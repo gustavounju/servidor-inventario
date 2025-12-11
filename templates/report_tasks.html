@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de tareas</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body class="p-3">
+
+<h1>Reporte de tareas completadas</h1>
+
+{% if pc_name %}
+    <p>
+        PC filtrada: <strong>{{ pc_name }}</strong>
+    </p>
+{% else %}
+    <p>
+        PC filtrada: <em>Todas</em>
+    </p>
+{% endif %}
+
+<form action="{{ url_for('report_tasks_completed', pc=pc_name) }}" method="post" class="form-inline mb-3">
+    <label for="fecha" class="mr-2">Seleccionar fecha:</label>
+    <input type="date"
+           id="fecha"
+           name="fecha"
+           class="form-control form-control-sm mr-2"
+           value="{{ request.form.get('fecha', '') }}">
+
+    <!-- Campo oculto para mantener el filtro de PC si existe -->
+    <input type="hidden" name="pc_name" value="{{ pc_name or '' }}">
+
+    <button type="submit" class="btn btn-sm btn-primary">
+        Descargar Excel
+    </button>
+</form>
+
+<p class="text-muted">
+    Si no elegís fecha, se usa la fecha de hoy. Si no hay PC filtrada, se incluyen todas las PCs.
+</p>
+
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+    Volver al dashboard
+</a>
+
+</body>
+</html>

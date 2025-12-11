@@ -1,0 +1,241 @@
+**********************
+Inicio de la transcripción de Windows PowerShell
+Hora de inicio: 20251210103502
+Nombre de usuario: PODJUDSP\gmurad_adm
+Usuario RunAs: PODJUDSP\gmurad_adm
+Nombre de la configuración: 
+Máquina: SISTEMAS-105 (Microsoft Windows NT 10.0.19045.0)
+Aplicación host: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+Id. de proceso: 15240
+PSVersion: 5.1.19041.6456
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.19041.6456
+BuildVersion: 10.0.19041.6456
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+La transcripción ha comenzado. El archivo de salida es C:\Users\GMURAD~1\AppData\Local\Temp\Inventario_Log_SISTEMAS-105.txt
+PS C:\Users\gmurad\Desktop\ServidorInventario> try {
+    # --- 0. INICIALIZAR VARIABLES ---
+    $mbName   = "N/A"
+    $diskFull = "N/A"
+    $ramFull  = "N/A"
+    $pName    = "Ninguna"
+    $pPort    = "N/A"
+    $mFull    = "N/A"
+    $ip       = "N/A"
+
+    # --- 1. USUARIO ---
+    try {
+        $Usuario_Actual = (Get-CimInstance Win32_ComputerSystem).UserName
+        if (-not $Usuario_Actual) { throw "Sin usuario en CIM" }
+    } catch {
+        try {
+            $Usuario_Actual = (Get-WmiObject Win32_ComputerSystem).UserName
+        } catch {
+            $Usuario_Actual = $env:USERNAME
+        }
+    }
+
+    $inventario = [PSCustomObject]@{
+        PC_Nombre      = $env:COMPUTERNAME
+        Usuario_Actual = $Usuario_Actual
+        Fecha_Reporte  = (Get-Date).ToString("o")
+    }
+
+    # --- 2. PLACA MADRE ---
+    try {
+        $bb = Get-WmiObject Win32_BaseBoard | Select-Object -First 1
+        if ($bb) { $mbName = "$($bb.Manufacturer) $($bb.Product)" }
+    } catch {
+        $mbName = "Error Placa"
+    }
+    $mbName = $mbName.Trim()
+
+    # --- 3. DISCOS ---
+    $diskFull = "N/A"
+    try {
+        $dsk = @(Get-CimInstance -Namespace "Root\Microsoft\Windows\Storage" -ClassName "MSFT_PhysicalDisk" -ErrorAction Stop |
+                 Select-Object FriendlyName, SpindleSpeed, MediaType, Size)
+        if ($dsk.Count -gt 0) {
+            $diskFull = ($dsk | ForEach-Object {
+                $tipo = "(HDD)"
+                if ([int]$_.MediaType -eq 4 -or $_.MediaType -eq "SSD") { $tipo = "(SSD)" }
+                elseif ([int]$_.SpindleSpeed -eq 0) { $tipo = "(SSD)" }
+                $tamGB = if ($_.Size) { [math]::Round($_.Size / 1GB, 0) } else { 0 }
+                if ($tamGB -gt 0) { "$($_.FriendlyName) $tipo $tamGB GB" }
+                else { "$($_.FriendlyName) $tipo" }
+            }) -join ", "
+        } else {
+            throw "Sin discos en MSFT_PhysicalDisk"
+        }
+    } catch {
+        try {
+            $d2 = @(Get-WmiObject Win32_DiskDrive -ErrorAction Stop)
+            if ($d2.Count -gt 0) {
+                $diskFull = ($d2 | ForEach-Object {
+                    $tamGB = if ($_.Size) { [math]::Round($_.Size / 1GB, 0) } else { 0 }
+                    if ($tamGB -gt 0) { "$($_.Model) (Legacy) $tamGB GB" }
+                    else { "$($_.Model) (Legacy)" }
+                }) -join ", "
+            } else {
+                $diskFull = "Sin datos disco"
+            }
+        } catch {
+            $diskFull = "Error Disco"
+        }
+    }
+
+    # --- 4. SISTEMA (OS, RAM, CPU) ---
+    try {
+        $cs = Get-ComputerInfo
+        $sis = @{
+            OsName     = $cs.OsName
+            OsVersion  = $cs.OsVersion
+            "RAM (GB)" = [math]::Round($cs.CsTotalPhysicalMemory / 1GB, 2)
+            Procesador = $cs.CsProcessors.Name -join ', '
+        }
+    } catch {
+        try {
+            $os  = Get-WmiObject Win32_OperatingSystem
+            $mem = Get-WmiObject Win32_ComputerSystem
+            $cpu = Get-WmiObject Win32_Processor
+            $sis = @{
+                OsName     = $os.Caption
+                OsVersion  = $os.Version
+                "RAM (GB)" = [math]::Round($mem.TotalPhysicalMemory / 1GB, 2)
+                Procesador = $cpu.Name
+            }
+        } catch {
+            $sis = @{ OsName = "Error WMI" }
+        }
+    }
+
+    # --- 4b. Detectar versión de Windows (7 vs 10/11) ---
+    try {
+        $osInfo = Get-CimInstance Win32_OperatingSystem
+    } catch {
+        $osInfo = Get-WmiObject Win32_OperatingSystem
+    }
+
+    $esWin7     = $false
+    $esWin10o11 = $false
+
+    if ($osInfo -and $osInfo.Version) {
+        if ($osInfo.Version -like "6.1*") { $esWin7 = $true }          # Windows 7
+        elseif ($osInfo.Version -like "10.0*") { $esWin10o11 = $true } # Win 10 / 11
+    }
+
+    # --- 5. RAM DETALLE ---
+    $RamMap = @{ "0"="Unk"; "20"="DDR"; "21"="DDR2"; "24"="DDR3"; "26"="DDR4"; "28"="DDR5" }
+    try {
+        try {
+            $r = Get-CimInstance Win32_PhysicalMemory | Select-Object -First 1
+        } catch {
+            $r = Get-WmiObject Win32_PhysicalMemory | Select-Object -First 1
+        }
+        if ($r) {
+            $t = if ($RamMap.ContainsKey([string]$r.SMBIOSMemoryType)) {
+                $RamMap[[string]$r.SMBIOSMemoryType]
+            } else {
+                "Tipo " + $r.SMBIOSMemoryType
+            }
+            $ramFull = "$t @ $($r.Speed) MHz"
+        } else {
+            $ramFull = "N/A"
+        }
+    } catch {
+        $ramFull = "N/A"
+    }
+
+    # --- 6. IMPRESORA ---
+    try {
+        $prn = Get-WmiObject Win32_Printer -Filter "Default = TRUE" | Select-Object -First 1
+        if ($prn) {
+            $pName = $prn.Name
+            $pPort = $prn.PortName
+            if ($pPort -like "USB*" -or $pPort -like "LPT*") { $pPort += " (Local)" }
+            elseif ($pPort -like "*IP_*" -or $pPort -like "WSD-*" -or $pPort -like "\\*") { $pPort += " (Red)" }
+        }
+    } catch {
+        $pName = "Error"
+        $pPort = "Error"
+    }
+
+    # --- 7. MONITORES e IP ---
+    try {
+        try {
+            $m = @(Get-CimInstance Win32_DesktopMonitor)
+        } catch {
+            $m = @(Get-WmiObject Win32_DesktopMonitor)
+        }
+        if ($m) { $mFull = ($m | ForEach-Object { $_.Name }) -join ", " }
+    } catch {}
+
+    # IP: usar método distinto si es Windows 7
+    if ($esWin7) {
+        try {
+            $cfg = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled='True'" |
+                   Select-Object -First 1
+            if ($cfg -and $cfg.IPAddress) {
+                $ip = $cfg.IPAddress[0]
+            }
+        } catch {}
+    } else {
+        try {
+            $net = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction Stop |
+                   Where-Object { $_.InterfaceAlias -notlike "*Loopback*" -and $_.PrefixOrigin -ne "WellKnown" } |
+                   Select-Object -First 1
+            if ($net) { $ip = $net.IPAddress }
+            else { throw "Sin IP en Get-NetIPAddress" }
+        } catch {
+            try {
+                $cfg = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled='True'" |
+                       Select-Object -First 1
+                if ($cfg -and $cfg.IPAddress) {
+                    $ip = $cfg.IPAddress[0]
+                }
+            } catch {}
+        }
+    }
+
+    # --- 8. CALIDAD DE CONEXIÓN (desactivada, se deja N/A) ---
+    $PingMs_Servidor      = "N/A"
+    $PingLoss_ServidorPct = "N/A"
+
+    # --- 9. ARMAR JSON ---
+    $inventario | Add-Member NoteProperty "Sistema"              $sis
+    $inventario | Add-Member NoteProperty "RAM_Detalles"         $ramFull
+    $inventario | Add-Member NoteProperty "Disk_Models"          $diskFull
+    $inventario | Add-Member NoteProperty "Printer_Model"        $pName
+    $inventario | Add-Member NoteProperty "Printer_Port"         $pPort
+    $inventario | Add-Member NoteProperty "Monitors"             $mFull
+    $inventario | Add-Member NoteProperty "Red"                  @(@{ IPAddress = $ip })
+    $inventario | Add-Member NoteProperty "Motherboard_Model"    $mbName
+    $inventario | Add-Member NoteProperty "PingMs_Servidor"      $PingMs_Servidor
+    $inventario | Add-Member NoteProperty "PingLoss_ServidorPct" $PingLoss_ServidorPct
+
+    # --- 10. ENVIAR INVENTARIO ---
+    Write-Host "Enviando a $UrlInventario..."
+    $json = $inventario | ConvertTo-Json -Depth 5
+    $web  = New-Object System.Net.WebClient
+    $web.Headers.Add("Content-Type", "application/json")
+    $web.Encoding = [System.Text.Encoding]::UTF8
+    $web.UploadString($UrlInventario, "POST", $json)
+    Write-Host "Inventario OK." -ForegroundColor Green
+}
+catch {
+    Write-Warning ("Inventario con fallo no crítico: {0}" -f $_)
+}
+Enviando a http://10.15.2.251:5000/submit_inventory...
+{
+  "status": "success"
+}
+Inventario OK.
+PS C:\Users\gmurad\Desktop\ServidorInventario> Stop-Transcript
+**********************
+Fin de la transcripción de Windows PowerShell
+Hora de finalización: 20251210103506
+**********************

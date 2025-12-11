@@ -1,0 +1,21 @@
+[Unit]
+Description=Servidor Inventario GOLD
+After=network.target
+
+[Service]
+# Usuario que ejecutará el servicio. 
+# Si usas otro usuario (ej: ubuntu), cámbialo aquí.
+User=root
+Group=root
+
+# Directorio donde copiarás los archivos
+WorkingDirectory=/opt/inventario
+
+# Comando de arranque
+ExecStart=/usr/bin/python3 /opt/inventario/servidor.py
+
+# Reiniciar automáticamente si falla
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

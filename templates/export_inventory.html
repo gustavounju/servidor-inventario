@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Exportar Inventario</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .checkbox-group {
+            columns: 2;
+            column-gap: 2rem;
+        }
+        .form-check {
+            break-inside: avoid;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+<div class="container">
+    <h1 class="mb-4">Exportar inventario a Excel</h1>
+
+    <form action="{{ url_for('export_inventory') }}" method="post">
+        
+        <h5 class="mb-3">Seleccionar campos a exportar:</h5>
+        
+        <div class="checkbox-group">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="pc_name" 
+                       name="campos" value="pc_name" checked>
+                <label class="form-check-label" for="pc_name">
+                    Nombre de PC
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="os_name" 
+                       name="campos" value="os_name" checked>
+                <label class="form-check-label" for="os_name">
+                    Sistema Operativo
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="processor" 
+                       name="campos" value="processor" checked>
+                <label class="form-check-label" for="processor">
+                    Procesador
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="ram_gb" 
+                       name="campos" value="ram_gb" checked>
+                <label class="form-check-label" for="ram_gb">
+                    RAM (GB)
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="ip_address" 
+                       name="campos" value="ip_address" checked>
+                <label class="form-check-label" for="ip_address">
+                    Dirección IP
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="last_user" 
+                       name="campos" value="last_user">
+                <label class="form-check-label" for="last_user">
+                    Último usuario
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="last_report" 
+                       name="campos" value="last_report">
+                <label class="form-check-label" for="last_report">
+                    Último reporte
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="motherboard_model" 
+                       name="campos" value="motherboard_model">
+                <label class="form-check-label" for="motherboard_model">
+                    Placa madre
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="disk_models" 
+                       name="campos" value="disk_models">
+                <label class="form-check-label" for="disk_models">
+                    Modelos de disco
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="disk_speeds_rpm" 
+                       name="campos" value="disk_speeds_rpm">
+                <label class="form-check-label" for="disk_speeds_rpm">
+                    Velocidad disco (RPM)
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="monitors" 
+                       name="campos" value="monitors">
+                <label class="form-check-label" for="monitors">
+                    Monitores
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="printer_model" 
+                       name="campos" value="printer_model">
+                <label class="form-check-label" for="printer_model">
+                    Modelo impresora
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="printer_port" 
+                       name="campos" value="printer_port">
+                <label class="form-check-label" for="printer_port">
+                    Puerto impresora
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="alerta_ram_baja" 
+                       name="campos" value="alerta_ram_baja">
+                <label class="form-check-label" for="alerta_ram_baja">
+                    ⚠️ Alerta RAM baja
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="alerta_sin_impresora" 
+                       name="campos" value="alerta_sin_impresora">
+                <label class="form-check-label" for="alerta_sin_impresora">
+                    ⚠️ Alerta sin impresora
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="alerta_impresora_red" 
+                       name="campos" value="alerta_impresora_red">
+                <label class="form-check-label" for="alerta_impresora_red">
+                    ⚠️ Alerta impresora red
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="is_active" 
+                       name="campos" value="is_active">
+                <label class="form-check-label" for="is_active">
+                    Estado (Activa/Inactiva)
+                </label>
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary btn-lg">
+                📥 Descargar Excel
+            </button>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg">
+                Cancelar
+            </a>
+        </div>
+
+    </form>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle PC - {{ pc.pc_name }}</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<style>
+.table th {
+    width: 25%;
+    white-space: nowrap;
+}
+.table td {
+    word-break: break-word;
+}
+</style>
+
+</head>
+<body class="p-3">
+
+<h1 class="mb-3">
+    Detalle de {{ pc.pc_name }}
+    {% if pc.is_active == 'True' %}
+        <span class="badge badge-success ml-2">Activa</span>
+    {% else %}
+        <span class="badge badge-secondary ml-2">Cementerio</span>
+    {% endif %}
+
+    {% if pc.alerta_ram_baja %}
+        <span class="badge badge-warning ml-2" title="RAM baja (&lt; 8 GB)">
+            💾 RAM
+        </span>
+    {% endif %}
+
+    {% if pc.alerta_sin_impresora %}
+        <span class="badge badge-warning ml-2" title="Sin impresora física">
+            🖨️ Sin
+        </span>
+    {% endif %}
+
+    {% if pc.alerta_impresora_red %}
+        <span class="badge badge-info ml-2" title="Solo impresora de red">
+            🌐 Red
+        </span>
+    {% endif %}
+</h1>
+
+
+
+<!-- Barra de acciones -->
+<div class="btn-toolbar mb-3" role="toolbar">
+  <div class="btn-group mr-2" role="group">
+    <!-- Agregar tarea (abre modal) -->
+    <button type="button"
+            class="btn btn-sm btn-primary"
+            data-toggle="modal"
+            data-target="#modalNuevaTarea">
+      Agregar tarea
+    </button>
+
+    <!-- Exportar tareas de esta PC (por ahora reusa reporte general con query pc) -->
+    <a href="{{ url_for('report_tasks_completed') }}?pc={{ pc.pc_name }}"
+       class="btn btn-sm btn-outline-primary">
+      Exportar tareas PC
+    </a>
+  </div>
+
+  <div class="btn-group" role="group">
+    {% if pc.is_active == 'True' %}
+      <a href="{{ url_for('decommission_pc', pc_name=pc.pc_name) }}"
+         class="btn btn-sm btn-danger">
+        Enviar a cementerio
+      </a>
+    {% else %}
+      <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}"
+         class="btn btn-sm btn-success">
+        Reactivar
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- BLOQUE 1: Datos principales de la PC -->
+<table class="table table-sm table-bordered mb-4">
+    <tbody>
+    <tr><th style="width: 20%;">Usuario</th><td>{{ pc.last_user }}</td></tr>
+    <tr><th>Placa Madre</th><td>{{ pc.motherboard_model }}</td></tr>
+    <tr><th>Sistema Operativo</th><td>{{ pc.os_name }}</td></tr>
+    <tr><th>CPU</th><td>{{ pc.processor }}</td></tr>
+    <tr><th>RAM</th><td>{{ pc.ram_gb }} GB ({{ pc.ram_detalles }})</td></tr>
+    <tr><th>Discos</th><td>{{ pc.disk_models }}</td></tr>
+    <tr><th>Impresora</th><td>{{ pc.printer_model }} ({{ pc.printer_port }})</td></tr>
+    <tr><th>Monitores</th><td>{{ pc.monitors }}</td></tr>
+    <tr><th>IP</th><td>{{ pc.ip_address }}</td></tr>
+    <tr><th>Último reporte</th><td>{{ pc.last_report }}</td></tr>
+    </tbody>
+</table>
+
+<!-- BLOQUE 3: Tareas de la PC -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h3 class="mt-2 mb-0">Tareas</h3>
+    <!-- Botón duplicado para agregar tarea (abre el mismo modal) -->
+    <button type="button"
+            class="btn btn-sm btn-primary"
+            data-toggle="modal"
+            data-target="#modalNuevaTarea">
+        Nueva tarea
+    </button>
+</div>
+
+<div class="table-responsive">
+<table class="table table-sm table-striped table-hover">
+    <thead class="thead-light">
+    <tr>
+        <th style="width: 20%;">Fecha</th>
+        <th>Descripción</th>
+        <th style="width: 15%;">Estado</th>
+        <th style="width: 20%;">Acciones</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for t in tareas %}
+        <tr>
+            <td>
+                {% set f = t.created_at %}
+                {% if f and ' ' in f %}
+                    {% set partes = f.split(' ') %}
+                    {% set fecha = partes[0].split('-') %}
+                    {% set hora = partes[1][:5] %}
+                    {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }} {{ hora }}
+                {% else %}
+                    {{ t.created_at }}
+                {% endif %}
+            </td>
+            <td>{{ t.descripcion }}</td>
+            <td>{{ t.estado }}</td>
+            <td>
+                {% if t.estado != 'Hecha' %}
+                <form action="{{ url_for('mark_task_done', task_id=t.id) }}"
+                      method="post"
+                      class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-success mb-1">
+                        Marcar hecha
+                    </button>
+                </form>
+                {% endif %}
+
+                <form action="{{ url_for('delete_task', task_id=t.id) }}"
+                      method="post"
+                      class="d-inline"
+                      onsubmit="return confirm('¿Borrar esta tarea?');">
+                    <button type="submit" class="btn btn-sm btn-danger mb-1">
+                        Borrar
+                    </button>
+                </form>
+            </td>
+        </tr>
+    {% else %}
+        <tr>
+            <td colspan="4" class="text-center">Sin tareas aún.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+<!-- FIN BLOQUE 3 -->
+
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm mt-3">
+    Volver al dashboard
+</a>
+
+<!-- Modal Nueva Tarea -->
+<div class="modal fade" id="modalNuevaTarea" tabindex="-1" role="dialog" aria-labelledby="modalNuevaTareaLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="form-nueva-tarea"
+            action="{{ url_for('add_task', pc_name=pc.pc_name) }}"
+            method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalNuevaTareaLabel">Agregar nueva tarea</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+
+          <div class="form-group">
+            <label for="descripcion">Descripción</label>
+            <input type="text"
+                   name="descripcion"
+                   id="descripcion"
+                   class="form-control"
+                   placeholder="Descripción de la tarea"
+                   required>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button"
+                  class="btn btn-secondary"
+                  data-dismiss="modal">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">
+            Guardar tarea
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JS de Bootstrap 4 para el modal -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+
+</body>
+</html>

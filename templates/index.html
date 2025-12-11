@@ -1,0 +1,1954 @@
+<!-- BLOQUE 1: HEAD -->
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Inventario</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            /* sin margen global */
+            background-color: #f4f4f4;
+        }
+
+
+        h1 {
+            color: #333;
+        }
+
+        /* Tabla */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+            vertical-align: top;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Botones de acción en la tabla */
+        .action-button {
+            padding: 5px 10px;
+            color: #fff;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .btn-decommission {
+            background-color: #dc3545;
+        }
+
+        .btn-reactivate {
+            background-color: #28a745;
+        }
+
+        /* Filas con alertas */
+        .tr-alerta-ram {
+            background-color: #fff3cd;
+        }
+
+        .tr-alerta-impresora {
+            background-color: #e0f7ff;
+        }
+
+        /* Toolbar superior (actualmente casi vacía) */
+        .header-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .toolbar-left,
+        .toolbar-center,
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toolbar-center {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .toolbar-right {
+            justify-content: flex-end;
+        }
+
+        /* Botones Cementerio / CSV */
+        .nav-link {
+            padding: 0 18px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+        }
+
+        .nav-link:hover {
+            filter: brightness(1.05);
+        }
+
+        /* Contenedores de filtros antiguos ocultos (por compatibilidad) */
+        .search-container,
+        .filter-buttons {
+            display: none;
+        }
+
+        /* Barra de KPIs + acciones a la derecha */
+        .kpi-toolbar {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 10px 0 15px 0;
+        }
+
+        .kpi-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .kpi-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            min-width: 60px;
+        }
+
+        .nav-link.nav-small {
+            padding: 0 8px;
+            min-width: 40px;
+            height: 30px;
+            font-size: 13px;
+        }
+
+
+
+
+        /* Tarjetas KPI base */
+        .kpi-box {
+            padding: 6px 10px;
+            min-width: 135px;
+            height: 66px;
+        }
+
+        .kpi-value {
+            font-size: 18px;
+        }
+
+
+
+
+
+        .kpi-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+
+        /* Estados KPI “normales” (colores de borde) */
+        .kpi-total {
+            border-left: 4px solid #22c55e;
+        }
+
+        /* verde */
+        .kpi-graveyard {
+            border-left: 4px solid #6b7280;
+        }
+
+        /* gris */
+        .kpi-ram {
+            border-left: 4px solid #fbbf24;
+        }
+
+        /* amarillo */
+        .kpi-imp {
+            border-left: 4px solid #0ea5e9;
+        }
+
+        /* celeste */
+        .kpi-so {
+            border-left: 4px solid #6366f1;
+        }
+
+        /* violeta */
+
+        /* Tarjeta Buscar */
+        .kpi-box.kpi-search {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .kpi-box.kpi-search input {
+            margin-top: 4px;
+            height: 28px;
+            padding: 0 8px;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+            font-size: 13px;
+        }
+
+
+
+        /* Tarjeta Script (acción principal) */
+        .kpi-box.kpi-script {
+            border-left: 4px solid #007bff;
+            background: #e0edff;
+        }
+
+        .kpi-box.kpi-script:hover {
+            background: #d0e2ff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .kpi-box.kpi-script.copiado {
+            background-color: #d1fae5;
+            box-shadow: 0 0 0 2px #10b981;
+        }
+
+        /* KPIs de SO */
+        .kpi-box.kpi-so {
+            border-left: 4px solid #6366f1;
+        }
+
+        .kpi-box.kpi-so.active-filter {
+            background-color: #e0e7ff;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.9);
+            animation: kpiBlink 1s infinite;
+        }
+
+        /* Estados activo / dormido para cualquier KPI */
+        .kpi-box.active-filter {
+            background-color: #e0e7ff;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.8);
+            animation: kpiBlink 1s infinite;
+        }
+
+        .kpi-box.kpi-muted {
+            opacity: 0.4;
+        }
+
+        @keyframes kpiBlink {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-1px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        .kpi-box.kpi-active {
+            border: 2px solid #f97316;
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+        }
+
+        /* Fila en cementerio */
+        .row-graveyard {
+            background-color: #111827;
+            color: #e5e7eb;
+        }
+
+        /* Fila de cementerio sin tachado, solo más apagada si querés */
+        .row-graveyard td {
+            text-decoration: none;
+            /* opcional: */
+            /* color: #9ca3af; */
+        }
+
+
+        /* Badge BAJA */
+        .badge-baja {
+            display: inline-block;
+            margin-bottom: 4px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* KPI cementerio como interruptor */
+        #kpiCementerio.active-filter {
+            background-color: #1f2937;
+            color: #f9fafb;
+            box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.9);
+        }
+
+        /* Botón CSV pequeño */
+        .nav-link.nav-small {
+            padding: 0 10px;
+            min-width: 44px;
+            height: 30px;
+            font-size: 13px;
+        }
+
+        /* Tabla más compacta y legible */
+        #inventoryTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #inventoryTable th,
+        #inventoryTable td {
+            padding: 0.4rem 0.5rem;
+            vertical-align: middle;
+        }
+
+        /* Resaltar cabecera */
+        #inventoryTable thead th {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        /* Fila de cementerio ligeramente gris */
+        .row-graveyard {
+            background-color: #f0f0f0;
+            color: #555;
+        }
+
+        /* Fila con alerta de RAM o impresora un poco más intensa */
+        .tr-alerta-ram {
+            background-color: #fff3cd;
+            /* amarillo suave */
+        }
+
+        .tr-alerta-impresora {
+            background-color: #e7f3ff;
+            /* celeste suave */
+        }
+
+        /* Cards de KPIs compactas */
+        .card .card-body {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .card .small {
+            font-size: 0.7rem;
+            letter-spacing: 0.04em;
+        }
+
+        .card .h4,
+        .card .h5 {
+            font-weight: 600;
+        }
+
+        /* Buscar (JS) dentro de card */
+        #searchInput {
+            font-size: 0.85rem;
+        }
+
+        /* Navbar brand un poco más destacada */
+        .navbar-brand {
+            font-weight: 600;
+        }
+
+        /* Resaltado temporal/activo para KPIs clicables */
+        .kpi-active {
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.6);
+            transform: translateY(-1px);
+        }
+
+        /* Estado activo claro para KPIs clicables */
+        .kpi-toggle {
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .kpi-toggle.kpi-on {
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.7);
+            /* rojo */
+            background-color: #212529 !important;
+            /* casi negro */
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        /* KPI clicable genérico */
+        .kpi-toggle {
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s, opacity 0.1s;
+        }
+
+        /* KPI clicable genérico */
+        .kpi-toggle {
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s, opacity 0.1s;
+        }
+
+        /* Activo: negro con borde rojo, como cementerio */
+        .kpi-on {
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.9);
+            background-color: #212529 !important;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        /* Deshabilitado mientras hay otro filtro activo */
+        .kpi-disabled {
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        /* Misma altura para todas las cards KPI */
+        .row.g-3.mb-3 .card {
+            height: 80px;
+            /* ajusta si quieres un poco más o menos */
+            display: flex;
+            align-items: center;
+        }
+
+        .row.g-3.mb-3 .card .card-body {
+            width: 100%;
+        }
+
+        /* Mismo tamaño y centrado para todos los KPIs */
+        .row.g-3.mb-3 .card {
+            height: 90px;
+            /* ajusta a gusto */
+            display: flex;
+            align-items: center;
+            /* centra verticalmente el contenido */
+        }
+
+        .row.g-3.mb-3 .card .card-body {
+            width: 100%;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .row.g-3.mb-3 .card .h4,
+        .row.g-3.mb-3 .card .h5 {
+            margin-bottom: 0;
+            /* evita que el número se baje demasiado */
+        }
+
+        /* Distribuir KPIs a lo ancho */
+        .row.g-3.mb-3 {
+            display: flex;
+            justify-content: space-between;
+            /* reparte el espacio entre las cards */
+            flex-wrap: nowrap;
+            /* evita que bajen de línea en pantallas grandes */
+        }
+
+        .kpi-row {
+            display: flex;
+            justify-content: space-between;
+            /* reparte horizontalmente */
+            flex-wrap: nowrap;
+            /* todos en una sola fila en grande */
+        }
+
+        .kpi-row>div {
+            flex: 1 1 0;
+            /* todos el mismo ancho */
+            max-width: none;
+        }
+
+        .kpi-row .card {
+            height: 90px;
+            display: flex;
+            align-items: center;
+        }
+
+
+        .kpi-row .card .card-body {
+            width: 100%;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+
+
+        .kpi-row .card .h4,
+        .kpi-row .card .h5 {
+            margin-bottom: 0;
+        }
+
+        #inventoryTable thead th {
+            background-color: #343a40;
+            /* gris oscuro tipo Bootstrap */
+            color: #ffffff;
+            /* texto blanco */
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        h1 {
+            margin-top: 0.25rem;
+            /* casi pegado a la barra */
+            margin-bottom: 0.5rem;
+            /* poco espacio con los botones */
+        }
+
+        /* Gráficos */
+        #chartsRow .card {
+            height: 300px !important;
+        }
+
+        #chartsRow canvas {
+            max-height: 220px !important;
+        }
+
+        /* ===== DARK MODE ===== */
+        [data-theme="dark"] {
+            color-scheme: dark;
+        }
+
+        [data-theme="dark"] body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] h1 {
+            color: #f0f0f0;
+        }
+
+        [data-theme="dark"] table {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] th {
+            background-color: #0056b3;
+        }
+
+        [data-theme="dark"] td {
+            border-color: #444;
+        }
+
+        [data-theme="dark"] tr:nth-child(even) {
+            background-color: #252525;
+        }
+
+        [data-theme="dark"] .card {
+            background-color: #2d2d2d;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] .card-header {
+            background-color: #333 !important;
+            border-color: #444;
+            color: #f0f0f0;
+        }
+
+        [data-theme="dark"] .navbar-dark {
+            background-color: #111 !important;
+        }
+
+        [data-theme="dark"] .form-control {
+            background-color: #333;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] .form-select {
+            background-color: #333;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        [data-theme="dark"] .kpi-toggle {
+            background-color: #2d2d2d;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] .kpi-toggle:hover {
+            background-color: #3a3a3a;
+        }
+
+        [data-theme="dark"] .kpi-on {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .kpi-disabled {
+            opacity: 0.4;
+        }
+
+        [data-theme="dark"] .text-bg-light {
+            background-color: #2d2d2d !important;
+            color: #e0e0e0 !important;
+        }
+
+        [data-theme="dark"] .row-graveyard {
+            background-color: #3a2a2a !important;
+        }
+
+        [data-theme="dark"] .tr-alerta-ram {
+            background-color: #4a4020 !important;
+        }
+
+        [data-theme="dark"] .tr-alerta-impresora {
+            background-color: #1a3a4a !important;
+        }
+
+        /* ===== MODERNIZACI\u00d3N: CARDS PREMIUM ===== */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            letter-spacing: -0.01em;
+        }
+
+        /* Cards KPI modernizados con glassmorphism */
+        .card.text-bg-light {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04),
+                0 1px 3px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card.text-bg-light::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card.text-bg-light:hover::before {
+            opacity: 1;
+        }
+
+        .card.text-bg-light:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12),
+                0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .kpi-toggle {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .kpi-toggle:hover {
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        .kpi-toggle:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .kpi-on {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+        }
+
+        /* Tabla premium modernizada */
+        #inventoryTable {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        #inventoryTable thead th {
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            padding: 1rem 0.75rem;
+            border: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #inventoryTable thead th:hover {
+            background: linear-gradient(180deg, #7c92f0 0%, #8c5bb2 100%);
+            cursor: pointer;
+        }
+
+        #inventoryTable tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        #inventoryTable tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.04);
+            transform: scale(1.001);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        #inventoryTable tbody td {
+            padding: 0.875rem 0.75rem;
+            vertical-align: middle;
+            border-left: none;
+            border-right: none;
+        }
+
+        /* Animaciones suaves globales */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .row.mb-4>div {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .row.mb-4>div:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .row.mb-4>div:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .row.mb-4>div:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .kpi-row>div {
+            animation: slideIn 0.4s ease-out;
+        }
+
+        .kpi-row>div:nth-child(odd) {
+            animation-delay: 0.05s;
+        }
+
+        .kpi-row>div:nth-child(even) {
+            animation-delay: 0.1s;
+        }
+
+        /* Botones modernizados */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #7c92f0 0%, #8c5bb2 100%);
+        }
+
+        /* Tipografía mejorada */
+        h1 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1a202c;
+        }
+
+        .small {
+            font-weight: 500;
+        }
+
+        /* Cards de gráficos */
+        #chartsRow .card {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        #chartsRow .card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
+        }
+
+        #chartsRow .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 2px solid #667eea;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        /* Navbar mejorada */
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.01em;
+        }
+
+        /* Input de búsqueda mejorado */
+        .form-control,
+        .form-select {
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Modo oscuro actualizado */
+        [data-theme="dark"] .card.text-bg-light {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="dark"] #inventoryTable thead th {
+            background: linear-gradient(180deg, #4c51bf 0%, #5a67d8 100%);
+        }
+
+        [data-theme="dark"] h1 {
+            color: #f7fafc;
+        }
+
+        [data-theme="dark"] #chartsRow .card-header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+        }
+    </style>
+
+</head>
+<!-- FIN BLOQUE 1 -->
+
+
+<!-- BLOQUE 2: CUERPO (navbar + KPIs + filtros + tabla) -->
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                Inventario GOLD
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+
+                    <li class="nav-item">
+                        <a href="{{ url_for('export_inventory') }}" class="nav-link">
+                            Inventario XLS
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ url_for('report_tasks_completed') }}" class="nav-link">
+                            Tareas XLS
+                        </a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <input type="text" id="searchInput" class="form-control form-control-sm"
+                            placeholder="Buscar (JS)...">
+                    </li>
+                    <li class="nav-item ms-2">
+                        <button class="btn btn-outline-light btn-sm" id="toggleCompactBtn" onclick="toggleCompactMode()"
+                            title="Alternar modo compacto/expandido (Ctrl+M)">
+                            <i class="bi bi-list-ul"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <button class="btn btn-outline-light btn-sm" id="themeToggle" onclick="toggleTheme()">
+                            <i class="bi bi-moon-stars-fill"></i>
+                        </button>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-fluid" style="padding-top: 10px;">
+
+
+        <h1 class="mb-3">Dashboard de Inventario</h1>
+        <div class="row mb-4" id="chartsRow">
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Distribución SO</div>
+                    <div class="card-body d-flex align-items-center justify-content-center"><canvas
+                            id="osChart"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Estado PCs</div>
+                    <div class="card-body d-flex align-items-center justify-content-center"><canvas
+                            id="statusChart"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Alertas</div>
+                    <div class="card-body d-flex align-items-center justify-content-center"><canvas
+                            id="alertsChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3 mb-3 kpi-row">
+
+            <!-- Script -->
+            <div class="col-6 col-md-1">
+                <div class="card text-bg-light kpi-toggle" id="kpiScript" onclick="copyScript()"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2">
+                        <div class="small text-uppercase">Script</div>
+                        <div class="h6 mb-0 text-primary">Copiar</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PCs activas (informativo) -->
+            <div class="col-6 col-md-1">
+                <div class="card text-bg-light">
+                    <div class="card-body py-2">
+                        <div class="small text-uppercase">PCs activas</div>
+                        <div class="h4 mb-0">{{ kpi_total_activas }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- En cementerio -->
+            <div class="col-6 col-md-1">
+                <div class="card text-bg-light kpi-toggle" id="kpiCementerio" onclick="onFilterClick('cementerio')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2">
+                        <div class="small text-uppercase">En cementerio</div>
+                        <div class="h4 mb-0">{{ kpi_total_graveyard }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Windows 7 -->
+            <div class="col-6 col-md-1">
+                <div class="card text-bg-light kpi-toggle" id="kpiWin7" onclick="onFilterClick('win7')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2">
+                        <div class="small text-uppercase">Windows 7</div>
+                        <div class="h4 mb-0">{{ kpi_win7 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Windows 10/11 -->
+            <div class="col-6 col-md-1">
+                <div class="card text-bg-light kpi-toggle" id="kpiWin10" onclick="onFilterClick('win10')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2">
+                        <div class="small text-uppercase">Windows 10/11</div>
+                        <div class="h4 mb-0">{{ kpi_win10 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RAM baja -->
+            <div class="col-6 col-md-1">
+                <div class="card text-bg-light kpi-toggle" id="kpiRam" onclick="onFilterClick('ram')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2">
+                        <div class="small text-uppercase">RAM baja (&lt; 8 GB)</div>
+                        <div class="h4 mb-0">{{ kpi_alerta_ram }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sin impresora -->
+            <div class="col-6 col-md-1">
+                <div class="card text-bg-light kpi-toggle" id="kpiSinImp" onclick="onFilterClick('sin_impresora')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2">
+                        <div class="small text-uppercase">Sin impresora</div>
+                        <div class="h4 mb-0">{{ kpi_sin_impresora }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Solo impresora en red -->
+            <div class="col-6 col-md-1">
+                <div class="card text-bg-light kpi-toggle" id="kpiSoloRed" onclick="onFilterClick('solo_red')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2">
+                        <div class="small text-uppercase">Solo impresora en red</div>
+                        <div class="h4 mb-0">{{ kpi_impresora_red }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tareas pendientes -->
+            <div class="col-6 col-md-1">
+                <div class="card text-bg-light kpi-toggle" id="kpiTareasPendientes" onclick="onFilterClick('tareas')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2">
+                        <div class="small text-uppercase">Tareas pendientes</div>
+                        <div class="h4 mb-0">
+                            {{ pcs|selectattr('tareas_pendientes', 'gt', 0)|list|length }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+
+
+
+
+
+
+
+
+        <!-- Tabla de inventario (igual que tenías, solo envuelta en main) -->
+        <table id="inventoryTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Nombre PC</th>
+                    <th onclick="sortTable(1)">Usuario</th>
+                    <th onclick="sortTable(2)">Placa Madre</th>
+                    <th onclick="sortTable(3)">SO</th>
+                    <th onclick="sortTable(4)">CPU</th>
+                    <th onclick="sortTable(5)">RAM</th>
+                    <th onclick="sortTable(6)">RAM Detalle</th>
+                    <th onclick="sortTable(7)">Discos</th>
+                    <th onclick="sortTable(8)">Impresora</th>
+                    <th onclick="sortTable(9)">Monitores</th>
+                    <th onclick="sortTable(10)">IP</th>
+                    <th onclick="sortTable(11)">Último Reporte</th>
+                    <th>Alertas</th>
+                    <th>Acción</th>
+
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for pc in pcs %}
+                {% set row_class = [] %}
+                {% if pc.alerta_ram_baja %}
+                {% set _ = row_class.append('tr-alerta-ram') %}
+                {% endif %}
+                {% if pc.alerta_sin_impresora %}
+                {% set _ = row_class.append('tr-alerta-impresora') %}
+                {% endif %}
+                {% if pc.is_active == 'False' %}
+                {% set _ = row_class.append('row-graveyard') %}
+                {% endif %}
+                <tr class="{{ ' '.join(row_class) }}" data-alerta-ram="{{ pc.alerta_ram_baja | default(0) }}"
+                    data-alerta-sin-imp="{{ pc.alerta_sin_impresora | default(0) }}"
+                    data-alerta-impresora-red="{{ pc.alerta_impresora_red | default(0) }}"
+                    data-so="{{ pc.os_name | default('') }}"
+                    data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
+                    data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
+                    <td>{{ pc.pc_name }}</td>
+                    <td>{{ pc.last_user }}</td>
+                    <td>{{ pc.motherboard_model }}</td>
+                    <td>{{ pc.os_name }}</td>
+                    <td>{{ pc.processor }}</td>
+                    <td>{{ pc.ram_gb }} GB</td>
+                    <td>{{ pc.ram_detalles }}</td>
+                    <td>{{ pc.disk_models }}</td>
+                    <td>{{ pc.printer_model }} ({{ pc.printer_port }})</td>
+                    <td>{{ pc.monitors }}</td>
+                    <td>{{ pc.ip_address }}</td>
+                    <td>
+                        {% set f = pc.last_report %}
+                        {% if f and 'T' in f %}
+                        {% set partes = f.split('T') %}
+                        {% set fecha = partes[0].split('-') %}
+                        {% set hora = partes[1][:5] %}
+                        {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }} {{ hora }}
+                        {% else %}
+                        {{ pc.last_report }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if pc.alerta_ram_baja %}
+                        💾 RAM
+                        {% endif %}
+                        {% if pc.alerta_sin_impresora %}
+                        🖨️ Sin
+                        {% endif %}
+                        {% if pc.alerta_impresora_red %}
+                        🌐 Red
+                        {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                        {% if pc.is_active == 'True' %}
+                        <a href="{{ url_for('decommission_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-danger">
+                            Baja
+                        </a>
+                        <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}" class="btn btn-sm btn-secondary">
+                            Tareas
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-success">
+                            Activar
+                        </a>
+                        <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}" class="btn btn-sm btn-secondary">
+                            Ver Detalle
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="13" style="text-align: center;">Sin datos.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div id="server-data-container" data-server-url="{{ server_url }}" style="display: none;"></div>
+
+        </div>
+
+
+    </main>
+    <!-- FIN BLOQUE 2 -->
+
+
+
+
+
+    <!-- BLOQUE 3: SCRIPT POWERSHELL EN TEXTAREA -->
+    <textarea id="script-to-copy" style="display: none;">
+# --- Script de Inventario V7.0 (Gold + Rendimiento) ---
+$UrlBase       = "__URL_BASE__"
+$UrlInventario = "$UrlBase/submit_inventory"
+$UrlLog        = "$UrlBase/submit_log"
+$LogFile       = "$env:TEMP\Inventario_Log_$env:COMPUTERNAME.txt"
+
+# resto del script igual...
+
+
+Start-Transcript -Path $LogFile -Force
+try {
+    # --- 0. INICIALIZAR VARIABLES ---
+    $mbName   = "N/A"
+    $diskFull = "N/A"
+    $ramFull  = "N/A"
+    $pName    = "Ninguna"
+    $pPort    = "N/A"
+    $mFull    = "N/A"
+    $ip       = "N/A"
+
+    # --- 1. USUARIO ---
+    try {
+        $Usuario_Actual = (Get-CimInstance Win32_ComputerSystem).UserName
+        if (-not $Usuario_Actual) { throw "Sin usuario en CIM" }
+    } catch {
+        try {
+            $Usuario_Actual = (Get-WmiObject Win32_ComputerSystem).UserName
+        } catch {
+            $Usuario_Actual = $env:USERNAME
+        }
+    }
+
+    $inventario = [PSCustomObject]@{
+        PC_Nombre      = $env:COMPUTERNAME
+        Usuario_Actual = $Usuario_Actual
+        Fecha_Reporte  = (Get-Date).ToString("o")
+    }
+
+    # --- 2. PLACA MADRE ---
+    try {
+        $bb = Get-WmiObject Win32_BaseBoard | Select-Object -First 1
+        if ($bb) { $mbName = "$($bb.Manufacturer) $($bb.Product)" }
+    } catch {
+        $mbName = "Error Placa"
+    }
+    $mbName = $mbName.Trim()
+
+    # --- 3. DISCOS ---
+    $diskFull = "N/A"
+    try {
+        $dsk = @(Get-CimInstance -Namespace "Root\Microsoft\Windows\Storage" -ClassName "MSFT_PhysicalDisk" -ErrorAction Stop |
+                 Select-Object FriendlyName, SpindleSpeed, MediaType, Size)
+        if ($dsk.Count -gt 0) {
+            $diskFull = ($dsk | ForEach-Object {
+                $tipo = "(HDD)"
+                if ([int]$_.MediaType -eq 4 -or $_.MediaType -eq "SSD") { $tipo = "(SSD)" }
+                elseif ([int]$_.SpindleSpeed -eq 0) { $tipo = "(SSD)" }
+                $tamGB = if ($_.Size) { [math]::Round($_.Size / 1GB, 0) } else { 0 }
+                if ($tamGB -gt 0) { "$($_.FriendlyName) $tipo $tamGB GB" }
+                else { "$($_.FriendlyName) $tipo" }
+            }) -join ", "
+        } else {
+            throw "Sin discos en MSFT_PhysicalDisk"
+        }
+    } catch {
+        try {
+            $d2 = @(Get-WmiObject Win32_DiskDrive -ErrorAction Stop)
+            if ($d2.Count -gt 0) {
+                $diskFull = ($d2 | ForEach-Object {
+                    $tamGB = if ($_.Size) { [math]::Round($_.Size / 1GB, 0) } else { 0 }
+                    if ($tamGB -gt 0) { "$($_.Model) (Legacy) $tamGB GB" }
+                    else { "$($_.Model) (Legacy)" }
+                }) -join ", "
+            } else {
+                $diskFull = "Sin datos disco"
+            }
+        } catch {
+            $diskFull = "Error Disco"
+        }
+    }
+
+    # --- 4. SISTEMA (OS, RAM, CPU) ---
+    try {
+        $cs = Get-ComputerInfo
+        $sis = @{
+            OsName     = $cs.OsName
+            OsVersion  = $cs.OsVersion
+            "RAM (GB)" = [math]::Round($cs.CsTotalPhysicalMemory / 1GB, 2)
+            Procesador = $cs.CsProcessors.Name -join ', '
+        }
+    } catch {
+        try {
+            $os  = Get-WmiObject Win32_OperatingSystem
+            $mem = Get-WmiObject Win32_ComputerSystem
+            $cpu = Get-WmiObject Win32_Processor
+            $sis = @{
+                OsName     = $os.Caption
+                OsVersion  = $os.Version
+                "RAM (GB)" = [math]::Round($mem.TotalPhysicalMemory / 1GB, 2)
+                Procesador = $cpu.Name
+            }
+        } catch {
+            $sis = @{ OsName = "Error WMI" }
+        }
+    }
+
+    # --- 4b. Detectar versión de Windows (7 vs 10/11) ---
+    try {
+        $osInfo = Get-CimInstance Win32_OperatingSystem
+    } catch {
+        $osInfo = Get-WmiObject Win32_OperatingSystem
+    }
+
+    $esWin7     = $false
+    $esWin10o11 = $false
+
+    if ($osInfo -and $osInfo.Version) {
+        if ($osInfo.Version -like "6.1*") { $esWin7 = $true }          # Windows 7
+        elseif ($osInfo.Version -like "10.0*") { $esWin10o11 = $true } # Win 10 / 11
+    }
+
+    # --- 5. RAM DETALLE ---
+    $RamMap = @{ "0"="Unk"; "20"="DDR"; "21"="DDR2"; "24"="DDR3"; "26"="DDR4"; "28"="DDR5" }
+    try {
+        try {
+            $r = Get-CimInstance Win32_PhysicalMemory | Select-Object -First 1
+        } catch {
+            $r = Get-WmiObject Win32_PhysicalMemory | Select-Object -First 1
+        }
+        if ($r) {
+            $t = if ($RamMap.ContainsKey([string]$r.SMBIOSMemoryType)) {
+                $RamMap[[string]$r.SMBIOSMemoryType]
+            } else {
+                "Tipo " + $r.SMBIOSMemoryType
+            }
+            $ramFull = "$t @ $($r.Speed) MHz"
+        } else {
+            $ramFull = "N/A"
+        }
+    } catch {
+        $ramFull = "N/A"
+    }
+
+    # --- 6. IMPRESORA ---
+    try {
+        $prn = Get-WmiObject Win32_Printer -Filter "Default = TRUE" | Select-Object -First 1
+        if ($prn) {
+            $pName = $prn.Name
+            $pPort = $prn.PortName
+            if ($pPort -like "USB*" -or $pPort -like "LPT*") { $pPort += " (Local)" }
+            elseif ($pPort -like "*IP_*" -or $pPort -like "WSD-*" -or $pPort -like "\\*") { $pPort += " (Red)" }
+        }
+    } catch {
+        $pName = "Error"
+        $pPort = "Error"
+    }
+
+    # --- 7. MONITORES e IP ---
+    try {
+        try {
+            $m = @(Get-CimInstance Win32_DesktopMonitor)
+        } catch {
+            $m = @(Get-WmiObject Win32_DesktopMonitor)
+        }
+        if ($m) { $mFull = ($m | ForEach-Object { $_.Name }) -join ", " }
+    } catch {}
+
+    # IP: usar método distinto si es Windows 7
+    if ($esWin7) {
+        try {
+            $cfg = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled='True'" |
+                   Select-Object -First 1
+            if ($cfg -and $cfg.IPAddress) {
+                $ip = $cfg.IPAddress[0]
+            }
+        } catch {}
+    } else {
+        try {
+            $net = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction Stop |
+                   Where-Object { $_.InterfaceAlias -notlike "*Loopback*" -and $_.PrefixOrigin -ne "WellKnown" } |
+                   Select-Object -First 1
+            if ($net) { $ip = $net.IPAddress }
+            else { throw "Sin IP en Get-NetIPAddress" }
+        } catch {
+            try {
+                $cfg = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled='True'" |
+                       Select-Object -First 1
+                if ($cfg -and $cfg.IPAddress) {
+                    $ip = $cfg.IPAddress[0]
+                }
+            } catch {}
+        }
+    }
+
+    # --- 8. CALIDAD DE CONEXIÓN (desactivada, se deja N/A) ---
+    $PingMs_Servidor      = "N/A"
+    $PingLoss_ServidorPct = "N/A"
+
+    # --- 9. ARMAR JSON ---
+    $inventario | Add-Member NoteProperty "Sistema"              $sis
+    $inventario | Add-Member NoteProperty "RAM_Detalles"         $ramFull
+    $inventario | Add-Member NoteProperty "Disk_Models"          $diskFull
+    $inventario | Add-Member NoteProperty "Printer_Model"        $pName
+    $inventario | Add-Member NoteProperty "Printer_Port"         $pPort
+    $inventario | Add-Member NoteProperty "Monitors"             $mFull
+    $inventario | Add-Member NoteProperty "Red"                  @(@{ IPAddress = $ip })
+    $inventario | Add-Member NoteProperty "Motherboard_Model"    $mbName
+    $inventario | Add-Member NoteProperty "PingMs_Servidor"      $PingMs_Servidor
+    $inventario | Add-Member NoteProperty "PingLoss_ServidorPct" $PingLoss_ServidorPct
+
+    # --- 10. ENVIAR INVENTARIO ---
+    Write-Host "Enviando a $UrlInventario..."
+    $json = $inventario | ConvertTo-Json -Depth 5
+    $web  = New-Object System.Net.WebClient
+    $web.Headers.Add("Content-Type", "application/json")
+    $web.Encoding = [System.Text.Encoding]::UTF8
+    $web.UploadString($UrlInventario, "POST", $json)
+    Write-Host "Inventario OK." -ForegroundColor Green
+}
+catch {
+    Write-Warning ("Inventario con fallo no crítico: {0}" -f $_)
+}
+Stop-Transcript
+
+# --- 11. ENVIAR LOG ---
+try {
+    $logContent = [System.IO.File]::ReadAllText($LogFile)
+    $logPayload = @{ PC_Nombre = $env:COMPUTERNAME; Log_Content = $logContent } | ConvertTo-Json
+    $web = New-Object System.Net.WebClient
+    $web.Headers.Add("Content-Type", "application/json")
+    $web.Encoding = [System.Text.Encoding]::UTF8
+    $web.UploadString($UrlLog, "POST", $logPayload) | Out-Null
+}
+catch {
+    Write-Warning "Error subiendo log."
+}
+# --- FIN ---
+</textarea>
+    <!-- FIN BLOQUE 3 -->
+
+
+    <!-- BLOQUE 4: JAVASCRIPT -->
+    <script>
+        // ===== Filtros exclusivos por KPIs =====
+        var activeFilter = null;  // null, 'cementerio', 'ram', 'sin_impresora', 'solo_red', 'win7', 'win10', 'tareas'
+
+        function clearAllRowFilters() {
+            var rows = document.querySelectorAll('#inventoryTable tbody tr');
+            rows.forEach(function (tr) {
+                tr.style.display = '';
+            });
+        }
+
+        function applyRowFilter(tipo) {
+            clearAllRowFilters();
+            var rows = document.querySelectorAll('#inventoryTable tbody tr');
+
+            if (tipo === 'cementerio') {
+                rows.forEach(function (tr) {
+                    var estado = tr.getAttribute('data-estado');
+                    tr.style.display = (estado === 'baja') ? '' : 'none';
+                });
+            } else if (tipo === 'ram') {
+                rows.forEach(function (tr) {
+                    var alertaRam = tr.getAttribute('data-alerta-ram');
+                    tr.style.display = (alertaRam === '1') ? '' : 'none';
+                });
+            } else if (tipo === 'sin_impresora') {
+                rows.forEach(function (tr) {
+                    var alertaSin = tr.getAttribute('data-alerta-sin-imp');
+                    tr.style.display = (alertaSin === '1') ? '' : 'none';
+                });
+            } else if (tipo === 'solo_red') {
+                rows.forEach(function (tr) {
+                    var alertaRed = tr.getAttribute('data-alerta-impresora-red');
+                    tr.style.display = (alertaRed === '1') ? '' : 'none';
+                });
+            } else if (tipo === 'win7') {
+                rows.forEach(function (tr) {
+                    var so = (tr.getAttribute('data-so') || '').toLowerCase();
+                    tr.style.display = (so.indexOf('windows 7') !== -1) ? '' : 'none';
+                });
+            } else if (tipo === 'win10') {
+                rows.forEach(function (tr) {
+                    var so = (tr.getAttribute('data-so') || '').toLowerCase();
+                    tr.style.display = (so.indexOf('windows 10') !== -1 || so.indexOf('windows 11') !== -1) ? '' : 'none';
+                });
+            } else if (tipo === 'tareas') {
+                rows.forEach(function (tr) {
+                    var pendientes = parseInt(tr.getAttribute('data-tareas-pendientes') || '0', 10);
+                    tr.style.display = (pendientes > 0) ? '' : 'none';
+                });
+            }
+        }
+
+        function clearFiltersVisual() {
+            document.querySelectorAll('.kpi-toggle').forEach(function (card) {
+                card.classList.remove('kpi-on', 'kpi-disabled');
+            });
+            activeFilter = null;
+        }
+
+        function setKpiStates() {
+            var cards = document.querySelectorAll('.kpi-toggle');
+            cards.forEach(function (card) {
+                card.classList.remove('kpi-disabled');
+            });
+
+            if (activeFilter === null) {
+                return;
+            }
+
+            cards.forEach(function (card) {
+                var id = card.id;
+                var isActiveCard = (
+                    (activeFilter === 'cementerio' && id === 'kpiCementerio') ||
+                    (activeFilter === 'ram' && id === 'kpiRam') ||
+                    (activeFilter === 'sin_impresora' && id === 'kpiSinImp') ||
+                    (activeFilter === 'solo_red' && id === 'kpiSoloRed') ||
+                    (activeFilter === 'win7' && id === 'kpiWin7') ||
+                    (activeFilter === 'win10' && id === 'kpiWin10') ||
+                    (activeFilter === 'tareas' && id === 'kpiTareasPendientes')
+                );
+                if (!isActiveCard) {
+                    card.classList.add('kpi-disabled');
+                }
+            });
+        }
+
+        function onFilterClick(tipo) {
+            if (activeFilter === tipo) {
+                clearAllRowFilters();
+                clearFiltersVisual();
+                return;
+            }
+
+            activeFilter = tipo;
+            applyRowFilter(tipo);
+
+            document.querySelectorAll('.kpi-toggle').forEach(function (card) {
+                card.classList.remove('kpi-on', 'kpi-disabled');
+            });
+
+            var activeId = null;
+            if (tipo === 'cementerio') activeId = 'kpiCementerio';
+            if (tipo === 'ram') activeId = 'kpiRam';
+            if (tipo === 'sin_impresora') activeId = 'kpiSinImp';
+            if (tipo === 'solo_red') activeId = 'kpiSoloRed';
+            if (tipo === 'win7') activeId = 'kpiWin7';
+            if (tipo === 'win10') activeId = 'kpiWin10';
+            if (tipo === 'tareas') activeId = 'kpiTareasPendientes';
+
+            if (activeId) {
+                var el = document.getElementById(activeId);
+                if (el) el.classList.add('kpi-on');
+            }
+
+            setKpiStates();
+        }
+
+        // ===== Buscador JS por texto libre =====
+        document.addEventListener('DOMContentLoaded', function () {
+            var searchInput = document.getElementById('searchInput');
+            if (!searchInput) return;
+
+            searchInput.addEventListener('keyup', function () {
+                var filter = searchInput.value.toLowerCase();
+                var rows = document.querySelectorAll('#inventoryTable tbody tr');
+
+                rows.forEach(function (tr) {
+                    var text = tr.textContent.toLowerCase();
+                    tr.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+                });
+            });
+        });
+        // ===== Copiar script al portapapeles =====
+        function copyScript() {
+            var ta = document.getElementById('script-to-copy');  // mismo id que el textarea
+            if (!ta) {
+                alert('No se encontró el contenido del script.');
+                return;
+            }
+
+            var serverDiv = document.getElementById('server-data-container');
+            var baseUrl = serverDiv
+                ? (serverDiv.getAttribute('data-server-url') || '').replace(/\/+$/, '')
+                : '';
+
+            if (!baseUrl) {
+                alert('No se pudo obtener la URL del servidor.');
+                return;
+            }
+
+            // Reemplazar el placeholder por la URL real del servidor
+            var texto = ta.value.replace(/__URL_BASE__/g, baseUrl);
+
+            var temp = document.createElement('textarea');
+            temp.value = texto;
+            document.body.appendChild(temp);
+            temp.select();
+            try {
+                document.execCommand('copy');
+            } catch (e) {
+                console.warn('No se pudo copiar automáticamente:', e);
+            }
+            document.body.removeChild(temp);
+
+            var el = document.getElementById('kpiScript');
+            if (el) {
+                el.classList.add('kpi-on');
+                setTimeout(function () {
+                    el.classList.remove('kpi-on');
+                }, 500);
+            }
+        }
+        // Dark Mode
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            const icon = document.querySelector('#themeToggle i');
+            if (next === 'dark') {
+                icon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
+            } else {
+                icon.classList.replace('bi-sun-fill', 'bi-moon-stars-fill');
+            }
+        }
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        // Actualizar icono al cargar la página
+        document.addEventListener('DOMContentLoaded', function () {
+            const icon = document.querySelector('#themeToggle i');
+            if (icon && savedTheme === 'dark') {
+                icon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const kpiWin7 = {{ kpi_win7 }}, kpiWin10 = {{ kpi_win10 }}, kpiTotal = {{ kpi_total_activas }}, kpiGraveyard = {{ kpi_total_graveyard }}, kpiRam = {{ kpi_alerta_ram }}, kpiSinImp = {{ kpi_sin_impresora }}, kpiImpRed = {{ kpi_impresora_red }};
+
+        new Chart(document.getElementById('osChart'), { type: 'doughnut', data: { labels: ['Win 7', 'Win 10/11', 'Otros'], datasets: [{ data: [kpiWin7, kpiWin10, kpiTotal - (kpiWin7 + kpiWin10)], backgroundColor: ['#dc3545', '#0d6efd', '#6c757d'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+        new Chart(document.getElementById('statusChart'), { type: 'pie', data: { labels: ['Activas', 'Cementerio'], datasets: [{ data: [kpiTotal, kpiGraveyard], backgroundColor: ['#198754', '#6c757d'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+        new Chart(document.getElementById('alertsChart'), { type: 'bar', data: { labels: ['RAM Baja', 'Sin Imp', 'Imp Red'], datasets: [{ label: 'Cantidad', data: [kpiRam, kpiSinImp, kpiImpRed], backgroundColor: ['#ffc107', '#0dcaf0', '#6610f2'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+
+        // ===== MODERNIZACIÓN: Gráficos Clickeables (Opción 7) =====
+        const osChart = Chart.getChart('osChart');
+        const statusChart = Chart.getChart('statusChart');
+        const alertsChart = Chart.getChart('alertsChart');
+
+        if (osChart) {
+            document.getElementById('osChart').onclick = function (evt) {
+                const points = osChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                if (points.length) {
+                    const firstPoint = points[0];
+                    const label = osChart.data.labels[firstPoint.index];
+                    if (label === 'Win 7') onFilterClick('win7');
+                    else if (label === 'Win 10/11') onFilterClick('win10');
+                }
+            };
+        }
+
+        if (statusChart) {
+            document.getElementById('statusChart').onclick = function (evt) {
+                const points = statusChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                if (points.length) {
+                    const firstPoint = points[0];
+                    if (firstPoint.index === 1) onFilterClick('cementerio');
+                }
+            };
+        }
+
+        if (alertsChart) {
+            document.getElementById('alertsChart').onclick = function (evt) {
+                const points = alertsChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                if (points.length) {
+                    const firstPoint = points[0];
+                    const filters = ['ram', 'sin_impresora', 'solo_red'];
+                    onFilterClick(filters[firstPoint.index]);
+                }
+            };
+        }
+    });
+
+        // ===== MODERNIZACIÓN: Ordenamiento Mejorado con Indicadores (Opción 4) =====
+        let currentSortColumn = -1;
+        let currentSortDirection = 'asc';
+
+        function sortTable(columnIndex) {
+            const table = document.getElementById('inventoryTable');
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const rows = Array.from(tbody.getElementsByTagName('tr'));
+
+            // Toggle direction si es la misma columna
+            if (currentSortColumn === columnIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortDirection = 'asc';
+            }
+            currentSortColumn = columnIndex;
+
+            // Ordenar filas
+            rows.sort((a, b) => {
+                let aValue = a.getElementsByTagName('td')[columnIndex]?.textContent.trim() || '';
+                let bValue = b.getElementsByTagName('td')[columnIndex]?.textContent.trim() || '';
+
+                // Intentar comparación numérica
+                const aNum = parseFloat(aValue);
+                const bNum = parseFloat(bValue);
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return currentSortDirection === 'asc' ? aNum - bNum : bNum - aNum;
+                }
+
+                // Comparación alfabética
+                return currentSortDirection === 'asc'
+                    ? aValue.localeCompare(bValue)
+                    : bValue.localeCompare(aValue);
+            });
+
+            // Remover y reagregar filas
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Actualizar indicadores visuales
+            updateSortIndicators(columnIndex);
+
+            // Guardar en localStorage
+            localStorage.setItem('tableSortColumn', columnIndex);
+            localStorage.setItem('tableSortDirection', currentSortDirection);
+        }
+
+        function updateSortIndicators(columnIndex) {
+            const headers = document.querySelectorAll('#inventoryTable thead th');
+            headers.forEach((header, index) => {
+                // Remover indicadores anteriores
+                header.innerHTML = header.innerHTML.replace(/ ↑| ↓/g, '');
+
+                // Agregar nuevo indicador
+                if (index === columnIndex) {
+                    header.innerHTML += currentSortDirection === 'asc' ? ' ↑' : ' ↓';
+                    header.style.color = '#fff';
+                }
+            });
+        }
+
+        // Restaurar orden al cargar
+        window.addEventListener('load', function () {
+            const savedColumn = localStorage.getItem('tableSortColumn');
+            const savedDirection = localStorage.getItem('tableSortDirection');
+            if (savedColumn !== null) {
+                currentSortColumn = parseInt(savedColumn);
+                currentSortDirection = savedDirection || 'asc';
+                sortTable(currentSortColumn);
+            }
+        });
+
+        // ===== MODERNIZACIÓN: Exportar CSV Filtrado (Opción 5) =====
+        function exportToCSV() {
+            const table = document.getElementById('inventoryTable');
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
+
+            let csv = [];
+
+            // Headers
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th =>
+                th.textContent.trim().replace(/ ↑| ↓/g, '')
+            );
+            csv.push(headers.join(','));
+
+            // Datos visibles solamente
+            rows.forEach(row => {
+                const cols = Array.from(row.querySelectorAll('td')).map(td => {
+                    let text = td.textContent.trim();
+                    // Escapar comas y comillas
+                    if (text.includes(',') || text.includes('"')) {
+                        text = '"' + text.replace(/"/g, '""') + '"';
+                    }
+                    return text;
+                });
+                csv.push(cols.join(','));
+            });
+
+            // Descargar
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'inventario_filtrado_' + new Date().toISOString().slice(0, 10) + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ===== MODERNIZACIÓN: Modo Compacto/Expandido (Opción 6) =====
+        let isCompactMode = localStorage.getItem('compactMode') === 'true';
+
+        function toggleCompactMode() {
+            isCompactMode = !isCompactMode;
+            const table = document.getElementById('inventoryTable');
+            const rows = table.querySelectorAll('tbody tr');
+
+            if (isCompactMode) {
+                table.style.fontSize = '0.75rem';
+                rows.forEach(row => {
+                    row.querySelectorAll('td').forEach(td => {
+                        td.style.padding = '0.4rem 0.5rem';
+                    });
+                });
+            } else {
+                table.style.fontSize = '';
+                rows.forEach(row => {
+                    row.querySelectorAll('td').forEach(td => {
+                        td.style.padding = '';
+                    });
+                });
+            }
+
+            localStorage.setItem('compactMode', isCompactMode);
+
+            // Actualizar botón si existe
+            const btn = document.getElementById('toggleCompactBtn');
+            if (btn) {
+                btn.textContent = isCompactMode ? '📋 Expandir' : '📋 Compactar';
+            }
+        }
+
+        // Aplicar modo guardado al cargar
+        if (isCompactMode) {
+            toggleCompactMode();
+        }
+
+        // ===== MODERNIZACIÓN: Navegación por Teclado (Opción 12) =====
+        document.addEventListener('keydown', function (e) {
+            // Ctrl+K: Buscar
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInput')?.focus();
+            }
+
+            // Ctrl+E: Exportar CSV
+            if (e.ctrlKey && e.key === 'e') {
+                e.preventDefault();
+                exportToCSV();
+            }
+
+            // Ctrl+T: Toggle tema
+            if (e.ctrlKey && e.key === 't') {
+                e.preventDefault();
+                toggleTheme();
+            }
+
+            // Ctrl+M: Toggle modo compacto
+            if (e.ctrlKey && e.key === 'm') {
+                e.preventDefault();
+                toggleCompactMode();
+            }
+
+            // Escape: Limpiar filtros
+            if (e.key === 'Escape') {
+                clearAllRowFilters();
+                clearFiltersVisual();
+            }
+        });
+
+        // ===== MODERNIZACIÓN: Paginación Client-Side (Opción 9) =====
+        let currentPage = 1;
+        const rowsPerPage = parseInt(localStorage.getItem('rowsPerPage')) || 50;
+
+        function paginateTable() {
+            const table = document.getElementById('inventoryTable');
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
+            const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+            // Ocultar todas las filas
+            rows.forEach((row, index) => {
+                const shouldShow = index >= (currentPage - 1) * rowsPerPage && index < currentPage * rowsPerPage;
+                row.style.display = shouldShow ? '' : 'none';
+            });
+
+            // Actualizar controles de paginación
+            updatePaginationControls(currentPage, totalPages, rows.length);
+        }
+
+        function updatePaginationControls(page, totalPages, totalRows) {
+            let paginationDiv = document.querySelector('.client-pagination');
+            if (!paginationDiv) {
+                // Crear controles si no existen
+                paginationDiv = document.createElement('div');
+                paginationDiv.className = 'client-pagination mt-3 d-flex justify-content-between align-items-center';
+                paginationDiv.innerHTML = `
+                    <div>
+                        <span class="text-muted">Mostrando <strong id="rowStart">1</strong>-<strong id="rowEnd">50</strong> de <strong id="rowTotal">0</strong></span>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="changePage(-1)">← Anterior</button>
+                        <span class="mx-3">Página <strong id="currentPageNum">1</strong> de <strong id="totalPagesNum">1</strong></span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="changePage(1)">Siguiente →</button>
+                    </div>
+                    <div>
+                        <select class="form-select form-select-sm" onchange="changeRowsPerPage(this.value)" style="width: auto;">
+                            <option value="25">25 filas</option>
+                            <option value="50" selected>50 filas</option>
+                            <option value="100">100 filas</option>
+                            <option value="9999">Todas</option>
+                        </select>
+                    </div>
+                `;
+                document.getElementById('inventoryTable').after(paginationDiv);
+            }
+
+            document.getElementById('rowStart').textContent = (page - 1) * rowsPerPage + 1;
+            document.getElementById('rowEnd').textContent = Math.min(page * rowsPerPage, totalRows);
+            document.getElementById('rowTotal').textContent = totalRows;
+            document.getElementById('currentPageNum').textContent = page;
+            document.getElementById('totalPagesNum').textContent = totalPages || 1;
+        }
+
+        function changePage(delta) {
+            const table = document.getElementById('inventoryTable');
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
+            const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+            currentPage = Math.max(1, Math.min(currentPage + delta, totalPages));
+            paginateTable();
+        }
+
+        function changeRowsPerPage(value) {
+            rowsPerPage = parseInt(value);
+            localStorage.setItem('rowsPerPage', rowsPerPage);
+            currentPage = 1;
+            paginateTable();
+        }
+
+        // Aplicar paginación al cargar y al filtrar
+        setTimeout(() => paginateTable(), 100);
+    </script>
+    <!-- FIN BLOQUE 4 -->
+</body>
+
+</html>
