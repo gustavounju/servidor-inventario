@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Dashboard de Inventario</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -934,6 +934,11 @@
                             Tareas XLS
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <button class="nav-link btn btn-link" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                            <i class="bi bi-plus-circle"></i> Nueva Tarea
+                        </button>
+                    </li>
                     <li class="nav-item ms-3">
                         <input type="text" id="searchInput" class="form-control form-control-sm"
                             placeholder="Buscar (JS)...">
@@ -982,6 +987,42 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tareas sin asignar -->
+        {% if unassigned_tasks %}
+        <div class="card mb-4 shadow-sm border-warning">
+            <div class="card-header bg-warning text-dark font-weight-bold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-exclamation-triangle-fill me-2"></i> Tareas Pendientes de Asignar ({{ unassigned_count }})</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0" style="font-size: 0.9rem;">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Solicitante</th>
+                            <th>Fecha</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in unassigned_tasks %}
+                        <tr>
+                            <td>{{ task.descripcion }}</td>
+                            <td>{{ task.solicitante or '-' }}</td>
+                            <td>{{ task.created_at }}</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-primary" onclick="openAssignModal('{{ task.id }}')">
+                                    <i class="bi bi-person-check"></i> Asignar
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="row g-3 mb-3 kpi-row">
 
             <!-- Script -->
@@ -1948,7 +1989,77 @@ catch {
         // Aplicar paginación al cargar y al filtrar
         setTimeout(() => paginateTable(), 100);
     </script>
-    <!-- FIN BLOQUE 4 -->
+    <!-- FINAL BLOQUE 4 -->
+
+    <!-- Modales -->
+    <!-- Modal Crear Tarea Suelta -->
+    <div class="modal fade" id="createTaskModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('create_loose_task') }}" method="POST">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Nueva Tarea General</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea name="descripcion" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Solicitante (Quién llama)</label>
+                            <input type="text" name="solicitante" class="form-control" placeholder="Ej: Juan Pérez / Contabilidad">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Asignar Tarea -->
+    <div class="modal fade" id="assignTaskModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('assign_task') }}" method="POST">
+                    <input type="hidden" name="task_id" id="assignTaskId">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Asignar Tarea a PC</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Seleccione la PC responsable:</label>
+                            <select name="pc_name" class="form-select" required size="10">
+                                <option value="">Seleccione PC...</option>
+                                {% for pc in pcs %}
+                                <option value="{{ pc.pc_name }}">{{ pc.pc_name }} | {{ pc.last_user }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Puede escribir para buscar en la lista desplegada.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Asignar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function openAssignModal(taskId) {
+            document.getElementById('assignTaskId').value = taskId;
+            var modal = new bootstrap.Modal(document.getElementById('assignTaskModal'));
+            modal.show();
+        }
+    </script>
+    <!-- FIN BLOQUE 4 UI -->
 </body>
 
 </html>

@@ -61,10 +61,11 @@ def init_db():
             """
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                pc_name TEXT NOT NULL,
+                pc_name TEXT,
                 created_at TEXT NOT NULL DEFAULT (datetime('now', '-3 hours')),
                 descripcion TEXT NOT NULL,
                 estado TEXT NOT NULL DEFAULT 'Pendiente',
+                solicitante TEXT,
                 FOREIGN KEY (pc_name) REFERENCES pcs(pc_name)
             )
             """
@@ -72,6 +73,53 @@ def init_db():
 
         conn.commit()
     print("Base de datos lista y estructura verificada.")
+
+def migrate_db_v2():
+    """Migra la tabla tasks para permitir pc_name NULL y agregar solicitante."""
+    print("Verificando migración de DB v2...")
+    with get_db_connection() as conn:
+        # Verificar si ya existe la columna solicitante
+        cursor = conn.execute("PRAGMA table_info(tasks)")
+        columns = [row["name"] for row in cursor.fetchall()]
+        if "solicitante" in columns:
+            print("DB ya está en v2.")
+            return
+
+        print("Migrando DB a v2...")
+        try:
+            # 1. Renombrar tabla vieja
+            conn.execute("ALTER TABLE tasks RENAME TO tasks_old")
+
+            # 2. Crear tabla nueva
+            conn.execute(
+                """
+                CREATE TABLE tasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    pc_name TEXT,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now', '-3 hours')),
+                    descripcion TEXT NOT NULL,
+                    estado TEXT NOT NULL DEFAULT 'Pendiente',
+                    solicitante TEXT,
+                    FOREIGN KEY (pc_name) REFERENCES pcs(pc_name)
+                )
+                """
+            )
+
+            # 3. Copiar datos
+            conn.execute(
+                """
+                INSERT INTO tasks (id, pc_name, created_at, descripcion, estado)
+                SELECT id, pc_name, created_at, descripcion, estado FROM tasks_old
+                """
+            )
+
+            # 4. Borrar vieja
+            conn.execute("DROP TABLE tasks_old")
+            conn.commit()
+            print("Migración v2 completada con éxito.")
+        except Exception as e:
+            print(f"Error en migración v2: {e}")
+            conn.rollback()
 
 
 
@@ -143,6 +191,12 @@ def dashboard():
                 count_sql += " AND p.alerta_impresora_red = 1"
 
             total_rows = conn.execute(count_sql, params).fetchone()["c"]
+
+            # Contar tareas pendientes sin asignar (para mostrar en dashboard)
+            unassigned_tasks = conn.execute(
+                "SELECT * FROM tasks WHERE pc_name IS NULL OR pc_name = '' AND estado != 'Hecha' ORDER BY created_at DESC"
+            ).fetchall()
+            unassigned_count = len(unassigned_tasks)
 
             # Ahora traemos solo la página actual
             base_sql = """
@@ -221,7 +275,9 @@ def dashboard():
         total_pages=total_pages,
         total_rows=total_rows,
         per_page=per_page,
-        server_url=server_url,      # <- agregar esta línea
+        server_url=server_url,
+        unassigned_tasks=[dict(t) for t in unassigned_tasks], # Pasamos tareas sueltas
+        unassigned_count=unassigned_count,
         hostname=socket.gethostname(),
     )
 
@@ -363,6 +419,44 @@ def delete_task(task_id):
         return redirect(url_for("dashboard"))
 
     return redirect(url_for("pc_detail", pc_name=pc_name))
+
+
+@app.route("/tasks/create_loose", methods=["POST"])
+def create_loose_task():
+    descripcion = request.form.get("descripcion", "").strip()
+    solicitante = request.form.get("solicitante", "").strip()
+    
+    if descripcion:
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO tasks (descripcion, solicitante, estado) VALUES (?, ?, 'Pendiente')",
+                (descripcion, solicitante)
+            )
+            conn.commit()
+            
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/tasks/assign", methods=["POST"])
+def assign_task():
+    task_id = request.form.get("task_id")
+    pc_name = request.form.get("pc_name", "").strip()
+    
+    if task_id and pc_name:
+        with get_db_connection() as conn:
+            # Verificar si existe la PC (opcional, pero buena práctica)
+            t = conn.execute("SELECT 1 FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+            if t:
+                conn.execute(
+                    "UPDATE tasks SET pc_name = ? WHERE id = ?",
+                    (pc_name, task_id)
+                )
+                conn.commit()
+            else:
+                # Podríamos manejar error, por ahora redirigimos igual
+                pass
+                
+    return redirect(url_for("dashboard"))
 
 
 # --------- Reporte tareas a Excel ---------
@@ -658,5 +752,6 @@ def receive_log():
 
 if __name__ == "__main__":
     init_db()
+    migrate_db_v2()
     print("Servidor Inventario GOLD iniciado en http://0.0.0.0:5000")
     app.run(host="0.0.0.0", port=5000, debug=True)
