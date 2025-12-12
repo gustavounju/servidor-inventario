@@ -1043,28 +1043,31 @@
                 </div>
             </div>
 
-            <!-- PCs activas (informativo) -->
+            <!-- PCs activas (informativo - enlace a resetear filtros) -->
             <div class="col-6 col-md-1">
-                <div class="card text-bg-light">
-                    <div class="card-body py-2">
-                        <div class="small text-uppercase">PCs activas</div>
-                        <div class="h4 mb-0">{{ kpi_total_activas }}</div>
+                <a href="{{ url_for('dashboard') }}" class="text-decoration-none" title="Ver todas las PCs activas">
+                    <div class="card text-bg-light kpi-toggle">
+                        <div class="card-body py-2">
+                            <div class="small text-uppercase">PCs activas</div>
+                            <div class="h4 mb-0">{{ kpi_total_activas }}</div>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
-            <!-- En cementerio -->
+            <!-- En cementerio (Enlace directo a la nueva ruta) -->
             <div class="col-6 col-md-1">
-                <div class="card text-bg-light kpi-toggle" id="kpiCementerio" onclick="onFilterClick('cementerio')"
-                    style="cursor:pointer;">
-                    <div class="card-body py-2">
-                        <div class="small text-uppercase">En cementerio</div>
-                        <div class="h4 mb-0">{{ kpi_total_graveyard }}</div>
+                <a href="{{ url_for('view_cementerio') }}" class="text-decoration-none"
+                    title="Ver equipos dados de baja">
+                    <div
+                        class="card text-bg-light kpi-toggle {% if request.path == '/cementerio' or request.args.get('estado') == 'False' %}kpi-on{% endif %}">
+                        <div class="card-body py-2">
+                            <div class="small text-uppercase">Cementerio</div>
+                            <div class="h4 mb-0">{{ kpi_total_graveyard }}</div>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
-
-            <!-- Windows 7 -->
             <div class="col-6 col-md-1">
                 <div class="card text-bg-light kpi-toggle" id="kpiWin7" onclick="onFilterClick('win7')"
                     style="cursor:pointer;">
@@ -1698,7 +1701,8 @@ catch {
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            const kpiWin7 = {{ kpi_win7 }};
+            const kpiWin7 = {{ kpi_win7 }
+        };
         const kpiWin10 = {{ kpi_win10 }};
         const kpiTotal = {{ kpi_total_activas }};
         const kpiGraveyard = {{ kpi_total_graveyard }};

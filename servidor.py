@@ -187,6 +187,11 @@ if not os.path.exists(LOG_FOLDER):
 
 
 # ----------------- Rutas Web -----------------
+
+@app.route("/cementerio")
+def view_cementerio():
+    return redirect(url_for("dashboard", estado="False"))
+
 @app.route("/", methods=["GET"])
 def dashboard():
     """Lista todas las PCs (activas y en cementerio) + KPIs + filtros + paginado."""
@@ -201,7 +206,7 @@ def dashboard():
 
     # Filtros
     q = request.args.get("q", "").strip()
-    estado = request.args.get("estado", "").strip()
+    estado = request.args.get("estado", "True").strip() # Por defecto mostramos solo activos
     alerta = request.args.get("alerta", "").strip()
 
     # Paginación
@@ -227,6 +232,8 @@ def dashboard():
             if estado in ("True", "False"):
                 count_sql += " AND p.is_active = ?"
                 params.append(estado)
+            # Si estado es "All" o vacio explícito, podrías no filtrar, pero el default arriba es True.
+
 
             if alerta == "ram":
                 count_sql += " AND p.alerta_ram_baja = 1"
