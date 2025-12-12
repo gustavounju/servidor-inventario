@@ -71,6 +71,15 @@ def init_db():
             """
         )
 
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS technicians (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE
+            )
+            """
+        )
+
         conn.commit()
     print("Base de datos lista y estructura verificada.")
 
@@ -120,6 +129,42 @@ def migrate_db_v2():
         except Exception as e:
             print(f"Error en migración v2: {e}")
             conn.rollback()
+
+def migrate_db_v3():
+    """Migra BD a v3: tabla technicians y columnas completed_by/at en tasks."""
+    print("Verificando migración de DB v3...")
+    with get_db_connection() as conn:
+        # Check if technicians table exists
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='technicians'")
+        if not cursor.fetchone():
+            print("Creando tabla technicians...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS technicians (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE
+                )
+                """
+            )
+        
+        # Check columns in tasks
+        cursor = conn.execute("PRAGMA table_info(tasks)")
+        columns = [row["name"] for row in cursor.fetchall()]
+        
+        if "completed_by" not in columns:
+            print("Agregando col completed_by a tasks...")
+            try:
+                conn.execute("ALTER TABLE tasks ADD COLUMN completed_by TEXT")
+            except Exception as e: print(f"Error add completed_by: {e}")
+
+        if "completed_at" not in columns:
+            print("Agregando col completed_at a tasks...")
+            try:
+                conn.execute("ALTER TABLE tasks ADD COLUMN completed_at TEXT")
+            except Exception as e: print(f"Error add completed_at: {e}")
+            
+        conn.commit()
+    print("Migración v3 verificada.")
 
 
 
@@ -197,6 +242,9 @@ def dashboard():
                 "SELECT * FROM tasks WHERE pc_name IS NULL OR pc_name = '' AND estado != 'Hecha' ORDER BY created_at DESC"
             ).fetchall()
             unassigned_count = len(unassigned_tasks)
+            
+            # Obtener lista de técnicos
+            technicians_list = [dict(r) for r in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
 
             # Ahora traemos solo la página actual
             base_sql = """
@@ -254,6 +302,9 @@ def dashboard():
 
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
+        technicians_list = []
+        unassigned_tasks = []
+        unassigned_count = 0
 
     # Calcular total de páginas
     total_pages = (total_rows // per_page) + (1 if total_rows % per_page else 0)
@@ -276,9 +327,10 @@ def dashboard():
         total_rows=total_rows,
         per_page=per_page,
         server_url=server_url,
-        unassigned_tasks=[dict(t) for t in unassigned_tasks], # Pasamos tareas sueltas
+        unassigned_tasks=[dict(t) for t in unassigned_tasks],
         unassigned_count=unassigned_count,
         hostname=socket.gethostname(),
+        technicians=technicians_list 
     )
 
 
@@ -354,10 +406,12 @@ def pc_detail(pc_name):
             (pc_name,),
         ).fetchall()
 
+        technicians = [dict(row) for row in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
+
     if pc is None:
         abort(404)
 
-    return render_template("pc_detail.html", pc=pc, tareas=tareas)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians)
 
 
 @app.route("/pc/<pc_name>/tasks", methods=["POST"])
@@ -376,8 +430,30 @@ def add_task(pc_name):
     return redirect(url_for("pc_detail", pc_name=pc_name))
 
 
+@app.route("/technicians/add", methods=["POST"])
+def add_technician():
+    name = request.form.get("name", "").strip()
+    if name:
+        try:
+            with get_db_connection() as conn:
+                conn.execute("INSERT INTO technicians (name) VALUES (?)", (name,))
+                conn.commit()
+        except sqlite3.IntegrityError:
+            pass # Ya existe
+    return redirect(url_for("dashboard"))
+
+@app.route("/technicians/delete/<int:tech_id>", methods=["POST"])
+def delete_technician(tech_id):
+    with get_db_connection() as conn:
+        conn.execute("DELETE FROM technicians WHERE id = ?", (tech_id,))
+        conn.commit()
+    return redirect(url_for("dashboard"))
+
+
 @app.route("/tasks/<int:task_id>/done", methods=["POST"])
 def mark_task_done(task_id):
+    technician = request.form.get("technician_name", None)
+    
     with get_db_connection() as conn:
         row = conn.execute(
             "SELECT pc_name FROM tasks WHERE id = ?",
@@ -386,8 +462,14 @@ def mark_task_done(task_id):
 
         if row:
             conn.execute(
-                "UPDATE tasks SET estado = 'Hecha' WHERE id = ?",
-                (task_id,),
+                """
+                UPDATE tasks 
+                SET estado = 'Hecha',
+                    completed_by = ?,
+                    completed_at = ?
+                WHERE id = ?
+                """,
+                (technician, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), task_id),
             )
             conn.commit()
             pc_name = row["pc_name"]
@@ -486,7 +568,7 @@ def report_tasks_completed():
 
     with get_db_connection() as conn:
         base_sql = """
-            SELECT pc_name, descripcion, created_at, estado
+            SELECT pc_name, descripcion, created_at, estado, completed_by, completed_at
             FROM tasks
             WHERE estado = 'Hecha'
               AND DATE(created_at) = ?
@@ -505,7 +587,7 @@ def report_tasks_completed():
     ws = wb.active
     ws.title = "Tareas"
 
-    ws.append(["PC", "Descripción", "Fecha/Hora", "Estado"])
+    ws.append(["PC", "Descripción", "Fecha Creación", "Estado", "Realizado Por", "Fecha Cierre"])
 
     for t in tareas:
         ws.append([
@@ -513,6 +595,8 @@ def report_tasks_completed():
             t["descripcion"],
             t["created_at"],
             t["estado"],
+            t["completed_by"] or "",
+            t["completed_at"] or ""
         ])
 
     output = BytesIO()
@@ -753,5 +837,6 @@ def receive_log():
 if __name__ == "__main__":
     init_db()
     migrate_db_v2()
+    migrate_db_v3()
     print("Servidor Inventario GOLD iniciado en http://0.0.0.0:5000")
     app.run(host="0.0.0.0", port=5000, debug=True)

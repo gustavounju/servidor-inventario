@@ -928,6 +928,11 @@
                             Inventario XLS
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <button class="nav-link btn btn-link" data-bs-toggle="modal" data-bs-target="#techniciansModal">
+                            <i class="bi bi-people-fill"></i> Técnicos
+                        </button>
+                    </li>
 
                     <li class="nav-item">
                         <a href="{{ url_for('report_tasks_completed') }}" class="nav-link">
@@ -991,8 +996,10 @@
         <!-- Tareas sin asignar -->
         {% if unassigned_tasks %}
         <div class="card mb-4 shadow-sm border-warning">
-            <div class="card-header bg-warning text-dark font-weight-bold d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-exclamation-triangle-fill me-2"></i> Tareas Pendientes de Asignar ({{ unassigned_count }})</span>
+            <div
+                class="card-header bg-warning text-dark font-weight-bold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-exclamation-triangle-fill me-2"></i> Tareas Pendientes de Asignar ({{
+                    unassigned_count }})</span>
             </div>
             <div class="card-body p-0">
                 <table class="table table-striped mb-0" style="font-size: 0.9rem;">
@@ -1691,7 +1698,13 @@ catch {
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            const kpiWin7 = {{ kpi_win7 }}, kpiWin10 = {{ kpi_win10 }}, kpiTotal = {{ kpi_total_activas }}, kpiGraveyard = {{ kpi_total_graveyard }}, kpiRam = {{ kpi_alerta_ram }}, kpiSinImp = {{ kpi_sin_impresora }}, kpiImpRed = {{ kpi_impresora_red }};
+            const kpiWin7 = {{ kpi_win7 }};
+        const kpiWin10 = {{ kpi_win10 }};
+        const kpiTotal = {{ kpi_total_activas }};
+        const kpiGraveyard = {{ kpi_total_graveyard }};
+        const kpiRam = {{ kpi_alerta_ram }};
+        const kpiSinImp = {{ kpi_sin_impresora }};
+        const kpiImpRed = {{ kpi_impresora_red }};
 
         new Chart(document.getElementById('osChart'), { type: 'doughnut', data: { labels: ['Win 7', 'Win 10/11', 'Otros'], datasets: [{ data: [kpiWin7, kpiWin10, kpiTotal - (kpiWin7 + kpiWin10)], backgroundColor: ['#dc3545', '#0d6efd', '#6c757d'] }] }, options: { responsive: true, maintainAspectRatio: false } });
         new Chart(document.getElementById('statusChart'), { type: 'pie', data: { labels: ['Activas', 'Cementerio'], datasets: [{ data: [kpiTotal, kpiGraveyard], backgroundColor: ['#198754', '#6c757d'] }] }, options: { responsive: true, maintainAspectRatio: false } });
@@ -2008,7 +2021,8 @@ catch {
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Solicitante (Quién llama)</label>
-                            <input type="text" name="solicitante" class="form-control" placeholder="Ej: Juan Pérez / Contabilidad">
+                            <input type="text" name="solicitante" class="form-control"
+                                placeholder="Ej: Juan Pérez / Contabilidad">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -2047,6 +2061,43 @@ catch {
                         <button type="submit" class="btn btn-success">Asignar</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal Gestión Técnicos -->
+    <div class="modal fade" id="techniciansModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gestión de Técnicos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Form Alta -->
+                    <form action="{{ url_for('add_technician') }}" method="POST" class="d-flex mb-3">
+                        <input type="text" name="name" class="form-control me-2" placeholder="Nombre del técnico"
+                            required>
+                        <button type="submit" class="btn btn-success">Agregar</button>
+                    </form>
+
+                    <!-- Lista -->
+                    <ul class="list-group">
+                        {% for tech in technicians %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ tech.name }}
+                            <form action="{{ url_for('delete_technician', tech_id=tech.id) }}" method="POST"
+                                style="margin:0;">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('¿Borrar técnico?')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
