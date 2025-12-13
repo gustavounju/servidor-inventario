@@ -940,6 +940,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <span class="nav-link" title="Tareas completadas hoy">
+                            ✅ Hoy: {{ kpi_tareas_hoy }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
                         <button class="nav-link btn btn-link" data-bs-toggle="modal" data-bs-target="#createTaskModal">
                             <i class="bi bi-plus-circle"></i> Nueva Tarea
                         </button>
@@ -1701,8 +1706,7 @@ catch {
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            const kpiWin7 = {{ kpi_win7 }
-        };
+            const kpiWin7 = {{ kpi_win7 }};
         const kpiWin10 = {{ kpi_win10 }};
         const kpiTotal = {{ kpi_total_activas }};
         const kpiGraveyard = {{ kpi_total_graveyard }};

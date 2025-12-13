@@ -283,29 +283,50 @@ def dashboard():
 
             rows = conn.execute(base_sql, params_with_limit).fetchall()
 
-            for row in rows:
-                pc = dict(row)
+            pcs_data = [dict(row) for row in rows]
 
-                # KPIs sobre el conjunto filtrado de la página (si quieres sobre todo, habría que usar otra consulta)
-                if pc.get("is_active") == "True":
-                    kpi_total_activas += 1
-                else:
-                    kpi_total_graveyard += 1
+            # --- CALCULO GLOBAL DE KPIS (fuera de paginación) ---
+            # 1. Total Activas
+            kpi_total_activas = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True'"
+            ).fetchone()["c"]
 
-                if pc.get("alerta_ram_baja"):
-                    kpi_alerta_ram += 1
-                if pc.get("alerta_sin_impresora"):
-                    kpi_sin_impresora += 1
-                if pc.get("alerta_impresora_red"):
-                    kpi_impresora_red += 1
+            # 2. Total Cementerio
+            kpi_total_graveyard = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'"
+            ).fetchone()["c"]
 
-                os_name = pc.get("os_name") or ""
-                if "Windows 7" in os_name:
-                    kpi_win7 += 1
-                elif "Windows 10" in os_name or "Windows 11" in os_name:
-                    kpi_win10 += 1
+            # 3. Alertas (RAM, Sin Impresora, Impresora Red) - Solo sobre activos? 
+            #    Asumimos que las alertas interesan sobre las máquinas activas.
+            kpi_alerta_ram = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1"
+            ).fetchone()["c"]
 
-                pcs_data.append(pc)
+            kpi_sin_impresora = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1"
+            ).fetchone()["c"]
+
+            kpi_impresora_red = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1"
+            ).fetchone()["c"]
+
+            # 4. OS Versions (Win 7 vs Win 10/11) - Sobre activos
+            kpi_win7 = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE '%Windows 7%'"
+            ).fetchone()["c"]
+            
+            # Win 10 o 11
+            kpi_win10 = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE '%Windows 10%' OR os_name LIKE '%Windows 11%')"
+            ).fetchone()["c"]
+
+            # 5. Tareas hechas hoy
+            kpi_tareas_hoy = conn.execute(
+                "SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = DATE('now', 'localtime')"
+            ).fetchone()["c"]
+            
+            # (Opcional) Si 'localtime' da problemas en producción/docker, usar DATE('now') o gestionar zona horaria en python.
+            # Como corre en local Windows del usuario, 'localtime' debería tomar la hora del sistema.
 
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
@@ -337,7 +358,8 @@ def dashboard():
         unassigned_tasks=[dict(t) for t in unassigned_tasks],
         unassigned_count=unassigned_count,
         hostname=socket.gethostname(),
-        technicians=technicians_list 
+        technicians=technicians_list,
+        kpi_tareas_hoy=kpi_tareas_hoy
     )
 
 
@@ -405,7 +427,7 @@ def pc_detail(pc_name):
 
         tareas = conn.execute(
             """
-            SELECT id, pc_name, created_at, descripcion, estado
+            SELECT id, pc_name, created_at, descripcion, estado, solicitante
             FROM tasks
             WHERE pc_name = ?
             ORDER BY created_at DESC
@@ -424,13 +446,14 @@ def pc_detail(pc_name):
 @app.route("/pc/<pc_name>/tasks", methods=["POST"])
 def add_task(pc_name):
     descripcion = request.form.get("descripcion", "").strip()
+    solicitante = request.form.get("solicitante", "").strip()
     if not descripcion:
         return redirect(url_for("pc_detail", pc_name=pc_name))
 
     with get_db_connection() as conn:
         conn.execute(
-            "INSERT INTO tasks (pc_name, descripcion) VALUES (?, ?)",
-            (pc_name, descripcion),
+            "INSERT INTO tasks (pc_name, descripcion, solicitante) VALUES (?, ?, ?)",
+            (pc_name, descripcion, solicitante),
         )
         conn.commit()
 
@@ -575,7 +598,7 @@ def report_tasks_completed():
 
     with get_db_connection() as conn:
         base_sql = """
-            SELECT pc_name, descripcion, created_at, estado, completed_by, completed_at
+            SELECT pc_name, descripcion, solicitante, created_at, estado, completed_by, completed_at
             FROM tasks
             WHERE estado = 'Hecha'
               AND DATE(created_at) = ?
@@ -594,12 +617,13 @@ def report_tasks_completed():
     ws = wb.active
     ws.title = "Tareas"
 
-    ws.append(["PC", "Descripción", "Fecha Creación", "Estado", "Realizado Por", "Fecha Cierre"])
+    ws.append(["PC", "Descripción", "Solicitante", "Fecha Creación", "Estado", "Realizado Por", "Fecha Cierre"])
 
     for t in tareas:
         ws.append([
             t["pc_name"],
             t["descripcion"],
+            t["solicitante"] or "",
             t["created_at"],
             t["estado"],
             t["completed_by"] or "",

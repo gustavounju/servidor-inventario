@@ -139,6 +139,7 @@
         <tr>
           <th style="width: 20%;">Fecha</th>
           <th>Descripción</th>
+          <th>Solicitante</th>
           <th style="width: 15%;">Estado</th>
           <th style="width: 20%;">Acciones</th>
         </tr>
@@ -158,6 +159,7 @@
             {% endif %}
           </td>
           <td>{{ t.descripcion }}</td>
+          <td>{{ t.solicitante or '' }}</td>
           <td>{{ t.estado }}</td>
           <td>
             {% if t.estado != 'Hecha' %}
@@ -202,10 +204,15 @@
           </div>
           <div class="modal-body">
 
-            <div class="form-group">
+            <div class="form-group mb-3">
               <label for="descripcion">Descripción</label>
               <input type="text" name="descripcion" id="descripcion" class="form-control"
                 placeholder="Descripción de la tarea" required>
+            </div>
+            <div class="form-group">
+              <label for="solicitante">Solicitante</label>
+              <input type="text" name="solicitante" id="solicitante" class="form-control"
+                placeholder="Quién solicita (opcional)">
             </div>
 
           </div>
