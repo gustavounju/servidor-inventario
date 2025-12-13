@@ -984,9 +984,10 @@
             </div>
             <div class="col-md-4">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Estado PCs</div>
+                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Tareas por Categoría
+                    </div>
                     <div class="card-body d-flex align-items-center justify-content-center"><canvas
-                            id="statusChart"></canvas></div>
+                            id="catChart"></canvas></div>
                 </div>
             </div>
             <div class="col-md-4">
@@ -1715,12 +1716,32 @@ catch {
         const kpiImpRed = {{ kpi_impresora_red }};
 
         new Chart(document.getElementById('osChart'), { type: 'doughnut', data: { labels: ['Win 7', 'Win 10/11', 'Otros'], datasets: [{ data: [kpiWin7, kpiWin10, kpiTotal - (kpiWin7 + kpiWin10)], backgroundColor: ['#dc3545', '#0d6efd', '#6c757d'] }] }, options: { responsive: true, maintainAspectRatio: false } });
-        new Chart(document.getElementById('statusChart'), { type: 'pie', data: { labels: ['Activas', 'Cementerio'], datasets: [{ data: [kpiTotal, kpiGraveyard], backgroundColor: ['#198754', '#6c757d'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+        const catLabels = {{ cat_labels | tojson }};
+        const catValues = {{ cat_values | tojson }};
+        new Chart(document.getElementById('catChart'), {
+            type: 'bar',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    label: 'Tareas',
+                    data: catValues,
+                    backgroundColor: '#6366f1',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                }
+            }
+        });
+
         new Chart(document.getElementById('alertsChart'), { type: 'bar', data: { labels: ['RAM Baja', 'Sin Imp', 'Imp Red'], datasets: [{ label: 'Cantidad', data: [kpiRam, kpiSinImp, kpiImpRed], backgroundColor: ['#ffc107', '#0dcaf0', '#6610f2'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
 
         // ===== MODERNIZACIÓN: Gráficos Clickeables (Opción 7) =====
         const osChart = Chart.getChart('osChart');
-        const statusChart = Chart.getChart('statusChart');
         const alertsChart = Chart.getChart('alertsChart');
 
         if (osChart) {
@@ -2026,6 +2047,18 @@ catch {
                         <div class="mb-3">
                             <label class="form-label">Descripción</label>
                             <textarea name="descripcion" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Categoría</label>
+                            <select name="categoria" class="form-select">
+                                <option value="">-- Automático --</option>
+                                <option value="Impresoras">Impresoras</option>
+                                <option value="Red/Conectividad">Red/Conectividad</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Software">Software</option>
+                                <option value="Usuarios">Usuarios</option>
+                                <option value="General">General</option>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Solicitante (Quién llama)</label>

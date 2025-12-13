@@ -9,8 +9,12 @@ from openpyxl import Workbook
 from datetime import datetime as dt
 from io import BytesIO
 import socket
+from classifier import SimpleNaiveBayes, SEED_DATA
 
 app = Flask(__name__)
+# Inicializar IA
+ai_classifier = SimpleNaiveBayes()
+
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
@@ -165,6 +169,66 @@ def migrate_db_v3():
             
         conn.commit()
     print("Migración v3 verificada.")
+
+def migrate_db_v4():
+    """Migra BD a v4: agregar columna categoria a tasks."""
+    print("Verificando migración de DB v4...")
+    with get_db_connection() as conn:
+        cursor = conn.execute("PRAGMA table_info(tasks)")
+        columns = [row["name"] for row in cursor.fetchall()]
+        
+        if "categoria" not in columns:
+            print("Agregando col categoria a tasks...")
+            try:
+                conn.execute("ALTER TABLE tasks ADD COLUMN categoria TEXT")
+                conn.commit()
+            except Exception as e: print(f"Error add categoria: {e}")
+            
+    print("Migración v4 verificada.")
+
+def train_ai_model():
+    """Entrena la IA con datos semilla + datos históricos de la DB."""
+    try:
+        # 1. Entrenar con Semilla (Base Knowledge)
+        ai_classifier.train(SEED_DATA)
+        print(f"IA: Entrenada con {len(SEED_DATA)} ejemplos semilla.")
+
+        # 2. Entrenar con Datos del Usuario (Incremental Learning)
+        conn = get_db_connection()
+        tasks = conn.execute("SELECT descripcion, categoria FROM tasks WHERE categoria IS NOT NULL AND categoria != ''").fetchall()
+        conn.close()
+
+        user_data = [(t['descripcion'], t['categoria']) for t in tasks]
+        if user_data:
+            ai_classifier.train(user_data)
+            print(f"IA: Refinada con {len(user_data)} tareas históricas.")
+        
+    except Exception as e:
+        print(f"Error entrenando IA: {e}")
+
+# Entrenar al iniciar (después de definir la clase y migraciones)
+with app.app_context():
+    init_db()
+    migrate_db_v2()
+    migrate_db_v3()
+    migrate_db_v4()
+    train_ai_model()
+
+
+
+
+def predict_category(descripcion):
+    """Clasifica la tarea usando el modelo Naive Bayes."""
+    if not descripcion:
+        return "General"
+    
+    # Predicción IA
+    prediction = ai_classifier.predict(descripcion)
+    
+    # (Opcional: Logs para depurar qué está pensando)
+    # print(f"DEBUG IA: '{descripcion}' -> {prediction}")
+    
+    return prediction
 
 
 
@@ -324,6 +388,20 @@ def dashboard():
             kpi_tareas_hoy = conn.execute(
                 "SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = DATE('now', 'localtime')"
             ).fetchone()["c"]
+
+            # 6. Tareas por Categoria
+            rows_cats = conn.execute("SELECT categoria, COUNT(*) as c FROM tasks GROUP BY categoria").fetchall()
+            # Convertir a dos listas para Chart.js o pasar dict
+            # Lo pasaremos como dict y lo procesamos en JS, o listas separadas.
+            # Mejor listas separadas para facilitar jinja
+            cat_labels = []
+            cat_values = []
+            for r in rows_cats:
+                cat_name = r["categoria"] if r["categoria"] else "Sin Categoría"
+                if cat_name == "General":
+                    continue
+                cat_labels.append(cat_name)
+                cat_values.append(r["c"])
             
             # (Opcional) Si 'localtime' da problemas en producción/docker, usar DATE('now') o gestionar zona horaria en python.
             # Como corre en local Windows del usuario, 'localtime' debería tomar la hora del sistema.
@@ -359,7 +437,9 @@ def dashboard():
         unassigned_count=unassigned_count,
         hostname=socket.gethostname(),
         technicians=technicians_list,
-        kpi_tareas_hoy=kpi_tareas_hoy
+        kpi_tareas_hoy=kpi_tareas_hoy,
+        cat_labels=cat_labels,
+        cat_values=cat_values
     )
 
 
@@ -447,13 +527,18 @@ def pc_detail(pc_name):
 def add_task(pc_name):
     descripcion = request.form.get("descripcion", "").strip()
     solicitante = request.form.get("solicitante", "").strip()
+    categoria = request.form.get("categoria", "").strip()
+
     if not descripcion:
         return redirect(url_for("pc_detail", pc_name=pc_name))
 
+    if not categoria:
+        categoria = predict_category(descripcion)
+
     with get_db_connection() as conn:
         conn.execute(
-            "INSERT INTO tasks (pc_name, descripcion, solicitante) VALUES (?, ?, ?)",
-            (pc_name, descripcion, solicitante),
+            "INSERT INTO tasks (pc_name, descripcion, solicitante, categoria) VALUES (?, ?, ?, ?)",
+            (pc_name, descripcion, solicitante, categoria),
         )
         conn.commit()
 
@@ -537,12 +622,16 @@ def delete_task(task_id):
 def create_loose_task():
     descripcion = request.form.get("descripcion", "").strip()
     solicitante = request.form.get("solicitante", "").strip()
+    categoria = request.form.get("categoria", "").strip()
     
     if descripcion:
+        if not categoria:
+            categoria = predict_category(descripcion)
+
         with get_db_connection() as conn:
             conn.execute(
-                "INSERT INTO tasks (descripcion, solicitante, estado) VALUES (?, ?, 'Pendiente')",
-                (descripcion, solicitante)
+                "INSERT INTO tasks (descripcion, solicitante, estado, categoria) VALUES (?, ?, 'Pendiente', ?)",
+                (descripcion, solicitante, categoria)
             )
             conn.commit()
             
@@ -869,5 +958,6 @@ if __name__ == "__main__":
     init_db()
     migrate_db_v2()
     migrate_db_v3()
+    migrate_db_v4()
     print("Servidor Inventario GOLD iniciado en http://0.0.0.0:5000")
     app.run(host="0.0.0.0", port=5000, debug=True)
