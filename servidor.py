@@ -234,6 +234,28 @@ def predict_category(descripcion):
 
 # ----------------- Healthcheck -----------------
 
+# ----------------- Backup Remoto -----------------
+@app.route("/download_db")
+def download_db():
+    try:
+        if not os.path.exists(DB_FILE):
+            return "Base de datos no encontrada", 404
+            
+        # Nombre del archivo con fecha
+        filename = f"inventario_backup_{datetime.now().strftime('%Y%m%d_%H%M')}.db"
+        
+        return send_file(
+            DB_FILE,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/x-sqlite3"
+        )
+    except Exception as e:
+        return f"Error generando backup: {e}", 500
+
+
+# ----------------- Healthcheck -----------------
+
 @app.route("/health", methods=["GET"])
 def health():
     try:

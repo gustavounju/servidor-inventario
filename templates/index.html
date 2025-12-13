@@ -940,6 +940,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ url_for('download_db') }}" class="nav-link text-warning"
+                            title="Descargar copia de la BD">
+                            <i class="bi bi-database-down"></i> Backup
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <span class="nav-link" title="Tareas completadas hoy">
                             ✅ Hoy: {{ kpi_tareas_hoy }}
                         </span>
@@ -1707,7 +1713,8 @@ catch {
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            const kpiWin7 = {{ kpi_win7 }};
+            const kpiWin7 = {{ kpi_win7 }
+        };
         const kpiWin10 = {{ kpi_win10 }};
         const kpiTotal = {{ kpi_total_activas }};
         const kpiGraveyard = {{ kpi_total_graveyard }};
