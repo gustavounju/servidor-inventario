@@ -1713,14 +1713,13 @@ catch {
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            const kpiWin7 = {{ kpi_win7 }
-        };
-        const kpiWin10 = {{ kpi_win10 }};
-        const kpiTotal = {{ kpi_total_activas }};
-        const kpiGraveyard = {{ kpi_total_graveyard }};
-        const kpiRam = {{ kpi_alerta_ram }};
-        const kpiSinImp = {{ kpi_sin_impresora }};
-        const kpiImpRed = {{ kpi_impresora_red }};
+            const kpiWin7 = {{ kpi_win7 }};
+            const kpiWin10 = {{ kpi_win10 }};
+            const kpiTotal = {{ kpi_total_activas }};
+            const kpiGraveyard = {{ kpi_total_graveyard }};
+            const kpiRam = {{ kpi_alerta_ram }};
+            const kpiSinImp = {{ kpi_sin_impresora }};
+            const kpiImpRed = {{ kpi_impresora_red }};
 
         new Chart(document.getElementById('osChart'), { type: 'doughnut', data: { labels: ['Win 7', 'Win 10/11', 'Otros'], datasets: [{ data: [kpiWin7, kpiWin10, kpiTotal - (kpiWin7 + kpiWin10)], backgroundColor: ['#dc3545', '#0d6efd', '#6c757d'] }] }, options: { responsive: true, maintainAspectRatio: false } });
         const catLabels = {{ cat_labels | tojson }};
