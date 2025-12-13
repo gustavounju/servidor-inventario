@@ -242,7 +242,7 @@ def download_db():
             return "Base de datos no encontrada", 404
             
         # Nombre del archivo con fecha
-        filename = f"inventario_backup_{datetime.now().strftime('%Y%m%d_%H%M')}.db"
+        filename = f"inventario_backup_{dt.now().strftime('%Y%m%d_%H%M')}.db"
         
         return send_file(
             DB_FILE,
