@@ -9,796 +9,236 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            /* OCEANIC (DEFAULT) */
+            --bg-color: #f4f6f9;
+            --text-color: #333;
+            --card-bg: #fff;
+            --primary-gradient: linear-gradient(135deg, #0f4c75 0%, #3282b8 100%);
+            --secondary-gradient: linear-gradient(135deg, #1b262c 0%, #0f4c75 100%);
+            --accent-color: #3282b8;
+            --border-color: #ddd;
+            --table-header-bg: linear-gradient(180deg, #0f4c75 0%, #3282b8 100%);
+            --kpi-border-success: #22c55e;
+            --kpi-border-neutral: #6b7280;
+            --kpi-border-warning: #fbbf24;
+            --kpi-shadow: rgba(15, 76, 117, 0.4);
+        }
+
+        [data-theme="emerald"] {
+            /* EMERALD MODERN */
+            --bg-color: #ecfdf5;
+            --text-color: #064e3b;
+            --card-bg: #ffffff;
+            --primary-gradient: linear-gradient(135deg, #059669 0%, #34d399 100%);
+            --secondary-gradient: linear-gradient(135deg, #064e3b 0%, #059669 100%);
+            --accent-color: #10b981;
+            --border-color: #d1fae5;
+            --table-header-bg: linear-gradient(180deg, #059669 0%, #34d399 100%);
+            --kpi-shadow: rgba(16, 185, 129, 0.4);
+        }
+
+        [data-theme="midnight"] {
+            /* MIDNIGHT PRO (DARK) */
+            --bg-color: #111827;
+            --text-color: #e5e7eb;
+            --card-bg: #1f2937;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --secondary-gradient: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);
+            --accent-color: #8b5cf6;
+            --border-color: #374151;
+            --table-header-bg: linear-gradient(180deg, #4f46e5 0%, #7c3aed 100%);
+            --kpi-border-success: #34d399;
+            --kpi-border-neutral: #9ca3af;
+            --kpi-border-warning: #fcd34d;
+            --kpi-shadow: rgba(139, 92, 246, 0.4);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
-            /* sin margen global */
-            background-color: #f4f4f4;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-
-        h1 {
-            color: #333;
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
+            color: var(--text-color);
         }
 
-        /* Tabla */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        /* --- CARDS --- */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
         }
 
-        th,
-        td {
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            text-align: left;
-            vertical-align: top;
-            font-size: 13px;
-        }
-
-        th {
-            background-color: #007bff;
-            color: #fff;
-            cursor: pointer;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        /* Botones de acción en la tabla */
-        .action-button {
-            padding: 5px 10px;
-            color: #fff;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: bold;
-            display: block;
-            margin-bottom: 5px;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .btn-decommission {
-            background-color: #dc3545;
-        }
-
-        .btn-reactivate {
-            background-color: #28a745;
-        }
-
-        /* Filas con alertas */
-        .tr-alerta-ram {
-            background-color: #fff3cd;
-        }
-
-        .tr-alerta-impresora {
-            background-color: #e0f7ff;
-        }
-
-        /* Toolbar superior (actualmente casi vacía) */
-        .header-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .toolbar-left,
-        .toolbar-center,
-        .toolbar-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .toolbar-center {
-            flex: 1;
-            justify-content: center;
-        }
-
-        .toolbar-right {
-            justify-content: flex-end;
-        }
-
-        /* Botones Cementerio / CSV */
-        .nav-link {
-            padding: 0 18px;
-            height: 34px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            font-size: 14px;
+        .card-header {
+            background: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
             font-weight: 600;
-            text-decoration: none;
-            border: none;
+        }
+
+        /* --- TABLES --- */
+        table,
+        #inventoryTable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        #inventoryTable thead th {
+            background: var(--table-header-bg);
             color: #fff;
-            cursor: pointer;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+            padding: 12px 15px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            border: none;
         }
 
-        .nav-link:hover {
-            filter: brightness(1.05);
+        #inventoryTable tbody td {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 12px 15px;
         }
 
-        /* Contenedores de filtros antiguos ocultos (por compatibilidad) */
-        .search-container,
-        .filter-buttons {
-            display: none;
+        #inventoryTable tbody tr:hover td {
+            filter: brightness(0.95);
         }
 
-        /* Barra de KPIs + acciones a la derecha */
-        .kpi-toolbar {
-            display: flex;
-            align-items: stretch;
-            justify-content: space-between;
-            gap: 12px;
-            margin: 10px 0 15px 0;
-        }
-
-        .kpi-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            flex: 1;
-        }
-
-        .kpi-actions {
+        /* --- KPI BOXES --- */
+        .kpi-box {
+            padding: 10px;
+            min-width: 135px;
+            height: 90px;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
-            min-width: 60px;
+            justify-content: center;
         }
 
-        .nav-link.nav-small {
-            padding: 0 8px;
-            min-width: 40px;
-            height: 30px;
-            font-size: 13px;
-        }
-
-
-
-
-        /* Tarjetas KPI base */
-        .kpi-box {
-            padding: 6px 10px;
-            min-width: 135px;
-            height: 66px;
-        }
-
-        .kpi-value {
-            font-size: 18px;
-        }
-
-
-
-
-
-        .kpi-label {
-            font-size: 11px;
-            font-weight: 500;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-
-        /* Estados KPI “normales” (colores de borde) */
+        /* Colores de Borde Izquierdo dinámicos o fijos según semántica */
         .kpi-total {
-            border-left: 4px solid #22c55e;
+            border-left: 4px solid var(--kpi-border-success);
         }
 
-        /* verde */
         .kpi-graveyard {
-            border-left: 4px solid #6b7280;
+            border-left: 4px solid var(--kpi-border-neutral);
         }
 
-        /* gris */
         .kpi-ram {
-            border-left: 4px solid #fbbf24;
+            border-left: 4px solid var(--kpi-border-warning);
         }
 
-        /* amarillo */
         .kpi-imp {
             border-left: 4px solid #0ea5e9;
         }
 
-        /* celeste */
         .kpi-so {
             border-left: 4px solid #6366f1;
         }
 
-        /* violeta */
-
-        /* Tarjeta Buscar */
-        .kpi-box.kpi-search {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .kpi-box.kpi-search input {
-            margin-top: 4px;
-            height: 28px;
-            padding: 0 8px;
-            border-radius: 4px;
-            border: 1px solid #d1d5db;
-            font-size: 13px;
-        }
-
-
-
-        /* Tarjeta Script (acción principal) */
-        .kpi-box.kpi-script {
-            border-left: 4px solid #007bff;
-            background: #e0edff;
-        }
-
-        .kpi-box.kpi-script:hover {
-            background: #d0e2ff;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        }
-
-        .kpi-box.kpi-script.copiado {
-            background-color: #d1fae5;
-            box-shadow: 0 0 0 2px #10b981;
-        }
-
-        /* KPIs de SO */
-        .kpi-box.kpi-so {
-            border-left: 4px solid #6366f1;
-        }
-
-        .kpi-box.kpi-so.active-filter {
-            background-color: #e0e7ff;
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.9);
-            animation: kpiBlink 1s infinite;
-        }
-
-        /* Estados activo / dormido para cualquier KPI */
-        .kpi-box.active-filter {
-            background-color: #e0e7ff;
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.8);
-            animation: kpiBlink 1s infinite;
-        }
-
-        .kpi-box.kpi-muted {
-            opacity: 0.4;
-        }
-
-        @keyframes kpiBlink {
-            0% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-1px);
-            }
-
-            100% {
-                transform: translateY(0);
-            }
-        }
-
-        .kpi-box.kpi-active {
-            border: 2px solid #f97316;
-            box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
-        }
-
-        /* Fila en cementerio */
-        .row-graveyard {
-            background-color: #111827;
-            color: #e5e7eb;
-        }
-
-        /* Fila de cementerio sin tachado, solo más apagada si querés */
-        .row-graveyard td {
-            text-decoration: none;
-            /* opcional: */
-            /* color: #9ca3af; */
-        }
-
-
-        /* Badge BAJA */
-        .badge-baja {
-            display: inline-block;
-            margin-bottom: 4px;
-            padding: 2px 6px;
-            border-radius: 999px;
-            font-size: 10px;
-            font-weight: 700;
-            background-color: #fee2e2;
-            color: #b91c1c;
-        }
-
-        /* KPI cementerio como interruptor */
-        #kpiCementerio.active-filter {
-            background-color: #1f2937;
-            color: #f9fafb;
-            box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.9);
-        }
-
-        /* Botón CSV pequeño */
-        .nav-link.nav-small {
-            padding: 0 10px;
-            min-width: 44px;
-            height: 30px;
-            font-size: 13px;
-        }
-
-        /* Tabla más compacta y legible */
-        #inventoryTable {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        #inventoryTable th,
-        #inventoryTable td {
-            padding: 0.4rem 0.5rem;
-            vertical-align: middle;
-        }
-
-        /* Resaltar cabecera */
-        #inventoryTable thead th {
-            background-color: #f8f9fa;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-
-        /* Fila de cementerio ligeramente gris */
-        .row-graveyard {
-            background-color: #f0f0f0;
-            color: #555;
-        }
-
-        /* Fila con alerta de RAM o impresora un poco más intensa */
-        .tr-alerta-ram {
-            background-color: #fff3cd;
-            /* amarillo suave */
-        }
-
-        .tr-alerta-impresora {
-            background-color: #e7f3ff;
-            /* celeste suave */
-        }
-
-        /* Cards de KPIs compactas */
-        .card .card-body {
-            padding: 0.5rem 0.75rem;
-        }
-
-        .card .small {
-            font-size: 0.7rem;
-            letter-spacing: 0.04em;
-        }
-
-        .card .h4,
-        .card .h5 {
-            font-weight: 600;
-        }
-
-        /* Buscar (JS) dentro de card */
-        #searchInput {
-            font-size: 0.85rem;
-        }
-
-        /* Navbar brand un poco más destacada */
-        .navbar-brand {
-            font-weight: 600;
-        }
-
-        /* Resaltado temporal/activo para KPIs clicables */
-        .kpi-active {
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.6);
-            transform: translateY(-1px);
-        }
-
-        /* Estado activo claro para KPIs clicables */
-        .kpi-toggle {
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.1s;
-        }
-
-        .kpi-toggle.kpi-on {
-            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.7);
-            /* rojo */
-            background-color: #212529 !important;
-            /* casi negro */
-            color: #fff;
-            transform: translateY(-1px);
-        }
-
-        /* KPI clicable genérico */
-        .kpi-toggle {
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.1s, opacity 0.1s;
-        }
-
-        /* KPI clicable genérico */
-        .kpi-toggle {
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.1s, opacity 0.1s;
-        }
-
-        /* Activo: negro con borde rojo, como cementerio */
+        /* KPI Activo */
         .kpi-on {
-            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.9);
-            background-color: #212529 !important;
-            color: #fff;
-            transform: translateY(-1px);
-        }
-
-        /* Deshabilitado mientras hay otro filtro activo */
-        .kpi-disabled {
-            pointer-events: none;
-            opacity: 0.4;
-        }
-
-        /* Misma altura para todas las cards KPI */
-        .row.g-3.mb-3 .card {
-            height: 80px;
-            /* ajusta si quieres un poco más o menos */
-            display: flex;
-            align-items: center;
-        }
-
-        .row.g-3.mb-3 .card .card-body {
-            width: 100%;
-        }
-
-        /* Mismo tamaño y centrado para todos los KPIs */
-        .row.g-3.mb-3 .card {
-            height: 90px;
-            /* ajusta a gusto */
-            display: flex;
-            align-items: center;
-            /* centra verticalmente el contenido */
-        }
-
-        .row.g-3.mb-3 .card .card-body {
-            width: 100%;
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-        }
-
-        .row.g-3.mb-3 .card .h4,
-        .row.g-3.mb-3 .card .h5 {
-            margin-bottom: 0;
-            /* evita que el número se baje demasiado */
-        }
-
-        /* Distribuir KPIs a lo ancho */
-        .row.g-3.mb-3 {
-            display: flex;
-            justify-content: space-between;
-            /* reparte el espacio entre las cards */
-            flex-wrap: nowrap;
-            /* evita que bajen de línea en pantallas grandes */
-        }
-
-        .kpi-row {
-            display: flex;
-            justify-content: space-between;
-            /* reparte horizontalmente */
-            flex-wrap: nowrap;
-            /* todos en una sola fila en grande */
-        }
-
-        .kpi-row>div {
-            flex: 1 1 0;
-            /* todos el mismo ancho */
-            max-width: none;
-        }
-
-        .kpi-row .card {
-            height: 90px;
-            display: flex;
-            align-items: center;
-        }
-
-
-        .kpi-row .card .card-body {
-            width: 100%;
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-        }
-
-
-
-        .kpi-row .card .h4,
-        .kpi-row .card .h5 {
-            margin-bottom: 0;
-        }
-
-        #inventoryTable thead th {
-            background-color: #343a40;
-            /* gris oscuro tipo Bootstrap */
-            color: #ffffff;
-            /* texto blanco */
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-
-        h1 {
-            margin-top: 0.25rem;
-            /* casi pegado a la barra */
-            margin-bottom: 0.5rem;
-            /* poco espacio con los botones */
-        }
-
-        /* Gráficos */
-        #chartsRow .card {
-            height: 300px !important;
-        }
-
-        #chartsRow canvas {
-            max-height: 220px !important;
-        }
-
-        /* ===== DARK MODE ===== */
-        [data-theme="dark"] {
-            color-scheme: dark;
-        }
-
-        [data-theme="dark"] body {
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-        }
-
-        [data-theme="dark"] h1 {
-            color: #f0f0f0;
-        }
-
-        [data-theme="dark"] table {
-            background-color: #2d2d2d;
-            color: #e0e0e0;
-        }
-
-        [data-theme="dark"] th {
-            background-color: #0056b3;
-        }
-
-        [data-theme="dark"] td {
-            border-color: #444;
-        }
-
-        [data-theme="dark"] tr:nth-child(even) {
-            background-color: #252525;
-        }
-
-        [data-theme="dark"] .card {
-            background-color: #2d2d2d;
-            border-color: #444;
-            color: #e0e0e0;
-        }
-
-        [data-theme="dark"] .card-header {
-            background-color: #333 !important;
-            border-color: #444;
-            color: #f0f0f0;
-        }
-
-        [data-theme="dark"] .navbar-dark {
-            background-color: #111 !important;
-        }
-
-        [data-theme="dark"] .form-control {
-            background-color: #333;
-            border-color: #555;
-            color: #e0e0e0;
-        }
-
-        [data-theme="dark"] .form-select {
-            background-color: #333;
-            border-color: #555;
-            color: #e0e0e0;
-        }
-
-        [data-theme="dark"] .btn-primary {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-        }
-
-        [data-theme="dark"] .kpi-toggle {
-            background-color: #2d2d2d;
-            border-color: #444;
-            color: #e0e0e0;
-        }
-
-        [data-theme="dark"] .kpi-toggle:hover {
-            background-color: #3a3a3a;
-        }
-
-        [data-theme="dark"] .kpi-on {
-            background-color: #0d6efd !important;
-            color: white !important;
-        }
-
-        [data-theme="dark"] .kpi-disabled {
-            opacity: 0.4;
-        }
-
-        [data-theme="dark"] .text-bg-light {
-            background-color: #2d2d2d !important;
-            color: #e0e0e0 !important;
-        }
-
-        [data-theme="dark"] .row-graveyard {
-            background-color: #3a2a2a !important;
-        }
-
-        [data-theme="dark"] .tr-alerta-ram {
-            background-color: #4a4020 !important;
-        }
-
-        [data-theme="dark"] .tr-alerta-impresora {
-            background-color: #1a3a4a !important;
-        }
-
-        /* ===== MODERNIZACI\u00d3N: CARDS PREMIUM ===== */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            letter-spacing: -0.01em;
-        }
-
-        /* Cards KPI modernizados con glassmorphism */
-        .card.text-bg-light {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04),
-                0 1px 3px rgba(0, 0, 0, 0.06);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
-            position: relative;
-        }
-
-        .card.text-bg-light::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .card.text-bg-light:hover::before {
-            opacity: 1;
-        }
-
-        .card.text-bg-light:hover {
+            background: var(--primary-gradient) !important;
+            color: #fff !important;
+            box-shadow: 0 0 15px var(--kpi-shadow);
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12),
-                0 4px 12px rgba(0, 0, 0, 0.08);
+            border: none;
         }
 
-        .kpi-toggle {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        .kpi-on .kpi-label {
+            color: #eee;
         }
 
-        .kpi-toggle:hover {
-            transform: translateY(-1px) scale(1.02);
+        .kpi-on .kpi-value {
+            color: #fff;
         }
 
-        .kpi-toggle:active {
-            transform: translateY(0) scale(0.98);
-        }
-
-        .kpi-on {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            color: white !important;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
-        }
-
-        /* Tabla premium modernizada */
-        #inventoryTable {
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(0, 0, 0, 0.06);
-        }
-
-        #inventoryTable thead th {
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .kpi-label {
+            font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            padding: 1rem 0.75rem;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        /* --- FILTROS --- */
+        .kpi-disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* --- NAVBAR / TOOLBAR --- */
+        .header-toolbar {
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
             border: none;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        #inventoryTable thead th:hover {
-            background: linear-gradient(180deg, #7c92f0 0%, #8c5bb2 100%);
-            cursor: pointer;
+        .btn-primary:hover {
+            filter: brightness(1.1);
         }
 
-        #inventoryTable tbody tr {
-            transition: all 0.2s ease;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
 
-        #inventoryTable tbody tr:hover {
-            background-color: rgba(102, 126, 234, 0.04);
-            transform: scale(1.001);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
         }
 
-        #inventoryTable tbody td {
-            padding: 0.875rem 0.75rem;
-            vertical-align: middle;
-            border-left: none;
-            border-right: none;
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 4px;
         }
 
-        /* Animaciones suaves globales */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Utils */
+        .text-muted {
+            color: var(--text-color) !important;
+            opacity: 0.6;
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        /* Inputs */
+        .form-control,
+        .form-select {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
         }
 
-        .row.mb-4>div {
-            animation: fadeIn 0.5s ease-out;
+        .form-control:focus,
+        .form-select:focus {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem var(--kpi-shadow);
         }
 
-        .row.mb-4>div:nth-child(1) {
-            animation-delay: 0.1s;
-        }
-
-        .row.mb-4>div:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .row.mb-4>div:nth-child(3) {
-            animation-delay: 0.3s;
-        }
-
-        .kpi-row>div {
-            animation: slideIn 0.4s ease-out;
-        }
-
-        .kpi-row>div:nth-child(odd) {
-            animation-delay: 0.05s;
+        animation-delay: 0.05s;
         }
 
         .kpi-row>div:nth-child(even) {
@@ -965,10 +405,19 @@
                             <i class="bi bi-list-ul"></i>
                         </button>
                     </li>
-                    <li class="nav-item ms-2">
-                        <button class="btn btn-outline-light btn-sm" id="themeToggle" onclick="toggleTheme()">
-                            <i class="bi bi-moon-stars-fill"></i>
+                    <li class="nav-item dropdown ms-2">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-palette-fill"></i> Tema
                         </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="setTheme('oceanic')"><i
+                                        class="bi bi-water me-2"></i>Oceanic (Default)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setTheme('emerald')"><i
+                                        class="bi bi-gem me-2"></i>Emerald Modern</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setTheme('midnight')"><i
+                                        class="bi bi-moon-stars-fill me-2"></i>Midnight Pro</a></li>
+                        </ul>
                     </li>
 
                 </ul>
@@ -1687,39 +1136,27 @@ catch {
                 }, 500);
             }
         }
-        // Dark Mode
-        function toggleTheme() {
-            const html = document.documentElement;
-            const current = html.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-            const icon = document.querySelector('#themeToggle i');
-            if (next === 'dark') {
-                icon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
-            } else {
-                icon.classList.replace('bi-sun-fill', 'bi-moon-stars-fill');
-            }
+        // ===== THEME MANAGER =====
+        function setTheme(themeName) {
+            document.documentElement.setAttribute('data-theme', themeName);
+            localStorage.setItem('theme', themeName);
         }
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
 
-        // Actualizar icono al cargar la página
-        document.addEventListener('DOMContentLoaded', function () {
-            const icon = document.querySelector('#themeToggle i');
-            if (icon && savedTheme === 'dark') {
-                icon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
-            }
-        });
+        // Init Theme immediately to prevent flash
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || 'oceanic';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
 
         document.addEventListener('DOMContentLoaded', function () {
-            const kpiWin7 = {{ kpi_win7 }};
-            const kpiWin10 = {{ kpi_win10 }};
-            const kpiTotal = {{ kpi_total_activas }};
-            const kpiGraveyard = {{ kpi_total_graveyard }};
-            const kpiRam = {{ kpi_alerta_ram }};
-            const kpiSinImp = {{ kpi_sin_impresora }};
-            const kpiImpRed = {{ kpi_impresora_red }};
+            const kpiWin7 = {{ kpi_win7 }
+        };
+        const kpiWin10 = {{ kpi_win10 }};
+        const kpiTotal = {{ kpi_total_activas }};
+        const kpiGraveyard = {{ kpi_total_graveyard }};
+        const kpiRam = {{ kpi_alerta_ram }};
+        const kpiSinImp = {{ kpi_sin_impresora }};
+        const kpiImpRed = {{ kpi_impresora_red }};
 
         new Chart(document.getElementById('osChart'), { type: 'doughnut', data: { labels: ['Win 7', 'Win 10/11', 'Otros'], datasets: [{ data: [kpiWin7, kpiWin10, kpiTotal - (kpiWin7 + kpiWin10)], backgroundColor: ['#dc3545', '#0d6efd', '#6c757d'] }] }, options: { responsive: true, maintainAspectRatio: false } });
         const catLabels = {{ cat_labels | tojson }};
@@ -1947,10 +1384,13 @@ catch {
                 exportToCSV();
             }
 
-            // Ctrl+T: Toggle tema
+            // Ctrl+T: Cycle Theme
             if (e.ctrlKey && e.key === 't') {
                 e.preventDefault();
-                toggleTheme();
+                const themes = ['oceanic', 'emerald', 'midnight'];
+                const current = localStorage.getItem('theme') || 'oceanic';
+                const nextIndex = (themes.indexOf(current) + 1) % themes.length;
+                setTheme(themes[nextIndex]);
             }
 
             // Ctrl+M: Toggle modo compacto
