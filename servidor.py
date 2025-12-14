@@ -186,6 +186,24 @@ def migrate_db_v4():
             
     print("Migración v4 verificada.")
 
+def migrate_db_v5():
+    """Migra BD a v5: crear tabla audit_logs para historial de cambios."""
+    print("Verificando migración de DB v5...")
+    with get_db_connection() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pc_name TEXT,
+                field TEXT,
+                old_value TEXT,
+                new_value TEXT,
+                changed_at DATETIME DEFAULT (datetime('now', '-3 hours'))
+            )
+            """
+        )
+    print("Migración v5 verificada.")
+
 def train_ai_model():
     """Entrena la IA con datos semilla + datos históricos de la DB."""
     try:
@@ -212,6 +230,7 @@ with app.app_context():
     migrate_db_v2()
     migrate_db_v3()
     migrate_db_v4()
+    migrate_db_v5()
     train_ai_model()
 
 
@@ -539,10 +558,16 @@ def pc_detail(pc_name):
 
         technicians = [dict(row) for row in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
 
+        # Obtener historial de cambios
+        audit_logs = conn.execute(
+            "SELECT * FROM audit_logs WHERE pc_name = ? ORDER BY changed_at DESC",
+            (pc_name,)
+        ).fetchall()
+
     if pc is None:
         abort(404)
 
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs)
 
 
 @app.route("/pc/<pc_name>/tasks", methods=["POST"])
@@ -908,6 +933,39 @@ def receive_inventory():
         """
 
         with get_db_connection() as conn:
+            # 1. Detectar cambios antes del UPDATE
+            # Obtenemos el registro actual
+            current_pc = conn.execute("SELECT * FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+            
+            if current_pc:
+                # Lista de campos a auditar
+                fields_to_check = {
+                    "ram_gb": str(current_pc["ram_gb"]),
+                    "disk_models": str(current_pc["disk_models"]),
+                    "processor": str(current_pc["processor"]),
+                    "os_name": str(current_pc["os_name"]),
+                    "ip_address": str(current_pc["ip_address"])
+                }
+                
+                new_values_map = {
+                    "ram_gb": str(ram_gb),
+                    "disk_models": str(disk_models),
+                    "processor": str(processor),
+                    "os_name": str(os_name),
+                    "ip_address": str(ip_address)
+                }
+
+                for field, old_val in fields_to_check.items():
+                    new_val = new_values_map.get(field, "N/A")
+                    # Normalizamos para evitar falsos positivos por espacios o diferencias mínimas
+                    if old_val.strip() != new_val.strip():
+                        print(f"CAMBIO DETECTADO en {pc_name}: {field} de '{old_val}' a '{new_val}'")
+                        conn.execute(
+                            "INSERT INTO audit_logs (pc_name, field, old_value, new_value, changed_at) VALUES (?, ?, ?, ?, datetime('now', '-3 hours'))",
+                            (pc_name, field, old_val, new_val)
+                        )
+
+            # 2. Ejecutar el Upsert
             conn.execute(
                 sql,
                 (

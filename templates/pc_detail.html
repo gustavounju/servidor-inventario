@@ -186,6 +186,45 @@
   </div>
   <!-- FIN BLOQUE 3 -->
 
+  <!-- BLOQUE 4: Historial de Cambios -->
+  <h3 class="mt-4 mb-2">Historial de Cambios</h3>
+  <div class="table-responsive mb-4">
+    <table class="table table-sm table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Fecha</th>
+          <th>Campo</th>
+          <th>Valor Anterior</th>
+          <th>Valor Nuevo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in audit_logs %}
+        <tr>
+          <td>
+             {% set f = log.changed_at %}
+             {% if f and ' ' in f %}
+               {% set partes = f.split(' ') %}
+               {% set fecha = partes[0].split('-') %}
+               {% set hora = partes[1][:5] %}
+               {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }} {{ hora }}
+             {% else %}
+               {{ log.changed_at }}
+             {% endif %}
+          </td>
+          <td>{{ log.field }}</td>
+          <td class="text-danger">{{ log.old_value }}</td>
+          <td class="text-success">{{ log.new_value }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="text-center text-muted">Sin cambios registrados.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
   <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm mt-3">
     Volver al dashboard
   </a>
