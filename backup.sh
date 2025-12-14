@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Configuración
-DB_PATH="/ruta/a/tu/servidor/inventario.db"      # <--- CAMBIAR ESTO
-BACKUP_DIR="/ruta/a/tu/servidor/backups"         # <--- CAMBIAR ESTO
+DB_PATH="/opt/inventario/inventario.db"
+BACKUP_DIR="/opt/inventario/backups"
 DATE=$(date +"%Y-%m-%d_%H%M")
 BACKUP_FILE="$BACKUP_DIR/inventario_$DATE.db"
 

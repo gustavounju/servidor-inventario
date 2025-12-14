@@ -80,3 +80,29 @@ Desde tu navegador ingresa a:
 `http://10.15.2.251:5000`
 
 ¡Y listo! El script `inventario.ps1` ya fue actualizado para apuntar a esta IP.
+
+## 7. Configurar Backups Automáticos
+
+Para asegurar que los datos no se pierdan, configuraremos una tarea programada (cron job) que ejecute el script de backup todos los días a las 20:00 hs.
+
+1. **Hacer ejecutable el script**:
+   ```bash
+   chmod +x /opt/inventario/backup.sh
+   ```
+
+2. **Editar el Cron**:
+   ```bash
+   crontab -e
+   ```
+   *(Si te pregunta qué editor usar, elige nano, opción 1)*
+
+3. **Agregar la tarea**:
+   Ve al final del archivo y agrega esta línea:
+   ```cron
+   0 20 * * * /opt/inventario/backup.sh
+   ```
+   *(Esto significa: Minuto 0, Hora 20, Todos los días/meses)*
+
+4. **Guardar y Salir**:
+   - En nano: `Ctrl+O` -> `Enter` -> `Ctrl+X`
+
