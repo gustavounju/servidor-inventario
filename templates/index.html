@@ -1149,8 +1149,7 @@ catch {
         })();
 
         document.addEventListener('DOMContentLoaded', function () {
-            const kpiWin7 = {{ kpi_win7 }
-        };
+            const kpiWin7 = {{ kpi_win7 }};
         const kpiWin10 = {{ kpi_win10 }};
         const kpiTotal = {{ kpi_total_activas }};
         const kpiGraveyard = {{ kpi_total_graveyard }};
@@ -1510,7 +1509,16 @@ catch {
                         <div class="mb-3">
                             <label class="form-label">Solicitante (Quién llama)</label>
                             <input type="text" name="solicitante" class="form-control"
-                                placeholder="Ej: Juan Pérez / Contabilidad">
+                                placeholder="Ej: Juan Pérez / Contabilidad (Requerido)" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Asignar a Técnico (Opcional)</label>
+                            <select name="technician" class="form-select">
+                                <option value="">-- Sin Asignar (Bolsa) --</option>
+                                {% for tech in technicians %}
+                                <option value="{{ tech.name }}">{{ tech.name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1597,6 +1605,32 @@ catch {
             var modal = new bootstrap.Modal(document.getElementById('assignTaskModal'));
             modal.show();
         }
+
+        // --- Auto Refresh Logic (Smart) ---
+        (function () {
+            let lastInteraction = Date.now();
+
+            // Detect user activity to avoid reloading while typing/clicking
+            const interactions = ['mousemove', 'keydown', 'scroll', 'click'];
+            interactions.forEach(evt => {
+                document.addEventListener(evt, () => lastInteraction = Date.now());
+            });
+
+            // Check every 60 seconds
+            setInterval(() => {
+                const now = Date.now();
+                // Only reload if no interaction in last 59 seconds AND no modals open
+                const modalsOpen = document.querySelectorAll('.modal.show').length > 0;
+                const searchActive = document.getElementById('searchInput').value.length > 0;
+
+                if (!modalsOpen && !searchActive && (now - lastInteraction > 59000)) {
+                    console.log("Auto-refreshing dashboard...");
+                    window.location.reload();
+                } else {
+                    console.log("Skipping refresh due to activity/modal.");
+                }
+            }, 60000);
+        })();
     </script>
     <!-- FIN BLOQUE 4 UI -->
 </body>

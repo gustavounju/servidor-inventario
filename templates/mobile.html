@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Inventario GOLD - Técnicos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --app-bg: #f8f9fa;
+            --app-card-bg: #ffffff;
+            --primary-color: #0d6efd;
+            --success-color: #198754;
+        }
+
+        body {
+            background-color: var(--app-bg);
+            padding-bottom: 80px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .app-header {
+            background: #fff;
+            padding: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-card {
+            background: var(--app-card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+            border: 1px solid #dee2e6;
+        }
+
+        .task-card.priority {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #fff;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-item i {
+            font-size: 1.5rem;
+            margin-bottom: 2px;
+        }
+
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .fab-add {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: var(--primary-color);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+            z-index: 1000;
+            border: none;
+        }
+
+        .section-title {
+            color: #6c757d;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin: 20px 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <h2 class="mb-4">🛠️ Inventario GOLD</h2>
+        <p class="text-muted mb-4">Selecciona tu perfil para continuar</p>
+        <div class="w-100" style="max-width: 300px;">
+            <select id="techSelect" class="form-select form-select-lg mb-3">
+                <option value="">-- Soy... --</option>
+            </select>
+            <button onclick="login()" class="btn btn-primary btn-lg w-100">Ingresar</button>
+        </div>
+    </div>
+
+    <!-- App Header -->
+    <div class="app-header" id="appHeader" style="display:none;">
+        <div>
+            <span class="text-muted small">Hola,</span>
+            <div class="fw-bold" id="headerName">Técnico</div>
+        </div>
+        <div class="d-flex align-items-center">
+            <button id="btnSound" class="btn btn-sm btn-outline-secondary me-2" onclick="toggleSound()">
+                <i class="bi bi-volume-mute-fill" id="iconSound"></i>
+            </button>
+            <button onclick="logout()" class="btn btn-sm btn-outline-secondary">Salir</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container" id="mainContent" style="display:none;">
+        <div id="debugPanel"
+            style="padding: 10px; background: #eee; font-family: monospace; font-size: 10px; margin-bottom: 10px; display:none;">
+            <strong>DEBUG:</strong> <span id="debugOutput">...</span>
+        </div>
+
+        <!-- Tab: Mis Tareas -->
+        <div id="tabMyTasks">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="section-title">Mis Pendientes</div>
+                <button class="btn btn-link btn-sm" onclick="forceRefresh()"><i
+                        class="bi bi-arrow-clockwise"></i></button>
+            </div>
+            <div id="myTasksList">
+                <div class="text-center text-muted py-5">Cargando...</div>
+            </div>
+        </div>
+
+        <!-- Tab: Bolsa (Unassigned) -->
+        <div id="tabPool" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="section-title">Bolsa de Tareas</div>
+                <button class="btn btn-link btn-sm" onclick="forceRefresh()"><i
+                        class="bi bi-arrow-clockwise"></i></button>
+            </div>
+            <div id="poolList">
+                <div class="text-center text-muted py-5">No hay tareas libres.</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FAB Add Button -->
+    <button class="fab-add" onclick="openAddTask()" id="fabAdd" style="display:none;">
+        <i class="bi bi-plus"></i>
+    </button>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav" id="bottomNav" style="display:none;">
+        <a href="#" class="nav-item active" onclick="switchTab('myTasks')">
+            <i class="bi bi-list-check"></i>
+            <span>Mis Tareas</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchTab('pool')">
+            <i class="bi bi-basket"></i>
+            <span id="navPoolCount" class="badge rounded-pill bg-secondary ms-1"></span>
+            <span>Disponibles</span>
+        </a>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="addTaskModal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Tarea</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addTaskForm">
+                        <div class="mb-3">
+                            <textarea id="taskDesc" class="form-control" rows="3" placeholder="¿Qué hay que hacer?"
+                                required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">¿Quién lo solicitó?</label>
+                            <input type="text" id="taskSolicitante" class="form-control"
+                                placeholder="Ej: Secretaria, Dirección... (Requerido)">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">PC (Opcional)</label>
+                            <select id="taskPC" class="form-select">
+                                <option value="">-- Sin PC específica --</option>
+                            </select>
+                        </div>
+                        <div class="form-check form-switch mb-3 p-3 bg-light rounded">
+                            <input class="form-check-input" type="checkbox" id="taskDonenow">
+                            <label class="form-check-label fw-bold" for="taskDonenow">¡Ya la hice!</label>
+                            <div class="small text-muted">Se marcará como finalizada y asignada a ti inmediatamente.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitTask()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="completeTaskModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Asignar PC para Finalizar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted">Esta tarea no tiene PC asignada. Selecciona una para el historial.</p>
+                    <select id="completeTaskPC" class="form-select mb-3">
+                        <option value="">-- Seleccionar PC --</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmCompleteWithPC()">Finalizar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- DATA & STATE ---
+        let currentUser = localStorage.getItem('techName');
+        let currentTab = 'myTasks';
+
+        let allUnassigned = [];
+        let allActive = [];
+        let allPCs = [];
+        let allTechs = [];
+
+        let soundEnabled = false;
+        let lastPoolCount = -1;
+        let pollTimer = null;
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+        });
+
+        async function initApp() {
+            await loadData();
+            if (currentUser) {
+                showApp();
+            } else {
+                showLogin();
+            }
+        }
+
+        async function forceRefresh() {
+            await loadData();
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch('/api/mobile/data?t=' + new Date().getTime());
+                if (!res.ok) throw new Error("Status: " + res.status);
+
+                const data = await res.json();
+
+                // Debug Output
+                const dbg = document.getElementById('debugOutput');
+                if (dbg) dbg.textContent = "OK " + new Date().toLocaleTimeString() + " | Techs: " + (data.technicians ? data.technicians.length : 0);
+
+                if (data.error) throw new Error(data.error);
+
+                // Assign Globals
+                allTechs = data.technicians || [];
+                allUnassigned = data.unassigned || [];
+                allActive = data.active_tasks || [];
+                allPCs = data.pcs || [];
+
+                // Sound Alert
+                if (allUnassigned) {
+                    const cnt = allUnassigned.length;
+                    if (lastPoolCount !== -1 && cnt > lastPoolCount) {
+                        playBeep();
+                        // Visual badge
+                        const badge = document.getElementById('navPoolCount');
+                        if (badge) {
+                            badge.textContent = cnt;
+                            badge.classList.remove('bg-secondary');
+                            badge.classList.add('bg-danger');
+                        }
+                    } else if (lastPoolCount !== -1 && cnt !== lastPoolCount) {
+                        // Update badge without sound
+                        const badge = document.getElementById('navPoolCount');
+                        if (badge) badge.textContent = cnt > 0 ? cnt : '';
+                    }
+                    lastPoolCount = cnt;
+                }
+
+                populateTechSelect(allTechs);
+                populatePCSelect(allPCs);
+                renderLists();
+
+                // Poll
+                if (pollTimer) clearTimeout(pollTimer);
+                pollTimer = setTimeout(loadData, 10000);
+
+            } catch (e) {
+                console.error("Load Error:", e);
+                document.getElementById('debugPanel').style.display = 'block';
+                document.getElementById('debugOutput').textContent = "ERROR: " + e.message;
+            }
+        }
+
+        // --- RENDERERS ---
+        function populateTechSelect(techs) {
+            const sel = document.getElementById('techSelect');
+            const currentVal = sel.value;
+            sel.innerHTML = '<option value="">-- Soy... --</option>';
+
+            if (!techs || techs.length === 0) {
+                const opt = document.createElement('option');
+                opt.textContent = "(Error: Lista vacía)";
+                sel.appendChild(opt);
+                return;
+            }
+
+            techs.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.name;
+                opt.textContent = t.name;
+                sel.appendChild(opt);
+            });
+
+            if (currentVal) sel.value = currentVal;
+        }
+
+        function populatePCSelect(pcs) {
+            const sel = document.getElementById('taskPC');
+            const selComplete = document.getElementById('completeTaskPC');
+            const currentPC = sel.value;
+
+            // Reset
+            sel.innerHTML = '<option value="">-- Sin PC específica --</option>';
+            selComplete.innerHTML = '<option value="">-- Seleccionar PC --</option>';
+
+            pcs.forEach(pc => {
+                const opt = document.createElement('option');
+                opt.value = pc;
+                opt.textContent = pc;
+                sel.appendChild(opt);
+
+                const opt2 = document.createElement('option');
+                opt2.value = pc;
+                opt2.textContent = pc;
+                selComplete.appendChild(opt2);
+            });
+
+            if (currentPC) sel.value = currentPC;
+        }
+
+        function renderLists() {
+            // My Tasks
+            const myTasks = allActive.filter(t => t.assigned_to === currentUser);
+            const myContainer = document.getElementById('myTasksList');
+            if (myTasks.length === 0) {
+                myContainer.innerHTML = `<div class="text-center text-muted py-5"><i class="bi bi-emoji-smile display-4"></i><br>Sin tareas.</div>`;
+            } else {
+                myContainer.innerHTML = myTasks.map(t => createTaskCard(t, 'mine')).join('');
+            }
+
+            // Pool
+            const poolTasks = allUnassigned.filter(t => !t.assigned_to);
+            const poolContainer = document.getElementById('poolList');
+            if (poolTasks.length === 0) {
+                poolContainer.innerHTML = `<div class="text-center text-muted py-5"><i class="bi bi-check-circle display-4"></i><br>Nada en la bolsa.</div>`;
+            } else {
+                poolContainer.innerHTML = poolTasks.map(t => createTaskCard(t, 'pool')).join('');
+            }
+        }
+
+        function createTaskCard(task, type) {
+            const pcBadge = task.pc_name ? `<span class="badge bg-secondary mb-2">${task.pc_name}</span>` : '';
+            const date = new Date(task.created_at);
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const dateStr = date.toLocaleDateString();
+
+            let btn = '';
+            if (type === 'mine') {
+                btn = `<button class="btn btn-success btn-action" onclick="completeTask(${task.id})"><i class="bi bi-check-lg"></i> Listo</button>`;
+            } else {
+                btn = `<button class="btn btn-outline-primary btn-action" onclick="claimTask(${task.id})"><i class="bi bi-hand-index-thumb"></i> Tomar</button>`;
+            }
+
+            return `
+            <div class="task-card ${type === 'mine' ? 'priority' : ''}">
+                <div class="d-flex justify-content-between">
+                    <div>${pcBadge}</div>
+                    <small class="text-muted">${dateStr} ${timeStr}</small>
+                </div>
+                <div class="fw-bold fs-5 mb-2">${task.descripcion}</div>
+                <div class="text-muted small mb-3">Solicitó: ${task.solicitante || 'Sistema'}</div>
+                ${btn}
+            </div>
+            `;
+        }
+
+        // --- APP FLOW ---
+        function showLogin() {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('appHeader').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('bottomNav').style.display = 'none';
+            document.getElementById('fabAdd').style.display = 'none';
+        }
+
+        function login() {
+            const val = document.getElementById('techSelect').value;
+            if (!val) return alert("Selecciona tu nombre");
+            currentUser = val;
+            localStorage.setItem('techName', currentUser);
+            showApp();
+        }
+
+        function logout() {
+            if (confirm("¿Salir?")) {
+                localStorage.removeItem('techName');
+                currentUser = null;
+                showLogin();
+            }
+        }
+
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appHeader').style.display = 'flex';
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('bottomNav').style.display = 'flex';
+            document.getElementById('fabAdd').style.display = 'flex';
+            document.getElementById('headerName').textContent = currentUser;
+            renderLists();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tabMyTasks').style.display = tab === 'myTasks' ? 'block' : 'none';
+            document.getElementById('tabPool').style.display = tab === 'pool' ? 'block' : 'none';
+
+            const items = document.querySelectorAll('.nav-item');
+            if (items.length > 1) {
+                items[0].classList.toggle('active', tab === 'myTasks');
+                items[1].classList.toggle('active', tab === 'pool');
+            }
+        }
+
+        // --- ACTIONS ---
+        function openAddTask() {
+            document.getElementById('taskDesc').value = '';
+            document.getElementById('taskSolicitante').value = '';
+            document.getElementById('taskPC').value = '';
+            document.getElementById('taskDonenow').checked = false;
+            new bootstrap.Modal(document.getElementById('addTaskModal')).show();
+        }
+
+        async function submitTask() {
+            const desc = document.getElementById('taskDesc').value.trim();
+            const solicitante = document.getElementById('taskSolicitante').value.trim();
+            const pc = document.getElementById('taskPC').value;
+            const done = document.getElementById('taskDonenow').checked;
+
+            if (!desc) return alert("Falta descripción");
+            if (!solicitante) return alert("Falta solicitante");
+            if (done && !pc) return alert("Para finalizar ya, elige PC.");
+
+            try {
+                const res = await fetch('/api/mobile/create_task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        descripcion: desc,
+                        solicitante: solicitante,
+                        pc_name: pc,
+                        technician: currentUser,
+                        is_done: done
+                    })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+                    loadData();
+                    if (done) alert("Guardado y finalizado.");
+                } else {
+                    alert("Error: " + json.message);
+                }
+            } catch (e) { alert("Error red"); }
+        }
+
+        async function claimTask(id) {
+            if (!confirm("¿Tomar tarea?")) return;
+            await updateTask(id, 'claim');
+            switchTab('myTasks');
+        }
+
+        let taskToCompleteId = null;
+        async function completeTask(id) {
+            const t = allActive.find(k => k.id === id);
+            if (!t) return;
+            if (!t.pc_name) {
+                taskToCompleteId = id;
+                document.getElementById('completeTaskPC').value = '';
+                new bootstrap.Modal(document.getElementById('completeTaskModal')).show();
+            } else {
+                if (confirm("¿Finalizar?")) await updateTask(id, 'complete');
+            }
+        }
+
+        async function confirmCompleteWithPC() {
+            const pc = document.getElementById('completeTaskPC').value;
+            if (!pc) return alert("Elige PC");
+            await updateTask(taskToCompleteId, 'complete', pc);
+            bootstrap.Modal.getInstance(document.getElementById('completeTaskModal')).hide();
+        }
+
+        async function updateTask(id, action, pcName = null) {
+            try {
+                const payload = { id: id, action: action, technician: currentUser };
+                if (pcName) payload.pc_name = pcName;
+
+                const res = await fetch('/api/mobile/update_task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    await loadData();
+                } else alert("Error: " + json.message);
+            } catch (e) { alert("Error red"); }
+        }
+
+        // --- AUDIO ---
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('btnSound');
+            const icon = document.getElementById('iconSound');
+            if (soundEnabled) {
+                btn.classList.add('btn-warning');
+                btn.classList.remove('btn-outline-secondary');
+                icon.classList.remove('bi-volume-mute-fill');
+                icon.classList.add('bi-volume-up-fill');
+                playBeep(0.01);
+            } else {
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-outline-secondary');
+                icon.classList.add('bi-volume-mute-fill');
+                icon.classList.remove('bi-volume-up-fill');
+            }
+        }
+
+        function playBeep(dur = 0.2) {
+            if (!soundEnabled) return;
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            const ctx = new AC();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            osc.type = 'sine';
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880; // A5
+            gain.gain.value = 0.8; // High volume for alert
+            osc.start();
+            setTimeout(() => { osc.stop(); ctx.close(); }, dur * 1000);
+        }
+
+    </script>
+</body>
+
+</html>

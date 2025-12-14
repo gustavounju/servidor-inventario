@@ -204,6 +204,21 @@ def migrate_db_v5():
         )
     print("Migración v5 verificada.")
 
+def migrate_db_v6():
+    """Migra BD a v6: agregar columna assigned_to a tasks."""
+    print("Verificando migración de DB v6...")
+    with get_db_connection() as conn:
+        cursor = conn.execute("PRAGMA table_info(tasks)")
+        columns = [row["name"] for row in cursor.fetchall()]
+
+        if "assigned_to" not in columns:
+            print("Agregando col assigned_to a tasks...")
+            try:
+                conn.execute("ALTER TABLE tasks ADD COLUMN assigned_to TEXT")
+                conn.commit()
+            except Exception as e: print(f"Error add assigned_to: {e}")
+    print("Migración v6 verificada.")
+
 def train_ai_model():
     """Entrena la IA con datos semilla + datos históricos de la DB."""
     try:
@@ -231,6 +246,7 @@ with app.app_context():
     migrate_db_v3()
     migrate_db_v4()
     migrate_db_v5()
+    migrate_db_v6()
     train_ai_model()
 
 
@@ -548,7 +564,7 @@ def pc_detail(pc_name):
 
         tareas = conn.execute(
             """
-            SELECT id, pc_name, created_at, descripcion, estado, solicitante
+            SELECT id, pc_name, created_at, descripcion, estado, solicitante, assigned_to
             FROM tasks
             WHERE pc_name = ?
             ORDER BY created_at DESC
@@ -575,6 +591,12 @@ def add_task(pc_name):
     descripcion = request.form.get("descripcion", "").strip()
     solicitante = request.form.get("solicitante", "").strip()
     categoria = request.form.get("categoria", "").strip()
+    
+    print(f"DEBUG: add_task called. Desc: {descripcion}, Solicitante Input: '{solicitante}'")
+
+    # Enforce Solicitante
+    if not solicitante:
+        solicitante = "No Especificado (Dashboard)"
 
     if not descripcion:
         return redirect(url_for("pc_detail", pc_name=pc_name))
@@ -670,15 +692,21 @@ def create_loose_task():
     descripcion = request.form.get("descripcion", "").strip()
     solicitante = request.form.get("solicitante", "").strip()
     categoria = request.form.get("categoria", "").strip()
+
+    # Enforce Solicitante
+    if not solicitante:
+        solicitante = "No Especificado (Dashboard)"
     
+    technician = request.form.get("technician", "").strip() or None
+
     if descripcion:
         if not categoria:
             categoria = predict_category(descripcion)
 
         with get_db_connection() as conn:
             conn.execute(
-                "INSERT INTO tasks (descripcion, solicitante, estado, categoria) VALUES (?, ?, 'Pendiente', ?)",
-                (descripcion, solicitante, categoria)
+                "INSERT INTO tasks (descripcion, solicitante, estado, categoria, pc_name, assigned_to) VALUES (?, ?, 'Pendiente', ?, ?, ?)",
+                (descripcion, solicitante, categoria, None, technician),
             )
             conn.commit()
             
@@ -1032,7 +1060,130 @@ def receive_log():
         return jsonify({"status": "error", "details": str(exc)}), 200
 
 
-# ----------------- Arranque -----------------
+# ----------------- MOBILE API -----------------
+
+@app.route("/mobile")
+def mobile_view():
+    return render_template("mobile.html")
+
+@app.route("/api/mobile/data")
+def api_mobile_data():
+    """Returns technicians, unassigned tasks, and pcs for mobile view."""
+    try:
+        with get_db_connection() as conn:
+            # Technicians
+            techs = [dict(r) for r in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
+            
+            # Tasks assigned to specific tech (filtered by frontend usually, or we can filter here if param provided)
+            # Unassigned tasks
+            unassigned = [dict(r) for r in conn.execute(
+                "SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC"
+            ).fetchall()]
+
+            # All active tasks (for "My Tasks" filtering on client or server)
+            # Let's send all non-completed tasks and let client filter by tech name for simplicity/offline-readiness
+            all_active = [dict(r) for r in conn.execute(
+                "SELECT * FROM tasks WHERE estado != 'Hecha' ORDER BY created_at DESC"
+            ).fetchall()]
+
+            # PCs for dropdown
+            pcs = [r["pc_name"] for r in conn.execute("SELECT pc_name FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()]
+
+        return jsonify({
+            "technicians": techs,
+            "unassigned": unassigned,
+            "active_tasks": all_active,
+            "pcs": pcs
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/mobile/create_task", methods=["POST"])
+def api_mobile_create_task():
+    try:
+        data = request.json
+        descripcion = data.get("descripcion")
+        pc_name = data.get("pc_name")
+        technician = data.get("technician")
+        solicitante_input = data.get("solicitante", "").strip()
+        is_done = data.get("is_done", False)
+
+        if not descripcion or not technician:
+            return jsonify({"status": "error", "message": "Faltan datos"}), 400
+
+        # Predict category if valid
+        categoria = predict_category(descripcion)
+
+        estado = "Hecha" if is_done else "Pendiente"
+        created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        completed_at = created_at if is_done else None
+        completed_by = technician if is_done else None
+        
+        # Logic for Solicitante
+        # If user provided a name, use it.
+        # If empty, default to "Presencial/Teléfono" or similar generic, NOT the technician name.
+        if solicitante_input:
+            solicitante = solicitante_input
+        else:
+            solicitante = "No Especificado (Móvil)"
+
+        assigned_to = technician # Auto-assign new mobile task to the creator
+
+        with get_db_connection() as conn:
+             cursor = conn.execute(
+                """
+                INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to)
+            )
+             new_id = cursor.lastrowid
+             conn.commit()
+
+        return jsonify({"status": "success", "id": new_id})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/api/mobile/update_task", methods=["POST"])
+def api_mobile_update_task():
+    try:
+        data = request.json
+        task_id = data.get("id")
+        action = data.get("action") # 'claim' or 'complete'
+        technician = data.get("technician")
+        pc_name = data.get("pc_name") # Optional, for updating PC when completing
+
+        if not task_id or not action or not technician:
+             return jsonify({"status": "error", "message": "Datos incompletos"}), 400
+
+        with get_db_connection() as conn:
+            if action == "claim":
+                conn.execute(
+                    "UPDATE tasks SET assigned_to=? WHERE id=?",
+                    (technician, task_id)
+                )
+            elif action == "complete":
+                 # Prepare query args
+                 sql = "UPDATE tasks SET estado='Hecha', completed_by=?, completed_at=datetime('now', 'localtime')"
+                 params = [technician]
+
+                 # If PC name provided, update it too
+                 if pc_name:
+                     sql += ", pc_name=?"
+                     params.append(pc_name)
+                 
+                 sql += " WHERE id=?"
+                 params.append(task_id)
+
+                 conn.execute(sql, params)
+            
+            conn.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 
 if __name__ == "__main__":
     init_db()
