@@ -106,3 +106,27 @@ Para asegurar que los datos no se pierdan, configuraremos una tarea programada (
 4. **Guardar y Salir**:
    - En nano: `Ctrl+O` -> `Enter` -> `Ctrl+X`
 
+## 8. Cómo actualizar el sistema (Mantenimiento)
+
+Cuando hagamos cambios en el código (como ahora con el historial), sigue estos pasos en el servidor Ubuntu:
+
+1.  **Descargar cambios**:
+    *   Si usaste `git clone`:
+        ```bash
+        cd /opt/inventario
+        git pull
+        ```
+    *   *Si subiste los archivos manual*: Vuelve a copiar los archivos `.py` y la carpeta `templates` reemplazando los existentes.
+
+2.  **Reiniciar el servicio**:
+    Es necesario para que Python recargue el nuevo código.
+    ```bash
+    sudo systemctl restart inventario
+    ```
+
+3.  **Verificar**:
+    ```bash
+    sudo systemctl status inventario
+    ```
+
+
