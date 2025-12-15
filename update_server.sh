@@ -13,7 +13,7 @@ echo "2. Verificando dependencias (fpdf2, etc)..."
 if [ -d "venv" ]; then
     source venv/bin/activate
 fi
-pip install -r requirements.txt
+pip install -r requirements.txt --break-system-packages
 
 echo ""
 echo "=== LISTO ==="
