@@ -247,6 +247,25 @@ with app.app_context():
     migrate_db_v4()
     migrate_db_v5()
     migrate_db_v6()
+    
+    def ensure_generic_pc():
+        """Asegura que exista una PC genérica para asignar tareas a hardware no inventariado."""
+        try:
+            with get_db_connection() as conn:
+                exists = conn.execute("SELECT 1 FROM pcs WHERE pc_name = 'PC Generica'").fetchone()
+                if not exists:
+                    print("Creando 'PC Generica'...")
+                    conn.execute(
+                        """
+                        INSERT INTO pcs (pc_name, os_name, is_active) 
+                        VALUES ('PC Generica', 'Virtual/Pendiente', 'True')
+                        """
+                    )
+                    conn.commit()
+        except Exception as e:
+            print(f"Error creando PC Generica: {e}")
+
+    ensure_generic_pc()
     train_ai_model()
 
 
@@ -407,9 +426,9 @@ def dashboard():
             pcs_data = [dict(row) for row in rows]
 
             # --- CALCULO GLOBAL DE KPIS (fuera de paginación) ---
-            # 1. Total Activas
+            # 1. Total Activas (Excluyendo PC Generica)
             kpi_total_activas = conn.execute(
-                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True'"
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name != 'PC Generica'"
             ).fetchone()["c"]
 
             # 2. Total Cementerio
@@ -417,18 +436,18 @@ def dashboard():
                 "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'"
             ).fetchone()["c"]
 
-            # 3. Alertas (RAM, Sin Impresora, Impresora Red) - Solo sobre activos? 
+            # 3. Alertas (RAM, Sin Impresora, Impresora Red) - Solo sobre activos (y no generica)
             #    Asumimos que las alertas interesan sobre las máquinas activas.
             kpi_alerta_ram = conn.execute(
-                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1"
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name != 'PC Generica'"
             ).fetchone()["c"]
 
             kpi_sin_impresora = conn.execute(
-                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1"
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name != 'PC Generica'"
             ).fetchone()["c"]
 
             kpi_impresora_red = conn.execute(
-                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1"
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name != 'PC Generica'"
             ).fetchone()["c"]
 
             # 4. OS Versions (Win 7 vs Win 10/11) - Sobre activos
@@ -580,10 +599,47 @@ def pc_detail(pc_name):
             (pc_name,)
         ).fetchall()
 
+        # Para el modal de migración (solo si es PC Generica, pero lo pasamos siempre por simplicidad o filtrado en jinja)
+        all_pcs = conn.execute("SELECT pc_name FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
+
     if pc is None:
         abort(404)
 
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs)
+
+
+@app.route("/pc/migrate_tasks", methods=["POST"])
+def migrate_generic_tasks():
+    target_pc = request.form.get("target_pc")
+    task_id = request.form.get("migration_task_id")
+
+    if not target_pc:
+        return redirect(url_for("pc_detail", pc_name="PC Generica"))
+    
+    with get_db_connection() as conn:
+        if task_id:
+            # Migrar una sola tarea
+            conn.execute(
+                "UPDATE tasks SET pc_name = ? WHERE id = ? AND pc_name = 'PC Generica'",
+                (target_pc, task_id)
+            )
+            audit_msg = f"Se importó la tarea #{task_id} de PC Generica"
+        else:
+            # Fallback (o legado): Mover todas (aunque la UI ya no tenga el botón global)
+            conn.execute(
+                "UPDATE tasks SET pc_name = ? WHERE pc_name = 'PC Generica'",
+                (target_pc,)
+            )
+            audit_msg = "Se importaron TODAS las tareas de PC Generica"
+
+        # Registro en audit logs de la PC destino
+        conn.execute(
+            "INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)",
+            (target_pc, "MIGRACION", "PC Generica", audit_msg)
+        )
+        conn.commit()
+
+    return redirect(url_for("pc_detail", pc_name=target_pc))
 
 
 @app.route("/pc/<pc_name>/tasks", methods=["POST"])
