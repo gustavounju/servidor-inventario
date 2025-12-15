@@ -163,12 +163,27 @@
                 <button type="submit" class="btn btn-primary btn-lg">
                     📥 Descargar Excel
                 </button>
+                <button type="button" class="btn btn-danger btn-lg ml-2" onclick="submitPDF()"
+                    style="margin-left: 10px;">
+                    <i class="bi bi-file-pdf"></i> Exportar PDF
+                </button>
                 <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg">
                     Cancelar
                 </a>
             </div>
 
         </form>
+    </div>
+
+    <script>
+        function submitPDF() {
+            const form = document.querySelector('form');
+            const originalAction = form.action;
+            form.action = "{{ url_for('export_inventory_pdf') }}";
+            form.submit();
+            setTimeout(() => form.action = originalAction, 100);
+        }
+    </script>
     </div>
 
 </body>

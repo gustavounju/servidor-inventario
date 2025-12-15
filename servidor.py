@@ -821,7 +821,7 @@ def report_tasks_completed():
             SELECT pc_name, descripcion, solicitante, created_at, estado, completed_by, completed_at
             FROM tasks
             WHERE estado = 'Hecha'
-              AND DATE(created_at) = ?
+              AND DATE(completed_at) = ?
         """
         params = [fecha_filtro]
 
@@ -829,7 +829,7 @@ def report_tasks_completed():
             base_sql += " AND pc_name = ?"
             params.append(pc_name)
 
-        base_sql += " ORDER BY created_at DESC"
+        base_sql += " ORDER BY completed_at DESC"
 
         tareas = conn.execute(base_sql, params).fetchall()
 
@@ -860,6 +860,286 @@ def report_tasks_completed():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
         download_name=f"Tareas_Completadas{nombre_pc_sufijo}_{fecha_filtro}.xlsx",
+    )
+
+
+# --------- PDF Report Class ---------
+from fpdf import FPDF
+
+# Helper para fechas en español (sin depender de locale del sistema)
+def format_date_es(d_obj):
+    if isinstance(d_obj, str):
+        try:
+            d_obj = datetime.datetime.strptime(d_obj, "%Y-%m-%d")
+        except:
+            return d_obj
+    dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+    meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+    # Formato: Lunes 14 de Diciembre de 2025 ?? O User pidió "Lunes 14/12/2025"
+    # "formato con el nombre de l dia mejor" -> Lunes 14/12/2025 is concise and good.
+    return f"{dias[d_obj.weekday()]} {d_obj.day:02d}/{d_obj.month:02d}/{d_obj.year}"
+
+class PDFReport(FPDF):
+    def __init__(self, title="Reporte - Inventario GOLD", orientation='P', unit='mm', format='A4'):
+        super().__init__(orientation, unit, format)
+        self.report_title = title
+
+    def header(self):
+        # Logo placeholder or Title
+        self.set_font('Arial', 'B', 15)
+        self.set_text_color(33, 37, 41) # Dark gray
+        self.cell(0, 10, self.report_title, 0, 1, 'C')
+        self.ln(5)
+        
+        # Line break
+        self.set_draw_color(13, 110, 253) # Bootstrap Primary Blue
+        self.set_line_width(1)
+        current_width = self.w - 20 # margin 10 left right
+        self.line(10, 25, 10 + current_width, 25)
+        self.ln(10)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.set_text_color(128)
+        # Fecha simple en footer
+        ahora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+        self.cell(0, 10, f'Página {self.page_no()}/{{nb}} - Generado el {ahora}', 0, 0, 'C')
+
+@app.route("/report/tasks_completed_pdf", methods=["POST"])
+def report_tasks_completed_pdf():
+    # ... query code ...
+    fecha_filtro_str = request.form.get("fecha", "").strip() or dt.now().strftime("%Y-%m-%d")
+    pc_name = request.form.get("pc_name", "").strip()
+    
+    # Parse date for display
+    fecha_dt = datetime.datetime.strptime(fecha_filtro_str, "%Y-%m-%d")
+    fecha_display = format_date_es(fecha_dt)
+
+    with get_db_connection() as conn:
+        # 1. Tareas REALIZADAS (Hecha)
+        base_sql = """
+            SELECT t.pc_name, t.descripcion, t.solicitante, t.created_at, t.estado, t.completed_by, t.completed_at,
+                   p.last_user
+            FROM tasks t
+            LEFT JOIN pcs p ON t.pc_name = p.pc_name
+            WHERE t.estado = 'Hecha'
+              AND DATE(t.completed_at) = ?
+        """
+        params = [fecha_filtro_str]
+
+        if pc_name:
+            base_sql += " AND t.pc_name = ?"
+            params.append(pc_name)
+
+        base_sql += " ORDER BY t.completed_at DESC"
+        tareas_hechas = conn.execute(base_sql, params).fetchall()
+
+        # 2. Tareas PENDIENTES
+        sql_pendientes = """
+            SELECT t.pc_name, t.descripcion, t.solicitante, t.created_at, t.estado, t.assigned_to,
+                   p.last_user
+            FROM tasks t
+            LEFT JOIN pcs p ON t.pc_name = p.pc_name
+            WHERE t.estado != 'Hecha'
+              AND DATE(t.created_at) = ?
+        """
+        params_pend = [fecha_filtro_str]
+        if pc_name:
+            sql_pendientes += " AND t.pc_name = ?"
+            params_pend.append(pc_name)
+        
+        sql_pendientes += " ORDER BY t.created_at DESC"
+        tareas_pendientes = conn.execute(sql_pendientes, params_pend).fetchall()
+
+    # --- Generación PDF ---
+    pdf = PDFReport(title="Reporte de Tareas - Inventario GOLD")
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    # Titulo del día
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, f"Reporte del día: {fecha_display}", 0, 1)
+    pdf.ln(2)
+
+    # --- SECCIÓN 1: TAREAS REALIZADAS ---
+    pdf.set_font("Arial", "B", 11)
+    pdf.set_text_color(25, 135, 84) # Success Green
+    pdf.cell(0, 8, f"Tareas Realizadas ({len(tareas_hechas)})", 0, 1)
+    pdf.ln(2)
+
+    # Headers
+    pdf.set_font("Arial", "B", 9)
+    pdf.set_fill_color(25, 135, 84) # Green header
+    pdf.set_text_color(255)
+    
+    # PC(25), Usuario(25), Desc(65), Solic(25), Tech(25), Hora(20)
+    headers = ["PC", "Usuario", "Descripción", "Solic.", "Técnico", "Hora Creada"]
+    w = [25, 25, 65, 25, 25, 20]
+    
+    for i, h in enumerate(headers):
+        pdf.cell(w[i], 8, h, 1, 0, 'C', fill=True)
+    pdf.ln()
+
+    if not tareas_hechas:
+        pdf.set_font("Arial", "I", 9)
+        pdf.set_text_color(0)
+        pdf.cell(0, 8, "No hay tareas realizadas registradas para hoy.", 1, 1, 'C')
+    else:
+        pdf.set_font("Arial", "", 8)
+        pdf.set_text_color(0)
+        for t in tareas_hechas:
+            # Procesar Usuario
+            raw_user = t["last_user"] or "N/A"
+            if "\\" in raw_user: user_display = raw_user.split("\\")[-1]
+            else: user_display = raw_user
+            
+            desc = t["descripcion"]
+            if len(desc) > 35: desc = desc[:32] + "..."
+
+            # Hora CREACION
+            created_at = t["created_at"] or ""
+            hora = created_at.split(' ')[1][:5] if ' ' in created_at else ""
+
+            pdf.cell(w[0], 7, str(t["pc_name"]), 1)
+            pdf.cell(w[1], 7, str(user_display)[:14], 1)
+            pdf.cell(w[2], 7, desc, 1)
+            pdf.cell(w[3], 7, str(t["solicitante"] or "")[:14], 1)
+            pdf.cell(w[4], 7, str(t["completed_by"] or "")[:12], 1)
+            pdf.cell(w[5], 7, hora, 1, 1, 'C')
+
+    pdf.ln(10)
+
+    # --- SECCIÓN 2: TAREAS PENDIENTES ---
+    pdf.set_font("Arial", "B", 11)
+    pdf.set_text_color(220, 53, 69) # Danger Red
+    pdf.cell(0, 8, f"Tareas Pendientes / Generadas Hoy ({len(tareas_pendientes)})", 0, 1)
+    pdf.ln(2)
+
+    # Headers Pendientes (Sin PC ni Usuario)
+    # Desc(80), Solic(40), Técnico(40), Hora(25) -> Total 185
+    headers_pend = ["Descripción", "Solic.", "Asignado a", "Hora Creada"]
+    w_pend = [80, 40, 40, 25]
+
+    pdf.set_font("Arial", "B", 9)
+    pdf.set_fill_color(220, 53, 69) # Red header
+    pdf.set_text_color(255)
+    
+    for i, h in enumerate(headers_pend):
+        pdf.cell(w_pend[i], 8, h, 1, 0, 'C', fill=True)
+    pdf.ln()
+
+    if not tareas_pendientes:
+        pdf.set_font("Arial", "I", 9)
+        pdf.set_text_color(0)
+        pdf.cell(0, 8, "No hay tareas pendientes generadas hoy.", 1, 1, 'C')
+    else:
+        pdf.set_font("Arial", "", 8)
+        pdf.set_text_color(0)
+        for t in tareas_pendientes:
+            desc = t["descripcion"]
+            # Descripción mas larga permitida aquí
+            if len(desc) > 50: desc = desc[:47] + "..."
+
+            created_at = t["created_at"] or ""
+            hora = created_at.split(' ')[1][:5] if ' ' in created_at else ""
+            
+            assigned = t["assigned_to"] or "Sin Asignar"
+
+            pdf.cell(w_pend[0], 7, desc, 1)
+            pdf.cell(w_pend[1], 7, str(t["solicitante"] or "")[:20], 1)
+            pdf.cell(w_pend[2], 7, str(assigned)[:20], 1)
+            pdf.cell(w_pend[3], 7, hora, 1, 1, 'C')
+
+
+    # Output
+    output = BytesIO()
+    # fpdf2 output to string/bytes requires 'dest=S'. 
+    # Actually fpdf2 has output(dest='S').encode('latin-1') logic. 
+    # For using BytesIO with flask send_file, we can do:
+    pdf_bytes = pdf.output()  # retorna bytearray en fpdf2 recientes o string
+    # check fpdf2 version. Assuming default behavior: returns bytes.
+    
+    # Write to BytesIO
+    output.write(pdf_bytes)
+    output.seek(0)
+    
+    nombre_pc_sufijo = f"_{pc_name}" if pc_name else ""
+    return send_file(
+        output,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"Reporte_Tareas{nombre_pc_sufijo}_{fecha_filtro_str}.pdf",
+    )
+
+
+@app.route("/export_inventory_pdf", methods=["POST"])
+def export_inventory_pdf():
+    # Ignoramos selección dinámica para PDF, usamos columnas fijas "Pro"
+    # Columnas: PC Name, Last User, OS Name, Processor, RAM, IP
+    with get_db_connection() as conn:
+        rows = conn.execute("SELECT pc_name, last_user, os_name, processor, ram_gb, ip_address FROM pcs WHERE pc_name != 'PC Generica' ORDER BY last_report DESC").fetchall()
+    
+    pdf = PDFReport(title="Inventario General - Inventario GOLD", orientation='L')
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    
+    # Fecha de reporte
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 8, f"Fecha de emisión: {format_date_es(datetime.datetime.now())}", 0, 1, 'C')
+    pdf.ln(5)
+    
+    # Titulo (Conteo)
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, f"Total Equipos Inventariados: {len(rows)}", 0, 1, 'C')
+    pdf.ln(5)
+    
+    # Headers
+    # Landscape A4 ~ 297mm ancho. Margen 10+10=20. Util: 277.
+    # PC(40), User(40), OS(50), CPU(70), RAM(20), IP(35) -> Total 255
+    headers = ["Nombre PC", "Usuario", "Sistema Operativo", "Procesador", "RAM", "IP Address"]
+    w = [40, 40, 50, 70, 20, 35]
+    
+    pdf.set_font("Arial", "B", 9)
+    pdf.set_fill_color(13, 110, 253)
+    pdf.set_text_color(255)
+    
+    for i, h in enumerate(headers):
+        pdf.cell(w[i], 8, h, 1, 0, 'C', fill=True)
+    pdf.ln()
+    
+    pdf.set_font("Arial", "", 8)
+    pdf.set_text_color(0)
+    
+    for row in rows:
+        # User clean
+        raw_user = row["last_user"] or "N/A"
+        if "\\" in raw_user: user = raw_user.split("\\")[-1]
+        else: user = raw_user
+        
+        # CPU truncate
+        cpu = row["processor"] or "N/A"
+        if len(cpu) > 40: cpu = cpu[:37] + "..."
+        
+        pdf.cell(w[0], 7, str(row["pc_name"]), 1)
+        pdf.cell(w[1], 7, str(user)[:20], 1)
+        pdf.cell(w[2], 7, str(row["os_name"]), 1)
+        pdf.cell(w[3], 7, cpu, 1)
+        pdf.cell(w[4], 7, f'{row["ram_gb"]} GB', 1, 0, 'C')
+        pdf.cell(w[5], 7, str(row["ip_address"]), 1, 1, 'C')
+
+    output = BytesIO()
+    pdf_bytes = pdf.output()
+    output.write(pdf_bytes)
+    output.seek(0)
+    
+    return send_file(
+        output,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"Inventario_Reporte_{dt.now().strftime('%Y%m%d')}.pdf",
     )
 
 
