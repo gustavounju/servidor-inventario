@@ -112,7 +112,8 @@
             background-color: var(--card-bg);
             border-bottom: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 12px 15px;
+            padding: 10px 12px;
+            font-size: 0.875rem;
         }
 
         #inventoryTable tbody tr:hover td {
@@ -622,7 +623,6 @@
                     <th onclick="sortTable(8)">Impresora</th>
                     <th onclick="sortTable(9)">Monitores</th>
                     <th onclick="sortTable(10)">IP</th>
-                    <th onclick="sortTable(11)">Último Reporte</th>
                     <th>Alertas</th>
                     <th>Acción</th>
 
@@ -659,17 +659,6 @@
                     <td>{{ pc.monitors }}</td>
                     <td>{{ pc.ip_address }}</td>
                     <td>
-                        {% set f = pc.last_report %}
-                        {% if f and 'T' in f %}
-                        {% set partes = f.split('T') %}
-                        {% set fecha = partes[0].split('-') %}
-                        {% set hora = partes[1][:5] %}
-                        {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }} {{ hora }}
-                        {% else %}
-                        {{ pc.last_report }}
-                        {% endif %}
-                    </td>
-                    <td>
                         {% if pc.alerta_ram_baja %}
                         💾 RAM
                         {% endif %}
@@ -701,7 +690,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="13" style="text-align: center;">Sin datos.</td>
+                    <td colspan="12" style="text-align: center;">Sin datos.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -1149,13 +1138,14 @@ catch {
         })();
 
         document.addEventListener('DOMContentLoaded', function () {
-            const kpiWin7 = {{ kpi_win7 }};
-        const kpiWin10 = {{ kpi_win10 }};
-        const kpiTotal = {{ kpi_total_activas }};
-        const kpiGraveyard = {{ kpi_total_graveyard }};
-        const kpiRam = {{ kpi_alerta_ram }};
-        const kpiSinImp = {{ kpi_sin_impresora }};
-        const kpiImpRed = {{ kpi_impresora_red }};
+            const kpiWin7 = {{ kpi_win7 | default (0)
+        }};
+        const kpiWin10 = {{ kpi_win10 | default (0) }};
+        const kpiTotal = {{ kpi_total_activas | default (0) }};
+        const kpiGraveyard = {{ kpi_total_graveyard | default (0) }};
+        const kpiRam = {{ kpi_alerta_ram | default (0) }};
+        const kpiSinImp = {{ kpi_sin_impresora | default (0) }};
+        const kpiImpRed = {{ kpi_impresora_red | default (0) }};
 
         new Chart(document.getElementById('osChart'), { type: 'doughnut', data: { labels: ['Win 7', 'Win 10/11', 'Otros'], datasets: [{ data: [kpiWin7, kpiWin10, kpiTotal - (kpiWin7 + kpiWin10)], backgroundColor: ['#dc3545', '#0d6efd', '#6c757d'] }] }, options: { responsive: true, maintainAspectRatio: false } });
         const catLabels = {{ cat_labels | tojson }};
