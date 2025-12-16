@@ -365,8 +365,8 @@
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
 
                     <li class="nav-item">
-                        <a href="{{ url_for('export_inventory') }}" class="nav-link">
-                            Inventario XLS
+                        <a href="{{ url_for('view_graphics') }}" class="nav-link">
+                            <i class="bi bi-graph-up"></i> Gráficos
                         </a>
                     </li>
                     <li class="nav-item">
@@ -430,30 +430,118 @@
 
 
         <h1 class="mb-3">Dashboard de Inventario</h1>
-        <div class="row mb-4" id="chartsRow">
-            <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Distribución SO</div>
-                    <div class="card-body d-flex align-items-center justify-content-center"><canvas
-                            id="osChart"></canvas></div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Tareas por Categoría
+
+        <!-- KPIs Cards Restaurados con distribución flexible -->
+        <div class="kpi-container d-flex flex-wrap justify-content-center gap-3 mb-4">
+
+            <!-- Script -->
+            <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
+                <div class="card text-bg-light kpi-toggle h-100" id="kpiScript" onclick="copyScript()"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2 text-center">
+                        <div class="small text-uppercase">Script</div>
+                        <div class="h6 mb-0 text-primary">Copiar</div>
                     </div>
-                    <div class="card-body d-flex align-items-center justify-content-center"><canvas
-                            id="catChart"></canvas></div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Alertas</div>
-                    <div class="card-body d-flex align-items-center justify-content-center"><canvas
-                            id="alertsChart"></canvas></div>
+
+            <!-- PCs activas -->
+            <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
+                <a href="{{ url_for('dashboard') }}" class="text-decoration-none" title="Ver todas las PCs activas">
+                    <div class="card text-bg-light kpi-toggle h-100">
+                        <div class="card-body py-2 text-center">
+                            <div class="small text-uppercase">PCs activas</div>
+                            <div class="h4 mb-0">{{ kpi_total_activas }}</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Cementerio -->
+            <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
+                <a href="{{ url_for('view_cementerio') }}" class="text-decoration-none"
+                    title="Ver equipos dados de baja">
+                    <div
+                        class="card text-bg-light kpi-toggle h-100 {% if request.path == '/cementerio' or request.args.get('estado') == 'False' %}kpi-on{% endif %}">
+                        <div class="card-body py-2 text-center">
+                            <div class="small text-uppercase">Cementerio</div>
+                            <div class="h4 mb-0">{{ kpi_total_graveyard }}</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Windows 7 -->
+            <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
+                <div class="card text-bg-light kpi-toggle h-100" id="kpiWin7" onclick="onFilterClick('win7')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2 text-center">
+                        <div class="small text-uppercase">Windows 7</div>
+                        <div class="h4 mb-0">{{ kpi_win7 }}</div>
+                    </div>
                 </div>
             </div>
+
+            <!-- Windows 10/11 -->
+            <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
+                <div class="card text-bg-light kpi-toggle h-100" id="kpiWin10" onclick="onFilterClick('win10')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2 text-center">
+                        <div class="small text-uppercase">Windows 10/11</div>
+                        <div class="h4 mb-0">{{ kpi_win10 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RAM baja -->
+            <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
+                <div class="card text-bg-light kpi-toggle h-100" id="kpiRam" onclick="onFilterClick('ram')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2 text-center">
+                        <div class="small text-uppercase">RAM baja (&lt; 8 GB)</div>
+                        <div class="h4 mb-0">{{ kpi_alerta_ram }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sin impresora -->
+            <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
+                <div class="card text-bg-light kpi-toggle h-100" id="kpiSinImp" onclick="onFilterClick('sin_impresora')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2 text-center">
+                        <div class="small text-uppercase">Sin impresora</div>
+                        <div class="h4 mb-0">{{ kpi_sin_impresora }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Solo impresora en red -->
+            <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
+                <div class="card text-bg-light kpi-toggle h-100" id="kpiSoloRed" onclick="onFilterClick('solo_red')"
+                    style="cursor:pointer;">
+                    <div class="card-body py-2 text-center">
+                        <div class="small text-uppercase">Solo impresora en red</div>
+                        <div class="h4 mb-0">{{ kpi_impresora_red }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tareas pendientes -->
+            <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
+                <div class="card text-bg-light kpi-toggle h-100" id="kpiTareasPendientes"
+                    onclick="onFilterClick('tareas')" style="cursor:pointer;">
+                    <div class="card-body py-2 text-center">
+                        <div class="small text-uppercase">Tareas pendientes</div>
+                        <div class="h4 mb-0">
+                            {{ pcs|selectattr('tareas_pendientes', 'gt', 0)|list|length }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
+
+        <!-- Gráficos movidos a la página /graficos -->
 
         <!-- Tareas sin asignar -->
         {% if unassigned_tasks %}
@@ -492,112 +580,7 @@
         </div>
         {% endif %}
 
-        <div class="row g-3 mb-3 kpi-row">
-
-            <!-- Script -->
-            <div class="col-6 col-md-1">
-                <div class="card text-bg-light kpi-toggle" id="kpiScript" onclick="copyScript()"
-                    style="cursor:pointer;">
-                    <div class="card-body py-2">
-                        <div class="small text-uppercase">Script</div>
-                        <div class="h6 mb-0 text-primary">Copiar</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PCs activas (informativo - enlace a resetear filtros) -->
-            <div class="col-6 col-md-1">
-                <a href="{{ url_for('dashboard') }}" class="text-decoration-none" title="Ver todas las PCs activas">
-                    <div class="card text-bg-light kpi-toggle">
-                        <div class="card-body py-2">
-                            <div class="small text-uppercase">PCs activas</div>
-                            <div class="h4 mb-0">{{ kpi_total_activas }}</div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <!-- En cementerio (Enlace directo a la nueva ruta) -->
-            <div class="col-6 col-md-1">
-                <a href="{{ url_for('view_cementerio') }}" class="text-decoration-none"
-                    title="Ver equipos dados de baja">
-                    <div
-                        class="card text-bg-light kpi-toggle {% if request.path == '/cementerio' or request.args.get('estado') == 'False' %}kpi-on{% endif %}">
-                        <div class="card-body py-2">
-                            <div class="small text-uppercase">Cementerio</div>
-                            <div class="h4 mb-0">{{ kpi_total_graveyard }}</div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-1">
-                <div class="card text-bg-light kpi-toggle" id="kpiWin7" onclick="onFilterClick('win7')"
-                    style="cursor:pointer;">
-                    <div class="card-body py-2">
-                        <div class="small text-uppercase">Windows 7</div>
-                        <div class="h4 mb-0">{{ kpi_win7 }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Windows 10/11 -->
-            <div class="col-6 col-md-1">
-                <div class="card text-bg-light kpi-toggle" id="kpiWin10" onclick="onFilterClick('win10')"
-                    style="cursor:pointer;">
-                    <div class="card-body py-2">
-                        <div class="small text-uppercase">Windows 10/11</div>
-                        <div class="h4 mb-0">{{ kpi_win10 }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RAM baja -->
-            <div class="col-6 col-md-1">
-                <div class="card text-bg-light kpi-toggle" id="kpiRam" onclick="onFilterClick('ram')"
-                    style="cursor:pointer;">
-                    <div class="card-body py-2">
-                        <div class="small text-uppercase">RAM baja (&lt; 8 GB)</div>
-                        <div class="h4 mb-0">{{ kpi_alerta_ram }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sin impresora -->
-            <div class="col-6 col-md-1">
-                <div class="card text-bg-light kpi-toggle" id="kpiSinImp" onclick="onFilterClick('sin_impresora')"
-                    style="cursor:pointer;">
-                    <div class="card-body py-2">
-                        <div class="small text-uppercase">Sin impresora</div>
-                        <div class="h4 mb-0">{{ kpi_sin_impresora }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Solo impresora en red -->
-            <div class="col-6 col-md-1">
-                <div class="card text-bg-light kpi-toggle" id="kpiSoloRed" onclick="onFilterClick('solo_red')"
-                    style="cursor:pointer;">
-                    <div class="card-body py-2">
-                        <div class="small text-uppercase">Solo impresora en red</div>
-                        <div class="h4 mb-0">{{ kpi_impresora_red }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tareas pendientes -->
-            <div class="col-6 col-md-1">
-                <div class="card text-bg-light kpi-toggle" id="kpiTareasPendientes" onclick="onFilterClick('tareas')"
-                    style="cursor:pointer;">
-                    <div class="card-body py-2">
-                        <div class="small text-uppercase">Tareas pendientes</div>
-                        <div class="h4 mb-0">
-                            {{ pcs|selectattr('tareas_pendientes', 'gt', 0)|list|length }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+        <!-- KPIs movidos a la página /graficos -->
 
 
 
@@ -1137,79 +1120,7 @@ catch {
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const kpiWin7 = {{ kpi_win7 | default (0)
-        }};
-        const kpiWin10 = {{ kpi_win10 | default (0) }};
-        const kpiTotal = {{ kpi_total_activas | default (0) }};
-        const kpiGraveyard = {{ kpi_total_graveyard | default (0) }};
-        const kpiRam = {{ kpi_alerta_ram | default (0) }};
-        const kpiSinImp = {{ kpi_sin_impresora | default (0) }};
-        const kpiImpRed = {{ kpi_impresora_red | default (0) }};
-
-        new Chart(document.getElementById('osChart'), { type: 'doughnut', data: { labels: ['Win 7', 'Win 10/11', 'Otros'], datasets: [{ data: [kpiWin7, kpiWin10, kpiTotal - (kpiWin7 + kpiWin10)], backgroundColor: ['#dc3545', '#0d6efd', '#6c757d'] }] }, options: { responsive: true, maintainAspectRatio: false } });
-        const catLabels = {{ cat_labels | tojson }};
-        const catValues = {{ cat_values | tojson }};
-        new Chart(document.getElementById('catChart'), {
-            type: 'bar',
-            data: {
-                labels: catLabels,
-                datasets: [{
-                    label: 'Tareas',
-                    data: catValues,
-                    backgroundColor: '#6366f1',
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { beginAtZero: true, ticks: { precision: 0 } }
-                }
-            }
-        });
-
-        new Chart(document.getElementById('alertsChart'), { type: 'bar', data: { labels: ['RAM Baja', 'Sin Imp', 'Imp Red'], datasets: [{ label: 'Cantidad', data: [kpiRam, kpiSinImp, kpiImpRed], backgroundColor: ['#ffc107', '#0dcaf0', '#6610f2'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-
-        // ===== MODERNIZACIÓN: Gráficos Clickeables (Opción 7) =====
-        const osChart = Chart.getChart('osChart');
-        const alertsChart = Chart.getChart('alertsChart');
-
-        if (osChart) {
-            document.getElementById('osChart').onclick = function (evt) {
-                const points = osChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-                if (points.length) {
-                    const firstPoint = points[0];
-                    const label = osChart.data.labels[firstPoint.index];
-                    if (label === 'Win 7') onFilterClick('win7');
-                    else if (label === 'Win 10/11') onFilterClick('win10');
-                }
-            };
-        }
-
-        if (statusChart) {
-            document.getElementById('statusChart').onclick = function (evt) {
-                const points = statusChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-                if (points.length) {
-                    const firstPoint = points[0];
-                    if (firstPoint.index === 1) onFilterClick('cementerio');
-                }
-            };
-        }
-
-        if (alertsChart) {
-            document.getElementById('alertsChart').onclick = function (evt) {
-                const points = alertsChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-                if (points.length) {
-                    const firstPoint = points[0];
-                    const filters = ['ram', 'sin_impresora', 'solo_red'];
-                    onFilterClick(filters[firstPoint.index]);
-                }
-            };
-        }
-    });
+        /* Gráficos y lógica de KPIs desactivada en index (movido a graficos.html) */
 
         // ===== MODERNIZACIÓN: Ordenamiento Mejorado con Indicadores (Opción 4) =====
         let currentSortColumn = -1;

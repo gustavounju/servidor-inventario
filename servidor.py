@@ -332,17 +332,117 @@ if not os.path.exists(LOG_FOLDER):
 def view_cementerio():
     return redirect(url_for("dashboard", estado="False"))
 
+@app.route("/graficos")
+def view_graphics():
+    """Nueva página dedicada a KPIs y Gráficos."""
+    try:
+        with get_db_connection() as conn:
+            # 1. Total Activas (Excluyendo PC Generica)
+            kpi_total_activas = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name != 'PC Generica'"
+            ).fetchone()["c"]
+
+            # 2. Total Cementerio
+            kpi_total_graveyard = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'"
+            ).fetchone()["c"]
+
+            # 3. Alertas (RAM, Sin Impresora, Impresora Red)
+            kpi_alerta_ram = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name != 'PC Generica'"
+            ).fetchone()["c"]
+
+            kpi_sin_impresora = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name != 'PC Generica'"
+            ).fetchone()["c"]
+
+            kpi_impresora_red = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name != 'PC Generica'"
+            ).fetchone()["c"]
+
+            # 4. OS Versions
+            kpi_win7 = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE '%Windows 7%'"
+            ).fetchone()["c"]
+            
+            kpi_win10 = conn.execute(
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE '%Windows 10%' OR os_name LIKE '%Windows 11%')"
+            ).fetchone()["c"]
+
+            # 5. Tareas hechas hoy
+            kpi_tareas_hoy = conn.execute(
+                "SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = DATE('now', 'localtime')"
+            ).fetchone()["c"]
+            
+            # Tareas pendientes (para el card)
+            # Nota: Esto es un calculo un poco mas pesado si hay muchas PCs, pero necesario para el KPI
+            # Alternativa: count distinct pc_name from tasks where estado != hecho
+            # Pero el template original usa: pcs|selectattr('tareas_pendientes', 'gt', 0)|list|length
+            # Vamos a hacer una query directa más eficiente:
+            kpi_tareas_pendientes_count = conn.execute(
+                 "SELECT COUNT(DISTINCT pc_name) as c FROM tasks WHERE estado != 'Hecha' AND pc_name IS NOT NULL AND pc_name != ''"
+            ).fetchone()["c"]
+
+
+            # 6. Tareas por Categoria (para Charts)
+            rows_cats = conn.execute("SELECT categoria, COUNT(*) as c FROM tasks GROUP BY categoria").fetchall()
+            cat_labels = []
+            cat_values = []
+            for r in rows_cats:
+                cat_name = r["categoria"] if r["categoria"] else "Sin Categoría"
+                if cat_name == "General":
+                    continue
+                cat_labels.append(cat_name)
+                cat_values.append(r["c"])
+
+            # 7. Distribución SO (para Chart)
+            # Reutilizamos kpi_win7 y win10, o hacemos query completa si hay otros SO
+            # El original usa un canvas "osChart". Necesitamos pasar datos si queremos recrearlo.
+            # Vamos a asumir que el JS pedía los datos? O se inyectaban?
+            # En index.html original: <canvas id="osChart"></canvas>.
+            # No veo donde se inyectaban los datos de charts en el python original en el bloque reemplazado...
+            # Ah, espera, en render_template no se pasaban listas para charts excepto cat_labels/values?
+            # Revisando el bloque eliminado: solo cat_labels/values.
+            # El osChart quizas se llena via API o con variables JS inline que no vi?
+            # Revisaré index.html para ver como se llenan los charts.
+            
+    except Exception as e:
+        print(f"Error en graficos: {e}")
+        kpi_total_activas = 0
+        kpi_total_graveyard = 0
+        kpi_alerta_ram = 0
+        kpi_sin_impresora = 0
+        kpi_impresora_red = 0
+        kpi_win7 = 0
+        kpi_win10 = 0
+        kpi_tareas_hoy = 0
+        kpi_tareas_pendientes_count = 0
+        cat_labels = []
+        cat_values = []
+
+    return render_template(
+        "graficos.html",
+        kpi_total_activas=kpi_total_activas,
+        kpi_total_graveyard=kpi_total_graveyard,
+        kpi_alerta_ram=kpi_alerta_ram,
+        kpi_sin_impresora=kpi_sin_impresora,
+        kpi_impresora_red=kpi_impresora_red,
+        kpi_win7=kpi_win7,
+        kpi_win10=kpi_win10,
+        kpi_tareas_hoy=kpi_tareas_hoy,
+        kpi_tareas_pendientes_count=kpi_tareas_pendientes_count,
+        cat_labels=cat_labels,
+        cat_values=cat_values,
+        hostname=socket.gethostname()
+    )
+
 @app.route("/", methods=["GET"])
 def dashboard():
     """Lista todas las PCs (activas y en cementerio) + KPIs + filtros + paginado."""
     pcs_data = []
-    kpi_total_activas = 0
-    kpi_total_graveyard = 0
-    kpi_alerta_ram = 0
-    kpi_sin_impresora = 0
-    kpi_impresora_red = 0
-    kpi_win7 = 0
-    kpi_win10 = 0
+    # KPIs se movieron a /graficos, inicializamos a 0 por si jinja los pide (aunque los quitaremos del template)
+    kpi_tareas_hoy = 0
+
 
     # Filtros
     q = request.args.get("q", "").strip()
@@ -425,7 +525,7 @@ def dashboard():
 
             pcs_data = [dict(row) for row in rows]
 
-            # --- CALCULO GLOBAL DE KPIS (fuera de paginación) ---
+            # --- RESTAURADO: CALCULO GLOBAL DE KPIS PARA DASHBOARD ---
             # 1. Total Activas (Excluyendo PC Generica)
             kpi_total_activas = conn.execute(
                 "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name != 'PC Generica'"
@@ -436,8 +536,7 @@ def dashboard():
                 "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'"
             ).fetchone()["c"]
 
-            # 3. Alertas (RAM, Sin Impresora, Impresora Red) - Solo sobre activos (y no generica)
-            #    Asumimos que las alertas interesan sobre las máquinas activas.
+            # 3. Alertas (RAM, Sin Impresora, Impresora Red)
             kpi_alerta_ram = conn.execute(
                 "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name != 'PC Generica'"
             ).fetchone()["c"]
@@ -450,12 +549,11 @@ def dashboard():
                 "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name != 'PC Generica'"
             ).fetchone()["c"]
 
-            # 4. OS Versions (Win 7 vs Win 10/11) - Sobre activos
+            # 4. OS Versions
             kpi_win7 = conn.execute(
                 "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE '%Windows 7%'"
             ).fetchone()["c"]
             
-            # Win 10 o 11
             kpi_win10 = conn.execute(
                 "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE '%Windows 10%' OR os_name LIKE '%Windows 11%')"
             ).fetchone()["c"]
@@ -464,20 +562,9 @@ def dashboard():
             kpi_tareas_hoy = conn.execute(
                 "SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = DATE('now', 'localtime')"
             ).fetchone()["c"]
-
-            # 6. Tareas por Categoria
-            rows_cats = conn.execute("SELECT categoria, COUNT(*) as c FROM tasks GROUP BY categoria").fetchall()
-            # Convertir a dos listas para Chart.js o pasar dict
-            # Lo pasaremos como dict y lo procesamos en JS, o listas separadas.
-            # Mejor listas separadas para facilitar jinja
-            cat_labels = []
-            cat_values = []
-            for r in rows_cats:
-                cat_name = r["categoria"] if r["categoria"] else "Sin Categoría"
-                if cat_name == "General":
-                    continue
-                cat_labels.append(cat_name)
-                cat_values.append(r["c"])
+            
+            # (Opcional) Si 'localtime' da problemas en producción/docker, usar DATE('now') o gestionar zona horaria en python.
+            # Como corre en local Windows del usuario, 'localtime' debería tomar la hora del sistema.
             
             # (Opcional) Si 'localtime' da problemas en producción/docker, usar DATE('now') o gestionar zona horaria en python.
             # Como corre en local Windows del usuario, 'localtime' debería tomar la hora del sistema.
@@ -514,8 +601,8 @@ def dashboard():
         hostname=socket.gethostname(),
         technicians=technicians_list,
         kpi_tareas_hoy=kpi_tareas_hoy,
-        cat_labels=cat_labels,
-        cat_values=cat_values
+        cat_labels=[], # Charts removed from main
+        cat_values=[]
     )
 
 
