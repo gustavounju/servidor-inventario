@@ -459,8 +459,8 @@
 
             <!-- Cementerio -->
             <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
-                <a href="{{ url_for('view_cementerio') }}" class="text-decoration-none"
-                    title="Ver equipos dados de baja">
+                <a href="{% if request.path == '/cementerio' or request.args.get('estado') == 'False' %}{{ url_for('dashboard') }}{% else %}{{ url_for('view_cementerio') }}{% endif %}"
+                    class="text-decoration-none" title="Ver equipos dados de baja">
                     <div
                         class="card text-bg-light kpi-toggle h-100 {% if request.path == '/cementerio' or request.args.get('estado') == 'False' %}kpi-on{% endif %}">
                         <div class="card-body py-2 text-center">
