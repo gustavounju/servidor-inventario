@@ -1,7 +1,7 @@
 # --- Script de DEBUG Inventario (Verifica envío de datos) ---
-$UrlBase       = "http://10.15.2.251:5000"
+$UrlBase = "http://localhost:5000"
 $UrlInventario = "$UrlBase/submit_inventory"
-$PC_Nombre     = $env:COMPUTERNAME
+$PC_Nombre = $env:COMPUTERNAME
 
 Clear-Host
 Write-Host "==========================================" -ForegroundColor Cyan
@@ -14,7 +14,8 @@ Write-Host "[1] Verificando identidad del equipo..." -ForegroundColor Yellow
 Write-Host "    Nombre detectado: '$PC_Nombre'" -ForegroundColor White
 if ($PC_Nombre -ne "SISTEMAS-106") {
     Write-Warning "    ATENCION: El script detecta el nombre '$PC_Nombre', no 'SISTEMAS-106'."
-} else {
+}
+else {
     Write-Host "    Nombre correcto." -ForegroundColor Green
 }
 Write-Host ""
@@ -25,12 +26,14 @@ try {
     $test = Test-NetConnection -ComputerName 10.15.2.251 -Port 5000
     if ($test.TcpTestSucceeded) {
         Write-Host "    Conectividad TCP OK." -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "    FALLO DE CONEXION TCP." -ForegroundColor Red
         Write-Host "    No se puede contactar al servidor. Revisa red/firewall."
         exit
     }
-} catch {
+}
+catch {
     Write-Warning "    No se pudo ejecutar Test-NetConnection (¿PowerShell antiguo?). Saltando check..."
 }
 Write-Host ""
@@ -44,7 +47,7 @@ $payload = @{
     Usuario_Actual = $env:USERNAME
     Fecha_Reporte  = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
     Sistema        = @{
-        OsName    = "Windows Debug Mode"
+        OsName     = "Windows Debug Mode"
         Procesador = "CPU Genetico Debug"
         "RAM (GB)" = 8
     }
@@ -78,12 +81,14 @@ try {
         Write-Host ""
         Write-Host "    CONCLUSION: El servidor recibió y aceptó los datos." -ForegroundColor Green
         Write-Host "    Si no ves la PC en la web, revisa el filtro de 'Activos/Inactivos' o busca por nombre."
-    } else {
+    }
+    else {
         Write-Host ""
         Write-Host "    ATENCION: El servidor respondió pero no dijo 'success'. Revisa el mensaje arriba." -ForegroundColor Magenta
     }
 
-} catch {
+}
+catch {
     Write-Host "    ERROR FATAL AL ENVIAR:" -ForegroundColor Red
     Write-Host "    $($_.Exception.Message)" -ForegroundColor Red
     

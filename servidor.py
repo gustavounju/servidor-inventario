@@ -1261,6 +1261,181 @@ def reactivate_pc(pc_name):
 
 # ----------------- API: inventario -----------------
 
+
+def process_inventory_data(data):
+    """Lógica central para procesar el JSON de inventario e insertar/actualizar en BD."""
+    pc_name = data.get("PC_Nombre")
+    if not pc_name:
+        raise ValueError("Falta PC_Nombre en el JSON")
+
+    last_user = data.get("Usuario_Actual", "N/A")
+    fecha_raw = data.get("Fecha_Reporte", str(datetime.datetime.now()))
+    last_report = fecha_raw["value"] if isinstance(fecha_raw, dict) else str(fecha_raw)
+
+    sistema = data.get("Sistema", {})
+    os_name = sistema.get("OsName", "N/A")
+    processor = sistema.get("Procesador", "N/A")
+    ram_gb = sistema.get("RAM (GB)", 0)
+
+    # Red
+    red = data.get("Red", [])
+    ip_address = red[0].get("IPAddress") if red else "N/A"
+
+    # Otros detalles
+    ram_detalles = data.get("RAM_Detalles", "N/A")
+    disk_models = data.get("Disk_Models", "N/A")
+    disk_speeds_rpm = data.get("Disk_Speeds_RPM", "N/A")
+    motherboard_model = data.get("Motherboard_Model", "N/A")
+    printer_model = data.get("Printer_Model", "N/A")
+    printer_port = data.get("Printer_Port", "N/A")
+    monitors = data.get("Monitors", "N/A")
+
+    # Calidad de conexión (desactivada, dejamos N/A)
+    ping_ms = "N/A"
+    ping_loss_pct = "N/A"
+
+    # ------------ ALERTAS ------------
+
+    # RAM baja
+    try:
+        ram_val = float(ram_gb)
+    except Exception:
+        ram_val = 0.0
+    alerta_ram_baja = 1 if ram_val < 8 else 0
+
+    # Impresoras
+    pm = (printer_model or "").upper()
+    pp = (printer_port or "").upper()
+
+    sin_modelo = pm in ("", "N/A", "NINGUNA")
+
+    # Impresoras virtuales típicas
+    es_virtual = ("PDF" in pm) or ("XPS" in pm) or ("ONENOTE" in pm)
+
+    es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp)
+    es_local = pp.startswith("USB") or pp.startswith("LPT")
+
+    # Sin impresora física propia:
+    if sin_modelo or es_virtual:
+        alerta_sin_impresora = 1
+    else:
+        alerta_sin_impresora = 0
+
+    # Solo impresora en red (física)
+    alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red and not es_local) else 0
+
+    # JSON completo
+    full_json = json.dumps(data, ensure_ascii=False)
+
+    sql = """
+    INSERT INTO pcs (
+        pc_name,
+        os_name,
+        processor,
+        ram_gb,
+        ip_address,
+        last_user,
+        last_report,
+        ram_detalles,
+        disk_models,
+        disk_speeds_rpm,
+        motherboard_model,
+        monitors,
+        printer_model,
+        printer_port,
+        ping_ms,
+        ping_loss_pct,
+        alerta_ram_baja,
+        alerta_sin_impresora,
+        alerta_impresora_red,
+        is_active,
+        full_json_data
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'True', ?)
+    ON CONFLICT(pc_name) DO UPDATE SET
+        os_name = excluded.os_name,
+        processor = excluded.processor,
+        ram_gb = excluded.ram_gb,
+        ip_address = excluded.ip_address,
+        last_user = excluded.last_user,
+        last_report = excluded.last_report,
+        ram_detalles = excluded.ram_detalles,
+        disk_models = excluded.disk_models,
+        disk_speeds_rpm = excluded.disk_speeds_rpm,
+        motherboard_model = excluded.motherboard_model,
+        monitors = excluded.monitors,
+        printer_model = excluded.printer_model,
+        printer_port = excluded.printer_port,
+        ping_ms = excluded.ping_ms,
+        ping_loss_pct = excluded.ping_loss_pct,
+        alerta_ram_baja = excluded.alerta_ram_baja,
+        alerta_sin_impresora = excluded.alerta_sin_impresora,
+        alerta_impresora_red = excluded.alerta_impresora_red,
+        full_json_data = excluded.full_json_data
+    """
+
+    with get_db_connection() as conn:
+        # 1. Detectar cambios antes del UPDATE
+        current_pc = conn.execute("SELECT * FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+        
+        if current_pc:
+            fields_to_check = {
+                "ram_gb": str(current_pc["ram_gb"]),
+                "disk_models": str(current_pc["disk_models"]),
+                "processor": str(current_pc["processor"]),
+                "os_name": str(current_pc["os_name"]),
+                "ip_address": str(current_pc["ip_address"])
+            }
+            
+            new_values_map = {
+                "ram_gb": str(ram_gb),
+                "disk_models": str(disk_models),
+                "processor": str(processor),
+                "os_name": str(os_name),
+                "ip_address": str(ip_address)
+            }
+
+            for field, old_val in fields_to_check.items():
+                new_val = new_values_map.get(field, "N/A")
+                if old_val.strip() != new_val.strip():
+                    print(f"CAMBIO DETECTADO en {pc_name}: {field} de '{old_val}' a '{new_val}'")
+                    conn.execute(
+                        "INSERT INTO audit_logs (pc_name, field, old_value, new_value, changed_at) VALUES (?, ?, ?, ?, datetime('now', '-3 hours'))",
+                        (pc_name, field, old_val, new_val)
+                    )
+
+        # 2. Ejecutar el Upsert
+        conn.execute(
+            sql,
+            (
+                pc_name,
+                os_name,
+                processor,
+                ram_gb,
+                ip_address,
+                last_user,
+                last_report,
+                ram_detalles,
+                disk_models,
+                disk_speeds_rpm,
+                motherboard_model,
+                monitors,
+                printer_model,
+                printer_port,
+                ping_ms,
+                ping_loss_pct,
+                alerta_ram_baja,
+                alerta_sin_impresora,
+                alerta_impresora_red,
+                full_json,
+            ),
+        )
+        conn.commit()
+
+    print(f"Inventario guardado / actualizado: {pc_name}")
+    return pc_name
+
+
 @app.route("/submit_inventory", methods=["POST"])
 def receive_inventory():
     """Recibe JSON de inventario y hace upsert en pcs."""
@@ -1271,185 +1446,46 @@ def receive_inventory():
         except Exception:
             data = json.loads(raw_data.decode("utf-16"))
 
-        pc_name = data.get("PC_Nombre")
-        if not pc_name:
-            return jsonify({"status": "error", "message": "Falta PC_Nombre"}), 400
-
-        last_user = data.get("Usuario_Actual", "N/A")
-        fecha_raw = data.get("Fecha_Reporte", str(datetime.datetime.now()))
-        last_report = fecha_raw["value"] if isinstance(fecha_raw, dict) else str(fecha_raw)
-
-        sistema = data.get("Sistema", {})
-        os_name = sistema.get("OsName", "N/A")
-        processor = sistema.get("Procesador", "N/A")
-        ram_gb = sistema.get("RAM (GB)", 0)
-
-        # Red
-        red = data.get("Red", [])
-        ip_address = red[0].get("IPAddress") if red else "N/A"
-
-        # Otros detalles
-        ram_detalles = data.get("RAM_Detalles", "N/A")
-        disk_models = data.get("Disk_Models", "N/A")
-        disk_speeds_rpm = data.get("Disk_Speeds_RPM", "N/A")
-        motherboard_model = data.get("Motherboard_Model", "N/A")
-        printer_model = data.get("Printer_Model", "N/A")
-        printer_port = data.get("Printer_Port", "N/A")
-        monitors = data.get("Monitors", "N/A")
-
-        # Calidad de conexión (desactivada, dejamos N/A)
-        ping_ms = "N/A"
-        ping_loss_pct = "N/A"
-
-        # ------------ ALERTAS ------------
-
-        # RAM baja
-        try:
-            ram_val = float(ram_gb)
-        except Exception:
-            ram_val = 0.0
-        alerta_ram_baja = 1 if ram_val < 8 else 0
-
-        # Impresoras
-        pm = (printer_model or "").upper()
-        pp = (printer_port or "").upper()
-
-        sin_modelo = pm in ("", "N/A", "NINGUNA")
-
-        # Impresoras virtuales típicas
-        es_virtual = ("PDF" in pm) or ("XPS" in pm) or ("ONENOTE" in pm)
-
-        es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp)
-        es_local = pp.startswith("USB") or pp.startswith("LPT")
-
-        # Sin impresora física propia:
-        # - sin modelo
-        # - o solo impresora virtual (PDF/XPS/etc.)
-        if sin_modelo or es_virtual:
-            alerta_sin_impresora = 1
-        else:
-            alerta_sin_impresora = 0
-
-        # Solo impresora en red (física)
-        alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red and not es_local) else 0
-
-        # JSON completo
-        full_json = json.dumps(data, ensure_ascii=False)
-
-        sql = """
-        INSERT INTO pcs (
-            pc_name,
-            os_name,
-            processor,
-            ram_gb,
-            ip_address,
-            last_user,
-            last_report,
-            ram_detalles,
-            disk_models,
-            disk_speeds_rpm,
-            motherboard_model,
-            monitors,
-            printer_model,
-            printer_port,
-            ping_ms,
-            ping_loss_pct,
-            alerta_ram_baja,
-            alerta_sin_impresora,
-            alerta_impresora_red,
-            is_active,
-            full_json_data
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'True', ?)
-        ON CONFLICT(pc_name) DO UPDATE SET
-            os_name = excluded.os_name,
-            processor = excluded.processor,
-            ram_gb = excluded.ram_gb,
-            ip_address = excluded.ip_address,
-            last_user = excluded.last_user,
-            last_report = excluded.last_report,
-            ram_detalles = excluded.ram_detalles,
-            disk_models = excluded.disk_models,
-            disk_speeds_rpm = excluded.disk_speeds_rpm,
-            motherboard_model = excluded.motherboard_model,
-            monitors = excluded.monitors,
-            printer_model = excluded.printer_model,
-            printer_port = excluded.printer_port,
-            ping_ms = excluded.ping_ms,
-            ping_loss_pct = excluded.ping_loss_pct,
-            alerta_ram_baja = excluded.alerta_ram_baja,
-            alerta_sin_impresora = excluded.alerta_sin_impresora,
-            alerta_impresora_red = excluded.alerta_impresora_red,
-            full_json_data = excluded.full_json_data
-        """
-
-        with get_db_connection() as conn:
-            # 1. Detectar cambios antes del UPDATE
-            # Obtenemos el registro actual
-            current_pc = conn.execute("SELECT * FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
-            
-            if current_pc:
-                # Lista de campos a auditar
-                fields_to_check = {
-                    "ram_gb": str(current_pc["ram_gb"]),
-                    "disk_models": str(current_pc["disk_models"]),
-                    "processor": str(current_pc["processor"]),
-                    "os_name": str(current_pc["os_name"]),
-                    "ip_address": str(current_pc["ip_address"])
-                }
-                
-                new_values_map = {
-                    "ram_gb": str(ram_gb),
-                    "disk_models": str(disk_models),
-                    "processor": str(processor),
-                    "os_name": str(os_name),
-                    "ip_address": str(ip_address)
-                }
-
-                for field, old_val in fields_to_check.items():
-                    new_val = new_values_map.get(field, "N/A")
-                    # Normalizamos para evitar falsos positivos por espacios o diferencias mínimas
-                    if old_val.strip() != new_val.strip():
-                        print(f"CAMBIO DETECTADO en {pc_name}: {field} de '{old_val}' a '{new_val}'")
-                        conn.execute(
-                            "INSERT INTO audit_logs (pc_name, field, old_value, new_value, changed_at) VALUES (?, ?, ?, ?, datetime('now', '-3 hours'))",
-                            (pc_name, field, old_val, new_val)
-                        )
-
-            # 2. Ejecutar el Upsert
-            conn.execute(
-                sql,
-                (
-                    pc_name,
-                    os_name,
-                    processor,
-                    ram_gb,
-                    ip_address,
-                    last_user,
-                    last_report,
-                    ram_detalles,
-                    disk_models,
-                    disk_speeds_rpm,
-                    motherboard_model,
-                    monitors,
-                    printer_model,
-                    printer_port,
-                    ping_ms,
-                    ping_loss_pct,
-                    alerta_ram_baja,
-                    alerta_sin_impresora,
-                    alerta_impresora_red,
-                    full_json,
-                ),
-            )
-            conn.commit()
-
-        print(f"Inventario guardado / actualizado: {pc_name}")
+        process_inventory_data(data)
         return jsonify({"status": "success"}), 200
 
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 400
     except Exception as exc:
-        print(f"ERROR CRÍTICO EN SERVER: {exc}")
+        print(f"Error procesando inventario: {exc}")
         return jsonify({"status": "error", "message": str(exc)}), 500
+
+
+@app.route("/upload_manual", methods=["POST"])
+def upload_manual_inventory():
+    """Permite subir un archivo JSON manualmente (Modo Offline)."""
+    if 'file' not in request.files:
+        return redirect(url_for('dashboard'))
+    
+    file = request.files['file']
+    if file.filename == '':
+        return redirect(url_for('dashboard'))
+
+    if file:
+        try:
+            # Leer el archivo
+            content = file.read()
+            # Intentar decodificar (puede venir en utf-8 o utf-16 desde powershell)
+            try:
+                data = json.loads(content.decode("utf-8"))
+            except:
+                data = json.loads(content.decode("utf-16"))
+            
+            pc_name = process_inventory_data(data)
+            # Podríamos añadir un flash message aquí si tuviéramos soporte, 
+            # pero por ahora redirigimos.
+            print(f"Manual upload success for {pc_name}")
+        except Exception as e:
+            print(f"Error en carga manual: {e}")
+            
+        return redirect(url_for('dashboard'))
+
+
 
 
 # ----------------- API: logs -----------------
@@ -1657,7 +1693,21 @@ def install_page():
 @app.route("/download/script")
 def download_client_script():
     try:
-        return send_file("inventario.ps1", as_attachment=True, download_name="inventario.ps1")
+        # Leemos el archivo original
+        with open("inventario.ps1", "r", encoding="utf-8") as f:
+            content = f.read()
+            
+        # Reemplazamos 'localhost:5000' por la dirección actual (host:puerto)
+        # Esto permite que si entras por 192.168.1.X, el script se baje con esa IP.
+        current_host = request.host
+        modified_content = content.replace("localhost:5000", current_host)
+        
+        # Servimos el contenido modificado desde memoria
+        mem = BytesIO()
+        mem.write(modified_content.encode("utf-8"))
+        mem.seek(0)
+        
+        return send_file(mem, as_attachment=True, download_name="inventario.ps1")
     except Exception as e:
         return f"Error: {e}", 404
 

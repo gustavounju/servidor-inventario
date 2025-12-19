@@ -175,6 +175,14 @@ try {
         if ($defaultPrinter) {
             $printerModel = $defaultPrinter.Name
             $printerPort = $defaultPrinter.PortName
+
+            # Detectar tipo de puerto
+            if ($printerPort -like "USB*" -or $printerPort -like "LPT*") { 
+                $printerPort += " (Local)" 
+            }
+            elseif ($printerPort -like "*IP_*" -or $printerPort -like "WSD-*" -or $printerPort -like "\\*") { 
+                $printerPort += " (Red)" 
+            }
         }
     }
     catch {}
@@ -244,7 +252,7 @@ try {
     # -----------------------------------------------------------
     # ENVÍO AL SERVIDOR (WEBCLIENT PARA COMPATIBILIDAD)
     # -----------------------------------------------------------
-    $servidor = "http://10.15.2.251:5000/submit_inventory"
+    $servidor = "http://localhost:5000/submit_inventory"
     Write-Host "Enviando a $servidor ..."
 
     try {
@@ -270,7 +278,7 @@ try {
     
         # Backup Local de JSON en Escritorio
         $desktopPath = [Environment]::GetFolderPath("Desktop")
-        $backupJson = "$desktopPath\Error_Inventario_$pcNombre.json"
+        $backupJson = "$desktopPath\Inventario_$pcNombre.json"
     
         try {
             [System.IO.File]::WriteAllText($backupJson, $json)

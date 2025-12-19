@@ -1,4 +1,4 @@
-# Guía de Despliegue en Ubuntu 24.04 (IP: 10.15.2.251)
+# Guía de Despliegue en Ubuntu 24.04 (IP: <IP_DEL_SERVIDOR>)
 
 Sigue estos pasos para poner en marcha el servidor de inventario en tu nuevo Linux.
 
@@ -25,7 +25,7 @@ Puedes usar SCP, WinSCP o FileZilla. Aquí tienes los pasos para **FileZilla**:
 2.  **Nuevo Sitio**: Crea uno llamado "Servidor Ubuntu".
 3.  **Configuración**:
     *   **Protocolo**: SFTP - SSH File Transfer Protocol
-    *   **Servidor**: `10.15.2.251`
+    *   **Servidor**: `<IP_DEL_SERVIDOR>`
     *   **Usuario**: `root` (o el usuario que hayas configurado en la instalación)
     *   **Contraseña**: Tu contraseña de root/usuario.
 4.  **Conectar**: Acepta la clave del servidor si es la primera vez.
@@ -77,7 +77,7 @@ sudo ufw allow 5000
 ## 6. Probar
 
 Desde tu navegador ingresa a:
-`http://10.15.2.251:5000`
+`http://<IP_DEL_SERVIDOR>:5000`
 
 ¡Y listo! El script `inventario.ps1` ya fue actualizado para apuntar a esta IP.
 
