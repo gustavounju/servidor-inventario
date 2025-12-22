@@ -1589,9 +1589,17 @@ def api_mobile_create_task():
         technician = data.get("technician")
         solicitante_input = data.get("solicitante", "").strip()
         is_done = data.get("is_done", False)
+        
+        # Nuevos campos para infraestructura
+        es_infraestructura = data.get("es_infraestructura", False)
+        tecnico_ejecutor = data.get("tecnico", "")
 
         if not descripcion or not technician:
             return jsonify({"status": "error", "message": "Faltan datos"}), 400
+
+        # Si es tarea de infraestructura y no tiene PC asignada, usar "Infraestructura"
+        if es_infraestructura and not pc_name:
+            pc_name = "Infraestructura"
 
         # Predict category if valid
         categoria = predict_category(descripcion)
@@ -1599,11 +1607,16 @@ def api_mobile_create_task():
         estado = "Hecha" if is_done else "Pendiente"
         created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         completed_at = created_at if is_done else None
-        completed_by = technician if is_done else None
+        
+        # Si hay técnico ejecutor y está marcada como hecha, usar ese técnico
+        if is_done and tecnico_ejecutor:
+            completed_by = tecnico_ejecutor
+        elif is_done:
+            completed_by = technician
+        else:
+            completed_by = None
         
         # Logic for Solicitante
-        # If user provided a name, use it.
-        # If empty, default to "Presencial/Teléfono" or similar generic, NOT the technician name.
         if solicitante_input:
             solicitante = solicitante_input
         else:

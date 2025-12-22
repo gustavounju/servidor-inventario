@@ -523,6 +523,11 @@
             if (!solicitante) return alert("Falta solicitante");
             if (done && !pc) return alert("Para finalizar ya, elige PC.");
 
+            // Obtener datos adicionales de la IA si existen
+            const modal = document.getElementById('addTaskModal');
+            const tecnico = modal.dataset.tecnico || "";
+            const esInfra = (pc === 'Infraestructura');
+
             try {
                 const res = await fetch('/api/mobile/create_task', {
                     method: 'POST',
@@ -532,12 +537,16 @@
                         solicitante: solicitante,
                         pc_name: pc,
                         technician: currentUser,
-                        is_done: done
+                        is_done: done,
+                        es_infraestructura: esInfra,
+                        tecnico: tecnico
                     })
                 });
                 const json = await res.json();
                 if (json.status === 'success') {
                     bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+                    // Limpiar dataset
+                    modal.dataset.tecnico = "";
                     loadData();
                     if (done) alert("Guardado y finalizado.");
                 } else {
@@ -694,6 +703,24 @@
                     const data = json.data;
                     document.getElementById('taskDesc').value = capitalize(data.descripcion || text);
                     document.getElementById('taskSolicitante').value = capitalize(data.solicitante || "");
+
+                    // Si es tarea de infraestructura, pre-seleccionar "Infraestructura"
+                    if (data.es_infraestructura) {
+                        const pcSelect = document.getElementById('taskPC');
+                        // Buscar la opción "Infraestructura" en el dropdown
+                        for (let i = 0; i < pcSelect.options.length; i++) {
+                            if (pcSelect.options[i].value === 'Infraestructura') {
+                                pcSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Guardar el técnico ejecutor para enviarlo al backend
+                    if (data.tecnico) {
+                        console.log("Técnico detectado:", data.tecnico);
+                        document.getElementById('addTaskModal').dataset.tecnico = data.tecnico;
+                    }
                 } else {
                     // Fallback
                     document.getElementById('taskDesc').value = capitalize(text);
