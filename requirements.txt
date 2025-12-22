@@ -1,3 +1,7 @@
 Flask
 openpyxl
 fpdf2
+
+waitress
+
+google-generativeai

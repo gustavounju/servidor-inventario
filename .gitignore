@@ -7,3 +7,17 @@ env/
 venv/
 *.db
 .DS_Store
+# Certificados SSL
+cert.pem
+key.pem
+# Bases de datos y backups
+*.db
+*.db.old
+*.db.bak
+*.backup
+# Logs
+logs/
+# API Keys
+voice_processor.py
+# Tests temporales
+test_*.py

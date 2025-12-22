@@ -204,6 +204,29 @@ def migrate_db_v5():
         )
     print("Migración v5 verificada.")
 
+@app.route("/api/mobile/parse_voice", methods=["POST"])
+def api_parse_voice():
+    """Recibe audio transcrito/texto y usa IA para extraer estructura."""
+    data = request.json
+    raw_text = data.get("text", "")
+    
+    if not raw_text:
+        return jsonify({"status": "error", "message": "No text provided"})
+
+    try:
+        from voice_processor import process_voice_command
+        result = process_voice_command(raw_text)
+        return jsonify({"status": "success", "data": result})
+    except ImportError:
+         return jsonify({"status": "error", "message": "Module voice_processor missing"})
+    except Exception as e:
+        print(f"Error AI Parse: {e}")
+        # Fallback a lo básico
+        return jsonify({
+            "status": "success", 
+            "data": {"descripcion": raw_text, "solicitante": ""}
+        })
+
 def migrate_db_v6():
     """Migra BD a v6: agregar columna assigned_to a tasks."""
     print("Verificando migración de DB v6...")
@@ -1720,9 +1743,19 @@ def download_client_launcher():
 
 
 if __name__ == "__main__":
-    init_db()
-    migrate_db_v2()
-    migrate_db_v3()
-    migrate_db_v4()
-    print("Servidor Inventario GOLD iniciado en http://0.0.0.0:5000")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    import platform
+    sistema = platform.system()
+    
+    if sistema == "Windows":
+        print("\n" + "="*64)
+        print(" MODO DESARROLLO (Windows)")
+        print(" Iniciando servidor Flask (Debug On)...")
+        print("="*64)
+        app.run(host="0.0.0.0", port=5000, debug=True)
+    else:
+        print("\n" + "="*64)
+        print(" MODO PRODUCCIÓN (Linux)")
+        print(" Iniciando servidor Flask con HTTPS...")
+        print("="*64)
+        app.run(host="0.0.0.0", port=5000, debug=True, 
+                ssl_context=('cert.pem', 'key.pem'))
