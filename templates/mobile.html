@@ -220,6 +220,14 @@
                         <div class="mb-3">
                             <textarea id="taskDesc" class="form-control" rows="3" placeholder="¿Qué hay que hacer?"
                                 required></textarea>
+                            <div class="d-grid mt-2">
+                                <button type="button" class="btn btn-outline-secondary" onclick="startVoiceInput()">
+                                    <i class="bi bi-mic-fill"></i> Hablar para llenar
+                                </button>
+                                <small class="text-muted text-center mt-1" style="font-size: 0.75rem;">
+                                    Diga: "Hacer algo <strong>solicitado por</strong> Alguien"
+                                </small>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">¿Quién lo solicitó?</label>
@@ -614,6 +622,97 @@
             gain.gain.value = 0.8; // High volume for alert
             osc.start();
             setTimeout(() => { osc.stop(); ctx.close(); }, dur * 1000);
+        }
+
+        // --- VOICE INPUT ---
+        function startVoiceInput() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("Tu navegador no soporta reconocimiento de voz (Prueba Chrome/Edge).");
+                return;
+            }
+
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            // Aumentar tiempo: continuous=true mantiene el mic abierto un poco más, 
+            // aunque para comandos cortos false suele ser mejor, el usuario pide mas tiempo.
+            // Pero API web suele cortar igual en silencio. Vamos a intentar manejarlo por UI.
+            recognition.continuous = false;
+
+            // Visual feedback
+            const btn = document.querySelector('button[onclick="startVoiceInput()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-mic-fill text-danger"></i> Escuchando... (Hable ahora)';
+            btn.disabled = true;
+
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const speechResult = event.results[0][0].transcript;
+                console.log("Escuchado: " + speechResult);
+                parseVoiceInput(speechResult);
+            };
+
+            recognition.onspeechend = () => {
+                recognition.stop();
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Error Speech: " + event.error);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                if (event.error === 'no-speech') {
+                    // Ignorar silencio
+                } else if (event.error === 'not-allowed') {
+                    alert('🚫 Acceso denegado al micrófono.\n\nNOTA: Si usa Chrome en Android por IP (no localhost), Google bloquea el micrófono por seguridad (requiere HTTPS).\n\nSolución rápida: Vaya a chrome://flags, busque "Insecure origins treated as secure" y agregue esta IP:port.');
+                } else {
+                    alert('Error reconocimiento: ' + event.error);
+                }
+            };
+        }
+
+        async function parseVoiceInput(text) {
+            // Reemplazo de Regex local por llamada a API con IA (Gemini)
+            const btn = document.querySelector('button[onclick="startVoiceInput()"]');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando IA...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/mobile/parse_voice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!res.ok) throw new Error("Error API");
+                const json = await res.json();
+
+                if (json.status === 'success') {
+                    const data = json.data;
+                    document.getElementById('taskDesc').value = capitalize(data.descripcion || text);
+                    document.getElementById('taskSolicitante').value = capitalize(data.solicitante || "");
+                } else {
+                    // Fallback
+                    document.getElementById('taskDesc').value = capitalize(text);
+                }
+
+            } catch (e) {
+                console.error("AI Error:", e);
+                // Fallback silencioso a poner todo en descripción
+                document.getElementById('taskDesc').value = capitalize(text);
+                alert("Error conectando con IA. Se copió todo el texto.");
+            } finally {
+                // Restaurar botón
+                btn.innerHTML = '<i class="bi bi-mic-fill"></i> Hablar para llenar';
+                btn.disabled = false;
+            }
+        }
+
+        function capitalize(s) {
+            return s && s[0].toUpperCase() + s.slice(1);
         }
 
     </script>

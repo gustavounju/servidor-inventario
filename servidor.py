@@ -204,6 +204,29 @@ def migrate_db_v5():
         )
     print("Migración v5 verificada.")
 
+@app.route("/api/mobile/parse_voice", methods=["POST"])
+def api_parse_voice():
+    """Recibe audio transcrito/texto y usa IA para extraer estructura."""
+    data = request.json
+    raw_text = data.get("text", "")
+    
+    if not raw_text:
+        return jsonify({"status": "error", "message": "No text provided"})
+
+    try:
+        from voice_processor import process_voice_command
+        result = process_voice_command(raw_text)
+        return jsonify({"status": "success", "data": result})
+    except ImportError:
+         return jsonify({"status": "error", "message": "Module voice_processor missing"})
+    except Exception as e:
+        print(f"Error AI Parse: {e}")
+        # Fallback a lo básico
+        return jsonify({
+            "status": "success", 
+            "data": {"descripcion": raw_text, "solicitante": ""}
+        })
+
 def migrate_db_v6():
     """Migra BD a v6: agregar columna assigned_to a tasks."""
     print("Verificando migración de DB v6...")
