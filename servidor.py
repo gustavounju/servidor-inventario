@@ -1724,5 +1724,30 @@ if __name__ == "__main__":
     migrate_db_v2()
     migrate_db_v3()
     migrate_db_v4()
-    print("Servidor Inventario GOLD iniciado en http://0.0.0.0:5000")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    import platform
+    import sys
+
+    system_os = platform.system()
+    print(f"Sistema detectado: {system_os}")
+
+    # Detectar si estamos en Linux (Producción probable) o Windows (Dev)
+    if system_os == "Linux":
+        try:
+            from waitress import serve
+            print("----------------------------------------------------------------")
+            print(" MODO PRODUCCIÓN DETECTADO (Linux)")
+            print(" Iniciando servidor WSGI con Waitress...")
+            print("----------------------------------------------------------------")
+            serve(app, host="0.0.0.0", port=5000, threads=6)
+        except ImportError:
+            print("ADVERTENCIA: 'waitress' no está instalado.")
+            print("Ejecutando en modo desarrollo (Flask) por defecto.")
+            app.run(host="0.0.0.0", port=5000, debug=False)
+            
+    else:
+        # Windows o MacOS -> Modo Desarrollo
+        print("----------------------------------------------------------------")
+        print(f" MODO DESARROLLO ({system_os})")
+        print(" Iniciando servidor Flask (Debug On)...")
+        print("----------------------------------------------------------------")
+        app.run(host="0.0.0.0", port=5000, debug=True)
