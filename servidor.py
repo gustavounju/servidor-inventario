@@ -1755,6 +1755,21 @@ def download_client_launcher():
         return f"Error: {e}", 404
 
 
+@app.route("/download-cert")
+def download_certificate():
+    """Permite descargar el certificado SSL para instalarlo en dispositivos móviles."""
+    try:
+        return send_file(
+            "cert.pem",
+            as_attachment=True,
+            download_name="inventario-cert.crt",
+            mimetype="application/x-x509-ca-cert"
+        )
+    except Exception as e:
+        return f"Error: {e}", 404
+
+
+
 if __name__ == "__main__":
     import platform
     import threading
