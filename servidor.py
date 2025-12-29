@@ -1757,6 +1757,7 @@ def download_client_launcher():
 
 if __name__ == "__main__":
     import platform
+    import threading
     sistema = platform.system()
     
     if sistema == "Windows":
@@ -1768,7 +1769,24 @@ if __name__ == "__main__":
     else:
         print("\n" + "="*64)
         print(" MODO PRODUCCIÓN (Linux)")
-        print(" Iniciando servidor Flask con HTTPS...")
+        print(" Iniciando servidor Flask con HTTPS y HTTP...")
+        print(" - HTTPS: https://10.15.2.251:5000 (para PCs)")
+        print(" - HTTP:  http://10.15.2.251:8080 (para móviles)")
         print("="*64)
-        app.run(host="0.0.0.0", port=5000, debug=True, 
-                ssl_context=('cert.pem', 'key.pem'))
+        
+        # Función para ejecutar servidor HTTPS
+        def run_https():
+            app.run(host="0.0.0.0", port=5000, debug=False, 
+                    ssl_context=('cert.pem', 'key.pem'), use_reloader=False)
+        
+        # Función para ejecutar servidor HTTP
+        def run_http():
+            app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
+        
+        # Iniciar HTTPS en un thread separado
+        https_thread = threading.Thread(target=run_https, daemon=True)
+        https_thread.start()
+        
+        # Iniciar HTTP en el thread principal
+        run_http()
+
