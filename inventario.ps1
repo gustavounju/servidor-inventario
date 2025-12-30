@@ -27,6 +27,28 @@ catch {
 }
 
 # -----------------------------------------------------------
+# BYPASS DE VALIDACIÓN SSL (Para certificados autofirmados)
+# -----------------------------------------------------------
+try {
+    # Crear una clase que acepta todos los certificados
+    add-type @"
+        using System.Net;
+        using System.Security.Cryptography.X509Certificates;
+        public class TrustAllCertsPolicy : ICertificatePolicy {
+            public bool CheckValidationResult(
+                ServicePoint srvPoint, X509Certificate certificate,
+                WebRequest request, int certificateProblem) {
+                return true;
+            }
+        }
+"@
+    [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+}
+catch {
+    # Si falla (ej: ya existe la clase), continuar
+}
+
+# -----------------------------------------------------------
 # FUNCIÓN: ConvertTo-JsonCustom (Polyfill para PS 2.0)
 # -----------------------------------------------------------
 function ConvertTo-JsonCustom($InputObject) {
@@ -252,7 +274,7 @@ try {
     # -----------------------------------------------------------
     # ENVÍO AL SERVIDOR (WEBCLIENT PARA COMPATIBILIDAD)
     # -----------------------------------------------------------
-    $servidor = "http://localhost:5000/submit_inventory"
+    $servidor = "https://10.15.2.251:5000/submit_inventory"
     Write-Host "Enviando a $servidor ..."
 
     try {
