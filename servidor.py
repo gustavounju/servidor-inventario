@@ -1098,9 +1098,9 @@ def report_tasks_completed_pdf():
     pdf.set_fill_color(25, 135, 84) # Green header
     pdf.set_text_color(255)
     
-    # PC(20), Usuario(20), Desc(50), Solic(20), Tech(20), Fecha Creada(35)
+    # PC(28), Usuario(22), Desc(45), Solic(18), Tech(18), Fecha Creada(34)
     headers = ["PC", "Usuario", "Descripción", "Solic.", "Técnico", "Fecha Creada"]
-    w = [20, 20, 50, 20, 20, 35]
+    w = [28, 22, 45, 18, 18, 34]
     
     for i, h in enumerate(headers):
         pdf.cell(w[i], 8, h, 1, 0, 'C', fill=True)
@@ -1120,17 +1120,23 @@ def report_tasks_completed_pdf():
             else: user_display = raw_user
             
             desc = t["descripcion"]
-            if len(desc) > 35: desc = desc[:32] + "..."
+            if len(desc) > 30: desc = desc[:27] + "..."
 
             # Fecha y Hora CREACION en español
             created_at = t["created_at"] or ""
             fecha_hora = format_datetime_es(created_at)
+            
+            # Truncar textos para que quepan en las columnas
+            pc_name = str(t["pc_name"])[:16]  # Max 16 chars para PC
+            user_display = str(user_display)[:13]  # Max 13 chars para Usuario
+            solicitante = str(t["solicitante"] or "")[:11]  # Max 11 chars
+            tecnico = str(t["completed_by"] or "")[:11]  # Max 11 chars
 
-            pdf.cell(w[0], 7, str(t["pc_name"]), 1)
-            pdf.cell(w[1], 7, str(user_display)[:14], 1)
+            pdf.cell(w[0], 7, pc_name, 1)
+            pdf.cell(w[1], 7, user_display, 1)
             pdf.cell(w[2], 7, desc, 1)
-            pdf.cell(w[3], 7, str(t["solicitante"] or "")[:14], 1)
-            pdf.cell(w[4], 7, str(t["completed_by"] or "")[:12], 1)
+            pdf.cell(w[3], 7, solicitante, 1)
+            pdf.cell(w[4], 7, tecnico, 1)
             pdf.cell(w[5], 7, fecha_hora, 1, 1, 'C')
 
     pdf.ln(10)
