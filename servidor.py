@@ -989,6 +989,20 @@ def format_date_es(d_obj):
     # "formato con el nombre de l dia mejor" -> Lunes 14/12/2025 is concise and good.
     return f"{dias[d_obj.weekday()]} {d_obj.day:02d}/{d_obj.month:02d}/{d_obj.year}"
 
+def format_datetime_es(datetime_str):
+    """Convierte datetime string a formato español DD/MM/YYYY HH:MM"""
+    if not datetime_str:
+        return ""
+    try:
+        # Parsear formato: "2025-12-30 14:30:00"
+        dt_obj = datetime.datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+        return f"{dt_obj.day:02d}/{dt_obj.month:02d}/{dt_obj.year} {dt_obj.hour:02d}:{dt_obj.minute:02d}"
+    except:
+        # Si falla, intentar extraer solo la hora como fallback
+        if ' ' in datetime_str:
+            return datetime_str.split(' ')[1][:5]
+        return datetime_str
+
 class PDFReport(FPDF):
     def __init__(self, title="Reporte - Inventario GOLD", orientation='P', unit='mm', format='A4'):
         super().__init__(orientation, unit, format)
@@ -1084,9 +1098,9 @@ def report_tasks_completed_pdf():
     pdf.set_fill_color(25, 135, 84) # Green header
     pdf.set_text_color(255)
     
-    # PC(25), Usuario(25), Desc(65), Solic(25), Tech(25), Hora(20)
-    headers = ["PC", "Usuario", "Descripción", "Solic.", "Técnico", "Hora Creada"]
-    w = [25, 25, 65, 25, 25, 20]
+    # PC(20), Usuario(20), Desc(50), Solic(20), Tech(20), Fecha Creada(35)
+    headers = ["PC", "Usuario", "Descripción", "Solic.", "Técnico", "Fecha Creada"]
+    w = [20, 20, 50, 20, 20, 35]
     
     for i, h in enumerate(headers):
         pdf.cell(w[i], 8, h, 1, 0, 'C', fill=True)
@@ -1108,16 +1122,16 @@ def report_tasks_completed_pdf():
             desc = t["descripcion"]
             if len(desc) > 35: desc = desc[:32] + "..."
 
-            # Hora CREACION
+            # Fecha y Hora CREACION en español
             created_at = t["created_at"] or ""
-            hora = created_at.split(' ')[1][:5] if ' ' in created_at else ""
+            fecha_hora = format_datetime_es(created_at)
 
             pdf.cell(w[0], 7, str(t["pc_name"]), 1)
             pdf.cell(w[1], 7, str(user_display)[:14], 1)
             pdf.cell(w[2], 7, desc, 1)
             pdf.cell(w[3], 7, str(t["solicitante"] or "")[:14], 1)
             pdf.cell(w[4], 7, str(t["completed_by"] or "")[:12], 1)
-            pdf.cell(w[5], 7, hora, 1, 1, 'C')
+            pdf.cell(w[5], 7, fecha_hora, 1, 1, 'C')
 
     pdf.ln(10)
 
@@ -1129,8 +1143,8 @@ def report_tasks_completed_pdf():
 
     # Headers Pendientes (Sin PC ni Usuario)
     # Desc(80), Solic(40), Técnico(40), Hora(25) -> Total 185
-    headers_pend = ["Descripción", "Solic.", "Asignado a", "Hora Creada"]
-    w_pend = [80, 40, 40, 25]
+    headers_pend = ["Descripción", "Solic.", "Asignado a", "Fecha Creada"]
+    w_pend = [70, 30, 30, 35]
 
     pdf.set_font("Arial", "B", 9)
     pdf.set_fill_color(220, 53, 69) # Red header
@@ -1153,14 +1167,14 @@ def report_tasks_completed_pdf():
             if len(desc) > 50: desc = desc[:47] + "..."
 
             created_at = t["created_at"] or ""
-            hora = created_at.split(' ')[1][:5] if ' ' in created_at else ""
+            fecha_hora = format_datetime_es(created_at)
             
             assigned = t["assigned_to"] or "Sin Asignar"
 
             pdf.cell(w_pend[0], 7, desc, 1)
             pdf.cell(w_pend[1], 7, str(t["solicitante"] or "")[:20], 1)
             pdf.cell(w_pend[2], 7, str(assigned)[:20], 1)
-            pdf.cell(w_pend[3], 7, hora, 1, 1, 'C')
+            pdf.cell(w_pend[3], 7, fecha_hora, 1, 1, 'C')
 
 
     # Output
