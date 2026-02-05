@@ -360,9 +360,9 @@ def view_graphics():
     """Nueva página dedicada a KPIs y Gráficos."""
     try:
         with get_db_connection() as conn:
-            # 1. Total Activas (Excluyendo PC Generica)
+            # 1. Total Activas (Excluyendo PC Generica e Infraestructura)
             kpi_total_activas = conn.execute(
-                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name != 'PC Generica'"
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura')"
             ).fetchone()["c"]
 
             # 2. Total Cementerio
@@ -549,9 +549,9 @@ def dashboard():
             pcs_data = [dict(row) for row in rows]
 
             # --- RESTAURADO: CALCULO GLOBAL DE KPIS PARA DASHBOARD ---
-            # 1. Total Activas (Excluyendo PC Generica)
+            # 1. Total Activas (Excluyendo PC Generica e Infraestructura)
             kpi_total_activas = conn.execute(
-                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name != 'PC Generica'"
+                "SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura')"
             ).fetchone()["c"]
 
             # 2. Total Cementerio
