@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, Response, send_file
+from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify, make_response
 import json
 import os
 import sqlite3
@@ -10,8 +10,11 @@ from datetime import datetime as dt
 from io import BytesIO
 import socket
 from classifier import SimpleNaiveBayes, SEED_DATA
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
+# Aplicar ProxyFix para que Flask entienda que está detrás de (Nginx) y maneje bien HTTPS/URLs
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 # Inicializar IA
 ai_classifier = SimpleNaiveBayes()
 
