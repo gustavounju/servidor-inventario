@@ -17,13 +17,32 @@ catch {}
 # -----------------------------------------------------------
 # CONFIGURACIÓN PREVIA (SEGURIDAD Y RED)
 # -----------------------------------------------------------
-# Forzar TLS 1.2 (Protocolo 3072) usando casting para evitar error de parser en .NET viejos
+
+# FIX: ACTIVAR TLS 1.2 POR REGISTRO (CRÍTICO PARA WINDOWS 7)
 try {
-    # 3072 es el valor de Tls12. Usamos int para que no falle si el Enum no tiene el miembro definido.
+    # .NET 4.x
+    $path4 = 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319'
+    if (Test-Path $path4) {
+        New-ItemProperty -Path $path4 -Name 'SchUseStrongCrypto' -Value '1' -PropertyType 'DWord' -Force -ErrorAction SilentlyContinue | Out-Null
+        New-ItemProperty -Path $path4 -Name 'SystemDefaultTlsVersions' -Value '1' -PropertyType 'DWord' -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+
+    # .NET 2.0/3.5 (Default en Win7)
+    $path2 = 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727'
+    if (Test-Path $path2) {
+        New-ItemProperty -Path $path2 -Name 'SchUseStrongCrypto' -Value '1' -PropertyType 'DWord' -Force -ErrorAction SilentlyContinue | Out-Null
+        New-ItemProperty -Path $path2 -Name 'SystemDefaultTlsVersions' -Value '1' -PropertyType 'DWord' -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+} catch {
+    # Puede fallar si no hay permisos de admin, pero intentamos
+}
+
+# Forzar TLS 1.2 (Protocolo 3072) en la sesión actual
+try {
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 }
 catch {
-    # Ignorar si falla, el sistema usará su default
+    # Ignorar si falla
 }
 
 # -----------------------------------------------------------
