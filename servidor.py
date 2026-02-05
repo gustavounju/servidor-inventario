@@ -406,6 +406,11 @@ def view_graphics():
                  "SELECT COUNT(DISTINCT pc_name) as c FROM tasks WHERE estado != 'Hecha' AND pc_name IS NOT NULL AND pc_name != ''"
             ).fetchone()["c"]
 
+            # KPI Tareas Pendientes TOTAL (Asignadas + Sin Asignar)
+            kpi_tareas_pendientes_total = conn.execute(
+                "SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'"
+            ).fetchone()["c"]
+
 
             # 6. Tareas por Categoria (para Charts)
             rows_cats = conn.execute("SELECT categoria, COUNT(*) as c FROM tasks GROUP BY categoria").fetchall()
@@ -440,6 +445,7 @@ def view_graphics():
         kpi_win10 = 0
         kpi_tareas_hoy = 0
         kpi_tareas_pendientes_count = 0
+        kpi_tareas_pendientes_total = 0
         cat_labels = []
         cat_values = []
 
@@ -454,6 +460,7 @@ def view_graphics():
         kpi_win10=kpi_win10,
         kpi_tareas_hoy=kpi_tareas_hoy,
         kpi_tareas_pendientes_count=kpi_tareas_pendientes_count,
+        kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
         cat_labels=cat_labels,
         cat_values=cat_values,
         hostname=socket.gethostname()
@@ -465,6 +472,7 @@ def dashboard():
     pcs_data = []
     # KPIs se movieron a /graficos, inicializamos a 0 por si jinja los pide (aunque los quitaremos del template)
     kpi_tareas_hoy = 0
+    kpi_tareas_pendientes_total = 0
 
 
     # Filtros
@@ -585,6 +593,11 @@ def dashboard():
             kpi_tareas_hoy = conn.execute(
                 "SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = DATE('now', 'localtime')"
             ).fetchone()["c"]
+
+            # KPI Tareas Pendientes TOTAL (Asignadas + Sin Asignar)
+            kpi_tareas_pendientes_total = conn.execute(
+                "SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'"
+            ).fetchone()["c"]
             
             # (Opcional) Si 'localtime' da problemas en producción/docker, usar DATE('now') o gestionar zona horaria en python.
             # Como corre en local Windows del usuario, 'localtime' debería tomar la hora del sistema.
@@ -597,6 +610,7 @@ def dashboard():
         technicians_list = []
         unassigned_tasks = []
         unassigned_count = 0
+        kpi_tareas_pendientes_total = 0
 
     # Calcular total de páginas
     total_pages = (total_rows // per_page) + (1 if total_rows % per_page else 0)
@@ -624,6 +638,7 @@ def dashboard():
         hostname=socket.gethostname(),
         technicians=technicians_list,
         kpi_tareas_hoy=kpi_tareas_hoy,
+        kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
         cat_labels=[], # Charts removed from main
         cat_values=[]
     )

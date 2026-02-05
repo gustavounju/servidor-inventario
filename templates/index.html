@@ -239,7 +239,8 @@
             box-shadow: 0 0 0 0.2rem var(--kpi-shadow);
         }
 
-        animation-delay: 0.05s;
+        .kpi-row>div:nth-child(odd) {
+            animation-delay: 0.05s;
         }
 
         .kpi-row>div:nth-child(even) {
@@ -545,7 +546,7 @@
                     <div class="card-body py-2 text-center">
                         <div class="small text-uppercase">Tareas pendientes</div>
                         <div class="h4 mb-0">
-                            {{ pcs|selectattr('tareas_pendientes', 'gt', 0)|list|length }}
+                            {{ kpi_tareas_pendientes_total }}
                         </div>
                     </div>
                 </div>
