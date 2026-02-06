@@ -1219,8 +1219,20 @@ Start-Sleep -Seconds 10
                 return;
             }
 
+
+            // Asegurar puerto 5000 para el script de inventario
+            var urlForScript = baseUrl;
+            if (urlForScript.indexOf(':5000') === -1 && urlForScript.indexOf('10.15.2.251') !== -1) {
+                // Si es el servidor de producción y no tiene puerto, forzar 5000
+                urlForScript = urlForScript.replace('10.15.2.251', '10.15.2.251:5000');
+            }
+            // Si empieza con http: y no https:, forzar https para produccion
+            if (urlForScript.indexOf('http:') === 0 && urlForScript.indexOf('10.15.2.251') !== -1) {
+                urlForScript = urlForScript.replace('http:', 'https:');
+            }
+
             // Reemplazar el placeholder por la URL real del servidor
-            var texto = ta.value.replace(/__URL_BASE__/g, baseUrl);
+            var texto = ta.value.replace(/__URL_BASE__/g, urlForScript);
 
             var temp = document.createElement('textarea');
             temp.value = texto;
