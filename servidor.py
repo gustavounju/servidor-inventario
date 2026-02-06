@@ -767,7 +767,7 @@ def pc_detail(pc_name):
         ).fetchall()
 
         # Para el modal de migración (solo si es PC Generica, pero lo pasamos siempre por simplicidad o filtrado en jinja)
-        all_pcs = conn.execute("SELECT pc_name FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
+        all_pcs = conn.execute("SELECT pc_name, fuero, last_user FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
 
     if pc is None:
         abort(404)

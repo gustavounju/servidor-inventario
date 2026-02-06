@@ -344,7 +344,8 @@
                 <option value="">-- Seleccionar --</option>
                 {% for p in all_pcs %}
                 {% if p.pc_name != 'PC Generica' %}
-                <option value="{{ p.pc_name }}">{{ p.pc_name }}</option>
+                <option value="{{ p.pc_name }}">{{ p.pc_name }} | {{ p.fuero or '-' }} | {{ p.last_user or '?' }}
+                </option>
                 {% endif %}
                 {% endfor %}
               </select>
