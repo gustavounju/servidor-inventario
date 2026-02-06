@@ -1616,7 +1616,8 @@ Start-Sleep -Seconds 10
                             <select name="pc_name" class="form-select" required size="10">
                                 <option value="">Seleccione PC...</option>
                                 {% for pc in pcs %}
-                                <option value="{{ pc.pc_name }}">{{ pc.pc_name }} | {{ pc.last_user }}</option>
+                                <option value="{{ pc.pc_name }}">{{ pc.pc_name }} | {{ pc.fuero or '-' }} | {{
+                                    pc.last_user or '?' }}</option>
                                 {% endfor %}
                             </select>
                             <div class="form-text">Puede escribir para buscar en la lista desplegada.</div>
