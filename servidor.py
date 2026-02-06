@@ -1198,32 +1198,118 @@ def report_tasks_completed_pdf():
         pdf.set_font("Arial", "", 8)
         pdf.set_text_color(0)
         for t in tareas_hechas:
-            # Procesar Usuario
+            # Procesar datos
             raw_user = t["last_user"] or "N/A"
             if "\\" in raw_user: user_display = raw_user.split("\\")[-1]
             else: user_display = raw_user
             
-            desc = t["descripcion"]
-            if len(desc) > 30: desc = desc[:27] + "..."
-
-            # Fecha y Hora CREACION en español
+            desc = t["descripcion"] or ""
+            solicitante = t["solicitante"] or ""
+            tecnico = t["completed_by"] or ""
+            
+            # Fecha
             created_at = t["created_at"] or ""
             fecha_hora = format_datetime_es(created_at)
             
-            # Truncar textos para que quepan en las columnas
-            pc_name = str(t["pc_name"])[:16]  # Max 16 chars para PC
-            user_display = str(user_display)[:13]  # Max 13 chars para Usuario
-            solicitante = str(t["solicitante"] or "")[:11]  # Max 11 chars
-            tecnico = str(t["completed_by"] or "")[:11]  # Max 11 chars
+            pc_name = str(t["pc_name"])
+            user_display = str(user_display)
 
-            pdf.cell(w[0], 7, pc_name, 1)
-            pdf.cell(w[1], 7, user_display, 1)
-            pdf.cell(w[2], 7, desc, 1)
-            pdf.cell(w[3], 7, solicitante, 1)
-            pdf.cell(w[4], 7, tecnico, 1)
-            pdf.cell(w[5], 7, fecha_hora, 1, 1, 'C')
-
-    pdf.ln(10)
+            # CALCULAR ALTURA DE LA FILA (Maximo entre Descripcion y Solicitante)
+            # Aproximacion simple: chars / ancho.
+            # Mejor: Usar MultiCell en "dry run" o guardar Y.
+            
+            x_start = pdf.get_x()
+            y_start = pdf.get_y()
+            
+            # Simulamos altura renderizando la descripcion (la mas larga)
+            # FPDF no tiene "dry run" facil sin hacks. 
+            # Estrategia: Guardar Y, imprimir celda ficticia? No.
+            # Estrategia: Contar lineas basado en width aprox.
+            # Width descripcion: 45. Width solicitante: 18.
+            # Font size 8 aprox 2mm width avg char? -> NO, variable.
+            # Usaremos GetStringWidth si es posible, o simplemente dejaremos que FPDF maneje el cursor.
+            
+            # MEJOR ESTRATEGIA: Renderizar las MultiCells primero, ver cual es la mas alta, y luego las celdas simples.
+            # Pero las celdas simples deben tener esa altura.
+            
+            # 1. Calcular altura necesaria
+            # Contamos caracteres y dividimos por un promedio seguro (e.g. 2.5mm per char? Aprox 18 chars en 45mm con size 8)
+            # Desc limit width 45. Solicitante limit width 18.
+            
+            # Metodo robusto sin GetStringWidth complejo:
+            # Guardamos posicion
+            pdf.set_xy(x_start + w[0] + w[1], y_start) 
+            pdf.multi_cell(w[2], 5, desc, 1) # Imprimir Desc
+            y_end_desc = pdf.get_y()
+            h_desc = y_end_desc - y_start
+            
+            # Volver y hacer Solicitante
+            pdf.set_xy(x_start + w[0] + w[1] + w[2], y_start)
+            pdf.multi_cell(w[3], 5, solicitante, 1) # Imprimir Solic
+            y_end_solic = pdf.get_y()
+            h_solic = y_end_solic - y_start
+            
+            # Determinar altura maxima de la fila
+            # Nota: FPDF mueve la pagina si hay salto. Esto complica las cosas si estamos al final de pagina.
+            # Asumiremos que add_page automatico funciona, pero el "y_start" cambiaria.
+            # Para simplificar: usaremos height fijo calculado por len() para evitar complejidad de salto de pagina manual.
+            
+            # Revertimos a estrategia mas segura para este contexto limitado:
+            # Calcular height basado en chars (heuristica).
+            # Font size 8. width 45mm (~127pt). Avg char width ~3-4pt. ~30-40 chars por linea.
+            lines_desc = max(1, (len(desc) // 25) + 1)
+            lines_solic = max(1, (len(solicitante) // 9) + 1) # width 18 espoco, ~9 chars
+            
+            # Altura base 5mm por linea
+            max_lines = max(lines_desc, lines_solic)
+            h_row = max_lines * 5
+            
+            # Check page break
+            if (y_start + h_row) > 275: # A4 height ~297 minus margins
+                pdf.add_page()
+                y_start = pdf.get_y()
+                # Redraw headers? (Opcional, pero ideal)
+            
+            # Renderizar Celdas (Ahora si)
+            pdf.set_xy(x_start, y_start)
+            
+            # PC
+            pdf.cell(w[0], h_row, pc_name[:16], 1)
+            
+            # User
+            pdf.cell(w[1], h_row, user_display[:13], 1)
+            
+            # Desc (MultiCell)
+            x_desc = x_start + w[0] + w[1]
+            pdf.set_xy(x_desc, y_start)
+            pdf.multi_cell(w[2], 5, desc, 1, 'L')
+            # Si multicell ocupo menos que h_row, el borde queda mal?
+            # MultiCell dibuja caja alrededor de texto. Si queremos caja full height:
+            # Dibujamos Rect border despues.
+            
+            # Solic (MultiCell)
+            x_solic = x_desc + w[2]
+            pdf.set_xy(x_solic, y_start)
+            pdf.multi_cell(w[3], 5, solicitante, 1, 'L')
+            
+            # Tecnico
+            x_tech = x_solic + w[3]
+            pdf.set_xy(x_tech, y_start)
+            pdf.cell(w[4], h_row, tecnico[:11], 1)
+            
+            # Fecha
+            x_date = x_tech + w[4]
+            pdf.set_xy(x_date, y_start)
+            pdf.cell(w[5], h_row, fecha_hora, 1, 1, 'C') # El ultimo param 1 salto linea? No, forzamos set_xy abajo
+            
+            # Dibujar rectangulos vacios alrededor de MultiCells para completar el grid si quedo corto
+            pdf.rect(x_desc, y_start, w[2], h_row)
+            pdf.rect(x_solic, y_start, w[3], h_row)
+            
+            # Moverse a la siguiente linea logicamente
+            pdf.set_xy(x_start, y_start + h_row)
+    
+    pdf.ln(2)
 
     # --- SECCIÓN 2: TAREAS PENDIENTES ---
     pdf.set_font("Arial", "B", 11)
@@ -1252,19 +1338,57 @@ def report_tasks_completed_pdf():
         pdf.set_font("Arial", "", 8)
         pdf.set_text_color(0)
         for t in tareas_pendientes:
-            desc = t["descripcion"]
-            # Descripción mas larga permitida aquí
-            if len(desc) > 50: desc = desc[:47] + "..."
-
+            desc = t["descripcion"] or ""
+            solicitante = str(t["solicitante"] or "")
+            assigned = str(t["assigned_to"] or "Sin Asignar")
+            
             created_at = t["created_at"] or ""
             fecha_hora = format_datetime_es(created_at)
-            
-            assigned = t["assigned_to"] or "Sin Asignar"
 
-            pdf.cell(w_pend[0], 7, desc, 1)
-            pdf.cell(w_pend[1], 7, str(t["solicitante"] or "")[:20], 1)
-            pdf.cell(w_pend[2], 7, str(assigned)[:20], 1)
-            pdf.cell(w_pend[3], 7, fecha_hora, 1, 1, 'C')
+            # CALCULO ALTURA (misma logica heuristica)
+            # Widths: Desc(70), Solic(30), Asignado(30), Fecha(35)
+            # Desc(70): ~35 chars por linea
+            # Solic(30): ~15 chars por linea
+            
+            lines_desc = max(1, (len(desc) // 35) + 1)
+            lines_solic = max(1, (len(solicitante) // 15) + 1)
+            
+            max_lines = max(lines_desc, lines_solic)
+            h_row = max_lines * 5
+            
+            # Check page break
+            x_start = pdf.get_x()
+            y_start = pdf.get_y()
+            
+            if (y_start + h_row) > 275:
+                pdf.add_page()
+                y_start = pdf.get_y()
+            
+            # Desc (MultiCell)
+            pdf.set_xy(x_start, y_start)
+            pdf.multi_cell(w_pend[0], 5, desc, 1, 'L')
+            
+            # Solic (MultiCell)
+            x_solic = x_start + w_pend[0]
+            pdf.set_xy(x_solic, y_start)
+            pdf.multi_cell(w_pend[1], 5, solicitante, 1, 'L')
+            
+            # Asignado
+            x_assign = x_solic + w_pend[1]
+            pdf.set_xy(x_assign, y_start)
+            pdf.cell(w_pend[2], h_row, assigned[:18], 1)
+            
+            # Fecha
+            x_date = x_assign + w_pend[2]
+            pdf.set_xy(x_date, y_start)
+            pdf.cell(w_pend[3], h_row, fecha_hora, 1, 1, 'C')
+            
+            # Rectangulos borde para MultiCells
+            pdf.rect(x_start, y_start, w_pend[0], h_row)
+            pdf.rect(x_solic, y_start, w_pend[1], h_row)
+            
+            # Next line
+            pdf.set_xy(x_start, y_start + h_row)
 
 
     # Output
