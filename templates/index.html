@@ -992,36 +992,51 @@ try {
     Write-Host "Enviando a $servidor ..."
 
     try {
+        # Intento 1: PRIMARY (HTTPS/5000)
         # Usamos System.Net.WebClient porque Invoke-RestMethod no existe en PS 2.0
         $wc = New-Object System.Net.WebClient
         $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
         $wc.Encoding = [System.Text.Encoding]::UTF8
-    
+
         $response = $wc.UploadString($servidor, "POST", $json)
-    
-        Write-Host "Inventario enviado EXITOSAMENTE." -ForegroundColor Green
+
+        Write-Host "Inventario enviado EXITOSAMENTE (HTTPS)." -ForegroundColor Green
     }
     catch {
-        $script:errorOccurred = $true
-        Write-Host "ERROR al enviar el inventario:" -ForegroundColor Red
-        Write-Host $_.Exception.Message -ForegroundColor Red
-    
-        # Mostrar detalle si es WebException
-        if ($_.Exception.InnerException) {
-            Write-Host $_.Exception.InnerException.Message -ForegroundColor DarkRed
-        }
-
-
-        # Backup Local de JSON en Escritorio
-        $desktopPath = [Environment]::GetFolderPath("Desktop")
-        $backupJson = "$desktopPath\Inventario_$pcNombre.json"
-
+        Write-Host "Fallo conexion HTTPS ($($_.Exception.Message)). Intentando HTTP Legacy..." -ForegroundColor Yellow
+        
+        # Intento 2: FALLBACK (HTTP/8080)
         try {
-            [System.IO.File]::WriteAllText($backupJson, $json)
-            Write-Host "Se guardó el JSON del inventario en: $backupJson" -ForegroundColor Yellow
+            # Construir URL Fallback dinamicamente
+            # Reemplazamos :5000 por :8080 y https por http
+            $servidorFallback = $servidor.Replace(":5000", ":8080").Replace("https:", "http:")
+            Write-Host "Re-intentando a $servidorFallback ..."
+
+            $wc2 = New-Object System.Net.WebClient
+            $wc2.Headers.Add("Content-Type", "application/json; charset=utf-8")
+            $wc2.Encoding = [System.Text.Encoding]::UTF8
+
+            $response = $wc2.UploadString($servidorFallback, "POST", $json)
+            Write-Host "Inventario enviado EXITOSAMENTE (HTTP Legacy)." -ForegroundColor Green
+             # Reset error flag success
+            $script:errorOccurred = $false
         }
         catch {
-            Write-Host "No se pudo guardar copia local del JSON." -ForegroundColor DarkRed
+             $script:errorOccurred = $true
+            Write-Host "ERROR FINAL: No se pudo conectar ni por HTTPS ni por HTTP." -ForegroundColor Red
+            Write-Host $_.Exception.Message -ForegroundColor Red
+
+            # Backup Local de JSON en Escritorio
+            $desktopPath = [Environment]::GetFolderPath("Desktop")
+            $backupJson = "$desktopPath\Inventario_$pcNombre.json"
+
+            try {
+                [System.IO.File]::WriteAllText($backupJson, $json)
+                Write-Host "Se guardó el JSON del inventario en: $backupJson" -ForegroundColor Yellow
+            }
+            catch {
+                Write-Host "No se pudo guardar copia local del JSON." -ForegroundColor DarkRed
+            }
         }
     }
 
