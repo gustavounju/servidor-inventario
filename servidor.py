@@ -663,6 +663,14 @@ def dashboard():
         unassigned_tasks = []
         unassigned_count = 0
         kpi_tareas_pendientes_total = 0
+        kpi_total_activas = 0
+        kpi_total_graveyard = 0
+        kpi_alerta_ram = 0
+        kpi_sin_impresora = 0
+        kpi_impresora_red = 0
+        kpi_win7 = 0
+        kpi_win10 = 0
+        kpi_tareas_hoy = 0
 
     # Calcular total de páginas
     total_pages = (total_rows // per_page) + (1 if total_rows % per_page else 0)
@@ -679,6 +687,15 @@ def dashboard():
         kpi_tareas_hoy=kpi_tareas_hoy,
         kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
         fueros=FUERO_MAPPING,  # Pasar mapping para filtros o modales
+        # KPIs faltantes
+        kpi_total_activas=kpi_total_activas,
+        kpi_total_graveyard=kpi_total_graveyard,
+        kpi_alerta_ram=kpi_alerta_ram,
+        kpi_sin_impresora=kpi_sin_impresora,
+        kpi_impresora_red=kpi_impresora_red,
+        kpi_win7=kpi_win7,
+        kpi_win10=kpi_win10,
+
         # Params de filtro para mantener estado en UI si se desea
         q=q,
         estado=estado,
