@@ -258,6 +258,19 @@ def migrate_db_v7():
         else:
             print("Migración V7 verificada.")
 
+def migrate_db_v8():
+    """Migración V8: Agregar columna 'fuero' a la tabla 'tasks'."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(tasks)")
+        columns = [info[1] for info in cursor.fetchall()]
+        if 'fuero' not in columns:
+            print("Aplicando migración V8: Agregando 'fuero' a tasks...")
+            cursor.execute("ALTER TABLE tasks ADD COLUMN fuero TEXT")
+            conn.commit()
+        else:
+            print("Migración V8 verificada.")
+
 # --- DICCIONARIO DE FUEROS (CONFIGURABLE) ---
 # Agregar aquí nuevos códigos. El sistema buscará el prefijo más largo que coincida.
 FUERO_MAPPING = {
@@ -310,6 +323,7 @@ with app.app_context():
     migrate_db_v5()
     migrate_db_v6()
     migrate_db_v7()
+    migrate_db_v8()
     
     def ensure_generic_pc():
         """Asegura que exista una PC genérica para asignar tareas a hardware no inventariado."""
@@ -503,7 +517,8 @@ def view_graphics():
         kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
         cat_labels=cat_labels,
         cat_values=cat_values,
-        hostname=socket.gethostname()
+        hostname=socket.gethostname(),
+        fueros=FUERO_MAPPING  # Pasar mapping a template graficos/dashboard
     )
 
 @app.route("/", methods=["GET"])
@@ -642,9 +657,6 @@ def dashboard():
             # (Opcional) Si 'localtime' da problemas en producción/docker, usar DATE('now') o gestionar zona horaria en python.
             # Como corre en local Windows del usuario, 'localtime' debería tomar la hora del sistema.
             
-            # (Opcional) Si 'localtime' da problemas en producción/docker, usar DATE('now') o gestionar zona horaria en python.
-            # Como corre en local Windows del usuario, 'localtime' debería tomar la hora del sistema.
-
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
         technicians_list = []
@@ -660,30 +672,20 @@ def dashboard():
     return render_template(
         "index.html",
         pcs=pcs_data,
-        kpi_total_activas=kpi_total_activas,
-        kpi_total_graveyard=kpi_total_graveyard,
-        kpi_alerta_ping=0,
-        kpi_alerta_ram=kpi_alerta_ram,
-        kpi_sin_impresora=kpi_sin_impresora,
-        kpi_impresora_red=kpi_impresora_red,
-        kpi_win7=kpi_win7,
-        kpi_win10=kpi_win10,
-        page=page,
-        total_pages=total_pages,
-        total_rows=total_rows,
-        per_page=per_page,
-        server_url=server_url,
-        unassigned_tasks=[dict(t) for t in unassigned_tasks],
+        server_url=request.host_url,
+        unassigned_tasks=unassigned_tasks,
         unassigned_count=unassigned_count,
-        hostname=socket.gethostname(),
         technicians=technicians_list,
         kpi_tareas_hoy=kpi_tareas_hoy,
         kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
-        cat_labels=[], # Charts removed from main
-        cat_values=[]
+        fueros=FUERO_MAPPING,  # Pasar mapping para filtros o modales
+        # Params de filtro para mantener estado en UI si se desea
+        q=q,
+        estado=estado,
+        alerta=alerta,
+        page=page,
+        total_pages=total_pages
     )
-
-
 
 
 # --------- Exportar a CSV ---------
@@ -908,29 +910,39 @@ def delete_task(task_id):
     return redirect(url_for("pc_detail", pc_name=pc_name))
 
 
-@app.route("/tasks/create_loose", methods=["POST"])
+@app.route("/create_loose_task", methods=["POST"])
 def create_loose_task():
-    descripcion = request.form.get("descripcion", "").strip()
-    solicitante = request.form.get("solicitante", "").strip()
-    categoria = request.form.get("categoria", "").strip()
+    """Crea una tarea sin PC asignada (global), pero ahora con posible FUERO."""
+    descripcion = request.form.get("descripcion")
+    solicitante = request.form.get("solicitante")
+    categoria = request.form.get("categoria")
+    technician = request.form.get("technician")
+    fuero = request.form.get("fuero") # Nuevo campo
 
-    # Enforce Solicitante
-    if not solicitante:
-        solicitante = "No Especificado (Dashboard)"
+    if not descripcion or not solicitante:
+        return "Faltan datos", 400
     
-    technician = request.form.get("technician", "").strip() or None
+    # Si no elige categoría, intentar predecir con IA
+    if not categoria:
+        categoria = predict_category(descripcion)
+    
+    # Si elige técnico, el estado pasa a "Asignada" (aunque no tenga PC, tiene responsable)
+    # SI no tiene PC ni técnico, es "Pendiente" (bolsa general)
+    estado = "Pendiente"
+    assigned_to = None
+    
+    if technician:
+        assigned_to = technician
+        estado = "Asignada"  # Ojo: Asignada a Técnico, pero sin PC.
 
-    if descripcion:
-        if not categoria:
-            categoria = predict_category(descripcion)
+    with get_db_connection() as conn:
+        conn.execute(
+            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero)
+               VALUES (?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)""",
+            (descripcion, solicitante, estado, categoria, assigned_to, fuero),
+        )
+        conn.commit()
 
-        with get_db_connection() as conn:
-            conn.execute(
-                "INSERT INTO tasks (descripcion, solicitante, estado, categoria, pc_name, assigned_to) VALUES (?, ?, 'Pendiente', ?, ?, ?)",
-                (descripcion, solicitante, categoria, None, technician),
-            )
-            conn.commit()
-            
     return redirect(url_for("dashboard"))
 
 
@@ -1643,10 +1655,15 @@ def api_mobile_data():
                 "SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC"
             ).fetchall()]
 
-            # All active tasks (for "My Tasks" filtering on client or server)
-            # Let's send all non-completed tasks and let client filter by tech name for simplicity/offline-readiness
+            # All active tasks (Joined with PCs to get info like fuero)
             all_active = [dict(r) for r in conn.execute(
-                "SELECT * FROM tasks WHERE estado != 'Hecha' ORDER BY created_at DESC"
+                """
+                SELECT t.*, p.fuero as pc_fuero 
+                FROM tasks t
+                LEFT JOIN pcs p ON t.pc_name = p.pc_name
+                WHERE t.estado != 'Hecha' 
+                ORDER BY t.created_at DESC
+                """
             ).fetchall()]
 
             # PCs for dropdown

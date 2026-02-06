@@ -569,6 +569,7 @@
                     <thead class="thead-light">
                         <tr>
                             <th>Descripción</th>
+                            <th>Fuero/Ubicación</th>
                             <th>Solicitante</th>
                             <th>Fecha</th>
                             <th class="text-end">Acciones</th>
@@ -578,6 +579,7 @@
                         {% for task in unassigned_tasks %}
                         <tr>
                             <td>{{ task.descripcion }}</td>
+                            <td><span class="badge bg-secondary">{{ task.fuero or '-' }}</span></td>
                             <td>{{ task.solicitante or '-' }}</td>
                             <td>{{ task.created_at }}</td>
                             <td class="text-end">
@@ -610,15 +612,16 @@
                 <tr>
                     <th onclick="sortTable(0)">Nombre PC</th>
                     <th onclick="sortTable(1)">Usuario</th>
-                    <th onclick="sortTable(2)">Placa Madre</th>
-                    <th onclick="sortTable(3)">SO</th>
-                    <th onclick="sortTable(4)">CPU</th>
-                    <th onclick="sortTable(5)">RAM</th>
-                    <th onclick="sortTable(6)">RAM Detalle</th>
-                    <th onclick="sortTable(7)">Discos</th>
-                    <th onclick="sortTable(8)">Impresora</th>
-                    <th onclick="sortTable(9)">Monitores</th>
-                    <th onclick="sortTable(10)">IP</th>
+                    <th onclick="sortTable(2)">Fuero</th>
+                    <th onclick="sortTable(3)">Placa Madre</th>
+                    <th onclick="sortTable(4)">SO</th>
+                    <th onclick="sortTable(5)">CPU</th>
+                    <th onclick="sortTable(6)">RAM</th>
+                    <th onclick="sortTable(7)">RAM Detalle</th>
+                    <th onclick="sortTable(8)">Discos</th>
+                    <th onclick="sortTable(9)">Impresora</th>
+                    <th onclick="sortTable(10)">Monitores</th>
+                    <th onclick="sortTable(11)">IP</th>
                     <th>Alertas</th>
                     <th>Acción</th>
 
@@ -645,6 +648,7 @@
                     data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
                     <td>{{ pc.pc_name }}</td>
                     <td>{{ pc.last_user }}</td>
+                    <td><span class="badge bg-info text-dark">{{ pc.fuero or '-' }}</span></td>
                     <td>{{ pc.motherboard_model }}</td>
                     <td>{{ pc.os_name }}</td>
                     <td>{{ pc.processor }}</td>
@@ -1534,6 +1538,15 @@ Start-Sleep -Seconds 10
                                 <option value="Software">Software</option>
                                 <option value="Usuarios">Usuarios</option>
                                 <option value="General">General</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fuero / Ubicación</label>
+                            <select name="fuero" class="form-select">
+                                <option value="">-- No Especificado --</option>
+                                {% for code, name in fueros.items() %}
+                                <option value="{{ name }}">{{ name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="mb-3">

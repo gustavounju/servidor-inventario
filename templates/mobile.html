@@ -432,6 +432,8 @@
         }
 
         function createTaskCard(task, type) {
+            const fueroText = task.fuero || task.pc_fuero;
+            const fueroBadge = fueroText ? `<span class="badge bg-info text-dark mb-2 ms-1">${fueroText}</span>` : '';
             const pcBadge = task.pc_name ? `<span class="badge bg-secondary mb-2">${task.pc_name}</span>` : '';
             const date = new Date(task.created_at);
             const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -447,7 +449,7 @@
             return `
             <div class="task-card ${type === 'mine' ? 'priority' : ''}">
                 <div class="d-flex justify-content-between">
-                    <div>${pcBadge}</div>
+                    <div>${pcBadge}${fueroBadge}</div>
                     <small class="text-muted">${dateStr} ${timeStr}</small>
                 </div>
                 <div class="fw-bold fs-5 mb-2">${task.descripcion}</div>
