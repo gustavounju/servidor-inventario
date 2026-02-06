@@ -231,19 +231,55 @@ def api_parse_voice():
         })
 
 def migrate_db_v6():
-    """Migra BD a v6: agregar columna assigned_to a tasks."""
-    print("Verificando migración de DB v6...")
+    """Migración V6: Agregar columna 'assigned_to' a la tabla 'tasks'."""
     with get_db_connection() as conn:
-        cursor = conn.execute("PRAGMA table_info(tasks)")
-        columns = [row["name"] for row in cursor.fetchall()]
+        cursor = conn.cursor()
+        # Verificar si la columna ya existe
+        cursor.execute("PRAGMA table_info(tasks)")
+        columns = [info[1] for info in cursor.fetchall()]
+        if 'assigned_to' not in columns:
+            print("Aplicando migración V6: Agregando 'assigned_to' a tasks...")
+            cursor.execute("ALTER TABLE tasks ADD COLUMN assigned_to TEXT")
+            conn.commit()
+        else:
+            print("Migración V6 verificada.")
 
-        if "assigned_to" not in columns:
-            print("Agregando col assigned_to a tasks...")
-            try:
-                conn.execute("ALTER TABLE tasks ADD COLUMN assigned_to TEXT")
-                conn.commit()
-            except Exception as e: print(f"Error add assigned_to: {e}")
-    print("Migración v6 verificada.")
+def migrate_db_v7():
+    """Migración V7: Agregar columna 'fuero' a la tabla 'pcs'."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        # Verificar si la columna ya existe
+        cursor.execute("PRAGMA table_info(pcs)")
+        columns = [info[1] for info in cursor.fetchall()]
+        if 'fuero' not in columns:
+            print("Aplicando migración V7: Agregando 'fuero' a pcs...")
+            cursor.execute("ALTER TABLE pcs ADD COLUMN fuero TEXT")
+            conn.commit()
+        else:
+            print("Migración V7 verificada.")
+
+# --- DICCIONARIO DE FUEROS (CONFIGURABLE) ---
+# Agregar aquí nuevos códigos. El sistema buscará el prefijo más largo que coincida.
+FUERO_MAPPING = {
+    "TTSIVVOC": "Tribunal de Trabajo Sala IV",
+    "OGL": "Oficina de Gestion Laboral",
+    "SISTEMAS": "Dpto. Informatica San Pedro"
+}
+
+def detect_fuero(pc_name):
+    """Detecta el fuero basado en el prefijo del nombre de la PC."""
+    if not pc_name:
+        return "Desconocido"
+    
+    pc_upper = pc_name.upper()
+    
+    # Ordenar por longitud de clave descendente para coincidir prefijos más largos primero
+    # Ej: Si existe 'TT' y 'TTVOC', y la PC es 'TTVOC01', coincidirá primero 'TTVOC'.
+    for prefix in sorted(FUERO_MAPPING.keys(), key=len, reverse=True):
+        if pc_upper.startswith(prefix):
+            return FUERO_MAPPING[prefix]
+            
+    return "Desconocido"
 
 def train_ai_model():
     """Entrena la IA con datos semilla + datos históricos de la DB."""
@@ -273,6 +309,7 @@ with app.app_context():
     migrate_db_v4()
     migrate_db_v5()
     migrate_db_v6()
+    migrate_db_v7()
     
     def ensure_generic_pc():
         """Asegura que exista una PC genérica para asignar tareas a hardware no inventariado."""
@@ -1388,9 +1425,13 @@ def process_inventory_data(data):
     # JSON completo
     full_json = json.dumps(data, ensure_ascii=False)
 
+    # Detectar Fuero automáticamente
+    fuero_detectado = detect_fuero(pc_name)
+
     sql = """
     INSERT INTO pcs (
         pc_name,
+        fuero,
         os_name,
         processor,
         ram_gb,
@@ -1412,8 +1453,9 @@ def process_inventory_data(data):
         is_active,
         full_json_data
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'True', ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'True', ?)
     ON CONFLICT(pc_name) DO UPDATE SET
+        fuero = excluded.fuero,
         os_name = excluded.os_name,
         processor = excluded.processor,
         ram_gb = excluded.ram_gb,
@@ -1470,6 +1512,7 @@ def process_inventory_data(data):
             sql,
             (
                 pc_name,
+                fuero_detectado,
                 os_name,
                 processor,
                 ram_gb,
