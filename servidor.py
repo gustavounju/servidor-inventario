@@ -1236,19 +1236,6 @@ def report_tasks_completed_pdf():
             # Contamos caracteres y dividimos por un promedio seguro (e.g. 2.5mm per char? Aprox 18 chars en 45mm con size 8)
             # Desc limit width 45. Solicitante limit width 18.
             
-            # Metodo robusto sin GetStringWidth complejo:
-            # Guardamos posicion
-            pdf.set_xy(x_start + w[0] + w[1], y_start) 
-            pdf.multi_cell(w[2], 5, desc, 1) # Imprimir Desc
-            y_end_desc = pdf.get_y()
-            h_desc = y_end_desc - y_start
-            
-            # Volver y hacer Solicitante
-            pdf.set_xy(x_start + w[0] + w[1] + w[2], y_start)
-            pdf.multi_cell(w[3], 5, solicitante, 1) # Imprimir Solic
-            y_end_solic = pdf.get_y()
-            h_solic = y_end_solic - y_start
-            
             # Determinar altura maxima de la fila
             # Nota: FPDF mueve la pagina si hay salto. Esto complica las cosas si estamos al final de pagina.
             # Asumiremos que add_page automatico funciona, pero el "y_start" cambiaria.
