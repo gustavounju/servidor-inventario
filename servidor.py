@@ -1269,7 +1269,7 @@ def report_tasks_completed_pdf():
             # Desc (MultiCell)
             x_desc = x_start + w[0] + w[1]
             pdf.set_xy(x_desc, y_start)
-            pdf.multi_cell(w[2], 5, desc, 1, 'L')
+            pdf.multi_cell(w[2], 5, desc, 0, 'L')
             # Si multicell ocupo menos que h_row, el borde queda mal?
             # MultiCell dibuja caja alrededor de texto. Si queremos caja full height:
             # Dibujamos Rect border despues.
@@ -1277,7 +1277,7 @@ def report_tasks_completed_pdf():
             # Solic (MultiCell)
             x_solic = x_desc + w[2]
             pdf.set_xy(x_solic, y_start)
-            pdf.multi_cell(w[3], 5, solicitante, 1, 'L')
+            pdf.multi_cell(w[3], 5, solicitante, 0, 'L')
             
             # Tecnico
             x_tech = x_solic + w[3]
@@ -1353,12 +1353,12 @@ def report_tasks_completed_pdf():
             
             # Desc (MultiCell)
             pdf.set_xy(x_start, y_start)
-            pdf.multi_cell(w_pend[0], 5, desc, 1, 'L')
+            pdf.multi_cell(w_pend[0], 5, desc, 0, 'L')
             
             # Solic (MultiCell)
             x_solic = x_start + w_pend[0]
             pdf.set_xy(x_solic, y_start)
-            pdf.multi_cell(w_pend[1], 5, solicitante, 1, 'L')
+            pdf.multi_cell(w_pend[1], 5, solicitante, 0, 'L')
             
             # Asignado
             x_assign = x_solic + w_pend[1]
