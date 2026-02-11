@@ -623,8 +623,7 @@
                         <th onclick="sortTable(9)">Impresora</th>
                         <th onclick="sortTable(10)">Monitores</th>
                         <th onclick="sortTable(11)">IP</th>
-                        <th>Alertas</th>
-                        <th>Acción</th>
+                        <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -660,37 +659,43 @@
                         <td>{{ pc.printer_model }} ({{ pc.printer_port }})</td>
                         <td>{{ pc.monitors }}</td>
                         <td>{{ pc.ip_address }}</td>
-                        <td class="text-center">
-                            {% if pc.alerta_ram_baja %}
-                            <span title="RAM Baja (< 8GB)">💾</span>
-                            {% endif %}
-                            {% if pc.alerta_sin_impresora %}
-                            <span title="Sin Impresora">🖨️⚠️</span>
-                            {% endif %}
-                            {% if pc.alerta_impresora_red %}
-                            <span title="Impresora en Red">🖨️🌐</span>
-                            {% endif %}
-                        </td>
 
                         <td class="text-center text-nowrap">
+                            <!-- Alertas -->
+                            {% if pc.alerta_ram_baja %}
+                            <span title="RAM Baja (< 8GB)" class="me-1">💾</span>
+                            {% endif %}
+                            {% if pc.alerta_sin_impresora %}
+                            <span title="Sin Impresora" class="me-1">🖨️⚠️</span>
+                            {% endif %}
+                            {% if pc.alerta_impresora_red %}
+                            <span title="Impresora en Red" class="me-1">🖨️🌐</span>
+                            {% endif %}
+
+                            <!-- Separador si hay alertas y acciones -->
+                            {% if pc.alerta_ram_baja or pc.alerta_sin_impresora or pc.alerta_impresora_red %}
+                            <span class="text-muted mx-1">|</span>
+                            {% endif %}
+
+                            <!-- Acciones -->
                             {% if pc.is_active == 'True' %}
                             {% if pc.pc_name != 'PC Generica' %}
                             <a href="{{ url_for('decommission_pc', pc_name=pc.pc_name) }}"
-                                class="btn btn-sm btn-outline-danger" title="Dar de Baja">
+                                class="btn btn-sm btn-outline-danger py-0 px-1" title="Dar de Baja">
                                 <i class="bi bi-trash"></i>
                             </a>
                             {% endif %}
                             <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}"
-                                class="btn btn-sm btn-outline-secondary" title="Ver Tareas y Detalle">
+                                class="btn btn-sm btn-outline-secondary py-0 px-1" title="Ver Tareas y Detalle">
                                 <i class="bi bi-list-task"></i>
                             </a>
                             {% else %}
-                            <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-success"
-                                title="Reactivar">
+                            <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}"
+                                class="btn btn-sm btn-success py-0 px-1" title="Reactivar">
                                 <i class="bi bi-power"></i>
                             </a>
-                            <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}" class="btn btn-sm btn-secondary"
-                                title="Ver Detalle">
+                            <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}"
+                                class="btn btn-sm btn-secondary py-0 px-1" title="Ver Detalle">
                                 <i class="bi bi-eye"></i>
                             </a>
                             {% endif %}
@@ -698,7 +703,8 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="12" style="text-align: center;">Sin datos.</td>
+                        <!-- Ajustar colspan a 13 columnas ahora -->
+                        <td colspan="13" style="text-align: center;">Sin datos.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
