@@ -607,98 +607,100 @@
 
 
         <!-- Tabla de inventario (igual que tenías, solo envuelta en main) -->
-        <table id="inventoryTable">
-            <thead>
-                <tr>
-                    <th onclick="sortTable(0)">Nombre PC</th>
-                    <th onclick="sortTable(1)">Usuario</th>
-                    <th onclick="sortTable(2)">Fuero</th>
-                    <th onclick="sortTable(3)">Placa Madre</th>
-                    <th onclick="sortTable(4)">SO</th>
-                    <th onclick="sortTable(5)">CPU</th>
-                    <th onclick="sortTable(6)">RAM</th>
-                    <th onclick="sortTable(7)">RAM Detalle</th>
-                    <th onclick="sortTable(8)">Discos</th>
-                    <th onclick="sortTable(9)">Impresora</th>
-                    <th onclick="sortTable(10)">Monitores</th>
-                    <th onclick="sortTable(11)">IP</th>
-                    <th>Alertas</th>
-                    <th>Acción</th>
+        <div class="table-responsive">
+            <table id="inventoryTable" class="table table-striped table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Nombre PC</th>
+                        <th onclick="sortTable(1)">Usuario</th>
+                        <th onclick="sortTable(2)">Fuero</th>
+                        <th onclick="sortTable(3)">Placa Madre</th>
+                        <th onclick="sortTable(4)">SO</th>
+                        <th onclick="sortTable(5)">CPU</th>
+                        <th onclick="sortTable(6)">RAM</th>
+                        <th onclick="sortTable(7)">RAM Detalle</th>
+                        <th onclick="sortTable(8)">Discos</th>
+                        <th onclick="sortTable(9)">Impresora</th>
+                        <th onclick="sortTable(10)">Monitores</th>
+                        <th onclick="sortTable(11)">IP</th>
+                        <th>Alertas</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pc in pcs %}
+                    {% set row_class = [] %}
+                    {% if pc.alerta_ram_baja %}
+                    {% set _ = row_class.append('tr-alerta-ram') %}
+                    {% endif %}
+                    {% if pc.alerta_sin_impresora %}
+                    {% set _ = row_class.append('tr-alerta-impresora') %}
+                    {% endif %}
+                    {% if pc.is_active == 'False' %}
+                    {% set _ = row_class.append('row-graveyard') %}
+                    {% endif %}
+                    <tr class="{{ ' '.join(row_class) }}" data-alerta-ram="{{ pc.alerta_ram_baja | default(0) }}"
+                        data-alerta-sin-imp="{{ pc.alerta_sin_impresora | default(0) }}"
+                        data-alerta-impresora-red="{{ pc.alerta_impresora_red | default(0) }}"
+                        data-so="{{ pc.os_name | default('') }}"
+                        data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
+                        data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
+                        <td>{{ pc.pc_name }}</td>
+                        <td>{{ pc.last_user }}</td>
+                        <td><span class="badge text-white"
+                                style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{ pc.fuero or
+                                '-'
+                                }}</span></td>
+                        <td>{{ pc.motherboard_model }}</td>
+                        <td>{{ pc.os_name }}</td>
+                        <td>{{ pc.processor }}</td>
+                        <td>{{ pc.ram_gb }} GB</td>
+                        <td>{{ pc.ram_detalles }}</td>
+                        <td>{{ pc.disk_models }}</td>
+                        <td>{{ pc.printer_model }} ({{ pc.printer_port }})</td>
+                        <td>{{ pc.monitors }}</td>
+                        <td>{{ pc.ip_address }}</td>
+                        <td>
+                            {% if pc.alerta_ram_baja %}
+                            💾 RAM
+                            {% endif %}
+                            {% if pc.alerta_sin_impresora %}
+                            🖨️ Sin
+                            {% endif %}
+                            {% if pc.alerta_impresora_red %}
+                            🖨️ Red
+                            {% endif %}
+                        </td>
 
-
-                </tr>
-            </thead>
-            <tbody>
-                {% for pc in pcs %}
-                {% set row_class = [] %}
-                {% if pc.alerta_ram_baja %}
-                {% set _ = row_class.append('tr-alerta-ram') %}
-                {% endif %}
-                {% if pc.alerta_sin_impresora %}
-                {% set _ = row_class.append('tr-alerta-impresora') %}
-                {% endif %}
-                {% if pc.is_active == 'False' %}
-                {% set _ = row_class.append('row-graveyard') %}
-                {% endif %}
-                <tr class="{{ ' '.join(row_class) }}" data-alerta-ram="{{ pc.alerta_ram_baja | default(0) }}"
-                    data-alerta-sin-imp="{{ pc.alerta_sin_impresora | default(0) }}"
-                    data-alerta-impresora-red="{{ pc.alerta_impresora_red | default(0) }}"
-                    data-so="{{ pc.os_name | default('') }}"
-                    data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
-                    data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
-                    <td>{{ pc.pc_name }}</td>
-                    <td>{{ pc.last_user }}</td>
-                    <td><span class="badge text-white"
-                            style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{ pc.fuero or '-'
-                            }}</span></td>
-                    <td>{{ pc.motherboard_model }}</td>
-                    <td>{{ pc.os_name }}</td>
-                    <td>{{ pc.processor }}</td>
-                    <td>{{ pc.ram_gb }} GB</td>
-                    <td>{{ pc.ram_detalles }}</td>
-                    <td>{{ pc.disk_models }}</td>
-                    <td>{{ pc.printer_model }} ({{ pc.printer_port }})</td>
-                    <td>{{ pc.monitors }}</td>
-                    <td>{{ pc.ip_address }}</td>
-                    <td>
-                        {% if pc.alerta_ram_baja %}
-                        💾 RAM
-                        {% endif %}
-                        {% if pc.alerta_sin_impresora %}
-                        🖨️ Sin
-                        {% endif %}
-                        {% if pc.alerta_impresora_red %}
-                        🖨️ Red
-                        {% endif %}
-                    </td>
-
-                    <td class="text-center">
-                        {% if pc.is_active == 'True' %}
-                        {% if pc.pc_name != 'PC Generica' %}
-                        <a href="{{ url_for('decommission_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-danger">
-                            Baja
-                        </a>
-                        {% endif %}
-                        <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}" class="btn btn-sm btn-secondary">
-                            Tareas
-                        </a>
-                        {% else %}
-                        <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-success">
-                            Activar
-                        </a>
-                        <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}" class="btn btn-sm btn-secondary">
-                            Ver Detalle
-                        </a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="12" style="text-align: center;">Sin datos.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        <td class="text-center">
+                            {% if pc.is_active == 'True' %}
+                            {% if pc.pc_name != 'PC Generica' %}
+                            <a href="{{ url_for('decommission_pc', pc_name=pc.pc_name) }}"
+                                class="btn btn-sm btn-danger">
+                                Baja
+                            </a>
+                            {% endif %}
+                            <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}" class="btn btn-sm btn-secondary">
+                                Tareas
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-success">
+                                Activar
+                            </a>
+                            <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}" class="btn btn-sm btn-secondary">
+                                Ver Detalle
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="12" style="text-align: center;">Sin datos.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
         <!-- Paginación -->
         {% if total_pages > 1 %}
