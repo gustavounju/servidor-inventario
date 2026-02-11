@@ -611,18 +611,81 @@
             <table id="inventoryTable" class="table table-striped table-hover table-sm mb-0">
                 <thead>
                     <tr>
-                        <th onclick="sortTable(0)">Nombre PC</th>
-                        <th onclick="sortTable(1)">Usuario</th>
-                        <th onclick="sortTable(2)">Fuero</th>
-                        <th onclick="sortTable(3)">Placa Madre</th>
-                        <th onclick="sortTable(4)">SO</th>
-                        <th onclick="sortTable(5)">CPU</th>
-                        <th onclick="sortTable(6)">RAM</th>
-                        <th onclick="sortTable(7)">RAM Detalle</th>
-                        <th onclick="sortTable(8)">Discos</th>
-                        <th onclick="sortTable(9)">Impresora</th>
-                        <th onclick="sortTable(10)">Monitores</th>
-                        <th onclick="sortTable(11)">IP</th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='pc_name', order='desc' if sort_by == 'pc_name' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Nombre PC {% if sort_by == 'pc_name' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='last_user', order='desc' if sort_by == 'last_user' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Usuario {% if sort_by == 'last_user' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='fuero', order='desc' if sort_by == 'fuero' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Fuero {% if sort_by == 'fuero' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='motherboard_model', order='desc' if sort_by == 'motherboard_model' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Placa Madre {% if sort_by == 'motherboard_model' %}{{ '↑' if order == 'asc' else '↓'
+                                }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='os_name', order='desc' if sort_by == 'os_name' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                SO {% if sort_by == 'os_name' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='processor', order='desc' if sort_by == 'processor' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                CPU {% if sort_by == 'processor' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='ram_gb', order='desc' if sort_by == 'ram_gb' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                RAM {% if sort_by == 'ram_gb' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='ram_detalles', order='desc' if sort_by == 'ram_detalles' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                RAM Detalle {% if sort_by == 'ram_detalles' %}{{ '↑' if order == 'asc' else '↓' }}{%
+                                endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='disk_models', order='desc' if sort_by == 'disk_models' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Discos {% if sort_by == 'disk_models' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='printer_model', order='desc' if sort_by == 'printer_model' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Impresora {% if sort_by == 'printer_model' %}{{ '↑' if order == 'asc' else '↓' }}{%
+                                endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='monitors', order='desc' if sort_by == 'monitors' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Monitores {% if sort_by == 'monitors' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard', sort_by='ip_address', order='desc' if sort_by == 'ip_address' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                IP {% if sort_by == 'ip_address' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
                         <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
@@ -722,7 +785,7 @@
                 <!-- Anterior -->
                 <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('dashboard', page=page-1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, per_page=per_page) }}">
+                        href="{{ url_for('dashboard', page=page-1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, sort_by=sort_by, order=order, per_page=per_page) }}">
                         Anterior
                     </a>
                 </li>
@@ -737,7 +800,7 @@
                 <!-- Siguiente -->
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('dashboard', page=page+1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, per_page=per_page) }}">
+                        href="{{ url_for('dashboard', page=page+1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, sort_by=sort_by, order=order, per_page=per_page) }}">
                         Siguiente
                     </a>
                 </li>
@@ -1678,7 +1741,7 @@ Start-Sleep -Seconds 10
             const currentOs = url.searchParams.get('os');
             const currentTasks = url.searchParams.get('filter_tasks');
 
-            // Reset page param on new filter
+            // Reset page param on new filter, but KEEP sort params
             url.searchParams.set('page', 1);
 
             // Clear existing specific filters to allow toggling/switching

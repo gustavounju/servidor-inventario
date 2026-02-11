@@ -588,6 +588,10 @@ def dashboard():
     alerta = request.args.get("alerta", "").strip()
     os_param = request.args.get("os", "").strip()
     filter_tasks = request.args.get("filter_tasks", "").strip()
+    
+    # Ordenamiento
+    sort_by = request.args.get("sort_by", "pc_name").strip()
+    order = request.args.get("order", "asc").strip()
 
     # Paginación
     try:
@@ -677,11 +681,26 @@ def dashboard():
             if filter_tasks == "true":
                 base_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') > 0"
             
-            # Añadir ordenamiento por nombre de PC por defecto si no hay filtros de alerta
-            # Si hay filtros de alerta, el orden puede ser menos relevante o ya estar implícito
-            # if not alerta: # O podrías querer ordenar siempre
-            base_sql += " ORDER BY p.pc_name"
-
+            # Ordenamiento seguro (solo columnas permitidas)
+            allowed_sort_cols = {
+                "pc_name": "p.pc_name",
+                "last_user": "p.last_user",
+                "fuero": "p.fuero",
+                "motherboard_model": "p.motherboard_model",
+                "os_name": "p.os_name",
+                "processor": "p.processor",
+                "ram_gb": "p.ram_gb",
+                "ram_detalles": "p.ram_detalles",
+                "disk_models": "p.disk_models",
+                "printer_model": "p.printer_model",
+                "monitors": "p.monitors",
+                "ip_address": "p.ip_address"
+            }
+            
+            sort_col_sql = allowed_sort_cols.get(sort_by, "p.pc_name")
+            sort_dir_sql = "DESC" if order == "desc" else "ASC"
+            
+            base_sql += f" ORDER BY {sort_col_sql} {sort_dir_sql}"
 
             # Añadir límite y offset para paginación
             base_sql += " LIMIT ? OFFSET ?"
