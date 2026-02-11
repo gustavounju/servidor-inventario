@@ -660,35 +660,38 @@
                         <td>{{ pc.printer_model }} ({{ pc.printer_port }})</td>
                         <td>{{ pc.monitors }}</td>
                         <td>{{ pc.ip_address }}</td>
-                        <td>
+                        <td class="text-center">
                             {% if pc.alerta_ram_baja %}
-                            💾 RAM
+                            <span title="RAM Baja (< 8GB)">💾</span>
                             {% endif %}
                             {% if pc.alerta_sin_impresora %}
-                            🖨️ Sin
+                            <span title="Sin Impresora">🖨️⚠️</span>
                             {% endif %}
                             {% if pc.alerta_impresora_red %}
-                            🖨️ Red
+                            <span title="Impresora en Red">🖨️🌐</span>
                             {% endif %}
                         </td>
 
-                        <td class="text-center">
+                        <td class="text-center text-nowrap">
                             {% if pc.is_active == 'True' %}
                             {% if pc.pc_name != 'PC Generica' %}
                             <a href="{{ url_for('decommission_pc', pc_name=pc.pc_name) }}"
-                                class="btn btn-sm btn-danger">
-                                Baja
+                                class="btn btn-sm btn-outline-danger" title="Dar de Baja">
+                                <i class="bi bi-trash"></i>
                             </a>
                             {% endif %}
-                            <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}" class="btn btn-sm btn-secondary">
-                                Tareas
+                            <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}"
+                                class="btn btn-sm btn-outline-secondary" title="Ver Tareas y Detalle">
+                                <i class="bi bi-list-task"></i>
                             </a>
                             {% else %}
-                            <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-success">
-                                Activar
+                            <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-success"
+                                title="Reactivar">
+                                <i class="bi bi-power"></i>
                             </a>
-                            <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}" class="btn btn-sm btn-secondary">
-                                Ver Detalle
+                            <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}" class="btn btn-sm btn-secondary"
+                                title="Ver Detalle">
+                                <i class="bi bi-eye"></i>
                             </a>
                             {% endif %}
                         </td>
