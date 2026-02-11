@@ -648,10 +648,10 @@
                             style="white-space: normal; word-wrap: break-word; max-width: 120px; font-weight: 600; font-size: 0.85rem;">
                             {{ pc.pc_name }}</td>
                         <td>{{ pc.last_user }}</td>
-                        <td><span class="badge text-white"
-                                style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{ pc.fuero or
-                                '-'
-                                }}</span></td>
+                        <td style="white-space: normal; max-width: 100px; font-size: 0.9rem;"><span
+                                class="badge text-white"
+                                style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }}; white-space: normal; text-align: center; display: inline-block;">{{
+                                pc.fuero or '-' }}</span></td>
                         <td>{{ pc.motherboard_model }}</td>
                         <td>{{ pc.os_name }}</td>
                         <td>{{ pc.processor }}</td>
