@@ -1864,6 +1864,17 @@ def upload_manual_inventory():
         return redirect(url_for('dashboard'))
 
 
+@app.route("/script")
+def get_script():
+    """Devuelve el contenido del script inventario.ps1 para ser copiado."""
+    try:
+        # Asegurarse de que el mimetype sea text/plain para que fetch lo lea como texto
+        return send_file("inventario.ps1", mimetype="text/plain", as_attachment=False)
+            
+    except Exception as e:
+        return f"Error al leer script: {e}", 500
+
+
 
 
 # ----------------- API: logs -----------------
