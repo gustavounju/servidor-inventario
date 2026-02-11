@@ -313,6 +313,7 @@ FUERO_MAPPING = {
     "SIVL": "Sala IV Laboral",
     "TJO1": "Tribunal de Juicio",
     "TJ01": "Tribunal de Juicio",
+    "TJ": "Tribunal de Juicio",
     "CGESE": "Cámara Gesell"
 }
 
