@@ -128,6 +128,29 @@
     </tbody>
   </table>
 
+  <!-- BLOQUE 2: Infraestructura de Red -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Infraestructura de Red</h5>
+      <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+        data-bs-target="#modalEditarInfra">
+        <i class="bi bi-pencil"></i> Editar
+      </button>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>Edificio:</strong> {{ pc.building or '-' }}</p>
+          <p><strong>Piso:</strong> {{ pc.floor or '-' }}</p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Switch:</strong> {{ pc.switch_name or '-' }} (Puerto {{ pc.switch_port or '-' }})</p>
+          <p><strong>Pachera:</strong> {{ pc.pachera_name or '-' }} (Boca {{ pc.pachera_port or '-' }})</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- BLOQUE 3: Tareas de la PC -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h3 class="mt-2 mb-0">Tareas</h3>
@@ -354,6 +377,62 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
             <button type="submit" class="btn btn-primary">Confirmar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editar Infraestructura -->
+  <div class="modal fade" id="modalEditarInfra" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="{{ url_for('update_pc_infrastructure', pc_name=pc.pc_name) }}" method="post">
+          <div class="modal-header">
+            <h5 class="modal-title">Editar Infraestructura</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label for="building" class="form-label">Edificio</label>
+                <input type="text" class="form-control" id="building" name="building" value="{{ pc.building or '' }}">
+              </div>
+              <div class="col-md-6">
+                <label for="floor" class="form-label">Piso</label>
+                <input type="text" class="form-control" id="floor" name="floor" value="{{ pc.floor or '' }}">
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label for="switch_name" class="form-label">Nombre Switch</label>
+                <input type="text" class="form-control" id="switch_name" name="switch_name"
+                  value="{{ pc.switch_name or '' }}">
+              </div>
+              <div class="col-md-6">
+                <label for="switch_port" class="form-label">Puerto Switch</label>
+                <input type="text" class="form-control" id="switch_port" name="switch_port"
+                  value="{{ pc.switch_port or '' }}">
+              </div>
+            </div>
+
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label for="pachera_name" class="form-label">Nombre Pachera</label>
+                <input type="text" class="form-control" id="pachera_name" name="pachera_name"
+                  value="{{ pc.pachera_name or '' }}">
+              </div>
+              <div class="col-md-6">
+                <label for="pachera_port" class="form-label">Boca Pachera</label>
+                <input type="text" class="form-control" id="pachera_port" name="pachera_port"
+                  value="{{ pc.pachera_port or '' }}">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
           </div>
         </form>
       </div>

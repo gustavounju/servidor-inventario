@@ -23,6 +23,10 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 DB_FILE = "inventario.db"
 LOG_FOLDER = "logs"
+UPLOAD_FOLDER = "uploads"
+ALLOWED_EXTENSIONS = {'pdf'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ----------------- Utilidades DB -----------------
 
@@ -271,6 +275,33 @@ def migrate_db_v8():
         else:
             print("Migración V8 verificada.")
 
+def migrate_db_v9():
+    """Migración V9: Agregar columnas de infraestructura de red y ubicación a 'pcs'."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(pcs)")
+        columns = [info[1] for info in cursor.fetchall()]
+        
+        new_columns = {
+            "switch_name": "TEXT",
+            "switch_port": "TEXT",
+            "pachera_name": "TEXT",
+            "pachera_port": "TEXT",
+            "building": "TEXT",
+            "floor": "TEXT"
+        }
+        
+        for col, dtype in new_columns.items():
+            if col not in columns:
+                print(f"Aplicando migración V9: Agregando '{col}' a pcs...")
+                try:
+                    cursor.execute(f"ALTER TABLE pcs ADD COLUMN {col} {dtype}")
+                except Exception as e:
+                    print(f"Error agregando columna {col}: {e}")
+        
+        conn.commit()
+    print("Migración V9 verificada.")
+
 # --- DICCIONARIO DE FUEROS (CONFIGURABLE) ---
 # Agregar aquí nuevos códigos. El sistema buscará el prefijo más largo que coincida.
 FUERO_MAPPING = {
@@ -324,6 +355,7 @@ with app.app_context():
     migrate_db_v6()
     migrate_db_v7()
     migrate_db_v8()
+    migrate_db_v9()
     
     def ensure_generic_pc():
         """Asegura que exista una PC genérica para asignar tareas a hardware no inventariado."""
@@ -401,6 +433,9 @@ def health():
 # Crear carpeta de logs
 if not os.path.exists(LOG_FOLDER):
     os.makedirs(LOG_FOLDER)
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 
 # ----------------- Rutas Web -----------------
@@ -790,6 +825,60 @@ def pc_detail(pc_name):
         abort(404)
 
     return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs)
+
+
+@app.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
+def update_pc_infrastructure(pc_name):
+    """Actualiza los datos de infraestructura de una PC (Edificio, Piso, Switch, Pachera)."""
+    building = request.form.get("building", "").strip()
+    floor = request.form.get("floor", "").strip()
+    switch_name = request.form.get("switch_name", "").strip()
+    switch_port = request.form.get("switch_port", "").strip()
+    pachera_name = request.form.get("pachera_name", "").strip()
+    pachera_port = request.form.get("pachera_port", "").strip()
+    
+    try:
+        with get_db_connection() as conn:
+            # Verificar si existía para audit logs (opcional, pero recomendado)
+            old_pc = conn.execute("SELECT * FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+            
+            conn.execute(
+                """
+                UPDATE pcs 
+                SET building = ?, floor = ?, switch_name = ?, switch_port = ?, pachera_name = ?, pachera_port = ?
+                WHERE pc_name = ?
+                """,
+                (building, floor, switch_name, switch_port, pachera_name, pachera_port, pc_name)
+            )
+            
+            # Registrar cambios en audit_logs
+            if old_pc:
+                changes = [
+                    ("building", old_pc["building"], building),
+                    ("floor", old_pc["floor"], floor),
+                    ("switch_name", old_pc["switch_name"], switch_name),
+                    ("switch_port", old_pc["switch_port"], switch_port),
+                    ("pachera_name", old_pc["pachera_name"], pachera_name),
+                    ("pachera_port", old_pc["pachera_port"], pachera_port)
+                ]
+                
+                for field, old, new in changes:
+                    # Normalizar None a "" para comparación
+                    old_str = str(old) if old is not None else ""
+                    new_str = str(new) if new is not None else ""
+                    
+                    if old_str != new_str:
+                        conn.execute(
+                            "INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)",
+                            (pc_name, field, old_str, new_str)
+                        )
+            
+            conn.commit()
+            
+        return redirect(url_for("pc_detail", pc_name=pc_name))
+        
+    except Exception as e:
+        return f"Error actualizando infraestructura: {e}", 500
 
 
 @app.route("/pc/migrate_tasks", methods=["POST"])
