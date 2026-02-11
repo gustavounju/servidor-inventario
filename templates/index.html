@@ -648,7 +648,9 @@
                     data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
                     <td>{{ pc.pc_name }}</td>
                     <td>{{ pc.last_user }}</td>
-                    <td><span class="badge text-white" style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{ pc.fuero or '-' }}</span></td>
+                    <td><span class="badge text-white"
+                            style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{ pc.fuero or '-'
+                            }}</span></td>
                     <td>{{ pc.motherboard_model }}</td>
                     <td>{{ pc.os_name }}</td>
                     <td>{{ pc.processor }}</td>
@@ -697,6 +699,36 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <!-- Paginación -->
+        {% if total_pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-4 mb-4">
+            <ul class="pagination justify-content-center">
+                <!-- Anterior -->
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link"
+                        href="{{ url_for('dashboard', page=page-1, q=q, estado=estado, alerta=alerta) }}">
+                        Anterior
+                    </a>
+                </li>
+
+                <!-- Info Pagina -->
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        Página {{ page }} de {{ total_pages }}
+                    </span>
+                </li>
+
+                <!-- Siguiente -->
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link"
+                        href="{{ url_for('dashboard', page=page+1, q=q, estado=estado, alerta=alerta) }}">
+                        Siguiente
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
 
         <div id="server-data-container" data-server-url="{{ server_url }}" style="display: none;"></div>
 
