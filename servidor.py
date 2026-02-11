@@ -307,7 +307,13 @@ def migrate_db_v9():
 FUERO_MAPPING = {
     "TTSIVVOC": "Tribunal de Trabajo Sala IV",
     "OGL": "Oficina de Gestion Laboral",
-    "SISTEMAS": "Dpto. Informatica San Pedro"
+    "SISTEMAS": "Dpto. Informatica San Pedro",
+    "VGS": "Violencia de Género 5",
+    "VG5": "Violencia de Género 5",
+    "SIVL": "Sala IV Laboral",
+    "TJO1": "Tribunal de Juicio",
+    "TJ01": "Tribunal de Juicio",
+    "CGESE": "Cámara Gesell"
 }
 
 def detect_fuero(pc_name):
