@@ -660,45 +660,47 @@
                         <td>{{ pc.monitors }}</td>
                         <td>{{ pc.ip_address }}</td>
 
-                        <td class="text-center text-nowrap">
-                            <!-- Alertas -->
-                            {% if pc.alerta_ram_baja %}
-                            <span title="RAM Baja (< 8GB)" class="me-1">💾</span>
-                            {% endif %}
-                            {% if pc.alerta_sin_impresora %}
-                            <span title="Sin Impresora" class="me-1">🖨️⚠️</span>
-                            {% endif %}
-                            {% if pc.alerta_impresora_red %}
-                            <span title="Impresora en Red" class="me-1">🖨️🌐</span>
-                            {% endif %}
+                        <td class="text-center p-1">
+                            <div class="d-grid gap-1"
+                                style="grid-template-columns: repeat(2, 1fr); max-width: 60px; margin: 0 auto;">
+                                <!-- Alertas -->
+                                {% if pc.alerta_ram_baja %}
+                                <div title="RAM Baja (< 8GB)">💾</div>
+                                {% endif %}
+                                {% if pc.alerta_sin_impresora %}
+                                <div title="Sin Impresora">🖨️</div>
+                                {% endif %}
+                                {% if pc.alerta_impresora_red %}
+                                <div title="Impresora en Red">🌐</div>
+                                {% endif %}
 
-                            <!-- Separador si hay alertas y acciones -->
-                            {% if pc.alerta_ram_baja or pc.alerta_sin_impresora or pc.alerta_impresora_red %}
-                            <span class="text-muted mx-1">|</span>
-                            {% endif %}
-
-                            <!-- Acciones -->
-                            {% if pc.is_active == 'True' %}
-                            {% if pc.pc_name != 'PC Generica' %}
-                            <a href="{{ url_for('decommission_pc', pc_name=pc.pc_name) }}"
-                                class="btn btn-sm btn-outline-danger py-0 px-1" title="Dar de Baja">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                            {% endif %}
-                            <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}"
-                                class="btn btn-sm btn-outline-secondary py-0 px-1" title="Ver Tareas y Detalle">
-                                <i class="bi bi-list-task"></i>
-                            </a>
-                            {% else %}
-                            <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}"
-                                class="btn btn-sm btn-success py-0 px-1" title="Reactivar">
-                                <i class="bi bi-power"></i>
-                            </a>
-                            <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}"
-                                class="btn btn-sm btn-secondary py-0 px-1" title="Ver Detalle">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            {% endif %}
+                                <!-- Acciones -->
+                                {% if pc.is_active == 'True' %}
+                                {% if pc.pc_name != 'PC Generica' %}
+                                <a href="{{ url_for('decommission_pc', pc_name=pc.pc_name) }}"
+                                    class="btn btn-sm btn-outline-danger py-0 px-1" title="Dar de Baja"
+                                    style="font-size: 0.7rem;">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                {% endif %}
+                                <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}"
+                                    class="btn btn-sm btn-outline-secondary py-0 px-1" title="Ver Tareas y Detalle"
+                                    style="font-size: 0.7rem;">
+                                    <i class="bi bi-list-task"></i>
+                                </a>
+                                {% else %}
+                                <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}"
+                                    class="btn btn-sm btn-success py-0 px-1" title="Reactivar"
+                                    style="font-size: 0.7rem;">
+                                    <i class="bi bi-power"></i>
+                                </a>
+                                <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}"
+                                    class="btn btn-sm btn-secondary py-0 px-1" title="Ver Detalle"
+                                    style="font-size: 0.7rem;">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% else %}
