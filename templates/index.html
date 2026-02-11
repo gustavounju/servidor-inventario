@@ -722,7 +722,7 @@
                 <!-- Anterior -->
                 <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('dashboard', page=page-1, q=q, estado=estado, alerta=alerta, per_page=per_page) }}">
+                        href="{{ url_for('dashboard', page=page-1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, per_page=per_page) }}">
                         Anterior
                     </a>
                 </li>
@@ -737,7 +737,7 @@
                 <!-- Siguiente -->
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('dashboard', page=page+1, q=q, estado=estado, alerta=alerta, per_page=per_page) }}">
+                        href="{{ url_for('dashboard', page=page+1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, per_page=per_page) }}">
                         Siguiente
                     </a>
                 </li>
@@ -1670,6 +1670,102 @@ Start-Sleep -Seconds 10
             var modal = new bootstrap.Modal(document.getElementById('assignTaskModal'));
             modal.show();
         }
+
+        // --- KPI Filters Logic ---
+        function onFilterClick(type) {
+            const url = new URL(window.location.href);
+            // Reset page param on new filter
+            url.searchParams.set('page', 1);
+
+            // Clear existing specific filters to allow toggling/switching
+            url.searchParams.delete('alerta');
+            url.searchParams.delete('os');
+            url.searchParams.delete('filter_tasks');
+
+            if (type === 'ram') {
+                url.searchParams.set('alerta', 'ram');
+            } else if (type === 'sin_impresora') {
+                url.searchParams.set('alerta', 'sinimp');
+            } else if (type === 'solo_red') {
+                url.searchParams.set('alerta', 'red');
+            } else if (type === 'win7') {
+                url.searchParams.set('os', 'win7');
+            } else if (type === 'win10') {
+                url.searchParams.set('os', 'win10');
+            } else if (type === 'tareas') {
+                url.searchParams.set('filter_tasks', 'true');
+            }
+
+            // Always ensure active PCs (except for Graveyard which is a link)
+            url.searchParams.set('estado', 'True');
+
+            window.location.href = url.toString();
+        }
+
+        // --- Copy Script Logic ---
+        function copyScript() {
+            const scriptText = `
+# Configuracion
+$serverUrl = "https://{{ request.host.split(':')[0] }}:5000"
+$pcName = $env:COMPUTERNAME
+$userName = $env:USERNAME
+
+# Bypasear certificado auto-firmado
+add-type @"
+    using System.Net;
+    using System.Security.Cryptography.X509Certificates;
+    public class TrustAllCertsPolicy : ICertificatePolicy {
+        public bool CheckValidationResult(
+            ServicePoint srvPoint, X509Certificate certificate,
+            WebRequest request, int certificateProblem) {
+            return true;
+        }
+    }
+"@
+[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+
+# Recolectar datos
+$os = (Get-WmiObject Win32_OperatingSystem).Caption
+$cpu = (Get-WmiObject Win32_Processor).Name
+$ramBytes = (Get-WmiObject Win32_ComputerSystem).TotalPhysicalMemory
+$ramGB = [math]::Round($ramBytes / 1GB, 2)
+$disk = (Get-WmiObject Win32_DiskDrive | Select-Object -First 1).Model
+$motherboard = (Get-WmiObject Win32_BaseBoard).Product
+$ip = (Get-NetIPAddress | Where-Object {$_.AddressFamily -eq 'IPv4' -and $_.InterfaceAlias -notlike '*Loopback*' -and $_.InterfaceAlias -notlike '*vEthernet*'} | Select-Object -First 1).IPAddress
+$printers = (Get-WmiObject Win32_Printer).Name -join ", "
+$monitors = (Get-WmiObject WmiMonitorID -Namespace root\\wmi).UserFriendlyName -join ", "
+
+# JSON Payload
+$payload = @{
+    pc_name = $pcName
+    user_name = $userName
+    os_name = $os
+    processor = $cpu
+    ram_gb = $ramGB
+    disk_models = $disk
+    motherboard_model = $motherboard
+    ip_address = $ip
+    printers = $printers
+    monitors = $monitors
+} | ConvertTo-Json
+
+# Enviar
+try {
+    Invoke-RestMethod -Uri "$serverUrl/api/inventory" -Method Post -Body $payload -ContentType "application/json"
+    Write-Host "Inventario enviado con exito."
+} catch {
+    Write-Host "Error al enviar inventario: $_"
+}
+            `;
+            
+            navigator.clipboard.writeText(scriptText.trim()).then(() => {
+                alert("Script copiado al portapapeles. Pégalo en PowerShell (como Admin) en las PCs clientes.");
+            }).catch(err => {
+                console.error("Error al copiar:", err);
+                alert("No se pudo copiar automáticamente. Copia el texto desde el archivo.");
+            });
+        }
+
 
         // --- Auto Refresh Logic (Smart) ---
         (function () {

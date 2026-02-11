@@ -584,8 +584,10 @@ def dashboard():
 
     # Filtros
     q = request.args.get("q", "").strip()
-    estado = request.args.get("estado", "True").strip() # Por defecto mostramos solo activos
+    estado = request.args.get("estado", "True").strip()
     alerta = request.args.get("alerta", "").strip()
+    os_param = request.args.get("os", "").strip()
+    filter_tasks = request.args.get("filter_tasks", "").strip()
 
     # Paginación
     try:
@@ -615,8 +617,6 @@ def dashboard():
             if estado in ("True", "False"):
                 count_sql += " AND p.is_active = ?"
                 params.append(estado)
-            # Si estado es "All" o vacio explícito, podrías no filtrar, pero el default arriba es True.
-
 
             if alerta == "ram":
                 count_sql += " AND p.alerta_ram_baja = 1"
@@ -624,6 +624,14 @@ def dashboard():
                 count_sql += " AND p.alerta_sin_impresora = 1"
             elif alerta == "red":
                 count_sql += " AND p.alerta_impresora_red = 1"
+            
+            if os_param == "win7":
+                 count_sql += " AND p.os_name LIKE '%Windows 7%'"
+            elif os_param == "win10":
+                 count_sql += " AND (p.os_name LIKE '%Windows 10%' OR p.os_name LIKE '%Windows 11%')"
+
+            if filter_tasks == "true":
+                count_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') > 0"
 
             total_rows = conn.execute(count_sql, params).fetchone()["c"]
 
@@ -660,13 +668,26 @@ def dashboard():
                 base_sql += " AND p.alerta_sin_impresora = 1"
             elif alerta == "red":
                 base_sql += " AND p.alerta_impresora_red = 1"
+            
+            if os_param == "win7":
+                 base_sql += " AND p.os_name LIKE '%Windows 7%'"
+            elif os_param == "win10":
+                 base_sql += " AND (p.os_name LIKE '%Windows 10%' OR p.os_name LIKE '%Windows 11%')"
+            
+            if filter_tasks == "true":
+                base_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') > 0"
+            
+            # Añadir ordenamiento por nombre de PC por defecto si no hay filtros de alerta
+            # Si hay filtros de alerta, el orden puede ser menos relevante o ya estar implícito
+            # if not alerta: # O podrías querer ordenar siempre
+            base_sql += " ORDER BY p.pc_name"
 
-            base_sql += " ORDER BY p.last_report DESC LIMIT ? OFFSET ?"
-            params_with_limit = params + [per_page, offset]
 
-            rows = conn.execute(base_sql, params_with_limit).fetchall()
+            # Añadir límite y offset para paginación
+            base_sql += " LIMIT ? OFFSET ?"
+            params.extend([per_page, offset])
 
-            pcs_data = [dict(row) for row in rows]
+            pcs_data = [dict(row) for row in conn.execute(base_sql, params).fetchall()]
 
             # --- RESTAURADO: CALCULO GLOBAL DE KPIS PARA DASHBOARD ---
             # 1. Total Activas (Excluyendo PC Generica e Infraestructura)
