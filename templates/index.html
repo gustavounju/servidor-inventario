@@ -1717,16 +1717,21 @@ Start-Sleep -Seconds 10
                     return response.text();
                 })
                 .then(scriptText => {
-                    // Inject dynamic variables if needed (optional, but good for portability)
-                    // The script already uses $env:COMPUTERNAME, so it is generic.
-                    // We might want to ensure the server URL is correct if hardcoded in the file vs dynamic.
-                    // But reading the file directly is safest as it matches what runs locally.
-                    
-                    // Optional: Inject current server URL if the script uses a placeholder
-                    // scriptText = scriptText.replace('https://DEFAULT_SERVER', window.location.origin);
-
                     navigator.clipboard.writeText(scriptText.trim()).then(() => {
-                        alert("Script copiado al portapapeles. Pégalo en PowerShell (como Admin).");
+                        // Visual Feedback: Blink Blue
+                        const kpiScript = document.getElementById('kpiScript');
+                        if (kpiScript) {
+                            kpiScript.classList.add('kpi-on');
+                            
+                            // Change text temporarily (optional but nice)
+                            const originalText = kpiScript.querySelector('.text-primary').innerText;
+                            kpiScript.querySelector('.text-primary').innerText = "¡Copiado!";
+                            
+                            setTimeout(() => {
+                                kpiScript.classList.remove('kpi-on');
+                                kpiScript.querySelector('.text-primary').innerText = originalText;
+                            }, 1000); // 1.5 seconds feedback
+                        }
                     }).catch(err => {
                         console.error("Error al copiar:", err);
                         alert("No se pudo copiar automáticamente. Copia el texto desde el archivo inventario.ps1");
