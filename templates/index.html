@@ -1702,68 +1702,33 @@ Start-Sleep -Seconds 10
             window.location.href = url.toString();
         }
 
-        // --- Copy Script Logic ---
+        // --- Copy Script Logic (Updated to fetch real file) ---
         function copyScript() {
-            const scriptText = `
-# Configuracion
-$serverUrl = "https://{{ request.host.split(':')[0] }}:5000"
-$pcName = $env:COMPUTERNAME
-$userName = $env:USERNAME
+            fetch('{{ url_for("get_script") }}')
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.text();
+                })
+                .then(scriptText => {
+                    // Inject dynamic variables if needed (optional, but good for portability)
+                    // The script already uses $env:COMPUTERNAME, so it is generic.
+                    // We might want to ensure the server URL is correct if hardcoded in the file vs dynamic.
+                    // But reading the file directly is safest as it matches what runs locally.
+                    
+                    // Optional: Inject current server URL if the script uses a placeholder
+                    // scriptText = scriptText.replace('https://DEFAULT_SERVER', window.location.origin);
 
-# Bypasear certificado auto-firmado
-add-type @"
-    using System.Net;
-    using System.Security.Cryptography.X509Certificates;
-    public class TrustAllCertsPolicy : ICertificatePolicy {
-        public bool CheckValidationResult(
-            ServicePoint srvPoint, X509Certificate certificate,
-            WebRequest request, int certificateProblem) {
-            return true;
-        }
-    }
-"@
-[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
-
-# Recolectar datos
-$os = (Get-WmiObject Win32_OperatingSystem).Caption
-$cpu = (Get-WmiObject Win32_Processor).Name
-$ramBytes = (Get-WmiObject Win32_ComputerSystem).TotalPhysicalMemory
-$ramGB = [math]::Round($ramBytes / 1GB, 2)
-$disk = (Get-WmiObject Win32_DiskDrive | Select-Object -First 1).Model
-$motherboard = (Get-WmiObject Win32_BaseBoard).Product
-$ip = (Get-NetIPAddress | Where-Object {$_.AddressFamily -eq 'IPv4' -and $_.InterfaceAlias -notlike '*Loopback*' -and $_.InterfaceAlias -notlike '*vEthernet*'} | Select-Object -First 1).IPAddress
-$printers = (Get-WmiObject Win32_Printer).Name -join ", "
-$monitors = (Get-WmiObject WmiMonitorID -Namespace root\\wmi).UserFriendlyName -join ", "
-
-# JSON Payload
-$payload = @{
-    pc_name = $pcName
-    user_name = $userName
-    os_name = $os
-    processor = $cpu
-    ram_gb = $ramGB
-    disk_models = $disk
-    motherboard_model = $motherboard
-    ip_address = $ip
-    printers = $printers
-    monitors = $monitors
-} | ConvertTo-Json
-
-# Enviar
-try {
-    Invoke-RestMethod -Uri "$serverUrl/api/inventory" -Method Post -Body $payload -ContentType "application/json"
-    Write-Host "Inventario enviado con exito."
-} catch {
-    Write-Host "Error al enviar inventario: $_"
-}
-            `;
-            
-            navigator.clipboard.writeText(scriptText.trim()).then(() => {
-                alert("Script copiado al portapapeles. Pégalo en PowerShell (como Admin) en las PCs clientes.");
-            }).catch(err => {
-                console.error("Error al copiar:", err);
-                alert("No se pudo copiar automáticamente. Copia el texto desde el archivo.");
-            });
+                    navigator.clipboard.writeText(scriptText.trim()).then(() => {
+                        alert("Script copiado al portapapeles. Pégalo en PowerShell (como Admin).");
+                    }).catch(err => {
+                        console.error("Error al copiar:", err);
+                        alert("No se pudo copiar automáticamente. Copia el texto desde el archivo inventario.ps1");
+                    });
+                })
+                .catch(err => {
+                    console.error("Error al obtener script:", err);
+                    alert("Error al cargar el script del servidor.");
+                });
         }
 
 
