@@ -707,7 +707,7 @@
                 <!-- Anterior -->
                 <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('dashboard', page=page-1, q=q, estado=estado, alerta=alerta) }}">
+                        href="{{ url_for('dashboard', page=page-1, q=q, estado=estado, alerta=alerta, per_page=per_page) }}">
                         Anterior
                     </a>
                 </li>
@@ -722,11 +722,29 @@
                 <!-- Siguiente -->
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('dashboard', page=page+1, q=q, estado=estado, alerta=alerta) }}">
+                        href="{{ url_for('dashboard', page=page+1, q=q, estado=estado, alerta=alerta, per_page=per_page) }}">
                         Siguiente
                     </a>
                 </li>
             </ul>
+
+            <!-- Selector de filas por página -->
+            <div class="d-flex justify-content-center align-items-center mt-2">
+                <form action="{{ url_for('dashboard') }}" method="GET" class="d-flex align-items-center">
+                    <input type="hidden" name="q" value="{{ q }}">
+                    <input type="hidden" name="estado" value="{{ estado }}">
+                    <input type="hidden" name="alerta" value="{{ alerta }}">
+
+                    <label class="me-2 small text-muted">Filas:</label>
+                    <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()"
+                        style="width: auto;">
+                        <option value="10" {% if per_page==10 %}selected{% endif %}>10</option>
+                        <option value="25" {% if per_page==25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if per_page==50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if per_page==100 %}selected{% endif %}>100</option>
+                    </select>
+                </form>
+            </div>
         </nav>
         {% endif %}
 
@@ -1498,82 +1516,11 @@ Start-Sleep -Seconds 10
             }
         });
 
-        // ===== MODERNIZACIÓN: Paginación Client-Side (Opción 9) =====
-        let currentPage = 1;
-        const rowsPerPage = parseInt(localStorage.getItem('rowsPerPage')) || 50;
 
-        function paginateTable() {
-            const table = document.getElementById('inventoryTable');
-            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
-            const totalPages = Math.ceil(rows.length / rowsPerPage);
-
-            // Ocultar todas las filas
-            rows.forEach((row, index) => {
-                const shouldShow = index >= (currentPage - 1) * rowsPerPage && index < currentPage * rowsPerPage;
-                row.style.display = shouldShow ? '' : 'none';
-            });
-
-            // Actualizar controles de paginación
-            updatePaginationControls(currentPage, totalPages, rows.length);
-        }
-
-        function updatePaginationControls(page, totalPages, totalRows) {
-            let paginationDiv = document.querySelector('.client-pagination');
-            if (!paginationDiv) {
-                // Crear controles si no existen
-                paginationDiv = document.createElement('div');
-                paginationDiv.className = 'client-pagination mt-3 d-flex justify-content-between align-items-center';
-                paginationDiv.innerHTML = `
-                    <div>
-                        <span class="text-muted">Mostrando <strong id="rowStart">1</strong>-<strong id="rowEnd">50</strong> de <strong id="rowTotal">0</strong></span>
-                    </div>
-                    <div>
-                        <button class="btn btn-sm btn-outline-primary" onclick="changePage(-1)">← Anterior</button>
-                        <span class="mx-3">Página <strong id="currentPageNum">1</strong> de <strong id="totalPagesNum">1</strong></span>
-                        <button class="btn btn-sm btn-outline-primary" onclick="changePage(1)">Siguiente →</button>
-                    </div>
-                    <div>
-                        <select class="form-select form-select-sm" onchange="changeRowsPerPage(this.value)" style="width: auto;">
-                            <option value="25">25 filas</option>
-                            <option value="50" selected>50 filas</option>
-                            <option value="100">100 filas</option>
-                            <option value="9999">Todas</option>
-                        </select>
-                    </div>
-                `;
-                document.getElementById('inventoryTable').after(paginationDiv);
-            }
-
-            document.getElementById('rowStart').textContent = (page - 1) * rowsPerPage + 1;
-            document.getElementById('rowEnd').textContent = Math.min(page * rowsPerPage, totalRows);
-            document.getElementById('rowTotal').textContent = totalRows;
-            document.getElementById('currentPageNum').textContent = page;
-            document.getElementById('totalPagesNum').textContent = totalPages || 1;
-        }
-
-        function changePage(delta) {
-            const table = document.getElementById('inventoryTable');
-            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
-            const totalPages = Math.ceil(rows.length / rowsPerPage);
-
-            currentPage = Math.max(1, Math.min(currentPage + delta, totalPages));
-            paginateTable();
-        }
-
-        function changeRowsPerPage(value) {
-            rowsPerPage = parseInt(value);
-            localStorage.setItem('rowsPerPage', rowsPerPage);
-            currentPage = 1;
-            paginateTable();
-        }
-
-        // Aplicar paginación al cargar y al filtrar
-        setTimeout(() => paginateTable(), 100);
-    </script>
     <!-- FINAL BLOQUE 4 -->
 
-    <!-- Modales -->
-    <!-- Modal Crear Tarea Suelta -->
+    < !--Modales -->
+    < !--Modal Crear Tarea Suelta-- >
     <div class="modal fade" id="createTaskModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -1632,7 +1579,7 @@ Start-Sleep -Seconds 10
         </div>
     </div>
 
-    <!-- Modal Asignar Tarea -->
+    <!--Modal Asignar Tarea-- >
     <div class="modal fade" id="assignTaskModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -1665,7 +1612,7 @@ Start-Sleep -Seconds 10
     </div>
 
 
-    <!-- Modal Gestión Técnicos -->
+    <!--Modal Gestión Técnicos-- >
     <div class="modal fade" id="techniciansModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">

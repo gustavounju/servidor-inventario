@@ -592,7 +592,12 @@ def dashboard():
         page = int(request.args.get("page", 1))
     except ValueError:
         page = 1
-    per_page = 25
+    
+    try:
+        per_page = int(request.args.get("per_page", 25))
+    except ValueError:
+        per_page = 25
+        
     offset = (page - 1) * per_page
 
     total_rows = 0
@@ -754,7 +759,8 @@ def dashboard():
         alerta=alerta,
         page=page,
         total_pages=total_pages,
-        fuero_colors=FUERO_COLORS
+        fuero_colors=FUERO_COLORS,
+        per_page=per_page
     )
 
 
