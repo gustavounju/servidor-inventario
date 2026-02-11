@@ -648,7 +648,7 @@
                     data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
                     <td>{{ pc.pc_name }}</td>
                     <td>{{ pc.last_user }}</td>
-                    <td><span class="badge bg-info text-dark">{{ pc.fuero or '-' }}</span></td>
+                    <td><span class="badge text-white" style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{ pc.fuero or '-' }}</span></td>
                     <td>{{ pc.motherboard_model }}</td>
                     <td>{{ pc.os_name }}</td>
                     <td>{{ pc.processor }}</td>

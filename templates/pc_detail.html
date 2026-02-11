@@ -90,6 +90,11 @@
         <td>{{ pc.last_user }}</td>
       </tr>
       <tr>
+        <th>Fuero</th>
+        <td><span class="badge text-white" style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{
+            pc.fuero or '-' }}</span></td>
+      </tr>
+      <tr>
         <th>Placa Madre</th>
         <td>{{ pc.motherboard_model }}</td>
       </tr>

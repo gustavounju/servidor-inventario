@@ -317,6 +317,16 @@ FUERO_MAPPING = {
     "CGESE": "Cámara Gesell"
 }
 
+FUERO_COLORS = {
+    "Tribunal de Trabajo Sala IV": "#0d6efd",    # Blue
+    "Oficina de Gestion Laboral": "#198754",     # Green
+    "Dpto. Informatica San Pedro": "#212529",    # Dark
+    "Violencia de Género 5": "#d63384",          # Pink
+    "Sala IV Laboral": "#fd7e14",                # Orange
+    "Tribunal de Juicio": "#6610f2",             # Indigo
+    "Cámara Gesell": "#20c997"                   # Teal
+}
+
 def detect_fuero(pc_name):
     """Detecta el fuero basado en el prefijo del nombre de la PC."""
     if not pc_name:
@@ -743,7 +753,8 @@ def dashboard():
         estado=estado,
         alerta=alerta,
         page=page,
-        total_pages=total_pages
+        total_pages=total_pages,
+        fuero_colors=FUERO_COLORS
     )
 
 
@@ -831,7 +842,7 @@ def pc_detail(pc_name):
     if pc is None:
         abort(404)
 
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS)
 
 
 @app.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
