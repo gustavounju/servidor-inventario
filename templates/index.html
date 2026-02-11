@@ -644,7 +644,9 @@
                         data-so="{{ pc.os_name | default('') }}"
                         data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
                         data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
-                        <td>{{ pc.pc_name }}</td>
+                        <td
+                            style="white-space: normal; word-wrap: break-word; max-width: 120px; font-weight: 600; font-size: 0.85rem;">
+                            {{ pc.pc_name }}</td>
                         <td>{{ pc.last_user }}</td>
                         <td><span class="badge text-white"
                                 style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{ pc.fuero or
