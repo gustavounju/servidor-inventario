@@ -700,7 +700,8 @@ def dashboard():
             sort_col_sql = allowed_sort_cols.get(sort_by, "p.pc_name")
             sort_dir_sql = "DESC" if order == "desc" else "ASC"
             
-            base_sql += f" ORDER BY {sort_col_sql} {sort_dir_sql}"
+            # Usar NULLS LAST para que los vacíos queden al final siempre
+            base_sql += f" ORDER BY {sort_col_sql} {sort_dir_sql} NULLS LAST"
 
             # Añadir límite y offset para paginación
             base_sql += " LIMIT ? OFFSET ?"
