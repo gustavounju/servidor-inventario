@@ -486,8 +486,8 @@
 
             <!-- Windows 7 -->
             <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
-                <div class="card text-bg-light kpi-toggle h-100" id="kpiWin7" onclick="onFilterClick('win7')"
-                    style="cursor:pointer;">
+                <div class="card text-bg-light kpi-toggle h-100 {% if request.args.get('os') == 'win7' %}kpi-on{% endif %}"
+                    id="kpiWin7" onclick="onFilterClick('win7')" style="cursor:pointer;">
                     <div class="card-body py-2 text-center">
                         <div class="small text-uppercase">Windows 7</div>
                         <div class="h4 mb-0">{{ kpi_win7 }}</div>
@@ -497,8 +497,8 @@
 
             <!-- Windows 10/11 -->
             <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
-                <div class="card text-bg-light kpi-toggle h-100" id="kpiWin10" onclick="onFilterClick('win10')"
-                    style="cursor:pointer;">
+                <div class="card text-bg-light kpi-toggle h-100 {% if request.args.get('os') == 'win10' %}kpi-on{% endif %}"
+                    id="kpiWin10" onclick="onFilterClick('win10')" style="cursor:pointer;">
                     <div class="card-body py-2 text-center">
                         <div class="small text-uppercase">Windows 10/11</div>
                         <div class="h4 mb-0">{{ kpi_win10 }}</div>
@@ -508,8 +508,8 @@
 
             <!-- RAM baja -->
             <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
-                <div class="card text-bg-light kpi-toggle h-100" id="kpiRam" onclick="onFilterClick('ram')"
-                    style="cursor:pointer;">
+                <div class="card text-bg-light kpi-toggle h-100 {% if request.args.get('alerta') == 'ram' %}kpi-on{% endif %}"
+                    id="kpiRam" onclick="onFilterClick('ram')" style="cursor:pointer;">
                     <div class="card-body py-2 text-center">
                         <div class="small text-uppercase">RAM baja (&lt; 8 GB)</div>
                         <div class="h4 mb-0">{{ kpi_alerta_ram }}</div>
@@ -519,8 +519,8 @@
 
             <!-- Sin impresora -->
             <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
-                <div class="card text-bg-light kpi-toggle h-100" id="kpiSinImp" onclick="onFilterClick('sin_impresora')"
-                    style="cursor:pointer;">
+                <div class="card text-bg-light kpi-toggle h-100 {% if request.args.get('alerta') == 'sinimp' %}kpi-on{% endif %}"
+                    id="kpiSinImp" onclick="onFilterClick('sin_impresora')" style="cursor:pointer;">
                     <div class="card-body py-2 text-center">
                         <div class="small text-uppercase">Sin impresora</div>
                         <div class="h4 mb-0">{{ kpi_sin_impresora }}</div>
@@ -530,8 +530,8 @@
 
             <!-- Solo impresora en red -->
             <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
-                <div class="card text-bg-light kpi-toggle h-100" id="kpiSoloRed" onclick="onFilterClick('solo_red')"
-                    style="cursor:pointer;">
+                <div class="card text-bg-light kpi-toggle h-100 {% if request.args.get('alerta') == 'red' %}kpi-on{% endif %}"
+                    id="kpiSoloRed" onclick="onFilterClick('solo_red')" style="cursor:pointer;">
                     <div class="card-body py-2 text-center">
                         <div class="small text-uppercase">Solo impresora en red</div>
                         <div class="h4 mb-0">{{ kpi_impresora_red }}</div>
@@ -541,8 +541,8 @@
 
             <!-- Tareas pendientes -->
             <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
-                <div class="card text-bg-light kpi-toggle h-100" id="kpiTareasPendientes"
-                    onclick="onFilterClick('tareas')" style="cursor:pointer;">
+                <div class="card text-bg-light kpi-toggle h-100 {% if request.args.get('filter_tasks') == 'true' %}kpi-on{% endif %}"
+                    id="kpiTareasPendientes" onclick="onFilterClick('tareas')" style="cursor:pointer;">
                     <div class="card-body py-2 text-center">
                         <div class="small text-uppercase">Tareas pendientes</div>
                         <div class="h4 mb-0">
@@ -1674,6 +1674,10 @@ Start-Sleep -Seconds 10
         // --- KPI Filters Logic ---
         function onFilterClick(type) {
             const url = new URL(window.location.href);
+            const currentAlerta = url.searchParams.get('alerta');
+            const currentOs = url.searchParams.get('os');
+            const currentTasks = url.searchParams.get('filter_tasks');
+
             // Reset page param on new filter
             url.searchParams.set('page', 1);
 
@@ -1682,17 +1686,20 @@ Start-Sleep -Seconds 10
             url.searchParams.delete('os');
             url.searchParams.delete('filter_tasks');
 
-            if (type === 'ram') {
+            // Toggle logic: If clicked was NOT the active one, set it.
+            // If it WAS active, we just deleted it above, so it becomes a toggle-off.
+            
+            if (type === 'ram' && currentAlerta !== 'ram') {
                 url.searchParams.set('alerta', 'ram');
-            } else if (type === 'sin_impresora') {
+            } else if (type === 'sin_impresora' && currentAlerta !== 'sinimp') {
                 url.searchParams.set('alerta', 'sinimp');
-            } else if (type === 'solo_red') {
+            } else if (type === 'solo_red' && currentAlerta !== 'red') {
                 url.searchParams.set('alerta', 'red');
-            } else if (type === 'win7') {
+            } else if (type === 'win7' && currentOs !== 'win7') {
                 url.searchParams.set('os', 'win7');
-            } else if (type === 'win10') {
+            } else if (type === 'win10' && currentOs !== 'win10') {
                 url.searchParams.set('os', 'win10');
-            } else if (type === 'tareas') {
+            } else if (type === 'tareas' && currentTasks !== 'true') {
                 url.searchParams.set('filter_tasks', 'true');
             }
 
