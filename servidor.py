@@ -756,20 +756,35 @@ def dashboard():
                 "SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = DATE('now', 'localtime')"
             ).fetchone()["c"]
 
-            # KPI Tareas Pendientes TOTAL (Asignadas + Sin Asignar)
+            # KPI Tareas Pendientes TOTAL (Asignadas + Sin Asignar + PC Generica)
             kpi_tareas_pendientes_total = conn.execute(
                 "SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'"
             ).fetchone()["c"]
-            
-            # (Opcional) Si 'localtime' da problemas en producción/docker, usar DATE('now') o gestionar zona horaria en python.
-            # Como corre en local Windows del usuario, 'localtime' debería tomar la hora del sistema.
+
+            # Obtener LISTA COMPLETA de PCs activas para el dropdown de "Asignar"
+            # (pcs_data solo tiene la página actual). Priorizamos Generica e Infra.
+            all_pcs_dropdown = [dict(row) for row in conn.execute(
+                """
+                SELECT pc_name, fuero, last_user 
+                FROM pcs 
+                WHERE is_active = 'True' 
+                ORDER BY 
+                CASE 
+                    WHEN pc_name = 'PC Generica' THEN 0 
+                    WHEN pc_name = 'Infraestructura' THEN 1 
+                    ELSE 2 
+                END,
+                pc_name ASC
+                """
+            ).fetchall()]
             
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
+        pcs_data = []
         technicians_list = []
         unassigned_tasks = []
-        unassigned_count = 0
-        kpi_tareas_pendientes_total = 0
+        all_pcs_dropdown = [] # Fallback empty list
+        total_rows = 0
         kpi_total_activas = 0
         kpi_total_graveyard = 0
         kpi_alerta_ram = 0
@@ -778,9 +793,12 @@ def dashboard():
         kpi_win7 = 0
         kpi_win10 = 0
         kpi_tareas_hoy = 0
+        kpi_tareas_pendientes_total = 0
+        unassigned_count = 0
+
 
     # Calcular total de páginas
-    total_pages = (total_rows // per_page) + (1 if total_rows % per_page else 0)
+    total_pages = (total_rows + per_page - 1) // per_page if per_page > 0 else 1
 
     server_url = request.url_root.strip("/")  # ej: "http://192.168.1.8:5000"
 
