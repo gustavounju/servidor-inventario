@@ -1729,15 +1729,21 @@ Start-Sleep -Seconds 10
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function setAssignTaskId(taskId) {
-            // Solo establecer el ID, el modal lo abre Bootstrap via data-bs-toggle
-            var input = document.getElementById('assignTaskId');
-            if(input) {
-                input.value = taskId;
-                console.log("Task ID set to:", taskId);
-            } else {
-                console.error("Error: assignTaskId input not found!");
-            }
+        // Robust Assign Modal Handler
+        var assignModal = document.getElementById('assignTaskModal');
+        if (assignModal) {
+            assignModal.addEventListener('show.bs.modal', function (event) {
+                // Button that triggered the modal
+                var button = event.relatedTarget;
+                // Extract info from data-bs-* attributes
+                var taskId = button.getAttribute('data-bs-taskid');
+                // Update the modal's content.
+                var input = assignModal.querySelector('#assignTaskId');
+                if (input) {
+                    input.value = taskId;
+                    console.log("Task ID set properly via Event Listener:", taskId);
+                }
+            });
         }
 
         // --- KPI Filters Logic ---
