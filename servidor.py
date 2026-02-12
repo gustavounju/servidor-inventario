@@ -811,6 +811,7 @@ def dashboard():
         technicians=technicians_list,
         kpi_tareas_hoy=kpi_tareas_hoy,
         kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
+        all_pcs=all_pcs_dropdown,  # FIX: Pass the dropdown list to the template
         fueros=FUERO_MAPPING,  # Pasar mapping para filtros o modales
         # KPIs faltantes
         kpi_total_activas=kpi_total_activas,
