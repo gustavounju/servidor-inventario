@@ -1666,7 +1666,7 @@ Start-Sleep -Seconds 10
         </div>
     </div>
 
-    <!-- Modal Asignar Tarea -->
+    <!--Modal Asignar Tarea-- >
     <div class="modal fade" id="assignTaskModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -1699,7 +1699,7 @@ Start-Sleep -Seconds 10
     </div>
 
 
-    <!-- Modal Gestión Técnicos -->
+    <!--Modal Gestión Técnicos-- >
     <div class="modal fade" id="techniciansModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -1737,21 +1737,30 @@ Start-Sleep -Seconds 10
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Robust Assign Modal Handler
-        var assignModal = document.getElementById('assignTaskModal');
-        if (assignModal) {
-            assignModal.addEventListener('show.bs.modal', function (event) {
-                // Button that triggered the modal
-                var button = event.relatedTarget;
-                // Extract info from data-bs-* attributes
-                var taskId = button.getAttribute('data-bs-taskid');
-                // Update the modal's content.
-                var input = assignModal.querySelector('#assignTaskId');
-                if (input) {
-                    input.value = taskId;
-                    console.log("Task ID set properly via Event Listener:", taskId);
-                }
-            });
+        // Explicit Assign Modal Handler (Nuclear Option)
+        function openAssignModal(taskId) {
+            console.log("Opening generic assign modal for task ID:", taskId);
+            
+            // 1. Set the hidden input value
+            var input = document.getElementById('assignTaskId');
+            if (input) {
+                input.value = taskId;
+                console.log("Input value set to:", input.value);
+            } else {
+                console.error("CRITICAL: assignTaskId input not found!");
+                alert("Error interno: No se encontró el campo de ID de tarea.");
+                return;
+            }
+
+            // 2. Explicitly show the modal using Bootstrap API
+            var modalElement = document.getElementById('assignTaskModal');
+            if (modalElement) {
+                var modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            } else {
+                console.error("CRITICAL: assignTaskModal element not found!");
+                alert("Error interno: No se encontró el modal de asignación.");
+            }
         }
 
         // --- KPI Filters Logic ---
