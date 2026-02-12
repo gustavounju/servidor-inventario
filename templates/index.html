@@ -1627,7 +1627,7 @@ Start-Sleep -Seconds 10
                 clearFiltersVisual();
             }
         });
-
+    </script>
 
     <!-- FINAL BLOQUE 4 -->
 
@@ -1691,7 +1691,7 @@ Start-Sleep -Seconds 10
         </div>
     </div>
 
-    <!--Modal Asignar Tarea-- >
+    <!--Modal Asignar Tarea-->
     <div class="modal fade" id="assignTaskModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -1766,7 +1766,7 @@ Start-Sleep -Seconds 10
         function toggleAssignForm(taskId) {
             var btn = document.getElementById('btn-assign-' + taskId);
             var form = document.getElementById('form-assign-' + taskId);
-            
+
             if (btn && form) {
                 if (form.classList.contains('d-none')) {
                     // Show Form, Hide Button
@@ -1801,7 +1801,7 @@ Start-Sleep -Seconds 10
 
             // Toggle logic: If clicked was NOT the active one, set it.
             // If it WAS active, we just deleted it above, so it becomes a toggle-off.
-            
+
             if (type === 'ram' && currentAlerta !== 'ram') {
                 url.searchParams.set('alerta', 'ram');
             } else if (type === 'sin_impresora' && currentAlerta !== 'sinimp') {
@@ -1835,11 +1835,11 @@ Start-Sleep -Seconds 10
                         const kpiScript = document.getElementById('kpiScript');
                         if (kpiScript) {
                             kpiScript.classList.add('kpi-on');
-                            
+
                             // Change text temporarily (optional but nice)
                             const originalText = kpiScript.querySelector('.text-primary').innerText;
                             kpiScript.querySelector('.text-primary').innerText = "¡Copiado!";
-                            
+
                             setTimeout(() => {
                                 kpiScript.classList.remove('kpi-on');
                                 kpiScript.querySelector('.text-primary').innerText = originalText;
