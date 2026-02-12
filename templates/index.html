@@ -1737,29 +1737,25 @@ Start-Sleep -Seconds 10
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Explicit Assign Modal Handler (Nuclear Option)
-        function openAssignModal(taskId) {
-            console.log("Opening generic assign modal for task ID:", taskId);
+        // INLINE ASSIGN LOGIC (No Modals)
+        function toggleAssignForm(taskId) {
+            var btn = document.getElementById('btn-assign-' + taskId);
+            var form = document.getElementById('form-assign-' + taskId);
             
-            // 1. Set the hidden input value
-            var input = document.getElementById('assignTaskId');
-            if (input) {
-                input.value = taskId;
-                console.log("Input value set to:", input.value);
+            if (btn && form) {
+                if (form.classList.contains('d-none')) {
+                    // Show Form, Hide Button
+                    form.classList.remove('d-none');
+                    form.classList.add('d-flex');
+                    btn.classList.add('d-none');
+                } else {
+                    // Hide Form, Show Button
+                    form.classList.remove('d-flex');
+                    form.classList.add('d-none');
+                    btn.classList.remove('d-none');
+                }
             } else {
-                console.error("CRITICAL: assignTaskId input not found!");
-                alert("Error interno: No se encontró el campo de ID de tarea.");
-                return;
-            }
-
-            // 2. Explicitly show the modal using Bootstrap API
-            var modalElement = document.getElementById('assignTaskModal');
-            if (modalElement) {
-                var modal = new bootstrap.Modal(modalElement);
-                modal.show();
-            } else {
-                console.error("CRITICAL: assignTaskModal element not found!");
-                alert("Error interno: No se encontró el modal de asignación.");
+                console.error("Elements not found for task:", taskId);
             }
         }
 
