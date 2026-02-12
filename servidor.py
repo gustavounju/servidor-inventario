@@ -701,7 +701,16 @@ def dashboard():
             sort_dir_sql = "DESC" if order == "desc" else "ASC"
             
             # Usar NULLS LAST para que los vacíos queden al final siempre
-            base_sql += f" ORDER BY {sort_col_sql} {sort_dir_sql} NULLS LAST"
+            # Priorizar PC Generica e Infraestructura al inicio
+            base_sql += f"""
+                ORDER BY 
+                CASE 
+                    WHEN p.pc_name = 'PC Generica' THEN 0 
+                    WHEN p.pc_name = 'Infraestructura' THEN 1 
+                    ELSE 2 
+                END,
+                {sort_col_sql} {sort_dir_sql} NULLS LAST
+            """
 
             # Añadir límite y offset para paginación
             base_sql += " LIMIT ? OFFSET ?"
