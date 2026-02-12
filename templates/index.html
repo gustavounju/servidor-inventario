@@ -590,11 +590,36 @@
                             <td>{{ task.solicitante or '-' }}</td>
                             <td>{{ task.assigned_to or '-' }}</td>
                             <td>{{ task.created_at }}</td>
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                    data-bs-target="#assignTaskModal" data-bs-taskid="{{ task.id }}">
+                            <td class="text-end" style="min-width: 250px;">
+                                <!-- 1. Button Trigger -->
+                                <button id="btn-assign-{{ task.id }}" class="btn btn-sm btn-primary" type="button"
+                                    onclick="toggleAssignForm('{{ task.id }}')">
                                     <i class="bi bi-person-check"></i> Asignar
                                 </button>
+
+                                <!-- 2. Inline Form (Hidden by default) -->
+                                <form id="form-assign-{{ task.id }}" action="{{ url_for('assign_task') }}" method="POST"
+                                    class="d-none gap-2 align-items-center justify-content-end">
+
+                                    <input type="hidden" name="task_id" value="{{ task.id }}">
+
+                                    <select name="pc_name" class="form-select form-select-sm" required
+                                        style="width: auto; max-width: 200px;">
+                                        <option value="">Seleccionar PC...</option>
+                                        {% for pc in all_pcs %}
+                                        <option value="{{ pc.pc_name }}">{{ pc.pc_name }}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <button type="submit" class="btn btn-sm btn-success" title="Guardar">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+
+                                    <button type="button" class="btn btn-sm btn-secondary" title="Cancelar"
+                                        onclick="toggleAssignForm('{{ task.id }}')">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
