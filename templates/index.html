@@ -571,6 +571,7 @@
                             <th>Descripción</th>
                             <th>Fuero/Ubicación</th>
                             <th>Solicitante</th>
+                            <th>Técnico</th>
                             <th>Fecha</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -579,12 +580,19 @@
                         {% for task in unassigned_tasks %}
                         <tr>
                             <td>{{ task.descripcion }}</td>
-                            <td><span class="badge bg-secondary">{{ task.fuero or '-' }}</span></td>
+                            <td>
+                                {% if task.fuero %}
+                                <span class="badge bg-secondary">{{ task.fuero }}</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">-</span>
+                                {% endif %}
+                            </td>
                             <td>{{ task.solicitante or '-' }}</td>
+                            <td>{{ task.assigned_to or '-' }}</td>
                             <td>{{ task.created_at }}</td>
                             <td class="text-end">
                                 <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                    data-bs-target="#assignTaskModal" onclick="setAssignTaskId('{{ task.id }}')">
+                                    data-bs-target="#assignTaskModal" data-bs-taskid="{{ task.id }}">
                                     <i class="bi bi-person-check"></i> Asignar
                                 </button>
                             </td>
