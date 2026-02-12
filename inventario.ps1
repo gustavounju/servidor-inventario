@@ -33,7 +33,8 @@ try {
         New-ItemProperty -Path $path2 -Name 'SchUseStrongCrypto' -Value '1' -PropertyType 'DWord' -Force -ErrorAction SilentlyContinue | Out-Null
         New-ItemProperty -Path $path2 -Name 'SystemDefaultTlsVersions' -Value '1' -PropertyType 'DWord' -Force -ErrorAction SilentlyContinue | Out-Null
     }
-} catch {
+}
+catch {
     # Puede fallar si no hay permisos de admin, pero intentamos
 }
 
@@ -220,6 +221,15 @@ try {
             # Detectar tipo de puerto
             if ($printerPort -like "USB*" -or $printerPort -like "LPT*") { 
                 $printerPort += " (Local)" 
+                
+                # VERIFICACIÓN FÍSICA (PnP) PARA USB
+                # Si es USB, verificamos si hay un dispositivo PnP activo con ese nombre
+                if ($printerPort -like "USB*") {
+                    $pnp = Get-WmiObject Win32_PnPEntity | Where-Object { $_.Name -match $defaultPrinter.Name -or $_.Description -match $defaultPrinter.Name }
+                    if (-not $pnp -or $pnp.Status -ne "OK") {
+                        $printerPort += " [DESCONECTADA]"
+                    }
+                }
             }
             elseif ($printerPort -like "*IP_*" -or $printerPort -like "WSD-*" -or $printerPort -like "\\*") { 
                 $printerPort += " (Red)" 

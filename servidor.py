@@ -1706,9 +1706,12 @@ def process_inventory_data(data):
 
     es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp)
     es_local = pp.startswith("USB") or pp.startswith("LPT")
+    
+    # Detectar desconexión física (reportada por script PS updated)
+    esta_desconectada = "DESCONECTADA" in pp
 
-    # Sin impresora física propia:
-    if sin_modelo or es_virtual:
+    # Sin impresora física propia (o desconectada):
+    if sin_modelo or es_virtual or esta_desconectada:
         alerta_sin_impresora = 1
     else:
         alerta_sin_impresora = 0
