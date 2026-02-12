@@ -639,9 +639,9 @@ def dashboard():
 
             total_rows = conn.execute(count_sql, params).fetchone()["c"]
 
-            # Contar tareas pendientes sin asignar (para mostrar en dashboard)
+            # Contar tareas pendientes sin asignar O asignadas a PC Generica (para mostrar en dashboard)
             unassigned_tasks = conn.execute(
-                "SELECT * FROM tasks WHERE pc_name IS NULL OR pc_name = '' AND estado != 'Hecha' ORDER BY created_at DESC"
+                "SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '' OR pc_name = 'PC Generica') AND estado != 'Hecha' ORDER BY created_at DESC"
             ).fetchall()
             unassigned_count = len(unassigned_tasks)
             
