@@ -97,6 +97,7 @@ function ConvertTo-JsonCustom($InputObject) {
         }
         return "[ " + ([string]::Join(", ", $items)) + " ]"
     }
+
     # Hashtables / Diccionarios
     if ($InputObject -is [System.Collections.IDictionary]) {
         $props = @()
