@@ -789,6 +789,11 @@
                                     style="font-size: 0.7rem;">
                                     <i class="bi bi-list-task"></i>
                                 </a>
+                                <button onclick="showSecurity('{{ pc.pc_name }}')"
+                                    class="btn btn-sm btn-outline-warning py-0 px-1" title="Ver Conexiones / Seguridad"
+                                    style="font-size: 0.7rem;">
+                                    <i class="bi bi-shield-shaded"></i>
+                                </button>
                                 {% else %}
                                 <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}"
                                     class="btn btn-sm btn-success py-0 px-1" title="Reactivar"
@@ -1915,6 +1920,94 @@ Start-Sleep -Seconds 10
             </div>
         </div>
     </div>
+
+    <!-- Modal Seguridad -->
+    <div class="modal fade" id="securityModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">🛡️ Seguridad: <span id="securityPcName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="securityLoading" class="text-center">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p>Analizando conexiones...</p>
+                    </div>
+                    <div id="securityError" class="alert alert-danger d-none"></div>
+
+                    <div id="securityContent" class="d-none">
+                        <table class="table table-sm table-striped" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Proceso</th>
+                                    <th>PID</th>
+                                    <th>Remoto</th>
+                                    <th>Estado</th>
+                                    <th>Proto</th>
+                                </tr>
+                            </thead>
+                            <tbody id="securityTableBody">
+                                <!-- JS fill -->
+                            </tbody>
+                        </table>
+                        <p class="text-muted small">Mostrando conexiones ESTABLISHED/SYN_SENT externas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showSecurity(pcName) {
+            // Reset modal
+            document.getElementById('securityPcName').innerText = pcName;
+            document.getElementById('securityLoading').classList.remove('d-none');
+            document.getElementById('securityContent').classList.add('d-none');
+            document.getElementById('securityError').classList.add('d-none');
+
+            // Show modal
+            var myModal = new bootstrap.Modal(document.getElementById('securityModal'));
+            myModal.show();
+
+            // Fetch data
+            fetch('/api/security/' + encodeURIComponent(pcName))
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('securityLoading').classList.add('d-none');
+                    if (data.status === 'success') {
+                        const tbody = document.getElementById('securityTableBody');
+                        tbody.innerHTML = '';
+
+                        if (data.conexiones && data.conexiones.length > 0) {
+                            document.getElementById('securityContent').classList.remove('d-none');
+                            data.conexiones.forEach(conn => {
+                                let row = `<tr>
+                                    <td class="fw-bold text-primary">${conn.Process || '???'}</td>
+                                    <td>${conn.PID || '-'}</td>
+                                    <td><code>${conn.Remote}</code></td>
+                                    <td>${conn.State}</td>
+                                    <td>${conn.Proto}</td>
+                                </tr>`;
+                                tbody.innerHTML += row;
+                            });
+                        } else {
+                            document.getElementById('securityError').innerText = "No se detectaron conexiones activas externas o el reporte es antiguo.";
+                            document.getElementById('securityError').classList.remove('d-none');
+                        }
+                    } else {
+                        throw new Error(data.message || 'Error desconocido');
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('securityLoading').classList.add('d-none');
+                    document.getElementById('securityError').innerText = "Error cargando datos: " + err.message;
+                    document.getElementById('securityError').classList.remove('d-none');
+                });
+        }
+    </script>
 
     <!-- Datalist para asignación de tareas (Busqueda predictiva) -->
     <datalist id="datalistOptions">

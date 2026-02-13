@@ -2013,6 +2013,23 @@ def receive_log():
         return jsonify({"status": "error", "details": str(exc)}), 200
 
 
+@app.route("/api/security/<pc_name>")
+def get_pc_security(pc_name):
+    """Devuelve las conexiones activas de una PC desde su full_json_data."""
+    try:
+        with get_db_connection() as conn:
+            row = conn.execute("SELECT full_json_data FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+            if row and row["full_json_data"]:
+                data = json.loads(row["full_json_data"])
+                conexiones = data.get("Conexiones", [])
+                return jsonify({"status": "success", "conexiones": conexiones})
+            else:
+                return jsonify({"status": "error", "message": "PC no encontrada o sin datos"}), 404
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
 # ----------------- MOBILE API -----------------
 
 @app.route("/mobile")
