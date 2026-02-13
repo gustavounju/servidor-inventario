@@ -316,7 +316,9 @@ FUERO_MAPPING = {
     "TJ": "Tribunal de Juicio",
     "CGESE": "Cámara Gesell",
     "JCC8SEC16": "Juzgado civil y Comercial N°8 Secretaria 16",
-    "JCC9SEC18": "Juzgado civil y Comercial N°9 Secretaria 18"
+    "JCC9SEC18": "Juzgado civil y Comercial N°9 Secretaria 18",
+    "PRENSA": "Prensa Poder Judicial de San Pedro de Jujuy",
+    "SUPINT": "Superintendencia"
 }
 
 FUERO_COLORS = {
