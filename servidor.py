@@ -1687,6 +1687,30 @@ def reactivate_pc(pc_name):
     return redirect(url_for("dashboard"))
 
 
+@app.route("/refresh_fueros")
+def refresh_fueros():
+    """Recalcula el fuero para todas las PCs basándose en el nombre."""
+    try:
+        with get_db_connection() as conn:
+            pcs = conn.execute("SELECT pc_name FROM pcs").fetchall()
+            count = 0
+            for pc in pcs:
+                name = pc["pc_name"]
+                nuevo_fuero = detect_fuero(name)
+                # Actualizar siempre para asegurar corrección
+                conn.execute(
+                    "UPDATE pcs SET fuero = ? WHERE pc_name = ?",
+                    (nuevo_fuero, name)
+                )
+                count += 1
+            conn.commit()
+        print(f"Fueros actualizados para {count} PCs.")
+    except Exception as exc:
+        print(f"Error refreshing fueros: {exc}")
+
+    return redirect(url_for("dashboard"))
+
+
 @app.route("/delete_permanent/<string:pc_name>")
 def delete_permanent_pc(pc_name):
     """Borrado definitivo de una PC y sus tareas asociadas."""
