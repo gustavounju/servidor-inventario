@@ -609,13 +609,9 @@
 
                                     <input type="hidden" name="task_id" value="{{ task.id }}">
 
-                                    <select name="pc_name" class="form-select form-select-sm" required
-                                        style="width: auto; max-width: 200px;">
-                                        <option value="">Seleccionar PC...</option>
-                                        {% for pc in all_pcs %}
-                                        <option value="{{ pc.pc_name }}">{{ pc.pc_name }}</option>
-                                        {% endfor %}
-                                    </select>
+                                    <input class="form-control form-control-sm" list="datalistOptions" name="pc_name"
+                                        placeholder="Buscar PC / Usuario..." required autocomplete="off"
+                                        style="width: 200px;">
 
                                     <button type="submit" class="btn btn-sm btn-success" title="Guardar">
                                         <i class="bi bi-check-lg"></i>
@@ -1919,6 +1915,13 @@ Start-Sleep -Seconds 10
             </div>
         </div>
     </div>
+
+    <!-- Datalist para asignación de tareas (Busqueda predictiva) -->
+    <datalist id="datalistOptions">
+        {% for pc in all_pcs %}
+        <option value="{{ pc.pc_name }}">{{ pc.last_user or '?' }} - {{ pc.fuero or '?' }}</option>
+        {% endfor %}
+    </datalist>
 
 </body>
 
