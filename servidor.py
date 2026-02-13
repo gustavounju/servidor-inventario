@@ -829,7 +829,11 @@ def dashboard():
         page=page,
         total_pages=total_pages,
         fuero_colors=FUERO_COLORS,
-        per_page=per_page
+        per_page=per_page,
+        sort_by=sort_by,
+        order=order,
+        os_param=os_param,
+        filter_tasks=filter_tasks
     )
 
 
