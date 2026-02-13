@@ -314,29 +314,46 @@ try {
     
         $response = $wc.UploadString($servidor, "POST", $json)
     
-        Write-Host "Inventario enviado EXITOSAMENTE." -ForegroundColor Green
+        Write-Host "Inventario enviado EXITOSAMENTE (HTTPS)." -ForegroundColor Green
     }
     catch {
-        $script:errorOccurred = $true
-        Write-Host "ERROR al enviar el inventario:" -ForegroundColor Red
-        Write-Host $_.Exception.Message -ForegroundColor Red
-    
-        # Mostrar detalle si es WebException
-        if ($_.Exception.InnerException) {
-            Write-Host $_.Exception.InnerException.Message -ForegroundColor DarkRed
-        }
-
-    
-        # Backup Local de JSON en Escritorio
-        $desktopPath = [Environment]::GetFolderPath("Desktop")
-        $backupJson = "$desktopPath\Inventario_$pcNombre.json"
-    
+        Write-Host "Fallo HTTPS: $($_.Exception.Message). Intentando HTTP (Puerto 8080)..." -ForegroundColor Yellow
+        
+        # FALLBACK: Intentar HTTP en puerto 8080 (legacy/mobile)
         try {
-            [System.IO.File]::WriteAllText($backupJson, $json)
-            Write-Host "Se guardó el JSON del inventario en: $backupJson" -ForegroundColor Yellow
+            # Cambiar URL a HTTP y puerto 8080
+            # Asumimos que la IP es la misma, solo cambia protocolo y puerto
+             # $servidor = "https://10.15.2.251:5000/submit_inventory" -> "http://10.15.2.251:8080/submit_inventory"
+            $servidorHttp = $servidor.Replace("https://", "http://").Replace(":5000", ":8080")
+            
+            $wc = New-Object System.Net.WebClient
+            $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
+            $wc.Encoding = [System.Text.Encoding]::UTF8
+            
+            $response = $wc.UploadString($servidorHttp, "POST", $json)
+            Write-Host "Inventario enviado EXITOSAMENTE (HTTP)." -ForegroundColor Green
         }
         catch {
-            Write-Host "No se pudo guardar copia local del JSON." -ForegroundColor DarkRed
+            $script:errorOccurred = $true
+            Write-Host "ERROR FATAL: Falló tanto HTTPS como HTTP." -ForegroundColor Red
+            Write-Host "HTTPS Error: $($_.Exception.Message)" -ForegroundColor Red
+        
+            # Mostrar detalle si es WebException
+            if ($_.Exception.InnerException) {
+                Write-Host $_.Exception.InnerException.Message -ForegroundColor DarkRed
+            }
+
+            # Backup Local de JSON en Escritorio
+            $desktopPath = [Environment]::GetFolderPath("Desktop")
+            $backupJson = "$desktopPath\Inventario_$pcNombre.json"
+        
+            try {
+                [System.IO.File]::WriteAllText($backupJson, $json)
+                Write-Host "Se guardó el JSON del inventario en: $backupJson" -ForegroundColor Yellow
+            }
+            catch {
+                Write-Host "No se pudo guardar copia local del JSON." -ForegroundColor DarkRed
+            }
         }
     }
 
