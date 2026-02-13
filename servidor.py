@@ -314,7 +314,9 @@ FUERO_MAPPING = {
     "TJO1": "Tribunal de Juicio",
     "TJ01": "Tribunal de Juicio",
     "TJ": "Tribunal de Juicio",
-    "CGESE": "Cámara Gesell"
+    "CGESE": "Cámara Gesell",
+    "JCC8SEC16": "Juzgado civil y Comercial N°8 Secretaria 16",
+    "JCC9SEC18": "Juzgado civil y Comercial N°9 Secretaria 18"
 }
 
 FUERO_COLORS = {
@@ -324,7 +326,9 @@ FUERO_COLORS = {
     "Violencia de Género 5": "#d63384",          # Pink
     "Sala IV Laboral": "#fd7e14",                # Orange
     "Tribunal de Juicio": "#6610f2",             # Indigo
-    "Cámara Gesell": "#20c997"                   # Teal
+    "Cámara Gesell": "#20c997",                  # Teal
+    "Juzgado civil y Comercial N°8 Secretaria 16": "#0dcaf0", # Cyan
+    "Juzgado civil y Comercial N°9 Secretaria 18": "#0dcaf0"  # Cyan
 }
 
 def detect_fuero(pc_name):
