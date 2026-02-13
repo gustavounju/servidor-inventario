@@ -1679,6 +1679,28 @@ def reactivate_pc(pc_name):
     return redirect(url_for("dashboard"))
 
 
+@app.route("/delete_permanent/<string:pc_name>")
+def delete_permanent_pc(pc_name):
+    """Borrado definitivo de una PC y sus tareas asociadas."""
+    try:
+        with get_db_connection() as conn:
+            # Borrar tareas asociadas primero
+            conn.execute("DELETE FROM tasks WHERE pc_name = ?", (pc_name,))
+            # Borrar PC
+            conn.execute("DELETE FROM pcs WHERE pc_name = ?", (pc_name,))
+            
+            # Log audit
+            conn.execute(
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, changed_at) VALUES (?, 'PERMANENT_DELETE', 'Active/Inactive', 'DELETED', datetime('now', '-3 hours'))",
+                (pc_name,)
+            )
+            conn.commit()
+    except Exception as exc:
+        print(f"Error deleting PC {pc_name}: {exc}")
+
+    return redirect(url_for("dashboard"))
+
+
 # ----------------- API: inventario -----------------
 
 

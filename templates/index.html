@@ -793,10 +793,13 @@
                                     style="font-size: 0.7rem;">
                                     <i class="bi bi-power"></i>
                                 </a>
-                                <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}"
-                                    class="btn btn-sm btn-secondary py-0 px-1" title="Ver Detalle"
-                                    style="font-size: 0.7rem;">
-                                    <i class="bi bi-eye"></i>
+                                <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('delete_permanent_pc', pc_name=pc.pc_name) }}"
+                                    class="btn btn-sm btn-outline-danger py-0 px-1" title="Borrar Definitivamente"
+                                    style="font-size: 0.7rem;"
+                                    onclick="return confirm('¿Estás SEGURO de borrar DEFINITIVAMENTE este equipo {{ pc.pc_name }}? Esta acción NO se puede deshacer y borrará todo su historial.');">
+                                    <i class="bi bi-trash-fill"></i>
                                 </a>
                                 {% endif %}
                             </div>
