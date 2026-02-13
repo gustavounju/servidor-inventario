@@ -97,58 +97,6 @@ function ConvertTo-JsonCustom($InputObject) {
         }
         return "[ " + ([string]::Join(", ", $items)) + " ]"
     }
-}
-
-# -----------------------------------------------------------
-# FUNCIÓN: Obtener Conexiones de Red (Snapshot)
-# -----------------------------------------------------------
-function Get-ActiveConnections {
-    $conns = @()
-    # Usamos netstat -ano para obtener PID sin requerir elevación para -b (que a veces falla)
-    # Filtramos por ESTABLISHED o SYN_SENT (intentos de conexión)
-    $netstatOutput = netstat -ano | Select-String "ESTABLISHED|SYN_SENT"
-    
-    foreach ($line in $netstatOutput) {
-        # Parsear línea: Proto Local Foreign State PID
-        # Ej: TCP 192.168.1.5:54321 1.2.3.4:443 ESTABLISHED 1234
-        # Split por espacios múltiples
-        $parts = $line.ToString().Trim().Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
-        
-        if ($parts.Count -ge 5) {
-            $proto = $parts[0]
-            $local = $parts[1]
-            $remote = $parts[2]
-            $state = $parts[3]
-
-            
-            # Corregir indice PID si hay columnas extrañas, pero en -ano suele ser el ultimo
-            $pidVal = $parts[$parts.Count - 1]
-
-            # Filtrar Loopback y Localhost explícito
-            if ($remote -like "127.0.0.1*" -or $remote -like "[::1]*" -or $remote -like "0.0.0.0*") { continue }
-            
-            # Obtener Nombre del Proceso
-            $procName = "Desconocido ($pidVal)"
-            try {
-                $p = Get-Process -Id $pidVal -ErrorAction SilentlyContinue
-                if ($p) { $procName = $p.ProcessName }
-            } catch {}
-
-            # Crear objeto simple
-            $connObj = @{
-                "Proto"   = $proto
-                "Local"   = $local
-                "Remote"  = $remote
-                "State"   = $state
-                "PID"     = $pidVal
-                "Process" = $procName
-            }
-            $conns += $connObj
-        }
-    }
-    return $conns
-}    
-
     # Hashtables / Diccionarios
     if ($InputObject -is [System.Collections.IDictionary]) {
         $props = @()
