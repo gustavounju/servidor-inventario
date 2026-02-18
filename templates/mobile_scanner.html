@@ -39,7 +39,15 @@
             <button id="startScan" class="btn btn-primary w-100">Iniciar Cámara</button>
             <button id="stopScan" class="btn btn-danger w-100 d-none">Detener</button>
         </div>
-        <p class="text-center small text-muted mt-2">Escanee un código de barras o QR de un componente.</p>
+
+        <div class="mt-3">
+            <label class="form-label fw-bold">O ingresar manualmente:</label>
+            <div class="input-group">
+                <input type="text" id="manualInput" class="form-control" placeholder="Serial / Código...">
+                <button class="btn btn-secondary" type="button" onclick="checkManual()">Buscar</button>
+            </div>
+            <p class="text-muted small mt-1">Puede usar una App externa y pegar el código aquí.</p>
+        </div>
     </div>
 
     <!-- Result: New Component -->
@@ -286,6 +294,13 @@
         });
 
         // Return
+        function checkManual() {
+            const val = document.getElementById('manualInput').value.trim();
+            if (!val) return showMsg("Ingrese un código", "warning");
+            hideAllCards();
+            checkComponent(val);
+        }
+
         function returnComponent(serial) {
             if (!confirm("¿Seguro que desea retirar este componente y devolverlo a stock?")) return;
 
