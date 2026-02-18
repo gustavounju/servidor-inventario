@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario de Componentes - Stock</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .status-stock {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .status-installed {
+            background-color: #fff3cd;
+            color: #664d03;
+        }
+
+        .status-retired {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Inventario IT</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">PCs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/stock">Componentes (Stock)</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>Gestión de Stock de Componentes</h2>
+            <div>
+                <a href="/mobile/scanner" class="btn btn-primary"><i class="bi bi-qr-code-scan"></i> Escáner /
+                    Añadir</a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Estado</label>
+                        <select id="filterStatus" class="form-select" onchange="loadComponents()">
+                            <option value="">Todos</option>
+                            <option value="Stock" selected>En Stock</option>
+                            <option value="Installed">Instalados</option>
+                            <option value="Retirado">Retirados</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Buscar (Serial/Modelo)</label>
+                        <input type="text" id="searchInput" class="form-control" placeholder="..."
+                            onkeyup="loadComponents()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card shadow">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Serial</th>
+                                <th>Tipo</th>
+                                <th>Marca / Modelo</th>
+                                <th>Estado</th>
+                                <th>Asignado a</th>
+                                <th>Fecha Alta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadComponents();
+        });
+
+        function loadComponents() {
+            fetch('/api/components/list')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('stockTableBody');
+                    tbody.innerHTML = '';
+
+                    const statusFilter = document.getElementById('filterStatus').value;
+                    const searchFilter = document.getElementById('searchInput').value.toLowerCase();
+
+                    const filtered = data.filter(item => {
+                        const matchesStatus = !statusFilter || item.status === statusFilter;
+                        const searchStr = (item.serial_number + ' ' + item.brand_model + ' ' + item.component_type).toLowerCase();
+                        const matchesSearch = !searchFilter || searchStr.includes(searchFilter);
+                        return matchesStatus && matchesSearch;
+                    });
+
+                    if (filtered.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No se encontraron componentes</td></tr>';
+                        return;
+                    }
+
+                    filtered.forEach(item => {
+                        let statusBadge = 'bg-secondary';
+                        if (item.status === 'Stock') statusBadge = 'bg-success';
+                        else if (item.status === 'Installed') statusBadge = 'bg-warning text-dark';
+                        else if (item.status === 'Retirado') statusBadge = 'bg-danger';
+
+                        let assignedLink = item.assigned_pc ? `<a href="/pc/${item.assigned_pc}">${item.assigned_pc}</a>` : '-';
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><span class="font-monospace">${item.serial_number}</span></td>
+                            <td>${item.component_type}</td>
+                            <td>${item.brand_model || '-'}</td>
+                            <td><span class="badge ${statusBadge}">${item.status}</span></td>
+                            <td>${assignedLink}</td>
+                            <td class="small text-muted">${item.created_at || '-'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => console.error("Error loading stock:", err));
+        }
+    </script>
+</body>
+
+</html>

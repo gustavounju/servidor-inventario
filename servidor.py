@@ -2235,6 +2235,21 @@ def get_component(serial_number):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route("/stock")
+def stock_view():
+    """Vista del dashboard de stock de componentes."""
+    return render_template("stock.html")
+
+@app.route("/api/components/list")
+def list_components():
+    """Devuelve lista completa de componentes."""
+    try:
+        with get_db_connection() as conn:
+            comps = [dict(r) for r in conn.execute("SELECT * FROM components ORDER BY created_at DESC").fetchall()]
+        return jsonify(comps)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/api/components/add", methods=["POST"])
 def add_component():
     """Registra un nuevo componente en stock."""
