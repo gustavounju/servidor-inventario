@@ -186,8 +186,13 @@
                 aspectRatio: 1.0
             };
 
-            // Prefer back camera with better focus
-            const cameraConfig = { facingMode: "environment" };
+            // Prefer back camera with better focus and resolution
+            const cameraConfig = {
+                facingMode: "environment",
+                width: { min: 640, ideal: 1280, max: 1920 },
+                height: { min: 480, ideal: 720, max: 1080 },
+                advanced: [{ focusMode: "continuous" }] // Try to force continuous focus
+            };
 
             html5QrcodeScanner.start(
                 cameraConfig,
