@@ -302,6 +302,29 @@ def migrate_db_v9():
         conn.commit()
     print("Migración V9 verificada.")
 
+def migrate_db_v10():
+    """Migración V10: Agregar columnas de alerta de salud a 'pcs'."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(pcs)")
+        columns = [info[1] for info in cursor.fetchall()]
+        
+        new_columns = {
+            "alerta_disco": "INTEGER DEFAULT 0",
+            "alerta_uptime": "INTEGER DEFAULT 0"
+        }
+        
+        for col, dtype in new_columns.items():
+            if col not in columns:
+                print(f"Aplicando migración V10: Agregando '{col}' a pcs...")
+                try:
+                    cursor.execute(f"ALTER TABLE pcs ADD COLUMN {col} {dtype}")
+                except Exception as e:
+                    print(f"Error agregando columna {col}: {e}")
+        
+        conn.commit()
+    print("Migración V10 verificada.")
+
 # --- DICCIONARIO DE FUEROS (CONFIGURABLE) ---
 # Agregar aquí nuevos códigos. El sistema buscará el prefijo más largo que coincida.
 FUERO_MAPPING = {
@@ -379,6 +402,7 @@ with app.app_context():
     migrate_db_v7()
     migrate_db_v8()
     migrate_db_v9()
+    migrate_db_v10()
     
     def ensure_generic_pc():
         """Asegura que exista una PC genérica para asignar tareas a hardware no inventariado."""
@@ -1803,6 +1827,41 @@ def process_inventory_data(data):
     # Solo impresora en red (física)
     alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red and not es_local) else 0
 
+    # ------------ SALUD (V10) ------------
+    salud = data.get("Salud", {})
+    
+    # Alerta Disco: Si algún disco está "Bad/Error" O espacio libre < 5GB
+    alerta_disco = 0
+    
+    # 1. Chequeo SMART
+    discos_smart = salud.get("Discos_SMART", [])
+    for d in discos_smart:
+        status = str(d.get("Status", "OK")).upper()
+        if status != "OK":
+            alerta_disco = 1
+            break
+    
+    # 2. Chequeo Espacio (si no saltó por SMART)
+    if alerta_disco == 0:
+        discos_espacio = salud.get("Discos_Espacio", [])
+        for v in discos_espacio:
+            try:
+                free_gb = float(v.get("FreeGB", 100))
+                # Consideramos critico menos de 5GB en cualquier volumen fijo
+                if free_gb < 5.0:
+                    alerta_disco = 1
+                    break
+            except: pass
+
+    # Alerta Uptime: Si la PC lleva más de 15 días encendida
+    alerta_uptime = 0
+    uptime_dias = salud.get("Uptime_Dias", 0)
+    try:
+        if float(uptime_dias) > 15.0:
+            alerta_uptime = 1
+    except: pass
+
+
     # JSON completo
     full_json = json.dumps(data, ensure_ascii=False)
 
@@ -1831,10 +1890,12 @@ def process_inventory_data(data):
         alerta_ram_baja,
         alerta_sin_impresora,
         alerta_impresora_red,
+        alerta_disco,
+        alerta_uptime,
         is_active,
         full_json_data
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'True', ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'True', ?)
     ON CONFLICT(pc_name) DO UPDATE SET
         fuero = excluded.fuero,
         os_name = excluded.os_name,
@@ -1855,8 +1916,11 @@ def process_inventory_data(data):
         alerta_ram_baja = excluded.alerta_ram_baja,
         alerta_sin_impresora = excluded.alerta_sin_impresora,
         alerta_impresora_red = excluded.alerta_impresora_red,
+        alerta_disco = excluded.alerta_disco,
+        alerta_uptime = excluded.alerta_uptime,
         full_json_data = excluded.full_json_data
     """
+
 
     with get_db_connection() as conn:
         # 1. Detectar cambios antes del UPDATE
@@ -1912,6 +1976,8 @@ def process_inventory_data(data):
                 alerta_ram_baja,
                 alerta_sin_impresora,
                 alerta_impresora_red,
+                alerta_disco,
+                alerta_uptime,
                 full_json,
             ),
         )
@@ -2010,23 +2076,37 @@ def receive_log():
         print(f"Log de error guardado: {filename}")
         return jsonify({"status": "success"}), 200
 
-    except Exception as exc:
         print(f"Error guardando log: {exc}")
         return jsonify({"status": "error", "details": str(exc)}), 200
 
 
-@app.route("/api/security/<pc_name>")
-def get_pc_security(pc_name):
-    """Devuelve las conexiones activas de una PC desde su full_json_data."""
+@app.route("/api/security/<string:pc_name>")
+def api_security(pc_name):
+    """Devuelve las conexiones de red activas (snapshot) desde el JSON completo."""
     try:
         with get_db_connection() as conn:
             row = conn.execute("SELECT full_json_data FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
-            if row and row["full_json_data"]:
-                data = json.loads(row["full_json_data"])
-                conexiones = data.get("Conexiones", [])
-                return jsonify({"status": "success", "conexiones": conexiones})
-            else:
+            if not row or not row["full_json_data"]:
                 return jsonify({"status": "error", "message": "PC no encontrada o sin datos"}), 404
+            
+            data = json.loads(row["full_json_data"])
+            conns = data.get("Conexiones", [])
+            return jsonify({"status": "success", "data": conns})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/api/health/<string:pc_name>")
+def api_health(pc_name):
+    """Devuelve los datos de salud (SMART, Uptime, Eventos) desde el JSON completo."""
+    try:
+        with get_db_connection() as conn:
+            row = conn.execute("SELECT full_json_data FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+            if not row or not row["full_json_data"]:
+                return jsonify({"status": "error", "message": "PC no encontrada o sin datos"}), 404
+            
+            data = json.loads(row["full_json_data"])
+            health = data.get("Salud", {})
+            return jsonify({"status": "success", "data": health})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 

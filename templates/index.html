@@ -774,6 +774,12 @@
                                 {% if pc.alerta_impresora_red %}
                                 <div title="Impresora en Red">🌐</div>
                                 {% endif %}
+                                {% if pc.alerta_disco %}
+                                <div title="Falla de Disco / Espacio Bajo" class="text-danger">💿</div>
+                                {% endif %}
+                                {% if pc.alerta_uptime %}
+                                <div title="Uptime Alto (>15 días)" class="text-danger">⏳</div>
+                                {% endif %}
 
                                 <!-- Acciones -->
                                 {% if pc.is_active == 'True' %}
@@ -793,6 +799,11 @@
                                     class="btn btn-sm btn-outline-warning py-0 px-1" title="Ver Conexiones / Seguridad"
                                     style="font-size: 0.7rem;">
                                     <i class="bi bi-shield-shaded"></i>
+                                </button>
+                                <button onclick="showHealth('{{ pc.pc_name }}')"
+                                    class="btn btn-sm btn-outline-info py-0 px-1" title="Diagnóstico y Salud"
+                                    style="font-size: 0.7rem;">
+                                    <i class="bi bi-activity"></i>
                                 </button>
                                 {% else %}
                                 <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}"
@@ -1921,6 +1932,56 @@ Start-Sleep -Seconds 10
         </div>
     </div>
 
+    <!-- Modal Salud -->
+    <div class="modal fade" id="healthModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-dark">
+                    <h5 class="modal-title">🩺 Diagnóstico: <span id="healthPcName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="healthLoading" class="text-center">
+                        <div class="spinner-border text-info" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p>Obteniendo diagnóstico...</p>
+                    </div>
+                    <div id="healthError" class="alert alert-danger d-none"></div>
+
+                    <div id="healthContent" class="d-none">
+                        <!-- Uptime -->
+                        <h6 class="border-bottom pb-2 mb-3">⏱️ Tiempo de Actividad</h6>
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card p-3 shadow-sm bg-light">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>Días encendido:</span>
+                                        <h3 class="mb-0" id="healthUptime">0</h3>
+                                    </div>
+                                    <small class="text-muted text-end" id="healthUptimeMsg"></small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Discos Space -->
+                        <h6 class="border-bottom pb-2 mb-3">💾 Espacio en Disco</h6>
+                        <div id="healthDiskSpaceContainer" class="row mb-4 g-2"></div>
+
+                        <!-- SMART -->
+                        <h6 class="border-bottom pb-2 mb-3">🛡️ Estado Físico (S.M.A.R.T)</h6>
+                        <ul id="healthSmartList" class="list-group mb-4 shadow-sm"></ul>
+
+                        <!-- Eventos -->
+                        <h6 class="border-bottom pb-2 mb-3">⚠️ Errores Críticos (Últimas 24hs)</h6>
+                        <ul id="healthEventsList" class="list-group mb-2 shadow-sm"></ul>
+                        <small class="text-muted">Muestra errores de aplicación y sistema recopilados.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Seguridad -->
     <div class="modal fade" id="securityModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -1998,15 +2059,103 @@ Start-Sleep -Seconds 10
                             document.getElementById('securityError').classList.remove('d-none');
                         }
                     } else {
-                        throw new Error(data.message || 'Error desconocido');
+                        document.getElementById('securityError').innerText = data.message || "Error desconocido";
+                        document.getElementById('securityError').classList.remove('d-none');
                     }
                 })
                 .catch(err => {
                     document.getElementById('securityLoading').classList.add('d-none');
-                    document.getElementById('securityError').innerText = "Error cargando datos: " + err.message;
+                    document.getElementById('securityError').innerText = "Error de conexión: " + err;
                     document.getElementById('securityError').classList.remove('d-none');
                 });
         }
+
+        function showHealth(pcName) {
+            // Reset
+            document.getElementById('healthPcName').innerText = pcName;
+            document.getElementById('healthLoading').classList.remove('d-none');
+            document.getElementById('healthContent').classList.add('d-none');
+            document.getElementById('healthError').classList.add('d-none');
+
+            // Show
+            var modal = new bootstrap.Modal(document.getElementById('healthModal'));
+            modal.show();
+
+            // Fetch
+            fetch('/api/health/' + encodeURIComponent(pcName))
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('healthLoading').classList.add('d-none');
+                    if (data.status === 'success') {
+                        document.getElementById('healthContent').classList.remove('d-none');
+                        const h = data.data || {};
+
+                        // Uptime
+                        const days = h.Uptime_Dias || 0;
+                        const uptimeEl = document.getElementById('healthUptime');
+                        uptimeEl.innerText = days;
+                        uptimeEl.className = "mb-0 " + (days > 15 ? "text-danger" : "text-success");
+                        document.getElementById('healthUptimeMsg').innerText = days > 15 ? "Reinicie el equipo pronto." : "Estado óptimo.";
+
+                        // Discos Espacio
+                        const spaceContainer = document.getElementById('healthDiskSpaceContainer');
+                        spaceContainer.innerHTML = '';
+                        (h.Discos_Espacio || []).forEach(d => {
+                            let color = d.FreeGB < 5 ? 'danger' : (d.FreeGB < 15 ? 'warning' : 'success');
+                            let card = `
+                                <div class="col-md-6">
+                                    <div class="card p-2 border-${color}">
+                                        <div class="d-flex justify-content-between fw-bold">
+                                            <span>${d.Letter}</span>
+                                            <span class="text-${color}">${d.FreeGB} GB Libres</span>
+                                        </div>
+                                        <small class="text-muted">Total: ${d.TotalGB} GB (${d.PctFree}%)</small>
+                                        <div class="progress mt-1" style="height: 5px;">
+                                            <div class="progress-bar bg-${color}" style="width: ${100 - d.PctFree}%"></div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            spaceContainer.innerHTML += card;
+                        });
+
+                        // SMART
+                        const smartList = document.getElementById('healthSmartList');
+                        smartList.innerHTML = '';
+                        (h.Discos_SMART || []).forEach(d => {
+                            let badge = d.Status === 'OK' ? 'bg-success' : 'bg-danger';
+                            let li = `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>${d.Model} (${d.DeviceID})</span>
+                                <span class="badge ${badge}">${d.Status}</span>
+                             </li>`;
+                            smartList.innerHTML += li;
+                        });
+
+                        // Eventos
+                        const eventList = document.getElementById('healthEventsList');
+                        eventList.innerHTML = '';
+                        if (h.Eventos_Criticos && h.Eventos_Criticos.length > 0) {
+                            h.Eventos_Criticos.forEach(e => {
+                                let li = `<li class="list-group-item list-group-item-danger">
+                                    <strong>${e.Source}</strong>: ${e.Msg}
+                                 </li>`;
+                                eventList.innerHTML += li;
+                            });
+                        } else {
+                            eventList.innerHTML = `<li class="list-group-item text-muted text-center">Sin errores críticos recientes.</li>`;
+                        }
+
+                    } else {
+                        document.getElementById('healthError').innerText = data.message || "Error al cargar datos.";
+                        document.getElementById('healthError').classList.remove('d-none');
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('healthLoading').classList.add('d-none');
+                    document.getElementById('healthError').innerText = "Error de red: " + err;
+                    document.getElementById('healthError').classList.remove('d-none');
+                });
+        }
+
     </script>
 
     <!-- Datalist para asignación de tareas (Busqueda predictiva) -->

@@ -174,6 +174,71 @@ function Get-ActiveConnections {
 }
 
 # -----------------------------------------------------------
+# FUNCIÓN: Obtener Salud del Sistema (WMI / Eventos)
+# -----------------------------------------------------------
+function Get-ComputerHealth {
+    $health = @{}
+    
+    # 1. Estado SMART de Discos
+    $diskStatus = @()
+    try {
+        $disks = Get-WmiObject -Class Win32_DiskDrive
+        if ($disks) {
+            foreach ($d in $disks) {
+                # Status: "OK", "Pred Fail", "Error", etc.
+                $diskStatus += @{ "Model" = $d.Model; "Status" = $d.Status; "DeviceID" = $d.DeviceID }
+            }
+        }
+    } catch {}
+    $health.Add("Discos_SMART", $diskStatus)
+
+    # 2. Espacio en Disco (Crítico < 5GB)
+    $diskSpace = @()
+    try {
+        $vols = Get-WmiObject -Class Win32_LogicalDisk -Filter "DriveType=3" # 3 = Local Disk
+        if ($vols) {
+            foreach ($v in $vols) {
+                if ($v.Size -gt 0) {
+                    $gbFree = [math]::Round($v.FreeSpace / 1GB, 2)
+                    $gbTotal = [math]::Round($v.Size / 1GB, 2)
+                    $pctFree = [math]::Round(($v.FreeSpace / $v.Size) * 100, 1)
+                    $diskSpace += @{ "Letter" = $v.DeviceID; "FreeGB" = $gbFree; "TotalGB" = $gbTotal; "PctFree" = $pctFree }
+                }
+            }
+        }
+    } catch {}
+    $health.Add("Discos_Espacio", $diskSpace)
+
+    # 3. Uptime (Días sin reiniciar)
+    $uptimeDays = 0
+    try {
+        $os = Get-WmiObject -Class Win32_OperatingSystem
+        # ConvertToDateTime funciona en PS 2.0+
+        $lastBoot = $os.ConvertToDateTime($os.LastBootUpTime)
+        $uptime = (Get-Date) - $lastBoot
+        $uptimeDays = [math]::Round($uptime.TotalDays, 1)
+    } catch {}
+    $health.Add("Uptime_Dias", $uptimeDays)
+
+    # 4. Errores Críticos Recientes (Últimas 24hs) - System y Application
+    $recentErrors = @()
+    try {
+        # Limitamos a 5 para no saturar JSON
+        $yesterday = (Get-Date).AddDays(-1)
+        $evts = Get-EventLog -LogName System -EntryType Error -After $yesterday -Newest 5 -ErrorAction SilentlyContinue
+        if ($evts) {
+            foreach ($e in $evts) {
+                $recentErrors += @{ "Log" = "System"; "Source" = $e.Source; "Msg" = $e.Message.Trim().Substring(0, [math]::Min($e.Message.Length, 100)) }
+            }
+        }
+    } catch {}
+    $health.Add("Eventos_Criticos", $recentErrors)
+
+    return $health
+}
+
+
+# -----------------------------------------------------------
 # RECOLECCIÓN DE DATOS
 # -----------------------------------------------------------
 
@@ -313,6 +378,13 @@ try {
     }
     catch {}
 
+    # 9) Salud y Diagnóstico
+    $healthData = @{}
+    try {
+        $healthData = Get-ComputerHealth
+    }
+    catch {}
+
     # -----------------------------------------------------------
     # CONSTRUCCIÓN DEL PAYLOAD
     # -----------------------------------------------------------
@@ -340,6 +412,7 @@ try {
         "Printer_Port"      = $printerPort
         "Monitors"          = $monitorsStr
         "Conexiones"        = $activeConns
+        "Salud"             = $healthData
     }
 
     # -----------------------------------------------------------
