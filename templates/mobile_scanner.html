@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Inventario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .result-card {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body class="p-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Scanner de Componentes</h4>
+        <a href="/mobile" class="btn btn-outline-secondary btn-sm">Volver</a>
+    </div>
+
+    <!-- Scanner Section -->
+    <div id="scanner-container">
+        <div id="reader"></div>
+        <div class="text-center mt-2">
+            <button id="startScan" class="btn btn-primary w-100">Iniciar Cámara</button>
+            <button id="stopScan" class="btn btn-danger w-100 d-none">Detener</button>
+        </div>
+        <p class="text-center small text-muted mt-2">Escanee un código de barras o QR de un componente.</p>
+    </div>
+
+    <!-- Result: New Component -->
+    <div id="newComponentCard" class="card result-card shadow border-success">
+        <div class="card-header bg-success text-white">Nuevo Componente Detectado</div>
+        <div class="card-body">
+            <h5 class="card-title" id="newSerialDisplay"></h5>
+            <p class="card-text">Este ítem no está en el sistema. Regístrelo:</p>
+
+            <form id="addComponentForm">
+                <input type="hidden" id="newSerialInput">
+                <div class="mb-2">
+                    <label class="form-label">Tipo</label>
+                    <select class="form-select" id="newType" required>
+                        <option value="Fuente">Fuente de Poder</option>
+                        <option value="Monitor">Monitor</option>
+                        <option value="Teclado">Teclado</option>
+                        <option value="Mouse">Mouse</option>
+                        <option value="Disco">Disco Rígido/SSD</option>
+                        <option value="Memoria">Memoria RAM</option>
+                        <option value="Gabinete">Gabinete</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Modelo / Marca</label>
+                    <input type="text" class="form-control" id="newModel" placeholder="Ej: Sentey 600W" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Agregar a Stock</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Result: Existing Component (In Stock) -->
+    <div id="stockComponentCard" class="card result-card shadow border-primary">
+        <div class="card-header bg-primary text-white">Componente en Stock</div>
+        <div class="card-body">
+            <h5 class="card-title" id="stockTypeDisplay"></h5>
+            <h6 class="card-subtitle mb-2 text-muted" id="stockModelDisplay"></h6>
+            <p class="small">S/N: <span id="stockSerialDisplay"></span></p>
+
+            <hr>
+            <p class="mb-2 fw-bold">Acciones:</p>
+            <form id="assignComponentForm">
+                <input type="hidden" id="assignSerialInput">
+                <div class="mb-3">
+                    <label class="form-label">Asignar a PC:</label>
+                    <select class="form-select" id="assignPcSelect" required>
+                        <option value="">Seleccione PC...</option>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Instalar en PC</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Result: Existing Component (Installed) -->
+    <div id="installedComponentCard" class="card result-card shadow border-warning">
+        <div class="card-header bg-warning text-dark">Componente Instalado</div>
+        <div class="card-body">
+            <h5 class="card-title" id="instTypeDisplay"></h5>
+            <h6 class="card-subtitle mb-2 text-muted" id="instModelDisplay"></h6>
+            <p>Actualmente en: <strong id="instPcDisplay"></strong></p>
+            <p class="small">S/N: <span id="instSerialDisplay"></span></p>
+
+            <hr>
+            <button id="btnReturnToStock" class="btn btn-outline-dark w-100">Devolver a Stock (Retirar)</button>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    <div id="msgArea" class="alert d-none mt-3"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let html5QrcodeScanner = null;
+        let pcsList = [];
+
+        // Load PCs on start
+        fetch('/api/mobile/data')
+            .then(res => res.json())
+            .then(data => {
+                pcsList = data.pcs || [];
+                const sel = document.getElementById('assignPcSelect');
+                pcsList.forEach(pc => {
+                    let opt = document.createElement('option');
+                    opt.value = pc;
+                    opt.text = pc;
+                    sel.appendChild(opt);
+                });
+            });
+
+        function showMsg(text, type = 'success') {
+            const el = document.getElementById('msgArea');
+            el.className = `alert alert-${type} mt-3`;
+            el.innerText = text;
+            el.classList.remove('d-none');
+            setTimeout(() => el.classList.add('d-none'), 3000);
+        }
+
+        function hideAllCards() {
+            document.querySelectorAll('.result-card').forEach(c => c.style.display = 'none');
+            document.getElementById('msgArea').classList.add('d-none');
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Stop scanning to process
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    document.getElementById('startScan').classList.remove('d-none');
+                    document.getElementById('stopScan').classList.add('d-none');
+                    document.getElementById('reader').innerHTML = ""; // Clean
+                }).catch(err => console.error(err));
+            }
+
+            hideAllCards();
+            checkComponent(decodedText);
+        }
+
+        document.getElementById('startScan').addEventListener('click', () => {
+            hideAllCards();
+            document.getElementById('startScan').classList.add('d-none');
+            document.getElementById('stopScan').classList.remove('d-none');
+
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess)
+                .catch(err => {
+                    console.error(err);
+                    showMsg("Error iniciando cámara: " + err, "danger");
+                    document.getElementById('startScan').classList.remove('d-none');
+                    document.getElementById('stopScan').classList.add('d-none');
+                });
+        });
+
+        document.getElementById('stopScan').addEventListener('click', () => {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    document.getElementById('startScan').classList.remove('d-none');
+                    document.getElementById('stopScan').classList.add('d-none');
+                });
+            }
+        });
+
+        function checkComponent(serial) {
+            showMsg("Buscando serial: " + serial + "...", "info");
+
+            fetch('/api/components/' + encodeURIComponent(serial))
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('msgArea').classList.add('d-none');
+
+                    if (data.status === 'not_found') {
+                        // Show New Component Form
+                        document.getElementById('newComponentCard').style.display = 'block';
+                        document.getElementById('newSerialDisplay').innerText = serial;
+                        document.getElementById('newSerialInput').value = serial;
+                    } else if (data.status === 'found') {
+                        const c = data.data;
+                        if (c.status === 'Stock' || c.status === 'Retirado') {
+                            // Show Stock Card
+                            document.getElementById('stockComponentCard').style.display = 'block';
+                            document.getElementById('stockTypeDisplay').innerText = c.component_type;
+                            document.getElementById('stockModelDisplay').innerText = c.brand_model;
+                            document.getElementById('stockSerialDisplay').innerText = c.serial_number;
+                            document.getElementById('assignSerialInput').value = c.serial_number;
+                        } else {
+                            // Show Installed Card
+                            document.getElementById('installedComponentCard').style.display = 'block';
+                            document.getElementById('instTypeDisplay').innerText = c.component_type;
+                            document.getElementById('instModelDisplay').innerText = c.brand_model;
+                            document.getElementById('instPcDisplay').innerText = c.assigned_pc;
+                            document.getElementById('instSerialDisplay').innerText = c.serial_number;
+
+                            // Setup Return Action
+                            document.getElementById('btnReturnToStock').onclick = function () {
+                                returnComponent(c.serial_number);
+                            };
+                        }
+                    }
+                })
+                .catch(err => showMsg("Error API: " + err, "danger"));
+        }
+
+        // --- FORMS SUBMIT --- //
+
+        // Add New
+        document.getElementById('addComponentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const payload = {
+                serial_number: document.getElementById('newSerialInput').value,
+                component_type: document.getElementById('newType').value,
+                brand_model: document.getElementById('newModel').value
+            };
+
+            fetch('/api/components/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(res => res.json()).then(d => {
+                if (d.status === 'success') {
+                    showMsg("Componente agregado a Stock!", "success");
+                    document.getElementById('newComponentCard').style.display = 'none';
+                } else showMsg("Error: " + d.message, "danger");
+            });
+        });
+
+        // Assign
+        document.getElementById('assignComponentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const payload = {
+                serial_number: document.getElementById('assignSerialInput').value,
+                pc_name: document.getElementById('assignPcSelect').value
+            };
+
+            fetch('/api/components/assign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(res => res.json()).then(d => {
+                if (d.status === 'success') {
+                    showMsg("Componente instalado correctamente!", "success");
+                    document.getElementById('stockComponentCard').style.display = 'none';
+                } else showMsg("Error: " + d.message, "danger");
+            });
+        });
+
+        // Return
+        function returnComponent(serial) {
+            if (!confirm("¿Seguro que desea retirar este componente y devolverlo a stock?")) return;
+
+            fetch('/api/components/return', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serial_number: serial })
+            }).then(res => res.json()).then(d => {
+                if (d.status === 'success') {
+                    showMsg("Componente devuelto a Stock!", "success");
+                    document.getElementById('installedComponentCard').style.display = 'none';
+                } else showMsg("Error: " + d.message, "danger");
+            });
+        }
+
+    </script>
+</body>
+
+</html>
