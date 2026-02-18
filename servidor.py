@@ -2076,6 +2076,7 @@ def receive_log():
         print(f"Log de error guardado: {filename}")
         return jsonify({"status": "success"}), 200
 
+    except Exception as exc:
         print(f"Error guardando log: {exc}")
         return jsonify({"status": "error", "details": str(exc)}), 200
 
