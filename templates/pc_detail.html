@@ -231,7 +231,13 @@
   <!-- FIN BLOQUE 3 -->
 
   <!-- BLOQUE 4: Historial de Cambios -->
-  <h3 class="mt-4 mb-2">Historial de Cambios</h3>
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h3 class="mt-4 mb-0">Historial de Cambios</h3>
+    <button type="button" class="btn btn-sm btn-outline-dark mt-3" data-bs-toggle="modal"
+      data-bs-target="#modalManualAudit">
+      <i class="bi bi-pencil-square"></i> Registrar Cambio Manual
+    </button>
+  </div>
   <div class="table-responsive mb-4">
     <table class="table table-sm table-bordered">
       <thead class="table-light">
@@ -441,6 +447,110 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
             <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Auditoria Manual -->
+  <div class="modal fade" id="modalManualAudit" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="{{ url_for('add_manual_audit', pc_name=pc.pc_name) }}" method="post">
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title">Registrar Cambio Manual</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+              aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted">Use esto para registrar cambios de componentes que el sistema no detecta
+              automáticamente (ej: Fuentes, Gabinetes, Periféricos analógicos).</p>
+
+            <div class="mb-3">
+              <label for="campo" class="form-label">Componente / Campo</label>
+              <input type="text" class="form-control" id="campo" name="campo" list="componentesList"
+                placeholder="Ej: Fuente de Poder" required>
+              <datalist id="componentesList">
+                <option value="Fuente de Poder">
+                <option value="Gabinete">
+                <option value="Teclado">
+                <option value="Mouse">
+                <option value="Monitor (Adicional)">
+                <option value="Estabilizador/UPS">
+                <option value="Placa de Red PCI">
+                <option value="Cooler/Ventilador">
+              </datalist>
+            </div>
+
+            <div class="mb-3">
+              <label for="valor_anterior" class="form-label">Valor Anterior (Opcional)</label>
+              <input type="text" class="form-control" id="valor_anterior" name="valor_anterior"
+                placeholder="Ej: Generica 500W">
+            </div>
+
+            <div class="mb-3">
+              <label for="valor_nuevo" class="form-label">Valor Nuevo / Detalle</label>
+              <input type="text" class="form-control" id="valor_nuevo" name="valor_nuevo"
+                placeholder="Ej: Sentey 600W 80 Plus" required>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-dark">Registrar Cambio</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Auditoria Manual -->
+  <div class="modal fade" id="modalManualAudit" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="{{ url_for('add_manual_audit', pc_name=pc.pc_name) }}" method="post">
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title">Registrar Cambio Manual</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+              aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted">Use esto para registrar cambios de componentes que el sistema no detecta
+              automáticamente (ej: Fuentes, Gabinetes, Periféricos analógicos).</p>
+
+            <div class="mb-3">
+              <label for="campo" class="form-label">Componente / Campo</label>
+              <input type="text" class="form-control" id="campo" name="campo" list="componentesList"
+                placeholder="Ej: Fuente de Poder" required>
+              <datalist id="componentesList">
+                <option value="Fuente de Poder">
+                <option value="Gabinete">
+                <option value="Teclado">
+                <option value="Mouse">
+                <option value="Monitor (Adicional)">
+                <option value="Estabilizador/UPS">
+                <option value="Placa de Red PCI">
+                <option value="Cooler/Ventilador">
+              </datalist>
+            </div>
+
+            <div class="mb-3">
+              <label for="valor_anterior" class="form-label">Valor Anterior (Opcional)</label>
+              <input type="text" class="form-control" id="valor_anterior" name="valor_anterior"
+                placeholder="Ej: Generica 500W">
+            </div>
+
+            <div class="mb-3">
+              <label for="valor_nuevo" class="form-label">Valor Nuevo / Detalle</label>
+              <input type="text" class="form-control" id="valor_nuevo" name="valor_nuevo"
+                placeholder="Ej: Sentey 600W 80 Plus" required>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-dark">Registrar Cambio</button>
           </div>
         </form>
       </div>

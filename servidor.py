@@ -1008,6 +1008,29 @@ def update_pc_infrastructure(pc_name):
         return f"Error actualizando infraestructura: {e}", 500
 
 
+@app.route("/api/audit/<pc_name>/add", methods=["POST"])
+def add_manual_audit(pc_name):
+    """Permite agregar un registro manual al historial de cambios (ej: cambio de fuente)."""
+    campo = request.form.get("campo", "").strip()
+    valor_anterior = request.form.get("valor_anterior", "").strip()
+    valor_nuevo = request.form.get("valor_nuevo", "").strip()
+    
+    if not campo or not valor_nuevo:
+        return jsonify({"status": "error", "message": "Faltan datos obligatorios (Campo, Valor Nuevo)"}), 400
+
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)",
+                (pc_name, campo, valor_anterior, valor_nuevo)
+            )
+            conn.commit()
+        return redirect(url_for("pc_detail", pc_name=pc_name))
+        
+    except Exception as e:
+        return f"Error agregando historial manual: {e}", 500
+
+
 @app.route("/pc/migrate_tasks", methods=["POST"])
 def migrate_generic_tasks():
     target_pc = request.form.get("target_pc")
