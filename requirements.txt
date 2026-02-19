@@ -4,4 +4,4 @@ fpdf2
 
 waitress
 
-google-generativeai
+google-genai

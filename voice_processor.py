@@ -1,20 +1,19 @@
 
 import os
 import json
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 # API KEY PROPORCIONADA POR EL USUARIO
-API_KEY = "AIzaSyDFYACcXHnLRNp1nrcr272MnQs5KRR7hIE"
+API_KEY = "AIzaSyA7MyN94qeuWptJHX3kXb-CalTdcmqXUzU"
 
 def process_voice_command(text_command):
     """
     Usa Gemini Flash para extraer (descripcion, solicitante) de un texto de voz desordenado.
     """
     try:
-        genai.configure(api_key=API_KEY)
-        # Using the specific stable model version
-        model = genai.GenerativeModel('gemini-1.5-flash')
-
+        client = genai.Client(api_key=API_KEY)
+        
         prompt = f"""
         Actúa como un asistente de inventario experto para soporte técnico.
         Tu misión es corregir errores fonéticos comunes y estructurar la orden.
@@ -40,15 +39,23 @@ def process_voice_command(text_command):
         }}
         """
 
-        print(f"IA Processing: {text_command}")
-        response = model.generate_content(prompt)
+        print(f"IA Processing (New SDK): {text_command}")
         
-        # Limpiar respuesta (a veces pone ```json ... ```)
+        response = client.models.generate_content(
+            model="gemini-flash-latest",
+            contents=prompt
+        )
+        
         raw_text = response.text.strip()
         print(f"IA Raw Response: {raw_text}")
         
+        # Limpiar bloques de código markdown si existen
         if raw_text.startswith("```json"):
-            raw_text = raw_text.replace("```json", "").replace("```", "")
+            raw_text = raw_text.replace("```json", "", 1)
+        if raw_text.startswith("```"):
+            raw_text = raw_text.replace("```", "", 1)
+        if raw_text.endswith("```"):
+            raw_text = raw_text[:-3]
         
         data = json.loads(raw_text)
         return data
