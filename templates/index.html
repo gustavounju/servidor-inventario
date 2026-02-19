@@ -598,16 +598,8 @@
                                 <span class="badge bg-light text-dark">-</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <div class="fw-bold">{{ pc.last_user or '-' }}</div>
-                                <div class="small text-muted" style="font-size: 0.75rem;">
-                                    {% if pc.ad_real_name %}
-                                    {{ pc.ad_real_name }}
-                                    {% else %}
-                                    <!-- Debug: No Real Name -->
-                                    {% endif %}
-                                </div>
-                            </td>
+                            <!-- 3. Solicitante -->
+                            <!-- ERROR FIX: Removed invalid reference to pc.last_user -->
                             <td>{{ task.solicitante or '-' }}</td>
                             <td>{{ task.assigned_to or '-' }}</td>
                             <td>{{ task.created_at }}</td>
@@ -761,7 +753,12 @@
                         <td
                             style="white-space: normal; word-wrap: break-word; max-width: 120px; font-weight: 600; font-size: 0.85rem;">
                             {{ pc.pc_name }}</td>
-                        <td>{{ pc.last_user }}</td>
+                        <td>
+                            <div class="fw-bold">{{ pc.last_user or '-' }}</div>
+                            {% if pc.ad_real_name %}
+                            <div class="small text-muted" style="font-size: 0.85rem;">{{ pc.ad_real_name }}</div>
+                            {% endif %}
+                        </td>
                         <td style="white-space: normal; max-width: 100px; font-size: 0.9rem;"><span
                                 class="badge text-white"
                                 style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }}; white-space: normal; text-align: center; display: inline-block;">{{
