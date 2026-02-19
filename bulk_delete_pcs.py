@@ -22,7 +22,11 @@ PCS_TO_DELETE = [
     "SIVL-0003",
     "VG5-0015",
     "VG5-0017",
-    "TJ01-0003"
+    "TJ01-0003",
+    # Added in fourth batch
+    "VGS-0016",
+    "VG5-0014",
+    "VG5-0005"
 ]
 
 DB_FILE = "inventario.db"
