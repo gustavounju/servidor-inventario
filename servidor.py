@@ -727,7 +727,7 @@ def dashboard():
                           AND t.estado != 'Hecha'
                     ) AS tareas_pendientes
                 FROM pcs p
-                LEFT JOIN ad_users u ON p.last_user = u.username
+                LEFT JOIN ad_users u ON LOWER(p.last_user) = u.username
                 WHERE 1=1
             """
 

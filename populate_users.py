@@ -361,7 +361,7 @@ def populate():
         if len(parts) >= 3:
             given = parts[0].strip()
             surname = parts[1].strip()
-            username = parts[2].strip()
+            username = parts[2].strip().lower() # Normalize to lowercase
             
             real_name = f"{given} {surname}".strip()
             
