@@ -12,8 +12,8 @@ def process_voice_command(text_command):
     """
     try:
         genai.configure(api_key=API_KEY)
-        # Using the generic alias found in list_models()
-        model = genai.GenerativeModel('gemini-flash-latest')
+        # Using the specific stable model version
+        model = genai.GenerativeModel('gemini-1.5-flash')
 
         prompt = f"""
         Actúa como un asistente de inventario experto para soporte técnico.
