@@ -37,12 +37,19 @@ def delete_pcs():
         cursor = conn.cursor()
         
         print(f"--- Bulk Deleting {len(PCS_TO_DELETE)} PCs ---")
+        deleted_count = 0
+        skipped_count = 0
         
+        print(f"{'PC NAME':<15} | {'STATUS':<15}")
+        print("-" * 35)
+
         for pc in PCS_TO_DELETE:
             # check if exists
             exists = cursor.execute("SELECT pc_name FROM pcs WHERE pc_name = ?", (pc,)).fetchone()
+            
             if not exists:
-                print(f"Skipping {pc}: Not found in DB.")
+                print(f"{pc:<15} | ALREADY GONE")
+                skipped_count += 1
                 continue
                 
             # Delete from pcs
@@ -57,11 +64,14 @@ def delete_pcs():
                 (pc, "STATUS", "Active/Cementerio", "DELETED FOREVER",)
             )
             
-            print(f"Deleted: {pc}")
+            print(f"{pc:<15} | DELETED NOW")
+            deleted_count += 1
             
         conn.commit()
         conn.close()
-        print("\nDeletion complete.")
+        print("-" * 35)
+        print(f"SUMMARY: Deleted: {deleted_count}, Already Gone: {skipped_count}, Total Checked: {len(PCS_TO_DELETE)}")
+        print("Deletion complete.")
         
     except Exception as e:
         print(f"Error: {e}")
