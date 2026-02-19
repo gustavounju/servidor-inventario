@@ -719,6 +719,7 @@ def dashboard():
             base_sql = """
                 SELECT
                     p.*,
+                    u.real_name as ad_real_name,
                     (
                         SELECT COUNT(*)
                         FROM tasks t
@@ -726,6 +727,7 @@ def dashboard():
                           AND t.estado != 'Hecha'
                     ) AS tareas_pendientes
                 FROM pcs p
+                LEFT JOIN ad_users u ON p.last_user = u.username
                 WHERE 1=1
             """
 

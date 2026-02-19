@@ -1736,7 +1736,8 @@ Start-Sleep -Seconds 10
                                 <option value="">Seleccione PC...</option>
                                 {% for pc in all_pcs %}
                                 <option value="{{ pc.pc_name }}">{{ pc.pc_name }} | {{ pc.fuero or '-' }} | {{
-                                    pc.last_user or '?' }}</option>
+                                    pc.last_user or '?' }} {% if pc.ad_real_name %}({{ pc.ad_real_name }}){% endif %}
+                                </option>
                                 {% endfor %}
                             </select>
                             <div class="form-text">Puede escribir para buscar en la lista desplegada.</div>
