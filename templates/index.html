@@ -598,6 +598,16 @@
                                 <span class="badge bg-light text-dark">-</span>
                                 {% endif %}
                             </td>
+                            <td>
+                                <div class="fw-bold">{{ pc.last_user or '-' }}</div>
+                                <div class="small text-muted" style="font-size: 0.75rem;">
+                                    {% if pc.ad_real_name %}
+                                    {{ pc.ad_real_name }}
+                                    {% else %}
+                                    <!-- Debug: No Real Name -->
+                                    {% endif %}
+                                </div>
+                            </td>
                             <td>{{ task.solicitante or '-' }}</td>
                             <td>{{ task.assigned_to or '-' }}</td>
                             <td>{{ task.created_at }}</td>
