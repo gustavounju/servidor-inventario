@@ -11,6 +11,7 @@ from io import BytesIO
 import socket
 from classifier import SimpleNaiveBayes, SEED_DATA
 from werkzeug.middleware.proxy_fix import ProxyFix
+import voice_processor  # Importar módulo de IA de voz
 
 app = Flask(__name__)
 # Aplicar ProxyFix para que Flask entienda que está detrás de (Nginx) y maneje bien HTTPS/URLs
