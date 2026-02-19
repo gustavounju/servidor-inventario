@@ -1581,7 +1581,9 @@ Start-Sleep -Seconds 10
         }
 
         // ===== MODERNIZACIÓN: Modo Compacto/Expandido (Opción 6) =====
-        let isCompactMode = localStorage.getItem('compactMode') === 'true';
+        // Default to TRUE (Compact) if null (first visit), otherwise use stored value
+        let storedCompact = localStorage.getItem('compactMode');
+        let isCompactMode = storedCompact === null ? true : storedCompact === 'true';
 
         function toggleCompactMode() {
             isCompactMode = !isCompactMode;

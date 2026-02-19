@@ -104,7 +104,41 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             loadComponents();
+            if (isCompactMode) {
+                applyCompactMode();
+            }
+            updateBtnInfo();
         });
+
+        // Compact Mode Logic
+        // Default to TRUE (Compact) if null (first visit), otherwise use stored value
+        let storedCompact = localStorage.getItem('compactMode');
+        let isCompactMode = storedCompact === null ? true : storedCompact === 'true';
+
+        function toggleCompactMode() {
+            isCompactMode = !isCompactMode;
+            localStorage.setItem('compactMode', isCompactMode);
+            applyCompactMode();
+            updateBtnInfo();
+        }
+
+        function applyCompactMode() {
+            const table = document.querySelector('table');
+            if (isCompactMode) {
+                table.classList.add('table-sm');
+                table.style.fontSize = '0.85rem';
+            } else {
+                table.classList.remove('table-sm');
+                table.style.fontSize = '';
+            }
+        }
+
+        function updateBtnInfo() {
+            const btn = document.getElementById('toggleCompactBtn');
+            if (btn) {
+                btn.innerHTML = isCompactMode ? '<i class="bi bi-list-ul"></i> Expandir' : '<i class="bi bi-list-ul"></i> Compactar';
+            }
+        }
 
         function loadComponents() {
             fetch('/api/components/list')
