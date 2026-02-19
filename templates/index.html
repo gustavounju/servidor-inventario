@@ -679,12 +679,7 @@
                                 }}{% endif %}
                             </a>
                         </th>
-                        <th>
-                            <a href="{{ url_for('dashboard', sort_by='os_name', order='desc' if sort_by == 'os_name' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
-                                class="text-dark text-decoration-none">
-                                SO {% if sort_by == 'os_name' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
-                            </a>
-                        </th>
+
                         <th>
                             <a href="{{ url_for('dashboard', sort_by='processor', order='desc' if sort_by == 'processor' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
@@ -751,8 +746,30 @@
                         data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
                         data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
                         <td
-                            style="white-space: normal; word-wrap: break-word; max-width: 120px; font-weight: 600; font-size: 0.85rem;">
-                            {{ pc.pc_name }}</td>
+                            style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
+                            {{ pc.pc_name }}
+                            <span class="float-end">
+                                {% if pc.os_name and 'Windows 11' in pc.os_name %}
+                                <i class="bi bi-windows text-primary" style="font-size: 1rem;"
+                                    title="{{ pc.os_name }}"></i>
+                                <span class="badge bg-primary text-white"
+                                    style="font-size: 0.5rem; vertical-align: top; padding: 2px 4px;">11</span>
+                                {% elif pc.os_name and 'Windows 10' in pc.os_name %}
+                                <i class="bi bi-windows text-info" style="font-size: 1rem;"
+                                    title="{{ pc.os_name }}"></i>
+                                <span class="badge bg-info text-dark"
+                                    style="font-size: 0.5rem; vertical-align: top; padding: 2px 4px;">10</span>
+                                {% elif pc.os_name and 'Windows 7' in pc.os_name %}
+                                <i class="bi bi-windows text-danger" style="font-size: 1rem;"
+                                    title="{{ pc.os_name }}"></i>
+                                <span class="badge bg-danger text-white"
+                                    style="font-size: 0.5rem; vertical-align: top; padding: 2px 4px;">7</span>
+                                {% elif pc.os_name and 'Windows' in pc.os_name %}
+                                <i class="bi bi-windows text-secondary" style="font-size: 1rem;"
+                                    title="{{ pc.os_name }}"></i>
+                                {% endif %}
+                            </span>
+                        </td>
                         <td>
                             <div class="fw-bold">{{ pc.last_user or '-' }}</div>
                             {% if pc.ad_real_name %}
@@ -764,28 +781,7 @@
                                 style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }}; white-space: normal; text-align: center; display: inline-block;">{{
                                 pc.fuero or '-' }}</span></td>
                         <td>{{ pc.motherboard_model }}</td>
-                        <td class="text-center">
-                            {% if pc.os_name and 'Windows 11' in pc.os_name %}
-                            <i class="bi bi-windows text-primary" style="font-size: 1.1rem;"
-                                title="{{ pc.os_name }}"></i>
-                            <span class="badge bg-primary text-white"
-                                style="font-size: 0.6rem; vertical-align: top;">11</span>
-                            {% elif pc.os_name and 'Windows 10' in pc.os_name %}
-                            <i class="bi bi-windows text-info" style="font-size: 1.1rem;" title="{{ pc.os_name }}"></i>
-                            <span class="badge bg-info text-dark"
-                                style="font-size: 0.6rem; vertical-align: top;">10</span>
-                            {% elif pc.os_name and 'Windows 7' in pc.os_name %}
-                            <i class="bi bi-windows text-danger" style="font-size: 1.1rem;"
-                                title="{{ pc.os_name }}"></i>
-                            <span class="badge bg-danger text-white"
-                                style="font-size: 0.6rem; vertical-align: top;">7</span>
-                            {% elif pc.os_name and 'Windows' in pc.os_name %}
-                            <i class="bi bi-windows text-secondary" style="font-size: 1.1rem;"
-                                title="{{ pc.os_name }}"></i>
-                            {% else %}
-                            <span class="small text-muted">{{ pc.os_name }}</span>
-                            {% endif %}
-                        </td>
+
                         <td>{{ pc.processor }}</td>
                         <td>{{ pc.ram_gb }} GB</td>
                         <td>{{ pc.ram_detalles }}</td>
@@ -859,7 +855,7 @@
                     {% else %}
                     <tr>
                         <!-- Ajustar colspan a 13 columnas ahora -->
-                        <td colspan="13" style="text-align: center;">Sin datos.</td>
+                        <td colspan="12" style="text-align: center;">Sin datos.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
