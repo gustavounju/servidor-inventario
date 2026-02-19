@@ -2445,6 +2445,25 @@ def api_mobile_update_task():
 
 
 
+
+@app.route("/api/mobile/parse_voice", methods=["POST"])
+def api_mobile_parse_voice():
+    """Recibe texto de voz y usa IA para estructurarlo."""
+    try:
+        data = request.json
+        text = data.get("text", "")
+        if not text:
+            return jsonify({"status": "error", "message": "Texto vacío"}), 400
+            
+        # Llamar al procesador de voz (Gemini)
+        result = voice_processor.process_voice_command(text)
+        
+        return jsonify({"status": "success", "data": result})
+    except Exception as e:
+        print(f"Error procesando voz: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 # ----------------- Rutas de Instalación / Descarga -----------------
 
 @app.route("/install")
