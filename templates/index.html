@@ -764,7 +764,28 @@
                                 style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }}; white-space: normal; text-align: center; display: inline-block;">{{
                                 pc.fuero or '-' }}</span></td>
                         <td>{{ pc.motherboard_model }}</td>
-                        <td>{{ pc.os_name }}</td>
+                        <td class="text-center">
+                            {% if pc.os_name and 'Windows 11' in pc.os_name %}
+                            <i class="bi bi-windows text-primary" style="font-size: 1.1rem;"
+                                title="{{ pc.os_name }}"></i>
+                            <span class="badge bg-primary text-white"
+                                style="font-size: 0.6rem; vertical-align: top;">11</span>
+                            {% elif pc.os_name and 'Windows 10' in pc.os_name %}
+                            <i class="bi bi-windows text-info" style="font-size: 1.1rem;" title="{{ pc.os_name }}"></i>
+                            <span class="badge bg-info text-dark"
+                                style="font-size: 0.6rem; vertical-align: top;">10</span>
+                            {% elif pc.os_name and 'Windows 7' in pc.os_name %}
+                            <i class="bi bi-windows text-danger" style="font-size: 1.1rem;"
+                                title="{{ pc.os_name }}"></i>
+                            <span class="badge bg-danger text-white"
+                                style="font-size: 0.6rem; vertical-align: top;">7</span>
+                            {% elif pc.os_name and 'Windows' in pc.os_name %}
+                            <i class="bi bi-windows text-secondary" style="font-size: 1.1rem;"
+                                title="{{ pc.os_name }}"></i>
+                            {% else %}
+                            <span class="small text-muted">{{ pc.os_name }}</span>
+                            {% endif %}
+                        </td>
                         <td>{{ pc.processor }}</td>
                         <td>{{ pc.ram_gb }} GB</td>
                         <td>{{ pc.ram_detalles }}</td>
