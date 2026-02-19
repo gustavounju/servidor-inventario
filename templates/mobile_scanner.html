@@ -141,8 +141,8 @@
                 const sel = document.getElementById('assignPcSelect');
                 pcsList.forEach(pc => {
                     let opt = document.createElement('option');
-                    opt.value = pc;
-                    opt.text = pc;
+                    opt.value = pc.name;
+                    opt.text = `${pc.name} - ${pc.user} - ${pc.area}`;
                     sel.appendChild(opt);
                 });
             });

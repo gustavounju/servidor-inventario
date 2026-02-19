@@ -178,8 +178,8 @@
                     sel.innerHTML = '<option value="">Seleccione PC...</option>';
                     allPcs.forEach(pc => {
                         const opt = document.createElement('option');
-                        opt.value = pc;
-                        opt.textContent = pc;
+                        opt.value = pc.name;
+                        opt.textContent = `${pc.name} | ${pc.user} (${pc.area})`;
                         sel.appendChild(opt);
                     });
                 })

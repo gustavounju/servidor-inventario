@@ -399,13 +399,13 @@
 
             pcs.forEach(pc => {
                 const opt = document.createElement('option');
-                opt.value = pc;
-                opt.textContent = pc;
+                opt.value = pc.name;
+                opt.textContent = `${pc.name} | ${pc.user} (${pc.area})`;
                 sel.appendChild(opt);
 
                 const opt2 = document.createElement('option');
-                opt2.value = pc;
-                opt2.textContent = pc;
+                opt2.value = pc.name;
+                opt2.textContent = `${pc.name} | ${pc.user} (${pc.area})`;
                 selComplete.appendChild(opt2);
             });
 

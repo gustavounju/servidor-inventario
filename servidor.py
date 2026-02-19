@@ -2208,8 +2208,16 @@ def api_mobile_data():
                 """
             ).fetchall()]
 
-            # PCs for dropdown
-            pcs = [r["pc_name"] for r in conn.execute("SELECT pc_name FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()]
+            # PCs for dropdown (Enhanced)
+            pcs_query = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
+            pcs = [
+                {
+                    "name": r["pc_name"],
+                    "user": r["last_user"] or "Desconocido", 
+                    "area": r["fuero"] or "Desconocido"
+                }
+                for r in pcs_query
+            ]
 
         return jsonify({
             "technicians": techs,
