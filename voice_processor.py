@@ -1,18 +1,19 @@
-
 import os
 import json
 from google import genai
 from google.genai import types
-
-# API KEY PROPORCIONADA POR EL USUARIO
-API_KEY = "AIzaSyA7MyN94qeuWptJHX3kXb-CalTdcmqXUzU"
 
 def process_voice_command(text_command):
     """
     Usa Gemini Flash para extraer (descripcion, solicitante) de un texto de voz desordenado.
     """
     try:
-        client = genai.Client(api_key=API_KEY)
+        # Obtener clave API de forma remota y segura (Variables de entorno)
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("Falta configurar la variable de entorno GEMINI_API_KEY en el servidor")
+
+        client = genai.Client(api_key=api_key)
         
         prompt = f"""
         Actúa como un asistente de inventario experto para soporte técnico.
