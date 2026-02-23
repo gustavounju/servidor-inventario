@@ -354,7 +354,7 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+            <a class="navbar-brand" href="{{ url_for('dashboard.dashboard') }}">
                 Inventario GOLD
             </a>
 
@@ -366,12 +366,12 @@
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
 
                     <li class="nav-item">
-                        <a href="{{ url_for('view_graphics') }}" class="nav-link">
+                        <a href="{{ url_for('dashboard.view_graphics') }}" class="nav-link">
                             <i class="bi bi-graph-up"></i> Gráficos
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('stock_view') }}" class="nav-link text-success">
+                        <a href="{{ url_for('stock.stock_view') }}" class="nav-link text-success">
                             <i class="bi bi-box-seam"></i> Stock
                         </a>
                     </li>
@@ -382,18 +382,18 @@
                     </li>
 
                     <li class="nav-item">
-                        <a href="{{ url_for('report_tasks_completed') }}" class="nav-link">
+                        <a href="{{ url_for('tasks.report_tasks_completed') }}" class="nav-link">
                             Tareas XLS
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('download_db') }}" class="nav-link text-warning"
+                        <a href="{{ url_for('dashboard.download_db') }}" class="nav-link text-warning"
                             title="Descargar copia de la BD">
                             <i class="bi bi-database-down"></i> Backup
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('download_certificate') }}" class="nav-link text-info"
+                        <a href="{{ url_for('setup.download_certificate') }}" class="nav-link text-info"
                             title="Descargar certificado SSL para móviles">
                             <i class="bi bi-shield-lock"></i>
                         </a>
@@ -425,7 +425,7 @@
                         </button>
                     </li>
                     <li class="nav-item ms-2">
-                        <a href="{{ url_for('refresh_fueros') }}" class="btn btn-outline-info btn-sm"
+                        <a href="{{ url_for('dashboard.refresh_fueros') }}" class="btn btn-outline-info btn-sm"
                             title="Actualizar Fueros">
                             <i class="bi bi-arrow-repeat"></i> Fueros
                         </a>
@@ -471,7 +471,8 @@
 
             <!-- PCs activas -->
             <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
-                <a href="{{ url_for('dashboard') }}" class="text-decoration-none" title="Ver todas las PCs activas">
+                <a href="{{ url_for('dashboard.dashboard') }}" class="text-decoration-none"
+                    title="Ver todas las PCs activas">
                     <div class="card text-bg-light kpi-toggle h-100">
                         <div class="card-body py-2 text-center">
                             <div class="small text-uppercase">PCs activas</div>
@@ -483,7 +484,7 @@
 
             <!-- Cementerio -->
             <div class="kpi-item" style="flex: 1 1 120px; max-width: 180px;">
-                <a href="{% if request.path == '/cementerio' or request.args.get('estado') == 'False' %}{{ url_for('dashboard') }}{% else %}{{ url_for('view_cementerio') }}{% endif %}"
+                <a href="{% if request.path == '/cementerio' or request.args.get('estado') == 'False' %}{{ url_for('dashboard.dashboard') }}{% else %}{{ url_for('dashboard.view_cementerio') }}{% endif %}"
                     class="text-decoration-none" title="Ver equipos dados de baja">
                     <div
                         class="card text-bg-light kpi-toggle h-100 {% if request.path == '/cementerio' or request.args.get('estado') == 'False' %}kpi-on{% endif %}">
@@ -611,8 +612,8 @@
                                 </button>
 
                                 <!-- 2. Inline Form (Hidden by default) -->
-                                <form id="form-assign-{{ task.id }}" action="{{ url_for('assign_task') }}" method="POST"
-                                    class="d-none gap-2 align-items-center justify-content-end">
+                                <form id="form-assign-{{ task.id }}" action="{{ url_for('tasks.assign_task') }}"
+                                    method="POST" class="d-none gap-2 align-items-center justify-content-end">
 
                                     <input type="hidden" name="task_id" value="{{ task.id }}">
 
@@ -655,25 +656,25 @@
                 <thead>
                     <tr>
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='pc_name', order='desc' if sort_by == 'pc_name' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='pc_name', order='desc' if sort_by == 'pc_name' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 Nombre PC {% if sort_by == 'pc_name' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
                             </a>
                         </th>
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='last_user', order='desc' if sort_by == 'last_user' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='last_user', order='desc' if sort_by == 'last_user' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 Usuario {% if sort_by == 'last_user' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
                             </a>
                         </th>
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='fuero', order='desc' if sort_by == 'fuero' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='fuero', order='desc' if sort_by == 'fuero' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 Fuero {% if sort_by == 'fuero' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
                             </a>
                         </th>
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='motherboard_model', order='desc' if sort_by == 'motherboard_model' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='motherboard_model', order='desc' if sort_by == 'motherboard_model' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 Placa Madre {% if sort_by == 'motherboard_model' %}{{ '↑' if order == 'asc' else '↓'
                                 }}{% endif %}
@@ -681,45 +682,45 @@
                         </th>
 
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='processor', order='desc' if sort_by == 'processor' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='processor', order='desc' if sort_by == 'processor' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 CPU {% if sort_by == 'processor' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
                             </a>
                         </th>
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='ram_gb', order='desc' if sort_by == 'ram_gb' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='ram_gb', order='desc' if sort_by == 'ram_gb' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 RAM {% if sort_by == 'ram_gb' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
                             </a>
                         </th>
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='ram_detalles', order='desc' if sort_by == 'ram_detalles' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='ram_detalles', order='desc' if sort_by == 'ram_detalles' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 RAM Detalle {% if sort_by == 'ram_detalles' %}{{ '↑' if order == 'asc' else '↓' }}{%
                                 endif %}
                             </a>
                         </th>
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='disk_models', order='desc' if sort_by == 'disk_models' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='disk_models', order='desc' if sort_by == 'disk_models' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 Discos {% if sort_by == 'disk_models' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
                             </a>
                         </th>
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='printer_model', order='desc' if sort_by == 'printer_model' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='printer_model', order='desc' if sort_by == 'printer_model' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 Impresora {% if sort_by == 'printer_model' %}{{ '↑' if order == 'asc' else '↓' }}{%
                                 endif %}
                             </a>
                         </th>
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='monitors', order='desc' if sort_by == 'monitors' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='monitors', order='desc' if sort_by == 'monitors' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 Monitores {% if sort_by == 'monitors' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
                             </a>
                         </th>
                         <th>
-                            <a href="{{ url_for('dashboard', sort_by='ip_address', order='desc' if sort_by == 'ip_address' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='ip_address', order='desc' if sort_by == 'ip_address' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
                                 IP {% if sort_by == 'ip_address' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
                             </a>
@@ -813,13 +814,13 @@
                                 <!-- Acciones -->
                                 {% if pc.is_active == 'True' %}
                                 {% if pc.pc_name != 'PC Generica' %}
-                                <a href="{{ url_for('decommission_pc', pc_name=pc.pc_name) }}"
+                                <a href="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}"
                                     class="btn btn-sm btn-outline-danger py-0 px-1" title="Dar de Baja"
                                     style="font-size: 0.7rem;">
                                     <i class="bi bi-trash"></i>
                                 </a>
                                 {% endif %}
-                                <a href="{{ url_for('pc_detail', pc_name=pc.pc_name) }}"
+                                <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}"
                                     class="btn btn-sm btn-outline-secondary py-0 px-1" title="Ver Tareas y Detalle"
                                     style="font-size: 0.7rem;">
                                     <i class="bi bi-list-task"></i>
@@ -835,14 +836,14 @@
                                     <i class="bi bi-activity"></i>
                                 </button>
                                 {% else %}
-                                <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}"
+                                <a href="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}"
                                     class="btn btn-sm btn-success py-0 px-1" title="Reactivar"
                                     style="font-size: 0.7rem;">
                                     <i class="bi bi-power"></i>
                                 </a>
                                 <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{{ url_for('delete_permanent_pc', pc_name=pc.pc_name) }}"
+                                <a href="{{ url_for('dashboard.delete_permanent_pc', pc_name=pc.pc_name) }}"
                                     class="btn btn-sm btn-danger py-0 px-1"
                                     title="Borrar Definitivamente (Irreversible)" style="font-size: 0.7rem;"
                                     onclick="return confirm('¿Estás SEGURO de borrar DEFINITIVAMENTE este equipo {{ pc.pc_name }}? Esta acción NO se puede deshacer y borrará todo su historial.');">
@@ -869,7 +870,7 @@
                 <!-- Anterior -->
                 <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('dashboard', page=page-1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, sort_by=sort_by, order=order, per_page=per_page) }}">
+                        href="{{ url_for('dashboard.dashboard', page=page-1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, sort_by=sort_by, order=order, per_page=per_page) }}">
                         Anterior
                     </a>
                 </li>
@@ -884,7 +885,7 @@
                 <!-- Siguiente -->
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('dashboard', page=page+1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, sort_by=sort_by, order=order, per_page=per_page) }}">
+                        href="{{ url_for('dashboard.dashboard', page=page+1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, sort_by=sort_by, order=order, per_page=per_page) }}">
                         Siguiente
                     </a>
                 </li>
@@ -892,7 +893,7 @@
 
             <!-- Selector de filas por página -->
             <div class="d-flex justify-content-center align-items-center mt-2">
-                <form action="{{ url_for('dashboard') }}" method="GET" class="d-flex align-items-center">
+                <form action="{{ url_for('dashboard.dashboard') }}" method="GET" class="d-flex align-items-center">
                     <input type="hidden" name="q" value="{{ q }}">
                     <input type="hidden" name="estado" value="{{ estado }}">
                     <input type="hidden" name="alerta" value="{{ alerta }}">
@@ -1688,7 +1689,7 @@ Start-Sleep -Seconds 10
     <div class="modal fade" id="createTaskModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="{{ url_for('create_loose_task') }}" method="POST">
+                <form action="{{ url_for('tasks.create_loose_task') }}" method="POST">
                     <div class="modal-header">
                         <h5 class="modal-title">Nueva Tarea General</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -1747,7 +1748,7 @@ Start-Sleep -Seconds 10
     <div class="modal fade" id="assignTaskModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="{{ url_for('assign_task') }}" method="POST">
+                <form action="{{ url_for('tasks.assign_task') }}" method="POST">
                     <input type="hidden" name="task_id" id="assignTaskId">
                     <div class="modal-header">
                         <h5 class="modal-title">Asignar Tarea a PC</h5>
@@ -1787,7 +1788,7 @@ Start-Sleep -Seconds 10
                 </div>
                 <div class="modal-body">
                     <!-- Form Alta -->
-                    <form action="{{ url_for('add_technician') }}" method="POST" class="d-flex mb-3">
+                    <form action="{{ url_for('tasks.add_technician') }}" method="POST" class="d-flex mb-3">
                         <input type="text" name="name" class="form-control me-2" placeholder="Nombre del técnico"
                             required>
                         <button type="submit" class="btn btn-success">Agregar</button>
@@ -1798,7 +1799,7 @@ Start-Sleep -Seconds 10
                         {% for tech in technicians %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             {{ tech.name }}
-                            <form action="{{ url_for('delete_technician', tech_id=tech.id) }}" method="POST"
+                            <form action="{{ url_for('tasks.delete_technician', tech_id=tech.id) }}" method="POST"
                                 style="margin:0;">
                                 <button type="submit" class="btn btn-sm btn-outline-danger"
                                     onclick="return confirm('¿Borrar técnico?')">
@@ -1877,7 +1878,7 @@ Start-Sleep -Seconds 10
 
         // --- Copy Script Logic (Updated to fetch real file) ---
         function copyScript() {
-            fetch('{{ url_for("get_script") }}')
+            fetch('{{ url_for("setup.get_script") }}')
                 .then(response => {
                     if (!response.ok) throw new Error('Network response was not ok');
                     return response.text();
@@ -1941,7 +1942,7 @@ Start-Sleep -Seconds 10
     <div class="modal fade" id="uploadManualModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="{{ url_for('upload_manual_inventory') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ url_for('api.upload_manual_inventory') }}" method="POST" enctype="multipart/form-data">
                     <div class="modal-header">
                         <h5 class="modal-title">Subir Inventario Offline</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

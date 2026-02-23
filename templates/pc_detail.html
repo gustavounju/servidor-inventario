@@ -60,7 +60,7 @@
       </button>
 
       <!-- Exportar tareas de esta PC. Usamos el endpoint global con filtro -->
-      <a href="{{ url_for('report_tasks_completed') }}?pc={{ pc.pc_name }}" class="btn btn-sm btn-outline-primary ms-2">
+      <a href="{{ url_for('tasks.report_tasks_completed') }}?pc={{ pc.pc_name }}" class="btn btn-sm btn-outline-primary ms-2">
         <i class="bi bi-file-earmark-excel"></i> Exportar tareas PC
       </a>
       {% endif %}
@@ -69,12 +69,12 @@
     <div class="col-auto ms-auto">
       {% if pc.pc_name != 'PC Generica' %}
       {% if pc.is_active == 'True' %}
-      <a href="{{ url_for('decommission_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-danger"
+      <a href="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-danger"
         onclick="return confirm('¿Seguro pasar a cementerio?')">
         <i class="bi bi-archive"></i> Enviar a cementerio
       </a>
       {% else %}
-      <a href="{{ url_for('reactivate_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-success">
+      <a href="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-success">
         <i class="bi bi-activity"></i> Reactivar
       </a>
       {% endif %}
@@ -212,7 +212,7 @@
             </button>
             {% endif %}
 
-            <form action="{{ url_for('delete_task', task_id=t.id) }}" method="post" class="d-inline"
+            <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline"
               onsubmit="return confirm('¿Borrar esta tarea?');">
               <button type="submit" class="btn btn-sm btn-danger mb-1">
                 Borrar
@@ -275,7 +275,7 @@
     </table>
   </div>
 
-  <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm mt-3">
+  <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary btn-sm mt-3">
     Volver al dashboard
   </a>
 
@@ -284,7 +284,7 @@
     aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
-        <form id="form-nueva-tarea" action="{{ url_for('add_task', pc_name=pc.pc_name) }}" method="post">
+        <form id="form-nueva-tarea" action="{{ url_for('tasks.add_task', pc_name=pc.pc_name) }}" method="post">
           <div class="modal-header">
             <h5 class="modal-title" id="modalNuevaTareaLabel">Agregar nueva tarea</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -367,7 +367,7 @@
   <div class="modal fade" id="modalMigrar" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form action="{{ url_for('migrate_generic_tasks') }}" method="POST">
+        <form action="{{ url_for('tasks.migrate_generic_tasks') }}" method="POST">
           <input type="hidden" name="migration_task_id" id="migration_task_id">
           <div class="modal-header">
             <h5 class="modal-title">Asignar tarea a PC Real</h5>
@@ -401,7 +401,7 @@
   <div class="modal fade" id="modalEditarInfra" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form action="{{ url_for('update_pc_infrastructure', pc_name=pc.pc_name) }}" method="post">
+        <form action="{{ url_for('dashboard.update_pc_infrastructure', pc_name=pc.pc_name) }}" method="post">
           <div class="modal-header">
             <h5 class="modal-title">Editar Infraestructura</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -457,7 +457,7 @@
   <div class="modal fade" id="modalManualAudit" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form action="{{ url_for('add_manual_audit', pc_name=pc.pc_name) }}" method="post">
+        <form action="{{ url_for('tasks.add_manual_audit', pc_name=pc.pc_name) }}" method="post">
           <div class="modal-header bg-dark text-white">
             <h5 class="modal-title">Registrar Cambio Manual</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
@@ -509,7 +509,7 @@
   <div class="modal fade" id="modalManualAudit" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form action="{{ url_for('add_manual_audit', pc_name=pc.pc_name) }}" method="post">
+        <form action="{{ url_for('tasks.add_manual_audit', pc_name=pc.pc_name) }}" method="post">
           <div class="modal-header bg-dark text-white">
             <h5 class="modal-title">Registrar Cambio Manual</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"

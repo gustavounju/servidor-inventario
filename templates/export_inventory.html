@@ -23,7 +23,7 @@
     <div class="container">
         <h1 class="mb-4">Exportar inventario a Excel</h1>
 
-        <form action="{{ url_for('export_inventory') }}" method="post">
+        <form action="{{ url_for('dashboard.export_inventory') }}" method="post">
 
             <h5 class="mb-3">Seleccionar campos a exportar:</h5>
 
@@ -167,7 +167,7 @@
                     style="margin-left: 10px;">
                     <i class="bi bi-file-pdf"></i> Exportar PDF
                 </button>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg">
+                <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary btn-lg">
                     Cancelar
                 </a>
             </div>
@@ -179,7 +179,7 @@
         function submitPDF() {
             const form = document.querySelector('form');
             const originalAction = form.action;
-            form.action = "{{ url_for('export_inventory_pdf') }}";
+            form.action = "{{ url_for('dashboard.export_inventory_pdf') }}";
             form.submit();
             setTimeout(() => form.action = originalAction, 100);
         }
