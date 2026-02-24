@@ -105,5 +105,14 @@ def init_db():
             """
         )
 
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ad_users (
+                username TEXT PRIMARY KEY,
+                real_name TEXT
+            )
+            """
+        )
+
         conn.commit()
     print("Base de datos lista y estructura verificada.")
