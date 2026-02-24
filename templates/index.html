@@ -1876,37 +1876,64 @@ Start-Sleep -Seconds 10
             window.location.href = url.toString();
         }
 
+        function fallbackCopyTextToClipboard(text, kpiElement) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                var successful = document.execCommand('copy');
+                if(successful) {
+                    showCopySuccess(kpiElement);
+                } else {
+                    alert("Tu navegador bloqueó el copiado automático. Por favor descarga el script desde Backup -> Subir Offline.");
+                }
+            } catch (err) {
+                console.error('Fallback: Error al copiar', err);
+                alert("Error al copiar. Tu navegador no lo permite. Descarga el archivo en forma manual.");
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showCopySuccess(kpiElement) {
+            if (kpiElement) {
+                kpiElement.classList.add('kpi-on');
+                const originalText = kpiElement.querySelector('.text-primary').innerText;
+                kpiElement.querySelector('.text-primary').innerText = "¡Copiado!";
+                setTimeout(() => {
+                    kpiElement.classList.remove('kpi-on');
+                    kpiElement.querySelector('.text-primary').innerText = originalText;
+                }, 1000);
+            }
+        }
+
         // --- Copy Script Logic (Updated to fetch real file) ---
         function copyScript() {
             fetch('{{ url_for("setup.get_script") }}')
                 .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
+                    if (!response.ok) throw new Error('Network response devolvió error: ' + response.status);
                     return response.text();
                 })
                 .then(scriptText => {
+                    const kpiScript = document.getElementById('kpiScript');
+                    if (!navigator.clipboard) {
+                        fallbackCopyTextToClipboard(scriptText.trim(), kpiScript);
+                        return;
+                    }
                     navigator.clipboard.writeText(scriptText.trim()).then(() => {
-                        // Visual Feedback: Blink Blue
-                        const kpiScript = document.getElementById('kpiScript');
-                        if (kpiScript) {
-                            kpiScript.classList.add('kpi-on');
-
-                            // Change text temporarily (optional but nice)
-                            const originalText = kpiScript.querySelector('.text-primary').innerText;
-                            kpiScript.querySelector('.text-primary').innerText = "¡Copiado!";
-
-                            setTimeout(() => {
-                                kpiScript.classList.remove('kpi-on');
-                                kpiScript.querySelector('.text-primary').innerText = originalText;
-                            }, 1000); // 1.5 seconds feedback
-                        }
+                        showCopySuccess(kpiScript);
                     }).catch(err => {
-                        console.error("Error al copiar:", err);
-                        alert("No se pudo copiar automáticamente. Copia el texto desde el archivo inventario.ps1");
+                        console.error("Error en navigator.clipboard:", err);
+                        fallbackCopyTextToClipboard(scriptText.trim(), kpiScript);
                     });
                 })
                 .catch(err => {
                     console.error("Error al obtener script:", err);
-                    alert("Error al cargar el script del servidor.");
+                    alert("Error al cargar el script del servidor. Razón: " + err.message);
                 });
         }
 

@@ -237,15 +237,40 @@ function Get-InventoryData {
 
         // Copy Script
         function copyScript() {
-            // Intenta copiar un comando simple para invocar el script remoto, que es una práctica común
-            // O copiar el texto del textarea.
             var ta = document.getElementById('script-to-copy');
-            if (ta) {
-                navigator.clipboard.writeText(ta.value).then(function () {
+            if (!ta) return;
+
+            var text = ta.value;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(function () {
                     alert('Script copiado al portapapeles.');
-                }, function (err) {
-                    console.error('Error copiando: ', err);
+                }).catch(function (err) {
+                    fallbackCopyGraficos(text);
                 });
+            } else {
+                fallbackCopyGraficos(text);
+            }
+
+            function fallbackCopyGraficos(textToCopy) {
+                var textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    var successful = document.execCommand('copy');
+                    if (successful) {
+                        alert('Script copiado al portapapeles.');
+                    } else {
+                        alert("Tu navegador bloqueó el copiado automático.");
+                    }
+                } catch (err) {
+                    alert("Error al copiar. Tu navegador no lo permite.");
+                }
+                document.body.removeChild(textArea);
             }
         }
     </script>

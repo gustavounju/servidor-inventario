@@ -5,9 +5,20 @@ bp_setup = Blueprint('setup', __name__)
 
 @bp_setup.route("/script")
 def get_script():
-    """Devuelve el contenido del script inventario.ps1 para ser copiado."""
+    """Devuelve el contenido del script inventario.ps1 modificado con la IP actual para ser copiado."""
     try:
-        return send_file("inventario.ps1", mimetype="text/plain", as_attachment=False)
+        with open("inventario.ps1", "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Reemplazar IP harcodeada por el host actual
+        current_host = request.host
+        modified_content = content.replace("10.15.2.251:5000", current_host)
+        
+        mem = BytesIO()
+        mem.write(modified_content.encode("utf-8"))
+        mem.seek(0)
+        
+        return send_file(mem, mimetype="text/plain", as_attachment=False, download_name="inventario.ps1")
     except Exception as e:
         return f"Error al leer script: {e}", 500
 
@@ -60,7 +71,8 @@ def download_client_script():
             content = f.read()
             
         current_host = request.host
-        modified_content = content.replace("localhost:5000", current_host)
+        # Also replace the production IP if it exists in the original file
+        modified_content = content.replace("localhost:5000", current_host).replace("10.15.2.251:5000", current_host)
         
         mem = BytesIO()
         mem.write(modified_content.encode("utf-8"))
