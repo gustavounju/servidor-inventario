@@ -107,6 +107,7 @@ def api_mobile_parse_voice():
             result = voice_processor.process_voice_command(text)
             return jsonify({"status": "success", "data": result})
         except Exception as e:
+            print(f"Error in api_mobile_parse_voice: {e}")
             return jsonify({"status": "success", "data": {"descripcion": text, "solicitante": "", "error_voice": str(e)}})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

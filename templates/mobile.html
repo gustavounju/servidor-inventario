@@ -688,18 +688,24 @@
 
         async function parseVoiceInput(text) {
             // Reemplazo de Regex local por llamada a API con IA (Gemini)
+            const startTime = Date.now();
             const btn = document.querySelector('button[onclick="startVoiceInput()"]');
             btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando IA...';
             btn.disabled = true;
 
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+
                 const res = await fetch('/api/mobile/parse_voice', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: text })
+                    body: JSON.stringify({ text: text }),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
 
-                if (!res.ok) throw new Error("Error API");
+                if (!res.ok) throw new Error("Error API " + res.status);
                 const json = await res.json();
 
                 if (json.status === 'success') {
@@ -730,10 +736,11 @@
                 }
 
             } catch (e) {
-                console.error("AI Error:", e);
+                const elapsed = Math.round((Date.now() - startTime) / 1000);
+                console.error("AI Error (" + elapsed + "s):", e);
                 // Fallback silencioso a poner todo en descripción
                 document.getElementById('taskDesc').value = capitalize(text);
-                alert("Error conectando con IA. Se copió todo el texto.");
+                alert("Error conectando con IA (" + elapsed + "s): " + (e.message || e) + ".\nSe copió todo el texto.");
             } finally {
                 // Restaurar botón
                 btn.innerHTML = '<i class="bi bi-mic-fill"></i> Hablar para llenar';
