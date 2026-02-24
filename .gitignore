@@ -21,3 +21,4 @@ logs/
 voice_processor.py
 # Tests temporales
 test_*.py
+.env

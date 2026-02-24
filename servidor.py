@@ -3,6 +3,10 @@ import os
 import threading
 import platform
 import socket
+from dotenv import load_dotenv
+
+# Load environment variables from .env if present (useful for Windows local dev)
+load_dotenv()
 
 # Base de datos y Migraciones
 from database.db_core import init_db, get_db_connection
