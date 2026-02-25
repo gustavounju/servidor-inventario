@@ -10,8 +10,12 @@ def get_script():
         with open("inventario.ps1", "r", encoding="utf-8") as f:
             content = f.read()
         
-        # Reemplazar la URL base completa (incluyendo http/https) 
-        current_base_url = request.host_url.rstrip('/')
+        # El dashboard se sirve en 443 (o 80), pero el receiver de PS está siempre en 5000.
+        # request.host_url devuelve "https://10.15.2.251/" si entras por 443, lo que rompe el script.
+        # Vamos a asegurar que la IP/Host sea la actual, pero forzar el puerto 5000:
+        current_host = request.host.split(':')[0] # Obtiene solo "10.15.2.251"
+        current_base_url = f"https://{current_host}:5000"
+        
         modified_content = content.replace("https://10.15.2.251:5000", current_base_url)
         modified_content = modified_content.replace("http://10.15.2.251:5000", current_base_url)
         # Por si en el archivo estaba localhost
@@ -74,7 +78,9 @@ def download_client_script():
         with open("inventario.ps1", "r", encoding="utf-8") as f:
             content = f.read()
             
-        current_base_url = request.host_url.rstrip('/')
+        current_host = request.host.split(':')[0]
+        current_base_url = f"https://{current_host}:5000"
+        
         modified_content = content.replace("https://10.15.2.251:5000", current_base_url)
         modified_content = modified_content.replace("http://10.15.2.251:5000", current_base_url)
         modified_content = modified_content.replace("https://localhost:5000", current_base_url)
