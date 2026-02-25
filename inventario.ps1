@@ -50,18 +50,8 @@ catch {
 # BYPASS DE VALIDACIÓN SSL (Para certificados autofirmados)
 # -----------------------------------------------------------
 try {
-    # Crear una clase que acepta todos los certificados
-    add-type @"
-        using System.Net;
-        using System.Security.Cryptography.X509Certificates;
-        public class TrustAllCertsPolicy : ICertificatePolicy {
-            public bool CheckValidationResult(
-                ServicePoint srvPoint, X509Certificate certificate,
-                WebRequest request, int certificateProblem) {
-                return true;
-            }
-        }
-"@
+    # Crear una clase que acepta todos los certificados (Formato de 1 línea para evitar problemas de copy-paste en PS 2.0)
+    add-type "using System.Net; using System.Security.Cryptography.X509Certificates; public class TrustAllCertsPolicy : ICertificatePolicy { public bool CheckValidationResult(ServicePoint srvPoint, X509Certificate certificate, WebRequest request, int certificateProblem) { return true; } }"
     [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
 }
 catch {
