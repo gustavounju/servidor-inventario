@@ -58,61 +58,7 @@ catch {
     # Si falla (ej: ya existe la clase), continuar
 }
 
-# -----------------------------------------------------------
-# FUNCIÓN: ConvertTo-JsonCustom (Polyfill para PS 2.0)
-# -----------------------------------------------------------
-function ConvertTo-JsonCustom($InputObject) {
-    if ($InputObject -eq $null) { return "null" }
-    
-    $type = $InputObject.GetType()
-
-    # Tipos numéricos y booleanos
-    if ($InputObject -is [bool]) { return $InputObject.ToString().ToLower() }
-    if ($InputObject -is [int] -or $InputObject -is [long] -or $InputObject -is [double] -or $InputObject -is [decimal] -or $InputObject -is [float]) {
-        return $InputObject.ToString().Replace(",", ".")
-    }
-
-    # Strings (escapar caracteres especiales)
-    if ($InputObject -is [string] -or $InputObject -is [char] -or $type.Name -eq "DateTime") { 
-        # Chained .Replace en una sola linea para evitar error de parser en PS 2.0 si el backtick falla
-        $str = $InputObject.ToString().Replace("\", "\\").Replace('"', '\"').Replace("`r", "\r").Replace("`n", "\n").Replace("`t", "\t")
-        return "`"$str`""
-    }
-
-    # Arrays / Colecciones
-    if ($InputObject -is [System.Collections.IEnumerable] -and $InputObject -isnot [System.Collections.IDictionary] -and $InputObject -isnot [string]) {
-        $items = @()
-        foreach ($item in $InputObject) {
-            $items += ConvertTo-JsonCustom $item
-        }
-        return "[ " + ([string]::Join(", ", $items)) + " ]"
-    }
-
-    # Hashtables / Diccionarios
-    if ($InputObject -is [System.Collections.IDictionary]) {
-        $props = @()
-        foreach ($key in $InputObject.Keys) {
-            $val = ConvertTo-JsonCustom $InputObject[$key]
-            $props += "`"$key`": $val"
-        }
-        return "{ " + ([string]::Join(", ", $props)) + " }"
-    }
-    
-    # Objetos genéricos PSObject
-    if ($InputObject -is [PSObject]) {
-        $props = @()
-        $properties = $InputObject | Get-Member -MemberType Properties
-        foreach ($prop in $properties) {
-            $name = $prop.Name
-            $val = ConvertTo-JsonCustom $InputObject.$name
-            $props += "`"$name`": $val"
-        }
-        return "{ " + ([string]::Join(", ", $props)) + " }"
-    }
-
-    # Fallback
-    return "`"$($InputObject.ToString())`""
-}
+# JSON polyfill function removed to maximize PS 2.0 copy-paste compatibility
 
 # -----------------------------------------------------------
 # FUNCIÓN: Obtener Conexiones de Red (Snapshot)
@@ -146,7 +92,8 @@ function Get-ActiveConnections {
             try {
                 $p = Get-Process -Id $pidVal -ErrorAction SilentlyContinue
                 if ($p) { $procName = $p.ProcessName }
-            } catch {}
+            }
+            catch {}
 
             # Crear objeto simple
             $connObj = @{
@@ -179,7 +126,8 @@ function Get-ComputerHealth {
                 $diskStatus += @{ "Model" = $d.Model; "Status" = $d.Status; "DeviceID" = $d.DeviceID }
             }
         }
-    } catch {}
+    }
+    catch {}
     $health.Add("Discos_SMART", $diskStatus)
 
     # 2. Espacio en Disco (Crítico < 5GB)
@@ -196,7 +144,8 @@ function Get-ComputerHealth {
                 }
             }
         }
-    } catch {}
+    }
+    catch {}
     $health.Add("Discos_Espacio", $diskSpace)
 
     # 3. Uptime (Días sin reiniciar)
@@ -207,7 +156,8 @@ function Get-ComputerHealth {
         $lastBoot = $os.ConvertToDateTime($os.LastBootUpTime)
         $uptime = (Get-Date) - $lastBoot
         $uptimeDays = [math]::Round($uptime.TotalDays, 1)
-    } catch {}
+    }
+    catch {}
     $health.Add("Uptime_Dias", $uptimeDays)
 
     # 4. Errores Críticos Recientes (Últimas 24hs) - System y Application
@@ -221,7 +171,8 @@ function Get-ComputerHealth {
                 $recentErrors += @{ "Log" = "System"; "Source" = $e.Source; "Msg" = $e.Message.Trim().Substring(0, [math]::Min($e.Message.Length, 100)) }
             }
         }
-    } catch {}
+    }
+    catch {}
     $health.Add("Eventos_Criticos", $recentErrors)
 
     return $health
@@ -376,49 +327,78 @@ try {
     catch {}
 
     # -----------------------------------------------------------
-    # CONSTRUCCIÓN DEL PAYLOAD
+    # CONSTRUCCIÓN DEL PAYLOAD (JSON MANUAL PARA EVITAR ERRORES PS2.0)
     # -----------------------------------------------------------
-
-    $payload = @{
-        "PC_Nombre"         = $pcNombre
-        "Usuario_Actual"    = $usuarioActual
-        "Fecha_Reporte"     = $fechaReporte
+    # Para máxima compatibilidad al copiar/pegar en PowerShell 2.0, evitamos
+    # usar comillas invertidas (backticks) complejas.
+    # Armamos un JSON lineal básico usando comillas simples externas o escapando con ""
     
-        "Sistema"           = @{
-            "OsName"     = $os.Caption
-            "Procesador" = $cpu.Name
-            "RAM (GB)"   = $ramGB
-        }
-
-        "Red"               = @(
-            @{ "IPAddress" = $ipAddress }
-        )
-
-        "RAM_Detalles"      = $ramDetalles
-        "Disk_Models"       = $diskModelsStr
-        "Disk_Speeds_RPM"   = $diskSpeedsStr
-        "Motherboard_Model" = $motherboardModel
-        "Printer_Model"     = $printerModel
-        "Printer_Port"      = $printerPort
-        "Monitors"          = $monitorsStr
-        "Conexiones"        = $activeConns
-        "Salud"             = $healthData
+    # helper rapidísimo para escapar strings en PS2.0
+    function e([string]$s) { return $s -replace "\\", "\\" -replace "`"", "\`"" -replace "`r", "" -replace "`n", "" }
+    
+    $jsonObj = "{"
+    $jsonObj += """PC_Nombre"": ""$(e $pcNombre)"","
+    $jsonObj += """Usuario_Actual"": ""$(e $usuarioActual)"","
+    $jsonObj += """Fecha_Reporte"": ""$fechaReporte"","
+    
+    $jsonObj += """Sistema"": {"
+    $jsonObj += """OsName"": ""$(e $os.Caption)"","
+    $jsonObj += """Procesador"": ""$(e $cpu.Name)"","
+    $jsonObj += """RAM (GB)"": $ramGB"
+    $jsonObj += "},"
+    
+    $jsonObj += """Red"": [{""IPAddress"": ""$ipAddress""}],"
+    
+    $jsonObj += """RAM_Detalles"": ""$(e $ramDetalles)"","
+    $jsonObj += """Disk_Models"": ""$(e $diskModelsStr)"","
+    $jsonObj += """Disk_Speeds_RPM"": ""$(e $diskSpeedsStr)"","
+    $jsonObj += """Motherboard_Model"": ""$(e $motherboardModel)"","
+    $jsonObj += """Printer_Model"": ""$(e $printerModel)"","
+    $jsonObj += """Printer_Port"": ""$(e $printerPort)"","
+    $jsonObj += """Monitors"": ""$(e $monitorsStr)"","
+    
+    # Armamos array Conexiones
+    $jsonObj += """Conexiones"": ["
+    $connArr = @()
+    foreach ($c in $activeConns) {
+        $connArr += "{""Proto"":""$(e $c.Proto)"",""Local"":""$(e $c.Local)"",""Remote"":""$(e $c.Remote)"",""State"":""$(e $c.State)"",""PID"":""$(e $c.PID)"",""Process"":""$(e $c.Process)""}"
     }
-
-    # -----------------------------------------------------------
-    # CONVERSIÓN A JSON (DETECTAR VERSIÓN)
-    # -----------------------------------------------------------
-    $json = ""
-
-    # Verificar si existe ConvertTo-Json (PowerShell 3.0+)
-    if (Get-Command "ConvertTo-Json" -ErrorAction SilentlyContinue) {
-        Write-Host "Usando ConvertTo-Json nativo..."
-        $json = $payload | ConvertTo-Json -Depth 5
+    $jsonObj += [string]::Join(",", $connArr)
+    $jsonObj += "],"
+    
+    # Armamos objeto Salud
+    $jsonObj += """Salud"": {"
+    $jsonObj += """Uptime_Dias"": $($healthData.Uptime_Dias),"
+    
+    $jsonObj += """Discos_SMART"": ["
+    $smartArr = @()
+    foreach ($d in $healthData.Discos_SMART) { 
+        $smartArr += "{""Model"":""$(e $d.Model)"",""Status"":""$(e $d.Status)"",""DeviceID"":""$(e $d.DeviceID)""}" 
     }
-    else {
-        Write-Host "Usando función JSON personalizada (Modo PS 2.0)..."
-        $json = ConvertTo-JsonCustom $payload
+    $jsonObj += [string]::Join(",", $smartArr)
+    $jsonObj += "],"
+    
+    $jsonObj += """Discos_Espacio"": ["
+    $spcArr = @()
+    foreach ($v in $healthData.Discos_Espacio) { 
+        $spcArr += "{""Letter"":""$(e $v.Letter)"",""FreeGB"":$($v.FreeGB),""TotalGB"":$($v.TotalGB),""PctFree"":$($v.PctFree)}" 
     }
+    $jsonObj += [string]::Join(",", $spcArr)
+    $jsonObj += "],"
+    
+    $jsonObj += """Eventos_Criticos"": ["
+    $evtArr = @()
+    foreach ($e in $healthData.Eventos_Criticos) { 
+        $evtArr += "{""Log"":""$(e $e.Log)"",""Source"":""$(e $e.Source)"",""Msg"":""$(e $e.Msg)""}" 
+    }
+    $jsonObj += [string]::Join(",", $evtArr)
+    $jsonObj += "]"
+    
+    $jsonObj += "}"
+    $jsonObj += "}"
+    
+    $json = $jsonObj -replace "`r", ""
+    $json = $json -replace "`n", ""
 
     # -----------------------------------------------------------
     # ENVÍO AL SERVIDOR (WEBCLIENT PARA COMPATIBILIDAD)
@@ -443,7 +423,7 @@ try {
         try {
             # Cambiar URL a HTTP y puerto 8080
             # Asumimos que la IP es la misma, solo cambia protocolo y puerto
-             # $servidor = "https://10.15.2.251:5000/submit_inventory" -> "http://10.15.2.251:8080/submit_inventory"
+            # $servidor = "https://10.15.2.251:5000/submit_inventory" -> "http://10.15.2.251:8080/submit_inventory"
             $servidorHttp = $servidor.Replace("https://", "http://").Replace(":5000", ":8080")
             
             $wc = New-Object System.Net.WebClient
