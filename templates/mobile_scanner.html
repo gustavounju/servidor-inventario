@@ -219,9 +219,7 @@
                 Html5QrcodeSupportedFormats.QR_CODE,
                 Html5QrcodeSupportedFormats.CODE_128,
                 Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.DATA_MATRIX
+                Html5QrcodeSupportedFormats.EAN_13
             ];
 
             html5QrcodeScanner = new Html5Qrcode("reader", {
@@ -233,8 +231,12 @@
 
             const config = {
                 fps: 10,
-                // Make the scanning box a wide rectangle to fit long serial codes
-                qrbox: { width: 300, height: 150 },
+                // Make the scanning box a wide rectangle to fit long serial codes (Dynamic for small screens)
+                qrbox: function (vw, vh) {
+                    let w = Math.min(vw * 0.95, 300);
+                    let h = Math.min(vh * 0.95, 120);
+                    return { width: Math.floor(w), height: Math.floor(h) };
+                },
                 aspectRatio: 1.0
             };
 
@@ -403,9 +405,7 @@
                 Html5QrcodeSupportedFormats.QR_CODE,
                 Html5QrcodeSupportedFormats.CODE_128,
                 Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.DATA_MATRIX
+                Html5QrcodeSupportedFormats.EAN_13
             ];
             const html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formats });
             html5QrCode.scanFile(file, true)
