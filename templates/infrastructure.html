@@ -242,13 +242,11 @@
                                             {% endif %}
                                         </td>
                                         <td class="align-middle text-end">
-                                            {% if bat.status == 'Stock' %}
                                             <a href="{{ url_for('infrastructure.delete_battery', id=bat.id) }}"
-                                                class="btn btn-sm btn-outline-danger" title="Eliminar del stock"
-                                                onclick="return confirm('¿Eliminar batería de stock?');">
+                                                class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
+                                                onclick="return confirm('¿Eliminar batería de stock? Si está asignada a una UPS, se desvinculará primero.');">
                                                 <i class="bi bi-x"></i>
                                             </a>
-                                            {% endif %}
                                         </td>
                                     </tr>
                                     {% else %}
