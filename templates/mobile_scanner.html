@@ -75,8 +75,13 @@
                         <option value="Disco">Disco Rígido/SSD</option>
                         <option value="Memoria">Memoria RAM</option>
                         <option value="Gabinete">Gabinete</option>
-                        <option value="Otro">Otro</option>
+                        <option value="Otro">Otro (Especificar)</option>
                     </select>
+                </div>
+                <!-- Div Oculto para Tipo Personalizado -->
+                <div class="mb-2 d-none" id="customTypeContainer">
+                    <label class="form-label text-muted small">Especifique el tipo</label>
+                    <input type="text" class="form-control" id="newTypeCustom" placeholder="Ej: Splitter, Extensor...">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Modelo / Marca</label>
@@ -259,11 +264,32 @@
         // --- FORMS SUBMIT --- //
 
         // Add New
+        document.getElementById('newType').addEventListener('change', function () {
+            const customTypeContainer = document.getElementById('customTypeContainer');
+            const customInput = document.getElementById('newTypeCustom');
+            if (this.value === 'Otro') {
+                customTypeContainer.classList.remove('d-none');
+                customInput.setAttribute('required', 'required');
+            } else {
+                customTypeContainer.classList.add('d-none');
+                customInput.removeAttribute('required');
+                customInput.value = '';
+            }
+        });
+
         document.getElementById('addComponentForm').addEventListener('submit', (e) => {
             e.preventDefault();
+
+            let finalType = document.getElementById('newType').value;
+            if (finalType === 'Otro') {
+                finalType = document.getElementById('newTypeCustom').value.trim();
+                // Si el usuario no escribe nada, forzamos un valor por defecto o evitamos el error
+                if (!finalType) finalType = "Otro";
+            }
+
             const payload = {
                 serial_number: document.getElementById('newSerialInput').value,
-                component_type: document.getElementById('newType').value,
+                component_type: finalType,
                 brand_model: document.getElementById('newModel').value
             };
 
