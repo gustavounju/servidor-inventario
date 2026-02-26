@@ -273,10 +273,37 @@ try {
                 }
                 $mList += $mn
             }
-            $monitorsStr = [string]::Join(" | ", $mList)
+            if ($mList.Count -gt 0) {
+                $monitorsStr = [string]::Join(" | ", $mList)
+            }
         }
     }
     catch {}
+    
+    # Fallback para monitores en Windows 10/11 si WmiMonitorID falla por falta de permisos
+    if ($monitorsStr -eq "N/A" -or $monitorsStr -eq "") {
+        try {
+            $monItemsV2 = Get-WmiObject -Class Win32_DesktopMonitor -ErrorAction SilentlyContinue
+            if ($monItemsV2) {
+                $mListV2 = @()
+                foreach ($m in $monItemsV2) {
+                    if ($m.MonitorType -and $m.MonitorType -ne "Monitor PnP genérico") {
+                        $mListV2 += $m.MonitorType
+                    }
+                    elseif ($m.Description) {
+                        $mListV2 += $m.Description
+                    }
+                    else {
+                        $mListV2 += "Monitor Reconocido"
+                    }
+                }
+                if ($mListV2.Count -gt 0) {
+                    $monitorsStr = [string]::Join(" | ", $mListV2)
+                }
+            }
+        }
+        catch {}
+    }
     # 8) Seguridad (Conexiones Activas)
     $activeConns = @()
     try {
