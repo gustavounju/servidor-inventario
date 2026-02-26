@@ -746,6 +746,28 @@
                         data-so="{{ pc.os_name | default('') }}"
                         data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
                         data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
+                        {% if pc.pc_name in ['PC Generica', 'Infraestructura'] %}
+                        <td style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
+                            {{ pc.pc_name }}
+                        </td>
+                        <td><div class="fw-bold text-muted">-</div></td>
+                        <td><span class="badge bg-light text-dark">-</span></td>
+                        <td><span class="text-muted">-</span></td>
+                        <td><span class="text-muted">-</span></td>
+                        <td><span class="text-muted">-</span></td>
+                        <td><span class="text-muted">-</span></td>
+                        <td><span class="text-muted">-</span></td>
+                        <td><span class="text-muted">-</span></td>
+                        <td><span class="text-muted">-</span></td>
+                        <td><span class="text-muted">-</span></td>
+                        <td class="text-center p-1">
+                            <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}"
+                                class="btn btn-sm btn-outline-secondary py-0 px-1" title="Ver Tareas y Detalle"
+                                style="font-size: 0.7rem;">
+                                <i class="bi bi-list-task"></i> Ver Tareas
+                            </a>
+                        </td>
+                        {% else %}
                         <td
                             style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
                             {{ pc.pc_name }}
@@ -852,6 +874,7 @@
                                 {% endif %}
                             </div>
                         </td>
+                        {% endif %}
                     </tr>
                     {% else %}
                     <tr>
