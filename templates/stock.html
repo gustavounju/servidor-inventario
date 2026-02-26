@@ -224,6 +224,25 @@
                 .catch(err => alert("Error de red: " + err));
         }
 
+        function deleteComponent(serial) {
+            if (!confirm('¿Eliminar definitivamente este componente (' + serial + ')?')) return;
+
+            fetch('/api/components/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serial_number: serial })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        loadComponents();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(err => alert("Error de red: " + err));
+        }
+
         function loadComponents() {
             fetch('/api/components/list')
                 .then(res => res.json())
@@ -254,8 +273,17 @@
                             statusBadge = 'bg-success';
                             actionBtn = `<button class="btn btn-sm btn-outline-primary" onclick="openAssignModal('${item.serial_number}', '${item.component_type}')">Asignar</button>`;
                         }
-                        else if (item.status === 'Installed') statusBadge = 'bg-warning text-dark';
-                        else if (item.status === 'Retirado') statusBadge = 'bg-danger';
+                        else if (item.status === 'Installed') {
+                            statusBadge = 'bg-warning text-dark';
+                            actionBtn = '';
+                        }
+                        else if (item.status === 'Retirado') {
+                            statusBadge = 'bg-danger';
+                            actionBtn = '';
+                        }
+
+                        let deleteBtn = `<button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteComponent('${item.serial_number}')" title="Eliminar definitivamente"><i class="bi bi-trash"></i></button>`;
+                        actionBtn = actionBtn === '-' || actionBtn === '' ? deleteBtn : actionBtn + deleteBtn;
 
                         let assignedLink = item.assigned_pc ? `<a href="/pc/${item.assigned_pc}">${item.assigned_pc}</a>` : '-';
 

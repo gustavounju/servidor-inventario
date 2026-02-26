@@ -90,3 +90,26 @@ def return_component():
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_stock.route("/api/components/delete", methods=["POST"])
+def delete_component():
+    try:
+        data = request.json
+        serial = data.get("serial_number")
+        if not serial: return jsonify({"status": "error", "message": "Falta serial"}), 400
+            
+        with get_db_connection() as conn:
+            comp = conn.execute("SELECT * FROM components WHERE serial_number = ?", (serial,)).fetchone()
+            if not comp: return jsonify({"status": "error", "message": "Componente no existe"}), 404
+            
+            old_pc = comp["assigned_pc"]
+            conn.execute("DELETE FROM components WHERE serial_number = ?", (serial,))
+            
+            if old_pc is not None and old_pc != "Unknown":
+                detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial})"
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, 'COMPONENT_DELETED', ?, 'DELETED')", (old_pc, detalles))
+                
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
