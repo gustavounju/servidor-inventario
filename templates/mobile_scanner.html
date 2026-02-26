@@ -214,8 +214,18 @@
             document.getElementById('startScan').classList.add('d-none');
             document.getElementById('stopScan').classList.remove('d-none');
 
-            // Use verbose=false
+            // Configure explicit 1D formats (Code 128, Code 39) alongside QR and EAN
+            const formats = [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.DATA_MATRIX
+            ];
+
             html5QrcodeScanner = new Html5Qrcode("reader", {
+                formatsToSupport: formats,
                 experimentalFeatures: {
                     useBarCodeDetectorIfSupported: true
                 }
@@ -223,11 +233,11 @@
 
             const config = {
                 fps: 10,
-                qrbox: { width: 280, height: 280 }, // Square box supports both QR and Barcodes fairly well
+                // Make the scanning box a wide rectangle to fit long serial codes
+                qrbox: { width: 300, height: 150 },
                 aspectRatio: 1.0
             };
 
-            // Revert to simple config as the library rejected the advanced constraints
             const cameraConfig = { facingMode: "environment" };
 
             html5QrcodeScanner.start(
@@ -388,7 +398,16 @@
 
         function processFile(file) {
             // Use Html5Qrcode (not Scanner) for file scan
-            const html5QrCode = new Html5Qrcode("reader");
+            // explicitly passing format constraints for 1D code files.
+            const formats = [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.DATA_MATRIX
+            ];
+            const html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formats });
             html5QrCode.scanFile(file, true)
                 .then(decodedText => {
                     onScanSuccess(decodedText);
