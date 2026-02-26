@@ -398,8 +398,20 @@ def pc_detail(pc_name):
         technicians = [dict(row) for row in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
         audit_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = ? ORDER BY changed_at DESC", (pc_name,)).fetchall()
         all_pcs = conn.execute("SELECT pc_name, fuero, last_user FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
+        
+        # Buscar Data de la UPS asignada
+        pc_ups = conn.execute('''
+            SELECT u.*, b.code as battery_code 
+            FROM ups_inventory u
+            LEFT JOIN baterias_stock b ON u.assigned_battery_id = b.id
+            WHERE u.assigned_pc = ?
+        ''', (pc_name,)).fetchone()
+        
+        # UPS Disponibles en caso de querer asignarle una (UPS sin asignar)
+        available_ups = conn.execute("SELECT id, code, model FROM ups_inventory WHERE assigned_pc IS NULL").fetchall()
+
     if pc is None: abort(404)
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups=pc_ups, available_ups=available_ups)
 
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
 def update_pc_infrastructure(pc_name):

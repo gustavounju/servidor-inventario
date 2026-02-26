@@ -30,7 +30,7 @@
     {% endif %}
 
     {% if pc.alerta_ram_baja %}
-    <span class="badge badge-warning ml-2" title="RAM baja (&lt; 8 GB)">
+    <span class="badge badge-warning ml-2" title="RAM baja (< 8 GB)">
       💾 RAM
     </span>
     {% endif %}
@@ -60,7 +60,8 @@
       </button>
 
       <!-- Exportar tareas de esta PC. Usamos el endpoint global con filtro -->
-      <a href="{{ url_for('tasks.report_tasks_completed') }}?pc={{ pc.pc_name }}" class="btn btn-sm btn-outline-primary ms-2">
+      <a href="{{ url_for('tasks.report_tasks_completed') }}?pc={{ pc.pc_name }}"
+        class="btn btn-sm btn-outline-primary ms-2">
         <i class="bi bi-file-earmark-excel"></i> Exportar tareas PC
       </a>
       {% endif %}
@@ -133,10 +134,10 @@
     </tbody>
   </table>
 
-  <!-- BLOQUE 2: Infraestructura de Red -->
+  <!-- BLOQUE 2: Infraestructura de Red & Energia -->
   <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">Infraestructura de Red</h5>
+      <h5 class="mb-0">Infraestructura de Red y Energía</h5>
       <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
         data-bs-target="#modalEditarInfra">
         <i class="bi bi-pencil"></i> Editar
@@ -144,13 +145,41 @@
     </div>
     <div class="card-body">
       <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
           <p><strong>Edificio:</strong> {{ pc.building or '-' }}</p>
           <p><strong>Piso:</strong> {{ pc.floor or '-' }}</p>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <p><strong>Switch:</strong> {{ pc.switch_name or '-' }} (Puerto {{ pc.switch_port or '-' }})</p>
           <p><strong>Pachera:</strong> {{ pc.pachera_name or '-' }} (Boca {{ pc.pachera_port or '-' }})</p>
+        </div>
+        <!-- Integracion UPS -->
+        <div class="col-md-4 border-start">
+          <h6 class="text-primary fw-bold mb-2"><i class="bi bi-plug"></i> Respaldo Eléctrico (UPS)</h6>
+          {% if pc_ups %}
+          <p class="mb-1"><strong>UPS:</strong> {{ pc_ups.code }}</p>
+          <p class="mb-2"><strong>Modelo:</strong> {{ pc_ups.model }}</p>
+          {% if pc_ups.battery_code %}
+          <span class="badge bg-success"><i class="bi bi-battery-charging"></i> Batería: {{ pc_ups.battery_code
+            }}</span>
+          {% else %}
+          <span class="badge bg-danger"><i class="bi bi-battery"></i> Sin Batería</span>
+          {% endif %}
+          <div class="mt-2">
+            <form action="{{ url_for('infrastructure.assign_ups_to_pc', ups_id=pc_ups.id) }}" method="POST">
+              <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
+              <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular UPS"
+                onclick="return confirm('¿Quitar UPS de este equipo?');">
+                <i class="bi bi-trash"></i> Desvincular UPS
+              </button>
+            </form>
+          </div>
+          {% else %}
+          <p class="text-muted small mb-2">Sin UPS asignada.</p>
+          <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalAssignUPS">
+            <i class="bi bi-link"></i> Asignar UPS a este equipo
+          </button>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -505,52 +534,32 @@
     </div>
   </div>
 
-  <!-- Modal Auditoria Manual -->
-  <div class="modal fade" id="modalManualAudit" tabindex="-1" aria-hidden="true">
+  <!-- Modal Asignar UPS -->
+  <div class="modal fade" id="modalAssignUPS" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form action="{{ url_for('tasks.add_manual_audit', pc_name=pc.pc_name) }}" method="post">
-          <div class="modal-header bg-dark text-white">
-            <h5 class="modal-title">Registrar Cambio Manual</h5>
+        <form id="assignUpsForm" method="POST"
+          onsubmit="this.action = '/infra/ups/' + document.getElementById('selectUPS').value + '/assign_pc';">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">Asignar UPS</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
               aria-label="Cerrar"></button>
           </div>
           <div class="modal-body">
-            <p class="small text-muted">Use esto para registrar cambios de componentes que el sistema no detecta
-              automáticamente (ej: Fuentes, Gabinetes, Periféricos analógicos).</p>
-
             <div class="mb-3">
-              <label for="campo" class="form-label">Componente / Campo</label>
-              <input type="text" class="form-control" id="campo" name="campo" list="componentesList"
-                placeholder="Ej: Fuente de Poder" required>
-              <datalist id="componentesList">
-                <option value="Fuente de Poder">
-                <option value="Gabinete">
-                <option value="Teclado">
-                <option value="Mouse">
-                <option value="Monitor (Adicional)">
-                <option value="Estabilizador/UPS">
-                <option value="Placa de Red PCI">
-                <option value="Cooler/Ventilador">
-              </datalist>
+              <label class="form-label fw-bold">UPS Disponible:</label>
+              <select class="form-select" id="selectUPS" required>
+                <option value="">-- Seleccionar --</option>
+                {% for u in available_ups %}
+                <option value="{{ u.id }}">{{ u.code }} (Mod: {{ u.model }})</option>
+                {% endfor %}
+              </select>
             </div>
-
-            <div class="mb-3">
-              <label for="valor_anterior" class="form-label">Valor Anterior (Opcional)</label>
-              <input type="text" class="form-control" id="valor_anterior" name="valor_anterior"
-                placeholder="Ej: Generica 500W">
-            </div>
-
-            <div class="mb-3">
-              <label for="valor_nuevo" class="form-label">Valor Nuevo / Detalle</label>
-              <input type="text" class="form-control" id="valor_nuevo" name="valor_nuevo"
-                placeholder="Ej: Sentey 600W 80 Plus" required>
-            </div>
-
+            <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-dark">Registrar Cambio</button>
+            <button type="submit" class="btn btn-success">Asignar a Equipo</button>
           </div>
         </form>
       </div>
@@ -578,29 +587,15 @@
       techHidden.value = "";
 
       if (assignedTo && assignedTo !== 'None') {
-        // Pre-select and lock
         techSelect.value = assignedTo;
-        // If the assigned tech is not in the list (legacy/different), this might fail validation?
-        // But assuming the list covers all active techs.
         techSelect.disabled = true;
         techHidden.value = assignedTo;
-
-        // Add a visual hint?
-        // (Optional)
       }
 
       var modal = new bootstrap.Modal(document.getElementById('modalFinalizarTarea'));
       modal.show();
     }
 
-    // On Submit, if disabled, the select won't send value. We use the hidden input if present.
-    // However, the backend expects 'technician_name' form field.
-    // If select is disabled, it is not sent.
-    // We can add logic to re-enable on submit OR change the name of the hidden input.
-    // Better: change hidden input name to 'technician_name' ONLY if disabled?
-    // Simpler: use JS to copy value to hidden input (which we added above as 'technician_name_hidden')
-    // AND in server-side, check both.
-    // OR: just enable the select right before submit.
     document.getElementById('formFinalizar').addEventListener('submit', function () {
       document.getElementById('techSelectComplete').disabled = false;
     });

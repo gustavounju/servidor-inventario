@@ -21,11 +21,13 @@ from blueprints.bp_dashboard import bp_dashboard
 from blueprints.bp_api import bp_api
 from blueprints.bp_stock import bp_stock
 from blueprints.bp_setup import bp_setup
+from blueprints.bp_infrastructure import bp_infrastructure
 from blueprints.bp_tasks import bp_tasks
 from blueprints.bp_mobile import bp_mobile
 
 # Inicializar Flask
 app = Flask(__name__)
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_dev_secret_key_12345')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Asegurar directorios
@@ -39,6 +41,7 @@ app.register_blueprint(bp_stock)
 app.register_blueprint(bp_setup)
 app.register_blueprint(bp_tasks)
 app.register_blueprint(bp_mobile)
+app.register_blueprint(bp_infrastructure)
 
 # Filtros para Jinja (si queda alguno que estuviéramos usando, aunque los que se usaban ya están resueltos o no declarados como filters globales en servidor.py original excepto quizas datetime_es, pero lo importabamos donde hiciera falta).
 from services.reporting import format_datetime_es

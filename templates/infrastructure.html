@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Infraestructura & Stock</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-hdd-network-fill me-2 text-primary"></i> Infraestructura y Stock</h2>
+            <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-4">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show"
+                role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <!-- Columna 1: UPS (Hardware) -->
+            <div class="col-lg-8 mb-4">
+                <div class="card shadow-sm h-100 border-primary">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-plug-fill me-2"></i> Equipos UPS y Asignaciones</h5>
+                        <button class="btn btn-sm btn-light text-primary fw-bold" data-bs-toggle="modal"
+                            data-bs-target="#modalAddUPS">
+                            <i class="bi bi-plus-circle"></i> Nueva UPS
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Código/Serial UPS</th>
+                                        <th>Modelo</th>
+                                        <th>Asignada a PC</th>
+                                        <th>Batería Instalada</th>
+                                        <th>Registro</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ups in ups_list %}
+                                    <tr>
+                                        <td class="fw-bold">{{ ups.code }}</td>
+                                        <td>{{ ups.model }}</td>
+                                        <td>
+                                            {% if ups.assigned_pc %}
+                                            <a href="{{ url_for('dashboard.pc_detail', pc_name=ups.assigned_pc) }}"
+                                                class="text-decoration-none fw-bold text-primary">
+                                                {{ ups.assigned_pc }}
+                                            </a>
+                                            {% if ups.fuero %}
+                                            <div class="small">
+                                                <span class="badge text-white"
+                                                    style="background-color: {{ fuero_colors.get(ups.fuero, '#6c757d') }};">
+                                                    {{ ups.fuero }}
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                            {% else %}
+                                            <span class="badge bg-secondary">Sin asignar</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if ups.battery_code %}
+                                            <span class="badge bg-success"><i class="bi bi-battery-charging"></i> {{
+                                                ups.battery_code }}</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">Sin Batería</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="small text-muted">{{ ups.created_at[:10] }}</td>
+                                        <td class="text-end">
+                                            <!-- Boton para cambiar bateria -->
+                                            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                                                data-bs-target="#modalAssignBattery{{ ups.id }}"
+                                                title="Asignar/Cambiar Batería">
+                                                <i class="bi bi-battery-half"></i>
+                                            </button>
+
+                                            <!-- Boton para asignar a PC -->
+                                            <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                                                data-bs-target="#modalAssignPC{{ ups.id }}" title="Vincular a PC">
+                                                <i class="bi bi-pc-display"></i>
+                                            </button>
+
+                                            <!-- Eliminar UPS -->
+                                            <a href="{{ url_for('infrastructure.delete_ups', id=ups.id) }}"
+                                                class="btn btn-sm btn-outline-danger ms-1"
+                                                onclick="return confirm('¿Eliminar esta UPS del sistema? Si tiene una batería asignada, se devolverá al Stock.')">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Modal Asignar Bateria a esta UPS -->
+                                    <div class="modal fade" id="modalAssignBattery{{ ups.id }}" tabindex="-1"
+                                        aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form
+                                                    action="{{ url_for('infrastructure.assign_battery_to_ups', ups_id=ups.id) }}"
+                                                    method="POST">
+                                                    <div class="modal-header bg-success text-white">
+                                                        <h5 class="modal-title">Asignar Batería a {{ ups.code }}</h5>
+                                                        <button type="button" class="btn-close btn-close-white"
+                                                            data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Seleccione qué batería del Stock se instalará en esta UPS. Si
+                                                            actualmente tiene una, se marcará como devuelta al Stock.
+                                                        </p>
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold">Batería
+                                                                Disponible:</label>
+                                                            <select class="form-select" name="battery_id">
+                                                                <option value="">-- Quitar batería / Ninguna --</option>
+                                                                {% for bat in baterias_disponibles %}
+                                                                <option value="{{ bat.id }}">{{ bat.code }} ({{
+                                                                    bat.brand_model }})</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-success">Guardar</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal Asignar UPS a PC -->
+                                    <div class="modal fade" id="modalAssignPC{{ ups.id }}" tabindex="-1"
+                                        aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form
+                                                    action="{{ url_for('infrastructure.assign_ups_to_pc', ups_id=ups.id) }}"
+                                                    method="POST">
+                                                    <div class="modal-header bg-info text-white">
+                                                        <h5 class="modal-title">Vincular UPS {{ ups.code }} a PC</h5>
+                                                        <button type="button" class="btn-close btn-close-white"
+                                                            data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Vincule esta UPS a un equipo de la red.</p>
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold">Equipo de destino:</label>
+                                                            <input class="form-control" list="datalistPCs"
+                                                                name="pc_name" placeholder="Buscar PC..."
+                                                                autocomplete="off">
+                                                            <datalist id="datalistPCs">
+                                                                {% for pc in pcs_disponibles %}
+                                                                <option value="{{ pc.pc_name }}">{{ pc.fuero }}</option>
+                                                                {% endfor %}
+                                                            </datalist>
+                                                        </div>
+                                                        <div class="form-text text-muted">Deje en blanco para
+                                                            desvincular
+                                                            del equipo actual.</div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit"
+                                                            class="btn btn-info text-white">Vincular</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">No hay UPS registradas.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna 2: Stock Baterías -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm h-100 border-success">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i> Stock Baterías</h5>
+                        <button class="btn btn-sm btn-light text-success fw-bold" data-bs-toggle="modal"
+                            data-bs-target="#modalAddBattery">
+                            <i class="bi bi-plus-circle"></i> Nuevo Ingreso
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-sm table-striped mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>Cód. / N° Serie</th>
+                                        <th>Estado</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bat in baterias %}
+                                    <tr>
+                                        <td class="align-middle">
+                                            <div class="fw-bold">{{ bat.code }}</div>
+                                            <div class="small text-muted" style="font-size: 0.75rem;">{{ bat.brand_model
+                                                }}
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            {% if bat.status == 'Stock' %}
+                                            <span class="badge bg-success">En Stock</span>
+                                            {% elif bat.status == 'Asignada' %}
+                                            <span class="badge bg-warning text-dark">En Uso</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">{{ bat.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="align-middle text-end">
+                                            {% if bat.status == 'Stock' %}
+                                            <a href="{{ url_for('infrastructure.delete_battery', id=bat.id) }}"
+                                                class="btn btn-sm btn-outline-danger" title="Eliminar del stock"
+                                                onclick="return confirm('¿Eliminar batería de stock?');">
+                                                <i class="bi bi-x"></i>
+                                            </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-3">El stock está vacío.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ingreso de UPS -->
+    <div class="modal fade" id="modalAddUPS" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('infrastructure.add_ups') }}" method="POST">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Registrar Nueva UPS</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Código / N° Inventario <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="code" required
+                                placeholder="Ej: UPS-LYO-001 / S/N 1234...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Modelo exacto</label>
+                            <input type="text" class="form-control" name="model" value="LYONN CTB-800V">
+                            <div class="form-text">Si son todas del mismo modelo, puede dejar el valor por defecto.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Registrar UPS</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ingreso de Batería -->
+    <div class="modal fade" id="modalAddBattery" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('infrastructure.add_battery') }}" method="POST">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">Ingreso de Batería a Stock</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Código / N° Serie de Batería <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="code" required
+                                placeholder="Ej: BAT-001, o codigo de la caja">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Marca y Modelo</label>
+                            <input type="text" class="form-control" name="brand_model"
+                                placeholder="Ej: 12V 7Ah o Marca X" value="12V 7Ah">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Ingresar Batería</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

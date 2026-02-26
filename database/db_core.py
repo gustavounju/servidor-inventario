@@ -107,6 +107,33 @@ def init_db():
 
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS baterias_stock (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT UNIQUE NOT NULL,
+                brand_model TEXT,
+                status TEXT DEFAULT 'Stock', -- Stock, Asignada, Descartada
+                created_at TEXT DEFAULT (datetime('now', '-3 hours'))
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ups_inventory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT UNIQUE NOT NULL,
+                model TEXT DEFAULT 'LYONN CTB-800V',
+                assigned_pc TEXT,
+                assigned_battery_id INTEGER,
+                created_at TEXT DEFAULT (datetime('now', '-3 hours')),
+                FOREIGN KEY (assigned_pc) REFERENCES pcs(pc_name) ON DELETE SET NULL,
+                FOREIGN KEY (assigned_battery_id) REFERENCES baterias_stock(id) ON DELETE SET NULL
+            )
+            """
+        )
+
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS ad_users (
                 username TEXT PRIMARY KEY,
                 real_name TEXT

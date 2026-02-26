@@ -382,6 +382,12 @@
                     </li>
 
                     <li class="nav-item">
+                        <a href="{{ url_for('infrastructure.index') }}" class="nav-link text-success"
+                            title="Gestionar stock de baterías y UPS">
+                            <i class="bi bi-hdd-network-fill"></i> Infra/Stock
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ url_for('tasks.report_tasks_completed') }}" class="nav-link">
                             Tareas XLS
                         </a>
@@ -747,10 +753,13 @@
                         data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
                         data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
                         {% if pc.pc_name in ['PC Generica', 'Infraestructura'] %}
-                        <td style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
+                        <td
+                            style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
                             {{ pc.pc_name }}
                         </td>
-                        <td><div class="fw-bold text-muted">-</div></td>
+                        <td>
+                            <div class="fw-bold text-muted">-</div>
+                        </td>
                         <td><span class="badge bg-light text-dark">-</span></td>
                         <td><span class="text-muted">-</span></td>
                         <td><span class="text-muted">-</span></td>
@@ -1910,7 +1919,7 @@ Start-Sleep -Seconds 10
             textArea.select();
             try {
                 var successful = document.execCommand('copy');
-                if(successful) {
+                if (successful) {
                     showCopySuccess(kpiElement);
                 } else {
                     alert("Tu navegador bloqueó el copiado automático. Por favor descarga el script desde Backup -> Subir Offline.");
