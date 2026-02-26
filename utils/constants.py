@@ -23,7 +23,8 @@ FUERO_MAPPING = {
     "SUPINT": "Superintendencia",
     "EQINT": "Equipo Interdisciplinario",
     "JUZMEN2": "Juzgado de Menores 2",
-    "OGJ": "Oficina de Gestion Judicial"
+    "OGJ": "Oficina de Gestion Judicial",
+    "VIOGENSP": "Violencia de Género 5"
 }
 
 FUERO_COLORS = {
