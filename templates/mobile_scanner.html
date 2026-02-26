@@ -87,6 +87,21 @@
                     <label class="form-label">Modelo / Marca</label>
                     <input type="text" class="form-control" id="newModel" placeholder="Ej: Sentey 600W" required>
                 </div>
+                <!-- Remito and Provider Section -->
+                <div class="mb-3">
+                    <label class="form-label">Negocio / Proveedor</label>
+                    <input class="form-control" list="suppliersList" id="newSupplier"
+                        placeholder="Busque o escriba uno nuevo..." autocomplete="off">
+                    <datalist id="suppliersList">
+                        <!-- Filled by JS -->
+                    </datalist>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Remito / N° Factura</label>
+                    <input type="text" class="form-control" id="newRemito" placeholder="Ej: 0001-00025267"
+                        autocomplete="off">
+                </div>
+
                 <button type="submit" class="btn btn-success w-100">Agregar a Stock</button>
             </form>
         </div>
@@ -151,6 +166,21 @@
                     sel.appendChild(opt);
                 });
             });
+
+        // Load Suppliers on start
+        fetch('/api/components/suppliers')
+            .then(res => res.json())
+            .then(suppliers => {
+                const datalist = document.getElementById('suppliersList');
+                suppliers.forEach(supp => {
+                    if (supp) {
+                        let opt = document.createElement('option');
+                        opt.value = supp;
+                        datalist.appendChild(opt);
+                    }
+                });
+            })
+            .catch(err => console.error("Error cargando proveedores:", err));
 
         function showMsg(text, type = 'success') {
             const el = document.getElementById('msgArea');
@@ -290,7 +320,9 @@
             const payload = {
                 serial_number: document.getElementById('newSerialInput').value,
                 component_type: finalType,
-                brand_model: document.getElementById('newModel').value
+                brand_model: document.getElementById('newModel').value,
+                supplier_name: document.getElementById('newSupplier').value,
+                remito_number: document.getElementById('newRemito').value
             };
 
             fetch('/api/components/add', {

@@ -92,6 +92,16 @@ def init_db():
             """
         )
 
+        try:
+            conn.execute("ALTER TABLE components ADD COLUMN supplier_name TEXT")
+        except sqlite3.OperationalError:
+            pass # Column already exists
+        
+        try:
+            conn.execute("ALTER TABLE components ADD COLUMN remito_number TEXT")
+        except sqlite3.OperationalError:
+            pass # Column already exists
+
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS audit_logs (

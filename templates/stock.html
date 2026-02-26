@@ -287,11 +287,19 @@
 
                         let assignedLink = item.assigned_pc ? `<a href="/pc/${item.assigned_pc}">${item.assigned_pc}</a>` : '-';
 
+                        let subText = [];
+                        if (item.supplier_name) subText.push(`Prov: ${item.supplier_name}`);
+                        if (item.remito_number) subText.push(`Remito: ${item.remito_number}`);
+                        let extraHtml = subText.length > 0 ? `<div class="small text-muted" style="font-size: 0.75rem;">${subText.join(' | ')}</div>` : '';
+
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td><span class="font-monospace">${item.serial_number}</span></td>
                             <td>${item.component_type}</td>
-                            <td>${item.brand_model || '-'}</td>
+                            <td>
+                                <div>${item.brand_model || '-'}</div>
+                                ${extraHtml}
+                            </td>
                             <td><span class="badge ${statusBadge}">${item.status}</span></td>
                             <td>${assignedLink}</td>
                             <td class="small text-muted">${item.created_at || '-'}</td>

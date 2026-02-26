@@ -28,6 +28,15 @@ def list_components():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@bp_stock.route("/api/components/suppliers")
+def list_suppliers():
+    try:
+        with get_db_connection() as conn:
+            suppliers = [r['supplier_name'] for r in conn.execute("SELECT DISTINCT supplier_name FROM components WHERE supplier_name IS NOT NULL AND supplier_name != '' ORDER BY supplier_name").fetchall()]
+        return jsonify(suppliers)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @bp_stock.route("/api/components/add", methods=["POST"])
 def add_component():
     try:
@@ -35,12 +44,14 @@ def add_component():
         serial = data.get("serial_number")
         ctype = data.get("component_type")
         model = data.get("brand_model")
+        supplier = data.get("supplier_name", "")
+        remito = data.get("remito_number", "")
         
         if not serial or not ctype:
             return jsonify({"status": "error", "message": "Faltan datos"}), 400
             
         with get_db_connection() as conn:
-            conn.execute("INSERT INTO components (serial_number, component_type, brand_model, status) VALUES (?, ?, ?, 'Stock')", (serial, ctype, model))
+            conn.execute("INSERT INTO components (serial_number, component_type, brand_model, status, supplier_name, remito_number) VALUES (?, ?, ?, 'Stock', ?, ?)", (serial, ctype, model, supplier, remito))
             conn.commit()
         return jsonify({"status": "success"})
     except Exception as e:
