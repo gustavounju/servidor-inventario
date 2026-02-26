@@ -37,7 +37,12 @@ try {
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 }
 catch {
-    # Ignorar si falla
+    try {
+        [System.Net.ServicePointManager]::SecurityProtocol = 3072
+    }
+    catch {
+        # Ignorar si falla por completo
+    }
 }
 # -----------------------------------------------------------
 # BYPASS DE VALIDACIÓN SSL (Para certificados autofirmados)
@@ -62,8 +67,8 @@ function Get-ActiveConnections {
     foreach ($line in $netstatOutput) {
         # Parsear línea: Proto Local Foreign State PID
         # Ej: TCP 192.168.1.5:54321 1.2.3.4:443 ESTABLISHED 1234
-        # Split por espacios múltiples
-        $parts = $line.ToString().Trim().Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
+        # Split por espacios múltiples (Compatible con PS 2.0 usando regex)
+        $parts = $line.ToString().Trim() -split "\s+"
         if ($parts.Count -ge 5) {
             $proto = $parts[0]
             $local = $parts[1]
@@ -76,7 +81,7 @@ function Get-ActiveConnections {
             # Obtener Nombre del Proceso
             $procName = "Desconocido ($pidVal)"
             try {
-                $p = Get-Process -Id $pidVal -ErrorAction SilentlyContinue
+                $p = Get-Process -Id $pidVal -ErrorAction Stop
                 if ($p) { $procName = $p.ProcessName }
             }
             catch {}
@@ -263,7 +268,7 @@ try {
             foreach ($m in $monItems) {
                 # Convertir array de ints a string chars manual
                 $mn = ""
-                if ($m.ManufacturerName) {
+                if ($m -and $m.ManufacturerName) {
                     foreach ($c in $m.ManufacturerName) { if ($c -ne 0) { $mn += [char]$c } }
                 }
                 $mList += $mn
@@ -322,7 +327,7 @@ try {
         $wc = New-Object System.Net.WebClient
         $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
         $wc.Encoding = [System.Text.Encoding]::UTF8
-        $response = $wc.UploadString($servidor, "POST", $json)
+        [void]$wc.UploadString($servidor, "POST", $json)
         Write-Host "Inventario enviado EXITOSAMENTE (HTTPS)." -ForegroundColor Green
     }
     catch {
@@ -336,7 +341,7 @@ try {
             $wc = New-Object System.Net.WebClient
             $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
             $wc.Encoding = [System.Text.Encoding]::UTF8
-            $response = $wc.UploadString($servidorHttp, "POST", $json)
+            [void]$wc.UploadString($servidorHttp, "POST", $json)
             Write-Host "Inventario enviado EXITOSAMENTE (HTTP)." -ForegroundColor Green
         }
         catch {

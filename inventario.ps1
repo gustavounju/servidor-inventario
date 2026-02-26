@@ -37,7 +37,12 @@ try {
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 }
 catch {
-    # Ignorar si falla
+    try {
+        [System.Net.ServicePointManager]::SecurityProtocol = 3072
+    }
+    catch {
+        # Ignorar si falla por completo
+    }
 }
 # -----------------------------------------------------------
 # BYPASS DE VALIDACIÓN SSL (Para certificados autofirmados)
@@ -62,8 +67,8 @@ function Get-ActiveConnections {
     foreach ($line in $netstatOutput) {
         # Parsear línea: Proto Local Foreign State PID
         # Ej: TCP 192.168.1.5:54321 1.2.3.4:443 ESTABLISHED 1234
-        # Split por espacios múltiples
-        $parts = $line.ToString().Trim().Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
+        # Split por espacios múltiples (Compatible con PS 2.0 usando regex)
+        $parts = $line.ToString().Trim() -split "\s+"
         if ($parts.Count -ge 5) {
             $proto = $parts[0]
             $local = $parts[1]
@@ -76,7 +81,7 @@ function Get-ActiveConnections {
             # Obtener Nombre del Proceso
             $procName = "Desconocido ($pidVal)"
             try {
-                $p = Get-Process -Id $pidVal -ErrorAction SilentlyContinue
+                $p = Get-Process -Id $pidVal -ErrorAction Stop
                 if ($p) { $procName = $p.ProcessName }
             }
             catch {}
@@ -263,7 +268,7 @@ try {
             foreach ($m in $monItems) {
                 # Convertir array de ints a string chars manual
                 $mn = ""
-                if ($m.ManufacturerName) {
+                if ($m -and $m.ManufacturerName) {
                     foreach ($c in $m.ManufacturerName) { if ($c -ne 0) { $mn += [char]$c } }
                 }
                 $mList += $mn
@@ -290,8 +295,11 @@ try {
     # Para máxima compatibilidad al copiar/pegar en PowerShell 2.0, evitamos
     # usar comillas invertidas (backticks) complejas.
     # Armamos un JSON lineal básico usando comillas simples externas o escapando con ""
-    # helper rapidísimo para escapar strings en PS2.0
-    function e([string]$s) { return $s -replace "\\", "\\" -replace "`"", "\`"" -replace "`r", "" -replace "`n", "" }
+    # helper rapidísimo para escapar strings en PS2.0 y manejar Nulls
+    function e($s) { 
+        if ($null -eq $s) { return "" }
+        return ([string]$s) -replace "\\", "\\" -replace "`"", "\`"" -replace "`r", "" -replace "`n", "" 
+    }
     $jsonObj = "{"
     $jsonObj += """PC_Nombre"": ""$(e $pcNombre)"","
     $jsonObj += """Usuario_Actual"": ""$(e $usuarioActual)"","
@@ -322,22 +330,28 @@ try {
     $jsonObj += """Uptime_Dias"": $($healthData.Uptime_Dias),"
     $jsonObj += """Discos_SMART"": ["
     $smartArr = @()
-    foreach ($d in $healthData.Discos_SMART) {
-        $smartArr += "{""Model"":""$(e $d.Model)"",""Status"":""$(e $d.Status)"",""DeviceID"":""$(e $d.DeviceID)""}"
+    if ($null -ne $healthData.Discos_SMART) {
+        foreach ($d in $healthData.Discos_SMART) {
+            $smartArr += "{""Model"":""$(e $d.Model)"",""Status"":""$(e $d.Status)"",""DeviceID"":""$(e $d.DeviceID)""}"
+        }
     }
     $jsonObj += [string]::Join(",", $smartArr)
     $jsonObj += "],"
     $jsonObj += """Discos_Espacio"": ["
     $spcArr = @()
-    foreach ($v in $healthData.Discos_Espacio) {
-        $spcArr += "{""Letter"":""$(e $v.Letter)"",""FreeGB"":$($v.FreeGB),""TotalGB"":$($v.TotalGB),""PctFree"":$($v.PctFree)}"
+    if ($null -ne $healthData.Discos_Espacio) {
+        foreach ($v in $healthData.Discos_Espacio) {
+            $spcArr += "{""Letter"":""$(e $v.Letter)"",""FreeGB"":$($v.FreeGB),""TotalGB"":$($v.TotalGB),""PctFree"":$($v.PctFree)}"
+        }
     }
     $jsonObj += [string]::Join(",", $spcArr)
     $jsonObj += "],"
     $jsonObj += """Eventos_Criticos"": ["
     $evtArr = @()
-    foreach ($e in $healthData.Eventos_Criticos) {
-        $evtArr += "{""Log"":""$(e $e.Log)"",""Source"":""$(e $e.Source)"",""Msg"":""$(e $e.Msg)""}"
+    if ($null -ne $healthData.Eventos_Criticos) {
+        foreach ($e in $healthData.Eventos_Criticos) {
+            $evtArr += "{""Log"":""$(e $e.Log)"",""Source"":""$(e $e.Source)"",""Msg"":""$(e $e.Msg)""}"
+        }
     }
     $jsonObj += [string]::Join(",", $evtArr)
     $jsonObj += "]"
