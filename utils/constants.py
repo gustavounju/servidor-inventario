@@ -21,7 +21,9 @@ FUERO_MAPPING = {
     "JCC9SEC18": "Juzgado civil y Comercial N°9 Secretaria 18",
     "PRENSA": "Prensa Poder Judicial de San Pedro de Jujuy",
     "SUPINT": "Superintendencia",
-    "EQINT": "Equipo Interdisciplinario"
+    "EQINT": "Equipo Interdisciplinario",
+    "JUZMEN2": "Juzgado de Menores 2",
+    "OGJ": "Oficina de Gestion Judicial"
 }
 
 FUERO_COLORS = {
@@ -34,7 +36,9 @@ FUERO_COLORS = {
     "Cámara Gesell": "#20c997",                  # Teal
     "Juzgado civil y Comercial N°8 Secretaria 16": "#0dcaf0", # Cyan
     "Juzgado civil y Comercial N°9 Secretaria 18": "#0dcaf0", # Cyan
-    "Equipo Interdisciplinario": "#ffc107"       # Yellow
+    "Equipo Interdisciplinario": "#ffc107",      # Yellow
+    "Juzgado de Menores 2": "#dc3545",           # Red
+    "Oficina de Gestion Judicial": "#0dcaf0"     # Cyan
 }
 
 def detect_fuero(pc_name):
