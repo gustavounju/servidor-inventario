@@ -13,7 +13,7 @@ from database.db_core import init_db, get_db_connection
 from database.migrations import run_all_migrations
 
 # Utils e IA
-from utils.constants import UPLOAD_FOLDER, LOG_FOLDER
+from utils.constants import UPLOAD_FOLDER, LOG_FOLDER, APP_VERSION
 from services.ai_assistant import train_ai_model
 
 # Blueprints
@@ -46,6 +46,11 @@ app.register_blueprint(bp_infrastructure)
 # Filtros para Jinja (si queda alguno que estuviéramos usando, aunque los que se usaban ya están resueltos o no declarados como filters globales en servidor.py original excepto quizas datetime_es, pero lo importabamos donde hiciera falta).
 from services.reporting import format_datetime_es
 app.jinja_env.filters['datetime_es'] = format_datetime_es
+
+# Contexto Global para todas las plantillas (Jinja2)
+@app.context_processor
+def inject_global_vars():
+    return {'app_version': APP_VERSION}
 
 # Configuración y Migraciones iniciales
 with app.app_context():

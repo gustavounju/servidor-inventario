@@ -1,5 +1,6 @@
 import os
 
+APP_VERSION = "v2.0.0"
 DB_FILE = "inventario.db"
 LOG_FOLDER = "logs"
 UPLOAD_FOLDER = "uploads"
