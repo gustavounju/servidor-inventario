@@ -1631,6 +1631,33 @@
                     <div id="securityError" class="alert alert-danger d-none"></div>
 
                     <div id="securityContent" class="d-none">
+                        <div class="mb-3">
+                            <h6 class="fw-bold border-bottom pb-1"><i class="bi bi-shield-check text-success"></i>
+                                Antivirus Detectado</h6>
+                            <span id="securityAntivirus" class="badge bg-secondary fs-6">Calculando...</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <h6 class="fw-bold border-bottom pb-1"><i class="bi bi-rocket-takeoff text-primary"></i>
+                                Programas de Inicio Automático (Startup)</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered table-hover mb-0"
+                                    style="font-size: 0.85rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Comando / Ruta</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="securityStartupBody">
+                                        <!-- JS fill -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold border-bottom pb-1"><i class="bi bi-globe text-info"></i> Conexiones Remotas
+                            Activas</h6>
                         <table class="table table-sm table-striped" style="font-size: 0.85rem;">
                             <thead>
                                 <tr>
@@ -1645,7 +1672,8 @@
                                 <!-- JS fill -->
                             </tbody>
                         </table>
-                        <p class="text-muted small">Mostrando conexiones ESTABLISHED/SYN_SENT externas.</p>
+                        <p class="text-muted small mb-0">Mostrando conexiones ESTABLISHED/SYN_SENT externas
+                            instántaneas.</p>
                     </div>
                 </div>
             </div>
@@ -1670,11 +1698,39 @@
                 .then(data => {
                     document.getElementById('securityLoading').classList.add('d-none');
                     if (data.status === 'success') {
+                        document.getElementById('securityContent').classList.remove('d-none');
+
+                        // 1. Antivirus & Startup
+                        if (data.seguridad_extra) {
+                            const avBadge = document.getElementById('securityAntivirus');
+                            const avName = data.seguridad_extra.Antivirus || 'Desconocido';
+                            avBadge.innerText = avName;
+                            if (avName === 'No Detectado') {
+                                avBadge.className = 'badge bg-danger fs-6';
+                            } else if (avName !== 'Desconocido') {
+                                avBadge.className = 'badge bg-success fs-6';
+                            } else {
+                                avBadge.className = 'badge bg-secondary fs-6';
+                            }
+
+                            const startupTbody = document.getElementById('securityStartupBody');
+                            startupTbody.innerHTML = '';
+                            if (data.seguridad_extra.Startup && data.seguridad_extra.Startup.length > 0) {
+                                data.seguridad_extra.Startup.forEach(st => {
+                                    startupTbody.innerHTML += `<tr>
+                                        <td class="fw-bold text-dark">${st.Name}</td>
+                                        <td class="text-muted text-break" style="max-width: 300px;"><small>${st.Command}</small></td>
+                                    </tr>`;
+                                });
+                            } else {
+                                startupTbody.innerHTML = `<tr><td colspan="2" class="text-center text-muted py-2">No se detectaron programas de inicio de terceros.</td></tr>`;
+                            }
+                        }
+
+                        // 2. Conexiones
                         const tbody = document.getElementById('securityTableBody');
                         tbody.innerHTML = '';
-
                         if (data.data && data.data.length > 0) {
-                            document.getElementById('securityContent').classList.remove('d-none');
                             data.data.forEach(conn => {
                                 let row = `<tr>
                                     <td class="fw-bold text-primary">${conn.Process || '???'}</td>
@@ -1686,8 +1742,7 @@
                                 tbody.innerHTML += row;
                             });
                         } else {
-                            document.getElementById('securityError').innerText = "No se detectaron conexiones activas externas o el reporte es antiguo.";
-                            document.getElementById('securityError').classList.remove('d-none');
+                            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">No se detectaron conexiones activas externas o el reporte es antiguo.</td></tr>`;
                         }
                     } else {
                         document.getElementById('securityError').innerText = data.message || "Error desconocido";

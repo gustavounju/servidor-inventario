@@ -160,7 +160,8 @@ def api_security(pc_name):
             
             data = json.loads(row["full_json_data"])
             conns = data.get("Conexiones", [])
-            return jsonify({"status": "success", "data": conns})
+            sec_extra = data.get("Seguridad_Extra", {"Antivirus": "Descargando...", "Startup": []})
+            return jsonify({"status": "success", "data": conns, "seguridad_extra": sec_extra})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 

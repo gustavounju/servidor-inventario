@@ -162,6 +162,55 @@ function Get-ComputerHealth {
     return $health
 }
 # -----------------------------------------------------------
+# FUNCIÓN: Obtener Seguridad Extra (Antivirus y Startup)
+# -----------------------------------------------------------
+function Get-SecurityExtra {
+    $sec = @{}
+    
+    # 1. Antivirus (WMI SecurityCenter2)
+    $avName = "No Detectado"
+    try {
+        $avs = Get-WmiObject -Namespace root\SecurityCenter2 -Class AntiVirusProduct -ErrorAction SilentlyContinue
+        if ($avs) {
+            $names = @()
+            if ($avs -is [array]) {
+                foreach ($a in $avs) { $names += $a.displayName }
+            } else {
+                $names += $avs.displayName
+            }
+            $avName = [string]::Join(" / ", $names)
+        }
+    }
+    catch {}
+    $sec.Add("Antivirus", $avName)
+    
+    # 2. Startup Programs (Registry HKLM & HKCU)
+    $startupArr = @()
+    try {
+        $paths = @("HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run", "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run")
+        foreach ($p in $paths) {
+            if (Test-Path $p) {
+                $items = Get-ItemProperty $p -ErrorAction SilentlyContinue
+                if ($items) {
+                    foreach ($prop in $items.psobject.properties) {
+                        $name = $prop.Name
+                        if ($name -notmatch "^PS[A-Z]") {
+                            $val = $prop.Value
+                            if ($val -is [string]) {
+                                $startupArr += @{ "Name" = $name; "Command" = $val }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    catch {}
+    $sec.Add("Startup", $startupArr)
+    
+    return $sec
+}
+# -----------------------------------------------------------
 # RECOLECCIÓN DE DATOS
 # -----------------------------------------------------------
 # -----------------------------------------------------------
@@ -316,6 +365,12 @@ try {
         $healthData = Get-ComputerHealth
     }
     catch {}
+    # 10) Seguridad Extra (Antivirus, Startup)
+    $secExtra = @{}
+    try {
+        $secExtra = Get-SecurityExtra
+    }
+    catch {}
     # -----------------------------------------------------------
     # CONSTRUCCIÓN DEL PAYLOAD (JSON MANUAL PARA EVITAR ERRORES PS2.0)
     # -----------------------------------------------------------
@@ -340,7 +395,22 @@ try {
     $jsonObj += """Printer_Port"": ""$printerPort"","
     $jsonObj += """Monitors"": ""$monitorsStr"","
     $jsonObj += """Conexiones"": [],"
-    $jsonObj += """Salud"": {}"
+    $jsonObj += """Salud"": {},"
+    $jsonObj += """Seguridad_Extra"": {"
+    $jsonObj += """Antivirus"": ""$($secExtra.Antivirus)"","
+    $jsonObj += """Startup"": ["
+    $strpArr = @()
+    if ($null -ne $secExtra.Startup) {
+        foreach ($s in $secExtra.Startup) {
+            # Escape strings manually for PS2.0 compatibility
+            $pName = ($s.Name) -replace "[\\]", "\\\\" -replace "`"", "\`""
+            $pCmd = ($s.Command) -replace "[\\]", "\\\\" -replace "`"", "\`""
+            $strpArr += "{""Name"":""$pName"",""Command"":""$pCmd""}"
+        }
+    }
+    $jsonObj += [string]::Join(",", $strpArr)
+    $jsonObj += "]"
+    $jsonObj += "}"
     $jsonObj += "}"
     $json = $jsonObj -replace "`r", ""
     $json = $json -replace "`n", ""
