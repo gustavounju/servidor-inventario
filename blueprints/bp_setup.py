@@ -79,13 +79,13 @@ def install_page():
             <h2 style="color: #495057; font-size: 1.2rem; margin-top:0;">⚡ Método Rápido (Antiguo)</h2>
             <p style="font-size: 0.9rem; color: #6c757d;">Para técnicos: Ejecuta el inventario sin descargar archivos. Abre <b>PowerShell como Administrador</b>, copia este comando y presiona Enter:</p>
             <div style="background: #212529; color: #20c20e; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 0.85rem; word-break: break-all; margin-bottom: 15px;">
-                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex (New-Object System.Net.WebClient).DownloadString('{scheme}://{current_host}:5000/script')
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {{$true}}; iex (New-Object System.Net.WebClient).DownloadString('{scheme}://{current_host}:5000/script')
             </div>
             <button onclick="copyCommand()" style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Copiar Comando</button>
             <span id="copyMsg" style="color: green; margin-left: 10px; display: none;">¡Copiado!</span>
             <script>
                 function copyCommand() {{
-                    const cmd = "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex (New-Object System.Net.WebClient).DownloadString('" + window.location.protocol + "//" + window.location.hostname + ":5000/script')\\n";
+                    const cmd = "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {{$true}}; iex (New-Object System.Net.WebClient).DownloadString('" + window.location.protocol + "//" + window.location.hostname + ":5000/script')\\n";
                     if (navigator.clipboard && window.isSecureContext) {{
                         navigator.clipboard.writeText(cmd).then(showCopied);
                     }} else {{
