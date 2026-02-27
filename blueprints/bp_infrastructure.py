@@ -163,8 +163,8 @@ def add_component():
     serial_number = request.form.get('serial_number', '').strip()
     component_type = request.form.get('component_type', '').strip()
     brand_model = request.form.get('brand_model', '').strip()
-    supplier = request.form.get('supplier', '').strip()
-    invoice_number = request.form.get('invoice_number', '').strip()
+    supplier_name = request.form.get('supplier', '').strip()
+    remito_number = request.form.get('invoice_number', '').strip()
     
     if not serial_number or not component_type:
         flash("El número de serie y el tipo son obligatorios.", "error")
@@ -173,8 +173,8 @@ def add_component():
     try:
         with get_db_connection() as conn:
             conn.execute(
-                "INSERT INTO components (serial_number, component_type, brand_model, supplier, invoice_number) VALUES (?, ?, ?, ?, ?)",
-                (serial_number, component_type, brand_model, supplier, invoice_number)
+                "INSERT INTO components (serial_number, component_type, brand_model, supplier_name, remito_number) VALUES (?, ?, ?, ?, ?)",
+                (serial_number, component_type, brand_model, supplier_name, remito_number)
             )
             conn.commit()
         flash(f"Componente {component_type} ({serial_number}) registrado exitosamente.", "success")
