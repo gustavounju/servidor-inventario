@@ -9,72 +9,52 @@ bp_infrastructure = Blueprint('infrastructure', __name__, url_prefix='/infra')
 def index():
     """Muestra el panel principal de Infraestructura: Baterías y UPS"""
     with get_db_connection() as conn:
-        baterias = conn.execute("SELECT * FROM baterias_stock ORDER BY created_at DESC").fetchall()
         ups_list = conn.execute('''
-            SELECT u.*, b.code as battery_code, p.last_user, p.fuero 
+            SELECT u.*, b.serial_number as battery_code, p.last_user, p.fuero 
             FROM ups_inventory u 
-            LEFT JOIN baterias_stock b ON u.assigned_battery_id = b.id
+            LEFT JOIN components b ON u.assigned_battery_id = b.id
             LEFT JOIN pcs p ON u.assigned_pc = p.pc_name
             ORDER BY u.created_at DESC
         ''').fetchall()
         
         # Baterias disponibles para el modal de asignacion
-        baterias_disponibles = conn.execute("SELECT id, code, brand_model FROM baterias_stock WHERE status = 'Stock'").fetchall()
+        baterias_disponibles = conn.execute("SELECT id, serial_number as code, brand_model FROM components WHERE component_type = 'Batería UPS' AND status = 'Stock'").fetchall()
         
         # PCs disponibles
-        pcs_disponibles = conn.execute("SELECT pc_name, fuero FROM pcs WHERE is_active = 'True' ORDER BY pc_name").fetchall()
+        pcs_disponibles = conn.execute("""
+            SELECT p.pc_name, p.fuero, p.last_user, u.real_name 
+            FROM pcs p 
+            LEFT JOIN ad_users u ON LOWER(p.last_user) = u.username 
+            WHERE p.is_active = 'True' 
+            ORDER BY p.pc_name
+        """).fetchall()
+        
+        # Componentes generales
+        components = conn.execute('''
+            SELECT c.*, p.fuero as pc_fuero, p.last_user,
+                   parent.serial_number as parent_serial,
+                   parent.component_type as parent_type
+            FROM components c
+            LEFT JOIN pcs p ON c.assigned_pc = p.pc_name
+            LEFT JOIN components parent ON c.assigned_to_component_id = parent.id
+            ORDER BY c.created_at DESC
+        ''').fetchall()
 
     return render_template(
         'infrastructure.html', 
-        baterias=baterias, 
         ups_list=ups_list,
         baterias_disponibles=baterias_disponibles,
         pcs_disponibles=pcs_disponibles,
+        components=components,
         fuero_colors=FUERO_COLORS
     )
-
-@bp_infrastructure.route('/battery/add', methods=['POST'])
-def add_battery():
-    code = request.form.get('code', '').strip()
-    brand_model = request.form.get('brand_model', '').strip()
-    
-    if not code:
-        flash("El código de la batería es obligatorio.", "error")
-        return redirect(url_for('infrastructure.index'))
-        
-    try:
-        with get_db_connection() as conn:
-            conn.execute(
-                "INSERT INTO baterias_stock (code, brand_model) VALUES (?, ?)",
-                (code, brand_model)
-            )
-            conn.commit()
-        flash(f"Batería {code} agregada exitosamente.", "success")
-    except Exception as e:
-        flash(f"Error al agregar batería (¿código duplicado?): {e}", "error")
-        
-    return redirect(url_for('infrastructure.index'))
-
-@bp_infrastructure.route('/battery/<int:id>/delete')
-def delete_battery(id):
-    try:
-        with get_db_connection() as conn:
-            # Check if assigned
-            b = conn.execute("SELECT status FROM baterias_stock WHERE id = ?", (id,)).fetchone()
-            if b and b['status'] == 'Asignada':
-                flash("No se puede eliminar una batería que está asignada a una UPS.", "error")
-            else:
-                conn.execute("DELETE FROM baterias_stock WHERE id = ?", (id,))
-                conn.commit()
-                flash("Batería eliminada.", "success")
-    except Exception as e:
-        flash(f"Error: {e}", "error")
-    return redirect(url_for('infrastructure.index'))
 
 @bp_infrastructure.route('/ups/add', methods=['POST'])
 def add_ups():
     code = request.form.get('code', '').strip()
     model = request.form.get('model', 'LYONN CTB-800V').strip()
+    supplier = request.form.get('supplier', '').strip()
+    invoice_number = request.form.get('invoice_number', '').strip()
     
     if not code:
         flash("El código/serial de la UPS es obligatorio.", "error")
@@ -83,8 +63,8 @@ def add_ups():
     try:
         with get_db_connection() as conn:
             conn.execute(
-                "INSERT INTO ups_inventory (code, model) VALUES (?, ?)",
-                (code, model)
+                "INSERT INTO ups_inventory (code, model, supplier, invoice_number) VALUES (?, ?, ?, ?)",
+                (code, model, supplier, invoice_number)
             )
             conn.commit()
         flash(f"UPS {code} agregada exitosamente.", "success")
@@ -109,16 +89,20 @@ def assign_battery_to_ups(ups_id):
             
             # If removing battery or changing it, set old battery back to Stock
             if old_battery_id:
-                conn.execute("UPDATE baterias_stock SET status = 'Stock' WHERE id = ?", (old_battery_id,))
+                old_bat_data = conn.execute("SELECT serial_number FROM components WHERE id = ?", (old_battery_id,)).fetchone()
+                old_bat_sn = old_bat_data['serial_number'] if old_bat_data else str(old_battery_id)
+                conn.execute("UPDATE components SET status = 'Stock' WHERE id = ?", (old_battery_id,))
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
-                             (f"UPS:{ups['code']}", "Bateria Retirada", str(old_battery_id), "None"))
+                             (f"UPS:{ups['code']}", "Bateria Retirada", old_bat_sn, "None"))
                 
             # If assigning a new battery
             if battery_id:
+                new_bat_data = conn.execute("SELECT serial_number FROM components WHERE id = ?", (battery_id,)).fetchone()
+                new_bat_sn = new_bat_data['serial_number'] if new_bat_data else str(battery_id)
                 conn.execute("UPDATE ups_inventory SET assigned_battery_id = ? WHERE id = ?", (battery_id, ups_id))
-                conn.execute("UPDATE baterias_stock SET status = 'Asignada' WHERE id = ?", (battery_id,))
+                conn.execute("UPDATE components SET status = 'Instalado' WHERE id = ?", (battery_id,))
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
-                             (f"UPS:{ups['code']}", "Bateria RAM", "None", str(battery_id)))
+                             (f"UPS:{ups['code']}", "Bateria RAM", "None", new_bat_sn))
             else:
                 # Just removing
                 conn.execute("UPDATE ups_inventory SET assigned_battery_id = NULL WHERE id = ?", (ups_id,))
@@ -166,10 +150,107 @@ def delete_ups(id):
             ups = conn.execute("SELECT assigned_battery_id FROM ups_inventory WHERE id = ?", (id,)).fetchone()
             if ups and ups['assigned_battery_id']:
                 # Liberar bateria
-                conn.execute("UPDATE baterias_stock SET status = 'Stock' WHERE id = ?", (ups['assigned_battery_id'],))
+                conn.execute("UPDATE components SET status = 'Stock' WHERE id = ?", (ups['assigned_battery_id'],))
             conn.execute("DELETE FROM ups_inventory WHERE id = ?", (id,))
             conn.commit()
             flash("UPS eliminada.", "success")
+    except Exception as e:
+        flash(f"Error: {e}", "error")
+    return redirect(url_for('infrastructure.index'))
+
+@bp_infrastructure.route('/components/add', methods=['POST'])
+def add_component():
+    serial_number = request.form.get('serial_number', '').strip()
+    component_type = request.form.get('component_type', '').strip()
+    brand_model = request.form.get('brand_model', '').strip()
+    supplier = request.form.get('supplier', '').strip()
+    invoice_number = request.form.get('invoice_number', '').strip()
+    
+    if not serial_number or not component_type:
+        flash("El número de serie y el tipo son obligatorios.", "error")
+        return redirect(url_for('infrastructure.index'))
+        
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO components (serial_number, component_type, brand_model, supplier, invoice_number) VALUES (?, ?, ?, ?, ?)",
+                (serial_number, component_type, brand_model, supplier, invoice_number)
+            )
+            conn.commit()
+        flash(f"Componente {component_type} ({serial_number}) registrado exitosamente.", "success")
+    except Exception as e:
+        flash(f"Error al agregar componente (¿serie duplicada?): {e}", "error")
+        
+    return redirect(url_for('infrastructure.index'))
+
+@bp_infrastructure.route('/components/<int:component_id>/assign_pc', methods=['POST'])
+def assign_component_to_pc(component_id):
+    pc_name = request.form.get('pc_name')
+    
+    try:
+        with get_db_connection() as conn:
+            comp = conn.execute("SELECT assigned_pc, serial_number, component_type FROM components WHERE id = ?", (component_id,)).fetchone()
+            if not comp: return redirect(url_for('infrastructure.index'))
+            
+            old_pc = comp['assigned_pc']
+            
+            if pc_name:
+                conn.execute("UPDATE components SET assigned_pc = ?, assigned_to_component_id = NULL, status = 'Instalado' WHERE id = ?", (pc_name, component_id))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
+                             (pc_name, f"{comp['component_type']} Asignado", str(old_pc), comp['serial_number']))
+            else:
+                conn.execute("UPDATE components SET assigned_pc = NULL, status = 'Stock' WHERE id = ?", (component_id,))
+                if old_pc:
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
+                                 (old_pc, f"{comp['component_type']} Retirado", comp['serial_number'], "None"))
+            
+            conn.commit()
+            flash("Asignación de componente a PC actualizada.", "success")
+    except Exception as e:
+        flash(f"Error vinculando componente: {e}", "error")
+        
+    return redirect(request.referrer or url_for('infrastructure.index'))
+
+@bp_infrastructure.route('/components/<int:component_id>/assign_component', methods=['POST'])
+def assign_component_to_component(component_id):
+    parent_id = request.form.get('parent_component_id')
+    
+    try:
+        with get_db_connection() as conn:
+            comp = conn.execute("SELECT assigned_to_component_id, serial_number, component_type FROM components WHERE id = ?", (component_id,)).fetchone()
+            if not comp: return redirect(url_for('infrastructure.index'))
+            
+            if parent_id:
+                # Get parent details for log
+                parent = conn.execute("SELECT serial_number, component_type, assigned_pc FROM components WHERE id = ?", (parent_id,)).fetchone()
+                
+                conn.execute("UPDATE components SET assigned_to_component_id = ?, assigned_pc = ?, status = 'Instalado' WHERE id = ?", 
+                             (parent_id, parent['assigned_pc'], component_id))
+                
+                pc_context = parent["assigned_pc"] or f"COMP:{parent['serial_number']}"
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
+                             (pc_context, f"Sub-componente {comp['component_type']} Asignado a {parent['component_type']}", "None", comp['serial_number']))
+            else:
+                conn.execute("UPDATE components SET assigned_to_component_id = NULL, assigned_pc = NULL, status = 'Stock' WHERE id = ?", (component_id,))
+            
+            conn.commit()
+            flash("Asignación interna de componente actualizada.", "success")
+    except Exception as e:
+        flash(f"Error vinculando sub-componente: {e}", "error")
+        
+    return redirect(request.referrer or url_for('infrastructure.index'))
+
+@bp_infrastructure.route('/components/<int:id>/delete')
+def delete_component(id):
+    try:
+        with get_db_connection() as conn:
+            # First, check if there are sub-components and release them to stock
+            conn.execute("UPDATE components SET assigned_to_component_id = NULL, status = 'Stock' WHERE assigned_to_component_id = ?", (id,))
+            
+            # Now delete the component
+            conn.execute("DELETE FROM components WHERE id = ?", (id,))
+            conn.commit()
+            flash("Componente eliminado del inventario.", "success")
     except Exception as e:
         flash(f"Error: {e}", "error")
     return redirect(url_for('infrastructure.index'))

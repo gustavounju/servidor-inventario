@@ -34,7 +34,7 @@
 
         <div class="row">
             <!-- Columna 1: UPS (Hardware) -->
-            <div class="col-lg-8 mb-4">
+            <div class="col-12 mb-4">
                 <div class="card shadow-sm h-100 border-primary">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="bi bi-plug-fill me-2"></i> Equipos UPS y Asignaciones</h5>
@@ -52,6 +52,7 @@
                                         <th>Modelo</th>
                                         <th>Asignada a PC</th>
                                         <th>Batería Instalada</th>
+                                        <th>Proveedor/Factura</th>
                                         <th>Registro</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
@@ -85,6 +86,14 @@
                                                 ups.battery_code }}</span>
                                             {% else %}
                                             <span class="badge bg-danger">Sin Batería</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if ups.supplier or ups.invoice_number %}
+                                            <div class="small fw-bold">{{ ups.supplier or 'Sin proveedor' }}</div>
+                                            <div class="small text-muted">{{ ups.invoice_number or '-' }}</div>
+                                            {% else %}
+                                            <span class="text-muted small">-</span>
                                             {% endif %}
                                         </td>
                                         <td class="small text-muted">{{ ups.created_at[:10] }}</td>
@@ -172,7 +181,9 @@
                                                                 autocomplete="off">
                                                             <datalist id="datalistPCs">
                                                                 {% for pc in pcs_disponibles %}
-                                                                <option value="{{ pc.pc_name }}">{{ pc.fuero }}</option>
+                                                                <option value="{{ pc.pc_name }}">{{ pc.fuero }} | {{
+                                                                    pc.last_user or 'Sin Usuario' }} {% if pc.real_name
+                                                                    %}- {{ pc.real_name }}{% endif %}</option>
                                                                 {% endfor %}
                                                             </datalist>
                                                         </div>
@@ -203,132 +214,194 @@
                 </div>
             </div>
 
-            <!-- Columna 2: Stock Baterías -->
-            <div class="col-lg-4 mb-4">
-                <div class="card shadow-sm h-100 border-success">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i> Stock Baterías</h5>
-                        <button class="btn btn-sm btn-light text-success fw-bold" data-bs-toggle="modal"
-                            data-bs-target="#modalAddBattery">
-                            <i class="bi bi-plus-circle"></i> Nuevo Ingreso
-                        </button>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                            <table class="table table-sm table-striped mb-0">
-                                <thead class="table-light sticky-top">
-                                    <tr>
-                                        <th>Cód. / N° Serie</th>
-                                        <th>Estado</th>
-                                        <th>Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for bat in baterias %}
-                                    <tr>
-                                        <td class="align-middle">
-                                            <div class="fw-bold">{{ bat.code }}</div>
-                                            <div class="small text-muted" style="font-size: 0.75rem;">{{ bat.brand_model
-                                                }}
-                                            </div>
-                                        </td>
-                                        <td class="align-middle">
-                                            {% if bat.status == 'Stock' %}
-                                            <span class="badge bg-success">En Stock</span>
-                                            {% elif bat.status == 'Asignada' %}
-                                            <span class="badge bg-warning text-dark">En Uso</span>
-                                            {% else %}
-                                            <span class="badge bg-danger">{{ bat.status }}</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="align-middle text-end">
-                                            <a href="{{ url_for('infrastructure.delete_battery', id=bat.id) }}"
-                                                class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
-                                                onclick="return confirm('¿Eliminar batería de stock? Si está asignada a una UPS, se desvinculará primero.');">
-                                                <i class="bi bi-x"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="3" class="text-center text-muted py-3">El stock está vacío.</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+
+
+            <!-- ROW 2: COMPONENTES Y PERIFÉRICOS -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card shadow-sm border-info">
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-cpu me-2"></i> Periféricos y Hardware (Monitores, DVRs,
+                                Teclados, etc.)</h5>
+                            <button class="btn btn-sm btn-light text-info fw-bold" data-bs-toggle="modal"
+                                data-bs-target="#modalAddComponent">
+                                <i class="bi bi-plus-circle"></i> Ingresar Al Stock
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-striped mb-0 align-middle">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Marca/Modelo</th>
+                                            <th>N° Serie</th>
+                                            <th>Proveedor/Factura</th>
+                                            <th>Estado/Asignación</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for comp in components %}
+                                        <tr>
+                                            <td><span class="badge bg-secondary">{{ comp.component_type }}</span></td>
+                                            <td>{{ comp.brand_model }}</td>
+                                            <td class="fw-bold">{{ comp.serial_number }}</td>
+                                            <td>
+                                                {% if comp.supplier or comp.invoice_number %}
+                                                <div class="small fw-bold">{{ comp.supplier or 'Sin proveedor' }}</div>
+                                                <div class="small text-muted">{{ comp.invoice_number or '-' }}</div>
+                                                {% else %}
+                                                <span class="text-muted small">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if comp.status == 'Stock' %}
+                                                <span class="badge bg-success">En Stock</span>
+                                                {% else %}
+                                                <span class="badge bg-warning text-dark">En Uso</span>
+                                                {% if comp.assigned_pc %}
+                                                <a href="{{ url_for('dashboard.pc_detail', pc_name=comp.assigned_pc) }}"
+                                                    class="ms-1" style="text-decoration: none;">
+                                                    <strong>{{ comp.assigned_pc }}</strong>
+                                                </a>
+                                                {% elif comp.assigned_to_component_id %}
+                                                <span class="ms-1 text-muted">A {{ comp.parent_type }} ({{
+                                                    comp.parent_serial }})</span>
+                                                {% endif %}
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ url_for('infrastructure.delete_component', id=comp.id) }}"
+                                                    class="btn btn-sm btn-outline-danger" title="Eliminar del sistema"
+                                                    onclick="return confirm('¿Seguro de dar de baja este componente?');">
+                                                    <i class="bi bi-x"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">No hay periféricos
+                                                registrados.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Modal Ingreso de UPS -->
-    <div class="modal fade" id="modalAddUPS" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form action="{{ url_for('infrastructure.add_ups') }}" method="POST">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">Registrar Nueva UPS</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Código / N° Inventario <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="code" required
-                                placeholder="Ej: UPS-LYO-001 / S/N 1234...">
+        </div>
+
+        <!-- Modal Ingreso de Componente -->
+        <div class="modal fade" id="modalAddComponent" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ url_for('infrastructure.add_component') }}" method="POST">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title">Ingresar Componente al Stock</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Modelo exacto</label>
-                            <input type="text" class="form-control" name="model" value="LYONN CTB-800V">
-                            <div class="form-text">Si son todas del mismo modelo, puede dejar el valor por defecto.
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tipo de Componente <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="component_type" required
+                                    list="componentTypesList" autocomplete="off"
+                                    placeholder="Ej: Monitor, DVR, Disco Duro...">
+                                <datalist id="componentTypesList">
+                                    <option value="Monitor">
+                                    <option value="DVR">
+                                    <option value="Disco Interno">
+                                    <option value="Teclado">
+                                    <option value="Mouse">
+                                    <option value="Webcam">
+                                    <option value="Placa de Video">
+                                    <option value="Adaptador HDMI">
+                                    <option value="Impresora">
+                                </datalist>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">N° Serie / Identificador Único <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="serial_number" required
+                                    placeholder="Ej: SN-AB1234...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Marca e Información Extra</label>
+                                <input type="text" class="form-control" name="brand_model"
+                                    placeholder="Ej: Samsung 24 / Hikvision 8CH">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Proveedor / Negocio</label>
+                                    <input type="text" class="form-control" name="supplier"
+                                        placeholder="Ej: Compumundo">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Remito / N° Factura</label>
+                                    <input type="text" class="form-control" name="invoice_number"
+                                        placeholder="Ej: A-0001-12345678">
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Registrar UPS</button>
-                    </div>
-                </form>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-info text-white">Registrar Ingreso</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Modal Ingreso de Batería -->
-    <div class="modal fade" id="modalAddBattery" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form action="{{ url_for('infrastructure.add_battery') }}" method="POST">
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title">Ingreso de Batería a Stock</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Código / N° Serie de Batería <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="code" required
-                                placeholder="Ej: BAT-001, o codigo de la caja">
+        <!-- Modal Ingreso de UPS -->
+        <div class="modal fade" id="modalAddUPS" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ url_for('infrastructure.add_ups') }}" method="POST">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">Registrar Nueva UPS</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Marca y Modelo</label>
-                            <input type="text" class="form-control" name="brand_model"
-                                placeholder="Ej: 12V 7Ah o Marca X" value="12V 7Ah">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Código / N° Inventario <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="code" required
+                                    placeholder="Ej: UPS-LYO-001 / S/N 1234...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Modelo exacto</label>
+                                <input type="text" class="form-control" name="model" value="LYONN CTB-800V">
+                                <div class="form-text">Si son todas del mismo modelo, puede dejar el valor por defecto.
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Proveedor / Negocio</label>
+                                    <input type="text" class="form-control" name="supplier"
+                                        placeholder="Ej: Compumundo">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Remito / N° Factura</label>
+                                    <input type="text" class="form-control" name="invoice_number"
+                                        placeholder="Ej: A-0001-12345678">
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success">Ingresar Batería</button>
-                    </div>
-                </form>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Registrar UPS</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

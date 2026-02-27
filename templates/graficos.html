@@ -153,22 +153,6 @@
         <!-- Usamos un contenedor flex para distribución equitativa horizontal -->
         <!-- KPIs eliminados de aquí (están en Dashboard principal) -->
 
-        <!-- TextArea Oculto con el Script Real (simplificado o completo) -->
-        <textarea id="script-to-copy" style="display: none;">
-$UrlBase = "{{ url_for('dashboard.dashboard', _external=True).rstrip('/') }}"
-$UrlInventario = "$UrlBase/submit_inventory"
-$UrlLog = "$UrlBase/submit_log"
-$LogFile = "$env:TEMP\Inventario_Log_$env:COMPUTERNAME.txt"
-
-# --- Inicio Script ---
-function Get-InventoryData {
-    # Aquí iría el script completo. 
-    # Para no duplicar 800 líneas, dejaré un mensaje indicando que se debe copiar del original si es necesario,
-    # pero el usuario pidió mover el botón.
-    Write-Host "Por favor utilice el script original o actualice este bloque en graficos.html"
-}
-# ...
-        </textarea>
 
     </main>
 
@@ -235,44 +219,7 @@ function Get-InventoryData {
             }
         });
 
-        // Copy Script
-        function copyScript() {
-            var ta = document.getElementById('script-to-copy');
-            if (!ta) return;
 
-            var text = ta.value;
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(function () {
-                    alert('Script copiado al portapapeles.');
-                }).catch(function (err) {
-                    fallbackCopyGraficos(text);
-                });
-            } else {
-                fallbackCopyGraficos(text);
-            }
-
-            function fallbackCopyGraficos(textToCopy) {
-                var textArea = document.createElement("textarea");
-                textArea.value = textToCopy;
-                textArea.style.top = "0";
-                textArea.style.left = "0";
-                textArea.style.position = "fixed";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try {
-                    var successful = document.execCommand('copy');
-                    if (successful) {
-                        alert('Script copiado al portapapeles.');
-                    } else {
-                        alert("Tu navegador bloqueó el copiado automático.");
-                    }
-                } catch (err) {
-                    alert("Error al copiar. Tu navegador no lo permite.");
-                }
-                document.body.removeChild(textArea);
-            }
-        }
     </script>
 </body>
 

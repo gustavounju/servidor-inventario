@@ -217,6 +217,97 @@ def migrate_db_v10():
         conn.commit()
     print("Migración V10 verificada.")
 
+def migrate_db_v11():
+    """Migración V11: Crear tabla components."""
+    print("Verificando migración de DB v11...")
+    with get_db_connection() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS components (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                serial_number TEXT UNIQUE,
+                component_type TEXT NOT NULL,
+                brand_model TEXT,
+                status TEXT DEFAULT 'Stock', 
+                assigned_pc TEXT,
+                created_at TEXT DEFAULT (datetime('now', '-3 hours')),
+                FOREIGN KEY (assigned_pc) REFERENCES pcs(pc_name)
+            )
+            """
+        )
+        conn.commit()
+    print("Migración V11 verificada.")
+
+def migrate_db_v12():
+    """Migración V12: Agregar columna 'assigned_to_component_id' a la tabla 'components'."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(components)")
+        columns = [info[1] for info in cursor.fetchall()]
+        if 'assigned_to_component_id' not in columns:
+            print("Aplicando migración V12: Agregando 'assigned_to_component_id' a components...")
+            cursor.execute("ALTER TABLE components ADD COLUMN assigned_to_component_id INTEGER REFERENCES components(id)")
+            conn.commit()
+        else:
+            print("Migración V12 verificada.")
+
+def migrate_db_v13():
+    """Migración V13: Añadir supplier e invoice_number a ups_inventory y components, unificar bateria_stock en components."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        # 1. Agregar columnas a ups_inventory y components
+        for table in ['components', 'ups_inventory']:
+            cursor.execute(f"PRAGMA table_info({table})")
+            columns = [info[1] for info in cursor.fetchall()]
+            
+            if 'supplier' not in columns:
+                print(f"Aplicando migración V13: Agregando 'supplier' e 'invoice_number' a {table}...")
+                try:
+                    cursor.execute(f"ALTER TABLE {table} ADD COLUMN supplier TEXT")
+                    cursor.execute(f"ALTER TABLE {table} ADD COLUMN invoice_number TEXT")
+                except Exception as e:
+                    print(f"Error agregando columnas a {table}: {e}")
+
+        # 2. Volcar baterias_stock en components
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='baterias_stock'")
+        if cursor.fetchone():
+            print("Aplicando migración V13: Migrando tabla baterias_stock hacia components...")
+            cursor.execute("SELECT id, code, brand_model, status, created_at FROM baterias_stock")
+            baterias = cursor.fetchall()
+            
+            status_map = {'Stock': 'Stock', 'Asignada': 'Instalado', 'Descartada': 'Retirado'}
+            
+            for bat in baterias:
+                cursor.execute("SELECT id FROM components WHERE component_type='Batería UPS' AND serial_number=?", (bat['code'],))
+                existing_comp = cursor.fetchone()
+                
+                if existing_comp:
+                    new_comp_id = existing_comp['id']
+                else:
+                    mapped_status = status_map.get(bat['status'], 'Stock')
+                    cursor.execute("""
+                        INSERT INTO components (serial_number, component_type, brand_model, status, created_at)
+                        VALUES (?, 'Batería UPS', ?, ?, ?)
+                    """, (bat['code'], bat['brand_model'], mapped_status, bat['created_at']))
+                    new_comp_id = cursor.lastrowid
+                
+                # 3. Actualizar la foreign key en ups_inventory
+                cursor.execute("""
+                    UPDATE ups_inventory 
+                    SET assigned_battery_id = ? 
+                    WHERE assigned_battery_id = ?
+                """, (new_comp_id, bat['id']))
+            
+            # Renombrar tabla antigua
+            try:
+                cursor.execute("ALTER TABLE baterias_stock RENAME TO baterias_stock_old")
+            except Exception as e:
+                pass
+                
+        conn.commit()
+    print("Migración V13 verificada.")
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -229,3 +320,5 @@ def run_all_migrations():
     migrate_db_v9()
     migrate_db_v10()
     migrate_db_v11()
+    migrate_db_v12()
+    migrate_db_v13()

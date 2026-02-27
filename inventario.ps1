@@ -6,12 +6,6 @@
 # -----------------------------------------------------------
 $ErrorActionPreference = "Continue"
 $script:errorOccurred = $false
-$tempLogFile = "$env:TEMP\Inventario_Log_$($env:COMPUTERNAME).txt"
-try {
-    Start-Transcript -Path $tempLogFile -Force -ErrorAction SilentlyContinue
-}
-catch {}
-# -----------------------------------------------------------
 # CONFIGURACIÓN PREVIA (SEGURIDAD Y RED)
 # -----------------------------------------------------------
 # FIX: ACTIVAR TLS 1.2 POR REGISTRO (CRÍTICO PARA WINDOWS 7)
@@ -434,10 +428,8 @@ try {
         }
     }
     # -----------------------------------------------------------
-    # FINALIZAR LOGGING Y GUARDAR SI HUBO ERROR
+    # FINALIZAR EJECUCIÓN
     # -----------------------------------------------------------
-    # Stop Transcript dentro del try
-    Stop-Transcript -ErrorAction SilentlyContinue
 }
 catch {
     $script:errorOccurred = $true
@@ -446,22 +438,16 @@ catch {
     Write-Host $_.ScriptStackTrace -ForegroundColor Red
 }
 # -----------------------------------------------------------
-# FINALIZAR Y GUARDAR LOG
+# FINALIZAR
 # -----------------------------------------------------------
 if ($script:errorOccurred) {
-    try {
-        $desktopPath = [Environment]::GetFolderPath("Desktop")
-        $destLog = "$desktopPath\Log_Error_$($env:COMPUTERNAME).txt"
-        Copy-Item -Path $tempLogFile -Destination $destLog -Force
-        # Re-abrir consola para avisar usuario (aunque transcript ya cerró)
-        Write-Host "---------------------------------------------------" -ForegroundColor Red
-        Write-Host "Ocurrió un error. Se ha guardado el LOG completo en:" -ForegroundColor Yellow
-        Write-Host "$destLog" -ForegroundColor Yellow
-        Write-Host "Por favor envíe este archivo al administrador." -ForegroundColor Yellow
-        Write-Host "---------------------------------------------------" -ForegroundColor Red
-    }
-    catch {
-        # Nada que hacer si falla la copia
-    }
+    Write-Host "---------------------------------------------------" -ForegroundColor Red
+    Write-Host "Ocurrió un error general durante la recolección." -ForegroundColor Yellow
+    Write-Host "---------------------------------------------------" -ForegroundColor Red
+    Start-Sleep -Seconds 10
 }
-Start-Sleep -Seconds 10
+else {
+    Write-Host "Cerrando ventana automáticamente en 3 segundos..." -ForegroundColor Green
+    Start-Sleep -Seconds 3
+    Stop-Process -Id $PID
+}

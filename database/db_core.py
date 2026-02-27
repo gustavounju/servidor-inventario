@@ -86,21 +86,15 @@ def init_db():
                 brand_model TEXT,
                 status TEXT DEFAULT 'Stock', -- Stock, Instalado, Retirado
                 assigned_pc TEXT,
+                assigned_to_component_id INTEGER,
+                supplier TEXT,
+                invoice_number TEXT,
                 created_at TEXT DEFAULT (datetime('now', '-3 hours')),
-                FOREIGN KEY (assigned_pc) REFERENCES pcs(pc_name)
+                FOREIGN KEY (assigned_pc) REFERENCES pcs(pc_name),
+                FOREIGN KEY (assigned_to_component_id) REFERENCES components(id)
             )
             """
         )
-
-        try:
-            conn.execute("ALTER TABLE components ADD COLUMN supplier_name TEXT")
-        except sqlite3.OperationalError:
-            pass # Column already exists
-        
-        try:
-            conn.execute("ALTER TABLE components ADD COLUMN remito_number TEXT")
-        except sqlite3.OperationalError:
-            pass # Column already exists
 
         conn.execute(
             """
@@ -117,27 +111,17 @@ def init_db():
 
         conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS baterias_stock (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                code TEXT UNIQUE NOT NULL,
-                brand_model TEXT,
-                status TEXT DEFAULT 'Stock', -- Stock, Asignada, Descartada
-                created_at TEXT DEFAULT (datetime('now', '-3 hours'))
-            )
-            """
-        )
-
-        conn.execute(
-            """
             CREATE TABLE IF NOT EXISTS ups_inventory (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 code TEXT UNIQUE NOT NULL,
                 model TEXT DEFAULT 'LYONN CTB-800V',
+                supplier TEXT,
+                invoice_number TEXT,
                 assigned_pc TEXT,
                 assigned_battery_id INTEGER,
                 created_at TEXT DEFAULT (datetime('now', '-3 hours')),
                 FOREIGN KEY (assigned_pc) REFERENCES pcs(pc_name) ON DELETE SET NULL,
-                FOREIGN KEY (assigned_battery_id) REFERENCES baterias_stock(id) ON DELETE SET NULL
+                FOREIGN KEY (assigned_battery_id) REFERENCES components(id) ON DELETE SET NULL
             )
             """
         )

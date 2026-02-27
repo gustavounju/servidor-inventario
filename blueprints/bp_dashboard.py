@@ -401,17 +401,35 @@ def pc_detail(pc_name):
         
         # Buscar Data de la UPS asignada
         pc_ups = conn.execute('''
-            SELECT u.*, b.code as battery_code 
+            SELECT u.*, b.serial_number as battery_code 
             FROM ups_inventory u
-            LEFT JOIN baterias_stock b ON u.assigned_battery_id = b.id
+            LEFT JOIN components b ON u.assigned_battery_id = b.id
             WHERE u.assigned_pc = ?
         ''', (pc_name,)).fetchone()
         
         # UPS Disponibles en caso de querer asignarle una (UPS sin asignar)
         available_ups = conn.execute("SELECT id, code, model FROM ups_inventory WHERE assigned_pc IS NULL").fetchall()
+        
+        # Buscar componentes asignados a la PC (y sus hijos)
+        pc_components = conn.execute('''
+            SELECT id, serial_number, component_type, brand_model, status, assigned_to_component_id 
+            FROM components 
+            WHERE assigned_pc = ?
+            ORDER BY assigned_to_component_id ASC, component_type
+        ''', (pc_name,)).fetchall()
+        
+        # Componentes en Stock disponibles para asignar
+        available_components = conn.execute('''
+            SELECT id, serial_number, component_type, brand_model 
+            FROM components 
+            WHERE status = 'Stock' AND component_type != 'Batería UPS'
+        ''').fetchall()
+        
+        # Baterias disponibles para asignar a la UPS de esta PC
+        baterias_disponibles = conn.execute("SELECT id, serial_number as code, brand_model FROM components WHERE component_type = 'Batería UPS' AND status = 'Stock'").fetchall()
 
     if pc is None: abort(404)
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups=pc_ups, available_ups=available_ups)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups=pc_ups, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles)
 
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
 def update_pc_infrastructure(pc_name):
