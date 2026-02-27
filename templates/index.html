@@ -1096,7 +1096,7 @@
             var el = document.getElementById('kpiScript');
 
             // Reemplazar host dynamico. Note the \n at the end to auto-execute.
-            const cmd = "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex (New-Object System.Net.WebClient).DownloadString('http://" + window.location.hostname + ":5000/script')\n";
+            const cmd = "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex (New-Object System.Net.WebClient).DownloadString('" + window.location.protocol + "//" + window.location.hostname + ":5000/script')\n";
 
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(cmd).then(() => {
