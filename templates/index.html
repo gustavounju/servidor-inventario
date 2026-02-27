@@ -583,7 +583,6 @@
                     <thead class="thead-light">
                         <tr>
                             <th>Descripción</th>
-                            <th>Fuero/Ubicación</th>
                             <th>Solicitante</th>
                             <th>Técnico</th>
                             <th>Fecha</th>
@@ -594,13 +593,6 @@
                         {% for task in unassigned_tasks %}
                         <tr>
                             <td>{{ task.descripcion }}</td>
-                            <td>
-                                {% if task.fuero %}
-                                <span class="badge bg-secondary">{{ task.fuero }}</span>
-                                {% else %}
-                                <span class="badge bg-light text-dark">-</span>
-                                {% endif %}
-                            </td>
                             <!-- 3. Solicitante -->
                             <!-- ERROR FIX: Removed invalid reference to pc.last_user -->
                             <td>{{ task.solicitante or '-' }}</td>
