@@ -1085,7 +1085,8 @@
 
             // Reemplazar host dynamico. Note the \n at the end to auto-execute.
             // Para Windows 7, la asignación a 3072 puede dar error si .NET es muy viejo. Lo envolvemos en try/catch.
-            const cmd = "try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; iex (New-Object System.Net.WebClient).DownloadString('" + window.location.protocol + "//" + window.location.hostname + ":5000/script')\n";
+            // Además, si HTTPS falla por incompatibilidad de cifrado (ERR_CONNECTION_CLOSED), usamos HTTP en el puerto 8080 como fallback.
+            const cmd = "try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try { iex (New-Object System.Net.WebClient).DownloadString('" + window.location.protocol + "//" + window.location.hostname + ":5000/script') } catch { Write-Host 'Fallo HTTPS, intentando HTTP (Puerto 8080)...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('http://" + window.location.hostname + ":8080/script') }\n";
 
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(cmd).then(() => {
