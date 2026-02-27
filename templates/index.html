@@ -1673,9 +1673,9 @@
                         const tbody = document.getElementById('securityTableBody');
                         tbody.innerHTML = '';
 
-                        if (data.conexiones && data.conexiones.length > 0) {
+                        if (data.data && data.data.length > 0) {
                             document.getElementById('securityContent').classList.remove('d-none');
-                            data.conexiones.forEach(conn => {
+                            data.data.forEach(conn => {
                                 let row = `<tr>
                                     <td class="fw-bold text-primary">${conn.Process || '???'}</td>
                                     <td>${conn.PID || '-'}</td>
