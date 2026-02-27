@@ -44,6 +44,16 @@
             </button>
             <input type="file" id="qr-input-file" accept="image/*" capture="environment" style="display:none"
                 onchange="scanFromFile(this)">
+
+            <a href="#" id="externalScanBtn" class="btn btn-warning mt-2 fw-bold text-dark">
+                <i class="bi bi-phone-vibrate"></i> Usar App Externa (Recomendado)
+            </a>
+            <div class="text-center mt-1">
+                <a href="https://play.google.com/store/apps/details?id=com.google.zxing.client.android" target="_blank"
+                    class="small text-muted text-decoration-none">
+                    ¿No la tienes? Descargar Barcode Scanner
+                </a>
+            </div>
         </div>
 
         <div class="mt-3">
@@ -152,6 +162,28 @@
     <script>
         let html5QrcodeScanner = null;
         let pcsList = [];
+
+        // Integración con App Externa (ZXing Intent)
+        document.addEventListener('DOMContentLoaded', () => {
+            const externalBtn = document.getElementById('externalScanBtn');
+            if (externalBtn) {
+                // Al tocar, armamos la URL de retorno apuntando a esta misma página pero con ?code={CODE}
+                const currentUrl = window.location.protocol + "//" + window.location.host + "/mobile/scanner?code={CODE}";
+                const encodedUrl = encodeURIComponent(currentUrl);
+                // zxing://scan/?ret=...
+                externalBtn.href = `zxing://scan/?ret=${encodedUrl}`;
+            }
+
+            // Revisar si volvimos de la App con un código leído
+            const urlParams = new URLSearchParams(window.location.search);
+            const scannedCode = urlParams.get('code');
+            if (scannedCode) {
+                // Limpiar la URL para evitar buscar de nuevo al refrescar F5
+                window.history.replaceState({}, document.title, window.location.pathname);
+                // Lanzar la búsqueda automáticamente
+                checkComponent(scannedCode);
+            }
+        });
 
         // Load PCs on start
         fetch('/api/mobile/data')
