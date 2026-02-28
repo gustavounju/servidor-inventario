@@ -45,15 +45,6 @@
             <input type="file" id="qr-input-file" accept="image/*" capture="environment" style="display:none"
                 onchange="scanFromFile(this)">
 
-            <a href="#" id="externalScanBtn" class="btn btn-warning mt-2 fw-bold text-dark">
-                <i class="bi bi-phone-vibrate"></i> Usar App Externa (Recomendado)
-            </a>
-            <div class="text-center mt-1">
-                <a href="https://play.google.com/store/apps/details?id=com.gammaplay.barcode" target="_blank"
-                    class="small text-muted text-decoration-none">
-                    ¿No la tienes? Descargar Barcode Scanner
-                </a>
-            </div>
         </div>
 
         <div class="mt-3">
@@ -163,27 +154,7 @@
         let html5QrcodeScanner = null;
         let pcsList = [];
 
-        // Integración con App Externa (ZXing Intent)
-        document.addEventListener('DOMContentLoaded', () => {
-            const externalBtn = document.getElementById('externalScanBtn');
-            if (externalBtn) {
-                // Al tocar, armamos la URL de retorno apuntando a esta misma página pero con ?code={CODE}
-                const currentUrl = window.location.protocol + "//" + window.location.host + "/mobile/scanner?code={CODE}";
-                const encodedUrl = encodeURIComponent(currentUrl);
-                // zxing://scan/?ret=...
-                externalBtn.href = `zxing://scan/?ret=${encodedUrl}`;
-            }
 
-            // Revisar si volvimos de la App con un código leído
-            const urlParams = new URLSearchParams(window.location.search);
-            const scannedCode = urlParams.get('code');
-            if (scannedCode) {
-                // Limpiar la URL para evitar buscar de nuevo al refrescar F5
-                window.history.replaceState({}, document.title, window.location.pathname);
-                // Lanzar la búsqueda automáticamente
-                checkComponent(scannedCode);
-            }
-        });
 
         // Load PCs on start
         fetch('/api/mobile/data')
@@ -262,11 +233,11 @@
             });
 
             const config = {
-                fps: 10,
+                fps: 20, // Aumentar framerate para captura más rápida
                 // Make the scanning box a wide rectangle to fit long serial codes (Dynamic for small screens)
                 qrbox: function (vw, vh) {
-                    let w = Math.min(vw * 0.95, 300);
-                    let h = Math.min(vh * 0.95, 120);
+                    let w = Math.min(vw * 0.95, 350); // Ligeramente más ancho
+                    let h = Math.min(vh * 0.95, 150); // Ligeramente más alto
                     return { width: Math.floor(w), height: Math.floor(h) };
                 },
                 aspectRatio: 1.0
@@ -440,13 +411,22 @@
                 Html5QrcodeSupportedFormats.EAN_13
             ];
             const html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formats });
-            html5QrCode.scanFile(file, true)
+            // Pasamos 'false' en el segundo parámetro para que no intente dibujar
+            // la foto gigante de 12MP en la pantalla y rompa el diseño.
+            html5QrCode.scanFile(file, false)
                 .then(decodedText => {
+                    document.getElementById('msgArea').classList.add('d-none');
                     onScanSuccess(decodedText);
+                    html5QrCode.clear();
                 })
                 .catch(err => {
                     console.error(err);
-                    showMsg("No se pudo leer ningún código. Intente acercarse más o mejorar la luz.", "warning");
+                    html5QrCode.clear();
+                    showMsg("No se pudo detectar un código en la foto. Intenta con una imagen más nítida.", "warning");
+                })
+                .finally(() => {
+                    // Limpiar el input para permitir seleccionar la misma foto si se desea
+                    document.getElementById('qr-input-file').value = "";
                 });
         }
 
