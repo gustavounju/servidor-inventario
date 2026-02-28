@@ -3,21 +3,41 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Infraestructura & Stock</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <title>Infraestructura — Inventario GOLD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/gold.css">
+    <style>
+        body {
+            padding-top: 62px;
+        }
+    </style>
 </head>
 
-<body class="bg-light">
-    <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="d-flex align-items-center">
-                <i class="bi bi-hdd-network-fill me-2 text-primary"></i> Infraestructura y Stock
-                <span class="badge bg-secondary ms-2" style="font-size: 0.8rem;">{{ app_version }}</span>
-            </h2>
-            <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver al Dashboard
-            </a>
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-gold fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Inventario GOLD</a>
+
+            <div class="ms-auto">
+                <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-arrow-left me-1"></i>Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-3 pt-2 pb-4">
+        <!-- Hero -->
+        <div class="hero-header mb-3">
+            <h1 class="hero-title">🔌 Infraestructura y Stock</h1>
+            <p class="hero-subtitle">UPS, baterías, periféricos y hardware del sistema
+                <span class="badge ms-2" style="background:rgba(255,255,255,0.15);font-size:0.72rem;">v{{ app_version
+                    }}</span>
+            </p>
         </div>
 
         <!-- Mensajes Flash -->

@@ -4,61 +4,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario de Componentes - Stock</title>
+    <title>Stock de Componentes — Inventario GOLD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/gold.css">
     <style>
+        body {
+            padding-top: 62px;
+        }
+
         .status-stock {
-            background-color: #d1e7dd;
-            color: #0f5132;
+            background: rgba(34, 197, 94, 0.12);
+            color: #15803d;
+            border: 1px solid rgba(34, 197, 94, 0.2);
         }
 
         .status-installed {
-            background-color: #fff3cd;
-            color: #664d03;
+            background: rgba(251, 191, 36, 0.12);
+            color: #b45309;
+            border: 1px solid rgba(251, 191, 36, 0.2);
         }
 
         .status-retired {
-            background-color: #f8d7da;
-            color: #842029;
+            background: rgba(239, 68, 68, 0.12);
+            color: #b91c1c;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .stock-badge {
+            border-radius: 6px;
+            padding: 3px 9px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: inline-block;
         }
     </style>
 </head>
 
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-gold fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">Inventario IT</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">PCs</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/stock">Componentes (Stock)</a>
-                    </li>
-                </ul>
+            <a class="navbar-brand" href="/">Inventario GOLD</a>
+
+            <div class="ms-auto">
+                <a href="/mobile/scanner" class="btn btn-sm btn-primary">
+                    <i class="bi bi-qr-code-scan me-1"></i>Escáner QR
+                </a>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>Gestión de Stock de Componentes</h2>
-            <div>
-                <a href="/mobile/scanner" class="btn btn-primary"><i class="bi bi-qr-code-scan"></i> Escáner /
-                    Añadir</a>
-            </div>
+    <div class="container-fluid px-3 pt-2">
+        <!-- Hero mini -->
+        <div class="hero-header mb-3">
+            <h1 class="hero-title">📦 Gestión de Stock</h1>
+            <p class="hero-subtitle">Componentes, periféricos y equipamiento en inventario</p>
         </div>
 
         <!-- Filters -->
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body py-3">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
                         <label class="form-label">Estado</label>
                         <select id="filterStatus" class="form-select" onchange="loadComponents()">
                             <option value="">Todos</option>
@@ -68,8 +78,8 @@
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Buscar (Serial/Modelo)</label>
-                        <input type="text" id="searchInput" class="form-control" placeholder="..."
+                        <label class="form-label">Buscar (Serial / Modelo)</label>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar..."
                             onkeyup="loadComponents()">
                     </div>
                 </div>
@@ -77,11 +87,11 @@
         </div>
 
         <!-- Table -->
-        <div class="card shadow">
+        <div class="card shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0 align-middle">
-                        <thead class="table-light">
+                    <table class="table table-hover mb-0 table-gold" id="stockTable">
+                        <thead>
                             <tr>
                                 <th>Serial</th>
                                 <th>Tipo</th>
@@ -266,24 +276,21 @@
                     }
 
                     filtered.forEach(item => {
-                        let statusBadge = 'bg-secondary';
-                        let actionBtn = '-';
+                        let badgeClass = 'bg-secondary';
+                        let statusHtml = '';
+                        let actionBtn = '';
 
                         if (item.status === 'Stock') {
-                            statusBadge = 'bg-success';
-                            actionBtn = `<button class="btn btn-sm btn-outline-primary" onclick="openAssignModal('${item.serial_number}', '${item.component_type}')">Asignar</button>`;
-                        }
-                        else if (item.status === 'Installed') {
-                            statusBadge = 'bg-warning text-dark';
-                            actionBtn = '';
-                        }
-                        else if (item.status === 'Retirado') {
-                            statusBadge = 'bg-danger';
-                            actionBtn = '';
+                            statusHtml = `<span class="stock-badge status-stock">✓ En Stock</span>`;
+                            actionBtn = `<button class="btn btn-sm btn-primary" onclick="openAssignModal('${item.serial_number}', '${item.component_type}')"><i class="bi bi-link-45deg me-1"></i>Asignar</button>`;
+                        } else if (item.status === 'Installed') {
+                            statusHtml = `<span class="stock-badge status-installed">⚙ Instalado</span>`;
+                        } else if (item.status === 'Retirado') {
+                            statusHtml = `<span class="stock-badge status-retired">✕ Retirado</span>`;
                         }
 
                         let deleteBtn = `<button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteComponent('${item.serial_number}')" title="Eliminar definitivamente"><i class="bi bi-trash"></i></button>`;
-                        actionBtn = actionBtn === '-' || actionBtn === '' ? deleteBtn : actionBtn + deleteBtn;
+                        actionBtn = actionBtn === '' ? deleteBtn : actionBtn + ' ' + deleteBtn;
 
                         let assignedLink = item.assigned_pc ? `<a href="/pc/${item.assigned_pc}">${item.assigned_pc}</a>` : '-';
 
@@ -294,13 +301,13 @@
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td><span class="font-monospace">${item.serial_number}</span></td>
-                            <td>${item.component_type}</td>
+                            <td><span class="font-monospace" style="font-size:0.82rem;">${item.serial_number}</span></td>
+                            <td><span class="fw-600" style="font-size:0.85rem;">${item.component_type}</span></td>
                             <td>
-                                <div>${item.brand_model || '-'}</div>
+                                <div style="font-size:0.85rem;">${item.brand_model || '-'}</div>
                                 ${extraHtml}
                             </td>
-                            <td><span class="badge ${statusBadge}">${item.status}</span></td>
+                            <td>${statusHtml}</td>
                             <td>${assignedLink}</td>
                             <td class="small text-muted">${item.created_at || '-'}</td>
                             <td>${actionBtn}</td>

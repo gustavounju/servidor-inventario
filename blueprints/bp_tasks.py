@@ -3,6 +3,8 @@ import datetime
 from datetime import datetime as dt
 from io import BytesIO
 from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 import sqlite3
 
 from database.db_core import get_db_connection
@@ -140,6 +142,49 @@ def add_manual_audit(pc_name):
     except Exception as e:
         return f"Error agregando historial manual: {e}", 500
 
+@bp_tasks.route("/api/report/preview", methods=["GET"])
+def report_preview():
+    """API para vista previa de tareas antes de descargar el reporte."""
+    fecha_filtro = request.args.get("fecha", dt.now().strftime("%Y-%m-%d")).strip()
+    pc_name = request.args.get("pc", "").strip()
+
+    with get_db_connection() as conn:
+        # Tareas completadas
+        sql_hechas = "SELECT t.pc_name, t.descripcion, t.solicitante, t.completed_at, t.completed_by, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado = 'Hecha' AND DATE(t.completed_at) = ?"
+        params = [fecha_filtro]
+        if pc_name:
+            sql_hechas += " AND t.pc_name = ?"
+            params.append(pc_name)
+        sql_hechas += " ORDER BY t.completed_at DESC"
+        hechas = conn.execute(sql_hechas, params).fetchall()
+
+        # Tareas pendientes del dia
+        sql_pend = "SELECT t.pc_name, t.descripcion, t.solicitante, t.created_at, t.estado, t.assigned_to FROM tasks t WHERE t.estado != 'Hecha' AND DATE(t.created_at) = ?"
+        params_pend = [fecha_filtro]
+        if pc_name:
+            sql_pend += " AND t.pc_name = ?"
+            params_pend.append(pc_name)
+        sql_pend += " ORDER BY t.created_at DESC"
+        pendientes = conn.execute(sql_pend, params_pend).fetchall()
+
+    return jsonify({
+        "fecha": fecha_filtro,
+        "pc_filter": pc_name or None,
+        "hechas": [{
+            "pc_name": r["pc_name"], "descripcion": r["descripcion"],
+            "solicitante": r["solicitante"] or "",
+            "completed_at": r["completed_at"] or "",
+            "completed_by": r["completed_by"] or "",
+        } for r in hechas],
+        "pendientes": [{
+            "pc_name": r["pc_name"], "descripcion": r["descripcion"],
+            "solicitante": r["solicitante"] or "",
+            "created_at": r["created_at"] or "",
+            "estado": r["estado"] or "",
+            "assigned_to": r["assigned_to"] or "Sin asignar",
+        } for r in pendientes]
+    })
+
 @bp_tasks.route("/report/tasks_completed", methods=["GET", "POST"])
 def report_tasks_completed():
     pc_name = request.args.get("pc", "").strip()
@@ -157,11 +202,59 @@ def report_tasks_completed():
         base_sql += " ORDER BY completed_at DESC"
         tareas = conn.execute(base_sql, params).fetchall()
 
+    # --- Excel con formato mejorado ---
     wb = Workbook()
     ws = wb.active
-    ws.title = "Tareas"
-    ws.append(["PC", "Descripción", "Solicitante", "Fecha Creación", "Estado", "Realizado Por", "Fecha Cierre"])
-    for t in tareas: ws.append([t["pc_name"], t["descripcion"], t["solicitante"] or "", t["created_at"], t["estado"], t["completed_by"] or "", t["completed_at"] or ""])
+    ws.title = "Tareas Completadas"
+
+    # Estilo de headers
+    header_fill = PatternFill("solid", fgColor="0F4C75")
+    header_font = Font(bold=True, color="FFFFFF", name="Calibri", size=11)
+    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    thin = Side(style="thin", color="CBD5E1")
+    cell_border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    headers = ["PC", "Descripción", "Solicitante", "Fecha Creación", "Estado", "Realizado Por", "Fecha Cierre"]
+    ws.append(headers)
+    for col_idx, col_letter in enumerate([get_column_letter(i+1) for i in range(len(headers))], 1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_align
+        cell.border = cell_border
+    ws.row_dimensions[1].height = 22
+
+    # Estilos alternados para filas
+    fill_even = PatternFill("solid", fgColor="EFF6FF")
+    fill_odd  = PatternFill("solid", fgColor="FFFFFF")
+    data_font = Font(name="Calibri", size=10)
+    data_align_wrap = Alignment(wrap_text=True, vertical="top")
+
+    for row_idx, t in enumerate(tareas, 2):
+        row_data = [t["pc_name"], t["descripcion"], t["solicitante"] or "", t["created_at"], t["estado"], t["completed_by"] or "", t["completed_at"] or ""]
+        ws.append(row_data)
+        fill = fill_even if row_idx % 2 == 0 else fill_odd
+        for col_idx in range(1, len(headers) + 1):
+            cell = ws.cell(row=row_idx, column=col_idx)
+            cell.fill = fill
+            cell.font = data_font
+            cell.border = cell_border
+            cell.alignment = data_align_wrap
+
+    # Auto-ancho de columnas
+    col_widths = [20, 40, 20, 20, 12, 18, 20]
+    for i, w in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    # Fila de totales
+    ws.append([])
+    total_row = ws.max_row + 1
+    total_cell = ws.cell(row=total_row, column=1)
+    total_cell.value = f"Total tareas: {len(tareas)}"
+    total_cell.font = Font(bold=True, name="Calibri", size=10, color="0F4C75")
+
+    # Freeze header
+    ws.freeze_panes = "A2"
 
     output = BytesIO()
     wb.save(output)

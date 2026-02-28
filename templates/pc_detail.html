@@ -3,425 +3,500 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Detalle PC - {{ pc.pc_name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ pc.pc_name }} — Detalle PC | Inventario GOLD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/static/css/gold.css">
   <style>
+    body {
+      padding-top: 62px;
+    }
+
     .table th {
       width: 25%;
       white-space: nowrap;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.82rem;
     }
 
     .table td {
       word-break: break-word;
+      color: var(--text-color);
+    }
+
+    /* Override table-gold for detail tables */
+    .detail-table thead th {
+      background: var(--table-header-bg);
+      color: #fff;
+      border: none;
+      padding: 9px 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .detail-table tbody td {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 9px 12px;
+      font-size: 0.855rem;
+      transition: background 0.12s;
+    }
+
+    .detail-table tbody tr:hover td {
+      background: color-mix(in srgb, var(--accent-color) 5%, var(--card-bg));
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-color);
+      margin: 22px 0 10px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .section-heading i {
+      color: var(--accent-color);
     }
   </style>
-
 </head>
 
-<body class="p-3">
+<body>
 
-  <h1 class="mb-3">
-    Detalle de {{ pc.pc_name }}
-    {% if pc.is_active == 'True' %}
-    <span class="badge badge-success ml-2">Activa</span>
-    {% else %}
-    <span class="badge badge-secondary ml-2">Cementerio</span>
-    {% endif %}
-
-    {% if pc.alerta_ram_baja %}
-    <span class="badge badge-warning ml-2" title="RAM baja (< 8 GB)">
-      💾 RAM
-    </span>
-    {% endif %}
-
-    {% if pc.alerta_sin_impresora %}
-    <span class="badge bg-warning text-dark ml-2" title="Sin impresora física">
-      🖨️ Sin
-    </span>
-    {% endif %}
-
-    {% if pc.alerta_impresora_red %}
-    <span class="badge bg-info text-dark ml-2" title="Solo impresora de red">
-      🌐 Red
-    </span>
-    {% endif %}
-  </h1>
-
-
-
-  <!-- Barra de acciones -->
-  <div class="row mb-3">
-    <div class="col-auto">
-      {% if pc.pc_name != 'PC Generica' %}
-      <!-- Agregar tarea (abre modal) -->
-      <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
-        <i class="bi bi-plus-lg"></i> Agregar tarea
-      </button>
-
-      <!-- Exportar tareas de esta PC. Usamos el endpoint global con filtro -->
-      <a href="{{ url_for('tasks.report_tasks_completed') }}?pc={{ pc.pc_name }}"
-        class="btn btn-sm btn-outline-primary ms-2">
-        <i class="bi bi-file-earmark-excel"></i> Exportar tareas PC
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg navbar-gold fixed-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{{ url_for('dashboard.dashboard') }}">
+        Inventario GOLD <span class="badge bg-secondary ms-1" style="font-size:0.65rem;font-weight:600;">v{{ app_version
+          if app_version else '' }}</span>
       </a>
-      {% endif %}
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-sm btn-outline-light" style="font-size:0.8rem;">
+          <i class="bi bi-arrow-left me-1"></i>Dashboard
+        </a>
+        {% if pc.pc_name != 'PC Generica' %}
+        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea"
+          style="font-size:0.8rem;">
+          <i class="bi bi-plus-lg me-1"></i>Nueva Tarea
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- MINI HERO HEADER -->
+  <div class="container-fluid px-3 pt-2 pb-0">
+    <div class="hero-header mb-3">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <h1 class="hero-title mb-0">🖥️ {{ pc.pc_name }}</h1>
+        {% if pc.is_active == 'True' %}
+        <span class="badge"
+          style="background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">●
+          Activa</span>
+        {% else %}
+        <span class="badge"
+          style="background:rgba(107,114,128,0.2);color:#9ca3af;border:1px solid rgba(107,114,128,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">⚰️
+          Cementerio</span>
+        {% endif %}
+        {% if pc.alerta_ram_baja %}
+        <span class="badge"
+          style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;"
+          title="RAM baja">⚠️ RAM</span>
+        {% endif %}
+        {% if pc.alerta_sin_impresora %}
+        <span class="badge"
+          style="background:rgba(107,114,128,0.18);color:#9ca3af;border:1px solid rgba(107,114,128,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">🖨️
+          Sin Imp.</span>
+        {% endif %}
+      </div>
+      <p class="hero-subtitle mt-2 mb-2" style="display:flex; gap:18px; flex-wrap:wrap;">
+        <span><i class="bi bi-person-fill me-1"></i><strong>{{ pc.last_user or '-' }}</strong></span>
+        <span><i class="bi bi-building me-1"></i><strong>{{ pc.fuero or '-' }}</strong></span>
+        <span><i class="bi bi-wifi me-1"></i><strong>{{ pc.ip_address or '-' }}</strong></span>
+      </p>
+      <div class="d-flex gap-2 flex-wrap">
+        {% if pc.pc_name != 'PC Generica' %}
+        {% if pc.is_active == 'True' %}
+        <a href="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" class="hero-stat"
+          style="color:#fca5a5;cursor:pointer" onclick="return confirm('¿Seguro pasar a cementerio?')">
+          <i class="bi bi-archive me-1"></i>Dar de baja
+        </a>
+        {% else %}
+        <a href="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" class="hero-stat" style="color:#86efac">
+          <i class="bi bi-activity me-1"></i>Reactivar
+        </a>
+        {% endif %}
+        <a href="{{ url_for('tasks.report_tasks_completed') }}?pc={{ pc.pc_name }}" class="hero-stat">
+          <i class="bi bi-file-earmark-excel me-1"></i>Exportar tareas
+        </a>
+        {% endif %}
+      </div>
     </div>
 
-    <div class="col-auto ms-auto">
-      {% if pc.pc_name != 'PC Generica' %}
-      {% if pc.is_active == 'True' %}
-      <a href="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-danger"
-        onclick="return confirm('¿Seguro pasar a cementerio?')">
-        <i class="bi bi-archive"></i> Enviar a cementerio
-      </a>
-      {% else %}
-      <a href="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" class="btn btn-sm btn-success">
-        <i class="bi bi-activity"></i> Reactivar
-      </a>
-      {% endif %}
-      {% endif %}
-    </div>
-  </div>
+  </div><!-- /.d-flex acciones secundaria -->
+  </div><!-- /.container-fluid hero -->
 
-  <!-- BLOQUE 1: Datos principales de la PC -->
-  <table class="table table-sm table-bordered mb-4">
-    <tbody>
-      <tr>
-        <th style="width: 20%;">Usuario</th>
-        <td>{{ pc.last_user }}</td>
-      </tr>
-      <tr>
-        <th>Fuero</th>
-        <td><span class="badge text-white" style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{
-            pc.fuero or '-' }}</span></td>
-      </tr>
-      <tr>
-        <th>Placa Madre</th>
-        <td>{{ pc.motherboard_model }}</td>
-      </tr>
-      <tr>
-        <th>Sistema Operativo</th>
-        <td>{{ pc.os_name }}</td>
-      </tr>
-      <tr>
-        <th>CPU</th>
-        <td>{{ pc.processor }}</td>
-      </tr>
-      <tr>
-        <th>RAM</th>
-        <td>{{ pc.ram_gb }} GB ({{ pc.ram_detalles }})</td>
-      </tr>
-      <tr>
-        <th>Discos</th>
-        <td>{{ pc.disk_models }}</td>
-      </tr>
-      <tr>
-        <th>Impresora</th>
-        <td>{{ pc.printer_model }} ({{ pc.printer_port }})</td>
-      </tr>
-      <tr>
-        <th>Monitores</th>
-        <td>{{ pc.monitors }}</td>
-      </tr>
-      <tr>
-        <th>IP</th>
-        <td>{{ pc.ip_address }}</td>
-      </tr>
-      <tr>
-        <th>Último reporte</th>
-        <td>{{ pc.last_report }}</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="container-fluid px-3">
 
-  <!-- BLOQUE 2: Infraestructura de Red & Energia -->
-  <div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">Infraestructura de Red y Energía</h5>
-      <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-        data-bs-target="#modalEditarInfra">
-        <i class="bi bi-pencil"></i> Editar
-      </button>
-    </div>
-    <div class="card-body">
-      <div class="row">
-        <div class="col-md-4">
-          <p><strong>Edificio:</strong> {{ pc.building or '-' }}</p>
-          <p><strong>Piso:</strong> {{ pc.floor or '-' }}</p>
-        </div>
-        <div class="col-md-4">
-          <p><strong>Switch:</strong> {{ pc.switch_name or '-' }} (Puerto {{ pc.switch_port or '-' }})</p>
-          <p><strong>Pachera:</strong> {{ pc.pachera_name or '-' }} (Boca {{ pc.pachera_port or '-' }})</p>
-        </div>
-        <!-- Integracion UPS -->
-        <div class="col-md-4 border-start">
-          <h6 class="text-primary fw-bold mb-2"><i class="bi bi-plug"></i> Respaldo Eléctrico (UPS)</h6>
-          {% if pc_ups %}
-          <p class="mb-1"><strong>UPS:</strong> {{ pc_ups.code }}</p>
-          <p class="mb-2"><strong>Modelo:</strong> {{ pc_ups.model }}</p>
-          {% if pc_ups.battery_code %}
-          <span class="badge bg-success"><i class="bi bi-battery-charging"></i> Batería: {{ pc_ups.battery_code
-            }}</span>
-          {% else %}
-          <span class="badge bg-danger"><i class="bi bi-battery"></i> Sin Batería</span>
-          {% endif %}
-          <div class="mt-2 d-flex gap-2">
-            <!-- Botón de Asignar/Cambiar Batería -->
-            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
-              data-bs-target="#modalAssignBatteryToUPS" title="Asignar/Cambiar Batería">
-              <i class="bi bi-battery-half"></i> {% if pc_ups.battery_code %}Cambiar Batería{% else %}Asignar Batería{%
-              endif %}
-            </button>
+    <!-- BLOQUE 1: Datos principales de la PC -->
+    <div class="card shadow-sm mb-4">
+      <div class="gold-card-header"><i class="bi bi-pc-display"></i> Información del Equipo</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0 detail-table">
+          <tbody>
+            <tr>
+              <th style="width:22%">Usuario</th>
+              <td>{{ pc.last_user }}</td>
+            </tr>
+            <tr>
+              <th>Fuero</th>
+              <td><span class="badge text-white"
+                  style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{
+                  pc.fuero or '-' }}</span></td>
+            </tr>
+            <tr>
+              <th>Placa Madre</th>
+              <td>{{ pc.motherboard_model }}</td>
+            </tr>
+            <tr>
+              <th>Sistema Operativo</th>
+              <td>{{ pc.os_name }}</td>
+            </tr>
+            <tr>
+              <th>CPU</th>
+              <td>{{ pc.processor }}</td>
+            </tr>
+            <tr>
+              <th>RAM</th>
+              <td>{{ pc.ram_gb }} GB ({{ pc.ram_detalles }})</td>
+            </tr>
+            <tr>
+              <th>Discos</th>
+              <td>{{ pc.disk_models }}</td>
+            </tr>
+            <tr>
+              <th>Impresora</th>
+              <td>{{ pc.printer_model }} ({{ pc.printer_port }})</td>
+            </tr>
+            <tr>
+              <th>Monitores</th>
+              <td>{{ pc.monitors }}</td>
+            </tr>
+            <tr>
+              <th>IP</th>
+              <td>{{ pc.ip_address }}</td>
+            </tr>
+            <tr>
+              <th>Último reporte</th>
+              <td>{{ pc.last_report }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div><!-- /.card-body -->
+    </div><!-- /.card bloque 1 -->
 
-            <!-- Botón Desvincular UPS -->
-            <form action="{{ url_for('infrastructure.assign_ups_to_pc', ups_id=pc_ups.id) }}" method="POST" class="m-0">
-              <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
-              <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular UPS"
-                onclick="return confirm('¿Quitar UPS de este equipo?');">
-                <i class="bi bi-trash"></i> Desvincular UPS
-              </button>
-            </form>
+    <!-- BLOQUE 2: Infraestructura de Red & Energia -->
+    <div class="card shadow-sm mb-4">
+      <div class="gold-card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-diagram-3"></i> Infraestructura de Red y Energía</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+          style="border-color:rgba(255,255,255,0.4);color:#fff;font-size:0.78rem;" data-bs-toggle="modal"
+          data-bs-target="#modalEditarInfra">
+          <i class="bi bi-pencil"></i> Editar
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <p><strong>Edificio:</strong> {{ pc.building or '-' }}</p>
+            <p><strong>Piso:</strong> {{ pc.floor or '-' }}</p>
           </div>
+          <div class="col-md-4">
+            <p><strong>Switch:</strong> {{ pc.switch_name or '-' }} (Puerto {{ pc.switch_port or '-' }})</p>
+            <p><strong>Pachera:</strong> {{ pc.pachera_name or '-' }} (Boca {{ pc.pachera_port or '-' }})</p>
+          </div>
+          <!-- Integracion UPS -->
+          <div class="col-md-4 border-start">
+            <h6 class="text-primary fw-bold mb-2"><i class="bi bi-plug"></i> Respaldo Eléctrico (UPS)</h6>
+            {% if pc_ups %}
+            <p class="mb-1"><strong>UPS:</strong> {{ pc_ups.code }}</p>
+            <p class="mb-2"><strong>Modelo:</strong> {{ pc_ups.model }}</p>
+            {% if pc_ups.battery_code %}
+            <span class="badge bg-success"><i class="bi bi-battery-charging"></i> Batería: {{ pc_ups.battery_code
+              }}</span>
+            {% else %}
+            <span class="badge bg-danger"><i class="bi bi-battery"></i> Sin Batería</span>
+            {% endif %}
+            <div class="mt-2 d-flex gap-2">
+              <!-- Botón de Asignar/Cambiar Batería -->
+              <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                data-bs-target="#modalAssignBatteryToUPS" title="Asignar/Cambiar Batería">
+                <i class="bi bi-battery-half"></i> {% if pc_ups.battery_code %}Cambiar Batería{% else %}Asignar
+                Batería{%
+                endif %}
+              </button>
 
-          <!-- Modal Asignar Bateria a esta UPS -->
-          <div class="modal fade" id="modalAssignBatteryToUPS" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <form action="{{ url_for('infrastructure.assign_battery_to_ups', ups_id=pc_ups.id) }}" method="POST">
-                  <!-- Retornamos a la página anterior de la PC -->
-                  <input type="hidden" name="next" value="{{ request.path }}">
-                  <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title">Batería para UPS {{ pc_ups.code }}</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                      aria-label="Close"></button>
-                  </div>
-                  <div class="modal-body">
-                    <p>Seleccione qué batería del Stock se instalará en esta UPS. Si actualmente tiene una, se devolverá
-                      al Stock.</p>
-                    <div class="mb-3">
-                      <label class="form-label fw-bold">Batería Disponible:</label>
-                      <select class="form-select" name="battery_id">
-                        <option value="">-- Quitar batería / Ninguna --</option>
-                        {% for bat in baterias_disponibles %}
-                        <option value="{{ bat.id }}">{{ bat.code }} ({{ bat.brand_model }})</option>
-                        {% endfor %}
-                      </select>
+              <!-- Botón Desvincular UPS -->
+              <form action="{{ url_for('infrastructure.assign_ups_to_pc', ups_id=pc_ups.id) }}" method="POST"
+                class="m-0">
+                <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular UPS"
+                  onclick="return confirm('¿Quitar UPS de este equipo?');">
+                  <i class="bi bi-trash"></i> Desvincular UPS
+                </button>
+              </form>
+            </div>
+
+            <!-- Modal Asignar Bateria a esta UPS -->
+            <div class="modal fade" id="modalAssignBatteryToUPS" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <form action="{{ url_for('infrastructure.assign_battery_to_ups', ups_id=pc_ups.id) }}" method="POST">
+                    <!-- Retornamos a la página anterior de la PC -->
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <div class="modal-header bg-success text-white">
+                      <h5 class="modal-title">Batería para UPS {{ pc_ups.code }}</h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                     </div>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success">Guardar</button>
-                  </div>
-                </form>
+                    <div class="modal-body">
+                      <p>Seleccione qué batería del Stock se instalará en esta UPS. Si actualmente tiene una, se
+                        devolverá
+                        al Stock.</p>
+                      <div class="mb-3">
+                        <label class="form-label fw-bold">Batería Disponible:</label>
+                        <select class="form-select" name="battery_id">
+                          <option value="">-- Quitar batería / Ninguna --</option>
+                          {% for bat in baterias_disponibles %}
+                          <option value="{{ bat.id }}">{{ bat.code }} ({{ bat.brand_model }})</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                      <button type="submit" class="btn btn-success">Guardar</button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
+            {% else %}
+            <p class="text-muted small mb-2">Sin UPS asignada.</p>
+            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalAssignUPS">
+              <i class="bi bi-link"></i> Asignar UPS a este equipo
+            </button>
+            {% endif %}
           </div>
-          {% else %}
-          <p class="text-muted small mb-2">Sin UPS asignada.</p>
-          <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalAssignUPS">
-            <i class="bi bi-link"></i> Asignar UPS a este equipo
-          </button>
-          {% endif %}
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- BLOQUE 2.5: Componentes Asignados -->
-  <div class="card shadow-sm mb-4 border-info">
-    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-      <h5 class="mb-0"><i class="bi bi-cpu"></i> Periféricos y Componentes Asignados</h5>
-      <button class="btn btn-sm btn-light text-info fw-bold" data-bs-toggle="modal"
-        data-bs-target="#modalAssignComponent">
-        <i class="bi bi-plus-circle"></i> Vincular Componente
-      </button>
+    <!-- BLOQUE 2.5: Componentes Asignados -->
+    <div class="card shadow-sm mb-4 border-info">
+      <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-cpu"></i> Periféricos y Componentes Asignados</h5>
+        <button class="btn btn-sm btn-light text-info fw-bold" data-bs-toggle="modal"
+          data-bs-target="#modalAssignComponent">
+          <i class="bi bi-plus-circle"></i> Vincular Componente
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Tipo</th>
+              <th>Marca/Modelo</th>
+              <th>N° Serie</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for comp in pc_components if not comp.assigned_to_component_id %}
+            <tr>
+              <td><span class="fw-bold">{{ comp.component_type }}</span></td>
+              <td>{{ comp.brand_model }}</td>
+              <td class="text-muted">{{ comp.serial_number }}</td>
+              <td class="text-end">
+                {% if comp.component_type == 'DVR' %}
+                <!-- Botón para asignar un disco a este DVR -->
+                <button class="btn btn-sm btn-outline-success me-1"
+                  onclick="openAssignSubcomponentModal('{{ comp.id }}', '{{ comp.component_type }} ({{ comp.serial_number }})')"
+                  title="Agregar Disco Interno">
+                  <i class="bi bi-hdd-network"></i>
+                </button>
+                {% endif %}
+                <form action="{{ url_for('infrastructure.assign_component_to_pc', component_id=comp.id) }}"
+                  method="POST" class="d-inline">
+                  <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Devolver al stock y desvincular"
+                    onclick="return confirm('¿Desvincular componente del equipo? Pasará a Stock.');">
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            <!-- Sub-componentes de este padre (Ej: HDD de DVR) -->
+            {% for subc in pc_components if subc.assigned_to_component_id == comp.id %}
+            <tr class="table-secondary">
+              <td class="ps-4"><i class="bi bi-arrow-return-right text-muted me-1"></i> {{ subc.component_type }}
+              </td>
+              <td>{{ subc.brand_model }}</td>
+              <td class="text-muted">{{ subc.serial_number }}</td>
+              <td class="text-end">
+                <form action="{{ url_for('infrastructure.assign_component_to_component', component_id=subc.id) }}"
+                  method="POST" class="d-inline">
+                  <input type="hidden" name="parent_component_id" value=""> <!-- empty to unassign -->
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Devolver al stock"
+                    onclick="return confirm('¿Quitar este componente interno?');">
+                    <i class="bi bi-dash-circle"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+              <td colspan="4" class="text-center text-muted py-3">No hay componentes adicionales asignados a este
+                equipo.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div class="card-body p-0">
-      <table class="table table-hover mb-0">
-        <thead class="table-light">
+
+    <!-- BLOQUE 3: Tareas de la PC -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 class="mt-2 mb-0">Tareas</h3>
+      <!-- Botón duplicado para agregar tarea (abre el mismo modal) -->
+      {% if pc.pc_name != 'PC Generica' %}
+      <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
+        <i class="bi bi-plus-lg"></i> Nueva tarea
+      </button>
+      {% endif %}
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-striped table-hover">
+        <thead class="thead-light">
           <tr>
-            <th>Tipo</th>
-            <th>Marca/Modelo</th>
-            <th>N° Serie</th>
-            <th class="text-end">Acciones</th>
+          <tr>
+            <th style="width: 15%;">Fecha</th>
+            <th>Descripción</th>
+            <th style="width: 15%;">Solicitante</th>
+            <th style="width: 10%;">Técnico</th>
+            <th style="width: 10%;">Estado</th>
+            <th style="width: 20%;">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {% for comp in pc_components if not comp.assigned_to_component_id %}
+          {% for t in tareas %}
           <tr>
-            <td><span class="fw-bold">{{ comp.component_type }}</span></td>
-            <td>{{ comp.brand_model }}</td>
-            <td class="text-muted">{{ comp.serial_number }}</td>
-            <td class="text-end">
-              {% if comp.component_type == 'DVR' %}
-              <!-- Botón para asignar un disco a este DVR -->
-              <button class="btn btn-sm btn-outline-success me-1"
-                onclick="openAssignSubcomponentModal('{{ comp.id }}', '{{ comp.component_type }} ({{ comp.serial_number }})')"
-                title="Agregar Disco Interno">
-                <i class="bi bi-hdd-network"></i>
+            <td>
+              {% set f = t.created_at %}
+              {% if f and ' ' in f %}
+              {% set partes = f.split(' ') %}
+              {% set fecha = partes[0].split('-') %}
+              {% set hora = partes[1][:5] %}
+              {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }} {{ hora }}
+              {% else %}
+              {{ t.created_at }}
+              {% endif %}
+            </td>
+            <td>{{ t.descripcion }}</td>
+            <td>{{ t.solicitante or '' }}</td>
+            <td>{{ t.assigned_to or '-' }}</td>
+            <td>{{ t.estado }}</td>
+            <td>
+              {% if t.estado != 'Hecha' %}
+              <button type="button" class="btn btn-sm btn-success mb-1"
+                onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}')">
+                <i class="bi bi-check-lg"></i> Hecha
               </button>
               {% endif %}
-              <form action="{{ url_for('infrastructure.assign_component_to_pc', component_id=comp.id) }}" method="POST"
-                class="d-inline">
-                <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
-                <button type="submit" class="btn btn-sm btn-outline-danger" title="Devolver al stock y desvincular"
-                  onclick="return confirm('¿Desvincular componente del equipo? Pasará a Stock.');">
-                  <i class="bi bi-x-circle"></i>
+
+              {% if pc.pc_name == 'PC Generica' %}
+              <button type="button" class="btn btn-sm btn-warning mb-1" onclick="openMigrateModal('{{ t.id }}')">
+                <i class="bi bi-arrow-right"></i> Asignar
+              </button>
+              {% endif %}
+
+              <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline"
+                onsubmit="return confirm('¿Borrar esta tarea?');">
+                <button type="submit" class="btn btn-sm btn-danger mb-1">
+                  Borrar
                 </button>
               </form>
             </td>
           </tr>
-          <!-- Sub-componentes de este padre (Ej: HDD de DVR) -->
-          {% for subc in pc_components if subc.assigned_to_component_id == comp.id %}
-          <tr class="table-secondary">
-            <td class="ps-4"><i class="bi bi-arrow-return-right text-muted me-1"></i> {{ subc.component_type }}</td>
-            <td>{{ subc.brand_model }}</td>
-            <td class="text-muted">{{ subc.serial_number }}</td>
-            <td class="text-end">
-              <form action="{{ url_for('infrastructure.assign_component_to_component', component_id=subc.id) }}"
-                method="POST" class="d-inline">
-                <input type="hidden" name="parent_component_id" value=""> <!-- empty to unassign -->
-                <button type="submit" class="btn btn-sm btn-outline-danger" title="Devolver al stock"
-                  onclick="return confirm('¿Quitar este componente interno?');">
-                  <i class="bi bi-dash-circle"></i>
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
           {% else %}
           <tr>
-            <td colspan="4" class="text-center text-muted py-3">No hay componentes adicionales asignados a este equipo.
-            </td>
+            <td colspan="4" class="text-center">Sin tareas aún.</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-  </div>
+    <!-- FIN BLOQUE 3 -->
 
-  <!-- BLOQUE 3: Tareas de la PC -->
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <h3 class="mt-2 mb-0">Tareas</h3>
-    <!-- Botón duplicado para agregar tarea (abre el mismo modal) -->
-    {% if pc.pc_name != 'PC Generica' %}
-    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
-      <i class="bi bi-plus-lg"></i> Nueva tarea
-    </button>
-    {% endif %}
-  </div>
+    <!-- BLOQUE 4: Historial de Cambios -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 class="mt-4 mb-0">Historial de Cambios</h3>
+      <button type="button" class="btn btn-sm btn-outline-dark mt-3" data-bs-toggle="modal"
+        data-bs-target="#modalManualAudit">
+        <i class="bi bi-pencil-square"></i> Registrar Cambio Manual
+      </button>
+    </div>
+    <div class="table-responsive mb-4">
+      <table class="table table-sm table-bordered">
+        <thead class="table-light">
+          <tr>
+            <th>Fecha</th>
+            <th>Campo</th>
+            <th>Valor Anterior</th>
+            <th>Valor Nuevo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in audit_logs %}
+          <tr>
+            <td>
+              {% set f = log.changed_at %}
+              {% if f and ' ' in f %}
+              {% set partes = f.split(' ') %}
+              {% set fecha = partes[0].split('-') %}
+              {% set hora = partes[1][:5] %}
+              {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }} {{ hora }}
+              {% else %}
+              {{ log.changed_at }}
+              {% endif %}
+            </td>
+            <td>{{ log.field }}</td>
+            <td class="text-danger">{{ log.old_value }}</td>
+            <td class="text-success">{{ log.new_value }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="text-center text-muted">Sin cambios registrados.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div><!-- /.table-responsive historial -->
+  </div><!-- /.container-fluid main -->
 
-  <div class="table-responsive">
-    <table class="table table-sm table-striped table-hover">
-      <thead class="thead-light">
-        <tr>
-        <tr>
-          <th style="width: 15%;">Fecha</th>
-          <th>Descripción</th>
-          <th style="width: 15%;">Solicitante</th>
-          <th style="width: 10%;">Técnico</th>
-          <th style="width: 10%;">Estado</th>
-          <th style="width: 20%;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for t in tareas %}
-        <tr>
-          <td>
-            {% set f = t.created_at %}
-            {% if f and ' ' in f %}
-            {% set partes = f.split(' ') %}
-            {% set fecha = partes[0].split('-') %}
-            {% set hora = partes[1][:5] %}
-            {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }} {{ hora }}
-            {% else %}
-            {{ t.created_at }}
-            {% endif %}
-          </td>
-          <td>{{ t.descripcion }}</td>
-          <td>{{ t.solicitante or '' }}</td>
-          <td>{{ t.assigned_to or '-' }}</td>
-          <td>{{ t.estado }}</td>
-          <td>
-            {% if t.estado != 'Hecha' %}
-            <button type="button" class="btn btn-sm btn-success mb-1"
-              onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}')">
-              <i class="bi bi-check-lg"></i> Hecha
-            </button>
-            {% endif %}
-
-            {% if pc.pc_name == 'PC Generica' %}
-            <button type="button" class="btn btn-sm btn-warning mb-1" onclick="openMigrateModal('{{ t.id }}')">
-              <i class="bi bi-arrow-right"></i> Asignar
-            </button>
-            {% endif %}
-
-            <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline"
-              onsubmit="return confirm('¿Borrar esta tarea?');">
-              <button type="submit" class="btn btn-sm btn-danger mb-1">
-                Borrar
-              </button>
-            </form>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="4" class="text-center">Sin tareas aún.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  <!-- FIN BLOQUE 3 -->
-
-  <!-- BLOQUE 4: Historial de Cambios -->
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <h3 class="mt-4 mb-0">Historial de Cambios</h3>
-    <button type="button" class="btn btn-sm btn-outline-dark mt-3" data-bs-toggle="modal"
-      data-bs-target="#modalManualAudit">
-      <i class="bi bi-pencil-square"></i> Registrar Cambio Manual
-    </button>
-  </div>
-  <div class="table-responsive mb-4">
-    <table class="table table-sm table-bordered">
-      <thead class="table-light">
-        <tr>
-          <th>Fecha</th>
-          <th>Campo</th>
-          <th>Valor Anterior</th>
-          <th>Valor Nuevo</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for log in audit_logs %}
-        <tr>
-          <td>
-            {% set f = log.changed_at %}
-            {% if f and ' ' in f %}
-            {% set partes = f.split(' ') %}
-            {% set fecha = partes[0].split('-') %}
-            {% set hora = partes[1][:5] %}
-            {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }} {{ hora }}
-            {% else %}
-            {{ log.changed_at }}
-            {% endif %}
-          </td>
-          <td>{{ log.field }}</td>
-          <td class="text-danger">{{ log.old_value }}</td>
-          <td class="text-success">{{ log.new_value }}</td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="4" class="text-center text-muted">Sin cambios registrados.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary btn-sm mt-3">
-    Volver al dashboard
-  </a>
 
   <!-- Modal Nueva Tarea -->
   <div class="modal fade" id="modalNuevaTarea" tabindex="-1" role="dialog" aria-labelledby="modalNuevaTareaLabel"
@@ -699,7 +774,8 @@
                 required>
                 <option value="">-- Seleccionar --</option>
                 {% for c in available_components %}
-                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number }})
+                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number
+                  }})
                 </option>
                 {% endfor %}
               </select>
@@ -734,7 +810,8 @@
                 required>
                 <option value="">-- Seleccionar --</option>
                 {% for c in available_components %}
-                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number }})
+                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number
+                  }})
                 </option>
                 {% endfor %}
               </select>
