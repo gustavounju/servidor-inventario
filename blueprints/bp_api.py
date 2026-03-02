@@ -41,11 +41,23 @@ def process_inventory_data(data):
 
     pm = (printer_model or "").upper()
     pp = (printer_port or "").upper()
-    sin_modelo = pm in ("", "N/A", "NINGUNA")
+    
+    esta_desconectada = "DESCONECTADA" in pp
+    es_local = pp.startswith("USB") or pp.startswith("LPT")
+
+    # Si la impresora está desconectada y es local, tratarla como SIN IMPRESORA
+    if esta_desconectada and es_local:
+        printer_model = "SIN IMPRESORA"
+        printer_port = "N/A"
+        data["Printer_Model"] = "SIN IMPRESORA"
+        data["Printer_Port"] = "N/A"
+        pm = "SIN IMPRESORA"
+        pp = "N/A"
+        esta_desconectada = False # Reset so it doesn't trigger other disconnect alerts if not wanted, though it's already "SIN IMPRESORA"
+
+    sin_modelo = pm in ("", "N/A", "NINGUNA", "SIN IMPRESORA")
     es_virtual = ("PDF" in pm) or ("XPS" in pm) or ("ONENOTE" in pm)
     es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp)
-    es_local = pp.startswith("USB") or pp.startswith("LPT")
-    esta_desconectada = "DESCONECTADA" in pp
 
     if sin_modelo or es_virtual or esta_desconectada: alerta_sin_impresora = 1
     else: alerta_sin_impresora = 0
