@@ -5,22 +5,34 @@ from database.db_core import get_db_connection
 
 # Helper para fechas en español
 def format_date_es(d_obj):
+    if not d_obj: return ""
     if isinstance(d_obj, str):
         try:
             d_obj = datetime.datetime.strptime(d_obj, "%Y-%m-%d")
         except:
             return d_obj
     dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
-    return f"{dias[d_obj.weekday()]} {d_obj.day:02d}/{d_obj.month:02d}/{d_obj.year}"
-
-def format_datetime_es(datetime_str):
-    if not datetime_str: return ""
     try:
-        dt_obj = datetime.datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
-        return f"{dt_obj.day:02d}/{dt_obj.month:02d}/{dt_obj.year} {dt_obj.hour:02d}:{dt_obj.minute:02d}"
+        return f"{dias[d_obj.weekday()]} {d_obj.day:02d}/{d_obj.month:02d}/{d_obj.year}"
     except:
-        if ' ' in datetime_str: return datetime_str.split(' ')[1][:5]
-        return datetime_str
+        return str(d_obj)
+
+def format_datetime_es(dt_val):
+    if not dt_val: return ""
+    
+    # Si ya es un objeto datetime (MySQL)
+    if isinstance(dt_val, datetime.datetime):
+        return f"{dt_val.day:02d}/{dt_val.month:02d}/{dt_val.year} {dt_val.hour:02d}:{dt_val.minute:02d}"
+    
+    # Si es un string (legacy SQLite)
+    if isinstance(dt_val, str):
+        try:
+            dt_obj = datetime.datetime.strptime(dt_val, "%Y-%m-%d %H:%M:%S")
+            return f"{dt_obj.day:02d}/{dt_obj.month:02d}/{dt_obj.year} {dt_obj.hour:02d}:{dt_obj.minute:02d}"
+        except:
+            if ' ' in dt_val: return dt_val.split(' ')[1][:5]
+            return dt_val
+    return str(dt_val)
 
 class PDFReport(FPDF):
     def __init__(self, title="Reporte - Inventario GOLD", orientation='P', unit='mm', format='A4'):

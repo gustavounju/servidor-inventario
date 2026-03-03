@@ -405,15 +405,7 @@
           {% for t in tareas %}
           <tr>
             <td>
-              {% set f = t.created_at %}
-              {% if f and ' ' in f %}
-              {% set partes = f.split(' ') %}
-              {% set fecha = partes[0].split('-') %}
-              {% set hora = partes[1][:5] %}
-              {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }} {{ hora }}
-              {% else %}
-              {{ t.created_at }}
-              {% endif %}
+              {{ t.created_at | datetime_es }}
             </td>
             <td>{{ t.descripcion }}</td>
             <td>{{ t.solicitante or '' }}</td>
@@ -473,15 +465,7 @@
           {% for log in audit_logs %}
           <tr>
             <td>
-              {% set f = log.changed_at %}
-              {% if f and ' ' in f %}
-              {% set partes = f.split(' ') %}
-              {% set fecha = partes[0].split('-') %}
-              {% set hora = partes[1][:5] %}
-              {{ fecha[2] }}/{{ fecha[1] }}/{{ fecha[0] }} {{ hora }}
-              {% else %}
-              {{ log.changed_at }}
-              {% endif %}
+              {{ log.changed_at | datetime_es }}
             </td>
             <td>{{ log.field }}</td>
             <td class="text-danger">{{ log.old_value }}</td>

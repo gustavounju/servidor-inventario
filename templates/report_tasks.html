@@ -286,7 +286,9 @@
         function fmtDatetime(s) {
             if (!s) return '—';
             try {
-                const [date, time] = s.split(' ');
+                // Soportar tanto espacio como 'T' (ISO)
+                const sep = s.includes('T') ? 'T' : ' ';
+                const [date, time] = s.split(sep);
                 if (!time) return s;
                 return time.substring(0, 5);
             } catch { return s; }

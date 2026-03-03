@@ -110,7 +110,7 @@ def create_loose_task():
 
     with get_db_connection() as conn:
         conn.execute(
-            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name) VALUES (%s, %s, %s, datetime('now', 'localtime'), %s, %s, %s, 'PC Generica')""",
+            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name) VALUES (%s, %s, %s, NOW(), %s, %s, %s, 'PC Generica')""",
             (descripcion, solicitante, estado, categoria, assigned_to, fuero)
         )
         conn.commit()
