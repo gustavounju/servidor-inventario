@@ -1,16 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, url_for, abort, send_file
 import os
 from datetime import datetime as dt
-from database.db_core import get_db_connection, DB_FILE
+from database.db_core import get_db_connection
 import socket
 from utils.constants import FUERO_MAPPING, detect_fuero
 import datetime
 from datetime import datetime as dt
 from io import BytesIO
 from openpyxl import Workbook
-import socket
-
-from database.db_core import get_db_connection
 from utils.constants import FUERO_MAPPING, FUERO_COLORS
 
 bp_dashboard = Blueprint('dashboard', __name__)
@@ -31,7 +28,7 @@ def view_graphics():
             kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
             kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE '%Windows 7%'").fetchone()["c"]
             kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE '%Windows 10%' OR os_name LIKE '%Windows 11%')").fetchone()["c"]
-            kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = DATE('now', 'localtime')").fetchone()["c"]
+            kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
             kpi_tareas_pendientes_count = conn.execute("SELECT COUNT(DISTINCT pc_name) as c FROM tasks WHERE estado != 'Hecha' AND pc_name IS NOT NULL AND pc_name != ''").fetchone()["c"]
             kpi_tareas_pendientes_total = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
 
@@ -99,10 +96,10 @@ def dashboard():
             count_sql = "SELECT COUNT(*) as c FROM pcs p WHERE 1=1"
             params = []
             if q:
-                count_sql += " AND p.pc_name LIKE ?"
+                count_sql += " AND p.pc_name LIKE %s"
                 params.append(f"%{q}%")
             if estado in ("True", "False"):
-                count_sql += " AND p.is_active = ?"
+                count_sql += " AND p.is_active = %s"
                 params.append(estado)
             if alerta == "ram": count_sql += " AND p.alerta_ram_baja = 1"
             elif alerta == "sinimp": count_sql += " AND p.alerta_sin_impresora = 1"
@@ -123,8 +120,8 @@ def dashboard():
                 LEFT JOIN ad_users u ON LOWER(p.last_user) = u.username
                 WHERE 1=1
             """
-            if q: base_sql += " AND p.pc_name LIKE ?"
-            if estado in ("True", "False"): base_sql += " AND p.is_active = ?"
+            if q: base_sql += " AND p.pc_name LIKE %s"
+            if estado in ("True", "False"): base_sql += " AND p.is_active = %s"
             if alerta == "ram": base_sql += " AND p.alerta_ram_baja = 1"
             elif alerta == "sinimp": base_sql += " AND p.alerta_sin_impresora = 1"
             elif alerta == "red": base_sql += " AND p.alerta_impresora_red = 1"
@@ -147,7 +144,7 @@ def dashboard():
                     WHEN p.pc_name = 'PC Generica' THEN 0 
                     WHEN p.pc_name = 'Infraestructura' THEN 1 
                     ELSE 2 
-                END, {sort_col_sql} {sort_dir_sql} NULLS LAST LIMIT ? OFFSET ?
+                END, {sort_col_sql} {sort_dir_sql} LIMIT %s OFFSET %s
             """
             params.extend([per_page, offset])
             pcs_data = [dict(row) for row in conn.execute(base_sql, params).fetchall()]
@@ -159,7 +156,7 @@ def dashboard():
             kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
             kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE '%Windows 7%'").fetchone()["c"]
             kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE '%Windows 10%' OR os_name LIKE '%Windows 11%')").fetchone()["c"]
-            kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = DATE('now', 'localtime')").fetchone()["c"]
+            kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
             kpi_tareas_pendientes_total = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
 
             all_pcs_dropdown = [dict(row) for row in conn.execute(
@@ -310,26 +307,13 @@ def export_inventory_pdf():
 
 @bp_dashboard.route("/download_db")
 def download_db():
-    try:
-        if not os.path.exists(DB_FILE):
-            return "Base de datos no encontrada", 404
-            
-        filename = f"inventario_backup_{dt.now().strftime('%Y%m%d_%H%M')}.db"
-        
-        return send_file(
-            DB_FILE,
-            as_attachment=True,
-            download_name=filename,
-            mimetype="application/x-sqlite3"
-        )
-    except Exception as e:
-        return f"Error generando backup: {e}", 500
+    return "Backup de BD no disponible en modo MySQL. Use mysqldump desde el servidor.", 503
 
 @bp_dashboard.route("/decommission/<string:pc_name>", methods=["GET"])
 def decommission_pc(pc_name):
     with get_db_connection() as conn:
         conn.execute(
-            "UPDATE pcs SET is_active = 'False' WHERE pc_name = ?", (pc_name,)
+            "UPDATE pcs SET is_active = 'False' WHERE pc_name = %s", (pc_name,)
         )
         conn.commit()
     return redirect(url_for("dashboard.dashboard"))
@@ -340,7 +324,7 @@ def reactivate_pc(pc_name):
     try:
         with get_db_connection() as conn:
             conn.execute(
-                "UPDATE pcs SET is_active = 'True' WHERE pc_name = ?",
+                "UPDATE pcs SET is_active = 'True' WHERE pc_name = %s",
                 (pc_name,),
             )
             conn.commit()
@@ -360,7 +344,7 @@ def refresh_fueros():
                 name = pc["pc_name"]
                 nuevo_fuero = detect_fuero(name)
                 conn.execute(
-                    "UPDATE pcs SET fuero = ? WHERE pc_name = ?",
+                    "UPDATE pcs SET fuero = %s WHERE pc_name = %s",
                     (nuevo_fuero, name)
                 )
                 count += 1
@@ -376,10 +360,10 @@ def delete_permanent_pc(pc_name):
     """Borrado definitivo de una PC y sus tareas asociadas."""
     try:
         with get_db_connection() as conn:
-            conn.execute("DELETE FROM tasks WHERE pc_name = ?", (pc_name,))
-            conn.execute("DELETE FROM pcs WHERE pc_name = ?", (pc_name,))
+            conn.execute("DELETE FROM tasks WHERE pc_name = %s", (pc_name,))
+            conn.execute("DELETE FROM pcs WHERE pc_name = %s", (pc_name,))
             conn.execute(
-                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, changed_at) VALUES (?, 'PERMANENT_DELETE', 'Active/Inactive', 'DELETED', datetime('now', '-3 hours'))",
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'PERMANENT_DELETE', 'Active/Inactive', 'DELETED')",
                 (pc_name,)
             )
             conn.commit()
@@ -393,10 +377,10 @@ def delete_permanent_pc(pc_name):
 @bp_dashboard.route("/pc/<pc_name>")
 def pc_detail(pc_name):
     with get_db_connection() as conn:
-        pc = conn.execute("SELECT * FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
-        tareas = conn.execute("SELECT id, pc_name, created_at, descripcion, estado, solicitante, assigned_to FROM tasks WHERE pc_name = ? ORDER BY created_at DESC", (pc_name,)).fetchall()
+        pc = conn.execute("SELECT * FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+        tareas = conn.execute("SELECT id, pc_name, created_at, descripcion, estado, solicitante, assigned_to FROM tasks WHERE pc_name = %s ORDER BY created_at DESC", (pc_name,)).fetchall()
         technicians = [dict(row) for row in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
-        audit_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = ? ORDER BY changed_at DESC", (pc_name,)).fetchall()
+        audit_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = %s ORDER BY changed_at DESC", (pc_name,)).fetchall()
         all_pcs = conn.execute("SELECT pc_name, fuero, last_user FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
         
         # Buscar Data de la UPS asignada
@@ -404,7 +388,7 @@ def pc_detail(pc_name):
             SELECT u.*, b.serial_number as battery_code 
             FROM ups_inventory u
             LEFT JOIN components b ON u.assigned_battery_id = b.id
-            WHERE u.assigned_pc = ?
+            WHERE u.assigned_pc = %s
         ''', (pc_name,)).fetchone()
         
         # UPS Disponibles en caso de querer asignarle una (UPS sin asignar)
@@ -414,7 +398,7 @@ def pc_detail(pc_name):
         pc_components = conn.execute('''
             SELECT id, serial_number, component_type, brand_model, status, assigned_to_component_id 
             FROM components 
-            WHERE assigned_pc = ?
+            WHERE assigned_pc = %s
             ORDER BY assigned_to_component_id ASC, component_type
         ''', (pc_name,)).fetchall()
         
@@ -443,9 +427,9 @@ def update_pc_infrastructure(pc_name):
     
     try:
         with get_db_connection() as conn:
-            old_pc = conn.execute("SELECT * FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+            old_pc = conn.execute("SELECT * FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
             conn.execute(
-                """UPDATE pcs SET building = ?, floor = ?, switch_name = ?, switch_port = ?, pachera_name = ?, pachera_port = ? WHERE pc_name = ?""",
+                """UPDATE pcs SET building = %s, floor = %s, switch_name = %s, switch_port = %s, pachera_name = %s, pachera_port = %s WHERE pc_name = %s""",
                 (building, floor, switch_name, switch_port, pachera_name, pachera_port, pc_name)
             )
             if old_pc:
@@ -458,7 +442,7 @@ def update_pc_infrastructure(pc_name):
                     old_str = str(old) if old is not None else ""
                     new_str = str(new) if new is not None else ""
                     if old_str != new_str:
-                        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", (pc_name, field, old_str, new_str))
+                        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (pc_name, field, old_str, new_str))
             conn.commit()
         return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
     except Exception as e:

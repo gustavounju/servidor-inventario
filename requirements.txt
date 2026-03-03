@@ -6,3 +6,5 @@ waitress
 
 google-genai
 python-dotenv
+pymysql
+cryptography

@@ -1,7 +1,8 @@
-import sqlite3
 import os
+from dotenv import load_dotenv
+from database.db_core import get_db_connection
 
-DB_FILE = "inventario.db"
+load_dotenv()
 
 # Datos extraídos manualmente de las imágenes
 # Formato: (PC_NAME, PACHERA_NAME, PACHERA_PORT, SWITCH_NAME, SWITCH_PORT, USUARIO_UBICACION)
@@ -117,10 +118,7 @@ datos_switches = [
 ]
 
 def ensure_columns(conn):
-    cursor = conn.cursor()
-    cursor.execute("PRAGMA table_info(pcs)")
-    columns = [info[1] for info in cursor.fetchall()]
-    
+    db_name = os.environ.get("DB_NAME", "inventario_dev")
     new_columns = {
         "switch_name": "TEXT",
         "switch_port": "TEXT",
@@ -129,68 +127,62 @@ def ensure_columns(conn):
         "building": "TEXT",
         "floor": "TEXT"
     }
-    
     for col, dtype in new_columns.items():
-        if col not in columns:
+        result = conn.execute(
+            "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS "
+            "WHERE TABLE_SCHEMA=%s AND TABLE_NAME='pcs' AND COLUMN_NAME=%s",
+            (db_name, col)
+        ).fetchone()
+        if not result or result["cnt"] == 0:
             print(f"Agregando columna '{col}'...")
             try:
-                cursor.execute(f"ALTER TABLE pcs ADD COLUMN {col} {dtype}")
+                conn.execute(f"ALTER TABLE pcs ADD COLUMN {col} {dtype}")
             except Exception as e:
                 print(f"Error agregando columna {col}: {e}")
-    conn.commit()
 
 def importar():
     print("Iniciando importación de datos de red...")
-    if not os.path.exists(DB_FILE):
-        print("Error: No se encontró la base de datos.")
-        return
 
-    conn = sqlite3.connect(DB_FILE)
-    ensure_columns(conn) # Asegurar que existan las columnas
-    cursor = conn.cursor()
+    with get_db_connection() as conn:
+        ensure_columns(conn)
 
-    count_pachera = 0
-    for pc, pachera, port, user_loc in datos_pacheras:
-        # Update existing
-        cursor.execute("""
-            UPDATE pcs 
-            SET building = 'Edificio Central', floor = 'Piso 2', pachera_name = ?, pachera_port = ?,
-                last_user = CASE WHEN last_user IS NULL OR last_user = '' THEN ? ELSE last_user END
-            WHERE pc_name = ?
-        """, (pachera, port, user_loc, pc))
-        
-        if cursor.rowcount == 0:
-            print(f"Creando PC {pc} con datos de Pachera...")
-            cursor.execute("""
-                INSERT INTO pcs (pc_name, building, floor, pachera_name, pachera_port, last_user, is_active, os_name)
-                VALUES (?, 'Edificio Central', 'Piso 2', ?, ?, ?, 'True', 'Desconocido')
-            """, (pc, pachera, port, user_loc))
-            count_pachera += 1
-        else:
+        count_pachera = 0
+        for pc, pachera, port, user_loc in datos_pacheras:
+            conn.execute("""
+                UPDATE pcs
+                SET building = 'Edificio Central', floor = 'Piso 2', pachera_name = %s, pachera_port = %s,
+                    last_user = CASE WHEN last_user IS NULL OR last_user = '' THEN %s ELSE last_user END
+                WHERE pc_name = %s
+            """, (pachera, port, user_loc, pc))
+
+            if conn.cursor.rowcount == 0:
+                print(f"Creando PC {pc} con datos de Pachera...")
+                conn.execute("""
+                    INSERT INTO pcs (pc_name, building, floor, pachera_name, pachera_port, last_user, is_active, os_name)
+                    VALUES (%s, 'Edificio Central', 'Piso 2', %s, %s, %s, 'True', 'Desconocido')
+                """, (pc, pachera, port, user_loc))
             count_pachera += 1
 
-    count_switch = 0
-    for pc, switch, port, user_loc in datos_switches:
-        cursor.execute("""
-            UPDATE pcs 
-            SET building = 'Edificio Central', floor = 'Piso 2', switch_name = ?, switch_port = ?,
-                last_user = CASE WHEN last_user IS NULL OR last_user = '' THEN ? ELSE last_user END
-            WHERE pc_name = ?
-        """, (switch, port, user_loc, pc))
-        
-        if cursor.rowcount > 0:
-            count_switch += 1
-        else:
-             print(f"Creando PC {pc} con datos de Switch...")
-             cursor.execute("""
-                INSERT INTO pcs (pc_name, building, floor, switch_name, switch_port, last_user, is_active, os_name)
-                VALUES (?, 'Edificio Central', 'Piso 2', ?, ?, ?, 'True', 'Desconocido')
-            """, (pc, switch, port, user_loc))
-             count_switch += 1
+        count_switch = 0
+        for pc, switch, port, user_loc in datos_switches:
+            conn.execute("""
+                UPDATE pcs
+                SET building = 'Edificio Central', floor = 'Piso 2', switch_name = %s, switch_port = %s,
+                    last_user = CASE WHEN last_user IS NULL OR last_user = '' THEN %s ELSE last_user END
+                WHERE pc_name = %s
+            """, (switch, port, user_loc, pc))
 
-    conn.commit()
-    conn.close()
-    print(f"Importación finalizada.")
+            if conn.cursor.rowcount > 0:
+                count_switch += 1
+            else:
+                print(f"Creando PC {pc} con datos de Switch...")
+                conn.execute("""
+                    INSERT INTO pcs (pc_name, building, floor, switch_name, switch_port, last_user, is_active, os_name)
+                    VALUES (%s, 'Edificio Central', 'Piso 2', %s, %s, %s, 'True', 'Desconocido')
+                """, (pc, switch, port, user_loc))
+                count_switch += 1
+
+    print("Importación finalizada.")
     print(f"Se actualizaron/crearon datos de Pachera para {count_pachera} registros.")
     print(f"Se actualizaron/crearon datos de Switch para {count_switch} registros.")
 

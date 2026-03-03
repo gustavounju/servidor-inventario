@@ -63,13 +63,13 @@ def add_ups():
     try:
         with get_db_connection() as conn:
             conn.execute(
-                "INSERT INTO ups_inventory (code, model, supplier, invoice_number) VALUES (?, ?, ?, ?)",
+                "INSERT INTO ups_inventory (code, model, supplier, invoice_number) VALUES (%s, %s, %s, %s)",
                 (code, model, supplier, invoice_number)
             )
             conn.commit()
         flash(f"UPS {code} agregada exitosamente.", "success")
     except Exception as e:
-        flash(f"Error al agregar UPS (¿código duplicado?): {e}", "error")
+        flash(f"Error al agregar UPS (¿código duplicado%s): {e}", "error")
         
     return redirect(url_for('infrastructure.index'))
 
@@ -80,7 +80,7 @@ def assign_battery_to_ups(ups_id):
     try:
         with get_db_connection() as conn:
             # Get current UPS to see if it already has a battery
-            ups = conn.execute("SELECT assigned_battery_id, code FROM ups_inventory WHERE id = ?", (ups_id,)).fetchone()
+            ups = conn.execute("SELECT assigned_battery_id, code FROM ups_inventory WHERE id = %s", (ups_id,)).fetchone()
             if not ups:
                 flash("UPS no encontrada", "error")
                 return redirect(url_for('infrastructure.index'))
@@ -89,23 +89,23 @@ def assign_battery_to_ups(ups_id):
             
             # If removing battery or changing it, set old battery back to Stock
             if old_battery_id:
-                old_bat_data = conn.execute("SELECT serial_number FROM components WHERE id = ?", (old_battery_id,)).fetchone()
+                old_bat_data = conn.execute("SELECT serial_number FROM components WHERE id = %s", (old_battery_id,)).fetchone()
                 old_bat_sn = old_bat_data['serial_number'] if old_bat_data else str(old_battery_id)
-                conn.execute("UPDATE components SET status = 'Stock' WHERE id = ?", (old_battery_id,))
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
+                conn.execute("UPDATE components SET status = 'Stock' WHERE id = %s", (old_battery_id,))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
                              (f"UPS:{ups['code']}", "Bateria Retirada", old_bat_sn, "None"))
                 
             # If assigning a new battery
             if battery_id:
-                new_bat_data = conn.execute("SELECT serial_number FROM components WHERE id = ?", (battery_id,)).fetchone()
+                new_bat_data = conn.execute("SELECT serial_number FROM components WHERE id = %s", (battery_id,)).fetchone()
                 new_bat_sn = new_bat_data['serial_number'] if new_bat_data else str(battery_id)
-                conn.execute("UPDATE ups_inventory SET assigned_battery_id = ? WHERE id = ?", (battery_id, ups_id))
-                conn.execute("UPDATE components SET status = 'Instalado' WHERE id = ?", (battery_id,))
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
+                conn.execute("UPDATE ups_inventory SET assigned_battery_id = %s WHERE id = %s", (battery_id, ups_id))
+                conn.execute("UPDATE components SET status = 'Instalado' WHERE id = %s", (battery_id,))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
                              (f"UPS:{ups['code']}", "Bateria RAM", "None", new_bat_sn))
             else:
                 # Just removing
-                conn.execute("UPDATE ups_inventory SET assigned_battery_id = NULL WHERE id = ?", (ups_id,))
+                conn.execute("UPDATE ups_inventory SET assigned_battery_id = NULL WHERE id = %s", (ups_id,))
                 
             conn.commit()
             flash("Asignación de batería actualizada.", "success")
@@ -121,19 +121,19 @@ def assign_ups_to_pc(ups_id):
     
     try:
         with get_db_connection() as conn:
-            ups = conn.execute("SELECT assigned_pc, code FROM ups_inventory WHERE id = ?", (ups_id,)).fetchone()
+            ups = conn.execute("SELECT assigned_pc, code FROM ups_inventory WHERE id = %s", (ups_id,)).fetchone()
             if not ups: return redirect(url_for('infrastructure.index'))
             
             old_pc = ups['assigned_pc']
             
             if pc_name:
-                conn.execute("UPDATE ups_inventory SET assigned_pc = ? WHERE id = ?", (pc_name, ups_id))
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
+                conn.execute("UPDATE ups_inventory SET assigned_pc = %s WHERE id = %s", (pc_name, ups_id))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
                              (pc_name, "UPS Asignada", str(old_pc), f"{ups['code']}"))
             else:
-                conn.execute("UPDATE ups_inventory SET assigned_pc = NULL WHERE id = ?", (ups_id,))
+                conn.execute("UPDATE ups_inventory SET assigned_pc = NULL WHERE id = %s", (ups_id,))
                 if old_pc:
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
                                  (old_pc, "UPS Retirada", f"{ups['code']}", "None"))
             
             conn.commit()
@@ -147,11 +147,11 @@ def assign_ups_to_pc(ups_id):
 def delete_ups(id):
     try:
         with get_db_connection() as conn:
-            ups = conn.execute("SELECT assigned_battery_id FROM ups_inventory WHERE id = ?", (id,)).fetchone()
+            ups = conn.execute("SELECT assigned_battery_id FROM ups_inventory WHERE id = %s", (id,)).fetchone()
             if ups and ups['assigned_battery_id']:
                 # Liberar bateria
-                conn.execute("UPDATE components SET status = 'Stock' WHERE id = ?", (ups['assigned_battery_id'],))
-            conn.execute("DELETE FROM ups_inventory WHERE id = ?", (id,))
+                conn.execute("UPDATE components SET status = 'Stock' WHERE id = %s", (ups['assigned_battery_id'],))
+            conn.execute("DELETE FROM ups_inventory WHERE id = %s", (id,))
             conn.commit()
             flash("UPS eliminada.", "success")
     except Exception as e:
@@ -173,13 +173,13 @@ def add_component():
     try:
         with get_db_connection() as conn:
             conn.execute(
-                "INSERT INTO components (serial_number, component_type, brand_model, supplier_name, remito_number) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO components (serial_number, component_type, brand_model, supplier_name, remito_number) VALUES (%s, %s, %s, %s, %s)",
                 (serial_number, component_type, brand_model, supplier_name, remito_number)
             )
             conn.commit()
         flash(f"Componente {component_type} ({serial_number}) registrado exitosamente.", "success")
     except Exception as e:
-        flash(f"Error al agregar componente (¿serie duplicada?): {e}", "error")
+        flash(f"Error al agregar componente (¿serie duplicada%s): {e}", "error")
         
     return redirect(url_for('infrastructure.index'))
 
@@ -189,19 +189,19 @@ def assign_component_to_pc(component_id):
     
     try:
         with get_db_connection() as conn:
-            comp = conn.execute("SELECT assigned_pc, serial_number, component_type FROM components WHERE id = ?", (component_id,)).fetchone()
+            comp = conn.execute("SELECT assigned_pc, serial_number, component_type FROM components WHERE id = %s", (component_id,)).fetchone()
             if not comp: return redirect(url_for('infrastructure.index'))
             
             old_pc = comp['assigned_pc']
             
             if pc_name:
-                conn.execute("UPDATE components SET assigned_pc = ?, assigned_to_component_id = NULL, status = 'Instalado' WHERE id = ?", (pc_name, component_id))
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
+                conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = 'Instalado' WHERE id = %s", (pc_name, component_id))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
                              (pc_name, f"{comp['component_type']} Asignado", str(old_pc), comp['serial_number']))
             else:
-                conn.execute("UPDATE components SET assigned_pc = NULL, status = 'Stock' WHERE id = ?", (component_id,))
+                conn.execute("UPDATE components SET assigned_pc = NULL, status = 'Stock' WHERE id = %s", (component_id,))
                 if old_pc:
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
                                  (old_pc, f"{comp['component_type']} Retirado", comp['serial_number'], "None"))
             
             conn.commit()
@@ -217,21 +217,21 @@ def assign_component_to_component(component_id):
     
     try:
         with get_db_connection() as conn:
-            comp = conn.execute("SELECT assigned_to_component_id, serial_number, component_type FROM components WHERE id = ?", (component_id,)).fetchone()
+            comp = conn.execute("SELECT assigned_to_component_id, serial_number, component_type FROM components WHERE id = %s", (component_id,)).fetchone()
             if not comp: return redirect(url_for('infrastructure.index'))
             
             if parent_id:
                 # Get parent details for log
-                parent = conn.execute("SELECT serial_number, component_type, assigned_pc FROM components WHERE id = ?", (parent_id,)).fetchone()
+                parent = conn.execute("SELECT serial_number, component_type, assigned_pc FROM components WHERE id = %s", (parent_id,)).fetchone()
                 
-                conn.execute("UPDATE components SET assigned_to_component_id = ?, assigned_pc = ?, status = 'Instalado' WHERE id = ?", 
+                conn.execute("UPDATE components SET assigned_to_component_id = %s, assigned_pc = %s, status = 'Instalado' WHERE id = %s", 
                              (parent_id, parent['assigned_pc'], component_id))
                 
                 pc_context = parent["assigned_pc"] or f"COMP:{parent['serial_number']}"
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", 
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
                              (pc_context, f"Sub-componente {comp['component_type']} Asignado a {parent['component_type']}", "None", comp['serial_number']))
             else:
-                conn.execute("UPDATE components SET assigned_to_component_id = NULL, assigned_pc = NULL, status = 'Stock' WHERE id = ?", (component_id,))
+                conn.execute("UPDATE components SET assigned_to_component_id = NULL, assigned_pc = NULL, status = 'Stock' WHERE id = %s", (component_id,))
             
             conn.commit()
             flash("Asignación interna de componente actualizada.", "success")
@@ -245,10 +245,10 @@ def delete_component(id):
     try:
         with get_db_connection() as conn:
             # First, check if there are sub-components and release them to stock
-            conn.execute("UPDATE components SET assigned_to_component_id = NULL, status = 'Stock' WHERE assigned_to_component_id = ?", (id,))
+            conn.execute("UPDATE components SET assigned_to_component_id = NULL, status = 'Stock' WHERE assigned_to_component_id = %s", (id,))
             
             # Now delete the component
-            conn.execute("DELETE FROM components WHERE id = ?", (id,))
+            conn.execute("DELETE FROM components WHERE id = %s", (id,))
             conn.commit()
             flash("Componente eliminado del inventario.", "success")
     except Exception as e:

@@ -1,312 +1,264 @@
 from database.db_core import get_db_connection
+import os
 
-def migrate_db_v11():
-    """Migración V11: Crear tabla components."""
-    print("Verificando migración de DB v11...")
-    with get_db_connection() as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS components (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                serial_number TEXT UNIQUE,
-                component_type TEXT NOT NULL,
-                brand_model TEXT,
-                status TEXT DEFAULT 'Stock', 
-                assigned_pc TEXT,
-                created_at TEXT DEFAULT (datetime('now', '-3 hours')),
-                FOREIGN KEY (assigned_pc) REFERENCES pcs(pc_name)
-            )
-            """
-        )
-        conn.commit()
-    print("Migración V11 verificada.")
+def _get_db_name():
+    return os.environ.get("DB_NAME", "inventario_dev")
+
+def _column_exists(conn, table, column):
+    """Verifica si una columna existe en una tabla usando INFORMATION_SCHEMA (MySQL)."""
+    db_name = _get_db_name()
+    result = conn.execute(
+        """
+        SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s
+        """,
+        (db_name, table, column)
+    ).fetchone()
+    return result and result["cnt"] > 0
+
+def _table_exists(conn, table):
+    """Verifica si una tabla existe usando INFORMATION_SCHEMA (MySQL)."""
+    db_name = _get_db_name()
+    result = conn.execute(
+        """
+        SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s
+        """,
+        (db_name, table)
+    ).fetchone()
+    return result and result["cnt"] > 0
+
 
 def migrate_db_v2():
-    """Migra la tabla tasks para permitir pc_name NULL y agregar solicitante."""
+    """Migración V2: Asegurar columna 'solicitante' en tasks."""
     print("Verificando migración de DB v2...")
     with get_db_connection() as conn:
-        cursor = conn.execute("PRAGMA table_info(tasks)")
-        columns = [row["name"] for row in cursor.fetchall()]
-        if "solicitante" in columns:
-            print("DB ya está en v2.")
-            return
+        if not _column_exists(conn, "tasks", "solicitante"):
+            print("Aplicando migración V2: Agregando 'solicitante' a tasks...")
+            conn.execute("ALTER TABLE tasks ADD COLUMN solicitante TEXT")
+    print("Migración v2 verificada.")
 
-        print("Migrando DB a v2...")
-        try:
-            conn.execute("ALTER TABLE tasks RENAME TO tasks_old")
-            conn.execute(
-                """
-                CREATE TABLE tasks (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    pc_name TEXT,
-                    created_at TEXT NOT NULL DEFAULT (datetime('now', '-3 hours')),
-                    descripcion TEXT NOT NULL,
-                    estado TEXT NOT NULL DEFAULT 'Pendiente',
-                    solicitante TEXT,
-                    FOREIGN KEY (pc_name) REFERENCES pcs(pc_name)
-                )
-                """
-            )
-            conn.execute(
-                """
-                INSERT INTO tasks (id, pc_name, created_at, descripcion, estado)
-                SELECT id, pc_name, created_at, descripcion, estado FROM tasks_old
-                """
-            )
-            conn.execute("DROP TABLE tasks_old")
-            conn.commit()
-            print("Migración v2 completada con éxito.")
-        except Exception as e:
-            print(f"Error en migración v2: {e}")
-            conn.rollback()
 
 def migrate_db_v3():
-    """Migra BD a v3: tabla technicians y columnas completed_by/at en tasks."""
+    """Migración V3: Asegurar tabla technicians y columnas completed_by/at en tasks."""
     print("Verificando migración de DB v3...")
     with get_db_connection() as conn:
-        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='technicians'")
-        if not cursor.fetchone():
+        if not _table_exists(conn, "technicians"):
             print("Creando tabla technicians...")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS technicians (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL UNIQUE
-                )
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL UNIQUE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
                 """
             )
-        
-        cursor = conn.execute("PRAGMA table_info(tasks)")
-        columns = [row["name"] for row in cursor.fetchall()]
-        
-        if "completed_by" not in columns:
-            print("Agregando col completed_by a tasks...")
-            try:
-                conn.execute("ALTER TABLE tasks ADD COLUMN completed_by TEXT")
-            except Exception as e: print(f"Error add completed_by: {e}")
 
-        if "completed_at" not in columns:
+        if not _column_exists(conn, "tasks", "completed_by"):
+            print("Agregando col completed_by a tasks...")
+            conn.execute("ALTER TABLE tasks ADD COLUMN completed_by TEXT")
+
+        if not _column_exists(conn, "tasks", "completed_at"):
             print("Agregando col completed_at a tasks...")
-            try:
-                conn.execute("ALTER TABLE tasks ADD COLUMN completed_at TEXT")
-            except Exception as e: print(f"Error add completed_at: {e}")
-            
-        conn.commit()
+            conn.execute("ALTER TABLE tasks ADD COLUMN completed_at DATETIME")
+
     print("Migración v3 verificada.")
 
+
 def migrate_db_v4():
-    """Migra BD a v4: agregar columna categoria a tasks."""
+    """Migración V4: Asegurar columna 'categoria' en tasks."""
     print("Verificando migración de DB v4...")
     with get_db_connection() as conn:
-        cursor = conn.execute("PRAGMA table_info(tasks)")
-        columns = [row["name"] for row in cursor.fetchall()]
-        
-        if "categoria" not in columns:
-            print("Agregando col categoria a tasks...")
-            try:
-                conn.execute("ALTER TABLE tasks ADD COLUMN categoria TEXT")
-                conn.commit()
-            except Exception as e: print(f"Error add categoria: {e}")
-            
+        if not _column_exists(conn, "tasks", "categoria"):
+            print("Aplicando migración V4: Agregando 'categoria' a tasks...")
+            conn.execute("ALTER TABLE tasks ADD COLUMN categoria TEXT")
     print("Migración v4 verificada.")
 
+
 def migrate_db_v5():
-    """Migra BD a v5: crear tabla audit_logs para historial de cambios."""
+    """Migración V5: Asegurar tabla audit_logs."""
     print("Verificando migración de DB v5...")
     with get_db_connection() as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS audit_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                pc_name TEXT,
-                field TEXT,
-                old_value TEXT,
-                new_value TEXT,
-                changed_at DATETIME DEFAULT (datetime('now', '-3 hours'))
+        if not _table_exists(conn, "audit_logs"):
+            print("Creando tabla audit_logs...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS audit_logs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    pc_name VARCHAR(255),
+                    field VARCHAR(255),
+                    old_value TEXT,
+                    new_value TEXT,
+                    changed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
             )
-            """
-        )
     print("Migración v5 verificada.")
 
+
 def migrate_db_v6():
-    """Migración V6: Agregar columna 'assigned_to' a la tabla 'tasks'."""
+    """Migración V6: Asegurar columna 'assigned_to' en tasks."""
+    print("Verificando migración de DB v6...")
     with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(tasks)")
-        columns = [info[1] for info in cursor.fetchall()]
-        if 'assigned_to' not in columns:
+        if not _column_exists(conn, "tasks", "assigned_to"):
             print("Aplicando migración V6: Agregando 'assigned_to' a tasks...")
-            cursor.execute("ALTER TABLE tasks ADD COLUMN assigned_to TEXT")
-            conn.commit()
+            conn.execute("ALTER TABLE tasks ADD COLUMN assigned_to TEXT")
         else:
             print("Migración V6 verificada.")
 
+
 def migrate_db_v7():
-    """Migración V7: Agregar columna 'fuero' a la tabla 'pcs'."""
+    """Migración V7: Asegurar columna 'fuero' en pcs."""
+    print("Verificando migración de DB v7...")
     with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(pcs)")
-        columns = [info[1] for info in cursor.fetchall()]
-        if 'fuero' not in columns:
+        if not _column_exists(conn, "pcs", "fuero"):
             print("Aplicando migración V7: Agregando 'fuero' a pcs...")
-            cursor.execute("ALTER TABLE pcs ADD COLUMN fuero TEXT")
-            conn.commit()
+            conn.execute("ALTER TABLE pcs ADD COLUMN fuero TEXT")
         else:
             print("Migración V7 verificada.")
 
+
 def migrate_db_v8():
-    """Migración V8: Agregar columna 'fuero' a la tabla 'tasks'."""
+    """Migración V8: Asegurar columna 'fuero' en tasks."""
+    print("Verificando migración de DB v8...")
     with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(tasks)")
-        columns = [info[1] for info in cursor.fetchall()]
-        if 'fuero' not in columns:
+        if not _column_exists(conn, "tasks", "fuero"):
             print("Aplicando migración V8: Agregando 'fuero' a tasks...")
-            cursor.execute("ALTER TABLE tasks ADD COLUMN fuero TEXT")
-            conn.commit()
+            conn.execute("ALTER TABLE tasks ADD COLUMN fuero TEXT")
         else:
             print("Migración V8 verificada.")
 
+
 def migrate_db_v9():
-    """Migración V9: Agregar columnas de infraestructura de red y ubicación a 'pcs'."""
+    """Migración V9: Agregar columnas de infraestructura de red y ubicación a pcs."""
+    print("Verificando migración de DB v9...")
+    new_columns = {
+        "switch_name": "TEXT",
+        "switch_port": "TEXT",
+        "pachera_name": "TEXT",
+        "pachera_port": "TEXT",
+        "building": "TEXT",
+        "floor": "TEXT"
+    }
     with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(pcs)")
-        columns = [info[1] for info in cursor.fetchall()]
-        
-        new_columns = {
-            "switch_name": "TEXT",
-            "switch_port": "TEXT",
-            "pachera_name": "TEXT",
-            "pachera_port": "TEXT",
-            "building": "TEXT",
-            "floor": "TEXT"
-        }
-        
         for col, dtype in new_columns.items():
-            if col not in columns:
+            if not _column_exists(conn, "pcs", col):
                 print(f"Aplicando migración V9: Agregando '{col}' a pcs...")
                 try:
-                    cursor.execute(f"ALTER TABLE pcs ADD COLUMN {col} {dtype}")
+                    conn.execute(f"ALTER TABLE pcs ADD COLUMN {col} {dtype}")
                 except Exception as e:
                     print(f"Error agregando columna {col}: {e}")
-        
-        conn.commit()
     print("Migración V9 verificada.")
 
+
 def migrate_db_v10():
-    """Migración V10: Agregar columnas de alerta de salud a 'pcs'."""
+    """Migración V10: Agregar columnas de alerta de salud a pcs."""
+    print("Verificando migración de DB v10...")
+    new_columns = {
+        "alerta_disco": "TINYINT(1) DEFAULT 0",
+        "alerta_uptime": "TINYINT(1) DEFAULT 0"
+    }
     with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(pcs)")
-        columns = [info[1] for info in cursor.fetchall()]
-        
-        new_columns = {
-            "alerta_disco": "INTEGER DEFAULT 0",
-            "alerta_uptime": "INTEGER DEFAULT 0"
-        }
-        
         for col, dtype in new_columns.items():
-            if col not in columns:
+            if not _column_exists(conn, "pcs", col):
                 print(f"Aplicando migración V10: Agregando '{col}' a pcs...")
                 try:
-                    cursor.execute(f"ALTER TABLE pcs ADD COLUMN {col} {dtype}")
+                    conn.execute(f"ALTER TABLE pcs ADD COLUMN {col} {dtype}")
                 except Exception as e:
                     print(f"Error agregando columna {col}: {e}")
-        
-        conn.commit()
     print("Migración V10 verificada.")
 
+
 def migrate_db_v11():
-    """Migración V11: Crear tabla components."""
+    """Migración V11: Asegurar tabla components."""
     print("Verificando migración de DB v11...")
     with get_db_connection() as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS components (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                serial_number TEXT UNIQUE,
-                component_type TEXT NOT NULL,
-                brand_model TEXT,
-                status TEXT DEFAULT 'Stock', 
-                assigned_pc TEXT,
-                created_at TEXT DEFAULT (datetime('now', '-3 hours')),
-                FOREIGN KEY (assigned_pc) REFERENCES pcs(pc_name)
+        if not _table_exists(conn, "components"):
+            print("Creando tabla components...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS components (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    serial_number VARCHAR(255) UNIQUE,
+                    component_type VARCHAR(100) NOT NULL,
+                    brand_model TEXT,
+                    status VARCHAR(50) DEFAULT 'Stock',
+                    assigned_pc VARCHAR(255),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (assigned_pc) REFERENCES pcs(pc_name) ON DELETE SET NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
             )
-            """
-        )
-        conn.commit()
     print("Migración V11 verificada.")
 
+
 def migrate_db_v12():
-    """Migración V12: Agregar columna 'assigned_to_component_id' a la tabla 'components'."""
+    """Migración V12: Asegurar columna 'assigned_to_component_id' en components."""
+    print("Verificando migración de DB v12...")
     with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(components)")
-        columns = [info[1] for info in cursor.fetchall()]
-        if 'assigned_to_component_id' not in columns:
+        if not _column_exists(conn, "components", "assigned_to_component_id"):
             print("Aplicando migración V12: Agregando 'assigned_to_component_id' a components...")
-            cursor.execute("ALTER TABLE components ADD COLUMN assigned_to_component_id INTEGER REFERENCES components(id)")
-            conn.commit()
+            conn.execute(
+                "ALTER TABLE components ADD COLUMN assigned_to_component_id INT, "
+                "ADD CONSTRAINT fk_comp_self FOREIGN KEY (assigned_to_component_id) REFERENCES components(id) ON DELETE SET NULL"
+            )
         else:
             print("Migración V12 verificada.")
 
+
 def migrate_db_v13():
-    """Migración V13: Añadir supplier e invoice_number a ups_inventory y components, unificar bateria_stock en components."""
+    """Migración V13: Agregar supplier e invoice_number a components y ups_inventory."""
+    print("Verificando migración de DB v13...")
     with get_db_connection() as conn:
-        cursor = conn.cursor()
-        
-        # 1. Agregar columnas a ups_inventory y components
-        for table in ['components', 'ups_inventory']:
-            cursor.execute(f"PRAGMA table_info({table})")
-            columns = [info[1] for info in cursor.fetchall()]
-            
-            if 'supplier' not in columns:
+        for table in ["components", "ups_inventory"]:
+            if not _column_exists(conn, table, "supplier"):
                 print(f"Aplicando migración V13: Agregando 'supplier' e 'invoice_number' a {table}...")
                 try:
-                    cursor.execute(f"ALTER TABLE {table} ADD COLUMN supplier TEXT")
-                    cursor.execute(f"ALTER TABLE {table} ADD COLUMN invoice_number TEXT")
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN supplier TEXT")
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN invoice_number TEXT")
                 except Exception as e:
                     print(f"Error agregando columnas a {table}: {e}")
 
-        # 2. Volcar baterias_stock en components
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='baterias_stock'")
-        if cursor.fetchone():
+        # Migrar tabla baterias_stock si aún existe
+        if _table_exists(conn, "baterias_stock"):
             print("Aplicando migración V13: Migrando tabla baterias_stock hacia components...")
-            cursor.execute("SELECT id, code, brand_model, status, created_at FROM baterias_stock")
-            baterias = cursor.fetchall()
-            
-            status_map = {'Stock': 'Stock', 'Asignada': 'Instalado', 'Descartada': 'Retirado'}
-            
+            baterias = conn.execute(
+                "SELECT id, code, brand_model, status, created_at FROM baterias_stock"
+            ).fetchall()
+
+            status_map = {"Stock": "Stock", "Asignada": "Instalado", "Descartada": "Retirado"}
+
             for bat in baterias:
-                cursor.execute("SELECT id FROM components WHERE component_type='Batería UPS' AND serial_number=?", (bat['code'],))
-                existing_comp = cursor.fetchone()
-                
+                existing_comp = conn.execute(
+                    "SELECT id FROM components WHERE component_type='Batería UPS' AND serial_number=%s",
+                    (bat["code"],)
+                ).fetchone()
+
                 if existing_comp:
-                    new_comp_id = existing_comp['id']
+                    new_comp_id = existing_comp["id"]
                 else:
-                    mapped_status = status_map.get(bat['status'], 'Stock')
-                    cursor.execute("""
+                    mapped_status = status_map.get(bat["status"], "Stock")
+                    conn.execute(
+                        """
                         INSERT INTO components (serial_number, component_type, brand_model, status, created_at)
-                        VALUES (?, 'Batería UPS', ?, ?, ?)
-                    """, (bat['code'], bat['brand_model'], mapped_status, bat['created_at']))
-                    new_comp_id = cursor.lastrowid
-                
-                # 3. Actualizar la foreign key en ups_inventory
-                cursor.execute("""
-                    UPDATE ups_inventory 
-                    SET assigned_battery_id = ? 
-                    WHERE assigned_battery_id = ?
-                """, (new_comp_id, bat['id']))
-            
-            # Renombrar tabla antigua
+                        VALUES (%s, 'Batería UPS', %s, %s, %s)
+                        """,
+                        (bat["code"], bat["brand_model"], mapped_status, bat["created_at"])
+                    )
+                    new_comp_id = conn.cursor.lastrowid
+
+                conn.execute(
+                    "UPDATE ups_inventory SET assigned_battery_id=%s WHERE assigned_battery_id=%s",
+                    (new_comp_id, bat["id"])
+                )
+
             try:
-                cursor.execute("ALTER TABLE baterias_stock RENAME TO baterias_stock_old")
-            except Exception as e:
+                conn.execute("RENAME TABLE baterias_stock TO baterias_stock_old")
+            except Exception:
                 pass
-                
-        conn.commit()
+
     print("Migración V13 verificada.")
+
 
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""

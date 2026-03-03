@@ -7,7 +7,7 @@ bp_stock = Blueprint('stock', __name__)
 def get_component(serial_number):
     try:
         with get_db_connection() as conn:
-            comp = conn.execute("SELECT * FROM components WHERE serial_number = ?", (serial_number,)).fetchone()
+            comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial_number,)).fetchone()
             if comp:
                 return jsonify({"status": "found", "data": dict(comp)})
             else:
@@ -51,7 +51,7 @@ def add_component():
             return jsonify({"status": "error", "message": "Faltan datos"}), 400
             
         with get_db_connection() as conn:
-            conn.execute("INSERT INTO components (serial_number, component_type, brand_model, status, supplier_name, remito_number) VALUES (?, ?, ?, 'Stock', ?, ?)", (serial, ctype, model, supplier, remito))
+            conn.execute("INSERT INTO components (serial_number, component_type, brand_model, status, supplier_name, remito_number) VALUES (%s, %s, %s, 'Stock', %s, %s)", (serial, ctype, model, supplier, remito))
             conn.commit()
         return jsonify({"status": "success"})
     except Exception as e:
@@ -67,12 +67,12 @@ def assign_component():
         if not serial or not pc_name: return jsonify({"status": "error", "message": "Faltan datos"}), 400
             
         with get_db_connection() as conn:
-            comp = conn.execute("SELECT * FROM components WHERE serial_number = ?", (serial,)).fetchone()
+            comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial,)).fetchone()
             if not comp: return jsonify({"status": "error", "message": "Componente no existe"}), 404
             
-            conn.execute("UPDATE components SET status = 'Installed', assigned_pc = ? WHERE serial_number = ?", (pc_name, serial))
+            conn.execute("UPDATE components SET status = 'Installed', assigned_pc = %s WHERE serial_number = %s", (pc_name, serial))
             detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial})"
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, 'COMPONENT_ASSIGN', 'Stock', ?)", (pc_name, detalles))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'COMPONENT_ASSIGN', 'Stock', %s)", (pc_name, detalles))
             conn.commit()
             
         return jsonify({"status": "success"})
@@ -87,15 +87,15 @@ def return_component():
         if not serial: return jsonify({"status": "error", "message": "Falta serial"}), 400
             
         with get_db_connection() as conn:
-            comp = conn.execute("SELECT * FROM components WHERE serial_number = ?", (serial,)).fetchone()
+            comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial,)).fetchone()
             if not comp: return jsonify({"status": "error", "message": "Componente no existe"}), 404
             
             old_pc = comp["assigned_pc"] or "Unknown"
-            conn.execute("UPDATE components SET status = 'Stock', assigned_pc = NULL WHERE serial_number = ?", (serial,))
+            conn.execute("UPDATE components SET status = 'Stock', assigned_pc = NULL WHERE serial_number = %s", (serial,))
             
             if old_pc != "Unknown":
                 detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial})"
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, 'COMPONENT_RETURN', ?, 'Stock')", (old_pc, detalles))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'COMPONENT_RETURN', %s, 'Stock')", (old_pc, detalles))
             conn.commit()
             
         return jsonify({"status": "success"})
@@ -110,15 +110,15 @@ def delete_component():
         if not serial: return jsonify({"status": "error", "message": "Falta serial"}), 400
             
         with get_db_connection() as conn:
-            comp = conn.execute("SELECT * FROM components WHERE serial_number = ?", (serial,)).fetchone()
+            comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial,)).fetchone()
             if not comp: return jsonify({"status": "error", "message": "Componente no existe"}), 404
             
             old_pc = comp["assigned_pc"]
-            conn.execute("DELETE FROM components WHERE serial_number = ?", (serial,))
+            conn.execute("DELETE FROM components WHERE serial_number = %s", (serial,))
             
             if old_pc is not None and old_pc != "Unknown":
                 detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial})"
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, 'COMPONENT_DELETED', ?, 'DELETED')", (old_pc, detalles))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'COMPONENT_DELETED', %s, 'DELETED')", (old_pc, detalles))
                 
         return jsonify({"status": "success"})
     except Exception as e:

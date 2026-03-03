@@ -57,7 +57,7 @@ def api_mobile_create_task():
 
         with get_db_connection() as conn:
              cursor = conn.execute(
-                "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to)
             )
              new_id = cursor.lastrowid
@@ -82,7 +82,7 @@ def api_mobile_update_task():
             if action == "claim":
                 conn.execute("UPDATE tasks SET assigned_to=? WHERE id=?", (technician, task_id))
             elif action == "complete":
-                 sql = "UPDATE tasks SET estado='Hecha', completed_by=?, completed_at=datetime('now', 'localtime')"
+                 sql = "UPDATE tasks SET estado='Hecha', completed_by=%s, completed_at=datetime('now', 'localtime')"
                  params = [technician]
                  if pc_name:
                      sql += ", pc_name=?"

@@ -4,7 +4,7 @@ import datetime
 import os
 
 from database.db_core import get_db_connection
-from utils.constants import detect_fuero, DB_FILE
+from utils.constants import detect_fuero
 
 bp_api = Blueprint('api', __name__)
 
@@ -94,13 +94,13 @@ def process_inventory_data(data):
 
     sql = """
     INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, is_active, full_json_data)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'True', ?)
-    ON CONFLICT(pc_name) DO UPDATE SET
-        fuero = excluded.fuero, os_name = excluded.os_name, processor = excluded.processor, ram_gb = excluded.ram_gb, ip_address = excluded.ip_address, last_user = excluded.last_user, last_report = excluded.last_report, ram_detalles = excluded.ram_detalles, disk_models = excluded.disk_models, disk_speeds_rpm = excluded.disk_speeds_rpm, motherboard_model = excluded.motherboard_model, monitors = excluded.monitors, printer_model = excluded.printer_model, printer_port = excluded.printer_port, ping_ms = excluded.ping_ms, ping_loss_pct = excluded.ping_loss_pct, alerta_ram_baja = excluded.alerta_ram_baja, alerta_sin_impresora = excluded.alerta_sin_impresora, alerta_impresora_red = excluded.alerta_impresora_red, alerta_disco = excluded.alerta_disco, alerta_uptime = excluded.alerta_uptime, full_json_data = excluded.full_json_data
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'True', %s)
+    ON DUPLICATE KEY UPDATE
+        fuero=VALUES(fuero), os_name=VALUES(os_name), processor=VALUES(processor), ram_gb=VALUES(ram_gb), ip_address=VALUES(ip_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_models=VALUES(disk_models), disk_speeds_rpm=VALUES(disk_speeds_rpm), motherboard_model=VALUES(motherboard_model), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), full_json_data=VALUES(full_json_data)
     """
     
     with get_db_connection() as conn:
-        current_pc = conn.execute("SELECT * FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+        current_pc = conn.execute("SELECT * FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
         if current_pc:
             fields_to_check = {
                 "ram_gb": str(current_pc["ram_gb"]), "disk_models": str(current_pc["disk_models"]),
@@ -112,7 +112,7 @@ def process_inventory_data(data):
             for field, old_val in fields_to_check.items():
                 new_val = new_values_map.get(field, "N/A")
                 if old_val.strip() != new_val.strip():
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, changed_at) VALUES (?, ?, ?, ?, datetime('now', '-3 hours'))", (pc_name, field, old_val, new_val))
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (pc_name, field, old_val, new_val))
 
         conn.execute(sql, (pc_name, fuero_detectado, os_name, processor, ram_gb, ip_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, full_json))
         conn.commit()
@@ -153,10 +153,8 @@ def upload_manual_inventory():
 @bp_api.route("/health", methods=["GET"])
 def health():
     try:
-        import sqlite3
-        conn = sqlite3.connect(DB_FILE)
-        conn.execute("SELECT 1")
-        conn.close()
+        with get_db_connection() as conn:
+            conn.execute("SELECT 1")
         return {"status": "ok", "db_ok": True}, 200
     except Exception:
         return {"status": "error", "db_ok": False}, 500
@@ -166,7 +164,7 @@ def api_security(pc_name):
     """Devuelve las conexiones de red activas (snapshot) desde el JSON completo."""
     try:
         with get_db_connection() as conn:
-            row = conn.execute("SELECT full_json_data FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+            row = conn.execute("SELECT full_json_data FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
             if not row or not row["full_json_data"]:
                 return jsonify({"status": "error", "message": "PC no encontrada o sin datos"}), 404
             
@@ -182,7 +180,7 @@ def api_health(pc_name):
     """Devuelve los datos de salud (SMART, Uptime, Eventos) desde el JSON completo."""
     try:
         with get_db_connection() as conn:
-            row = conn.execute("SELECT full_json_data FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+            row = conn.execute("SELECT full_json_data FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
             if not row or not row["full_json_data"]:
                 return jsonify({"status": "error", "message": "PC no encontrada o sin datos"}), 404
             

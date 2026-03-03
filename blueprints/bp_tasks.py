@@ -21,13 +21,13 @@ def migrate_generic_tasks():
     
     with get_db_connection() as conn:
         if task_id:
-            conn.execute("UPDATE tasks SET pc_name = ? WHERE id = ? AND pc_name = 'PC Generica'", (target_pc, task_id))
+            conn.execute("UPDATE tasks SET pc_name = %s WHERE id = %s AND pc_name = 'PC Generica'", (target_pc, task_id))
             audit_msg = f"Se importó la tarea #{task_id} de PC Generica"
         else:
-            conn.execute("UPDATE tasks SET pc_name = ? WHERE pc_name = 'PC Generica'", (target_pc,))
+            conn.execute("UPDATE tasks SET pc_name = %s WHERE pc_name = 'PC Generica'", (target_pc,))
             audit_msg = "Se importaron TODAS las tareas de PC Generica"
         
-        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", (target_pc, "MIGRACION", "PC Generica", audit_msg))
+        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (target_pc, "MIGRACION", "PC Generica", audit_msg))
         conn.commit()
     return redirect(url_for("dashboard.pc_detail", pc_name=target_pc))
 
@@ -41,7 +41,7 @@ def add_task(pc_name):
     if not categoria: categoria = predict_category(descripcion)
 
     with get_db_connection() as conn:
-        conn.execute("INSERT INTO tasks (pc_name, descripcion, solicitante, categoria) VALUES (?, ?, ?, ?)", (pc_name, descripcion, solicitante, categoria))
+        conn.execute("INSERT INTO tasks (pc_name, descripcion, solicitante, categoria) VALUES (%s, %s, %s, %s)", (pc_name, descripcion, solicitante, categoria))
         conn.commit()
     return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
 
@@ -51,7 +51,7 @@ def add_technician():
     if name:
         try:
             with get_db_connection() as conn:
-                conn.execute("INSERT INTO technicians (name) VALUES (?)", (name,))
+                conn.execute("INSERT INTO technicians (name) VALUES (%s)", (name,))
                 conn.commit()
         except sqlite3.IntegrityError: pass
     return redirect(url_for("dashboard.dashboard"))
@@ -59,7 +59,7 @@ def add_technician():
 @bp_tasks.route("/technicians/delete/<int:tech_id>", methods=["POST"])
 def delete_technician(tech_id):
     with get_db_connection() as conn:
-        conn.execute("DELETE FROM technicians WHERE id = ?", (tech_id,))
+        conn.execute("DELETE FROM technicians WHERE id = %s", (tech_id,))
         conn.commit()
     return redirect(url_for("dashboard.dashboard"))
 
@@ -67,10 +67,10 @@ def delete_technician(tech_id):
 def mark_task_done(task_id):
     technician = request.form.get("technician_name", None)
     with get_db_connection() as conn:
-        row = conn.execute("SELECT pc_name FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        row = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
         if row:
             conn.execute(
-                "UPDATE tasks SET estado = 'Hecha', completed_by = ?, completed_at = ? WHERE id = ?",
+                "UPDATE tasks SET estado = 'Hecha', completed_by = %s, completed_at = %s WHERE id = %s",
                 (technician, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), task_id)
             )
             conn.commit()
@@ -82,9 +82,9 @@ def mark_task_done(task_id):
 @bp_tasks.route("/tasks/<int:task_id>/delete", methods=["POST"])
 def delete_task(task_id):
     with get_db_connection() as conn:
-        row = conn.execute("SELECT pc_name FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        row = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
         if row:
-            conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+            conn.execute("DELETE FROM tasks WHERE id = %s", (task_id,))
             conn.commit()
             pc_name = row["pc_name"]
         else: pc_name = ""
@@ -110,7 +110,7 @@ def create_loose_task():
 
     with get_db_connection() as conn:
         conn.execute(
-            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name) VALUES (?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, 'PC Generica')""",
+            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name) VALUES (%s, %s, %s, datetime('now', 'localtime'), %s, %s, %s, 'PC Generica')""",
             (descripcion, solicitante, estado, categoria, assigned_to, fuero)
         )
         conn.commit()
@@ -122,9 +122,9 @@ def assign_task():
     pc_name = request.form.get("pc_name", "").strip()
     if task_id and pc_name:
         with get_db_connection() as conn:
-            t = conn.execute("SELECT 1 FROM pcs WHERE pc_name = ?", (pc_name,)).fetchone()
+            t = conn.execute("SELECT 1 FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
             if t:
-                conn.execute("UPDATE tasks SET pc_name = ? WHERE id = ?", (pc_name, task_id))
+                conn.execute("UPDATE tasks SET pc_name = %s WHERE id = %s", (pc_name, task_id))
                 conn.commit()
     return redirect(url_for("dashboard.dashboard"))
 
@@ -136,7 +136,7 @@ def add_manual_audit(pc_name):
     if not campo or not valor_nuevo: return jsonify({"status": "error", "message": "Faltan datos"}), 400
     try:
         with get_db_connection() as conn:
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (?, ?, ?, ?)", (pc_name, campo, valor_anterior, valor_nuevo))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (pc_name, campo, valor_anterior, valor_nuevo))
             conn.commit()
         return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
     except Exception as e:
@@ -150,19 +150,19 @@ def report_preview():
 
     with get_db_connection() as conn:
         # Tareas completadas
-        sql_hechas = "SELECT t.pc_name, t.descripcion, t.solicitante, t.completed_at, t.completed_by, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado = 'Hecha' AND DATE(t.completed_at) = ?"
+        sql_hechas = "SELECT t.pc_name, t.descripcion, t.solicitante, t.completed_at, t.completed_by, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado = 'Hecha' AND DATE(t.completed_at) = %s"
         params = [fecha_filtro]
         if pc_name:
-            sql_hechas += " AND t.pc_name = ?"
+            sql_hechas += " AND t.pc_name = %s"
             params.append(pc_name)
         sql_hechas += " ORDER BY t.completed_at DESC"
         hechas = conn.execute(sql_hechas, params).fetchall()
 
         # Tareas pendientes del dia
-        sql_pend = "SELECT t.pc_name, t.descripcion, t.solicitante, t.created_at, t.estado, t.assigned_to FROM tasks t WHERE t.estado != 'Hecha' AND DATE(t.created_at) = ?"
+        sql_pend = "SELECT t.pc_name, t.descripcion, t.solicitante, t.created_at, t.estado, t.assigned_to FROM tasks t WHERE t.estado != 'Hecha' AND DATE(t.created_at) = %s"
         params_pend = [fecha_filtro]
         if pc_name:
-            sql_pend += " AND t.pc_name = ?"
+            sql_pend += " AND t.pc_name = %s"
             params_pend.append(pc_name)
         sql_pend += " ORDER BY t.created_at DESC"
         pendientes = conn.execute(sql_pend, params_pend).fetchall()
@@ -194,10 +194,10 @@ def report_tasks_completed():
     pc_name = request.form.get("pc_name", "").strip() or pc_name
 
     with get_db_connection() as conn:
-        base_sql = "SELECT pc_name, descripcion, solicitante, created_at, estado, completed_by, completed_at FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = ?"
+        base_sql = "SELECT pc_name, descripcion, solicitante, created_at, estado, completed_by, completed_at FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = %s"
         params = [fecha_filtro]
         if pc_name:
-            base_sql += " AND pc_name = ?"
+            base_sql += " AND pc_name = %s"
             params.append(pc_name)
         base_sql += " ORDER BY completed_at DESC"
         tareas = conn.execute(base_sql, params).fetchall()
@@ -270,18 +270,18 @@ def report_tasks_completed_pdf():
     fecha_display = format_date_es(fecha_dt)
 
     with get_db_connection() as conn:
-        base_sql = "SELECT t.pc_name, t.descripcion, t.solicitante, t.created_at, t.estado, t.completed_by, t.completed_at, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado = 'Hecha' AND DATE(t.completed_at) = ?"
+        base_sql = "SELECT t.pc_name, t.descripcion, t.solicitante, t.created_at, t.estado, t.completed_by, t.completed_at, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado = 'Hecha' AND DATE(t.completed_at) = %s"
         params = [fecha_filtro_str]
         if pc_name:
-            base_sql += " AND t.pc_name = ?"
+            base_sql += " AND t.pc_name = %s"
             params.append(pc_name)
         base_sql += " ORDER BY t.completed_at DESC"
         tareas_hechas = conn.execute(base_sql, params).fetchall()
 
-        sql_pendientes = "SELECT t.pc_name, t.descripcion, t.solicitante, t.created_at, t.estado, t.assigned_to, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado != 'Hecha' AND DATE(t.created_at) = ?"
+        sql_pendientes = "SELECT t.pc_name, t.descripcion, t.solicitante, t.created_at, t.estado, t.assigned_to, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado != 'Hecha' AND DATE(t.created_at) = %s"
         params_pend = [fecha_filtro_str]
         if pc_name:
-            sql_pendientes += " AND t.pc_name = ?"
+            sql_pendientes += " AND t.pc_name = %s"
             params_pend.append(pc_name)
         sql_pendientes += " ORDER BY t.created_at DESC"
         tareas_pendientes = conn.execute(sql_pendientes, params_pend).fetchall()
