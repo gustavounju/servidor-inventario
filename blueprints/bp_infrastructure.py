@@ -173,7 +173,7 @@ def add_component():
     try:
         with get_db_connection() as conn:
             conn.execute(
-                "INSERT INTO components (serial_number, component_type, brand_model, supplier_name, remito_number) VALUES (%s, %s, %s, %s, %s)",
+                "INSERT INTO components (serial_number, component_type, brand_model, supplier, invoice_number) VALUES (%s, %s, %s, %s, %s)",
                 (serial_number, component_type, brand_model, supplier_name, remito_number)
             )
             conn.commit()

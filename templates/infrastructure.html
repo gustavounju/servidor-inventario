@@ -112,9 +112,9 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            {% if ups.supplier_name or ups.remito_number %}
-                                            <div class="small fw-bold">{{ ups.supplier_name or 'Sin proveedor' }}</div>
-                                            <div class="small text-muted">{{ ups.remito_number or '-' }}</div>
+                                            {% if ups.supplier or ups.invoice_number %}
+                                            <div class="small fw-bold">{{ ups.supplier or 'Sin proveedor' }}</div>
+                                            <div class="small text-muted">{{ ups.invoice_number or '-' }}</div>
                                             {% else %}
                                             <span class="text-muted small">-</span>
                                             {% endif %}
@@ -271,10 +271,10 @@
                                             <td>{{ comp.brand_model }}</td>
                                             <td class="fw-bold">{{ comp.serial_number }}</td>
                                             <td>
-                                                {% if comp.supplier_name or comp.remito_number %}
-                                                <div class="small fw-bold">{{ comp.supplier_name or 'Sin proveedor' }}
+                                                {% if comp.supplier or comp.invoice_number %}
+                                                <div class="small fw-bold">{{ comp.supplier or 'Sin proveedor' }}
                                                 </div>
-                                                <div class="small text-muted">{{ comp.remito_number or '-' }}</div>
+                                                <div class="small text-muted">{{ comp.invoice_number or '-' }}</div>
                                                 {% else %}
                                                 <span class="text-muted small">-</span>
                                                 {% endif %}
