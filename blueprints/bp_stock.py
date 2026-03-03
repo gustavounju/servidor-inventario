@@ -32,7 +32,7 @@ def list_components():
 def list_suppliers():
     try:
         with get_db_connection() as conn:
-            suppliers = [r['supplier_name'] for r in conn.execute("SELECT DISTINCT supplier_name FROM components WHERE supplier_name IS NOT NULL AND supplier_name != '' ORDER BY supplier_name").fetchall()]
+            suppliers = [r['supplier'] for r in conn.execute("SELECT DISTINCT supplier FROM components WHERE supplier IS NOT NULL AND supplier != '' ORDER BY supplier").fetchall()]
         return jsonify(suppliers)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -45,13 +45,13 @@ def add_component():
         ctype = data.get("component_type")
         model = data.get("brand_model")
         supplier = data.get("supplier_name", "")
-        remito = data.get("remito_number", "")
+        invoice = data.get("remito_number", "")
         
         if not serial or not ctype:
             return jsonify({"status": "error", "message": "Faltan datos"}), 400
             
         with get_db_connection() as conn:
-            conn.execute("INSERT INTO components (serial_number, component_type, brand_model, status, supplier_name, remito_number) VALUES (%s, %s, %s, 'Stock', %s, %s)", (serial, ctype, model, supplier, remito))
+            conn.execute("INSERT INTO components (serial_number, component_type, brand_model, status, supplier, invoice_number) VALUES (%s, %s, %s, 'Stock', %s, %s)", (serial, ctype, model, supplier, invoice))
             conn.commit()
         return jsonify({"status": "success"})
     except Exception as e:
