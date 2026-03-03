@@ -55,6 +55,10 @@ def api_mobile_create_task():
         solicitante = solicitante_input if solicitante_input else "No Especificado (Móvil)"
         assigned_to = technician
 
+        # MySQL exige NULL (no string vacío) para no violar la FK de pc_name
+        if not pc_name:
+            pc_name = None
+
         with get_db_connection() as conn:
              cursor = conn.execute(
                 "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
@@ -80,14 +84,14 @@ def api_mobile_update_task():
 
         with get_db_connection() as conn:
             if action == "claim":
-                conn.execute("UPDATE tasks SET assigned_to=? WHERE id=?", (technician, task_id))
+                conn.execute("UPDATE tasks SET assigned_to=%s WHERE id=%s", (technician, task_id))
             elif action == "complete":
-                 sql = "UPDATE tasks SET estado='Hecha', completed_by=%s, completed_at=datetime('now', 'localtime')"
+                 sql = "UPDATE tasks SET estado='Hecha', completed_by=%s, completed_at=NOW()"
                  params = [technician]
                  if pc_name:
-                     sql += ", pc_name=?"
+                     sql += ", pc_name=%s"
                      params.append(pc_name)
-                 sql += " WHERE id=?"
+                 sql += " WHERE id=%s"
                  params.append(task_id)
                  conn.execute(sql, params)
             conn.commit()
