@@ -26,8 +26,8 @@ def view_graphics():
             kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
             kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
             kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
-            kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE '%Windows 7%'").fetchone()["c"]
-            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE '%Windows 10%' OR os_name LIKE '%Windows 11%')").fetchone()["c"]
+            kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s", ("%Windows 7%",)).fetchone()["c"]
+            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE %s OR os_name LIKE %s)", ("%Windows 10%", "%Windows 11%")).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
             kpi_tareas_pendientes_count = conn.execute("SELECT COUNT(DISTINCT pc_name) as c FROM tasks WHERE estado != 'Hecha' AND pc_name IS NOT NULL AND pc_name != ''").fetchone()["c"]
             kpi_tareas_pendientes_total = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
@@ -92,22 +92,35 @@ def dashboard():
 
     try:
         with get_db_connection() as conn:
-            # Contar filas
-            count_sql = "SELECT COUNT(*) as c FROM pcs p WHERE 1=1"
-            params = []
+            # Construir filtros comunes
+            filter_sql = ""
+            filter_params = []
             if q:
-                count_sql += " AND p.pc_name LIKE %s"
-                params.append(f"%{q}%")
+                filter_sql += " AND p.pc_name LIKE %s"
+                filter_params.append(f"%{q}%")
             if estado in ("True", "False"):
-                count_sql += " AND p.is_active = %s"
-                params.append(estado)
-            if alerta == "ram": count_sql += " AND p.alerta_ram_baja = 1"
-            elif alerta == "sinimp": count_sql += " AND p.alerta_sin_impresora = 1"
-            elif alerta == "red": count_sql += " AND p.alerta_impresora_red = 1"
-            if os_param == "win7": count_sql += " AND p.os_name LIKE '%Windows 7%'"
-            elif os_param == "win10": count_sql += " AND (p.os_name LIKE '%Windows 10%' OR p.os_name LIKE '%Windows 11%')"
-            if filter_tasks == "true": count_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') > 0"
-            total_rows = conn.execute(count_sql, params).fetchone()["c"]
+                filter_sql += " AND p.is_active = %s"
+                filter_params.append(estado)
+            if alerta == "ram":
+                filter_sql += " AND p.alerta_ram_baja = 1"
+            elif alerta == "sinimp":
+                filter_sql += " AND p.alerta_sin_impresora = 1"
+            elif alerta == "red":
+                filter_sql += " AND p.alerta_impresora_red = 1"
+            
+            if os_param == "win7":
+                filter_sql += " AND p.os_name LIKE %s"
+                filter_params.append("%Windows 7%")
+            elif os_param == "win10":
+                filter_sql += " AND (p.os_name LIKE %s OR p.os_name LIKE %s)"
+                filter_params.extend(["%Windows 10%", "%Windows 11%"])
+            
+            if filter_tasks == "true":
+                filter_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') > 0"
+
+            # Ejecutar conteo
+            count_sql = "SELECT COUNT(*) as c FROM pcs p WHERE 1=1" + filter_sql
+            total_rows = conn.execute(count_sql, filter_params).fetchone()["c"]
 
             unassigned_tasks = conn.execute("SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC").fetchall()
             unassigned_count = len(unassigned_tasks)
@@ -119,15 +132,7 @@ def dashboard():
                 FROM pcs p
                 LEFT JOIN ad_users u ON LOWER(p.last_user) = u.username
                 WHERE 1=1
-            """
-            if q: base_sql += " AND p.pc_name LIKE %s"
-            if estado in ("True", "False"): base_sql += " AND p.is_active = %s"
-            if alerta == "ram": base_sql += " AND p.alerta_ram_baja = 1"
-            elif alerta == "sinimp": base_sql += " AND p.alerta_sin_impresora = 1"
-            elif alerta == "red": base_sql += " AND p.alerta_impresora_red = 1"
-            if os_param == "win7": base_sql += " AND p.os_name LIKE '%Windows 7%'"
-            elif os_param == "win10": base_sql += " AND (p.os_name LIKE '%Windows 10%' OR p.os_name LIKE '%Windows 11%')"
-            if filter_tasks == "true": base_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') > 0"
+            """ + filter_sql
             
             allowed_sort_cols = {
                 "pc_name": "p.pc_name", "last_user": "p.last_user", "fuero": "p.fuero",
@@ -146,16 +151,16 @@ def dashboard():
                     ELSE 2 
                 END, {sort_col_sql} {sort_dir_sql} LIMIT %s OFFSET %s
             """
-            params.extend([per_page, offset])
-            pcs_data = [dict(row) for row in conn.execute(base_sql, params).fetchall()]
+            params_base = filter_params + [per_page, offset]
+            pcs_data = [dict(row) for row in conn.execute(base_sql, params_base).fetchall()]
 
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
             kpi_total_graveyard = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
             kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
             kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
             kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
-            kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE '%Windows 7%'").fetchone()["c"]
-            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE '%Windows 10%' OR os_name LIKE '%Windows 11%')").fetchone()["c"]
+            kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s", ("%Windows 7%",)).fetchone()["c"]
+            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE %s OR os_name LIKE %s)", ("%Windows 10%", "%Windows 11%")).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
             kpi_tareas_pendientes_total = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
 
