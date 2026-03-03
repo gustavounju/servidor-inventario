@@ -411,11 +411,11 @@ def pc_detail(pc_name):
         available_components = conn.execute('''
             SELECT id, serial_number, component_type, brand_model 
             FROM components 
-            WHERE status = 'Stock' AND component_type != 'Batería UPS'
+            WHERE status = 'Stock' AND component_type NOT LIKE 'Bat%'
         ''').fetchall()
         
         # Baterias disponibles para asignar a la UPS de esta PC
-        baterias_disponibles = conn.execute("SELECT id, serial_number as code, brand_model FROM components WHERE component_type = 'Batería UPS' AND status = 'Stock'").fetchall()
+        baterias_disponibles = conn.execute("SELECT id, serial_number as code, brand_model FROM components WHERE component_type LIKE 'Bat%' AND status = 'Stock'").fetchall()
 
     if pc is None: abort(404)
     return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups=pc_ups, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles)

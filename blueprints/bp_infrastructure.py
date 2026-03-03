@@ -18,7 +18,8 @@ def index():
         ''').fetchall()
         
         # Baterias disponibles para el modal de asignacion
-        baterias_disponibles = conn.execute("SELECT id, serial_number as code, brand_model FROM components WHERE component_type = 'Batería UPS' AND status = 'Stock'").fetchall()
+        # Baterias disponibles para el modal de asignacion
+        baterias_disponibles = conn.execute("SELECT id, serial_number as code, brand_model FROM components WHERE component_type LIKE 'Bat%' AND status = 'Stock'").fetchall()
         
         # PCs disponibles
         pcs_disponibles = conn.execute("""

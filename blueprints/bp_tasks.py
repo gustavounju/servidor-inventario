@@ -173,13 +173,13 @@ def report_preview():
         "hechas": [{
             "pc_name": r["pc_name"], "descripcion": r["descripcion"],
             "solicitante": r["solicitante"] or "",
-            "completed_at": r["completed_at"] or "",
+            "completed_at": r["completed_at"].strftime("%Y-%m-%d %H:%M:%S") if r["completed_at"] else "",
             "completed_by": r["completed_by"] or "",
         } for r in hechas],
         "pendientes": [{
             "pc_name": r["pc_name"], "descripcion": r["descripcion"],
             "solicitante": r["solicitante"] or "",
-            "created_at": r["created_at"] or "",
+            "created_at": r["created_at"].strftime("%Y-%m-%d %H:%M:%S") if r["created_at"] else "",
             "estado": r["estado"] or "",
             "assigned_to": r["assigned_to"] or "Sin asignar",
         } for r in pendientes]

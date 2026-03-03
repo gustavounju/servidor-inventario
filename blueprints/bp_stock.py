@@ -9,7 +9,10 @@ def get_component(serial_number):
         with get_db_connection() as conn:
             comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial_number,)).fetchone()
             if comp:
-                return jsonify({"status": "found", "data": dict(comp)})
+                data = dict(comp)
+                if data.get('created_at'):
+                    data['created_at'] = data['created_at'].strftime("%Y-%m-%d %H:%M:%S")
+                return jsonify({"status": "found", "data": data})
             else:
                 return jsonify({"status": "not_found"}), 404
     except Exception as e:
@@ -23,7 +26,13 @@ def stock_view():
 def list_components():
     try:
         with get_db_connection() as conn:
-            comps = [dict(r) for r in conn.execute("SELECT * FROM components ORDER BY created_at DESC").fetchall()]
+            rows = conn.execute("SELECT * FROM components ORDER BY created_at DESC").fetchall()
+            comps = []
+            for r in rows:
+                item = dict(r)
+                if item.get('created_at'):
+                    item['created_at'] = item['created_at'].strftime("%Y-%m-%d %H:%M:%S")
+                comps.append(item)
         return jsonify(comps)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
