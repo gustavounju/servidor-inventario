@@ -972,7 +972,7 @@
                 <!-- Solo red -->
                 <div class="hero-stat {% if request.args.get('alerta') == 'red' %}hero-stat-on{% endif %}"
                     id="kpiSoloRed" onclick="onFilterClick('solo_red')" title="Filtrar: solo impresora en red">
-                    🌐 <span>Solo Red:</span> {{ kpi_impresora_red }}
+                    🌐 <span>Imp. Red:</span> {{ kpi_impresora_red }}
                 </div>
 
                 <!-- Tareas hoy -->
@@ -1177,7 +1177,8 @@
                         data-alerta-impresora-red="{{ pc.alerta_impresora_red | default(0) }}"
                         data-so="{{ pc.os_name | default('') }}"
                         data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
-                        data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}">
+                        data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}" style="cursor: pointer;"
+                        onclick="if(!event.target.closest('a') && !event.target.closest('button')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
                         {% if pc.pc_name in ['PC Generica', 'Infraestructura'] %}
                         <td
                             style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
@@ -1196,11 +1197,7 @@
                         <td><span class="text-muted">-</span></td>
                         <td><span class="text-muted">-</span></td>
                         <td class="text-center p-1">
-                            <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}"
-                                class="btn btn-sm btn-outline-secondary py-0 px-1" title="Ver Tareas y Detalle"
-                                style="font-size: 0.7rem;">
-                                <i class="bi bi-list-task"></i> Ver Tareas
-                            </a>
+                            <!-- Acciones reducidas porque la fila es clickeable -->
                         </td>
                         {% else %}
                         <td
@@ -1244,7 +1241,18 @@
                         <td>{{ pc.ram_gb }} GB</td>
                         <td>{{ pc.ram_detalles }}</td>
                         <td>{{ pc.disk_models }}</td>
-                        <td>{{ pc.printer_model }} ({{ pc.printer_port }})</td>
+                        <td>
+                            {% if not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in
+                            pc.printer_model | upper %}
+                            Sin impresora
+                            {% elif 'Red' in pc.printer_port %}
+                            Impresora en Red {{ pc.printer_model }}
+                            {% elif 'Local' in pc.printer_port %}
+                            Impresora Local {{ pc.printer_model }}
+                            {% else %}
+                            Impresora {{ pc.printer_model }}
+                            {% endif %}
+                        </td>
                         <td>{{ pc.monitors }}</td>
                         <td>{{ pc.ip_address }}</td>
 
@@ -1277,11 +1285,6 @@
                                     <i class="bi bi-trash"></i>
                                 </a>
                                 {% endif %}
-                                <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}"
-                                    class="btn btn-sm btn-outline-secondary py-0 px-1" title="Ver Tareas y Detalle"
-                                    style="font-size: 0.7rem;">
-                                    <i class="bi bi-list-task"></i>
-                                </a>
                                 <button onclick="showSecurity('{{ pc.pc_name }}')"
                                     class="btn btn-sm btn-outline-warning py-0 px-1" title="Ver Conexiones / Seguridad"
                                     style="font-size: 0.7rem;">

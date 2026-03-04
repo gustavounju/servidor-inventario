@@ -186,7 +186,18 @@
             </tr>
             <tr>
               <th>Impresora</th>
-              <td>{{ pc.printer_model }} ({{ pc.printer_port }})</td>
+              <td>
+                {% if not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in pc.printer_model | upper
+                %}
+                Sin impresora
+                {% elif 'Red' in pc.printer_port %}
+                Impresora en Red {{ pc.printer_model }}
+                {% elif 'Local' in pc.printer_port %}
+                Impresora Local {{ pc.printer_model }}
+                {% else %}
+                Impresora {{ pc.printer_model }}
+                {% endif %}
+              </td>
             </tr>
             <tr>
               <th>Monitores</th>
@@ -198,7 +209,7 @@
             </tr>
             <tr>
               <th>Último reporte</th>
-              <td>{{ pc.last_report }}</td>
+              <td>{{ pc.last_report | datetime_es }}</td>
             </tr>
           </tbody>
         </table>

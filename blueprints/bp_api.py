@@ -31,7 +31,44 @@ def process_inventory_data(data):
     motherboard_model = data.get("Motherboard_Model", "N/A")
     printer_model = data.get("Printer_Model", "N/A")
     printer_port = data.get("Printer_Port", "N/A")
-    monitors = data.get("Monitors", "N/A")
+    if printer_port and printer_port.upper().startswith("WSD"):
+        printer_port = "Red"
+        
+    # ----------------------------------------------------
+    # TRADUCCIÓN DE SIGLAS EDID DE MONITORES
+    # ----------------------------------------------------
+    raw_monitors = data.get("Monitors", "N/A")
+    edid_dict = {
+        "SAM": "Samsung",
+        "GSM": "LG",
+        "DEL": "Dell",
+        "PHL": "Philips",
+        "ACR": "Acer",
+        "AOC": "AOC",
+        "VSC": "ViewSonic",
+        "HPQ": "HP",
+        "HPN": "HP",
+        "LEN": "Lenovo",
+        "BNQ": "BenQ",
+        "ASU": "Asus",
+        "SNY": "Sony"
+    }
+    
+    if raw_monitors and raw_monitors != "N/A":
+        # Divide por si hay múltiples monitores (ej. "SAM | DEL")
+        parts = [p.strip() for p in raw_monitors.split("|")]
+        translated_parts = []
+        for p in parts:
+            # Reemplaza si el string completo es la sigla, o si empieza con la sigla
+            for sigla, nombre in edid_dict.items():
+                if sigla in p:
+                    p = p.replace(sigla, nombre)
+            translated_parts.append(p)
+        monitors = " | ".join(translated_parts)
+    else:
+        monitors = raw_monitors
+    # ----------------------------------------------------
+
     ping_ms = "N/A"
     ping_loss_pct = "N/A"
 

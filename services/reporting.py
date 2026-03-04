@@ -20,19 +20,26 @@ def format_date_es(d_obj):
 def format_datetime_es(dt_val):
     if not dt_val: return ""
     
-    # Si ya es un objeto datetime (MySQL)
-    if isinstance(dt_val, datetime.datetime):
-        return f"{dt_val.day:02d}/{dt_val.month:02d}/{dt_val.year} {dt_val.hour:02d}:{dt_val.minute:02d}"
-    
-    # Si es un string (legacy SQLite)
-    if isinstance(dt_val, str):
-        try:
-            dt_obj = datetime.datetime.strptime(dt_val, "%Y-%m-%d %H:%M:%S")
-            return f"{dt_obj.day:02d}/{dt_obj.month:02d}/{dt_obj.year} {dt_obj.hour:02d}:{dt_obj.minute:02d}"
-        except:
-            if ' ' in dt_val: return dt_val.split(' ')[1][:5]
-            return dt_val
-    return str(dt_val)
+    dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+    meses = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+
+    try:
+        if isinstance(dt_val, str):
+            # Si es string (legacy SQLite: 'YYYY-MM-DD HH:MM:SS' o ISO)
+            try:
+                dt_obj = datetime.datetime.strptime(dt_val, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                dt_obj = datetime.datetime.fromisoformat(dt_val.replace('Z', '+00:00'))
+        else:
+            # Si ya es datetime (MySQL/PyMySQL)
+            dt_obj = dt_val
+
+        nombre_dia = dias[dt_obj.weekday()]
+        nombre_mes = meses[dt_obj.month]
+        return f"{nombre_dia} {dt_obj.day:02d} de {nombre_mes} del {dt_obj.year} a las {dt_obj.hour:02d}:{dt_obj.minute:02d}"
+    except Exception as e:
+        # Fallback en caso de formato inesperado
+        return str(dt_val)
 
 class PDFReport(FPDF):
     def __init__(self, title="Reporte - Inventario GOLD", orientation='P', unit='mm', format='A4'):
