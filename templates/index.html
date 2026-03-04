@@ -1226,9 +1226,11 @@
                             </span>
                         </td>
                         <td>
-                            <div class="fw-bold">{{ pc.last_user or '-' }}</div>
                             {% if pc.ad_real_name %}
-                            <div class="small text-muted" style="font-size: 0.85rem;">{{ pc.ad_real_name }}</div>
+                            <div class="fw-bold">{{ pc.ad_real_name }}</div>
+                            <div class="small text-muted" style="font-size: 0.85rem;">{{ pc.last_user }}</div>
+                            {% else %}
+                            <div class="fw-bold">{{ pc.last_user or '-' }}</div>
                             {% endif %}
                         </td>
                         <td style="white-space: normal; max-width: 100px; font-size: 0.9rem;"><span

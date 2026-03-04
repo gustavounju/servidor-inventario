@@ -10,10 +10,12 @@ def index():
     """Muestra el panel principal de Infraestructura: Baterías y UPS"""
     with get_db_connection() as conn:
         ups_list = conn.execute('''
-            SELECT u.*, b.serial_number as battery_code, p.last_user, p.fuero 
+            SELECT u.*, b.serial_number as battery_code, p.last_user, p.fuero,
+                   usr.real_name as ad_real_name
             FROM ups_inventory u 
             LEFT JOIN components b ON u.assigned_battery_id = b.id
             LEFT JOIN pcs p ON u.assigned_pc = p.pc_name
+            LEFT JOIN ad_users usr ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = usr.username
             ORDER BY u.created_at DESC
         ''').fetchall()
         
@@ -23,9 +25,9 @@ def index():
         
         # PCs disponibles
         pcs_disponibles = conn.execute("""
-            SELECT p.pc_name, p.fuero, p.last_user, u.real_name 
+            SELECT p.pc_name, p.fuero, p.last_user, u.real_name as ad_real_name 
             FROM pcs p 
-            LEFT JOIN ad_users u ON LOWER(p.last_user) = u.username 
+            LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username 
             WHERE p.is_active = 'True' 
             ORDER BY p.pc_name
         """).fetchall()

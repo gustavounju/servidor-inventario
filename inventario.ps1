@@ -169,7 +169,8 @@ function Get-SecurityExtra {
             $names = @()
             if ($avs -is [array]) {
                 foreach ($a in $avs) { $names += $a.displayName }
-            } else {
+            }
+            else {
                 $names += $avs.displayName
             }
             $avName = [string]::Join(" / ", $names)
@@ -279,29 +280,56 @@ try {
     $printerModel = "N/A"
     $printerPort = "N/A"
     try {
-        # WMI Win32_Printer funciona en Win7
-        $defaultPrinter = Get-WmiObject -Class Win32_Printer | Where-Object { $_.Default -eq $true } | Select-Object -First 1
-        if ($defaultPrinter) {
-            $printerModel = $defaultPrinter.Name
-            $printerPort = $defaultPrinter.PortName
-            # Detectar tipo de puerto
-            if ($printerPort -like "USB*" -or $printerPort -like "LPT*") {
-                $printerPort += " (Local)"
-                # VERIFICACIÓN FÍSICA (PnP) PARA USB
-                # Si es USB, verificamos si hay un dispositivo PnP activo con ese nombre
-                if ($printerPort -like "USB*") {
-                    $pnp = Get-WmiObject Win32_PnPEntity | Where-Object { $_.Name -match $defaultPrinter.Name -or $_.Description -match $defaultPrinter.Name }
-                    if (-not $pnp -or $pnp.Status -ne "OK") {
-                        $printerPort += " [DESCONECTADA]"
-                    }
-                }
-            }
-            elseif ($printerPort -like "*IP_*" -or $printerPort -like "WSD-*" -or $printerPort -like "\\*") {
+        # Obtener todas las impresoras
+        $allPrinters = Get-WmiObject -Class Win32_Printer
+        
+        # 1. Intentar buscar la Default que NO sea virtual
+        $virtualKeywords = "PDF|XPS|OneNote|Fax|Send To|Microsoft Print|Writer"
+        $bestPrinter = $allPrinters | Where-Object { $_.Default -eq $true -and $_.Name -notmatch $virtualKeywords } | Select-Object -First 1
+        
+        # 2. Si la default es virtual o no hay, buscar la primera local física conectada
+        if (-not $bestPrinter) {
+            $bestPrinter = $allPrinters | Where-Object { $_.Local -eq $true -and $_.Name -notmatch $virtualKeywords -and $_.WorkOffline -eq $false } | Select-Object -First 1
+        }
+        
+        # 3. Si sigue sin haber, buscar cualquier local no virtual (aunque esté offline)
+        if (-not $bestPrinter) {
+            $bestPrinter = $allPrinters | Where-Object { $_.Local -eq $true -and $_.Name -notmatch $virtualKeywords } | Select-Object -First 1
+        }
+
+        # 4. Último recurso: la marcada como Default (aunque sea virtual)
+        if (-not $bestPrinter) {
+            $bestPrinter = $allPrinters | Where-Object { $_.Default -eq $true } | Select-Object -First 1
+        }
+
+        if ($bestPrinter) {
+            $printerModel = $bestPrinter.Name
+            $printerPort = $bestPrinter.PortName
+            
+            # Etiquetar tipo
+            if ($bestPrinter.Network -eq $true -or $printerPort -like "\\*" -or $printerPort -like "*IP_*" -or $printerPort -like "WSD-*") {
                 $printerPort += " (Red)"
+            }
+            else {
+                $printerPort += " (Local)"
+                # Verificación PnP para USB
+                if ($printerPort -like "USB*") {
+                    # Escape manual para evitar errores de regex en nombres con backslash
+                    $cleanName = $bestPrinter.Name -replace "[\\]", "\\"
+                    try {
+                        $pnp = Get-WmiObject Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Name -match [regex]::Escape($cleanName) -or $_.Description -match [regex]::Escape($cleanName) }
+                        if (-not $pnp -or $pnp.Status -ne "OK") {
+                            $printerPort += " [DESCONECTADA]"
+                        }
+                    }
+                    catch {}
+                }
             }
         }
     }
-    catch {}
+    catch {
+        Write-Host "Error detectando impresora: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
     # 7) Monitores (WmiMonitorID a veces falla en Win7 si no hay permisos, try-catch)
     $monitorsStr = "N/A"
     try {

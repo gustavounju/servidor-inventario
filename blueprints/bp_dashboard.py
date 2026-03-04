@@ -130,7 +130,7 @@ def dashboard():
                 SELECT p.*, u.real_name as ad_real_name,
                     (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') AS tareas_pendientes
                 FROM pcs p
-                LEFT JOIN ad_users u ON LOWER(p.last_user) = u.username
+                LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
                 WHERE 1=1
             """ + filter_sql
             
@@ -382,7 +382,12 @@ def delete_permanent_pc(pc_name):
 @bp_dashboard.route("/pc/<pc_name>")
 def pc_detail(pc_name):
     with get_db_connection() as conn:
-        pc = conn.execute("SELECT * FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+        pc = conn.execute("""
+            SELECT p.*, u.real_name as ad_real_name 
+            FROM pcs p 
+            LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username 
+            WHERE p.pc_name = %s
+        """, (pc_name,)).fetchone()
         tareas = conn.execute("SELECT id, pc_name, created_at, descripcion, estado, solicitante, assigned_to FROM tasks WHERE pc_name = %s ORDER BY created_at DESC", (pc_name,)).fetchall()
         technicians = [dict(row) for row in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
         audit_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = %s ORDER BY changed_at DESC", (pc_name,)).fetchall()

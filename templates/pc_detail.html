@@ -120,7 +120,11 @@
         {% endif %}
       </div>
       <p class="hero-subtitle mt-2 mb-2" style="display:flex; gap:18px; flex-wrap:wrap;">
-        <span><i class="bi bi-person-fill me-1"></i><strong>{{ pc.last_user or '-' }}</strong></span>
+        <span><i class="bi bi-person-fill me-1"></i><strong>{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or
+            '-' }}</strong></span>
+        {% if pc.ad_real_name %}
+        <span class="small opacity-75">({{ pc.last_user }})</span>
+        {% endif %}
         <span><i class="bi bi-building me-1"></i><strong>{{ pc.fuero or '-' }}</strong></span>
         <span><i class="bi bi-wifi me-1"></i><strong>{{ pc.ip_address or '-' }}</strong></span>
       </p>
@@ -156,7 +160,13 @@
           <tbody>
             <tr>
               <th style="width:22%">Usuario</th>
-              <td>{{ pc.last_user }}</td>
+              <td>
+                {% if pc.ad_real_name %}
+                <strong>{{ pc.ad_real_name }}</strong> <span class="text-muted">({{ pc.last_user }})</span>
+                {% else %}
+                {{ pc.last_user }}
+                {% endif %}
+              </td>
             </tr>
             <tr>
               <th>Fuero</th>

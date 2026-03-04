@@ -1,7 +1,6 @@
+from database.db_core import get_db_connection
 
-import sqlite3
-
-DB_FILE = "inventario.db"
+# DB_FILE is no longer needed for MySQL as it's handled by get_db_connection
 
 RAW_DATA = """
 Adolfo Adolino\tRios\tarios
@@ -348,31 +347,32 @@ Zalazar\tFernanda\tfzalazar
 """
 
 def populate():
-    conn = sqlite3.connect(DB_FILE)
-    
-    # Create table if not exists (username, real_name)
-    conn.execute('CREATE TABLE IF NOT EXISTS ad_users (username TEXT PRIMARY KEY, real_name TEXT)')
-    
-    # Process data
-    count = 0
-    lines = RAW_DATA.strip().split('\n')
-    for line in lines:
-        parts = line.split('\t')
-        if len(parts) >= 3:
-            given = parts[0].strip()
-            surname = parts[1].strip()
-            username = parts[2].strip().lower() # Normalize to lowercase
+    print("Iniciando población de usuarios en MySQL...")
+    try:
+        with get_db_connection() as conn:
+            # Create table if not exists (username, real_name)
+            conn.execute('CREATE TABLE IF NOT EXISTS ad_users (username VARCHAR(255) PRIMARY KEY, real_name TEXT)')
             
-            real_name = f"{given} {surname}".strip()
-            
-            if username:
-                conn.execute('INSERT OR REPLACE INTO ad_users (username, real_name) VALUES (?, ?)', 
-                             (username, real_name))
-                count += 1
-                
-    conn.commit()
-    conn.close()
-    print(f"Imported/Updated {count} users.")
+            # Process data
+            count = 0
+            lines = RAW_DATA.strip().split('\n')
+            for line in lines:
+                parts = line.split('\t')
+                if len(parts) >= 3:
+                    given = parts[0].strip()
+                    surname = parts[1].strip()
+                    username = parts[2].strip().lower() # Normalize to lowercase
+                    
+                    real_name = f"{given} {surname}".strip()
+                    
+                    if username:
+                        # MySQL syntax: INSERT INTO ... ON DUPLICATE KEY UPDATE
+                        conn.execute('INSERT INTO ad_users (username, real_name) VALUES (%s, %s) ON DUPLICATE KEY UPDATE real_name = VALUES(real_name)', 
+                                     (username, real_name))
+                        count += 1
+            print(f"Importación completada: {count} usuarios actualizados en MySQL.")
+    except Exception as e:
+        print(f"Error durante la población: {e}")
 
 if __name__ == "__main__":
     populate()

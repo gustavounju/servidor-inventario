@@ -206,8 +206,9 @@
                                                             <datalist id="datalistPCs">
                                                                 {% for pc in pcs_disponibles %}
                                                                 <option value="{{ pc.pc_name }}">{{ pc.fuero }} | {{
-                                                                    pc.last_user or 'Sin Usuario' }} {% if pc.real_name
-                                                                    %}- {{ pc.real_name }}{% endif %}</option>
+                                                                    pc.last_user or 'Sin Usuario' }} {% if
+                                                                    pc.ad_real_name
+                                                                    %}- {{ pc.ad_real_name }}{% endif %}</option>
                                                                 {% endfor %}
                                                             </datalist>
                                                         </div>
