@@ -23,9 +23,9 @@ def view_graphics():
         with get_db_connection() as conn:
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
             kpi_total_graveyard = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
-            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
-            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
-            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
+            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
             kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s", ("%Windows 7%",)).fetchone()["c"]
             kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE %s OR os_name LIKE %s)", ("%Windows 10%", "%Windows 11%")).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
@@ -156,11 +156,11 @@ def dashboard():
 
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
             kpi_total_graveyard = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
-            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
-            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
-            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name != 'PC Generica'").fetchone()["c"]
-            kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s", ("%Windows 7%",)).fetchone()["c"]
-            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE %s OR os_name LIKE %s)", ("%Windows 10%", "%Windows 11%")).fetchone()["c"]
+            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+            kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND pc_name NOT IN ('PC Generica', 'Infraestructura')", ("%Windows 7%",)).fetchone()["c"]
+            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE %s OR os_name LIKE %s) AND pc_name NOT IN ('PC Generica', 'Infraestructura')", ("%Windows 10%", "%Windows 11%")).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
             kpi_tareas_pendientes_total = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
 
@@ -247,7 +247,7 @@ def export_inventory_pdf():
     # Columnas: PC Name, Last User, OS Name, Processor, RAM, IP
     from services.reporting import PDFReport, format_date_es
     with get_db_connection() as conn:
-        rows = conn.execute("SELECT pc_name, last_user, os_name, processor, ram_gb, ip_address FROM pcs WHERE pc_name != 'PC Generica' ORDER BY last_report DESC").fetchall()
+        rows = conn.execute("SELECT pc_name, last_user, os_name, processor, ram_gb, ip_address FROM pcs WHERE pc_name NOT IN ('PC Generica', 'Infraestructura') ORDER BY last_report DESC").fetchall()
     
     pdf = PDFReport(title="Inventario General - Inventario GOLD", orientation='L')
     pdf.alias_nb_pages()
