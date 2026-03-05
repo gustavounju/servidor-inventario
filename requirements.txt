@@ -8,3 +8,4 @@ google-genai
 python-dotenv
 pymysql
 cryptography
+requests

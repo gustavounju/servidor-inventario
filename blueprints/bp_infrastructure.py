@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database.db_core import get_db_connection
 from datetime import datetime as dt
+import requests
 from utils.constants import FUERO_COLORS, FUERO_MAPPING
 
 bp_infrastructure = Blueprint('infrastructure', __name__, url_prefix='/infra')
@@ -145,6 +146,20 @@ def assign_ups_to_pc(ups_id):
         flash(f"Error vinculando UPS: {e}", "error")
         
     return redirect(request.referrer or url_for('infrastructure.index'))
+
+@bp_infrastructure.route('/status_check')
+def status_check():
+    """Verifica el estado del sistema SIGJ"""
+    url = "https://sigj.justiciajujuy.gov.ar/mentradas/sesiones/login"
+    try:
+        # Usamos un timeout corto para no bloquear demasiado si el sitio está caído
+        response = requests.get(url, timeout=5, verify=False)
+        if response.status_code == 200:
+            return {"status": "online", "code": response.status_code}
+        else:
+            return {"status": "offline", "code": response.status_code}
+    except Exception as e:
+        return {"status": "offline", "error": str(e)}
 
 @bp_infrastructure.route('/ups/<int:id>/delete')
 def delete_ups(id):
