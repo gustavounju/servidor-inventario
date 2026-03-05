@@ -98,10 +98,14 @@ def process_inventory_data(data):
     es_virtual = ("PDF" in pm) or ("XPS" in pm) or ("ONENOTE" in pm)
     es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp) or ("\\" in pm) or ("IP_" in pm) or ("(RED)" in pp) or ("(RED)" in pm)
 
-    if sin_modelo or es_virtual or esta_desconectada: alerta_sin_impresora = 1
-    else: alerta_sin_impresora = 0
+    if esta_desconectada and es_local and not sin_modelo:
+        alerta_impresora_red = 1
+        alerta_sin_impresora = 1
+    else:
+        if sin_modelo or es_virtual or esta_desconectada: alerta_sin_impresora = 1
+        else: alerta_sin_impresora = 0
 
-    alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red and not es_local) else 0
+        alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red and not es_local) else 0
 
     salud = data.get("Salud", {})
     alerta_disco = 0

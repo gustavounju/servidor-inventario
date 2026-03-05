@@ -1279,12 +1279,24 @@
                             {% if not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in
                             pc.printer_model | upper %}
                             Sin impresora
-                            {% elif 'Red' in pc.printer_port %}
+                            {% else %}
+                            {% if pc.alerta_sin_impresora and pc.alerta_impresora_red %}
+                            <span class="badge bg-info text-dark mb-1">Impresora en Red <i
+                                    class="bi bi-diagram-3"></i></span><br>
+                            {% endif %}
+
+                            {% if 'Red' in pc.printer_port %}
                             Impresora en Red {{ pc.printer_model }}
                             {% elif 'Local' in pc.printer_port %}
+                            {% if pc.alerta_sin_impresora and pc.alerta_impresora_red %}
+                            <span class="text-muted" title="Imprime por red pero el puerto mapea Local"
+                                style="text-decoration: line-through;">Impresora {{ pc.printer_model }}</span>
+                            {% else %}
                             Impresora Local {{ pc.printer_model }}
+                            {% endif %}
                             {% else %}
                             Impresora {{ pc.printer_model }}
+                            {% endif %}
                             {% endif %}
                         </td>
                         <td>{{ pc.monitors }}</td>
