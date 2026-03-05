@@ -105,7 +105,7 @@ def process_inventory_data(data):
         if sin_modelo or es_virtual or esta_desconectada: alerta_sin_impresora = 1
         else: alerta_sin_impresora = 0
 
-        alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red and not es_local) else 0
+        alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red) else 0
 
     salud = data.get("Salud", {})
     alerta_disco = 0
