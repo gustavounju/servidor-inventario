@@ -107,6 +107,9 @@ def process_inventory_data(data):
 
         alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red) else 0
 
+        if alerta_impresora_red == 1:
+            alerta_sin_impresora = 1
+
     salud = data.get("Salud", {})
     alerta_disco = 0
     discos_smart = salud.get("Discos_SMART", [])

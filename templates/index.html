@@ -1280,22 +1280,13 @@
                             pc.printer_model | upper %}
                             Sin impresora
                             {% else %}
-                            {% if pc.alerta_sin_impresora and pc.alerta_impresora_red %}
+                            {% if pc.alerta_impresora_red %}
                             <span class="badge bg-info text-dark mb-1">Impresora en Red <i
                                     class="bi bi-diagram-3"></i></span><br>
-                            {% endif %}
-
-                            {% if 'Red' in pc.printer_port %}
-                            Impresora en Red {{ pc.printer_model }}
-                            {% elif 'Local' in pc.printer_port %}
-                            {% if pc.alerta_sin_impresora and pc.alerta_impresora_red %}
-                            <span class="text-muted" title="Imprime por red pero el puerto mapea Local"
+                            <span class="text-muted" title="Imprime por red"
                                 style="text-decoration: line-through;">Impresora {{ pc.printer_model }}</span>
                             {% else %}
                             Impresora Local {{ pc.printer_model }}
-                            {% endif %}
-                            {% else %}
-                            Impresora {{ pc.printer_model }}
                             {% endif %}
                             {% endif %}
                         </td>
