@@ -740,6 +740,30 @@
             padding: 12px 14px !important;
         }
 
+        /* ===== SIGJ STATUS INDICATOR ===== */
+        .status-dot-blink {
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .hero-stat-sigj {
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            background: rgba(255, 255, 255, 0.15) !important;
+        }
+
         /* ===== TABLA (mejoras hover y borde) ===== */
         #inventoryTable thead th {
             background: var(--table-header-bg);
@@ -985,6 +1009,14 @@
                     id="kpiTareasPendientes" onclick="onFilterClick('tareas')"
                     title="Filtrar: PCs con tareas pendientes">
                     🔔 <span>Pendientes:</span> {{ kpi_tareas_pendientes_total }}
+                </div>
+
+                <!-- Status SIGJ -->
+                <div class="hero-stat hero-stat-sigj" title="Estado de SIGJ">
+                    <span id="sigj-dashboard-status-dot" class="status-dot-blink bg-warning"
+                        style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px;"></span>
+                    <span class="fw-bold me-1 text-white">SIGJ:</span>
+                    <span id="sigj-dashboard-status-text" class="fw-bold text-white-50">Checking...</span>
                 </div>
 
             </div>
@@ -2229,6 +2261,40 @@
         {% endfor %}
     </datalist>
 
+    <!-- Fetch SIGJ Status -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const statusDot = document.getElementById('sigj-dashboard-status-dot');
+            const statusText = document.getElementById('sigj-dashboard-status-text');
+
+            if (statusDot && statusText) {
+                fetch('/infra/status_check')
+                    .then(response => response.json())
+                    .then(data => {
+                        statusDot.classList.remove('status-dot-blink', 'bg-warning');
+                        if (data.status === 'online') {
+                            statusDot.classList.add('bg-success');
+                            statusText.innerText = 'Online';
+                            statusText.style.color = '#afffaf';
+                            statusText.classList.remove('text-white-50');
+                        } else {
+                            statusDot.classList.add('bg-danger');
+                            statusText.innerText = 'Offline';
+                            statusText.style.color = '#ff9999';
+                            statusText.classList.remove('text-white-50');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching SIGJ status:', error);
+                        statusDot.classList.remove('status-dot-blink', 'bg-warning');
+                        statusDot.classList.add('bg-secondary');
+                        statusText.innerText = 'Error';
+                        statusText.style.color = '#ccc';
+                        statusText.classList.remove('text-white-50');
+                    });
+            }
+        });
+    </script>
 </body>
 
 </html>
