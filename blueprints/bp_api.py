@@ -81,6 +81,7 @@ def process_inventory_data(data):
     
     esta_desconectada = "DESCONECTADA" in pp
     es_local = pp.startswith("USB") or pp.startswith("LPT")
+    sin_modelo = pm in ("", "N/A", "NINGUNA", "SIN IMPRESORA", "GENERICO", "GENERIC")
 
     # Si la impresora está desconectada y es local, tratarla como SIN IMPRESORA
     # (Solo si realmente no hay un modelo válido o es puramente genérica)
@@ -92,8 +93,8 @@ def process_inventory_data(data):
         pm = "SIN IMPRESORA"
         pp = "N/A"
         esta_desconectada = False
+        sin_modelo = True
 
-    sin_modelo = pm in ("", "N/A", "NINGUNA", "SIN IMPRESORA")
     es_virtual = ("PDF" in pm) or ("XPS" in pm) or ("ONENOTE" in pm)
     es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp)
 
