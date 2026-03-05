@@ -53,12 +53,39 @@
             font-weight: 800;
             color: #fff;
             letter-spacing: -0.02em;
+            margin-bottom: 2px;
+        }
+
+        .header-sigj-status {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
         }
 
         .app-header .header-actions {
             display: flex;
             gap: 8px;
             align-items: center;
+        }
+
+        /* ===== SIGJ STATUS INDICATOR ===== */
+        .status-dot-blink {
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         .app-header .btn-icon {
@@ -332,6 +359,12 @@
         <div>
             <div class="header-greeting">Hola,</div>
             <div class="header-name" id="headerName">Técnico</div>
+            <div class="header-sigj-status" title="Estado de SIGJ">
+                <span id="sigj-mobile-status-dot" class="status-dot-blink bg-warning"
+                    style="width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>
+                <span>SIGJ: </span>
+                <span id="sigj-mobile-status-text" class="ms-1 font-monospace">...</span>
+            </div>
         </div>
         <div class="header-actions">
             <button id="btnSound" class="btn-icon" onclick="toggleSound()" title="Sonido">
@@ -951,6 +984,35 @@
         function capitalize(s) {
             return s && s[0].toUpperCase() + s.slice(1);
         }
+
+        // --- SIGJ STATUS FETCH ---
+        document.addEventListener('DOMContentLoaded', function () {
+            const statusDot = document.getElementById('sigj-mobile-status-dot');
+            const statusText = document.getElementById('sigj-mobile-status-text');
+
+            if (statusDot && statusText) {
+                fetch('/infra/status_check')
+                    .then(response => response.json())
+                    .then(data => {
+                        statusDot.classList.remove('status-dot-blink', 'bg-warning');
+                        if (data.status === 'online') {
+                            statusDot.classList.add('bg-success');
+                            statusText.innerText = 'ON';
+                            statusText.style.color = '#afffaf';
+                        } else {
+                            statusDot.classList.add('bg-danger');
+                            statusText.innerText = 'OFF';
+                            statusText.style.color = '#ff9999';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching SIGJ status:', error);
+                        statusDot.classList.remove('status-dot-blink', 'bg-warning');
+                        statusDot.classList.add('bg-secondary');
+                        statusText.innerText = 'ERR';
+                    });
+            }
+        });
 
     </script>
 </body>
