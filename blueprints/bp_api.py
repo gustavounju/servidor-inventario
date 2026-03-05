@@ -96,7 +96,7 @@ def process_inventory_data(data):
         sin_modelo = True
 
     es_virtual = ("PDF" in pm) or ("XPS" in pm) or ("ONENOTE" in pm)
-    es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp)
+    es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp) or ("\\" in pm) or ("IP_" in pm) or ("(RED)" in pp) or ("(RED)" in pm)
 
     if sin_modelo or es_virtual or esta_desconectada: alerta_sin_impresora = 1
     else: alerta_sin_impresora = 0
