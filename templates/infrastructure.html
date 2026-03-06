@@ -271,8 +271,8 @@
                 <div class="col-12">
                     <div class="card shadow-sm border-info">
                         <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="bi bi-cpu me-2"></i> Periféricos, Hardware e Impresoras de Red
-                            </h5>
+                            <h5 class="mb-0"><i class="bi bi-cpu me-2"></i> Periféricos y Hardware (Monitores, DVRs,
+                                Teclados, etc.)</h5>
                             <button class="btn btn-sm btn-light text-info fw-bold" data-bs-toggle="modal"
                                 data-bs-target="#modalAddComponent">
                                 <i class="bi bi-plus-circle"></i> Ingresar Al Stock
@@ -344,6 +344,57 @@
                 </div>
             </div>
 
+            <!-- ROW 3: IMPRESORAS DE RED -->
+            <div class="row mt-4 mb-5">
+                <div class="col-12">
+                    <div class="card shadow-sm border-secondary">
+                        <div
+                            class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-printer me-2"></i> Impresoras de Red (Standalone)</h5>
+                            <button class="btn btn-sm btn-light text-secondary fw-bold" data-bs-toggle="modal"
+                                data-bs-target="#modalAddNetworkPrinter">
+                                <i class="bi bi-plus-circle"></i> Ingresar Impresora
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-striped mb-0 align-middle">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Dirección IP</th>
+                                            <th>Marca/Modelo</th>
+                                            <th>N° Serie / MAC</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for printer in network_printers %}
+                                        <tr>
+                                            <td class="fw-bold text-primary">{{ printer.ip_address }}</td>
+                                            <td>{{ printer.brand_model }}</td>
+                                            <td class="text-muted">{{ printer.serial_number }}</td>
+                                            <td class="text-end">
+                                                <a href="{{ url_for('infrastructure.delete_network_printer', id=printer.id) }}"
+                                                    class="btn btn-sm btn-outline-danger" title="Eliminar del sistema"
+                                                    onclick="return confirm('¿Seguro de eliminar esta impresora de red?');">
+                                                    <i class="bi bi-x"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">No hay impresoras de red
+                                                registradas individualmente.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Modal Ingreso de Componente -->
@@ -373,7 +424,6 @@
                                     <option value="Webcam">
                                     <option value="Placa de Video">
                                     <option value="Adaptador HDMI">
-                                    <option value="Impresora">
                                 </datalist>
                             </div>
                             <div class="mb-3">
@@ -453,6 +503,45 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Ingreso Impresora de Red -->
+        <div class="modal fade" id="modalAddNetworkPrinter" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ url_for('infrastructure.add_network_printer') }}" method="POST">
+                        <div class="modal-header bg-secondary text-white">
+                            <h5 class="modal-title">Ingresar Impresora de Red</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Dirección IP <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="ip_address" required
+                                    placeholder="Ej: 10.8.X.X">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">N° Serie / MAC Address <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="serial_number" required
+                                    placeholder="SN / MAC de la impresora">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Marca e Información Extra</label>
+                                <input type="text" class="form-control" name="brand_model"
+                                    placeholder="Ej: HP LaserJet P1102w / Lexmark...">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-secondary text-white">Registrar Impresora</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {

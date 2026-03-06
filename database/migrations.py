@@ -260,6 +260,37 @@ def migrate_db_v13():
     print("Migración V13 verificada.")
 
 
+def migrate_db_v14():
+    """Migración V14: Asegurar tabla network_printers."""
+    print("Verificando migración de DB v14...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "network_printers"):
+            print("Creando tabla network_printers...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS network_printers (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    ip_address VARCHAR(255),
+                    serial_number VARCHAR(255) UNIQUE,
+                    brand_model TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+            print("Migrando impresoras existentes...")
+            # Migrar las impresoras que ya estuvieran en components
+            printers = conn.execute("SELECT serial_number, brand_model, created_at FROM components WHERE component_type = 'Impresora'").fetchall()
+            for p in printers:
+                # Insertamos con IP vacía porque antes no se guardaba
+                conn.execute(
+                    "INSERT IGNORE INTO network_printers (ip_address, serial_number, brand_model, created_at) VALUES ('N/A', %s, %s, %s)",
+                    (p['serial_number'], p['brand_model'], p['created_at'])
+                )
+            # Borrar las impresoras de components
+            conn.execute("DELETE FROM components WHERE component_type = 'Impresora'")
+    print("Migración V14 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -274,3 +305,4 @@ def run_all_migrations():
     migrate_db_v11()
     migrate_db_v12()
     migrate_db_v13()
+    migrate_db_v14()

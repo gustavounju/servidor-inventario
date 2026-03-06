@@ -44,12 +44,16 @@ def index():
             ORDER BY c.created_at DESC
         ''').fetchall()
 
+        # Impresoras de Red
+        network_printers = conn.execute("SELECT * FROM network_printers ORDER BY created_at DESC").fetchall()
+
     return render_template(
         'infrastructure.html', 
         ups_list=ups_list,
         baterias_disponibles=baterias_disponibles,
         pcs_disponibles=pcs_disponibles,
         components=components,
+        network_printers=network_printers,
         fuero_colors=FUERO_COLORS
     )
 
@@ -269,6 +273,40 @@ def delete_component(id):
             conn.execute("DELETE FROM components WHERE id = %s", (id,))
             conn.commit()
             flash("Componente eliminado del inventario.", "success")
+    except Exception as e:
+        flash(f"Error: {e}", "error")
+    return redirect(url_for('infrastructure.index'))
+
+@bp_infrastructure.route('/network_printers/add', methods=['POST'])
+def add_network_printer():
+    ip_address = request.form.get('ip_address', '').strip()
+    serial_number = request.form.get('serial_number', '').strip()
+    brand_model = request.form.get('brand_model', '').strip()
+    
+    if not serial_number or not ip_address:
+        flash("La Dirección IP y el Número de Serie son obligatorios.", "error")
+        return redirect(url_for('infrastructure.index'))
+        
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO network_printers (ip_address, serial_number, brand_model) VALUES (%s, %s, %s)",
+                (ip_address, serial_number, brand_model)
+            )
+            conn.commit()
+        flash(f"Impresora de red ({ip_address}) registrada exitosamente.", "success")
+    except Exception as e:
+        flash(f"Error al agregar impresora de red (¿serie duplicada?): {e}", "error")
+        
+    return redirect(url_for('infrastructure.index'))
+
+@bp_infrastructure.route('/network_printers/<int:id>/delete')
+def delete_network_printer(id):
+    try:
+        with get_db_connection() as conn:
+            conn.execute("DELETE FROM network_printers WHERE id = %s", (id,))
+            conn.commit()
+            flash("Impresora de red eliminada del inventario.", "success")
     except Exception as e:
         flash(f"Error: {e}", "error")
     return redirect(url_for('infrastructure.index'))
