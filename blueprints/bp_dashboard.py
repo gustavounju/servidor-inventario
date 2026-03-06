@@ -401,6 +401,16 @@ def pc_detail(pc_name):
             WHERE u.assigned_pc = %s
         ''', (pc_name,)).fetchone()
         
+        # --- NUEVA LÓGICA: Detección de impresora compartida por otra PC ---
+        sharing_pc_data = None
+        if pc and pc["printer_port"] and pc["printer_port"].startswith("\\\\"):
+            # Extraer el nombre de la PC desde una ruta UNC (ej: \\SISTEMAS-105\HP Deskjet)
+            parts = pc["printer_port"].split("\\")
+            if len(parts) >= 3:
+                potential_host = parts[2].upper()
+                sharing_pc_data = conn.execute("SELECT pc_name, is_active FROM pcs WHERE pc_name = %s LIMIT 1", (potential_host,)).fetchone()
+        # -------------------------------------------------------------------
+        
         # UPS Disponibles en caso de querer asignarle una (UPS sin asignar)
         available_ups = conn.execute("SELECT id, code, model FROM ups_inventory WHERE assigned_pc IS NULL").fetchall()
         
@@ -423,7 +433,7 @@ def pc_detail(pc_name):
         baterias_disponibles = conn.execute("SELECT id, serial_number as code, brand_model FROM components WHERE component_type LIKE 'Bat%' AND status = 'Stock'").fetchall()
 
     if pc is None: abort(404)
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups=pc_ups, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups=pc_ups, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles, sharing_pc=sharing_pc_data)
 
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
 def update_pc_infrastructure(pc_name):

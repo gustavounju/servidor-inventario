@@ -205,6 +205,18 @@
                 <span class="badge bg-info text-dark mb-1">Impresora en Red <i class="bi bi-diagram-3"></i></span><br>
                 <span class="text-muted" title="Imprime por red" style="text-decoration: line-through;">Impresora {{
                   pc.printer_model }}</span>
+                {% if sharing_pc %}
+                <div class="mt-1" style="font-size: 0.8rem;">
+                  <i class="bi bi-share-fill text-muted"></i> Compartida por:
+                  <a href="{{ url_for('dashboard.pc_detail', pc_name=sharing_pc.pc_name) }}" class="fw-bold"
+                    style="text-decoration: none;">
+                    {{ sharing_pc.pc_name }}
+                  </a>
+                  {% if sharing_pc.is_active == 'False' %}
+                  <span class="badge bg-secondary" style="font-size: 0.6rem;">(Cementerio)</span>
+                  {% endif %}
+                </div>
+                {% endif %}
                 {% else %}
                 Impresora Local {{ pc.printer_model }}
                 {% endif %}
