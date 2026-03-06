@@ -307,13 +307,16 @@ try {
             $printerPort = $bestPrinter.PortName
             
             # Etiquetar tipo
-            if ($bestPrinter.Network -eq $true -or $printerPort -like "\\*" -or $printerPort -like "*IP_*" -or $printerPort -like "WSD-*") {
+            # 1. Definitivamente RED (Conexión a servidor de impresión o share)
+            if ($bestPrinter.Network -eq $true -or $printerPort -like "\\*") {
                 $printerPort += " (Red)"
             }
-            else {
+            # 2. Definitivamente LOCAL FÍSICO (USB, LPT, COM, DOT4 para HP)
+            elseif ($printerPort -like "USB*" -or $printerPort -like "DOT4*" -or $printerPort -like "LPT*" -or $printerPort -like "COM*") {
                 $printerPort += " (Local)"
-                # Verificación PnP para USB
-                if ($printerPort -like "USB*") {
+                
+                # Verificación PnP para USB/DOT4
+                if ($printerPort -like "USB*" -or $printerPort -like "DOT4*") {
                     # Escape manual para evitar errores de regex en nombres con backslash
                     $cleanName = $bestPrinter.Name -replace "[\\]", "\\"
                     try {
@@ -324,6 +327,14 @@ try {
                     }
                     catch {}
                 }
+            }
+            # 3. Puertos de red modernos (IP, WSD)
+            elseif ($printerPort -like "*IP_*" -or $printerPort -like "WSD-*") {
+                $printerPort += " (Red)"
+            }
+            # 4. Resto (ej: FILE:, NUL:, etc)
+            else {
+                $printerPort += " (Local)"
             }
         }
     }

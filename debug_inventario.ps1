@@ -290,20 +290,31 @@ try {
         if ($defaultPrinter) {
             $printerModel = $defaultPrinter.Name
             $printerPort = $defaultPrinter.PortName
-            # Detectar tipo de puerto
-            if ($printerPort -like "USB*" -or $printerPort -like "LPT*") {
+
+            # Etiquetar tipo
+            # 1. Definitivamente RED (Conexión a servidor de impresión o share)
+            if ($defaultPrinter.Network -eq $true -or $printerPort -like "\\*") {
+                $printerPort += " (Red)"
+            }
+            # 2. Definitivamente LOCAL FÍSICO (USB, LPT, COM, DOT4 para HP)
+            elseif ($printerPort -like "USB*" -or $printerPort -like "DOT4*" -or $printerPort -like "LPT*" -or $printerPort -like "COM*") {
                 $printerPort += " (Local)"
-                # VERIFICACIÓN FÍSICA (PnP) PARA USB
-                # Si es USB, verificamos si hay un dispositivo PnP activo con ese nombre
-                if ($printerPort -like "USB*") {
-                    $pnp = Get-WmiObject Win32_PnPEntity | Where-Object { $_.Name -match $defaultPrinter.Name -or $_.Description -match $defaultPrinter.Name }
+                
+                # Verificación PnP para USB/DOT4
+                if ($printerPort -like "USB*" -or $printerPort -like "DOT4*") {
+                    $pnp = Get-WmiObject Win32_PnPEntity | Where-Object { $_.Name -match [regex]::Escape($defaultPrinter.Name) -or $_.Description -match [regex]::Escape($defaultPrinter.Name) }
                     if (-not $pnp -or $pnp.Status -ne "OK") {
                         $printerPort += " [DESCONECTADA]"
                     }
                 }
             }
-            elseif ($printerPort -like "*IP_*" -or $printerPort -like "WSD-*" -or $printerPort -like "\\*") {
+            # 3. Puertos de red modernos (IP, WSD)
+            elseif ($printerPort -like "*IP_*" -or $printerPort -like "WSD-*") {
                 $printerPort += " (Red)"
+            }
+            # 4. Resto (ej: FILE:, NUL:, etc)
+            else {
+                $printerPort += " (Local)"
             }
         }
     }
