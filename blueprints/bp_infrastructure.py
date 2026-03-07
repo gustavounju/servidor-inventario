@@ -37,15 +37,21 @@ def index():
         components = conn.execute('''
             SELECT c.*, p.fuero as pc_fuero, p.last_user,
                    parent.serial_number as parent_serial,
-                   parent.component_type as parent_type
+                   parent.component_type as parent_type,
+                   u.code as ups_code,
+                   u.assigned_pc as ups_assigned_pc
             FROM components c
             LEFT JOIN pcs p ON c.assigned_pc = p.pc_name
             LEFT JOIN components parent ON c.assigned_to_component_id = parent.id
+            LEFT JOIN ups_inventory u ON u.assigned_battery_id = c.id
             ORDER BY c.created_at DESC
         ''').fetchall()
 
         # Impresoras de Red
         network_printers = conn.execute("SELECT * FROM network_printers ORDER BY created_at DESC").fetchall()
+
+        # Historial de Infraestructura
+        infra_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = 'Infraestructura' ORDER BY changed_at DESC").fetchall()
 
     return render_template(
         'infrastructure.html', 
@@ -54,6 +60,7 @@ def index():
         pcs_disponibles=pcs_disponibles,
         components=components,
         network_printers=network_printers,
+        infra_logs=infra_logs,
         fuero_colors=FUERO_COLORS
     )
 
@@ -169,13 +176,22 @@ def status_check():
 def delete_ups(id):
     try:
         with get_db_connection() as conn:
-            ups = conn.execute("SELECT assigned_battery_id FROM ups_inventory WHERE id = %s", (id,)).fetchone()
-            if ups and ups['assigned_battery_id']:
+            ups = conn.execute("SELECT code, assigned_pc, assigned_battery_id FROM ups_inventory WHERE id = %s", (id,)).fetchone()
+            if not ups:
+                return redirect(url_for('infrastructure.index'))
+            
+            if ups['assigned_pc']:
+                flash(f"No se puede eliminar: La UPS {ups['code']} está asignada a la PC '{ups['assigned_pc']}'. Desvincúlela primero.", "error")
+                return redirect(url_for('infrastructure.index'))
+                
+            if ups['assigned_battery_id']:
                 # Liberar bateria
                 conn.execute("UPDATE components SET status = 'Stock' WHERE id = %s", (ups['assigned_battery_id'],))
+            
             conn.execute("DELETE FROM ups_inventory WHERE id = %s", (id,))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES ('Infraestructura', 'UPS Eliminada', %s, 'DELETED')", (ups['code'],))
             conn.commit()
-            flash("UPS eliminada.", "success")
+            flash("UPS eliminada y registrada en el historial de infraestructura.", "success")
     except Exception as e:
         flash(f"Error: {e}", "error")
     return redirect(url_for('infrastructure.index'))
@@ -266,13 +282,26 @@ def assign_component_to_component(component_id):
 def delete_component(id):
     try:
         with get_db_connection() as conn:
-            # First, check if there are sub-components and release them to stock
+            comp = conn.execute("SELECT serial_number, component_type, status FROM components WHERE id = %s", (id,)).fetchone()
+            if not comp:
+                return redirect(url_for('infrastructure.index'))
+                
+            if comp['status'] != 'Stock':
+                flash(f"No se puede eliminar: El componente {comp['component_type']} ({comp['serial_number']}) se encuentra En Uso. Desvincúlelo primero.", "error")
+                return redirect(url_for('infrastructure.index'))
+                
+            # Check if it is a battery assigned to a UPS and unassign it to avoid foreign key/logic errors
+            conn.execute("UPDATE ups_inventory SET assigned_battery_id = NULL WHERE assigned_battery_id = %s", (id,))
+            
+            # Check if there are sub-components and release them to stock
             conn.execute("UPDATE components SET assigned_to_component_id = NULL, status = 'Stock' WHERE assigned_to_component_id = %s", (id,))
             
             # Now delete the component
             conn.execute("DELETE FROM components WHERE id = %s", (id,))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES ('Infraestructura', %s, %s, 'DELETED')", 
+                         (f"Componente Eliminado ({comp['component_type']})", comp['serial_number']))
             conn.commit()
-            flash("Componente eliminado del inventario.", "success")
+            flash("Componente eliminado del inventario y registrado en el historial.", "success")
     except Exception as e:
         flash(f"Error: {e}", "error")
     return redirect(url_for('infrastructure.index'))
@@ -304,9 +333,21 @@ def add_network_printer():
 def delete_network_printer(id):
     try:
         with get_db_connection() as conn:
+            printer = conn.execute("SELECT ip_address, brand_model FROM network_printers WHERE id = %s", (id,)).fetchone()
+            if not printer:
+                return redirect(url_for('infrastructure.index'))
+                
+            # Verificar si está en uso buscando la IP en `printer_port` de alguna PC
+            used_pc = conn.execute("SELECT pc_name FROM pcs WHERE is_active = 'True' AND printer_port LIKE %s LIMIT 1", (f"%{printer['ip_address']}%",)).fetchone()
+            if used_pc:
+                flash(f"No se puede eliminar: La impresora ({printer['ip_address']}) está actualmente asignada al equipo '{used_pc['pc_name']}'.", "error")
+                return redirect(url_for('infrastructure.index'))
+                
             conn.execute("DELETE FROM network_printers WHERE id = %s", (id,))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES ('Infraestructura', 'Impresora de Red Eliminada', %s, 'DELETED')", 
+                         (printer['ip_address'],))
             conn.commit()
-            flash("Impresora de red eliminada del inventario.", "success")
+            flash("Impresora de red eliminada del catálogo y registrada en el historial.", "success")
     except Exception as e:
         flash(f"Error: {e}", "error")
     return redirect(url_for('infrastructure.index'))

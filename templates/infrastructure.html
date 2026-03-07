@@ -40,7 +40,10 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="/">Inventario GOLD</a>
 
-            <div class="ms-auto">
+            <div class="ms-auto d-flex gap-2">
+                <a href="{{ url_for('dashboard.global_activity') }}" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-clock-history me-1"></i>Actividad
+                </a>
                 <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-sm btn-outline-light">
                     <i class="bi bi-arrow-left me-1"></i>Dashboard
                 </a>
@@ -161,11 +164,18 @@
                                             </button>
 
                                             <!-- Eliminar UPS -->
+                                            {% if ups.assigned_pc %}
+                                            <button class="btn btn-sm btn-outline-danger ms-1" title="Eliminar UPS"
+                                                onclick="alert('No se puede eliminar: Esta UPS está asignada a la PC {{ ups.assigned_pc }}. Desvincúlela primero.');">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                            {% else %}
                                             <a href="{{ url_for('infrastructure.delete_ups', id=ups.id) }}"
                                                 class="btn btn-sm btn-outline-danger ms-1"
                                                 onclick="return confirm('¿Eliminar esta UPS del sistema? Si tiene una batería asignada, se devolverá al Stock.')">
                                                 <i class="bi bi-trash"></i>
                                             </a>
+                                            {% endif %}
                                         </td>
                                     </tr>
 
@@ -319,15 +329,32 @@
                                                 {% elif comp.assigned_to_component_id %}
                                                 <span class="ms-1 text-muted">A {{ comp.parent_type }} ({{
                                                     comp.parent_serial }})</span>
+                                                {% elif comp.ups_code %}
+                                                <span class="ms-1 fw-bold text-secondary">UPS: {{ comp.ups_code
+                                                    }}</span>
+                                                {% if comp.ups_assigned_pc %}
+                                                <a href="{{ url_for('dashboard.pc_detail', pc_name=comp.ups_assigned_pc) }}"
+                                                    class="ms-1 fw-bold text-primary" style="text-decoration: none;">
+                                                    {{ comp.ups_assigned_pc }}
+                                                </a>
+                                                {% endif %}
                                                 {% endif %}
                                                 {% endif %}
                                             </td>
                                             <td class="text-end">
+                                                {% if comp.status != 'Stock' %}
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                    title="Eliminar del sistema"
+                                                    onclick="alert('No se puede eliminar: Este componente se encuentra asignado{% if comp.assigned_pc %} a la PC {{ comp.assigned_pc }}{% elif comp.ups_code %} a la UPS {{ comp.ups_code }}{% elif comp.assigned_to_component_id %} a otro componente{% endif %}. Desvincúlelo devolviéndolo al Stock primero.');">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                                {% else %}
                                                 <a href="{{ url_for('infrastructure.delete_component', id=comp.id) }}"
                                                     class="btn btn-sm btn-outline-danger" title="Eliminar del sistema"
                                                     onclick="return confirm('¿Seguro de dar de baja este componente?');">
                                                     <i class="bi bi-x"></i>
                                                 </a>
+                                                {% endif %}
                                             </td>
                                         </tr>
                                         {% else %}
@@ -397,182 +424,223 @@
 
         </div>
 
-        <!-- Modal Ingreso de Componente -->
-        <div class="modal fade" id="modalAddComponent" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form action="{{ url_for('infrastructure.add_component') }}" method="POST">
-                        <div class="modal-header bg-info text-white">
-                            <h5 class="modal-title">Ingresar Componente al Stock</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Tipo de Componente <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="component_type" required
-                                    list="componentTypesList" autocomplete="off"
-                                    placeholder="Ej: Monitor, DVR, Disco Duro...">
-                                <datalist id="componentTypesList">
-                                    <option value="Monitor">
-                                    <option value="DVR">
-                                    <option value="Disco Interno">
-                                    <option value="Batería UPS">
-                                    <option value="Teclado">
-                                    <option value="Mouse">
-                                    <option value="Webcam">
-                                    <option value="Placa de Video">
-                                    <option value="Adaptador HDMI">
-                                </datalist>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">N° Serie / Identificador Único <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="serial_number" required
-                                    placeholder="Ej: SN-AB1234...">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Marca e Información Extra</label>
-                                <input type="text" class="form-control" name="brand_model"
-                                    placeholder="Ej: Samsung 24 / Hikvision 8CH">
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold">Proveedor / Negocio</label>
-                                    <input type="text" class="form-control" name="supplier"
-                                        placeholder="Ej: Compumundo">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold">Remito / N° Factura</label>
-                                    <input type="text" class="form-control" name="invoice_number"
-                                        placeholder="Ej: A-0001-12345678">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-info text-white">Registrar Ingreso</button>
-                        </div>
-                    </form>
+    </div>
+
+    <!-- ROW 4: REGISTRO DE ACTIVIDAD (INFRAESTRUCTURA) -->
+    <div class="row mt-4 mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm border-dark">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i> Historial de Actividad (Componentes
+                        Eliminados)</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Fecha y Hora</th>
+                                    <th>Actividad / Acción</th>
+                                    <th>Detalle / S/N / Código</th>
+                                    <th>Estado Final</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in infra_logs %}
+                                <tr>
+                                    <td>{{ log.changed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td><span class="badge bg-secondary">{{ log.field }}</span></td>
+                                    <td class="fw-bold">{{ log.old_value }}</td>
+                                    <td class="text-danger fw-bold"><i class="bi bi-x-circle me-1"></i> {{ log.new_value
+                                        }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">No hay registros de actividad
+                                        eliminada en la infraestructura.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Modal Ingreso de UPS -->
-        <div class="modal fade" id="modalAddUPS" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form action="{{ url_for('infrastructure.add_ups') }}" method="POST">
-                        <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title">Registrar Nueva UPS</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+    <!-- Modal Ingreso de Componente -->
+    <div class="modal fade" id="modalAddComponent" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('infrastructure.add_component') }}" method="POST">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title">Ingresar Componente al Stock</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tipo de Componente <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="component_type" required
+                                list="componentTypesList" autocomplete="off"
+                                placeholder="Ej: Monitor, DVR, Disco Duro...">
+                            <datalist id="componentTypesList">
+                                <option value="Monitor">
+                                <option value="DVR">
+                                <option value="Disco Interno">
+                                <option value="Batería UPS">
+                                <option value="Teclado">
+                                <option value="Mouse">
+                                <option value="Webcam">
+                                <option value="Placa de Video">
+                                <option value="Adaptador HDMI">
+                            </datalist>
                         </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Código / N° Inventario <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="code" required
-                                    placeholder="Ej: UPS-LYO-001 / S/N 1234...">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">N° Serie / Identificador Único <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="serial_number" required
+                                placeholder="Ej: SN-AB1234...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Marca e Información Extra</label>
+                            <input type="text" class="form-control" name="brand_model"
+                                placeholder="Ej: Samsung 24 / Hikvision 8CH">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Proveedor / Negocio</label>
+                                <input type="text" class="form-control" name="supplier" placeholder="Ej: Compumundo">
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Modelo exacto</label>
-                                <input type="text" class="form-control" name="model" value="LYONN CTB-800V">
-                                <div class="form-text">Si son todas del mismo modelo, puede dejar el valor por defecto.
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold">Proveedor / Negocio</label>
-                                    <input type="text" class="form-control" name="supplier"
-                                        placeholder="Ej: Compumundo">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold">Remito / N° Factura</label>
-                                    <input type="text" class="form-control" name="invoice_number"
-                                        placeholder="Ej: A-0001-12345678">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Remito / N° Factura</label>
+                                <input type="text" class="form-control" name="invoice_number"
+                                    placeholder="Ej: A-0001-12345678">
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Registrar UPS</button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-info text-white">Registrar Ingreso</button>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
 
-        <!-- Modal Ingreso Impresora de Red -->
-        <div class="modal fade" id="modalAddNetworkPrinter" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form action="{{ url_for('infrastructure.add_network_printer') }}" method="POST">
-                        <div class="modal-header bg-secondary text-white">
-                            <h5 class="modal-title">Ingresar Impresora de Red</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+    <!-- Modal Ingreso de UPS -->
+    <div class="modal fade" id="modalAddUPS" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('infrastructure.add_ups') }}" method="POST">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Registrar Nueva UPS</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Código / N° Inventario <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="code" required
+                                placeholder="Ej: UPS-LYO-001 / S/N 1234...">
                         </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Dirección IP <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="ip_address" required
-                                    placeholder="Ej: 10.8.X.X">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">N° Serie / MAC Address <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="serial_number" required
-                                    placeholder="SN / MAC de la impresora">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Marca e Información Extra</label>
-                                <input type="text" class="form-control" name="brand_model"
-                                    placeholder="Ej: HP LaserJet P1102w / Lexmark...">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Modelo exacto</label>
+                            <input type="text" class="form-control" name="model" value="LYONN CTB-800V">
+                            <div class="form-text">Si son todas del mismo modelo, puede dejar el valor por defecto.
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-secondary text-white">Registrar Impresora</button>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Proveedor / Negocio</label>
+                                <input type="text" class="form-control" name="supplier" placeholder="Ej: Compumundo">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Remito / N° Factura</label>
+                                <input type="text" class="form-control" name="invoice_number"
+                                    placeholder="Ej: A-0001-12345678">
+                            </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Registrar UPS</button>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const statusDot = document.getElementById('sigj-status-dot');
-                const statusText = document.getElementById('sigj-status-text');
+    <!-- Modal Ingreso Impresora de Red -->
+    <div class="modal fade" id="modalAddNetworkPrinter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('infrastructure.add_network_printer') }}" method="POST">
+                    <div class="modal-header bg-secondary text-white">
+                        <h5 class="modal-title">Ingresar Impresora de Red</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Dirección IP <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="ip_address" required
+                                placeholder="Ej: 10.8.X.X">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">N° Serie / MAC Address <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="serial_number" required
+                                placeholder="SN / MAC de la impresora">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Marca e Información Extra</label>
+                            <input type="text" class="form-control" name="brand_model"
+                                placeholder="Ej: HP LaserJet P1102w / Lexmark...">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary text-white">Registrar Impresora</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-                fetch('/infra/status_check')
-                    .then(response => response.json())
-                    .then(data => {
-                        statusDot.classList.remove('status-dot-blink', 'bg-warning');
-                        if (data.status === 'online') {
-                            statusDot.classList.add('bg-success');
-                            statusText.innerText = 'Online';
-                            statusText.classList.add('text-success-light');
-                            // Custom style to make it look nicer against the gradient
-                            statusText.style.color = '#afffaf';
-                        } else {
-                            statusDot.classList.add('bg-danger');
-                            statusText.innerText = 'Offline';
-                            statusText.style.color = '#ff9999';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching SIGJ status:', error);
-                        statusDot.classList.remove('status-dot-blink', 'bg-warning');
-                        statusDot.classList.add('bg-secondary');
-                        statusText.innerText = 'Error';
-                        statusText.style.color = '#ccc';
-                    });
-            });
-        </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const statusDot = document.getElementById('sigj-status-dot');
+            const statusText = document.getElementById('sigj-status-text');
+
+            fetch('/infra/status_check')
+                .then(response => response.json())
+                .then(data => {
+                    statusDot.classList.remove('status-dot-blink', 'bg-warning');
+                    if (data.status === 'online') {
+                        statusDot.classList.add('bg-success');
+                        statusText.innerText = 'Online';
+                        statusText.classList.add('text-success-light');
+                        // Custom style to make it look nicer against the gradient
+                        statusText.style.color = '#afffaf';
+                    } else {
+                        statusDot.classList.add('bg-danger');
+                        statusText.innerText = 'Offline';
+                        statusText.style.color = '#ff9999';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching SIGJ status:', error);
+                    statusDot.classList.remove('status-dot-blink', 'bg-warning');
+                    statusDot.classList.add('bg-secondary');
+                    statusText.innerText = 'Error';
+                    statusText.style.color = '#ccc';
+                });
+        });
+    </script>
 </body>
 
 </html>

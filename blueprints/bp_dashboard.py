@@ -394,12 +394,12 @@ def pc_detail(pc_name):
         all_pcs = conn.execute("SELECT pc_name, fuero, last_user FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
         
         # Buscar Data de la UPS asignada
-        pc_ups = conn.execute('''
+        pc_ups_list = conn.execute('''
             SELECT u.*, b.serial_number as battery_code 
             FROM ups_inventory u
             LEFT JOIN components b ON u.assigned_battery_id = b.id
             WHERE u.assigned_pc = %s
-        ''', (pc_name,)).fetchone()
+        ''', (pc_name,)).fetchall()
         
         # --- NUEVA LÓGICA: Detección de impresora compartida por otra PC ---
         sharing_pc_data = None
@@ -433,7 +433,7 @@ def pc_detail(pc_name):
         baterias_disponibles = conn.execute("SELECT id, serial_number as code, brand_model FROM components WHERE component_type LIKE 'Bat%' AND status = 'Stock'").fetchall()
 
     if pc is None: abort(404)
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups=pc_ups, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles, sharing_pc=sharing_pc_data)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups_list=pc_ups_list, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles, sharing_pc=sharing_pc_data)
 
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
 def update_pc_infrastructure(pc_name):
@@ -467,3 +467,16 @@ def update_pc_infrastructure(pc_name):
         return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
     except Exception as e:
         return f"Error actualizando infraestructura: {e}", 500
+
+@bp_dashboard.route("/actividad")
+def global_activity():
+    """Muestra el historial global de actividad de todas las PCs e Infraestructura."""
+    with get_db_connection() as conn:
+        # Traer los últimos 1000 registros para no sobrecargar
+        logs = conn.execute("""
+            SELECT id, pc_name, field, old_value, new_value, changed_at 
+            FROM audit_logs 
+            ORDER BY changed_at DESC 
+            LIMIT 1000
+        """).fetchall()
+    return render_template("activity_logs.html", logs=logs)

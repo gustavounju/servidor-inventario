@@ -23,13 +23,17 @@ def migrate_generic_tasks():
         if task_id:
             conn.execute("UPDATE tasks SET pc_name = %s WHERE id = %s AND pc_name = 'PC Generica'", (target_pc, task_id))
             audit_msg = f"Se importó la tarea #{task_id} de PC Generica"
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                         ('PC Generica', f"Tarea #{task_id} Transferida", "", f"Enviada a {target_pc}"))
         else:
             conn.execute("UPDATE tasks SET pc_name = %s WHERE pc_name = 'PC Generica'", (target_pc,))
             audit_msg = "Se importaron TODAS las tareas de PC Generica"
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                         ('PC Generica', "Todas las tareas transferidas", "", f"Enviadas a {target_pc}"))
         
         conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (target_pc, "MIGRACION", "PC Generica", audit_msg))
         conn.commit()
-    return redirect(url_for("dashboard.pc_detail", pc_name=target_pc))
+    return redirect(url_for("dashboard.pc_detail", pc_name="PC Generica"))
 
 @bp_tasks.route("/pc/<pc_name>/tasks", methods=["POST"])
 def add_task(pc_name):
@@ -41,7 +45,10 @@ def add_task(pc_name):
     if not categoria: categoria = predict_category(descripcion)
 
     with get_db_connection() as conn:
-        conn.execute("INSERT INTO tasks (pc_name, descripcion, solicitante, categoria) VALUES (%s, %s, %s, %s)", (pc_name, descripcion, solicitante, categoria))
+        cursor = conn.execute("INSERT INTO tasks (pc_name, descripcion, solicitante, categoria) VALUES (%s, %s, %s, %s)", (pc_name, descripcion, solicitante, categoria))
+        task_id = cursor.lastrowid
+        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                     (pc_name, "Tarea Creada", "", f"#{task_id}: {descripcion[:30]}..."))
         conn.commit()
     return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
 
@@ -73,8 +80,10 @@ def mark_task_done(task_id):
                 "UPDATE tasks SET estado = 'Hecha', completed_by = %s, completed_at = %s WHERE id = %s",
                 (technician, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), task_id)
             )
-            conn.commit()
             pc_name = row["pc_name"]
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                         (pc_name, f"Tarea #{task_id} Completada", "Pendiente", f"Por {technician}"))
+            conn.commit()
         else: pc_name = ""
     if not pc_name: return redirect(url_for("dashboard.dashboard"))
     return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
@@ -82,11 +91,14 @@ def mark_task_done(task_id):
 @bp_tasks.route("/tasks/<int:task_id>/delete", methods=["POST"])
 def delete_task(task_id):
     with get_db_connection() as conn:
-        row = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
+        row = conn.execute("SELECT pc_name, descripcion FROM tasks WHERE id = %s", (task_id,)).fetchone()
         if row:
             conn.execute("DELETE FROM tasks WHERE id = %s", (task_id,))
-            conn.commit()
             pc_name = row["pc_name"]
+            descripcion = row.get("descripcion", "Sin descripción")
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                         (pc_name, "Tarea Eliminada", f"#{task_id}", f"Desc: {descripcion[:50]}"))
+            conn.commit()
         else: pc_name = ""
     if not pc_name: return redirect(url_for("dashboard.dashboard"))
     return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
@@ -109,8 +121,8 @@ def create_loose_task():
         estado = "Asignada"
 
     with get_db_connection() as conn:
-        conn.execute(
-            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name) VALUES (%s, %s, %s, NOW(), %s, %s, %s, 'PC Generica')""",
+        cursor = conn.execute(
+            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name) VALUES (%s, %s, %s, NOW(), %s, %s, %s, NULL)""",
             (descripcion, solicitante, estado, categoria, assigned_to, fuero)
         )
         conn.commit()
@@ -124,7 +136,18 @@ def assign_task():
         with get_db_connection() as conn:
             t = conn.execute("SELECT 1 FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
             if t:
+                # Obtenemos la tarea para ver de donde venía
+                old_task = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
+                old_pc = old_task['pc_name'] if old_task else 'PC Generica'
+                
                 conn.execute("UPDATE tasks SET pc_name = %s WHERE id = %s", (pc_name, task_id))
+                
+                # Log on both the new and old PC if they differ
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                             (pc_name, f"Tarea #{task_id} Asignada aquí", old_pc, f"Asignada a {pc_name}"))
+                if old_pc and old_pc != pc_name:
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                                 (old_pc, f"Tarea #{task_id} Transferida", pc_name, f"Transferida a {pc_name}"))
                 conn.commit()
     return redirect(url_for("dashboard.dashboard"))
 

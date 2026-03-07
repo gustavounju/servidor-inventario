@@ -1,0 +1,986 @@
+<!-- BLOQUE 1: HEAD -->
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Inventario | Inventario GOLD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/gold.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* OCEANIC (DEFAULT) */
+            --bg-color: #f0f4f8;
+            --text-color: #1e293b;
+            --card-bg: #fff;
+            --primary-gradient: linear-gradient(135deg, #0f4c75 0%, #3282b8 100%);
+            --secondary-gradient: linear-gradient(135deg, #1b262c 0%, #0f4c75 100%);
+            --accent-color: #3282b8;
+            --border-color: #e2e8f0;
+            --table-header-bg: linear-gradient(180deg, #0f4c75 0%, #3282b8 100%);
+            --kpi-border-success: #22c55e;
+            --kpi-border-neutral: #6b7280;
+            --kpi-border-warning: #fbbf24;
+            --kpi-shadow: rgba(15, 76, 117, 0.2);
+            --hero-bg: linear-gradient(135deg, #0f3d62 0%, #1a6faa 60%, #3282b8 100%);
+            --glass-bg: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.22);
+            --skeleton-base: #e2e8f0;
+            --skeleton-shine: #f8fafc;
+        }
+
+        [data-theme="emerald"] {
+            /* EMERALD MODERN */
+            --bg-color: #ecfdf5;
+            --text-color: #064e3b;
+            --card-bg: #ffffff;
+            --primary-gradient: linear-gradient(135deg, #059669 0%, #34d399 100%);
+            --secondary-gradient: linear-gradient(135deg, #064e3b 0%, #059669 100%);
+            --accent-color: #10b981;
+            --border-color: #d1fae5;
+            --table-header-bg: linear-gradient(180deg, #059669 0%, #34d399 100%);
+            --kpi-shadow: rgba(16, 185, 129, 0.2);
+            --hero-bg: linear-gradient(135deg, #064e3b 0%, #059669 60%, #34d399 100%);
+            --glass-bg: rgba(255, 255, 255, 0.14);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --skeleton-base: #d1fae5;
+            --skeleton-shine: #ecfdf5;
+        }
+
+        [data-theme="midnight"] {
+            /* MIDNIGHT PRO (DARK) */
+            --bg-color: #0d1117;
+            --text-color: #e6edf3;
+            --card-bg: #161b22;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --secondary-gradient: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);
+            --accent-color: #8b5cf6;
+            --border-color: #30363d;
+            --table-header-bg: linear-gradient(180deg, #312e81 0%, #4c1d95 100%);
+            --kpi-border-success: #34d399;
+            --kpi-border-neutral: #9ca3af;
+            --kpi-border-warning: #fcd34d;
+            --kpi-shadow: rgba(139, 92, 246, 0.3);
+            --hero-bg: linear-gradient(135deg, #0d0d1a 0%, #1a1040 60%, #2d1b6e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --skeleton-base: #21262d;
+            --skeleton-shine: #30363d;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
+            color: var(--text-color);
+        }
+
+        /* --- CARDS --- */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
+        }
+
+        .card-header {
+            background: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        /* --- TABLES --- */
+        table,
+        #inventoryTable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        #inventoryTable thead th {
+            background: var(--table-header-bg);
+            color: #fff;
+            padding: 12px 15px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            border: none;
+        }
+
+        #inventoryTable tbody td {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 10px 12px;
+            font-size: 0.875rem;
+        }
+
+        #inventoryTable tbody tr:hover td {
+            filter: brightness(0.95);
+        }
+
+        /* --- KPI BOXES --- */
+        .kpi-box {
+            padding: 10px;
+            min-width: 135px;
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Colores de Borde Izquierdo dinámicos o fijos según semántica */
+        .kpi-total {
+            border-left: 4px solid var(--kpi-border-success);
+        }
+
+        .kpi-graveyard {
+            border-left: 4px solid var(--kpi-border-neutral);
+        }
+
+        .kpi-ram {
+            border-left: 4px solid var(--kpi-border-warning);
+        }
+
+        .kpi-imp {
+            border-left: 4px solid #0ea5e9;
+        }
+
+        .kpi-so {
+            border-left: 4px solid #6366f1;
+        }
+
+        /* KPI Activo */
+        .kpi-on {
+            background: var(--primary-gradient) !important;
+            color: #fff !important;
+            box-shadow: 0 0 15px var(--kpi-shadow);
+            transform: translateY(-2px);
+            border: none;
+        }
+
+        .kpi-on .kpi-label {
+            color: #eee;
+        }
+
+        .kpi-on .kpi-value {
+            color: #fff;
+        }
+
+        .kpi-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        /* --- FILTROS --- */
+        .kpi-disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* --- NAVBAR / TOOLBAR --- */
+        .header-toolbar {
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+        }
+
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 4px;
+        }
+
+        /* Utils */
+        .text-muted {
+            color: var(--text-color) !important;
+            opacity: 0.6;
+        }
+
+        /* Inputs */
+        .form-control,
+        .form-select {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem var(--kpi-shadow);
+        }
+
+        .kpi-row>div:nth-child(odd) {
+            animation-delay: 0.05s;
+        }
+
+        .kpi-row>div:nth-child(even) {
+            animation-delay: 0.1s;
+        }
+
+        /* Botones modernizados */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #7c92f0 0%, #8c5bb2 100%);
+        }
+
+        /* Tipografía mejorada */
+        h1 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1a202c;
+        }
+
+        .small {
+            font-weight: 500;
+        }
+
+        /* Cards de gráficos */
+        #chartsRow .card {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        #chartsRow .card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
+        }
+
+        #chartsRow .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 2px solid #667eea;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        /* Navbar mejorada */
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.01em;
+        }
+
+        /* Input de búsqueda mejorado */
+        .form-control,
+        .form-select {
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Modo oscuro actualizado */
+        [data-theme="dark"] .card.text-bg-light {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="dark"] #inventoryTable thead th {
+            background: linear-gradient(180deg, #4c51bf 0%, #5a67d8 100%);
+        }
+
+        [data-theme="dark"] h1 {
+            color: #f7fafc;
+        }
+
+        [data-theme="dark"] #chartsRow .card-header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+        }
+
+        /* ===== HERO HEADER ===== */
+        .hero-header {
+            background: var(--hero-bg);
+            border-radius: 18px;
+            padding: 22px 28px;
+            margin-bottom: 22px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+        }
+
+        .hero-header::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.07);
+            pointer-events: none;
+        }
+
+        .hero-header::after {
+            content: '';
+            position: absolute;
+            bottom: -40px;
+            left: 5%;
+            width: 300px;
+            height: 160px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04);
+            pointer-events: none;
+        }
+
+        .hero-title {
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: #fff;
+            margin: 0 0 3px 0;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-subtitle {
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.83rem;
+            margin: 0 0 16px 0;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .hero-stat {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 7px 14px;
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .hero-stat:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .hero-stat-on {
+            background: rgba(255, 255, 255, 0.25) !important;
+            border-color: rgba(255, 255, 255, 0.4) !important;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+        }
+
+        .hero-stat span {
+            opacity: 0.75;
+            font-weight: 400;
+            margin-right: 4px;
+        }
+
+        /* ===== KPI GRID MODERNA ===== */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 12px 14px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px) scale(1.025);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14);
+            text-decoration: none;
+        }
+
+        .kpi-card:active {
+            transform: translateY(-2px) scale(1.01);
+        }
+
+        .kpi-card-icon {
+            font-size: 1.7rem;
+            margin-bottom: 7px;
+            line-height: 1;
+            transition: transform 0.2s ease;
+        }
+
+        .kpi-card:hover .kpi-card-icon {
+            transform: scale(1.12) rotate(-3deg);
+        }
+
+        .kpi-card-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-color);
+            opacity: 0.56;
+            margin-bottom: 5px;
+        }
+
+        .kpi-card-value {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: var(--text-color);
+            line-height: 1;
+            letter-spacing: -0.04em;
+        }
+
+        .kpi-accent-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 0 0 14px 14px;
+            opacity: 0.55;
+            transition: opacity 0.2s, height 0.2s;
+        }
+
+        .kpi-card:hover .kpi-accent-bar {
+            opacity: 1;
+            height: 4px;
+        }
+
+        /* Colores de barra por tipo */
+        .kpi-bar-success .kpi-accent-bar {
+            background: #22c55e;
+        }
+
+        .kpi-bar-neutral .kpi-accent-bar {
+            background: #6b7280;
+        }
+
+        .kpi-bar-warning .kpi-accent-bar {
+            background: #fbbf24;
+        }
+
+        .kpi-bar-info .kpi-accent-bar {
+            background: #0ea5e9;
+        }
+
+        .kpi-bar-purple .kpi-accent-bar {
+            background: #8b5cf6;
+        }
+
+        .kpi-bar-red .kpi-accent-bar {
+            background: #ef4444;
+        }
+
+        .kpi-bar-orange .kpi-accent-bar {
+            background: #f97316;
+        }
+
+        /* KPI Activo (filtro seleccionado) */
+        .kpi-card.kpi-on {
+            background: var(--primary-gradient) !important;
+            border-color: transparent;
+            box-shadow: 0 10px 30px var(--kpi-shadow);
+            transform: translateY(-5px) scale(1.03);
+        }
+
+        .kpi-card.kpi-on .kpi-card-label,
+        .kpi-card.kpi-on .kpi-card-value {
+            color: #fff !important;
+            opacity: 1;
+        }
+
+        .kpi-card.kpi-on .kpi-accent-bar {
+            background: rgba(255, 255, 255, 0.35);
+            opacity: 1;
+            height: 3px;
+        }
+
+        .kpi-card.kpi-disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* ===== SEARCH BAR STANDALONE ===== */
+        .search-bar-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .search-bar-container {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-bar-container .bi-search {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-color);
+            opacity: 0.38;
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        #searchInput:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px var(--kpi-shadow);
+        }
+
+        #searchInput::placeholder {
+            opacity: 0.45;
+        }
+
+        /* ===== OS BADGES MEJORADOS ===== */
+        .os-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border-radius: 6px;
+            padding: 2px 7px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+
+        .os-win11 {
+            background: rgba(59, 130, 246, 0.13);
+            color: #1d4ed8;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        .os-win10 {
+            background: rgba(6, 182, 212, 0.13);
+            color: #0369a1;
+            border: 1px solid rgba(6, 182, 212, 0.25);
+        }
+
+        .os-win7 {
+            background: rgba(239, 68, 68, 0.11);
+            color: #b91c1c;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+
+        [data-theme="midnight"] .os-win11 {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            border-color: rgba(59, 130, 246, 0.35);
+        }
+
+        [data-theme="midnight"] .os-win10 {
+            background: rgba(6, 182, 212, 0.2);
+            color: #67e8f9;
+            border-color: rgba(6, 182, 212, 0.35);
+        }
+
+        [data-theme="midnight"] .os-win7 {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        /* ===== TASKS ALERT ===== */
+        .tasks-alert-card {
+            border: none !important;
+            border-left: 4px solid #f59e0b !important;
+            background: color-mix(in srgb, #f59e0b 7%, var(--card-bg)) !important;
+            border-radius: 14px !important;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.1);
+        }
+
+        .tasks-alert-card .card-header {
+            background: transparent !important;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+            color: #92400e;
+            font-weight: 700;
+            border-radius: 14px 14px 0 0 !important;
+        }
+
+        [data-theme="midnight"] .tasks-alert-card {
+            background: rgba(245, 158, 11, 0.07) !important;
+        }
+
+        [data-theme="midnight"] .tasks-alert-card .card-header {
+            color: #fcd34d;
+        }
+
+        .time-ago {
+            font-size: 0.73rem;
+            opacity: 0.6;
+            font-style: italic;
+        }
+
+        /* ===== SKELETON LOADING ===== */
+        @keyframes shimmer {
+            0% {
+                background-position: -600px 0;
+            }
+
+            100% {
+                background-position: 600px 0;
+            }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg,
+                    var(--skeleton-base) 25%,
+                    var(--skeleton-shine) 50%,
+                    var(--skeleton-base) 75%);
+            background-size: 600px 100%;
+            animation: shimmer 1.4s infinite linear;
+            border-radius: 6px;
+            display: inline-block;
+            min-height: 12px;
+        }
+
+        .skeleton-row td {
+            padding: 12px 14px !important;
+        }
+
+        /* ===== SIGJ STATUS INDICATOR ===== */
+        .status-dot-blink {
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .hero-stat-sigj {
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            background: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        /* ===== TABLA (mejoras hover y borde) ===== */
+        #inventoryTable thead th {
+            background: var(--table-header-bg);
+            color: #fff;
+            padding: 11px 13px;
+            text-transform: uppercase;
+            font-size: 0.71rem;
+            letter-spacing: 0.06em;
+            border: none;
+            white-space: nowrap;
+        }
+
+        #inventoryTable thead th a {
+            color: rgba(255, 255, 255, 0.88) !important;
+            text-decoration: none !important;
+        }
+
+        #inventoryTable thead th a:hover {
+            color: #fff !important;
+        }
+
+        #inventoryTable tbody td {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 9px 12px;
+            font-size: 0.855rem;
+            transition: background-color 0.15s ease;
+        }
+
+        #inventoryTable tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        #inventoryTable tbody tr:hover td {
+            background-color: color-mix(in srgb, var(--accent-color) 5%, var(--card-bg));
+        }
+
+        /* ===== GLASSMORPHISM MIDNIGHT ===== */
+        [data-theme="midnight"] .card {
+            background: color-mix(in srgb, #8b5cf6 4%, #161b22);
+        }
+
+        [data-theme="midnight"] .kpi-card {
+            background: color-mix(in srgb, #6366f1 6%, #161b22);
+            border-color: rgba(99, 102, 241, 0.18);
+        }
+
+        [data-theme="midnight"] .kpi-card:hover {
+            border-color: rgba(99, 102, 241, 0.45);
+            box-shadow: 0 14px 32px rgba(99, 102, 241, 0.18);
+        }
+
+        [data-theme="midnight"] #inventoryTable tbody tr:hover td {
+            background-color: rgba(99, 102, 241, 0.07);
+        }
+
+        /* ===== PAGINACIÓN ===== */
+        .page-link {
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+            color: var(--accent-color);
+            transition: all 0.2s ease;
+        }
+
+        .page-link:hover {
+            background-color: var(--accent-color);
+            color: #fff;
+            border-color: var(--accent-color);
+        }
+
+        .page-item.disabled .page-link {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<!-- FIN BLOQUE 1 -->
+
+
+<!-- BLOQUE 2: CUERPO (navbar + KPIs + filtros + tabla) -->
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('dashboard.dashboard') }}">
+                Inventario GOLD
+                <span class="badge bg-secondary ms-2" style="font-size: 0.70rem;">{{ app_version }}</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.view_graphics') }}" class="nav-link">
+                            <i class="bi bi-graph-up"></i> Gráficos
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <button class="nav-link btn btn-link" data-bs-toggle="modal" data-bs-target="#techniciansModal">
+                            <i class="bi bi-people-fill"></i> Técnicos
+                        </button>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.global_activity') }}" class="nav-link text-primary"
+                            title="Ver Registro Global de Actividad">
+                            <i class="bi bi-clock-history"></i> Actividad
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('infrastructure.index') }}" class="nav-link text-success"
+                            title="Gestionar stock de baterías y UPS">
+                            <i class="bi bi-hdd-network-fill"></i> Infra/Stock
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('tasks.report_tasks_completed') }}" class="nav-link">
+                            Tareas XLS
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.download_db') }}" class="nav-link text-warning"
+                            title="Descargar copia de la BD">
+                            <i class="bi bi-database-down"></i> Backup
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('setup.download_certificate') }}" class="nav-link text-info"
+                            title="Descargar certificado SSL para móviles">
+                            <i class="bi bi-shield-lock"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link btn btn-link" data-bs-toggle="modal"
+                            data-bs-target="#uploadManualModal">
+                            <i class="bi bi-upload"></i> Subir Offline
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <span class="nav-link" title="Tareas completadas hoy">
+                            ✅ Hoy: {{ kpi_tareas_hoy }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link btn btn-link" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                            <i class="bi bi-plus-circle"></i> Nueva Tarea
+                        </button>
+                    </li>
+
+
+                    <li class="nav-item ms-2">
+                        <a href="{{ url_for('dashboard.refresh_fueros') }}" class="btn btn-outline-info btn-sm"
+                            title="Actualizar Fueros">
+                            <i class="bi bi-arrow-repeat"></i> Fueros
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- CONTAINER PRINCIPAL -->
+    <div class="container-fluid" style="margin-top: 80px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0"><i class="bi bi-clock-history text-primary"></i> Registro Global de Actividad</h2>
+            <p class="text-muted mb-0 small">Monto máximo visible: 1000 registros recientes</p>
+        </div>
+
+        <div class="card shadow-sm mb-5">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0" id="globalActivityTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 15%">Fecha</th>
+                                <th style="width: 15%">PC / Origen</th>
+                                <th style="width: 20%">Acción / Campo</th>
+                                <th style="width: 25%">Detalle Anterior</th>
+                                <th style="width: 25%">Detalle Nuevo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>{{ log.changed_at.strftime('%Y-%m-%d %H:%M:%S') if log.changed_at else 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ url_for('dashboard.pc_detail', pc_name=log.pc_name) }}"
+                                        class="fw-bold text-decoration-none">
+                                        {{ log.pc_name }}
+                                    </a>
+                                </td>
+                                <td><span class="badge bg-secondary">{{ log.field }}</span></td>
+                                <td class="text-danger small">{{ log.old_value }}</td>
+                                <td class="text-success small">{{ log.new_value }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">No hay actividad registrada en el
+                                    sistema.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/theme.js"></script>
+</body>
+
+</html>

@@ -31,8 +31,6 @@ def process_inventory_data(data):
     motherboard_model = data.get("Motherboard_Model", "N/A")
     printer_model = data.get("Printer_Model", "N/A")
     printer_port = data.get("Printer_Port", "N/A")
-    if printer_port and printer_port.upper().startswith("WSD"):
-        printer_port = "Red"
         
     # ----------------------------------------------------
     # TRADUCCIÓN DE SIGLAS EDID DE MONITORES
@@ -96,7 +94,7 @@ def process_inventory_data(data):
         sin_modelo = True
 
     es_virtual = ("PDF" in pm) or ("XPS" in pm) or ("ONENOTE" in pm)
-    es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp) or ("\\" in pm) or ("IP_" in pm) or ("(RED)" in pp) or ("(RED)" in pm)
+    es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp) or ("\\" in pm) or ("IP_" in pm) or ("(RED)" in pp) or ("(RED)" in pm) or (pp == "RED")
 
     if esta_desconectada and es_local and not sin_modelo:
         alerta_impresora_red = 1
@@ -138,19 +136,33 @@ def process_inventory_data(data):
     full_json = json.dumps(data, ensure_ascii=False)
     fuero_detectado = detect_fuero(pc_name)
 
-    sql = """
-    INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, is_active, full_json_data)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'True', %s)
-    ON DUPLICATE KEY UPDATE
-        fuero=VALUES(fuero), os_name=VALUES(os_name), processor=VALUES(processor), ram_gb=VALUES(ram_gb), ip_address=VALUES(ip_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_models=VALUES(disk_models), disk_speeds_rpm=VALUES(disk_speeds_rpm), motherboard_model=VALUES(motherboard_model), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), is_active='True', full_json_data=VALUES(full_json_data)
-    """
+    # Initial states for new calculations
+    alerta_nombre_duplicado = 0
+    reactivado = False
     
     with get_db_connection() as conn:
         current_pc = conn.execute("SELECT * FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
         if current_pc:
+            # Check for reactivation from Cementerio
+            if str(current_pc.get("is_active", "True")) == "False":
+                reactivado = True
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                             (pc_name, "Estado de PC", "Cementerio (Baja)", "Reactivado (Activo)"))
+
+            # Deduplicate check: if hardware (motherboard & processor) drastically changed, it's likely another physical machine
+            old_mb = str(current_pc.get("motherboard_model", "")).strip()
+            old_proc = str(current_pc.get("processor", "")).strip()
+            
+            # Solo si el equipo anterior tenia datos utiles
+            if old_mb and old_mb != "N/A" and old_proc and old_proc != "N/A":
+                # Si ambos difieren completamente (no son substrings)
+                if (motherboard_model != "N/A" and motherboard_model != old_mb) and \
+                   (processor != "N/A" and processor != old_proc):
+                    alerta_nombre_duplicado = 1
+            
             fields_to_check = {
-                "ram_gb": str(current_pc["ram_gb"]), "disk_models": str(current_pc["disk_models"]),
-                "processor": str(current_pc["processor"]), "os_name": str(current_pc["os_name"]), "ip_address": str(current_pc["ip_address"])
+                "ram_gb": str(current_pc.get("ram_gb", "")), "disk_models": str(current_pc.get("disk_models", "")),
+                "processor": str(current_pc.get("processor", "")), "os_name": str(current_pc.get("os_name", "")), "ip_address": str(current_pc.get("ip_address", ""))
             }
             new_values_map = {
                 "ram_gb": str(ram_gb), "disk_models": str(disk_models), "processor": str(processor), "os_name": str(os_name), "ip_address": str(ip_address)
@@ -160,8 +172,18 @@ def process_inventory_data(data):
                 if old_val.strip() != new_val.strip():
                     conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (pc_name, field, old_val, new_val))
 
-        conn.execute(sql, (pc_name, fuero_detectado, os_name, processor, ram_gb, ip_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, full_json))
+
+    sql = """
+    INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, is_active, full_json_data)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'True', %s)
+    ON DUPLICATE KEY UPDATE
+        fuero=VALUES(fuero), os_name=VALUES(os_name), processor=VALUES(processor), ram_gb=VALUES(ram_gb), ip_address=VALUES(ip_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_models=VALUES(disk_models), disk_speeds_rpm=VALUES(disk_speeds_rpm), motherboard_model=VALUES(motherboard_model), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), alerta_nombre_duplicado=VALUES(alerta_nombre_duplicado), is_active='True', full_json_data=VALUES(full_json_data)
+    """
+    
+    with get_db_connection() as conn:
+        conn.execute(sql, (pc_name, fuero_detectado, os_name, processor, ram_gb, ip_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, full_json))
         conn.commit()
+
 
     print(f"Inventario guardado / actualizado: {pc_name}")
     return pc_name

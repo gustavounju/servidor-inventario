@@ -291,6 +291,17 @@ def migrate_db_v14():
     print("Migración V14 verificada.")
 
 
+def migrate_db_v15():
+    """Migración V15: Agregar alerta de nombre duplicado a pcs."""
+    print("Verificando migración de DB v15...")
+    with get_db_connection() as conn:
+        if not _column_exists(conn, "pcs", "alerta_nombre_duplicado"):
+            print("Aplicando migración V15: Agregando 'alerta_nombre_duplicado' a pcs...")
+            conn.execute("ALTER TABLE pcs ADD COLUMN alerta_nombre_duplicado TINYINT(1) DEFAULT 0")
+        else:
+            print("Migración V15 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -306,3 +317,4 @@ def run_all_migrations():
     migrate_db_v12()
     migrate_db_v13()
     migrate_db_v14()
+    migrate_db_v15()

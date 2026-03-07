@@ -115,7 +115,8 @@ def init_db():
                 building TEXT,
                 floor TEXT,
                 alerta_disco TINYINT(1) DEFAULT 0,
-                alerta_uptime TINYINT(1) DEFAULT 0
+                alerta_uptime TINYINT(1) DEFAULT 0,
+                alerta_nombre_duplicado TINYINT(1) DEFAULT 0
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
 
