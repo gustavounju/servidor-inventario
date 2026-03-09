@@ -586,18 +586,24 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Dirección IP <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="ip_address" required
-                                placeholder="Ej: 10.8.X.X">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="ip_address" id="printer_ip_address"
+                                    required placeholder="Ej: 10.8.X.X">
+                                <button class="btn btn-outline-info" type="button" id="btnAutocompletarSNMP"
+                                    title="Consultar impresora vía red para rellenar datos faltantes">
+                                    <i class="bi bi-magic"></i> Autocompletar
+                                </button>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">N° Serie / MAC Address <span
                                     class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="serial_number" required
-                                placeholder="SN / MAC de la impresora">
+                            <input type="text" class="form-control" name="serial_number" id="printer_serial_number"
+                                required placeholder="SN / MAC de la impresora">
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Marca e Información Extra</label>
-                            <input type="text" class="form-control" name="brand_model"
+                            <input type="text" class="form-control" name="brand_model" id="printer_brand_model"
                                 placeholder="Ej: HP LaserJet P1102w / Lexmark...">
                         </div>
                     </div>
@@ -639,6 +645,48 @@
                     statusText.innerText = 'Error';
                     statusText.style.color = '#ccc';
                 });
+
+            // Logic for SNMP printer fetch
+            const btnSnmp = document.getElementById('btnAutocompletarSNMP');
+            if (btnSnmp) {
+                btnSnmp.addEventListener('click', function () {
+                    const ipControl = document.getElementById('printer_ip_address');
+                    if (!ipControl.value) {
+                        alert("Por favor ingrese la IP de la impresora primero.");
+                        return;
+                    }
+
+                    const originalText = btnSnmp.innerHTML;
+                    btnSnmp.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Consultando...';
+                    btnSnmp.disabled = true;
+
+                    fetch('/infra/api/snmp_printer?ip=' + encodeURIComponent(ipControl.value))
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert("No se pudo obtener datos SNMP: " + data.error);
+                            } else {
+                                if (data.brand_model) {
+                                    document.getElementById('printer_brand_model').value = data.brand_model;
+                                }
+                                if (data.serial_number) {
+                                    document.getElementById('printer_serial_number').value = data.serial_number;
+                                } else if (data.mac_address) {
+                                    document.getElementById('printer_serial_number').value = data.mac_address;
+                                } else {
+                                    // If no serial or MAC, just leave it mostly blank
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            alert("Error de conexión al autocompletar: " + err);
+                        })
+                        .finally(() => {
+                            btnSnmp.innerHTML = originalText;
+                            btnSnmp.disabled = false;
+                        });
+                });
+            }
         });
     </script>
 </body>

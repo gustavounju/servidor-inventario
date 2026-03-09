@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database.db_core import get_db_connection
 from datetime import datetime as dt
 import requests
+import asyncio
+from pysnmp.hlapi.v3arch.asyncio import *
 from utils.constants import FUERO_COLORS, FUERO_MAPPING
 
 bp_infrastructure = Blueprint('infrastructure', __name__, url_prefix='/infra')
@@ -351,3 +353,77 @@ def delete_network_printer(id):
     except Exception as e:
         flash(f"Error: {e}", "error")
     return redirect(url_for('infrastructure.index'))
+
+@bp_infrastructure.route('/api/snmp_printer')
+def snmp_printer():
+    ip = request.args.get('ip')
+    if not ip:
+        return {"error": "No IP provided"}, 400
+    
+    try:
+        data = asyncio.run(snmp_fetch(ip))
+        return data
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+async def snmp_fetch(ip):
+    snmp_engine = SnmpEngine()
+    result = {
+        "brand_model": "",
+        "serial_number": "",
+        "mac_address": ""
+    }
+    try:
+        transport = await UdpTransportTarget.create((ip, 161), timeout=2.0, retries=1)
+        
+        # 1. Fetch sysDescr (Model)
+        errorIndication, errorStatus, errorIndex, varBindTable = await get_cmd(
+            snmp_engine,
+            CommunityData('public', mpModel=0),
+            transport,
+            ContextData(),
+            ObjectType(ObjectIdentity('1.3.6.1.2.1.1.1.0'))
+        )
+        if not errorIndication and not errorStatus and varBindTable:
+            val = varBindTable[0][1].prettyPrint()
+            result["brand_model"] = val.split('/')[0].strip() if '/' in val else val.strip()
+            
+        # 2. Fetch MAC (ifPhysAddress)
+        async for errorIndication, errorStatus, errorIndex, varBinds in walk_cmd(
+            snmp_engine,
+            CommunityData('public', mpModel=0),
+            transport,
+            ContextData(),
+            ObjectType(ObjectIdentity('1.3.6.1.2.1.2.2.1.6')),
+            lexicographicMode=False
+        ):
+            if not errorIndication and not errorStatus and varBinds:
+                val = varBinds[0][1]
+                if val.prettyPrint().startswith('0x'):
+                    mac_hex = val.prettyPrint()[2:]
+                    if len(mac_hex) == 12:
+                        mac_str = ':'.join(mac_hex[i:i+2] for i in range(0, 12, 2)).upper()
+                        if not result["mac_address"] and mac_str != "00:00:00:00:00:00":
+                            result["mac_address"] = mac_str
+
+        # 3. Fetch Serial Number (prtGeneralSerialNumber)
+        async for errorIndication, errorStatus, errorIndex, varBinds in walk_cmd(
+            snmp_engine,
+            CommunityData('public', mpModel=0),
+            transport,
+            ContextData(),
+            ObjectType(ObjectIdentity('1.3.6.1.2.1.43.5.1.1.17')),
+            lexicographicMode=False
+        ):
+            if not errorIndication and not errorStatus and varBinds:
+                val = varBinds[0][1].prettyPrint()
+                if val and val != "No Such Instance currently exists at this OID":
+                    result["serial_number"] = val
+                    break
+                    
+    except Exception as e:
+        print(f"SNMP Error: {e}")
+    finally:
+        snmp_engine.close_dispatcher()
+        
+    return result
