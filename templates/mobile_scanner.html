@@ -49,7 +49,7 @@
                 onchange="scanFromFile(this)">
 
             <button class="btn btn-warning text-dark mt-2" onclick="openExternalScanner()">
-                <i class="bi bi-phone-vibrate"></i> Usar App Externa (QR & Barcode Scanner)
+                <i class="bi bi-phone-vibrate"></i> Usar App Externa (Recomendada)
             </button>
 
         </div>
@@ -456,8 +456,8 @@
         function openExternalScanner() {
             // URL to return back to this page with the scanned code
             const retUrl = encodeURIComponent(window.location.href.split('?')[0] + "?code={CODE}");
-            // Use standard ZXing intent scheme interception (Supported by QR & Barcode Scanner by Gamma Play via intent filters)
-            window.location.href = `intent://scan/?ret=${retUrl}#Intent;scheme=zxing;package=com.gamma.scan;end`;
+            // Usando Binary Eye (com.teacapps.barcodescanner) - 100% compatible con Callback Intent
+            window.location.href = `intent://scan/?ret=${retUrl}#Intent;scheme=zxing;package=com.teacapps.barcodescanner;end`;
         }
 
     </script>
