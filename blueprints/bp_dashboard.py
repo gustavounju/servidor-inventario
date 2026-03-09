@@ -169,11 +169,26 @@ def dashboard():
                 ORDER BY CASE WHEN pc_name = 'PC Generica' THEN 0 WHEN pc_name = 'Infraestructura' THEN 1 ELSE 2 END, pc_name ASC"""
             ).fetchall()]
             
+            # --- STATUS ULTIMO BACKUP ---
+            last_backup_info = "Sin backups"
+            backup_dir = "/opt/inventario/backups"
+            if os.path.exists(backup_dir):
+                try:
+                    backups = [f for f in os.listdir(backup_dir) if f.endswith('.sql.gz')]
+                    if backups:
+                        latest_backup = max(backups, key=lambda x: os.path.getmtime(os.path.join(backup_dir, x)))
+                        mtime = os.path.getmtime(os.path.join(backup_dir, latest_backup))
+                        last_backup_info = dt.fromtimestamp(mtime).strftime('%d/%m/%y %H:%M')
+                except Exception:
+                    pass
+            # ----------------------------
+
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
         pcs_data = technicians_list = unassigned_tasks = all_pcs_dropdown = []
         total_rows = kpi_total_activas = kpi_total_graveyard = kpi_alerta_ram = kpi_sin_impresora = 0
         kpi_impresora_red = kpi_win7 = kpi_win10 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
+        last_backup_info = "Error leyendo"
 
     total_pages = (total_rows + per_page - 1) // per_page if per_page > 0 else 1
 
@@ -205,7 +220,8 @@ def dashboard():
         sort_by=sort_by,
         order=order,
         os_param=os_param,
-        filter_tasks=filter_tasks
+        filter_tasks=filter_tasks,
+        last_backup_info=last_backup_info
     )
 
 @bp_dashboard.route("/export", methods=["GET", "POST"])

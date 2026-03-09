@@ -893,10 +893,10 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('dashboard.download_db') }}" class="nav-link text-warning"
-                            title="Descargar copia de la BD">
+                        <span class="nav-link text-warning" title="Descarga de BD deshabilitada: usar mysqldump"
+                            style="opacity: 0.5; cursor: not-allowed;">
                             <i class="bi bi-database-down"></i> Backup
-                        </a>
+                        </span>
                     </li>
                     <li class="nav-item">
                         <a href="{{ url_for('setup.download_certificate') }}" class="nav-link text-info"
@@ -1023,6 +1023,11 @@
                         style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px;"></span>
                     <span class="fw-bold me-1 text-white">SIGJ:</span>
                     <span id="sigj-dashboard-status-text" class="fw-bold text-white-50">Checking...</span>
+                </div>
+
+                <!-- Status Ultimo Backup -->
+                <div class="hero-stat" title="Último backup detectado en el servidor">
+                    💾 <span>SQL Backup:</span> {{ last_backup_info }}
                 </div>
 
             </div>
