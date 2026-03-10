@@ -166,17 +166,22 @@ def dashboard():
             kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
             kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
             kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
-            kpi_total_impresoras = conn.execute("""
-                SELECT COUNT(DISTINCT p.pc_name) as c 
-                FROM pcs p
-                LEFT JOIN pc_network_printers pnp ON p.pc_name = pnp.pc_name
-                WHERE p.is_active = 'True' 
-                AND p.pc_name NOT IN ('PC Generica', 'Infraestructura')
-                AND (
-                    (p.printer_model IS NOT NULL AND p.printer_model != '' AND p.printer_model != 'N/A' AND UPPER(p.printer_model) NOT LIKE '%SIN IMPRESORA%')
-                    OR pnp.printer_id IS NOT NULL
-                )
+            # Contador de Impresoras (Lógica Refinada: Red Únicas + Locales por PC)
+            # Primero: Cantidad de impresoras en el catálogo de Red
+            count_network_catalog = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
+            
+            # Segundo: PCs activas con impresora local (excluyendo las que sabemos que son de red por puerto UNC o alerta)
+            count_local_printers = conn.execute("""
+                SELECT COUNT(*) as c 
+                FROM pcs 
+                WHERE is_active = 'True' 
+                AND pc_name NOT IN ('PC Generica', 'Infraestructura')
+                AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
+                AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%')
+                AND alerta_impresora_red = 0
             """).fetchone()["c"]
+            
+            kpi_total_impresoras = count_network_catalog + count_local_printers
             kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND pc_name NOT IN ('PC Generica', 'Infraestructura')", ("%Windows 7%",)).fetchone()["c"]
             kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE %s OR os_name LIKE %s) AND pc_name NOT IN ('PC Generica', 'Infraestructura')", ("%Windows 10%", "%Windows 11%")).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
