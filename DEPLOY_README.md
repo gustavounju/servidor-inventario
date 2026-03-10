@@ -10,9 +10,9 @@ Conéctate por SSH a tu servidor y ejecuta:
 # Crear carpeta
 sudo mkdir -p /opt/inventario
 
-# Instalar Python y Pip si no están
+# Instalar Python, Pip y MySQL Client si no están
 sudo apt update
-sudo apt install -y python3 python3-pip
+sudo apt install -y python3 python3-pip mysql-client
 ```
 
 ## 2. Copiar archivos
@@ -83,11 +83,11 @@ Desde tu navegador ingresa a:
 
 ## 7. Configurar Backups Automáticos
 
-Para asegurar que los datos no se pierdan, configuraremos una tarea programada (cron job) que ejecute el script de backup todos los días a las 20:00 hs.
+Para asegurar que los datos no se pierdan, configuraremos una tarea programada (cron job) que ejecute el script de backup de MySQL todos los días a las 20:00 hs.
 
 1. **Hacer ejecutable el script**:
    ```bash
-   chmod +x /opt/inventario/backup.sh
+   chmod +x /opt/inventario/backup_mysql.sh
    ```
 
 2. **Editar el Cron**:
@@ -99,7 +99,7 @@ Para asegurar que los datos no se pierdan, configuraremos una tarea programada (
 3. **Agregar la tarea**:
    Ve al final del archivo y agrega esta línea:
    ```cron
-   0 20 * * * /opt/inventario/backup.sh
+   0 20 * * * /opt/inventario/backup_mysql.sh
    ```
    *(Esto significa: Minuto 0, Hora 20, Todos los días/meses)*
 
