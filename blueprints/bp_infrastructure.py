@@ -49,8 +49,15 @@ def index():
             ORDER BY c.created_at DESC
         ''').fetchall()
 
-        # Impresoras de Red
-        network_printers = conn.execute("SELECT * FROM network_printers ORDER BY created_at DESC").fetchall()
+        # Impresoras de Red y sus asignaciones
+        network_printers_raw = conn.execute("SELECT * FROM network_printers ORDER BY created_at DESC").fetchall()
+        network_printers = []
+        for printer in network_printers_raw:
+            p_dict = dict(printer)
+            # Obtener las PCs asignadas a esta impresora
+            assigned = conn.execute("SELECT pc_name FROM pc_network_printers WHERE printer_id = %s", (printer["id"],)).fetchall()
+            p_dict["assigned_pcs"] = [a["pc_name"] for a in assigned]
+            network_printers.append(p_dict)
 
         # Historial de Infraestructura
         infra_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = 'Infraestructura' ORDER BY changed_at DESC").fetchall()
@@ -339,10 +346,11 @@ def delete_network_printer(id):
             if not printer:
                 return redirect(url_for('infrastructure.index'))
                 
-            # Verificar si está en uso buscando la IP en `printer_port` de alguna PC
-            used_pc = conn.execute("SELECT pc_name FROM pcs WHERE is_active = 'True' AND printer_port LIKE %s LIMIT 1", (f"%{printer['ip_address']}%",)).fetchone()
-            if used_pc:
-                flash(f"No se puede eliminar: La impresora ({printer['ip_address']}) está actualmente asignada al equipo '{used_pc['pc_name']}'.", "error")
+            # Verificar si está en uso en pc_network_printers
+            used_pcs = conn.execute("SELECT pc_name FROM pc_network_printers WHERE printer_id = %s", (id,)).fetchall()
+            if used_pcs:
+                pc_names = ", ".join([p["pc_name"] for p in used_pcs])
+                flash(f"No se puede eliminar: La impresora ({printer['ip_address']}) está actualmente asignada a: {pc_names}. Desvincúlela primero.", "error")
                 return redirect(url_for('infrastructure.index'))
                 
             conn.execute("DELETE FROM network_printers WHERE id = %s", (id,))
@@ -353,6 +361,57 @@ def delete_network_printer(id):
     except Exception as e:
         flash(f"Error: {e}", "error")
     return redirect(url_for('infrastructure.index'))
+
+@bp_infrastructure.route('/network_printers/<int:printer_id>/assign_pc', methods=['POST'])
+def assign_network_printer(printer_id):
+    pc_name = request.form.get('pc_name', '').strip()
+    if not pc_name:
+        flash("Debe seleccionar una PC válida.", "error")
+        return redirect(request.referrer or url_for('infrastructure.index'))
+        
+    try:
+        with get_db_connection() as conn:
+            # Check if printer exists
+            printer = conn.execute("SELECT ip_address FROM network_printers WHERE id = %s", (printer_id,)).fetchone()
+            if not printer:
+                flash("Impresora no encontrada.", "error")
+                return redirect(request.referrer or url_for('infrastructure.index'))
+                
+            # Check if already assigned
+            existing = conn.execute("SELECT id FROM pc_network_printers WHERE printer_id = %s AND pc_name = %s", (printer_id, pc_name)).fetchone()
+            if existing:
+                flash(f"La impresora {printer['ip_address']} ya estaba asignada a {pc_name}.", "info")
+                return redirect(request.referrer or url_for('infrastructure.index'))
+                
+            conn.execute("INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)", (pc_name, printer_id))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                         (pc_name, "Impresora Red Asignada", "None", printer['ip_address']))
+            conn.commit()
+            flash(f"Impresora {printer['ip_address']} asignada a {pc_name} exitosamente.", "success")
+    except Exception as e:
+        flash(f"Error al asignar impresora: {e}", "error")
+        
+    return redirect(request.referrer or url_for('infrastructure.index'))
+
+@bp_infrastructure.route('/network_printers/<int:printer_id>/unassign_pc', methods=['POST'])
+def unassign_network_printer(printer_id):
+    pc_name = request.form.get('pc_name', '').strip()
+    
+    try:
+        with get_db_connection() as conn:
+            printer = conn.execute("SELECT ip_address FROM network_printers WHERE id = %s", (printer_id,)).fetchone()
+            if not printer:
+                return redirect(request.referrer or url_for('infrastructure.index'))
+                
+            conn.execute("DELETE FROM pc_network_printers WHERE printer_id = %s AND pc_name = %s", (printer_id, pc_name))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                         (pc_name, "Impresora Red Desvinculada", printer['ip_address'], "None"))
+            conn.commit()
+            flash(f"Impresora {printer['ip_address']} desvinculada de {pc_name}.", "success")
+    except Exception as e:
+        flash(f"Error al desvincular impresora: {e}", "error")
+        
+    return redirect(request.referrer or url_for('infrastructure.index'))
 
 @bp_infrastructure.route('/api/snmp_printer')
 def snmp_printer():

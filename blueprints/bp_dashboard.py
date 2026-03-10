@@ -128,7 +128,14 @@ def dashboard():
 
             base_sql = """
                 SELECT p.*, u.real_name as ad_real_name,
-                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') AS tareas_pendientes
+                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') AS tareas_pendientes,
+                    (
+                        SELECT CONCAT(np.ip_address, ' - ', np.brand_model) 
+                        FROM pc_network_printers pnp 
+                        JOIN network_printers np ON pnp.printer_id = np.id 
+                        WHERE pnp.pc_name = p.pc_name 
+                        LIMIT 1
+                    ) as assigned_network_printer
                 FROM pcs p
                 LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
                 WHERE 1=1
@@ -159,6 +166,17 @@ def dashboard():
             kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
             kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
             kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+            kpi_total_impresoras = conn.execute("""
+                SELECT COUNT(DISTINCT p.pc_name) as c 
+                FROM pcs p
+                LEFT JOIN pc_network_printers pnp ON p.pc_name = pnp.pc_name
+                WHERE p.is_active = 'True' 
+                AND p.pc_name NOT IN ('PC Generica', 'Infraestructura')
+                AND (
+                    (p.printer_model IS NOT NULL AND p.printer_model != '' AND p.printer_model != 'N/A' AND UPPER(p.printer_model) NOT LIKE '%SIN IMPRESORA%')
+                    OR pnp.printer_id IS NOT NULL
+                )
+            """).fetchone()["c"]
             kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND pc_name NOT IN ('PC Generica', 'Infraestructura')", ("%Windows 7%",)).fetchone()["c"]
             kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE %s OR os_name LIKE %s) AND pc_name NOT IN ('PC Generica', 'Infraestructura')", ("%Windows 10%", "%Windows 11%")).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
@@ -187,7 +205,7 @@ def dashboard():
         print(f"Error cargando dashboard: {exc}")
         pcs_data = technicians_list = unassigned_tasks = all_pcs_dropdown = []
         total_rows = kpi_total_activas = kpi_total_graveyard = kpi_alerta_ram = kpi_sin_impresora = 0
-        kpi_impresora_red = kpi_win7 = kpi_win10 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
+        kpi_impresora_red = kpi_total_impresoras = kpi_win7 = kpi_win10 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
         last_backup_info = "Error leyendo"
 
     total_pages = (total_rows + per_page - 1) // per_page if per_page > 0 else 1
@@ -198,6 +216,7 @@ def dashboard():
         server_url=request.host_url,
         unassigned_tasks=unassigned_tasks,
         unassigned_count=unassigned_count,
+        kpi_total_impresoras=kpi_total_impresoras,
         technicians=technicians_list,
         kpi_tareas_hoy=kpi_tareas_hoy,
         kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
@@ -448,8 +467,19 @@ def pc_detail(pc_name):
         # Baterias disponibles para asignar a la UPS de esta PC
         baterias_disponibles = conn.execute("SELECT id, serial_number as code, brand_model FROM components WHERE component_type LIKE 'Bat%' AND status = 'Stock'").fetchall()
 
+        # Impresoras de red asignadas a esta PC
+        assigned_network_printers = conn.execute('''
+            SELECT np.id, np.ip_address, np.brand_model, np.serial_number 
+            FROM network_printers np
+            JOIN pc_network_printers pnp ON np.id = pnp.printer_id
+            WHERE pnp.pc_name = %s
+        ''', (pc_name,)).fetchall()
+        
+        # Impresoras de red disponibles para asignar (todas)
+        available_network_printers = conn.execute("SELECT id, ip_address, brand_model FROM network_printers ORDER BY ip_address").fetchall()
+
     if pc is None: abort(404)
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups_list=pc_ups_list, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles, sharing_pc=sharing_pc_data)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups_list=pc_ups_list, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles, sharing_pc=sharing_pc_data, assigned_network_printers=assigned_network_printers, available_network_printers=available_network_printers)
 
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
 def update_pc_infrastructure(pc_name):

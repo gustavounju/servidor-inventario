@@ -419,10 +419,10 @@
               <td class="text-end">
                 <form action="{{ url_for('infrastructure.assign_component_to_component', component_id=subc.id) }}"
                   method="POST" class="d-inline">
-                  <input type="hidden" name="parent_component_id" value=""> <!-- empty to unassign -->
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Devolver al stock"
-                    onclick="return confirm('¿Quitar este componente interno?');">
-                    <i class="bi bi-dash-circle"></i>
+                  <input type="hidden" name="parent_id" value="">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular del DVR"
+                    onclick="return confirm('¿Desvincular componente del DVR?');">
+                    <i class="bi bi-x"></i>
                   </button>
                 </form>
               </td>
@@ -430,15 +430,62 @@
             {% endfor %}
             {% else %}
             <tr>
-              <td colspan="4" class="text-center text-muted py-3">No hay componentes adicionales asignados a este
-                equipo.
-              </td>
+              <td colspan="4" class="text-center text-muted">No hay componentes asignados manuales (fuera del inventario
+                principal).</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
-    </div>
+    </div> <!-- /.card de componentes -->
+    {% endif %}
+
+    {% if pc.pc_name not in ['PC Generica', 'Infraestructura'] %}
+    <!-- BLOQUE 2.8: Impresoras de Red Asignadas -->
+    <div class="card shadow-sm mb-4 border-secondary">
+      <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-printer"></i> Impresoras de Red Asignadas</h5>
+        <button class="btn btn-sm btn-light text-secondary fw-bold" data-bs-toggle="modal"
+          data-bs-target="#modalAssignNetworkPrinter">
+          <i class="bi bi-plus-circle"></i> Vincular Impresora
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Dirección IP</th>
+              <th>Marca/Modelo</th>
+              <th>N° Serie</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for np in assigned_network_printers %}
+            <tr>
+              <td><span class="fw-bold text-primary">{{ np.ip_address }}</span></td>
+              <td>{{ np.brand_model }}</td>
+              <td class="text-muted">{{ np.serial_number }}</td>
+              <td class="text-end">
+                <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=np.id) }}" method="POST"
+                  class="d-inline">
+                  <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular impresora de esta PC"
+                    onclick="return confirm('¿Desvincular esta impresora de red del equipo?');">
+                    <i class="bi bi-x-circle"></i> Desvincular
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">No hay impresoras de red asignadas a este equipo.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div> <!-- /.card de impresoras -->
     {% endif %}
 
     <!-- BLOQUE 3: Tareas de la PC -->
@@ -455,7 +502,6 @@
     <div class="table-responsive">
       <table class="table table-sm table-striped table-hover">
         <thead class="thead-light">
-          <tr>
           <tr>
             <th style="width: 15%;">Fecha</th>
             <th>Descripción</th>
@@ -499,7 +545,7 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="4" class="text-center">Sin tareas aún.</td>
+            <td colspan="6" class="text-center">Sin tareas aún.</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -832,7 +878,40 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-info text-white">Asignar a este equipo</button>
+            <button type="submit" class="btn btn-info text-white">Vincular Componente</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Vincular Impresora de Red -->
+  <div class="modal fade" id="modalAssignNetworkPrinter" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="#" method="POST" id="formAssignNetworkPrinter">
+          <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+          <div class="modal-header bg-secondary text-white">
+            <h5 class="modal-title">Vincular Impresora de Red a {{ pc.pc_name }}</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Seleccione la impresora de red que desea agregar a este equipo.</p>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Impresora Disponible:</label>
+              <select class="form-select" id="printer_select_id" required>
+                <option value="">-- Seleccione una impresora --</option>
+                {% for np in available_network_printers %}
+                <option value="{{ np.id }}">{{ np.ip_address }} - {{ np.brand_model }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-info text-white"
+              onclick="document.getElementById('formAssignNetworkPrinter').action = '/infra/network_printers/' + document.getElementById('printer_select_id').value + '/assign_pc';">Vincular
+              Impresora</button>
           </div>
         </form>
       </div>

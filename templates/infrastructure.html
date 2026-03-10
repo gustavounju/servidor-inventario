@@ -377,7 +377,7 @@
                     <div class="card shadow-sm border-secondary">
                         <div
                             class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="bi bi-printer me-2"></i> Impresoras de Red (Standalone)</h5>
+                            <h5 class="mb-0"><i class="bi bi-printer me-2"></i> Impresoras de Red</h5>
                             <button class="btn btn-sm btn-light text-secondary fw-bold" data-bs-toggle="modal"
                                 data-bs-target="#modalAddNetworkPrinter">
                                 <i class="bi bi-plus-circle"></i> Ingresar Impresora
@@ -391,6 +391,7 @@
                                             <th>Dirección IP</th>
                                             <th>Marca/Modelo</th>
                                             <th>N° Serie / MAC</th>
+                                            <th>Asignaciones</th>
                                             <th class="text-end">Acciones</th>
                                         </tr>
                                     </thead>
@@ -400,14 +401,73 @@
                                             <td class="fw-bold text-primary">{{ printer.ip_address }}</td>
                                             <td>{{ printer.brand_model }}</td>
                                             <td class="text-muted">{{ printer.serial_number }}</td>
+                                            <td>
+                                                {% if printer.assigned_pcs %}
+                                                {% for pc_val in printer.assigned_pcs %}
+                                                <a href="{{ url_for('dashboard.pc_detail', pc_name=pc_val) }}"
+                                                    class="badge bg-info text-dark text-decoration-none me-1 mb-1 d-inline-block">
+                                                    {{ pc_val }}
+                                                </a>
+                                                {% endfor %}
+                                                {% else %}
+                                                <span class="badge bg-secondary">Standalone</span>
+                                                {% endif %}
+                                            </td>
                                             <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                                                    data-bs-target="#modalAssignPrinter{{ printer.id }}"
+                                                    title="Vincular a PC">
+                                                    <i class="bi bi-pc-display"></i>
+                                                </button>
                                                 <a href="{{ url_for('infrastructure.delete_network_printer', id=printer.id) }}"
-                                                    class="btn btn-sm btn-outline-danger" title="Eliminar del sistema"
+                                                    class="btn btn-sm btn-outline-danger ms-1"
+                                                    title="Eliminar del sistema"
                                                     onclick="return confirm('¿Seguro de eliminar esta impresora de red?');">
-                                                    <i class="bi bi-x"></i>
+                                                    <i class="bi bi-trash"></i>
                                                 </a>
                                             </td>
                                         </tr>
+
+                                        <!-- Modal Asignar Impresora a PC -->
+                                        <div class="modal fade" id="modalAssignPrinter{{ printer.id }}" tabindex="-1"
+                                            aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form
+                                                        action="{{ url_for('infrastructure.assign_network_printer', printer_id=printer.id) }}"
+                                                        method="POST">
+                                                        <div class="modal-header bg-info text-white">
+                                                            <h5 class="modal-title">Vincular Impresora {{
+                                                                printer.ip_address }} a PC</h5>
+                                                            <button type="button" class="btn-close btn-close-white"
+                                                                data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p>Vincule esta impresora a un equipo de la red.</p>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Equipo de
+                                                                    destino:</label>
+                                                                <input class="form-control" list="datalistPCs"
+                                                                    name="pc_name" placeholder="Buscar PC..."
+                                                                    autocomplete="off" required>
+                                                                <datalist id="datalistPCs">
+                                                                    {% for pc in pcs_disponibles %}
+                                                                    <option value="{{ pc.pc_name }}">{{ pc.fuero }} | {{
+                                                                        pc.last_user or 'Sin Usuario' }}</option>
+                                                                    {% endfor %}
+                                                                </datalist>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary"
+                                                                data-bs-dismiss="modal">Cancelar</button>
+                                                            <button type="submit"
+                                                                class="btn btn-info text-white">Vincular</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
                                         {% else %}
                                         <tr>
                                             <td colspan="4" class="text-center text-muted py-4">No hay impresoras de red

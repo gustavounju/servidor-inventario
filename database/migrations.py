@@ -302,6 +302,27 @@ def migrate_db_v15():
             print("Migración V15 verificada.")
 
 
+def migrate_db_v16():
+    """Migración V16: Crear tabla pc_network_printers."""
+    print("Verificando migración de DB v16...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "pc_network_printers"):
+            print("Creando tabla pc_network_printers...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS pc_network_printers (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    pc_name VARCHAR(255),
+                    printer_id INT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (pc_name) REFERENCES pcs(pc_name) ON DELETE CASCADE,
+                    FOREIGN KEY (printer_id) REFERENCES network_printers(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+    print("Migración V16 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -318,3 +339,4 @@ def run_all_migrations():
     migrate_db_v13()
     migrate_db_v14()
     migrate_db_v15()
+    migrate_db_v16()

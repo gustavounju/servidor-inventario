@@ -999,6 +999,12 @@
                     🖨️ <span>Sin Imp.:</span> {{ kpi_sin_impresora }}
                 </div>
 
+                <!-- Total Impresoras (Sumatoria) -->
+                <div class="hero-stat" title="Total de impresoras en uso (Locales + Red)">
+                    <i class="bi bi-printer-fill text-success" style="font-size: 1.1rem;"></i> <span>Tot. Imp:</span> {{
+                    kpi_total_impresoras }}
+                </div>
+
                 <!-- Solo red -->
                 <div class="hero-stat {% if request.args.get('alerta') == 'red' %}hero-stat-on{% endif %}"
                     id="kpiSoloRed" onclick="onFilterClick('solo_red')" title="Filtrar: solo impresora en red">
@@ -1303,6 +1309,13 @@
                             {% else %}
                             Impresora Local {{ pc.printer_model }}
                             {% endif %}
+                            {% endif %}
+
+                            {% if pc.assigned_network_printer %}
+                            <div class="mt-1" style="font-size: 0.8rem;">
+                                <span class="text-muted"><i class="bi bi-diagram-3"></i> {{ pc.assigned_network_printer
+                                    }}</span>
+                            </div>
                             {% endif %}
                         </td>
                         <td>{{ pc.monitors }}</td>
