@@ -94,20 +94,42 @@ if __name__ == "__main__":
     else:
         print("\n" + "="*64)
         print(" MODO PRODUCCIÓN (Linux)")
-        print(" Iniciando servidor Flask con HTTPS y HTTP...")
-        # Cambiar el host si es necesario
-        print(" - HTTPS: https://0.0.0.0:5000 (para PCs)")
-        print(" - HTTP:  http://0.0.0.0:8080 (para móviles)")
+        
+        # Intentar detectar certificados SSL
+        cert_file = 'cert.pem'
+        key_file = 'key.pem'
+        
+        # Si no existe cert.pem, probar con inventario-cert.crt (que vimos en el listado de archivos)
+        if not os.path.exists(cert_file) and os.path.exists('inventario-cert.crt'):
+            cert_file = 'inventario-cert.crt'
+            print(f" - Usando certificado alternativo: {cert_file}")
+
+        use_ssl = os.path.exists(cert_file) and os.path.exists(key_file)
+
+        if use_ssl:
+            print(" Iniciando servidor Flask con HTTPS y HTTP...")
+            print(f" - HTTPS: https://0.0.0.0:5000 (Cert: {cert_file})")
+            print(" - HTTP:  http://0.0.0.0:8080 (para móviles)")
+            
+            def run_https():
+                try:
+                    app.run(host="0.0.0.0", port=5000, debug=False, 
+                            ssl_context=(cert_file, key_file), use_reloader=False)
+                except Exception as e:
+                    print(f"ERROR al iniciar HTTPS: {e}")
+            
+            https_thread = threading.Thread(target=run_https, daemon=True)
+            https_thread.start()
+        else:
+            print(" WARNING: No se encontraron certificados SSL (cert.pem/key.pem).")
+            print(" Iniciando servidor SOLO en modo HTTP (Puerto 5000 y 8080).")
+            
+            def run_http_alt():
+                app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
+            
+            threading.Thread(target=run_http_alt, daemon=True).start()
+
         print("="*64)
         
-        def run_https():
-            app.run(host="0.0.0.0", port=5000, debug=False, 
-                    ssl_context=('cert.pem', 'key.pem'), use_reloader=False)
-        
-        def run_http():
-            app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
-        
-        https_thread = threading.Thread(target=run_https, daemon=True)
-        https_thread.start()
-        
-        run_http()
+        # El hilo principal corre el puerto 8080 (móviles/fallback)
+        app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
