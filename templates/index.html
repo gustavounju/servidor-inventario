@@ -1291,8 +1291,12 @@
                             {% if pc.alerta_impresora_red %}
                             <span class="badge bg-info text-dark mb-1">Impresora en Red <i
                                     class="bi bi-diagram-3"></i></span><br>
-                            <span class="text-muted" title="Imprime por red"
-                                style="text-decoration: line-through;">Impresora {{ pc.printer_model }}</span>
+                            <strong>Impresora {{ pc.printer_model }}</strong>
+                            {% if pc.printer_port and pc.printer_port != 'N/A' %}
+                            <div class="small text-primary mt-1" style="font-size: 0.75rem;">
+                                <i class="bi bi-plug"></i> <code>{{ pc.printer_port }}</code>
+                            </div>
+                            {% endif %}
                             {% else %}
                             Impresora Local {{ pc.printer_model }}
                             {% endif %}
