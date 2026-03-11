@@ -223,7 +223,6 @@
                 {% else %}
                 {% if pc.alerta_impresora_red %}
                 <span class="badge bg-info text-dark mb-1">Impresora en Red <i class="bi bi-diagram-3"></i></span><br>
-                <strong>Impresora {{ pc.printer_model }}</strong>
                 {% if pc.printer_port and pc.printer_port != 'N/A' %}
                 <div class="small text-primary mt-1">
                   <i class="bi bi-plug"></i> Conectada a: <code>{{ pc.printer_port }}</code>
@@ -241,6 +240,9 @@
                   {% endif %}
                 </div>
                 {% endif %}
+                <div class="mt-1">
+                  <strong>Impresora {{ pc.printer_model }}</strong>
+                </div>
                 {% else %}
                 Impresora Local {{ pc.printer_model }}
                 {% endif %}
