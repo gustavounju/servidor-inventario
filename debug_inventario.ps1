@@ -1,3 +1,4 @@
+& {
 # Inventario GOLD - Cliente
 # Compatible con Windows 7 (PowerShell 2.0) y Windows 10/11
 # V2.0 - Corrección para "ConvertTo-Json" y "Invoke-RestMethod"
@@ -504,5 +505,6 @@ if ($script:errorOccurred) {
     }
 }
 Start-Sleep -Seconds 10
+}
 
 

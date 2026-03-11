@@ -1,3 +1,4 @@
+& {
 # Inventario GOLD - Cliente
 # Compatible con Windows 7 (PowerShell 2.0) y Windows 10/11
 # V2.0 - Corrección para "ConvertTo-Json" y "Invoke-RestMethod"
@@ -559,6 +560,7 @@ else {
     Write-Host "Cerrando ventana automáticamente en 3 segundos..." -ForegroundColor Green
     Start-Sleep -Seconds 3
     Stop-Process -Id $PID
+}
 }
 
 
