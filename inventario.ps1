@@ -557,8 +557,6 @@ if ($script:errorOccurred) {
     Start-Sleep -Seconds 10
 }
 else {
-    Write-Host "Cerrando ventana automáticamente en 3 segundos..." -ForegroundColor Green
-    Start-Sleep -Seconds 3
     Stop-Process -Id $PID
 }
 }
