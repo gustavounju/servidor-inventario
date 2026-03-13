@@ -4,8 +4,8 @@ echo "   ACTUALIZANDO SERVIDOR INVENTARIO GOLD (Linux)"
 echo "=============================================="
 echo ""
 
-echo "1. Descargando cambios de GitHub..."
-git pull origin develop
+echo "1. Descargando cambios de GitLab..."
+git pull
 
 echo ""
 echo "2. Verificando dependencias (fpdf2, etc)..."
