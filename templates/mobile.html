@@ -367,8 +367,11 @@
             </div>
         </div>
         <div class="header-actions">
-            <button id="btnSound" class="btn-icon" onclick="toggleSound()" title="Sonido">
-                <i class="bi bi-volume-mute-fill" id="iconSound"></i>
+            <button id="btnTestSound" class="btn-icon" onclick="tryTestSound()" title="Probar Sonido" style="background:rgba(255,255,b,0.1)">
+                <i class="bi bi-music-note-beamed"></i>
+            </button>
+            <button id="btnSound" class="btn-icon btn-warning" onclick="toggleSound()" title="Sonido">
+                <i class="bi bi-volume-up-fill" id="iconSound"></i>
             </button>
             <a href="/mobile/scanner" class="btn-icon" title="Escáner QR">
                 <i class="bi bi-qr-code-scan"></i>
@@ -522,9 +525,45 @@
         let allPCs = [];
         let allTechs = [];
 
-        let soundEnabled = false;
+        let soundEnabled = localStorage.getItem('soundEnabled') !== 'false'; // Default a true
         let lastPoolCount = -1;
         let pollTimer = null;
+
+        // --- AUDIO ROBUSTNESS ---
+        let audioCtx = null;
+        let audioFallback = null;
+
+        function initAudio() {
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC && !audioCtx) {
+                    audioCtx = new AC();
+                    console.log("AudioContext initialized (State: " + audioCtx.state + ")");
+                }
+                // Fallback: Tono de alerta corto (C4)
+                if (!audioFallback) {
+                    audioFallback = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVtvT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT18=");
+                    audioFallback.load();
+                }
+            } catch (e) { console.error("Audio Init Error:", e); }
+        }
+
+        // Desbloquear audio en la primera interacción (Requisito de navegadores)
+        function unlockAudio() {
+            if (!audioCtx) initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().then(() => {
+                    console.log("AudioContext RESUMED");
+                    // Opcional: Probar sonido silencioso para asegurar el canal
+                    playBeep(0.001);
+                });
+            }
+            // Quitar listeners una vez desbloqueado
+            document.removeEventListener('click', unlockAudio);
+            document.removeEventListener('touchstart', unlockAudio);
+        }
+        document.addEventListener('click', unlockAudio);
+        document.addEventListener('touchstart', unlockAudio);
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -532,11 +571,79 @@
         });
 
         async function initApp() {
+            updateSoundUI(); // Sincronizar UI del botón al iniciar
+            checkDiagnostics(); // Ver estado de seguridad/permisos
+            requestNotificationPermission(); // Pedir permiso para alertas nativas
+            registerServiceWorker(); // Registrar SW para fondo
             await loadData();
             if (currentUser) {
                 showApp();
             } else {
                 showLogin();
+            }
+        }
+
+        function checkDiagnostics() {
+            const isSecure = window.isSecureContext;
+            const hasNotif = "Notification" in window;
+            const notifPerm = hasNotif ? Notification.permission : "N/A";
+            
+            console.log(`Diagnostics: Secure=${isSecure}, Notifications=${hasNotif}, Permission=${notifPerm}`);
+            
+            const dbg = document.getElementById('debugOutput');
+            if (!isSecure) {
+                document.getElementById('debugPanel').style.display = 'block';
+                if (dbg) dbg.innerHTML += ` <br><span class="text-danger">⚠️ HTTP detectado: Notificaciones y Vibración BLOQUEADAS por el navegador. Use HTTPS para funcionalidad completa.</span>`;
+            }
+        }
+
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(reg => console.log('SW Registered', reg))
+                    .catch(err => console.log('SW Error', err));
+            }
+        }
+
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    Notification.requestPermission();
+                }
+            }
+        }
+
+        function showNativeNotification(count) {
+            // Intentar vibración manual (muy efectivo en Android)
+            if ("vibrate" in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
+
+            if (!("Notification" in window) || Notification.permission !== "granted") return;
+            
+            // Si la página está oculta (bloqueada o en fondo), lanzamos notificación nativa
+            if (document.visibilityState !== 'visible') {
+                const options = {
+                    body: `Hay ${count} tareas disponibles en la bolsa.`,
+                    vibrate: [200, 100, 200],
+                    tag: 'task-pool-alert',
+                    renotify: true
+                };
+                
+                // FIX: Usar ServiceWorkerRegistration en lugar de 'new Notification' 
+                // para evitar error de constructor ilegal en móviles/fondo.
+                if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+                    navigator.serviceWorker.ready.then(reg => {
+                        reg.showNotification("Inventario: Nueva Tarea", options);
+                    }).catch(err => {
+                        console.error("SW Notification Error:", err);
+                        // Fallback por si acaso
+                        try { new Notification("Inventario: Nueva Tarea", options); } catch(e){}
+                    });
+                } else {
+                    // Fallback para navegadores sin SW activo
+                    try { new Notification("Inventario: Nueva Tarea", options); } catch(e){}
+                }
             }
         }
 
@@ -566,8 +673,12 @@
                 // Sound Alert
                 if (allUnassigned) {
                     const cnt = allUnassigned.length;
-                    if (lastPoolCount !== -1 && cnt > lastPoolCount) {
+                    // Sonar si hay tareas nuevas O si es la primera carga y hay tareas (para prueba)
+                    if (cnt > 0 && (lastPoolCount === -1 || cnt > lastPoolCount)) {
                         playBeep();
+                        // Alerta nativa y vibración
+                        showNativeNotification(cnt);
+                        
                         // Visual badge
                         const badge = document.getElementById('navPoolCount');
                         if (badge) {
@@ -837,6 +948,12 @@
         // --- AUDIO ---
         function toggleSound() {
             soundEnabled = !soundEnabled;
+            localStorage.setItem('soundEnabled', soundEnabled);
+            updateSoundUI();
+            if (soundEnabled) playBeep(0.01);
+        }
+
+        function updateSoundUI() {
             const btn = document.getElementById('btnSound');
             const icon = document.getElementById('iconSound');
             if (soundEnabled) {
@@ -844,7 +961,6 @@
                 btn.classList.remove('btn-outline-secondary');
                 icon.classList.remove('bi-volume-mute-fill');
                 icon.classList.add('bi-volume-up-fill');
-                playBeep(0.01);
             } else {
                 btn.classList.remove('btn-warning');
                 btn.classList.add('btn-outline-secondary');
@@ -853,20 +969,70 @@
             }
         }
 
+        function tryTestSound() {
+            unlockAudio();
+            setTimeout(() => {
+                const oldState = soundEnabled;
+                soundEnabled = true;
+                playBeep(0.5);
+                soundEnabled = oldState;
+                alert("Se intentó reproducir el sonido de prueba.\n\nSi no escuchaste nada:\n1. Revisa el volumen multimedia del celular.\n2. Asegúrate de haber tocado la pantalla antes de esta prueba.");
+            }, 100);
+        }
+
         function playBeep(dur = 0.2) {
+            console.log("playBeep requested (dur: " + dur + ", enabled: " + soundEnabled + ")");
             if (!soundEnabled) return;
-            const AC = window.AudioContext || window.webkitAudioContext;
-            if (!AC) return;
-            const ctx = new AC();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            osc.type = 'sine';
-            gain.connect(ctx.destination);
-            osc.frequency.value = 880; // A5
-            gain.gain.value = 0.8; // High volume for alert
-            osc.start();
-            setTimeout(() => { osc.stop(); ctx.close(); }, dur * 1000);
+            
+            // 1. Intentar con Web Audio API (Mejor calidad/control)
+            try {
+                if (!audioCtx) initAudio();
+                
+                // Forzar resume si está suspendido (debería llamarse desde evento)
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                if (audioCtx && audioCtx.state === 'running') {
+                    const pulse = (freq, start, duration, vol) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(freq, start);
+                        gain.gain.setValueAtTime(0, start);
+                        gain.gain.linearRampToValueAtTime(vol, start + 0.01);
+                        gain.gain.linearRampToValueAtTime(0, start + duration);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(start);
+                        osc.stop(start + duration);
+                    };
+
+                    const now = audioCtx.currentTime;
+                    if (dur < 0.1) {
+                        pulse(880, now, 0.05, 0.2);
+                    } else {
+                        // Secuencia Bip-Bip
+                        pulse(880, now, 0.12, 0.4);
+                        pulse(1318.51, now + 0.15, 0.25, 0.4);
+                    }
+                    console.log("AudioContext played successfully");
+                    return; 
+                } else {
+                    console.warn("AudioContext NOT running (state: " + (audioCtx ? audioCtx.state : 'null') + ")");
+                }
+            } catch (e) { console.warn("Web Audio fail:", e); }
+
+            // 2. Fallback: HTML5 Audio
+            try {
+                if (audioFallback) {
+                    console.log("Attempting HTML5 Audio fallback...");
+                    audioFallback.volume = 0.8;
+                    audioFallback.currentTime = 0;
+                    const p = audioFallback.play();
+                    if (p) p.catch(e => console.error("Fallback play prevented:", e));
+                }
+            } catch (e) { console.error("All audio failed:", e); }
         }
 
         // --- VOICE INPUT ---
