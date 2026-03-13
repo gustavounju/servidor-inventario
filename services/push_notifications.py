@@ -70,3 +70,21 @@ def notify_all_technicians(title, body, url="/mobile"):
             format_strings = ','.join(['%s'] * len(expired_endpoints))
             conn.execute(f"DELETE FROM push_subscriptions WHERE endpoint IN ({format_strings})", tuple(expired_endpoints))
             conn.commit()
+
+    # --- FALLBACK / EXTERNAL: ntfy.sh ---
+    # Usamos un tópico único basado en el nombre de la app para que todos los técnicos escuchen el mismo
+    ntfy_topic = os.environ.get("NTFY_TOPIC", "inventario_gold_alertas_tech")
+    try:
+        import requests
+        requests.post(f"https://ntfy.sh/{ntfy_topic}",
+            data=body.encode('utf-8'),
+            headers={
+                "Title": title.encode('utf-8'),
+                "Priority": "high",
+                "Tags": "tools,warning",
+                "Click": url
+            },
+            timeout=5
+        )
+    except Exception as e:
+        print(f"Error sending to ntfy: {e}")

@@ -376,6 +376,9 @@
             <a href="/mobile/scanner" class="btn-icon" title="Escáner QR">
                 <i class="bi bi-qr-code-scan"></i>
             </a>
+            <button class="btn-icon" onclick="openNotifSettings()" title="Notificaciones">
+                <i class="bi bi-bell-fill"></i>
+            </button>
             <button onclick="logout()" class="btn-icon" title="Salir">
                 <i class="bi bi-box-arrow-right"></i>
             </button>
@@ -514,6 +517,51 @@
         </div>
     </div>
 
+    <!-- Notification Settings Modal -->
+    <div class="modal fade" id="notifSettingsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-bell me-2"></i>Ajustes de Alertas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info py-2" style="font-size: 0.85rem;">
+                        <i class="bi bi-info-circle me-2"></i>Para que las alertas suenen en todos los teléfonos, elija una opción:
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold">1. Alertas del Navegador (Web Push)</h6>
+                            <p class="small text-muted mb-2">Funcionan incluso con la pantalla apagada. Requiere HTTPS.</p>
+                            <div id="pushStatusMsg" class="mb-3 small">Cargando estado...</div>
+                            <button id="btnSubscribePush" class="btn btn-sm btn-primary w-100" onclick="subscribeToPushManual()">
+                                <i class="bi bi-plus-circle me-1"></i>Activar en este celular
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold">2. Alertas Externas (ntfy.sh) <span class="badge bg-success">Recomendado</span></h6>
+                            <p class="small text-muted">La opción más confiable. Usa una app externa que nunca falla.</p>
+                            <ol class="small text-muted ps-3 mb-3">
+                                <li>Instalá la app <strong>ntfy</strong> (Play Store/App Store).</li>
+                                <li>Abrila y dale a "Suscribirse a un tema".</li>
+                                <li>Escribí: <strong class="text-primary">inventario_gold_alertas_tech</strong></li>
+                            </ol>
+                            <div class="d-grid">
+                                <a href="https://ntfy.sh/inventario_gold_alertas_tech" target="_blank" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>Ver en ntfy.sh
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // --- DATA & STATE ---
@@ -615,6 +663,12 @@
             }
         }
 
+        async function subscribeToPushManual() {
+            unlockAudio();
+            await subscribeToPush();
+            updateNotifUI();
+        }
+
         async function subscribeToPush() {
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
                 console.log('Push notifications not supported');
@@ -622,6 +676,12 @@
             }
 
             try {
+                // Pedir permiso explícitamente si no se tiene
+                if (Notification.permission !== 'granted') {
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') throw new Error('Permiso denegado por el usuario');
+                }
+
                 const registration = await navigator.serviceWorker.ready;
                 const subscription = await registration.pushManager.subscribe({
                     userVisibleOnly: true,
@@ -630,7 +690,7 @@
 
                 console.log('Push Subscribed:', subscription);
 
-                await fetch('/api/mobile/subscribe', {
+                const res = await fetch('/api/mobile/subscribe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -638,8 +698,37 @@
                         subscription: subscription
                     })
                 });
+                if(res.ok) console.log("Suscripción guardada en servidor");
             } catch (err) {
                 console.error('Push Subscription Error:', err);
+                alert("Error al suscribir: " + err.message);
+            }
+        }
+
+        function openNotifSettings() {
+            updateNotifUI();
+            new bootstrap.Modal(document.getElementById('notifSettingsModal')).show();
+        }
+
+        function updateNotifUI() {
+            const msg = document.getElementById('pushStatusMsg');
+            const btn = document.getElementById('btnSubscribePush');
+            
+            if (!('Notification' in window)) {
+                msg.innerHTML = '<span class="text-danger">❌ No soportado por este navegador.</span>';
+                btn.disabled = true;
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                msg.innerHTML = '<span class="text-success">✅ Notificaciones activadas en el navegador.</span>';
+                btn.classList.replace('btn-primary', 'btn-outline-success');
+                btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Ya está activado (Volver a intentar)';
+            } else if (Notification.permission === 'denied') {
+                msg.innerHTML = '<span class="text-danger">❌ Permiso bloqueado. Debes resetear los permisos del sitio.</span>';
+                btn.disabled = true;
+            } else {
+                msg.innerHTML = '<span class="text-warning">⚠️ Aún no se han activado las alertas.</span>';
             }
         }
 
