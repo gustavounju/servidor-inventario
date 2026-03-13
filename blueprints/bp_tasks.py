@@ -10,6 +10,7 @@ import sqlite3
 from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.reporting import PDFReport, format_datetime_es, format_date_es
+from services.push_notifications import notify_all_technicians
 
 bp_tasks = Blueprint('tasks', __name__)
 
@@ -50,6 +51,17 @@ def add_task(pc_name):
         conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
                      (pc_name, "Tarea Creada", "", f"#{task_id}: {descripcion[:30]}..."))
         conn.commit()
+
+    # Notify technicians
+    try:
+        notify_all_technicians(
+            title="Nueva Tarea (PC)",
+            body=f"{solicitante}: {descripcion} [{pc_name}]",
+            url="/mobile"
+        )
+    except Exception as e:
+        print(f"Error notifying: {e}")
+
     return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
 
 @bp_tasks.route("/technicians/add", methods=["POST"])
@@ -126,6 +138,17 @@ def create_loose_task():
             (descripcion, solicitante, estado, categoria, assigned_to, fuero)
         )
         conn.commit()
+
+    # Notify technicians
+    try:
+        notify_all_technicians(
+            title="Nueva Tarea Suelta",
+            body=f"{solicitante}: {descripcion}",
+            url="/mobile"
+        )
+    except Exception as e:
+        print(f"Error notifying: {e}")
+
     return redirect(url_for("dashboard.dashboard"))
 
 @bp_tasks.route("/tasks/assign", methods=["POST"])

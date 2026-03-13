@@ -36,43 +36,15 @@ def send_push_notification(subscription_info, message_data):
 def notify_all_technicians(title, body, url="/mobile"):
     """
     Fetches all subscriptions and sends a notification to each.
+    Also sends to ntfy.sh as a reliable fallback.
     """
-    if not VAPID_PRIVATE_KEY or not VAPID_PUBLIC_KEY:
-        print("Push Notifications: VAPID keys not configured.")
-        return
-
     message = {
         "title": title,
         "body": body,
         "url": url
     }
 
-    expired_endpoints = []
-    
-    with get_db_connection() as conn:
-        subscriptions = conn.execute("SELECT * FROM push_subscriptions").fetchall()
-        
-        for sub in subscriptions:
-            sub_info = {
-                "endpoint": sub["endpoint"],
-                "keys": {
-                    "p256dh": sub["p256dh"],
-                    "auth": sub["auth"]
-                }
-            }
-            
-            result = send_push_notification(sub_info, message)
-            if result == "expired":
-                expired_endpoints.append(sub["endpoint"])
-        
-        # Clean up expired subscriptions
-        if expired_endpoints:
-            format_strings = ','.join(['%s'] * len(expired_endpoints))
-            conn.execute(f"DELETE FROM push_subscriptions WHERE endpoint IN ({format_strings})", tuple(expired_endpoints))
-            conn.commit()
-
-    # --- FALLBACK / EXTERNAL: ntfy.sh ---
-    # Usamos un tópico único basado en el nombre de la app para que todos los técnicos escuchen el mismo
+    # --- EXTERNAL: ntfy.sh (High Reliability) ---
     ntfy_topic = os.environ.get("NTFY_TOPIC", "inventario_gold_alertas_tech")
     try:
         import requests
@@ -86,5 +58,31 @@ def notify_all_technicians(title, body, url="/mobile"):
             },
             timeout=5
         )
+        print(f"Notification sent to ntfy topic: {ntfy_topic}")
     except Exception as e:
         print(f"Error sending to ntfy: {e}")
+
+    # --- WEB PUSH (Standard) ---
+    if not VAPID_PRIVATE_KEY or not VAPID_PUBLIC_KEY:
+        print("Push Notifications: VAPID keys not configured. Skipping Web Push.")
+        return
+
+    expired_endpoints = []
+    with get_db_connection() as conn:
+        subscriptions = conn.execute("SELECT * FROM push_subscriptions").fetchall()
+        for sub in subscriptions:
+            sub_info = {
+                "endpoint": sub["endpoint"],
+                "keys": {
+                    "p256dh": sub["p256dh"],
+                    "auth": sub["auth"]
+                }
+            }
+            result = send_push_notification(sub_info, message)
+            if result == "expired":
+                expired_endpoints.append(sub["endpoint"])
+        
+        if expired_endpoints:
+            format_strings = ','.join(['%s'] * len(expired_endpoints))
+            conn.execute(f"DELETE FROM push_subscriptions WHERE endpoint IN ({format_strings})", tuple(expired_endpoints))
+            conn.commit()
