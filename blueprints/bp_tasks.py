@@ -57,6 +57,14 @@ def add_task(pc_name):
         from datetime import datetime as _dt
         import locale
         
+        phone_info = ""
+        with get_db_connection() as conn:
+            # Try to match solicitante against real_name or username
+            user_row = conn.execute("SELECT phone FROM ad_users WHERE real_name = %s OR username = %s LIMIT 1", (solicitante, solicitante)).fetchone()
+            if user_row and user_row["phone"]:
+                phone_info = f"📞 *Teléfono:* {user_row['phone']}\n"
+
+        
         # Try to set locale for Spanish dates, fallback if not available
         try:
             locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
@@ -69,6 +77,7 @@ def add_task(pc_name):
         cuerpo = f"📅 *Fecha:* {fecha_str}\n"
         cuerpo += f"🖥️ *PC/Equipo:* {pc_name}\n"
         cuerpo += f"👤 *Solicitante:* {solicitante}\n"
+        cuerpo += phone_info
         cuerpo += f"🏷️ *Categoría:* {categoria}\n"
         cuerpo += f"📝 *Descripción:* {descripcion}\n"
 
@@ -162,6 +171,13 @@ def create_loose_task():
         from datetime import datetime as _dt
         import locale
         
+        phone_info = ""
+        with get_db_connection() as conn:
+            user_row = conn.execute("SELECT phone FROM ad_users WHERE real_name = %s OR username = %s LIMIT 1", (solicitante, solicitante)).fetchone()
+            if user_row and user_row["phone"]:
+                phone_info = f"📞 *Teléfono:* {user_row['phone']}\n"
+
+        
         try:
             locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
         except:
@@ -173,6 +189,7 @@ def create_loose_task():
         cuerpo = f"📅 *Fecha:* {fecha_str}\n"
         cuerpo += f"⚖️ *Fuero/Área:* {fuero if fuero else 'No especificado'}\n"
         cuerpo += f"👤 *Solicitante:* {solicitante}\n"
+        cuerpo += phone_info
         cuerpo += f"🏷️ *Categoría:* {categoria}\n"
         if assigned_to:
             cuerpo += f"👨‍🔧 *Asignada a:* {assigned_to}\n"
