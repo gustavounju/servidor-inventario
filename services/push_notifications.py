@@ -62,6 +62,56 @@ def notify_all_technicians(title, body, url="/mobile"):
     except Exception as e:
         print(f"Error sending to ntfy: {e}")
 
+    # --- EXTERNAL: Green-API WhatsApp (Fast) ---
+    green_id_instance = os.environ.get("GREEN_API_ID_INSTANCE")
+    green_api_token = os.environ.get("GREEN_API_TOKEN_INSTANCE")
+    green_phone = os.environ.get("GREEN_API_PHONE")
+    
+    if green_id_instance and green_api_token and green_phone:
+        try:
+            # Format message for WhatsApp
+            wa_message = f"*{title}*\n{body}\n\n{url}"
+            green_url = f"https://api.green-api.com/waInstance{green_id_instance}/sendMessage/{green_api_token}"
+            
+            # Identify if the target is a group or a private chat
+            chat_id = green_phone if "@g.us" in green_phone else f"{green_phone}@c.us"
+            
+            payload = {
+                "chatId": chat_id,
+                "message": wa_message
+            }
+            headers = {
+                'Content-Type': 'application/json'
+            }
+            response = requests.post(green_url, json=payload, headers=headers, timeout=5)
+            if response.status_code == 200:
+                print("Notification sent via Green-API WhatsApp")
+            else:
+                print(f"Green-API Error: {response.text}")
+        except Exception as e:
+            print(f"Error sending to Green-API: {e}")
+
+    # --- EXTERNAL: Telegram Bot (Fast) ---
+    telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    telegram_chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    if telegram_token and telegram_chat_id:
+        try:
+            tg_message = f"*{title}*\n{body}\n\n[Abrir Inventario]({url})"
+            tg_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
+            tg_data = {
+                "chat_id": telegram_chat_id,
+                "text": tg_message,
+                "parse_mode": "Markdown",
+                "disable_web_page_preview": True
+            }
+            response = requests.post(tg_url, json=tg_data, timeout=5)
+            if response.status_code == 200:
+                print("Notification sent via Telegram Bot")
+            else:
+                print(f"Telegram Bot Error: {response.text}")
+        except Exception as e:
+            print(f"Error sending to Telegram: {e}")
+
     # --- WEB PUSH (Standard) ---
     if not VAPID_PRIVATE_KEY or not VAPID_PUBLIC_KEY:
         print("Push Notifications: VAPID keys not configured. Skipping Web Push.")
