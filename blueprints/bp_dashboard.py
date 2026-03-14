@@ -127,7 +127,7 @@ def dashboard():
             technicians_list = [dict(r) for r in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
 
             base_sql = """
-                SELECT p.*, u.real_name as ad_real_name,
+                SELECT p.*, u.real_name as ad_real_name, u.phone as ad_phone,
                     (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') AS tareas_pendientes,
                     (
                         SELECT CONCAT(np.ip_address, ' - ', np.brand_model) 
@@ -205,10 +205,26 @@ def dashboard():
                 except Exception:
                     pass
             # ----------------------------
+            
+            ad_users_query = """
+                SELECT username, real_name, phone 
+                FROM ad_users
+                UNION
+                SELECT DISTINCT 
+                    LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
+                    last_user as real_name, 
+                    NULL as phone 
+                FROM pcs 
+                WHERE last_user IS NOT NULL 
+                  AND last_user != '' 
+                  AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
+                ORDER BY real_name
+            """
+            ad_users_list = [dict(row) for row in conn.execute(ad_users_query).fetchall()]
 
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
-        pcs_data = technicians_list = unassigned_tasks = all_pcs_dropdown = []
+        pcs_data = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = []
         total_rows = kpi_total_activas = kpi_total_graveyard = kpi_alerta_ram = kpi_sin_impresora = 0
         kpi_impresora_red = kpi_total_impresoras = kpi_win7 = kpi_win10 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
         last_backup_info = "Error leyendo"
@@ -223,6 +239,7 @@ def dashboard():
         unassigned_count=unassigned_count,
         kpi_total_impresoras=kpi_total_impresoras,
         technicians=technicians_list,
+        ad_users_list=ad_users_list,
         kpi_tareas_hoy=kpi_tareas_hoy,
         kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
         all_pcs=all_pcs_dropdown,
@@ -531,3 +548,22 @@ def global_activity():
             LIMIT 1000
         """).fetchall()
     return render_template("activity_logs.html", logs=logs)
+
+@bp_dashboard.route("/update_user_phone", methods=["POST"])
+def update_user_phone():
+    """Actualiza el teléfono de un usuario desde el modal."""
+    username = request.form.get("username", "").strip()
+    realname = request.form.get("realname", "").strip() or username
+    phone = request.form.get("phone", "").strip()
+    if username:
+        try:
+            with get_db_connection() as conn:
+                conn.execute("""
+                    INSERT INTO ad_users (username, real_name, phone)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE phone = VALUES(phone)
+                """, (username, realname, phone))
+        except Exception as e:
+            print(f"Error updating user phone: {e}")
+    return redirect(request.referrer or url_for("dashboard.dashboard"))
+
