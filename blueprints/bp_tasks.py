@@ -54,9 +54,27 @@ def add_task(pc_name):
 
     # Notify technicians
     try:
+        from datetime import datetime as _dt
+        import locale
+        
+        # Try to set locale for Spanish dates, fallback if not available
+        try:
+            locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+        except:
+            try: locale.setlocale(locale.LC_TIME, '') # Try default
+            except: pass
+            
+        fecha_str = _dt.now().strftime("%A %d de %B de %Y").capitalize()
+        
+        cuerpo = f"📅 *Fecha:* {fecha_str}\n"
+        cuerpo += f"🖥️ *PC/Equipo:* {pc_name}\n"
+        cuerpo += f"👤 *Solicitante:* {solicitante}\n"
+        cuerpo += f"🏷️ *Categoría:* {categoria}\n"
+        cuerpo += f"📝 *Descripción:* {descripcion}\n"
+
         notify_all_technicians(
-            title="Nueva Tarea (PC)",
-            body=f"{solicitante}: {descripcion} [{pc_name}]",
+            title="🚨 Nueva Tarea (PC)",
+            body=cuerpo,
             url="/mobile"
         )
     except Exception as e:
@@ -141,9 +159,28 @@ def create_loose_task():
 
     # Notify technicians
     try:
+        from datetime import datetime as _dt
+        import locale
+        
+        try:
+            locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+        except:
+            try: locale.setlocale(locale.LC_TIME, '')
+            except: pass
+            
+        fecha_str = _dt.now().strftime("%A %d de %B de %Y").capitalize()
+        
+        cuerpo = f"📅 *Fecha:* {fecha_str}\n"
+        cuerpo += f"⚖️ *Fuero/Área:* {fuero if fuero else 'No especificado'}\n"
+        cuerpo += f"👤 *Solicitante:* {solicitante}\n"
+        cuerpo += f"🏷️ *Categoría:* {categoria}\n"
+        if assigned_to:
+            cuerpo += f"👨‍🔧 *Asignada a:* {assigned_to}\n"
+        cuerpo += f"📝 *Descripción:* {descripcion}\n"
+
         notify_all_technicians(
-            title="Nueva Tarea Suelta",
-            body=f"{solicitante}: {descripcion}",
+            title="🚨 Nueva Tarea Suelta",
+            body=cuerpo,
             url="/mobile"
         )
     except Exception as e:
