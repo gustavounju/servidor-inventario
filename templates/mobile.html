@@ -357,6 +357,9 @@
             <button onclick="login()" class="btn btn-login mt-3">
                 <i class="bi bi-arrow-right-circle me-2"></i>Ingresar
             </button>
+            <button id="btnManualInstallLogin" class="btn btn-outline-primary mt-2 w-100" style="display:none; border-radius:12px;" onclick="triggerInstall()">
+                <i class="bi bi-download me-2"></i>Instalar aplicación
+            </button>
             <p class="text-center mt-3 mb-0" style="font-size:0.72rem;color:#94a3b8;">
                 v{{ app_version }}
             </p>
@@ -385,6 +388,9 @@
             <a href="/mobile/scanner" class="btn-icon" title="Escáner QR">
                 <i class="bi bi-qr-code-scan"></i>
             </a>
+            <button id="btnManualInstallHeader" class="btn-icon" style="display:none; background:rgba(40,167,69,0.2); border-color:#28a745;" onclick="triggerInstall()" title="Instalar Aplicación">
+                <i class="bi bi-download"></i>
+            </button>
             <button onclick="logout()" class="btn-icon" title="Salir">
                 <i class="bi bi-box-arrow-right"></i>
             </button>
@@ -621,6 +627,43 @@
             }
         }
 
+        // --- PWA MANUAL INSTALL LOGIC ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevenir que Chrome 76+ muestre automáticamente el prompt
+            e.preventDefault();
+            // Guardar el evento para dispararlo más tarde
+            deferredPrompt = e;
+            // Mostrar los botones de instalación
+            const btnLogin = document.getElementById('btnManualInstallLogin');
+            const btnHeader = document.getElementById('btnManualInstallHeader');
+            if (btnLogin) btnLogin.style.display = 'block';
+            if (btnHeader) btnHeader.style.display = 'flex';
+            
+            console.log("'beforeinstallprompt' capturado y botones mostrados");
+        });
+
+        async function triggerInstall() {
+            if (!deferredPrompt) return;
+            // Mostrar el prompt
+            deferredPrompt.prompt();
+            // Esperar a la respuesta del usuario
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            // Ya no podemos usar el evento, así que lo limpiamos
+            deferredPrompt = null;
+            // Ocultar botones
+            const btnLogin = document.getElementById('btnManualInstallLogin');
+            const btnHeader = document.getElementById('btnManualInstallHeader');
+            if (btnLogin) btnLogin.style.display = 'none';
+            if (btnHeader) btnHeader.style.display = 'none';
+        }
+
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('Aplicación instalada correctamente');
+            alert("¡Aplicación instalada! Ahora puedes abrirla desde tu pantalla de inicio.");
+        });
+
         function checkDiagnostics() {
             const isSecure = window.isSecureContext;
             const hasNotif = "Notification" in window;
@@ -631,7 +674,12 @@
             const dbg = document.getElementById('debugOutput');
             if (!isSecure) {
                 document.getElementById('debugPanel').style.display = 'block';
-                if (dbg) dbg.innerHTML += ` <br><span class="text-danger">⚠️ HTTP detectado: Notificaciones y Vibración BLOQUEADAS por el navegador. Use HTTPS para funcionalidad completa.</span>`;
+                if (dbg) dbg.innerHTML = `<span class="text-danger fw-bold">⚠️ CONEXIÓN NO SEGURA (HTTP)</span><br>
+                    <small>El navegador <strong>no permite instalar la aplicación</strong> ni usar vibración por seguridad si no es HTTPS.<br>
+                    <strong>Para instalar en este celular:</strong><br>
+                    1. Entra a <code>chrome://flags</code> en Chrome.<br>
+                    2. Busca "Insecure origins treated as secure".<br>
+                    3. Agrega: <code>http://10.15.3.139:5000</code> y marca Enabled.</small>`;
             }
         }
 
