@@ -631,18 +631,22 @@
                 navigator.serviceWorker.register('/static/sw.js')
                     .then(reg => {
                         console.log('SW Registered', reg);
-                        // Si se registró pero no hay prompt, mostrar ayuda manual después de un tiempo
+                        // El SW se registró, pero tal vez el navegador no muestra el prompt por el SSL
                         setTimeout(() => {
                             if (!deferredPrompt && document.getElementById('pwaManualHelp')) {
                                 document.getElementById('pwaManualHelp').style.display = 'block';
+                                document.getElementById('debugPanel').style.display = 'block';
+                                document.getElementById('debugOutput').innerHTML = `<span class="text-warning fw-bold">⚠️ Registro de red OK, pero instalación automática bloqueada.</span><br><small>Es probable que el navegador no confíe en el certificado SSL de este servidor.</small>`;
                             }
-                        }, 3000);
+                        }, 4000);
                     })
                     .catch(err => {
                         console.log('SW Error', err);
                         // Mostrar ayuda manual inmediatamente si falla el registro (probable SSL)
                         if (document.getElementById('pwaManualHelp')) {
                             document.getElementById('pwaManualHelp').style.display = 'block';
+                            document.getElementById('debugPanel').style.display = 'block';
+                            document.getElementById('debugOutput').innerHTML = `<span class="text-danger fw-bold">❌ ERROR DE SEGURIDAD (SSL)</span><br><small>El certificado de este servidor no es de confianza. La instalación automática está bloqueada.</small>`;
                         }
                     });
             } else {
@@ -692,19 +696,13 @@
 
         function checkDiagnostics() {
             const isSecure = window.isSecureContext;
-            const hasNotif = "Notification" in window;
-            const notifPerm = hasNotif ? Notification.permission : "N/A";
+            const hasSW = "serviceWorker" in navigator;
             
-            console.log(`Diagnostics: Secure=${isSecure}, Notifications=${hasNotif}, Permission=${notifPerm}`);
+            console.log(`Diagnostics: Secure=${isSecure}, SW=${hasSW}`);
             
             const dbg = document.getElementById('debugOutput');
-            if (!isSecure) {
-                document.getElementById('debugPanel').style.display = 'block';
-                if (dbg) dbg.innerHTML = `<span class="text-danger fw-bold">⚠️ CERTIFICADO NO VÁLIDO O HTTP</span><br>
-                    <small>El navegador bloquea la instalación automática por el error de seguridad (la X roja en el candado).<br>
-                    <strong>Para instalarlo igual:</strong><br>
-                    Pulsa los <i class="bi bi-three-dots-vertical"></i> <strong>3 puntos</strong> de Chrome y elige <strong>"Instalar aplicación"</strong> manualmente.</small>`;
-            }
+            // Si hay Red X en el candado, el navegador a veces dice isSecure=true pero bloquea todo.
+            // Siempre mostramos un pequeño aviso recordatorio si no hay prompt tras 5 seg.
         }
 
 
