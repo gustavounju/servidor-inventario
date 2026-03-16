@@ -411,6 +411,15 @@
             <strong>DEBUG:</strong> <span id="debugOutput">...</span>
         </div>
 
+        <div id="pwaManualHelpApp" class="mt-0 mb-3 p-2 border rounded bg-white shadow-sm" style="display:none; font-size: 0.8rem; color: #475569; border-left: 4px solid #0f4c75 !important;">
+            <p class="fw-bold mb-1 text-primary"><i class="bi bi-download me-1"></i>Instalar aplicación</p>
+            <p class="mb-1 small">Para tener el icono en tu pantalla de inicio:</p>
+            <ol class="ps-3 mb-0 small">
+                <li>Pulsa los <strong>3 puntos</strong> <i class="bi bi-three-dots-vertical"></i> arriba a la derecha.</li>
+                <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a pantalla de inicio"</strong>.</li>
+            </ol>
+        </div>
+
         <!-- Tab: Mis Tareas -->
         <div id="tabMyTasks">
             <div class="d-flex justify-content-between align-items-center">
@@ -633,8 +642,8 @@
                         console.log('SW Registered', reg);
                         // El SW se registró, pero tal vez el navegador no muestra el prompt por el SSL
                         setTimeout(() => {
-                            if (!deferredPrompt && document.getElementById('pwaManualHelp')) {
-                                document.getElementById('pwaManualHelp').style.display = 'block';
+                            if (!deferredPrompt) {
+                                showPwaHelp();
                                 document.getElementById('debugPanel').style.display = 'block';
                                 document.getElementById('debugOutput').innerHTML = `<span class="text-warning fw-bold">⚠️ Registro de red OK, pero instalación automática bloqueada.</span><br><small>Es probable que el navegador no confíe en el certificado SSL de este servidor.</small>`;
                             }
@@ -643,18 +652,20 @@
                     .catch(err => {
                         console.log('SW Error', err);
                         // Mostrar ayuda manual inmediatamente si falla el registro (probable SSL)
-                        if (document.getElementById('pwaManualHelp')) {
-                            document.getElementById('pwaManualHelp').style.display = 'block';
-                            document.getElementById('debugPanel').style.display = 'block';
-                            document.getElementById('debugOutput').innerHTML = `<span class="text-danger fw-bold">❌ ERROR DE SEGURIDAD (SSL)</span><br><small>El certificado de este servidor no es de confianza. La instalación automática está bloqueada.</small>`;
-                        }
+                        showPwaHelp();
+                        document.getElementById('debugPanel').style.display = 'block';
+                        document.getElementById('debugOutput').innerHTML = `<span class="text-danger fw-bold">❌ ERROR DE SEGURIDAD (SSL)</span><br><small>El certificado de este servidor no es de confianza. La instalación automática está bloqueada.</small>`;
                     });
             } else {
-                // Navegador no soporta PWA
-                if (document.getElementById('pwaManualHelp')) {
-                    document.getElementById('pwaManualHelp').style.display = 'block';
-                }
+                showPwaHelp();
             }
+        }
+
+        function showPwaHelp() {
+            const hLogin = document.getElementById('pwaManualHelp');
+            const hApp = document.getElementById('pwaManualHelpApp');
+            if (hLogin) hLogin.style.display = 'block';
+            if (hApp) hApp.style.display = 'block';
         }
 
         // --- PWA MANUAL INSTALL LOGIC ---
