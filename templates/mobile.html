@@ -360,6 +360,13 @@
             <button id="btnManualInstallLogin" class="btn btn-outline-primary mt-2 w-100" style="display:none; border-radius:12px;" onclick="triggerInstall()">
                 <i class="bi bi-download me-2"></i>Instalar aplicación
             </button>
+            <div id="pwaManualHelp" class="mt-3 p-2 border rounded bg-light" style="display:none; font-size: 0.75rem; color: #475569;">
+                <p class="fw-bold mb-1 text-primary"><i class="bi bi-info-circle me-1"></i>¿No ves el botón de instalar?</p>
+                <ol class="ps-3 mb-0">
+                    <li>Pulsa los <strong>3 puntos</strong> <i class="bi bi-three-dots-vertical"></i> arriba a la derecha.</li>
+                    <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla de inicio"</strong>.</li>
+                </ol>
+            </div>
             <p class="text-center mt-3 mb-0" style="font-size:0.72rem;color:#94a3b8;">
                 v{{ app_version }}
             </p>
@@ -622,8 +629,27 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/static/sw.js')
-                    .then(reg => console.log('SW Registered', reg))
-                    .catch(err => console.log('SW Error', err));
+                    .then(reg => {
+                        console.log('SW Registered', reg);
+                        // Si se registró pero no hay prompt, mostrar ayuda manual después de un tiempo
+                        setTimeout(() => {
+                            if (!deferredPrompt && document.getElementById('pwaManualHelp')) {
+                                document.getElementById('pwaManualHelp').style.display = 'block';
+                            }
+                        }, 3000);
+                    })
+                    .catch(err => {
+                        console.log('SW Error', err);
+                        // Mostrar ayuda manual inmediatamente si falla el registro (probable SSL)
+                        if (document.getElementById('pwaManualHelp')) {
+                            document.getElementById('pwaManualHelp').style.display = 'block';
+                        }
+                    });
+            } else {
+                // Navegador no soporta PWA
+                if (document.getElementById('pwaManualHelp')) {
+                    document.getElementById('pwaManualHelp').style.display = 'block';
+                }
             }
         }
 
@@ -674,12 +700,10 @@
             const dbg = document.getElementById('debugOutput');
             if (!isSecure) {
                 document.getElementById('debugPanel').style.display = 'block';
-                if (dbg) dbg.innerHTML = `<span class="text-danger fw-bold">⚠️ CONEXIÓN NO SEGURA (HTTP)</span><br>
-                    <small>El navegador <strong>no permite instalar la aplicación</strong> ni usar vibración por seguridad si no es HTTPS.<br>
-                    <strong>Para instalar en este celular:</strong><br>
-                    1. Entra a <code>chrome://flags</code> en Chrome.<br>
-                    2. Busca "Insecure origins treated as secure".<br>
-                    3. Agrega: <code>http://10.15.3.139:5000</code> y marca Enabled.</small>`;
+                if (dbg) dbg.innerHTML = `<span class="text-danger fw-bold">⚠️ CERTIFICADO NO VÁLIDO O HTTP</span><br>
+                    <small>El navegador bloquea la instalación automática por el error de seguridad (la X roja en el candado).<br>
+                    <strong>Para instalarlo igual:</strong><br>
+                    Pulsa los <i class="bi bi-three-dots-vertical"></i> <strong>3 puntos</strong> de Chrome y elige <strong>"Instalar aplicación"</strong> manualmente.</small>`;
             }
         }
 
