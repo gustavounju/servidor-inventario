@@ -10,6 +10,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/static/css/gold.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0f3d62">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
     <style>
         :root {
             --mob-primary: #0f4c75;
@@ -145,6 +148,12 @@
         .task-card .task-time {
             font-size: 0.72rem;
             color: var(--mob-muted);
+        }
+
+        .notif-body {
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         /* ===== BOTTOM NAV ===== */
@@ -376,9 +385,6 @@
             <a href="/mobile/scanner" class="btn-icon" title="Escáner QR">
                 <i class="bi bi-qr-code-scan"></i>
             </a>
-            <button class="btn-icon" onclick="openNotifSettings()" title="Notificaciones">
-                <i class="bi bi-bell-fill"></i>
-            </button>
             <button onclick="logout()" class="btn-icon" title="Salir">
                 <i class="bi bi-box-arrow-right"></i>
             </button>
@@ -421,6 +427,21 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tab: Notificaciones -->
+        <div id="tabNotifs" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="section-title">Historial de Alertas</div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadNotifications()" style="border-radius:8px;">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div id="notifsList">
+                <div class="empty-state"><i class="bi bi-chat-left-dots"></i>
+                    <p>Cargando historial...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- FAB Add Button -->
@@ -436,8 +457,12 @@
         </a>
         <a href="#" class="nav-item" onclick="switchTab('pool')">
             <i class="bi bi-basket"></i>
-            <span>Disponibles <span id="navPoolCount" class="badge rounded-pill bg-danger ms-1"
+            <span>Bolsa <span id="navPoolCount" class="badge rounded-pill bg-danger ms-1"
                     style="display:none;"></span></span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchTab('notifs')">
+            <i class="bi bi-chat-text"></i>
+            <span>Avisos</span>
         </a>
     </div>
 
@@ -517,50 +542,6 @@
         </div>
     </div>
 
-    <!-- Notification Settings Modal -->
-    <div class="modal fade" id="notifSettingsModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-bell me-2"></i>Ajustes de Alertas</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info py-2" style="font-size: 0.85rem;">
-                        <i class="bi bi-info-circle me-2"></i>Para que las alertas suenen en todos los teléfonos, elija una opción:
-                    </div>
-                    
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h6 class="card-title fw-bold">1. Alertas del Navegador (Web Push)</h6>
-                            <p class="small text-muted mb-2">Funcionan incluso con la pantalla apagada. Requiere HTTPS.</p>
-                            <div id="pushStatusMsg" class="mb-3 small">Cargando estado...</div>
-                            <button id="btnSubscribePush" class="btn btn-sm btn-primary w-100" onclick="subscribeToPushManual()">
-                                <i class="bi bi-plus-circle me-1"></i>Activar en este celular
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="card-title fw-bold">2. Alertas Externas (ntfy.sh) <span class="badge bg-success">Recomendado</span></h6>
-                            <p class="small text-muted">La opción más confiable. Usa una app externa que nunca falla.</p>
-                            <ol class="small text-muted ps-3 mb-3">
-                                <li>Instalá la app <strong>ntfy</strong> (Play Store/App Store).</li>
-                                <li>Abrila y dale a "Suscribirse a un tema".</li>
-                                <li>Escribí: <strong class="text-primary">inventario_gold_alertas_tech</strong></li>
-                            </ol>
-                            <div class="d-grid">
-                                <a href="https://ntfy.sh/inventario_gold_alertas_tech" target="_blank" class="btn btn-sm btn-outline-info">
-                                    <i class="bi bi-box-arrow-up-right me-1"></i>Ver en ntfy.sh
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -623,13 +604,20 @@
         async function initApp() {
             updateSoundUI(); // Sincronizar UI del botón al iniciar
             checkDiagnostics(); // Ver estado de seguridad/permisos
-            requestNotificationPermission(); // Pedir permiso para alertas nativas
-            registerServiceWorker(); // Registrar SW para fondo
+            registerServiceWorker(); // Restaurado para permitir instalación PWA
             await loadData();
             if (currentUser) {
                 showApp();
             } else {
                 showLogin();
+            }
+        }
+
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(reg => console.log('SW Registered', reg))
+                    .catch(err => console.log('SW Error', err));
             }
         }
 
@@ -647,135 +635,6 @@
             }
         }
 
-        function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/static/sw.js')
-                    .then(reg => console.log('SW Registered', reg))
-                    .catch(err => console.log('SW Error', err));
-            }
-        }
-
-        function requestNotificationPermission() {
-            if ("Notification" in window) {
-                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                    Notification.requestPermission();
-                }
-            }
-        }
-
-        async function subscribeToPushManual() {
-            unlockAudio();
-            await subscribeToPush();
-            updateNotifUI();
-        }
-
-        async function subscribeToPush() {
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                console.log('Push notifications not supported');
-                return;
-            }
-
-            try {
-                // Pedir permiso explícitamente si no se tiene
-                if (Notification.permission !== 'granted') {
-                    const permission = await Notification.requestPermission();
-                    if (permission !== 'granted') throw new Error('Permiso denegado por el usuario');
-                }
-
-                const registration = await navigator.serviceWorker.ready;
-                const subscription = await registration.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                });
-
-                console.log('Push Subscribed:', subscription);
-
-                const res = await fetch('/api/mobile/subscribe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        technician: currentUser,
-                        subscription: subscription
-                    })
-                });
-                if(res.ok) console.log("Suscripción guardada en servidor");
-            } catch (err) {
-                console.error('Push Subscription Error:', err);
-                alert("Error al suscribir: " + err.message);
-            }
-        }
-
-        function openNotifSettings() {
-            updateNotifUI();
-            new bootstrap.Modal(document.getElementById('notifSettingsModal')).show();
-        }
-
-        function updateNotifUI() {
-            const msg = document.getElementById('pushStatusMsg');
-            const btn = document.getElementById('btnSubscribePush');
-            
-            if (!('Notification' in window)) {
-                msg.innerHTML = '<span class="text-danger">❌ No soportado por este navegador.</span>';
-                btn.disabled = true;
-                return;
-            }
-
-            if (Notification.permission === 'granted') {
-                msg.innerHTML = '<span class="text-success">✅ Notificaciones activadas en el navegador.</span>';
-                btn.classList.replace('btn-primary', 'btn-outline-success');
-                btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Ya está activado (Volver a intentar)';
-            } else if (Notification.permission === 'denied') {
-                msg.innerHTML = '<span class="text-danger">❌ Permiso bloqueado. Debes resetear los permisos del sitio.</span>';
-                btn.disabled = true;
-            } else {
-                msg.innerHTML = '<span class="text-warning">⚠️ Aún no se han activado las alertas.</span>';
-            }
-        }
-
-        function urlBase64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
-        }
-
-        function showNativeNotification(count) {
-            // Intentar vibración manual (muy efectivo en Android)
-            if ("vibrate" in navigator) {
-                navigator.vibrate([200, 100, 200]);
-            }
-
-            if (!("Notification" in window) || Notification.permission !== "granted") return;
-            
-            // Si la página está oculta (bloqueada o en fondo), lanzamos notificación nativa
-            if (document.visibilityState !== 'visible') {
-                const options = {
-                    body: `Hay ${count} tareas disponibles en la bolsa.`,
-                    vibrate: [200, 100, 200],
-                    tag: 'task-pool-alert',
-                    renotify: true
-                };
-                
-                // FIX: Usar ServiceWorkerRegistration en lugar de 'new Notification' 
-                // para evitar error de constructor ilegal en móviles/fondo.
-                if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-                    navigator.serviceWorker.ready.then(reg => {
-                        reg.showNotification("Inventario: Nueva Tarea", options);
-                    }).catch(err => {
-                        console.error("SW Notification Error:", err);
-                        // Fallback por si acaso
-                        try { new Notification("Inventario: Nueva Tarea", options); } catch(e){}
-                    });
-                } else {
-                    // Fallback para navegadores sin SW activo
-                    try { new Notification("Inventario: Nueva Tarea", options); } catch(e){}
-                }
-            }
-        }
 
         async function forceRefresh() {
             await loadData();
@@ -808,7 +667,6 @@
                     if (newTasks.length > 0) {
                         if (lastTaskIds.size > 0) { // No sonar en la carga inicial
                             playBeep();
-                            showNativeNotification(allUnassigned.length);
                         }
                     }
 
@@ -947,7 +805,6 @@
             if (!val) return alert("Selecciona tu nombre");
             currentUser = val;
             localStorage.setItem('techName', currentUser);
-            subscribeToPush(); // Intentar suscribir al loguear
             showApp();
         }
 
@@ -973,12 +830,72 @@
             currentTab = tab;
             document.getElementById('tabMyTasks').style.display = tab === 'myTasks' ? 'block' : 'none';
             document.getElementById('tabPool').style.display = tab === 'pool' ? 'block' : 'none';
+            document.getElementById('tabNotifs').style.display = tab === 'notifs' ? 'block' : 'none';
 
             const items = document.querySelectorAll('.nav-item');
-            if (items.length > 1) {
+            if (items.length >= 3) {
                 items[0].classList.toggle('active', tab === 'myTasks');
                 items[1].classList.toggle('active', tab === 'pool');
+                items[2].classList.toggle('active', tab === 'notifs');
             }
+            if (tab === 'notifs') {
+                loadNotifications();
+                startNotifRefresh();
+            } else {
+                stopNotifRefresh();
+            }
+        }
+
+        let notifRefreshInterval = null;
+        function startNotifRefresh() {
+            if (notifRefreshInterval) return;
+            console.log("Iniciando auto-refresco de avisos...");
+            notifRefreshInterval = setInterval(() => {
+                if (currentTab === 'notifs') {
+                    loadNotifications();
+                }
+            }, 30000); // 30 segundos
+        }
+
+        function stopNotifRefresh() {
+            if (notifRefreshInterval) {
+                console.log("Deteniendo auto-refresco de avisos.");
+                clearInterval(notifRefreshInterval);
+                notifRefreshInterval = null;
+            }
+        }
+
+        async function loadNotifications() {
+            const container = document.getElementById('notifsList');
+            try {
+                const res = await fetch('/api/mobile/notifications?t=' + Date.now());
+                const data = await res.json();
+                if (data.length === 0) {
+                    container.innerHTML = `<div class="empty-state"><i class="bi bi-chat-left"></i><p>No hay mensajes recientes.</p></div>`;
+                    return;
+                }
+                container.innerHTML = data.map(n => {
+                    // Simple markdown-like bold converter for *text*
+                    const formattedBody = n.body.replace(/\*(.*?)\*/g, '<b>$1</b>');
+                    return `
+                        <div class="task-card" style="border-left: 4px solid #ffd700;">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold" style="color:var(--mob-primary);font-size:0.85rem;">${n.title}</span>
+                                <span class="task-time">${formatDate(n.created_at)}</span>
+                            </div>
+                            <div class="small notif-body">${formattedBody}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = `<div class="text-danger p-3 small">Error al cargar avisos.</div>`;
+            }
+        }
+
+        function formatDate(str) {
+            if (!str) return "";
+            const d = new Date(str.replace(' ', 'T'));
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " " + d.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
         }
 
         // --- ACTIONS ---

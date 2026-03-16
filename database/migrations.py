@@ -302,6 +302,8 @@ def migrate_db_v15():
             print("Migración V15 verificada.")
 
 
+
+
 def migrate_db_v16():
     """Migración V16: Crear tabla pc_network_printers."""
     print("Verificando migración de DB v16...")
@@ -320,7 +322,18 @@ def migrate_db_v16():
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
                 """
             )
-    print("Migración V16 verificada.")
+    print("Migración v16 verificada.")
+
+
+def migrate_db_v17():
+    """Migración V17: Asegurar columna 'phone' en ad_users."""
+    print("Verificando migración de DB v17...")
+    with get_db_connection() as conn:
+        if not _column_exists(conn, "ad_users", "phone"):
+            print("Aplicando migración V17: Agregando 'phone' a ad_users...")
+            conn.execute("ALTER TABLE ad_users ADD COLUMN phone TEXT")
+        else:
+            print("Migración V17 verificada.")
 
 
 def run_all_migrations():
@@ -340,3 +353,4 @@ def run_all_migrations():
     migrate_db_v14()
     migrate_db_v15()
     migrate_db_v16()
+    migrate_db_v17()

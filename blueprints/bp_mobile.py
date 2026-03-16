@@ -29,6 +29,20 @@ def api_mobile_data():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@bp_mobile.route("/api/mobile/notifications")
+def api_mobile_notifications():
+    try:
+        with get_db_connection() as conn:
+            # Traer las últimas 50 notificaciones
+            rows = conn.execute("SELECT * FROM app_notifications ORDER BY created_at DESC LIMIT 50").fetchall()
+            # Convertir objetos datetime a string para JSON
+            for r in rows:
+                if isinstance(r['created_at'], datetime.datetime):
+                    r['created_at'] = r['created_at'].strftime("%Y-%m-%d %H:%M:%S")
+            return jsonify(rows)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @bp_mobile.route("/api/mobile/create_task", methods=["POST"])
 def api_mobile_create_task():
     try:
@@ -127,35 +141,3 @@ def api_mobile_parse_voice():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@bp_mobile.route("/api/mobile/subscribe", methods=["POST"])
-def api_mobile_subscribe():
-    try:
-        data = request.json
-        technician = data.get("technician")
-        subscription = data.get("subscription") # {endpoint, keys: {p256dh, auth}}
-
-        if not subscription or not technician:
-            return jsonify({"status": "error", "message": "Faltan datos de suscripción"}), 400
-
-        endpoint = subscription.get("endpoint")
-        keys = subscription.get("keys", {})
-        p256dh = keys.get("p256dh")
-        auth = keys.get("auth")
-
-        if not endpoint or not p256dh or not auth:
-            return jsonify({"status": "error", "message": "Suscripción incompleta"}), 400
-
-        with get_db_connection() as conn:
-            conn.execute("""
-                INSERT INTO push_subscriptions (technician_name, endpoint, p256dh, auth)
-                VALUES (%s, %s, %s, %s)
-                ON DUPLICATE KEY UPDATE
-                technician_name = VALUES(technician_name),
-                p256dh = VALUES(p256dh),
-                auth = VALUES(auth)
-            """, (technician, endpoint, p256dh, auth))
-            conn.commit()
-
-        return jsonify({"status": "success"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500

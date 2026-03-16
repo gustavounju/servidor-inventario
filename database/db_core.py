@@ -195,15 +195,14 @@ def init_db():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
 
+
         conn.execute("""
-            CREATE TABLE IF NOT EXISTS push_subscriptions (
+            CREATE TABLE IF NOT EXISTS app_notifications (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                technician_name VARCHAR(255),
-                endpoint TEXT NOT NULL,
-                p256dh TEXT NOT NULL,
-                auth TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(endpoint(255))
+                title TEXT,
+                body TEXT,
+                url TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
     print("Base de datos lista y estructura verificada.")

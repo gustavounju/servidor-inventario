@@ -493,7 +493,7 @@ try {
     # -----------------------------------------------------------
     # ENVÍO AL SERVIDOR (WEBCLIENT PARA COMPATIBILIDAD)
     # -----------------------------------------------------------
-    $servidor = "https://10.15.2.251:5000/submit_inventory"
+    $servidor = "http://10.15.3.139:5000/submit_inventory"
     Write-Host "Enviando a $servidor ..."
     try {
         # Usamos System.Net.WebClient porque Invoke-RestMethod no existe en PS 2.0
