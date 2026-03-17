@@ -740,9 +740,19 @@
 
                 const data = await res.json();
 
-                // Debug Output
+                // Debug Output (Solo actualizar la primera línea de estado)
                 const dbg = document.getElementById('debugOutput');
-                if (dbg) dbg.textContent = "OK " + new Date().toLocaleTimeString() + " | Techs: " + (data.technicians ? data.technicians.length : 0);
+                if (dbg) {
+                    const statusLine = `OK ${new Date().toLocaleTimeString()} | Techs: ${(data.technicians ? data.technicians.length : 0)}`;
+                    // Si ya hay logs debajo, solo actualizamos la primera parte
+                    if (dbg.innerHTML.includes('<br>')) {
+                        const parts = dbg.innerHTML.split('<br>');
+                        parts[0] = statusLine;
+                        dbg.innerHTML = parts.join('<br>');
+                    } else {
+                        dbg.textContent = statusLine;
+                    }
+                }
 
                 if (data.error) throw new Error(data.error);
 
@@ -957,7 +967,10 @@
             document.getElementById('headerName').textContent = currentUser;
             renderLists();
             // Intentar suscribir a notificaciones push al iniciar sesión
-            setTimeout(() => subscribeToPush(), 2000);
+            setTimeout(() => {
+                console.log("Iniciando suscripción FCM...");
+                subscribeToPush();
+            }, 3000);
         }
 
         function switchTab(tab) {
