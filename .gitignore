@@ -22,3 +22,6 @@ voice_processor.py
 # Tests temporales
 test_*.py
 .env
+# Firebase credentials (NUNCA subir al repositorio)
+firebase-credentials.json
+*firebase-adminsdk*.json

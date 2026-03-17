@@ -140,4 +140,28 @@ def api_mobile_parse_voice():
             return jsonify({"status": "success", "data": {"descripcion": text, "solicitante": "", "error_voice": str(e)}})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+@bp_mobile.route("/api/mobile/subscribe_push", methods=["POST"])
+def api_subscribe_push():
+    """Saves an FCM token for a technician device."""
+    try:
+        data = request.json
+        technician = data.get("technician", "").strip()
+        token = data.get("token", "").strip()
+        if not technician or not token:
+            return jsonify({"status": "error", "message": "Faltan datos"}), 400
+
+        with get_db_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO fcm_tokens (technician_name, token)
+                VALUES (%s, %s)
+                ON DUPLICATE KEY UPDATE token = VALUES(token), updated_at = NOW()
+                """,
+                (technician, token)
+            )
+            conn.commit()
+        print(f"[FCM] Token registrado para: {technician}")
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 

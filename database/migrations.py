@@ -336,6 +336,27 @@ def migrate_db_v17():
             print("Migración V17 verificada.")
 
 
+def migrate_db_v18():
+    """Migración V18: Crear tabla fcm_tokens para Web Push / Firebase."""
+    print("Verificando migración de DB v18...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "fcm_tokens"):
+            print("Creando tabla fcm_tokens...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS fcm_tokens (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    technician_name VARCHAR(255) NOT NULL,
+                    token TEXT NOT NULL,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_tech (technician_name)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+        else:
+            print("Migración V18 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -354,3 +375,4 @@ def run_all_migrations():
     migrate_db_v15()
     migrate_db_v16()
     migrate_db_v17()
+    migrate_db_v18()

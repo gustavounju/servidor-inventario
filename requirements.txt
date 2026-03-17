@@ -11,3 +11,4 @@ cryptography
 requests
 pysnmp
 pywebpush
+firebase-admin

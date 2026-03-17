@@ -484,8 +484,13 @@
         </a>
         <a href="#" class="nav-item" onclick="switchTab('notifs')">
             <i class="bi bi-chat-text"></i>
-            <span>Avisos</span>
+            <span>Avisos <span id="navNotifCount" class="badge rounded-pill bg-danger ms-1" style="display:none;"></span></span>
         </a>
+    </div>
+
+    <!-- Toast: nueva notificación -->
+    <div id="notifToast" style="display:none; position:fixed; top:70px; left:50%; transform:translateX(-50%); z-index:2000; background:#0f4c75; color:#fff; padding:10px 20px; border-radius:16px; font-size:0.85rem; font-weight:600; box-shadow:0 4px 20px rgba(0,0,0,0.3); max-width:90vw; text-align:center; cursor:pointer;" onclick="openAvisosFromToast()">
+        🔔 <span id="notifToastText">Nueva notificación</span>
     </div>
 
     <!-- Modales -->
@@ -578,9 +583,11 @@
 
         let soundEnabled = localStorage.getItem('soundEnabled') !== 'false'; // Default a true
         let lastTaskIds = new Set();
+        let lastNotifId = parseInt(localStorage.getItem('lastNotifId') || '0');
+        let unreadNotifCount = 0;
         let pollTimer = null;
 
-        const VAPID_PUBLIC_KEY = "BCMzVKIQpmQi_FayAkWunuN9DhnwaOMddqLOl04khJjTyNMEobDiRGKrPtSNSbkHiznkl1Y_KTKKgvrlrthw08I=";
+        const VAPID_PUBLIC_KEY = "BOu99N41agBTHQmpQHo8yrbTdQ7Kb392R1NgXiy8DeK5f7WVvHB-OXmqm-ptw2CpoIqM0cZZOUtYRYGaBdAUufE";
 
         // --- AUDIO ROBUSTNESS ---
         let audioCtx = null;
@@ -740,7 +747,7 @@
                 allActive = data.active_tasks || [];
                 allPCs = data.pcs || [];
 
-                // Sound Alert
+                // Sound & Vibration Alert on new unassigned tasks
                 if (allUnassigned) {
                     const currentIds = new Set(allUnassigned.map(t => t.id));
                     const newTasks = [...currentIds].filter(id => !lastTaskIds.has(id));
@@ -748,10 +755,12 @@
                     if (newTasks.length > 0) {
                         if (lastTaskIds.size > 0) { // No sonar en la carga inicial
                             playBeep();
+                            // Vibración: patrón doble (200ms ON, 100ms OFF, 200ms ON)
+                            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
                         }
                     }
 
-                    // Actualizar badge visual
+                    // Actualizar badge visual Bolsa
                     const cnt = allUnassigned.length;
                     const badge = document.getElementById('navPoolCount');
                     if (badge) {
@@ -761,6 +770,41 @@
 
                     lastTaskIds = currentIds;
                 }
+
+                // Background notification check (Avisos en tiempo real)
+                try {
+                    const nRes = await fetch('/api/mobile/notifications?t=' + Date.now());
+                    const nData = await nRes.json();
+                    if (Array.isArray(nData) && nData.length > 0) {
+                        const latestId = nData[0].id;
+                        if (latestId > lastNotifId) {
+                            const newCount = nData.filter(n => n.id > lastNotifId).length;
+                            if (lastNotifId > 0) { // No alertar en la carga inicial
+                                // Vibración suave para aviso
+                                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                                // Mostrar badge en pestaña Avisos
+                                unreadNotifCount += newCount;
+                                const notifBadge = document.getElementById('navNotifCount');
+                                if (notifBadge) {
+                                    notifBadge.textContent = unreadNotifCount;
+                                    notifBadge.style.display = 'inline-block';
+                                }
+                                // Mostrar toast flotante
+                                const toastEl = document.getElementById('notifToast');
+                                const toastText = document.getElementById('notifToastText');
+                                if (toastEl && toastText) {
+                                    toastText.textContent = nData[0].title + ': ' + nData[0].body.substring(0, 60);
+                                    toastEl.style.display = 'block';
+                                    setTimeout(() => { toastEl.style.display = 'none'; }, 6000);
+                                }
+                                // Si el tab notifs está abierto, refrescar la lista
+                                if (currentTab === 'notifs') loadNotifications();
+                            }
+                            lastNotifId = latestId;
+                            localStorage.setItem('lastNotifId', lastNotifId);
+                        }
+                    }
+                } catch(eNotif) { /* silencioso, no interrumpir el poll principal */ }
 
                 populateTechSelect(allTechs);
                 populatePCSelect(allPCs);
@@ -905,6 +949,8 @@
             document.getElementById('fabAdd').style.display = 'flex';
             document.getElementById('headerName').textContent = currentUser;
             renderLists();
+            // Intentar suscribir a notificaciones push al iniciar sesión
+            setTimeout(() => subscribeToPush(), 2000);
         }
 
         function switchTab(tab) {
@@ -920,11 +966,20 @@
                 items[2].classList.toggle('active', tab === 'notifs');
             }
             if (tab === 'notifs') {
+                // Limpiar badge de avisos no leídos
+                unreadNotifCount = 0;
+                const notifBadge = document.getElementById('navNotifCount');
+                if (notifBadge) notifBadge.style.display = 'none';
                 loadNotifications();
                 startNotifRefresh();
             } else {
                 stopNotifRefresh();
             }
+        }
+
+        function openAvisosFromToast() {
+            document.getElementById('notifToast').style.display = 'none';
+            switchTab('notifs');
         }
 
         let notifRefreshInterval = null;
@@ -1308,6 +1363,85 @@
             }
         });
 
+        // --- FIREBASE PUSH SUBSCRIPTION ---
+        async function subscribeToPush() {
+            if (!currentUser) return;
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                console.log('[FCM] Push not supported in this browser.');
+                return;
+            }
+            try {
+                // Pedir permiso de notificaciones
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    console.log('[FCM] Permiso de notificaciones denegado.');
+                    return;
+                }
+
+                // Esperar a que el SW esté listo
+                const swReg = await navigator.serviceWorker.ready;
+
+                // Obtener token FCM
+                const messaging = firebase.messaging();
+                const token = await messaging.getToken({
+                    vapidKey: VAPID_PUBLIC_KEY,
+                    serviceWorkerRegistration: swReg
+                });
+
+                if (!token) {
+                    console.warn('[FCM] No se obtuvo token.');
+                    return;
+                }
+
+                console.log('[FCM] Token obtenido:', token.substring(0, 20) + '...');
+
+                // Enviar token al servidor
+                const res = await fetch('/api/mobile/subscribe_push', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ technician: currentUser, token: token })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    console.log('[FCM] Token registrado en servidor ✅');
+                } else {
+                    console.error('[FCM] Error registrando token:', json.message);
+                }
+
+                // Manejar mensajes en foreground (página abierta)
+                messaging.onMessage((payload) => {
+                    console.log('[FCM] Mensaje en foreground:', payload);
+                    // El toast ya lo maneja el polling, pero podemos forzarlo
+                    const toastEl = document.getElementById('notifToast');
+                    const toastText = document.getElementById('notifToastText');
+                    if (toastEl && toastText && payload.notification) {
+                        toastText.textContent = payload.notification.title + ': ' + (payload.notification.body || '').substring(0, 60);
+                        toastEl.style.display = 'block';
+                        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                        setTimeout(() => { toastEl.style.display = 'none'; }, 6000);
+                    }
+                });
+
+            } catch (e) {
+                console.error('[FCM] Error en suscripción push:', e);
+            }
+        }
+
+    </script>
+
+    <!-- Firebase SDK (debe ir DESPUÉS del script principal) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+    <script>
+        // Inicializar Firebase en la página principal
+        firebase.initializeApp({
+            apiKey: "AIzaSyC6PcD59xCNoqodWc3j3Xx-RkYaWRbUwHg",
+            authDomain: "inventario-gold.firebaseapp.com",
+            projectId: "inventario-gold",
+            storageBucket: "inventario-gold.firebasestorage.app",
+            messagingSenderId: "155956386088",
+            appId: "1:155956386088:web:0aac3dcc29079442ff981d"
+        });
     </script>
 </body>
 
