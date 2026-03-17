@@ -661,7 +661,7 @@
                         // Mostrar ayuda manual inmediatamente si falla el registro (probable SSL)
                         showPwaHelp();
                         document.getElementById('debugPanel').style.display = 'block';
-                        document.getElementById('debugOutput').innerHTML = `<span class="text-danger fw-bold">❌ ERROR DE SEGURIDAD (SSL)</span><br><small>El certificado de este servidor no es de confianza. La instalación automática está bloqueada.</small>`;
+                        document.getElementById('debugOutput').innerHTML = `<span class="text-danger fw-bold">❌ ERROR: ${err.message || err}</span><br><small>Es probable que el navegador bloquee el Service Worker por el certificado SSL.</small>`;
                     });
             } else {
                 showPwaHelp();
