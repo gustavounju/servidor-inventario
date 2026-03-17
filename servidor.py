@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 import os
 import threading
 import platform
@@ -51,6 +51,14 @@ app.jinja_env.filters['datetime_es'] = format_datetime_es
 @app.context_processor
 def inject_global_vars():
     return {'app_version': APP_VERSION}
+
+@app.route('/sw.js')
+def serve_sw():
+    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory('static', 'manifest.json', mimetype='application/json')
 
 # Configuración y Migraciones iniciales
 with app.app_context():
