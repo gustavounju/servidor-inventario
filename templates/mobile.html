@@ -631,6 +631,11 @@
         });
 
         async function initApp() {
+            // Asegurar que el sonido esté activo por defecto si no se ha configurado antes
+            if (localStorage.getItem('soundEnabled') === null) {
+                localStorage.setItem('soundEnabled', 'true');
+                soundEnabled = true;
+            }
             updateSoundUI(); // Sincronizar UI del botón al iniciar
             checkDiagnostics(); // Ver estado de seguridad/permisos
             registerServiceWorker(); // Restaurado para permitir instalación PWA
