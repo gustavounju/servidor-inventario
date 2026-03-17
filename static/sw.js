@@ -25,7 +25,9 @@ messaging.onBackgroundMessage((payload) => {
         body: payload.notification?.body || 'Hay una actualización.',
         icon: '/static/icon-192.png',
         badge: '/static/icon-192.png',
-        vibrate: [200, 100, 200],
+        vibrate: [500, 100, 500, 100, 500],
+        renotify: true,
+        tag: 'new-task',
         data: { url: payload.data?.url || '/mobile' },
         actions: [
             { action: 'open', title: 'Ver tarea' }
