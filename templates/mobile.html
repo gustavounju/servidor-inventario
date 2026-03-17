@@ -780,8 +780,10 @@
                         if (latestId > lastNotifId) {
                             const newCount = nData.filter(n => n.id > lastNotifId).length;
                             if (lastNotifId > 0) { // No alertar en la carga inicial
-                                // Vibración suave para aviso
-                                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                                // Sonido y Vibración para aviso
+                                if (soundEnabled) playBeep(0.3);
+                                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                                
                                 // Mostrar badge en pestaña Avisos
                                 unreadNotifCount += newCount;
                                 const notifBadge = document.getElementById('navNotifCount');
@@ -795,7 +797,7 @@
                                 if (toastEl && toastText) {
                                     toastText.textContent = nData[0].title + ': ' + nData[0].body.substring(0, 60);
                                     toastEl.style.display = 'block';
-                                    setTimeout(() => { toastEl.style.display = 'none'; }, 6000);
+                                    setTimeout(() => { toastEl.style.display = 'none'; }, 8000);
                                 }
                                 // Si el tab notifs está abierto, refrescar la lista
                                 if (currentTab === 'notifs') loadNotifications();
@@ -1417,8 +1419,9 @@
                     if (toastEl && toastText && payload.notification) {
                         toastText.textContent = payload.notification.title + ': ' + (payload.notification.body || '').substring(0, 60);
                         toastEl.style.display = 'block';
-                        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-                        setTimeout(() => { toastEl.style.display = 'none'; }, 6000);
+                        if (soundEnabled) playBeep(0.5);
+                        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                        setTimeout(() => { toastEl.style.display = 'none'; }, 8000);
                     }
                 });
 
