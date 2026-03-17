@@ -1396,6 +1396,7 @@
                 }
 
                 console.log('[FCM] Token obtenido:', token.substring(0, 20) + '...');
+                document.getElementById('debugOutput').innerHTML += `<br><span class="text-success">[FCM] Token OK: ${token.substring(0,10)}...</span>`;
 
                 // Enviar token al servidor
                 const res = await fetch('/api/mobile/subscribe_push', {
@@ -1427,6 +1428,7 @@
 
             } catch (e) {
                 console.error('[FCM] Error en suscripción push:', e);
+                document.getElementById('debugOutput').innerHTML += `<br><span class="text-danger">[FCM] Error: ${e.message || e}</span>`;
             }
         }
 
