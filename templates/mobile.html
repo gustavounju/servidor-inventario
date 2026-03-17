@@ -1171,10 +1171,12 @@
         }
 
         function playBeep(dur = 0.2) {
-            console.log("playBeep requested (dur: " + dur + ", enabled: " + soundEnabled + ")");
+            const dbg = document.getElementById('debugOutput');
+            if (dbg) dbg.innerHTML += `<br><span class="text-info">[SOUND] Triggered (Enabled: ${soundEnabled})</span>`;
+            
             if (!soundEnabled) return;
             
-            // 1. Intentar con Web Audio API (Mejor calidad/control)
+            // 1. Intentar con Web Audio API (Pitido Sintético)
             try {
                 if (!audioCtx) initAudio();
                 
@@ -1200,11 +1202,12 @@
 
                     const now = audioCtx.currentTime;
                     if (dur < 0.1) {
-                        pulse(880, now, 0.05, 0.2);
+                        pulse(880, now, 0.05, 0.2); // Bip corto
                     } else {
-                        // Secuencia Bip-Bip
-                        pulse(880, now, 0.12, 0.4);
-                        pulse(1318.51, now + 0.15, 0.25, 0.4);
+                        // Melodía Ascendente 'Premium' (Re-Fa#-La)
+                        pulse(587.33, now, 0.1, 0.3);        // D5
+                        pulse(739.99, now + 0.12, 0.1, 0.3);  // F#5
+                        pulse(880.00, now + 0.24, 0.2, 0.3);  // A5
                     }
                     console.log("AudioContext played successfully");
                     return; 
@@ -1419,7 +1422,6 @@
                 // Manejar mensajes en foreground (página abierta)
                 messaging.onMessage((payload) => {
                     console.log('[FCM] Mensaje en foreground:', payload);
-                    // El toast ya lo maneja el polling, pero podemos forzarlo
                     const toastEl = document.getElementById('notifToast');
                     const toastText = document.getElementById('notifToastText');
                     if (toastEl && toastText && payload.notification) {
