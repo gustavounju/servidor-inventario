@@ -1388,21 +1388,29 @@
 
         // --- FIREBASE PUSH SUBSCRIPTION ---
         async function subscribeToPush() {
+            const dbg = document.getElementById('debugOutput');
+            if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Iniciando... (User: ${currentUser})</span>`;
+
             if (!currentUser) return;
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                if (dbg) dbg.innerHTML += `<br><span class="text-danger">[FCM] Push no soportado</span>`;
                 console.log('[FCM] Push not supported in this browser.');
                 return;
             }
             try {
                 // Pedir permiso de notificaciones
+                if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Pidiendo permiso...</span>`;
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') {
+                    if (dbg) dbg.innerHTML += `<br><span class="text-warning">[FCM] Permiso: ${permission}</span>`;
                     console.log('[FCM] Permiso de notificaciones denegado.');
                     return;
                 }
 
                 // Esperar a que el SW esté listo
+                if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Esperando SW...</span>`;
                 const swReg = await navigator.serviceWorker.ready;
+                if (dbg) dbg.innerHTML += `<br><span class="text-success">[FCM] SW Listo!</span>`;
 
                 // Obtener token FCM
                 const messaging = firebase.messaging();
