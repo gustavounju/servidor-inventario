@@ -19,6 +19,8 @@ NGINX_DST_ENABLED="/etc/nginx/sites-enabled/inventario"
 KNOWN_DB_HOST="10.15.3.20"
 KNOWN_DB_PORT="3306"
 KNOWN_DB_NAME="inventario_prod"
+KNOWN_DB_USER="gustavo_murad"
+KNOWN_DB_PASS="justicia123"
 KNOWN_INVENTARIO_IP="10.15.2.251"
 KNOWN_INVENTARIO_HTTPS="https://${KNOWN_INVENTARIO_IP}:5000"
 KNOWN_INVENTARIO_HTTP="http://${KNOWN_INVENTARIO_IP}:8080"
@@ -104,24 +106,13 @@ if [[ -f "$APP_DIR/.env" ]]; then
         info "FLASK_SECRET_KEY generada automaticamente."
     fi
 
-    # Pedir credenciales MySQL si faltan
-    if ! grep -q "^DB_USER=." "$APP_DIR/.env"; then
-        read -rp "Usuario MySQL (ej: root): " DB_USER_INPUT
-        echo "DB_USER=${DB_USER_INPUT}" >> "$APP_DIR/.env"
-    fi
-    if ! grep -q "^DB_PASS=." "$APP_DIR/.env"; then
-        read -rsp "Clave MySQL para ${KNOWN_DB_HOST}: " DB_PASS_INPUT
-        echo ""
-        echo "DB_PASS=${DB_PASS_INPUT}" >> "$APP_DIR/.env"
-    fi
+    # Rellenar credenciales MySQL si faltan
+    update_env "DB_USER" "$KNOWN_DB_USER"
+    update_env "DB_PASS" "$KNOWN_DB_PASS"
 
 else
     # No existe .env → crearlo desde cero pidiendo solo credenciales MySQL
     warn ".env no encontrado. Creando uno nuevo..."
-
-    read -rp  "Usuario MySQL (ej: root): " DB_USER_INPUT
-    read -rsp "Clave MySQL para ${KNOWN_DB_HOST}: " DB_PASS_INPUT
-    echo ""
 
     SECRET=$(generar_secret_key)
 
@@ -131,8 +122,8 @@ FLASK_SECRET_KEY=${SECRET}
 
 DB_HOST=${KNOWN_DB_HOST}
 DB_PORT=${KNOWN_DB_PORT}
-DB_USER=${DB_USER_INPUT}
-DB_PASS=${DB_PASS_INPUT}
+DB_USER=${KNOWN_DB_USER}
+DB_PASS=${KNOWN_DB_PASS}
 DB_NAME=${KNOWN_DB_NAME}
 
 SESSION_COOKIE_SECURE=false
