@@ -84,6 +84,14 @@ def enforce_authentication():
     if csrf_response is not None:
         return csrf_response
 
+@app.route('/sw.js')
+def serve_sw():
+    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory('static', 'manifest.json', mimetype='application/json')
+
 # Configuración y Migraciones iniciales
 with app.app_context():
     init_db()

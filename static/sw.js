@@ -30,6 +30,8 @@ messaging.onBackgroundMessage((payload) => {
         renotify: true,
         tag: 'inventario-gold-alert',
         data: { url: payload.data?.url || '/mobile' },
+        silent: false,
+        requireInteraction: true,
         actions: [
             { action: 'open', title: 'Ver tarea' }
         ]

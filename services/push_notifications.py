@@ -65,6 +65,7 @@ def _send_fcm_push(title, body, url="/mobile"):
                     body=body,
                     icon="/static/icon-192.png",
                     badge="/static/icon-192.png",
+                    silent=False,
                 ),
                 fcm_options=messaging.WebpushFCMOptions(link=url),
             ),

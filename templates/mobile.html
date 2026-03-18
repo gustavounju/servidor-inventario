@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/static/css/gold.css">
-    <link rel="manifest" href="/static/manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f3d62">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
     <style>
@@ -492,6 +492,11 @@
         </div>
     </div>
 
+    <div id="debugPanel"
+        style="padding: 10px; background: #eee; font-family: monospace; font-size: 10px; margin-bottom: 2px;">
+        <strong>DEBUG:</strong> <span id="debugOutput">Cargando...</span>
+    </div>
+
     <!-- Main Content -->
     <div class="container py-3" id="mainContent" style="display:none;">
         <div id="secureBanner" class="secure-banner"></div>
@@ -755,7 +760,7 @@
 
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/static/sw.js')
+                navigator.serviceWorker.register('/sw.js')
                     .then(reg => {
                         console.log('SW Registered', reg);
                         // El SW se registró, pero tal vez el navegador no muestra el prompt por el SSL
@@ -772,7 +777,7 @@
                         // Mostrar ayuda manual inmediatamente si falla el registro (probable SSL)
                         showPwaHelp();
                         document.getElementById('debugPanel').style.display = 'block';
-                        document.getElementById('debugOutput').innerHTML = `<span class="text-danger fw-bold">❌ ERROR DE SEGURIDAD (SSL)</span><br><small>El certificado de este servidor no es de confianza. La instalación automática está bloqueada.</small>`;
+                        document.getElementById('debugOutput').innerHTML = `<span class="text-danger fw-bold">❌ ERROR: ${err.message || err}</span><br><small>Es probable que el navegador bloquee el Service Worker por el certificado SSL.</small>`;
                     });
             } else {
                 showPwaHelp();
@@ -855,9 +860,19 @@
 
                 const data = await res.json();
 
-                // Debug Output
+                // Debug Output (Solo actualizar la primera línea de estado)
                 const dbg = document.getElementById('debugOutput');
-                if (dbg) dbg.textContent = "OK " + new Date().toLocaleTimeString() + " | Techs: " + (data.technicians ? data.technicians.length : 0);
+                if (dbg) {
+                    const statusLine = `OK ${new Date().toLocaleTimeString()} | Techs: ${(data.technicians ? data.technicians.length : 0)}`;
+                    // Si ya hay logs debajo, solo actualizamos la primera parte
+                    if (dbg.innerHTML.includes('<br>')) {
+                        const parts = dbg.innerHTML.split('<br>');
+                        parts[0] = statusLine;
+                        dbg.innerHTML = parts.join('<br>');
+                    } else {
+                        dbg.textContent = statusLine;
+                    }
+                }
 
                 if (data.error) throw new Error(data.error);
 
@@ -908,8 +923,10 @@
                         if (latestId > lastNotifId) {
                             const newCount = nData.filter(n => n.id > lastNotifId).length;
                             if (lastNotifId > 0) { // No alertar en la carga inicial
-                                // Vibración suave para aviso
-                                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                                // Sonido y Vibración para aviso
+                                if (soundEnabled) playBeep(0.3);
+                                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                                
                                 // Mostrar badge en pestaña Avisos
                                 unreadNotifCount += newCount;
                                 const notifBadge = document.getElementById('navNotifCount');
@@ -925,7 +942,7 @@
                                 if (toastEl && toastText) {
                                     toastText.textContent = nData[0].title + ': ' + nData[0].body.substring(0, 60);
                                     toastEl.style.display = 'block';
-                                    setTimeout(() => { toastEl.style.display = 'none'; }, 6000);
+                                    setTimeout(() => { toastEl.style.display = 'none'; }, 8000);
                                 }
                                 // Si el tab notifs está abierto, refrescar la lista
                                 if (currentTab === 'notifs') loadNotifications();
@@ -1070,7 +1087,10 @@
             document.getElementById('mobileSessionCard').textContent = currentUser;
             renderLists();
             // Intentar suscribir a notificaciones push al iniciar sesión
-            setTimeout(() => subscribeToPush(), 2000);
+            setTimeout(() => {
+                console.log("Iniciando suscripción FCM...");
+                subscribeToPush();
+            }, 3000);
         }
 
         function switchTab(tab) {
@@ -1285,10 +1305,12 @@
         }
 
         function playBeep(dur = 0.2) {
-            console.log("playBeep requested (dur: " + dur + ", enabled: " + soundEnabled + ")");
+            const dbg = document.getElementById('debugOutput');
+            if (dbg) dbg.innerHTML += `<br><span class="text-info">[SOUND] Triggered (Enabled: ${soundEnabled})</span>`;
+            
             if (!soundEnabled) return;
             
-            // 1. Intentar con Web Audio API (Mejor calidad/control)
+            // 1. Intentar con Web Audio API (Pitido Sintético)
             try {
                 if (!audioCtx) initAudio();
                 
@@ -1314,11 +1336,12 @@
 
                     const now = audioCtx.currentTime;
                     if (dur < 0.1) {
-                        pulse(880, now, 0.05, 0.2);
+                        pulse(880, now, 0.05, 0.2); // Bip corto
                     } else {
-                        // Secuencia Bip-Bip
-                        pulse(880, now, 0.12, 0.4);
-                        pulse(1318.51, now + 0.15, 0.25, 0.4);
+                        // Melodía Ascendente 'Premium' (Re-Fa#-La)
+                        pulse(587.33, now, 0.1, 0.3);        // D5
+                        pulse(739.99, now + 0.12, 0.1, 0.3);  // F#5
+                        pulse(880.00, now + 0.24, 0.2, 0.3);  // A5
                     }
                     console.log("AudioContext played successfully");
                     return; 
@@ -1486,21 +1509,29 @@
 
         // --- FIREBASE PUSH SUBSCRIPTION ---
         async function subscribeToPush() {
+            const dbg = document.getElementById('debugOutput');
+            if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Iniciando... (User: ${currentUser})</span>`;
+
             if (!currentUser) return;
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                if (dbg) dbg.innerHTML += `<br><span class="text-danger">[FCM] Push no soportado</span>`;
                 console.log('[FCM] Push not supported in this browser.');
                 return;
             }
             try {
                 // Pedir permiso de notificaciones
+                if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Pidiendo permiso...</span>`;
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') {
+                    if (dbg) dbg.innerHTML += `<br><span class="text-warning">[FCM] Permiso: ${permission}</span>`;
                     console.log('[FCM] Permiso de notificaciones denegado.');
                     return;
                 }
 
                 // Esperar a que el SW esté listo
+                if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Esperando SW...</span>`;
                 const swReg = await navigator.serviceWorker.ready;
+                if (dbg) dbg.innerHTML += `<br><span class="text-success">[FCM] SW Listo!</span>`;
 
                 // Obtener token FCM
                 const messaging = firebase.messaging();
@@ -1515,6 +1546,7 @@
                 }
 
                 console.log('[FCM] Token obtenido:', token.substring(0, 20) + '...');
+                document.getElementById('debugOutput').innerHTML += `<br><span class="text-success">[FCM] Token OK: ${token.substring(0,10)}...</span>`;
 
                 // Enviar token al servidor
                 const res = await fetch('/api/mobile/subscribe_push', {
@@ -1532,19 +1564,20 @@
                 // Manejar mensajes en foreground (página abierta)
                 messaging.onMessage((payload) => {
                     console.log('[FCM] Mensaje en foreground:', payload);
-                    // El toast ya lo maneja el polling, pero podemos forzarlo
                     const toastEl = document.getElementById('notifToast');
                     const toastText = document.getElementById('notifToastText');
                     if (toastEl && toastText && payload.notification) {
                         toastText.textContent = payload.notification.title + ': ' + (payload.notification.body || '').substring(0, 60);
                         toastEl.style.display = 'block';
-                        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-                        setTimeout(() => { toastEl.style.display = 'none'; }, 6000);
+                        if (soundEnabled) playBeep(0.5);
+                        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                        setTimeout(() => { toastEl.style.display = 'none'; }, 8000);
                     }
                 });
 
             } catch (e) {
                 console.error('[FCM] Error en suscripción push:', e);
+                document.getElementById('debugOutput').innerHTML += `<br><span class="text-danger">[FCM] Error: ${e.message || e}</span>`;
             }
         }
 
