@@ -16,7 +16,7 @@ NGINX_DST_AVAIL="/etc/nginx/sites-available/inventario"
 NGINX_DST_ENABLED="/etc/nginx/sites-enabled/inventario"
 
 # Valores ya conocidos (cambialos aqui si cambian en el futuro)
-KNOWN_DB_HOST="10.15.3.20"
+KNOWN_DB_HOST="${1:-10.15.3.20}"   # pasar IP distinta: bash deploy_ubuntu.sh 10.15.3.X
 KNOWN_DB_PORT="3306"
 KNOWN_DB_NAME="inventario_prod"
 KNOWN_DB_USER="gustavo_murad"
