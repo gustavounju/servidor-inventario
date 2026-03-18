@@ -59,6 +59,7 @@ def _send_fcm_push(title, body, url="/mobile"):
             notification=messaging.Notification(title=title, body=body),
             data={"url": url},
             webpush=messaging.WebpushConfig(
+                headers={"Urgency": "high"},
                 notification=messaging.WebpushNotification(
                     title=title,
                     body=body,

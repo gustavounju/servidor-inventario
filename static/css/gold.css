@@ -511,6 +511,87 @@ textarea.form-control {
     color: #fff;
 }
 
+/* ===== MODULE SWITCHER ===== */
+.module-switcher {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    margin: 14px 0 18px;
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    box-shadow: 0 10px 28px rgba(15, 76, 117, 0.08);
+}
+
+.module-switcher-meta {
+    min-width: 220px;
+}
+
+.module-switcher-kicker {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.module-switcher-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-color);
+}
+
+.module-switcher-subtitle {
+    margin-top: 4px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.module-switcher-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.module-switcher-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--card-border);
+    background: #fff;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 700;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.module-switcher-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(15, 76, 117, 0.12);
+    color: var(--text-color);
+}
+
+.module-switcher-link.active {
+    background: var(--primary-gradient);
+    border-color: transparent;
+    color: #fff;
+}
+
+.module-switcher-link i {
+    font-size: 0.85rem;
+}
+
 
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar {
@@ -557,6 +638,15 @@ textarea.form-control {
 @media (max-width: 768px) {
     .navbar-gold {
         padding: 0 0.75rem;
+    }
+
+    .module-switcher {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .module-switcher-links {
+        justify-content: flex-start;
     }
 
     .modal-content {

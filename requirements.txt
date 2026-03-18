@@ -1,9 +1,6 @@
 Flask
 openpyxl
 fpdf2
-
-waitress
-
 google-genai
 python-dotenv
 pymysql
@@ -12,3 +9,6 @@ requests
 pysnmp
 pywebpush
 firebase-admin
+waitress
+gunicorn
+ldap3

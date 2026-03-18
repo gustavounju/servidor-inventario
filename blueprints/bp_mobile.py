@@ -3,13 +3,14 @@ import datetime
 from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.push_notifications import notify_all_technicians
+from utils.auth import current_technician_identity, list_technician_users
 # from voice_processor import process_voice_command # Ensure it handles import cleanly if missing
 
 bp_mobile = Blueprint('mobile', __name__)
 
 @bp_mobile.route("/mobile")
 def mobile_view():
-    return render_template("mobile.html")
+    return render_template("mobile.html", mobile_identity=current_technician_identity())
 
 @bp_mobile.route("/mobile/scanner")
 def mobile_scanner_view():
@@ -19,13 +20,27 @@ def mobile_scanner_view():
 def api_mobile_data():
     try:
         with get_db_connection() as conn:
-            techs = [dict(r) for r in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
+            techs = list_technician_users()
             unassigned = [dict(r) for r in conn.execute("SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC").fetchall()]
             all_active = [dict(r) for r in conn.execute("SELECT t.*, p.fuero as pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado != 'Hecha' ORDER BY t.created_at DESC").fetchall()]
             pcs_query = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
+            requesters = [dict(r) for r in conn.execute(
+                """
+                SELECT username, real_name, phone
+                FROM ad_users
+                UNION
+                SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username,
+                                last_user as real_name,
+                                NULL as phone
+                FROM pcs
+                WHERE last_user IS NOT NULL AND last_user != ''
+                  AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
+                ORDER BY real_name
+                """
+            ).fetchall()]
             pcs = [{"name": r["pc_name"], "user": r["last_user"] or "Desconocido", "area": r["fuero"] or "Desconocido"} for r in pcs_query]
 
-        return jsonify({"technicians": techs, "unassigned": unassigned, "active_tasks": all_active, "pcs": pcs})
+        return jsonify({"technicians": techs, "unassigned": unassigned, "active_tasks": all_active, "pcs": pcs, "requesters": requesters})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -49,11 +64,11 @@ def api_mobile_create_task():
         data = request.json
         descripcion = data.get("descripcion")
         pc_name = data.get("pc_name")
-        technician = data.get("technician")
+        technician = current_technician_identity()
         solicitante_input = data.get("solicitante", "").strip()
         is_done = data.get("is_done", False)
         es_infraestructura = data.get("es_infraestructura", False)
-        tecnico_ejecutor = data.get("tecnico", "")
+        tecnico_ejecutor = technician
 
         if not descripcion or not technician: return jsonify({"status": "error", "message": "Faltan datos"}), 400
         if es_infraestructura and not pc_name: pc_name = "Infraestructura"
@@ -102,7 +117,7 @@ def api_mobile_update_task():
         data = request.json
         task_id = data.get("id")
         action = data.get("action")
-        technician = data.get("technician")
+        technician = current_technician_identity()
         pc_name = data.get("pc_name")
 
         if not task_id or not action or not technician: return jsonify({"status": "error", "message": "Datos incompletos"}), 400
@@ -145,7 +160,7 @@ def api_subscribe_push():
     """Saves an FCM token for a technician device."""
     try:
         data = request.json
-        technician = data.get("technician", "").strip()
+        technician = current_technician_identity()
         token = data.get("token", "").strip()
         if not technician or not token:
             return jsonify({"status": "error", "message": "Faltan datos"}), 400

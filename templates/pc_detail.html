@@ -69,6 +69,8 @@
       color: var(--accent-color);
     }
   </style>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <script defer src="/static/js/security.js"></script>
 </head>
 
 <body>
@@ -81,12 +83,18 @@
           if app_version else '' }}</span>
       </a>
       <div class="d-flex align-items-center gap-2 ms-auto">
+        <span class="btn btn-sm btn-outline-light disabled" style="font-size:0.8rem;">
+          <i class="bi bi-person-badge me-1"></i>{{ current_role_label }}
+        </span>
         <a href="{{ url_for('dashboard.global_activity') }}" class="btn btn-sm btn-outline-info"
           style="font-size:0.8rem;">
           <i class="bi bi-clock-history me-1"></i>Actividad
         </a>
         <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-sm btn-outline-light" style="font-size:0.8rem;">
           <i class="bi bi-arrow-left me-1"></i>Dashboard
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-warning" style="font-size:0.8rem;">
+          <i class="bi bi-door-open me-1"></i>Salir
         </a>
         {% if pc.pc_name != 'PC Generica' %}
         <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea"
@@ -100,6 +108,7 @@
 
   <!-- MINI HERO HEADER -->
   <div class="container-fluid px-3 pt-2 pb-0">
+    {% include '_module_switcher.html' %}
     <div class="hero-header mb-3">
       <div class="d-flex flex-wrap align-items-center gap-2">
         <h1 class="hero-title mb-0">🖥️ {{ pc.pc_name }}</h1>
@@ -139,14 +148,18 @@
       <div class="d-flex gap-2 flex-wrap">
         {% if pc.pc_name != 'PC Generica' %}
         {% if pc.is_active == 'True' %}
-        <a href="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" class="hero-stat"
-          style="color:#fca5a5;cursor:pointer" onclick="return confirm('¿Seguro pasar a cementerio?')">
-          <i class="bi bi-archive me-1"></i>Dar de baja
-        </a>
+        <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST"
+          class="d-inline" onsubmit="return confirm('¿Seguro pasar a cementerio?')">
+          <button type="submit" class="hero-stat" style="color:#fca5a5;cursor:pointer;border:0;background:none;">
+            <i class="bi bi-archive me-1"></i>Dar de baja
+          </button>
+        </form>
         {% else %}
-        <a href="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" class="hero-stat" style="color:#86efac">
-          <i class="bi bi-activity me-1"></i>Reactivar
-        </a>
+        <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" method="POST" class="d-inline">
+          <button type="submit" class="hero-stat" style="color:#86efac;border:0;background:none;">
+            <i class="bi bi-activity me-1"></i>Reactivar
+          </button>
+        </form>
         {% endif %}
         <a href="{{ url_for('tasks.report_tasks_completed') }}?pc={{ pc.pc_name }}" class="hero-stat">
           <i class="bi bi-file-earmark-excel me-1"></i>Exportar tareas
@@ -634,7 +647,12 @@
             <div class="form-group">
               <label for="solicitante">Solicitante</label>
               <input type="text" name="solicitante" id="solicitante" class="form-control"
-                placeholder="Quién solicita (Dirección, Escuela, etc.)" required>
+                placeholder="Quién solicita (Dirección, Escuela, etc.)" list="pcUsersDatalist" required>
+              <datalist id="pcUsersDatalist">
+                {% for user in ad_users_list %}
+                <option value="{{ user.real_name }}">{{ user.username }}</option>
+                {% endfor %}
+              </datalist>
             </div>
 
           </div>
@@ -672,7 +690,7 @@
               </select>
               {% if not technicians %}
               <div class="form-text text-danger" id="techListWarning">
-                ⚠️ No hay técnicos registrados. Agregue uno en el Dashboard principal.
+                ⚠️ No hay usuarios con rol técnico listos. Crea un usuario del sistema con rol `tecnico` o permiso mobile.
               </div>
               {% endif %}
             </div>

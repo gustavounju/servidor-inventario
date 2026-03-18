@@ -181,7 +181,7 @@ def status_check():
     except Exception as e:
         return {"status": "offline", "error": str(e)}
 
-@bp_infrastructure.route('/ups/<int:id>/delete')
+@bp_infrastructure.route('/ups/<int:id>/delete', methods=['POST'])
 def delete_ups(id):
     try:
         with get_db_connection() as conn:
@@ -287,7 +287,7 @@ def assign_component_to_component(component_id):
         
     return redirect(request.referrer or url_for('infrastructure.index'))
 
-@bp_infrastructure.route('/components/<int:id>/delete')
+@bp_infrastructure.route('/components/<int:id>/delete', methods=['POST'])
 def delete_component(id):
     try:
         with get_db_connection() as conn:
@@ -338,7 +338,7 @@ def add_network_printer():
         
     return redirect(url_for('infrastructure.index'))
 
-@bp_infrastructure.route('/network_printers/<int:id>/delete')
+@bp_infrastructure.route('/network_printers/<int:id>/delete', methods=['POST'])
 def delete_network_printer(id):
     try:
         with get_db_connection() as conn:

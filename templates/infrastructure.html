@@ -32,6 +32,8 @@
             }
         }
     </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="/static/js/security.js"></script>
 </head>
 
 <body>
@@ -41,11 +43,17 @@
             <a class="navbar-brand" href="/">Inventario GOLD</a>
 
             <div class="ms-auto d-flex gap-2">
+                <span class="btn btn-sm btn-outline-light disabled">
+                    <i class="bi bi-person-badge me-1"></i>{{ current_role_label }}
+                </span>
                 <a href="{{ url_for('dashboard.global_activity') }}" class="btn btn-sm btn-outline-info">
                     <i class="bi bi-clock-history me-1"></i>Actividad
                 </a>
                 <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-sm btn-outline-light">
                     <i class="bi bi-arrow-left me-1"></i>Dashboard
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-warning">
+                    <i class="bi bi-door-open me-1"></i>Salir
                 </a>
             </div>
         </div>
@@ -82,6 +90,8 @@
         </div>
         {% endif %}
         {% endwith %}
+
+        {% include '_module_switcher.html' %}
 
         <div class="row">
             <!-- Columna 1: UPS (Hardware) -->
@@ -170,11 +180,13 @@
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                             {% else %}
-                                            <a href="{{ url_for('infrastructure.delete_ups', id=ups.id) }}"
-                                                class="btn btn-sm btn-outline-danger ms-1"
-                                                onclick="return confirm('¿Eliminar esta UPS del sistema? Si tiene una batería asignada, se devolverá al Stock.')">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
+                                            <form action="{{ url_for('infrastructure.delete_ups', id=ups.id) }}"
+                                                method="POST" class="d-inline"
+                                                onsubmit="return confirm('¿Eliminar esta UPS del sistema? Si tiene una batería asignada, se devolverá al Stock.')">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger ms-1">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -349,11 +361,14 @@
                                                     <i class="bi bi-x"></i>
                                                 </button>
                                                 {% else %}
-                                                <a href="{{ url_for('infrastructure.delete_component', id=comp.id) }}"
-                                                    class="btn btn-sm btn-outline-danger" title="Eliminar del sistema"
-                                                    onclick="return confirm('¿Seguro de dar de baja este componente?');">
-                                                    <i class="bi bi-x"></i>
-                                                </a>
+                                                <form action="{{ url_for('infrastructure.delete_component', id=comp.id) }}"
+                                                    method="POST" class="d-inline"
+                                                    onsubmit="return confirm('¿Seguro de dar de baja este componente?');">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        title="Eliminar del sistema">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </form>
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -419,12 +434,14 @@
                                                     title="Vincular a PC">
                                                     <i class="bi bi-pc-display"></i>
                                                 </button>
-                                                <a href="{{ url_for('infrastructure.delete_network_printer', id=printer.id) }}"
-                                                    class="btn btn-sm btn-outline-danger ms-1"
-                                                    title="Eliminar del sistema"
-                                                    onclick="return confirm('¿Seguro de eliminar esta impresora de red?');">
-                                                    <i class="bi bi-trash"></i>
-                                                </a>
+                                                <form action="{{ url_for('infrastructure.delete_network_printer', id=printer.id) }}"
+                                                    method="POST" class="d-inline ms-1"
+                                                    onsubmit="return confirm('¿Seguro de eliminar esta impresora de red?');">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        title="Eliminar del sistema">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
 

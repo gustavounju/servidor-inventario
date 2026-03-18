@@ -4,6 +4,7 @@ import threading
 import platform
 import socket
 from dotenv import load_dotenv
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Load environment variables from .env if present (useful for Windows local dev)
 load_dotenv()
@@ -24,11 +25,18 @@ from blueprints.bp_setup import bp_setup
 from blueprints.bp_infrastructure import bp_infrastructure
 from blueprints.bp_tasks import bp_tasks
 from blueprints.bp_mobile import bp_mobile
+from blueprints.bp_auth import bp_auth
+from utils.auth import allowed_module_links, auth_guard, auth_mode_label, available_roles, csrf_guard, current_user, ensure_default_admin, generate_csrf_token, has_permission, is_authenticated, role_label
+from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
 
 # Inicializar Flask
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_dev_secret_key_12345')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'false').lower() == 'true'
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # Asegurar directorios
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -42,6 +50,7 @@ app.register_blueprint(bp_setup)
 app.register_blueprint(bp_tasks)
 app.register_blueprint(bp_mobile)
 app.register_blueprint(bp_infrastructure)
+app.register_blueprint(bp_auth)
 
 # Filtros para Jinja (si queda alguno que estuviéramos usando, aunque los que se usaban ya están resueltos o no declarados como filters globales en servidor.py original excepto quizas datetime_es, pero lo importabamos donde hiciera falta).
 from services.reporting import format_datetime_es
@@ -50,12 +59,38 @@ app.jinja_env.filters['datetime_es'] = format_datetime_es
 # Contexto Global para todas las plantillas (Jinja2)
 @app.context_processor
 def inject_global_vars():
-    return {'app_version': APP_VERSION}
+    return {
+        'app_version': APP_VERSION,
+        'csrf_token': generate_csrf_token,
+        'is_authenticated': is_authenticated(),
+        'current_user': current_user(),
+        'auth_mode_label': auth_mode_label(),
+        'has_access': has_permission,
+        'module_access_links': allowed_module_links(),
+        'current_role_label': role_label(),
+        'available_roles': available_roles(),
+        'client_script_base_url': get_public_app_base_url(),
+        'client_script_fallback_url': get_public_script_fallback_url(),
+    }
+
+
+@app.before_request
+def enforce_authentication():
+    auth_response = auth_guard()
+    if auth_response is not None:
+        return auth_response
+
+    csrf_response = csrf_guard()
+    if csrf_response is not None:
+        return csrf_response
 
 # Configuración y Migraciones iniciales
 with app.app_context():
     init_db()
     run_all_migrations()
+    default_admin_created = ensure_default_admin()
+    if default_admin_created:
+        print("Usuario inicial creado: administrador / tdg729tdg")
     
     def ensure_generic_pc():
         """Asegura que exista una PC genérica y una de Infraestructura para asignar tareas a hardware no inventariado."""

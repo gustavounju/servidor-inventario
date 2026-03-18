@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, abort, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, abort, send_file, flash
 import os
 from datetime import datetime as dt
 from database.db_core import get_db_connection
@@ -9,6 +9,7 @@ from datetime import datetime as dt
 from io import BytesIO
 from openpyxl import Workbook
 from utils.constants import FUERO_MAPPING, FUERO_COLORS
+from utils.auth import current_username, delete_app_user, list_app_users, list_technician_users, superuser_required, upsert_app_user
 
 bp_dashboard = Blueprint('dashboard', __name__)
 
@@ -124,7 +125,7 @@ def dashboard():
 
             unassigned_tasks = conn.execute("SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC").fetchall()
             unassigned_count = len(unassigned_tasks)
-            technicians_list = [dict(r) for r in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
+            technicians_list = list_technician_users()
 
             base_sql = """
                 SELECT p.*, u.real_name as ad_real_name, u.phone as ad_phone,
@@ -221,10 +222,11 @@ def dashboard():
                 ORDER BY real_name
             """
             ad_users_list = [dict(row) for row in conn.execute(ad_users_query).fetchall()]
+            app_users_list = list_app_users()
 
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
-        pcs_data = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = []
+        pcs_data = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = app_users_list = []
         total_rows = kpi_total_activas = kpi_total_graveyard = kpi_alerta_ram = kpi_sin_impresora = 0
         kpi_impresora_red = kpi_total_impresoras = kpi_win7 = kpi_win10 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
         last_backup_info = "Error leyendo"
@@ -240,6 +242,7 @@ def dashboard():
         kpi_total_impresoras=kpi_total_impresoras,
         technicians=technicians_list,
         ad_users_list=ad_users_list,
+        app_users_list=app_users_list,
         kpi_tareas_hoy=kpi_tareas_hoy,
         kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
         all_pcs=all_pcs_dropdown,
@@ -371,7 +374,7 @@ def export_inventory_pdf():
 def download_db():
     return "Backup de BD no disponible en modo MySQL. Use mysqldump desde el servidor.", 503
 
-@bp_dashboard.route("/decommission/<string:pc_name>", methods=["GET"])
+@bp_dashboard.route("/decommission/<string:pc_name>", methods=["POST"])
 def decommission_pc(pc_name):
     with get_db_connection() as conn:
         conn.execute(
@@ -380,7 +383,7 @@ def decommission_pc(pc_name):
         conn.commit()
     return redirect(url_for("dashboard.dashboard"))
 
-@bp_dashboard.route("/reactivate/<pc_name>")
+@bp_dashboard.route("/reactivate/<pc_name>", methods=["POST"])
 def reactivate_pc(pc_name):
     """Reactivar una PC (sacarla del cementerio)."""
     try:
@@ -395,7 +398,7 @@ def reactivate_pc(pc_name):
 
     return redirect(url_for("dashboard.dashboard"))
 
-@bp_dashboard.route("/refresh_fueros")
+@bp_dashboard.route("/refresh_fueros", methods=["POST"])
 def refresh_fueros():
     """Recalcula el fuero para todas las PCs basándose en el nombre."""
     try:
@@ -417,7 +420,7 @@ def refresh_fueros():
 
     return redirect(url_for("dashboard.dashboard"))
 
-@bp_dashboard.route("/delete_permanent/<string:pc_name>")
+@bp_dashboard.route("/delete_permanent/<string:pc_name>", methods=["POST"])
 def delete_permanent_pc(pc_name):
     """Borrado definitivo de una PC y sus tareas asociadas."""
     try:
@@ -446,7 +449,21 @@ def pc_detail(pc_name):
             WHERE p.pc_name = %s
         """, (pc_name,)).fetchone()
         tareas = conn.execute("SELECT id, pc_name, created_at, descripcion, estado, solicitante, assigned_to FROM tasks WHERE pc_name = %s ORDER BY created_at DESC", (pc_name,)).fetchall()
-        technicians = [dict(row) for row in conn.execute("SELECT * FROM technicians ORDER BY name").fetchall()]
+        technicians = list_technician_users()
+        ad_users_list = [dict(row) for row in conn.execute(
+            """
+            SELECT username, real_name, phone
+            FROM ad_users
+            UNION
+            SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username,
+                            last_user as real_name,
+                            NULL as phone
+            FROM pcs
+            WHERE last_user IS NOT NULL AND last_user != ''
+              AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
+            ORDER BY real_name
+            """
+        ).fetchall()]
         audit_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = %s ORDER BY changed_at DESC", (pc_name,)).fetchall()
         all_pcs = conn.execute("SELECT pc_name, fuero, last_user FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
         
@@ -501,7 +518,7 @@ def pc_detail(pc_name):
         available_network_printers = conn.execute("SELECT id, ip_address, brand_model FROM network_printers ORDER BY ip_address").fetchall()
 
     if pc is None: abort(404)
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups_list=pc_ups_list, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles, sharing_pc=sharing_pc_data, assigned_network_printers=assigned_network_printers, available_network_printers=available_network_printers)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, ad_users_list=ad_users_list, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups_list=pc_ups_list, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles, sharing_pc=sharing_pc_data, assigned_network_printers=assigned_network_printers, available_network_printers=available_network_printers)
 
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
 def update_pc_infrastructure(pc_name):
@@ -550,6 +567,7 @@ def global_activity():
     return render_template("activity_logs.html", logs=logs)
 
 @bp_dashboard.route("/update_user_phone", methods=["POST"])
+@superuser_required
 def update_user_phone():
     """Actualiza el teléfono de un usuario desde el modal."""
     username = request.form.get("username", "").strip()
@@ -566,4 +584,52 @@ def update_user_phone():
         except Exception as e:
             print(f"Error updating user phone: {e}")
     return redirect(request.referrer or url_for("dashboard.dashboard"))
+
+
+@bp_dashboard.route("/admin/users/create", methods=["POST"])
+@superuser_required
+def create_app_user():
+    username = request.form.get("username", "").strip().lower()
+    display_name = request.form.get("display_name", "").strip() or username
+    password = request.form.get("password", "")
+    is_superuser_flag = request.form.get("is_superuser") == "on"
+    is_active = request.form.get("is_active") == "on"
+    must_change_password = request.form.get("must_change_password") == "on"
+    role = request.form.get("role", "tecnico").strip().lower()
+    technician_name = request.form.get("technician_name", "").strip()
+    permissions = {
+        "dashboard": request.form.get("perm_dashboard") == "on",
+        "mobile": request.form.get("perm_mobile") == "on",
+        "infrastructure": request.form.get("perm_infrastructure") == "on",
+        "reports": request.form.get("perm_reports") == "on",
+    }
+
+    try:
+        upsert_app_user(
+            username=username,
+            password=password,
+            display_name=display_name,
+            is_superuser_flag=is_superuser_flag,
+            is_active=is_active or is_superuser_flag,
+            must_change_password=must_change_password,
+            role=role,
+            technician_name=technician_name,
+            permissions=permissions,
+        )
+        flash(f"Usuario del sistema '{username}' guardado correctamente.", "success")
+    except Exception as exc:
+        flash(f"No se pudo guardar el usuario: {exc}", "error")
+
+    return redirect(url_for("dashboard.dashboard"))
+
+
+@bp_dashboard.route("/admin/users/<int:user_id>/delete", methods=["POST"])
+@superuser_required
+def remove_app_user(user_id):
+    try:
+        delete_app_user(user_id, acting_username=current_username())
+        flash("Usuario del sistema eliminado.", "success")
+    except Exception as exc:
+        flash(f"No se pudo eliminar el usuario: {exc}", "error")
+    return redirect(url_for("dashboard.dashboard"))
 

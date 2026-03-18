@@ -3,12 +3,14 @@ Description=Servidor Inventario GOLD (Gunicorn)
 After=network.target
 
 [Service]
-User=administrador
+User=www-data
 Group=www-data
 WorkingDirectory=/opt/inventario
-# Ejecutar Gunicorn en puerto interno 5001 con 3 trabajadores
-ExecStart=/usr/bin/gunicorn --workers 3 --bind 127.0.0.1:5001 servidor:app
+EnvironmentFile=-/opt/inventario/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/inventario/.venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5001 --timeout 120 servidor:app
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

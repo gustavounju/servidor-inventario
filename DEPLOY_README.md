@@ -1,132 +1,230 @@
-# Guía de Despliegue en Ubuntu 24.04 (IP: <IP_DEL_SERVIDOR>)
+# Despliegue Ubuntu 24.04
 
-Sigue estos pasos para poner en marcha el servidor de inventario en tu nuevo Linux.
+Esta version queda preparada para tu flujo real:
 
-## 1. Preparar el directorio en el servidor
+- Desarrollo en Windows 10.
+- Codigo en GitLab.
+- Actualizacion en Ubuntu por PuTTY con `git pull`.
+- Codigo en `/opt/inventario`.
+- Produccion con `Gunicorn + Nginx + systemd`.
 
-Conéctate por SSH a tu servidor y ejecuta:
+## 1. Paquetes del servidor
 
 ```bash
-# Crear carpeta
-sudo mkdir -p /opt/inventario
-
-# Instalar Python, Pip y MySQL Client si no están
 sudo apt update
-sudo apt install -y python3 python3-pip mysql-client
+sudo apt install -y python3 python3-venv python3-pip nginx mysql-client
 ```
 
-## 2. Copiar archivos
+## 2. Usuario y directorio
 
-Copia **todo el contenido** de esta carpeta (`ServidorInventario`) a la carpeta `/opt/inventario` en el servidor.
-Puedes usar SCP, WinSCP o FileZilla. Aquí tienes los pasos para **FileZilla**:
+Si `/opt/inventario` ya existe, usa el que ya tienes. Si no:
 
-### Guía Rápida FileZilla:
-1.  **Abrir FileZilla**: Ve a *Archivo* > *Gestor de Sitios*.
-2.  **Nuevo Sitio**: Crea uno llamado "Servidor Ubuntu".
-3.  **Configuración**:
-    *   **Protocolo**: SFTP - SSH File Transfer Protocol
-    *   **Servidor**: `<IP_DEL_SERVIDOR>`
-    *   **Usuario**: `root` (o el usuario que hayas configurado en la instalación)
-    *   **Contraseña**: Tu contraseña de root/usuario.
-4.  **Conectar**: Acepta la clave del servidor si es la primera vez.
-5.  **Navegar**:
-    *   En la derecha (Sitio remoto), sube de nivel hasta llegar a la raíz `/` y luego entra en `opt`. Si no existe la carpeta `inventario`, clic derecho -> *Crear directorio* -> `inventario`. Entra en ella.
-    *   En la izquierda (Sitio local), navega a tu carpeta `Desktop/ServidorInventario`.
-6.  **Transferir**: Selecciona **todos** los archivos de la izquierda y arrástralos a la derecha.
+```bash
+sudo mkdir -p /opt/inventario
+sudo chown -R $USER:www-data /opt/inventario
+sudo chmod -R 775 /opt/inventario
+```
 
+## 3. Obtener el codigo desde GitLab
 
-Asegúrate de que la estructura quede así:
-- `/opt/inventario/servidor.py`
-- `/opt/inventario/requirements.txt`
-- `/opt/inventario/templates/` ...
-
-## 3. Instalar dependencias
-
-En el servidor, ejecuta:
+Si ya tienes repo clonado:
 
 ```bash
 cd /opt/inventario
-# Instalar librerías necesarias
-pip3 install -r requirements.txt --break-system-packages
+git pull
 ```
-*(Nota: En Ubuntu 24.04, pip puede pedir `--break-system-packages` si no usas entorno virtual. Para este uso interno es aceptable).*
 
-## 4. Configurar el servicio (arranque automático)
-
-Copia el archivo `inventario.service` al sistema:
+Si es la primera vez:
 
 ```bash
-sudo cp /opt/inventario/inventario.service /etc/systemd/system/
+git clone <URL_DE_TU_REPO_GITLAB> /opt/inventario
+cd /opt/inventario
+```
+
+## 4. Entorno virtual e instalacion
+
+```bash
+cd /opt/inventario
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+## 5. Archivo .env
+
+Crea `/opt/inventario/.env` usando `.env.example` como base:
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Valores minimos recomendados:
+
+```env
+FLASK_SECRET_KEY=pon_una_clave_larga_y_privada
+
+DB_HOST=10.15.3.20
+DB_PORT=3306
+DB_USER=tu_usuario_mysql
+DB_PASS=tu_clave_mysql
+DB_NAME=tu_base_mysql
+
+SESSION_COOKIE_SECURE=false
+
+# URL publica a la que apuntan las PCs cliente.
+# Esto es el servidor Inventario, NO el MySQL.
+INVENTARIO_PUBLIC_BASE_URL=https://10.15.2.251:5000
+INVENTARIO_PUBLIC_HTTP_FALLBACK_URL=http://10.15.2.251:8080
+
+BOOTSTRAP_ADMIN_USERNAME=administrador
+BOOTSTRAP_ADMIN_PASSWORD=tdg729tdg
+
+AUTH_MODE=local
+
+AD_SERVER=
+AD_DOMAIN=
+AD_BASE_DN=
+AD_USE_SSL=false
+AD_CONNECT_TIMEOUT=5
+AD_SUPERUSERS=
+```
+
+Notas:
+
+- Mientras sigas entrando por HTTP interno o configuracion mixta, deja `SESSION_COOKIE_SECURE=false`.
+- Cuando Nginx/HTTPS ya quede firme, cambialo a `true`.
+- `AUTH_MODE=local` es el modo actual recomendado.
+- Mas adelante puedes usar `AUTH_MODE=hybrid` o `AUTH_MODE=ad` para Active Directory.
+- `DB_HOST` puede ser otra IP completamente distinta al servidor web.
+- `INVENTARIO_PUBLIC_BASE_URL` define a donde enviaran datos las PCs cliente.
+
+## 6. Probar localmente Gunicorn
+
+Antes de tocar systemd:
+
+```bash
+cd /opt/inventario
+source .venv/bin/activate
+gunicorn --workers 3 --bind 127.0.0.1:5001 servidor:app
+```
+
+Si arranca bien, corta con `Ctrl+C`.
+
+## 7. Configurar systemd
+
+Instala el archivo de servicio:
+
+```bash
+sudo cp deployment/inventario.service /etc/systemd/system/inventario.service
 sudo systemctl daemon-reload
 sudo systemctl enable inventario
-sudo systemctl start inventario
-```
-
-## 5. Verificar y abrir Firewall
-
-Verifica que esté corriendo:
-```bash
+sudo systemctl restart inventario
 sudo systemctl status inventario
 ```
 
-Si tienes activado el firewall (ufw), permite el puerto 5000:
+## 8. Configurar Nginx
+
+Instala la configuracion:
+
 ```bash
-sudo ufw allow 5000
+sudo cp deployment/nginx_inventario.conf /etc/nginx/sites-available/inventario
+sudo ln -sf /etc/nginx/sites-available/inventario /etc/nginx/sites-enabled/inventario
+sudo nginx -t
+sudo systemctl restart nginx
 ```
 
-## 6. Probar
+Si usas `ufw`:
 
-Desde tu navegador ingresa a:
-`http://<IP_DEL_SERVIDOR>:5000`
+```bash
+sudo ufw allow 5000/tcp
+sudo ufw allow 8080/tcp
+```
 
-¡Y listo! El script `inventario.ps1` ya fue actualizado para apuntar a esta IP.
+## 9. Primer ingreso
 
-## 7. Configurar Backups Automáticos
+Al primer arranque, si la tabla `app_users` esta vacia, se crea automaticamente:
 
-Para asegurar que los datos no se pierdan, configuraremos una tarea programada (cron job) que ejecute el script de backup de MySQL todos los días a las 20:00 hs.
+- usuario: `administrador`
+- clave: `tdg729tdg`
 
-1. **Hacer ejecutable el script**:
-   ```bash
-   chmod +x /opt/inventario/backup_mysql.sh
-   ```
+Luego entra al sistema y haz esto:
 
-2. **Editar el Cron**:
-   ```bash
-   crontab -e
-   ```
-   *(Si te pregunta qué editor usar, elige nano, opción 1)*
+1. ir al modal `Usuarios`
+2. crear tu propio superusuario
+3. cerrar sesion
+4. volver a entrar con tu cuenta propia
+5. borrar `administrador`
 
-3. **Agregar la tarea**:
-   Ve al final del archivo y agrega esta línea:
-   ```cron
-   0 20 * * * /opt/inventario/backup_mysql.sh
-   ```
-   *(Esto significa: Minuto 0, Hora 20, Todos los días/meses)*
+Ese usuario bootstrap solo reaparece si algun dia la tabla `app_users` queda completamente vacia.
 
-4. **Guardar y Salir**:
-   - En nano: `Ctrl+O` -> `Enter` -> `Ctrl+X`
+## 10. Preparado para Active Directory
 
-## 8. Cómo actualizar el sistema (Mantenimiento)
+Todavia no queda activado por defecto, pero el sistema ya soporta el camino futuro.
 
-Cuando hagamos cambios en el código (como ahora con el historial), sigue estos pasos en el servidor Ubuntu:
+Modos posibles:
 
-1.  **Descargar cambios**:
-    *   Si usaste `git clone`:
-        ```bash
-        cd /opt/inventario
-        git pull
-        ```
-    *   *Si subiste los archivos manual*: Vuelve a copiar los archivos `.py` y la carpeta `templates` reemplazando los existentes.
+- `AUTH_MODE=local`: solo usuarios locales de la tabla `app_users`
+- `AUTH_MODE=hybrid`: primero local y luego Active Directory
+- `AUTH_MODE=ad`: solo Active Directory
 
-2.  **Reiniciar el servicio**:
-    Es necesario para que Python recargue el nuevo código.
-    ```bash
-    sudo systemctl restart inventario
-    ```
+Variables previstas para AD:
 
-3.  **Verificar**:
-    ```bash
-    sudo systemctl status inventario
-    ```
+```env
+AUTH_MODE=hybrid
+AD_SERVER=ldap://tu-controlador-o-ip
+AD_DOMAIN=JUSTICIAJUJUY
+AD_BASE_DN=DC=justiciajujuy,DC=gov,DC=ar
+AD_USE_SSL=false
+AD_CONNECT_TIMEOUT=5
+AD_SUPERUSERS=tuusuario,otroadmin
+```
 
+Comportamiento previsto:
 
+- si el usuario autentica contra AD, entra al sistema
+- se crea o actualiza un registro local sombra en `app_users`
+- el rol superusuario se decide con `AD_SUPERUSERS`
+- puedes seguir conservando un usuario local de emergencia
+
+## 11. Flujo diario de actualizacion
+
+```bash
+cd /opt/inventario
+git pull
+source .venv/bin/activate
+pip install -r requirements.txt
+sudo systemctl restart inventario
+sudo systemctl status inventario
+```
+
+Revisa logs si algo falla:
+
+```bash
+sudo journalctl -u inventario -n 100 --no-pager
+sudo journalctl -u inventario -f
+```
+
+## 12. Checks rapidos
+
+App:
+
+```bash
+curl http://127.0.0.1:5001/health
+```
+
+Nginx:
+
+```bash
+curl http://127.0.0.1:8080/health
+```
+
+## 13. Siguiente paso natural
+
+Cuando tu admin de red te habilite AD real, solo habra que:
+
+1. cargar variables `AD_*` en `.env`
+2. poner `AUTH_MODE=hybrid`
+3. reiniciar `inventario`
+4. probar con tu usuario de Active Directory

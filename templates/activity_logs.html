@@ -841,6 +841,8 @@
             opacity: 0.4;
         }
     </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="/static/js/security.js"></script>
 </head>
 <!-- FIN BLOQUE 1 -->
 
@@ -863,16 +865,16 @@
             <div class="collapse navbar-collapse" id="navbarMain">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
 
+                    <li class="nav-item d-flex align-items-center">
+                        <span class="nav-link disabled">
+                            <i class="bi bi-person-badge"></i> {{ current_role_label }}
+                        </span>
+                    </li>
+
                     <li class="nav-item">
                         <a href="{{ url_for('dashboard.view_graphics') }}" class="nav-link">
                             <i class="bi bi-graph-up"></i> Gráficos
                         </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <button class="nav-link btn btn-link" data-bs-toggle="modal" data-bs-target="#techniciansModal">
-                            <i class="bi bi-people-fill"></i> Técnicos
-                        </button>
                     </li>
 
                     <li class="nav-item">
@@ -911,9 +913,15 @@
 
 
                     <li class="nav-item ms-2">
-                        <a href="{{ url_for('dashboard.refresh_fueros') }}" class="btn btn-outline-info btn-sm"
-                            title="Actualizar Fueros">
-                            <i class="bi bi-arrow-repeat"></i> Fueros
+                        <form action="{{ url_for('dashboard.refresh_fueros') }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-outline-info btn-sm" title="Actualizar Fueros">
+                                <i class="bi bi-arrow-repeat"></i> Fueros
+                            </button>
+                        </form>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-door-open"></i> Salir
                         </a>
                     </li>
                 </ul>
@@ -922,6 +930,7 @@
     </nav>
     <!-- CONTAINER PRINCIPAL -->
     <div class="container-fluid" style="margin-top: 80px;">
+        {% include '_module_switcher.html' %}
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0"><i class="bi bi-clock-history text-primary"></i> Registro Global de Actividad</h2>
             <p class="text-muted mb-0 small">Monto máximo visible: 1000 registros recientes</p>

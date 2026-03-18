@@ -357,6 +357,64 @@ def migrate_db_v18():
             print("Migración V18 verificada.")
 
 
+def migrate_db_v19():
+    """Migración V19: Crear tabla app_users para acceso al sistema."""
+    print("Verificando migración de DB v19...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "app_users"):
+            print("Creando tabla app_users...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(255) NOT NULL UNIQUE,
+                    display_name VARCHAR(255),
+                    password_hash TEXT NOT NULL,
+                    is_superuser TINYINT(1) DEFAULT 0,
+                    is_active TINYINT(1) DEFAULT 1,
+                    must_change_password TINYINT(1) DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+        else:
+            print("Migración V19 verificada.")
+
+
+def migrate_db_v20():
+    """Migración V20: Roles y permisos de acceso para app_users."""
+    print("Verificando migración de DB v20...")
+    new_columns = {
+        "role": "VARCHAR(50) DEFAULT 'tecnico'",
+        "technician_name": "VARCHAR(255)",
+        "can_access_dashboard": "TINYINT(1) DEFAULT 1",
+        "can_access_mobile": "TINYINT(1) DEFAULT 1",
+        "can_access_infrastructure": "TINYINT(1) DEFAULT 0",
+        "can_access_reports": "TINYINT(1) DEFAULT 0",
+    }
+
+    with get_db_connection() as conn:
+        for col, dtype in new_columns.items():
+            if not _column_exists(conn, "app_users", col):
+                print(f"Aplicando migración V20: Agregando '{col}' a app_users...")
+                conn.execute(f"ALTER TABLE app_users ADD COLUMN {col} {dtype}")
+
+        conn.execute(
+            """
+            UPDATE app_users
+            SET role = CASE WHEN is_superuser = 1 THEN 'administrador' ELSE COALESCE(NULLIF(role, ''), 'tecnico') END,
+                can_access_dashboard = CASE WHEN is_superuser = 1 THEN 1 ELSE can_access_dashboard END,
+                can_access_mobile = CASE WHEN is_superuser = 1 THEN 1 ELSE can_access_mobile END,
+                can_access_infrastructure = CASE WHEN is_superuser = 1 THEN 1 ELSE can_access_infrastructure END,
+                can_access_reports = CASE WHEN is_superuser = 1 THEN 1 ELSE can_access_reports END
+            """
+        )
+        conn.commit()
+
+    print("Migración V20 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -376,3 +434,5 @@ def run_all_migrations():
     migrate_db_v16()
     migrate_db_v17()
     migrate_db_v18()
+    migrate_db_v19()
+    migrate_db_v20()

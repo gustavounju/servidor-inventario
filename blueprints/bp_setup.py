@@ -1,8 +1,35 @@
 from flask import Blueprint, request, send_file
 from io import BytesIO
-import platform
+import re
+from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
 
 bp_setup = Blueprint('setup', __name__)
+
+
+def _build_client_base_url():
+    current_host = request.host.split(':')[0]
+    return current_host, get_public_app_base_url()
+
+
+def _rewrite_client_script(content):
+    current_host, current_base_url = _build_client_base_url()
+
+    replacements = [
+        "__INVENTARIO_SERVER_URL__",
+        "https://10.15.2.251:5000",
+        "http://10.15.2.251:5000",
+        "https://10.15.3.139:5000",
+        "http://10.15.3.139:5000",
+        "https://localhost:5000",
+        "http://localhost:5000",
+    ]
+
+    modified_content = content
+    for source in replacements:
+        modified_content = modified_content.replace(source, current_base_url)
+
+    modified_content = re.sub(r"https?://(?:\d{1,3}\.){3}\d{1,3}:5000", current_base_url, modified_content)
+    return current_host, current_base_url, modified_content
 
 @bp_setup.route("/script")
 def get_script():
@@ -10,20 +37,7 @@ def get_script():
     try:
         with open("inventario.ps1", "r", encoding="utf-8") as f:
             content = f.read()
-        
-        # El dashboard se sirve en 443 (o 80), pero el receiver de PS está siempre en 5000.
-        # request.host_url devuelve "https://10.15.2.251/" si entras por 443, lo que rompe el script.
-        # Vamos a asegurar que la IP/Host sea la actual, y usar el esquema correcto
-        # según el entorno: Windows = Desarrollo (HTTP), Linux = Producción (HTTPS)
-        current_host = request.host.split(':')[0] # Obtiene solo "10.15.2.251"
-        scheme = "http" if platform.system() == "Windows" else "https"
-        current_base_url = f"{scheme}://{current_host}:5000"
-        
-        modified_content = content.replace("https://10.15.2.251:5000", current_base_url)
-        modified_content = modified_content.replace("http://10.15.2.251:5000", current_base_url)
-        # Por si en el archivo estaba localhost
-        modified_content = modified_content.replace("https://localhost:5000", current_base_url)
-        modified_content = modified_content.replace("http://localhost:5000", current_base_url)
+        _, _, modified_content = _rewrite_client_script(content)
         
         mem = BytesIO()
         mem.write(modified_content.encode("utf-8"))
@@ -36,8 +50,8 @@ def get_script():
 @bp_setup.route("/install")
 def install_page():
     """Página simple para descargar los scripts del cliente."""
-    current_host = request.host.split(':')[0]
-    scheme = "http" if platform.system() == "Windows" else "https"
+    current_host, current_base_url = _build_client_base_url()
+    current_fallback_url = get_public_script_fallback_url()
     
     return f"""
     <html>
@@ -79,13 +93,13 @@ def install_page():
             <h2 style="color: #495057; font-size: 1.2rem; margin-top:0;">⚡ Método Rápido (Antiguo)</h2>
             <p style="font-size: 0.9rem; color: #6c757d;">Para técnicos: Ejecuta el inventario sin descargar archivos. Abre <b>PowerShell como Administrador</b>, copia este comando y presiona Enter:</p>
             <div style="background: #212529; color: #20c20e; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 0.85rem; word-break: break-all; margin-bottom: 15px;">
-                try {{ [Net.ServicePointManager]::SecurityProtocol = 3072 }} catch {{}}; try {{ Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy {{ public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) {{ return true; }} }}' }} catch {{}}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try {{ iex (New-Object System.Net.WebClient).DownloadString('{scheme}://{current_host}:5000/script') }} catch {{ Write-Host 'Fallo HTTPS, intentando HTTP (Puerto 8080)...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('http://{current_host}:8080/script') }}
+                try {{ [Net.ServicePointManager]::SecurityProtocol = 3072 }} catch {{}}; try {{ Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy {{ public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) {{ return true; }} }}' }} catch {{}}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try {{ iex (New-Object System.Net.WebClient).DownloadString('{current_base_url}/script') }} catch {{ Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('{current_fallback_url}/script') }}
             </div>
             <button onclick="copyCommand()" style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Copiar Comando</button>
             <span id="copyMsg" style="color: green; margin-left: 10px; display: none;">¡Copiado!</span>
             <script>
                 function copyCommand() {{
-                    const cmd = "try {{ [Net.ServicePointManager]::SecurityProtocol = 3072 }} catch {{}}; try {{ Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy {{ public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) {{ return true; }} }}' }} catch {{}}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try {{ iex (New-Object System.Net.WebClient).DownloadString('" + window.location.protocol + "//" + window.location.hostname + ":5000/script') }} catch {{ Write-Host 'Fallo HTTPS, intentando HTTP (Puerto 8080)...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('http://" + window.location.hostname + ":8080/script') }}\\n";
+                    const cmd = "try {{ [Net.ServicePointManager]::SecurityProtocol = 3072 }} catch {{}}; try {{ Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy {{ public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) {{ return true; }} }}' }} catch {{}}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try {{ iex (New-Object System.Net.WebClient).DownloadString('{current_base_url}/script') }} catch {{ Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('{current_fallback_url}/script') }}\\n";
                     if (navigator.clipboard && window.isSecureContext) {{
                         navigator.clipboard.writeText(cmd).then(showCopied);
                     }} else {{
@@ -123,15 +137,7 @@ def download_client_script():
     try:
         with open("inventario.ps1", "r", encoding="utf-8") as f:
             content = f.read()
-            
-        current_host = request.host.split(':')[0]
-        scheme = "http" if platform.system() == "Windows" else "https"
-        current_base_url = f"{scheme}://{current_host}:5000"
-        
-        modified_content = content.replace("https://10.15.2.251:5000", current_base_url)
-        modified_content = modified_content.replace("http://10.15.2.251:5000", current_base_url)
-        modified_content = modified_content.replace("https://localhost:5000", current_base_url)
-        modified_content = modified_content.replace("http://localhost:5000", current_base_url)
+        _, _, modified_content = _rewrite_client_script(content)
         
         mem = BytesIO()
         mem.write(modified_content.encode("utf-8"))

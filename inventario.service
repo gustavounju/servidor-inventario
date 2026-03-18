@@ -1,21 +1,16 @@
 [Unit]
-Description=Servidor Inventario GOLD
+Description=Servidor Inventario GOLD (Gunicorn)
 After=network.target
 
 [Service]
-# Usuario que ejecutará el servicio. 
-# Si usas otro usuario (ej: ubuntu), cámbialo aquí.
-User=root
-Group=root
-
-# Directorio donde copiarás los archivos
+User=www-data
+Group=www-data
 WorkingDirectory=/opt/inventario
-
-# Comando de arranque
-ExecStart=/usr/bin/python3 /opt/inventario/servidor.py
-
-# Reiniciar automáticamente si falla
+EnvironmentFile=-/opt/inventario/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/inventario/.venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5001 --timeout 120 servidor:app
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

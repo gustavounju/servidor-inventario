@@ -11,6 +11,7 @@ from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.reporting import PDFReport, format_datetime_es, format_date_es
 from services.push_notifications import notify_all_technicians
+from utils.auth import superuser_required
 
 bp_tasks = Blueprint('tasks', __name__)
 
@@ -92,6 +93,7 @@ def add_task(pc_name):
     return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
 
 @bp_tasks.route("/technicians/add", methods=["POST"])
+@superuser_required
 def add_technician():
     name = request.form.get("name", "").strip()
     if name:
@@ -103,6 +105,7 @@ def add_technician():
     return redirect(url_for("dashboard.dashboard"))
 
 @bp_tasks.route("/technicians/delete/<int:tech_id>", methods=["POST"])
+@superuser_required
 def delete_technician(tech_id):
     with get_db_connection() as conn:
         conn.execute("DELETE FROM technicians WHERE id = %s", (tech_id,))

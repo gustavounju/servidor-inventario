@@ -212,6 +212,197 @@
             margin-bottom: 20px;
         }
 
+        .topbar-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.78rem;
+            margin-right: 10px;
+        }
+
+        .topbar-status strong {
+            color: #fff;
+        }
+
+        .quick-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 14px 0 18px;
+        }
+
+        .quick-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            text-decoration: none;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.82);
+            color: var(--text-color);
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(15, 76, 117, 0.08);
+        }
+
+        .quick-link:hover {
+            color: var(--text-color);
+        }
+
+        .hero-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .hero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #fff;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .users-panel-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 18px;
+            align-items: start;
+        }
+
+        .users-panel-card {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            box-shadow: 0 10px 32px rgba(15, 76, 117, 0.08);
+        }
+
+        .section-kicker {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 4px;
+        }
+
+        .search-shell {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .search-shell i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+
+        .search-shell input {
+            padding-left: 40px;
+            border-radius: 12px;
+        }
+
+        .soft-note {
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: rgba(59, 130, 246, 0.08);
+            color: #1e3a8a;
+            font-size: 0.85rem;
+        }
+
+        .admin-tabs {
+            gap: 8px;
+            border-bottom: none;
+            margin-bottom: 16px;
+        }
+
+        .admin-tabs .nav-link {
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            color: var(--text-color);
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.65);
+        }
+
+        .admin-tabs .nav-link.active {
+            background: var(--primary-gradient);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .access-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            background: rgba(15, 118, 110, 0.09);
+            color: #0f766e;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+
+        .task-modal-shell {
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .task-modal-hero {
+            background: linear-gradient(135deg, rgba(15, 61, 98, 0.98), rgba(50, 130, 184, 0.88));
+            color: #fff;
+            padding: 18px 20px 16px;
+        }
+
+        .task-modal-hero h5 {
+            margin: 0;
+            color: #fff;
+        }
+
+        .task-modal-hero p {
+            margin: 6px 0 0;
+            opacity: 0.88;
+            font-size: 0.9rem;
+        }
+
+        .task-form-grid {
+            display: grid;
+            grid-template-columns: 1.25fr 0.95fr;
+            gap: 18px;
+        }
+
+        .task-form-card {
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.82);
+        }
+
+        .task-form-card .form-label {
+            font-weight: 700;
+        }
+
+        .task-mini-note {
+            font-size: 0.82rem;
+            color: #64748b;
+        }
+
         .btn-primary {
             background: var(--primary-gradient);
             border: none;
@@ -290,6 +481,31 @@
 
         .btn-primary:hover {
             background: linear-gradient(135deg, #7c92f0 0%, #8c5bb2 100%);
+        }
+
+        @media (max-width: 991.98px) {
+            .topbar-status {
+                display: none;
+            }
+
+            .users-panel-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .task-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .quick-link {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .hero-strip {
+                flex-direction: column;
+            }
         }
 
         /* Tipografía mejorada */
@@ -841,6 +1057,8 @@
             opacity: 0.4;
         }
     </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="/static/js/security.js"></script>
 </head>
 <!-- FIN BLOQUE 1 -->
 
@@ -862,23 +1080,28 @@
 
             <div class="collapse navbar-collapse" id="navbarMain">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item d-flex align-items-center">
+                        <span class="topbar-status">
+                            <i class="bi bi-person-badge"></i>
+                            <span><strong>{{ current_user.display_name or current_user.username }}</strong> · {{ current_role_label }} · {{ auth_mode_label }}</span>
+                        </span>
+                    </li>
 
+                    {% if has_access('reports') %}
                     <li class="nav-item">
                         <a href="{{ url_for('dashboard.view_graphics') }}" class="nav-link">
                             <i class="bi bi-graph-up"></i> Gráficos
                         </a>
                     </li>
+                    {% endif %}
 
-                    <li class="nav-item">
-                        <button class="nav-link btn btn-link" data-bs-toggle="modal" data-bs-target="#techniciansModal">
-                            <i class="bi bi-people-fill"></i> Técnicos
-                        </button>
-                    </li>
+                    {% if current_user.is_superuser %}
                     <li class="nav-item">
                         <button class="nav-link btn btn-link text-warning" data-bs-toggle="modal" data-bs-target="#usersModal" title="Gestión de Usuarios y Teléfonos">
                             <i class="bi bi-person-lines-fill"></i> Usuarios
                         </button>
                     </li>
+                    {% endif %}
 
                     <li class="nav-item">
                         <a href="{{ url_for('dashboard.global_activity') }}" class="nav-link text-primary"
@@ -886,17 +1109,21 @@
                             <i class="bi bi-clock-history"></i> Actividad
                         </a>
                     </li>
+                    {% if has_access('infrastructure') %}
                     <li class="nav-item">
                         <a href="{{ url_for('infrastructure.index') }}" class="nav-link text-success"
                             title="Gestionar stock de baterías y UPS">
                             <i class="bi bi-hdd-network-fill"></i> Infra/Stock
                         </a>
                     </li>
+                    {% endif %}
+                    {% if has_access('reports') %}
                     <li class="nav-item">
                         <a href="{{ url_for('tasks.report_tasks_completed') }}" class="nav-link">
                             Tareas XLS
                         </a>
                     </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a href="{{ url_for('setup.download_certificate') }}" class="nav-link text-info"
                             title="Descargar certificado SSL para móviles">
@@ -916,10 +1143,11 @@
 
 
                     <li class="nav-item ms-2">
-                        <a href="{{ url_for('dashboard.refresh_fueros') }}" class="btn btn-outline-info btn-sm"
-                            title="Actualizar Fueros">
-                            <i class="bi bi-arrow-repeat"></i> Fueros
-                        </a>
+                        <form action="{{ url_for('dashboard.refresh_fueros') }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-outline-info btn-sm" title="Actualizar Fueros">
+                                <i class="bi bi-arrow-repeat"></i> Fueros
+                            </button>
+                        </form>
                     </li>
                     <li class="nav-item dropdown ms-2">
                         <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button"
@@ -935,17 +1163,59 @@
                                         class="bi bi-moon-stars-fill me-2"></i>Midnight Pro</a></li>
                         </ul>
                     </li>
+                    <li class="nav-item ms-2">
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-door-open"></i> Salir
+                        </a>
+                    </li>
 
                 </ul>
             </div>
         </div>
     </nav>
 
+    <div class="container-fluid mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container-fluid">
+        {% include '_module_switcher.html' %}
+    </div>
+
+    <div class="container-fluid">
+        <div class="quick-links">
+            {% if has_access('reports') %}
+            <a href="{{ url_for('dashboard.view_graphics') }}" class="quick-link"><i class="bi bi-graph-up-arrow"></i>Vista gráfica</a>
+            {% endif %}
+            {% if has_access('infrastructure') %}
+            <a href="{{ url_for('infrastructure.index') }}" class="quick-link"><i class="bi bi-hdd-network"></i>Infraestructura y stock</a>
+            {% endif %}
+            {% if has_access('reports') %}
+            <a href="{{ url_for('tasks.report_tasks_completed') }}" class="quick-link"><i class="bi bi-file-earmark-excel"></i>Reportes de tareas</a>
+            {% endif %}
+            <a href="{{ url_for('setup.install_page') }}" class="quick-link"><i class="bi bi-download"></i>Instalar cliente</a>
+        </div>
+    </div>
+
     <main class="container-fluid" style="padding-top: 12px;">
 
         <!-- HERO HEADER -->
         <div class="hero-header">
             <p class="hero-subtitle" id="heroDatetime">Cargando fecha...</p>
+            <div class="hero-strip">
+                <span class="hero-chip"><i class="bi bi-person-check"></i>{{ current_user.display_name or current_user.username }}</span>
+                <span class="hero-chip"><i class="bi bi-shield-lock"></i>{{ auth_mode_label }}</span>
+                <span class="hero-chip"><i class="bi bi-database-check"></i>MySQL activo</span>
+            </div>
             <div class="hero-stats mt-3">
 
                 <!-- Script: copiar PowerShell -->
@@ -1353,11 +1623,14 @@
                                 <!-- Acciones -->
                                 {% if pc.is_active == 'True' %}
                                 {% if pc.pc_name != 'PC Generica' %}
-                                <a href="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}"
-                                    class="btn btn-sm btn-outline-danger py-0 px-1" title="Dar de Baja"
-                                    style="font-size: 0.7rem;">
-                                    <i class="bi bi-trash"></i>
-                                </a>
+                                <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}"
+                                    method="POST" class="d-inline"
+                                    onsubmit="return confirm('¿Seguro pasar este equipo al cementerio?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1"
+                                        title="Dar de Baja" style="font-size: 0.7rem;">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                                 {% endif %}
                                 <button onclick="showSecurity('{{ pc.pc_name }}')"
                                     class="btn btn-sm btn-outline-warning py-0 px-1" title="Ver Conexiones / Seguridad"
@@ -1370,19 +1643,23 @@
                                     <i class="bi bi-activity"></i>
                                 </button>
                                 {% else %}
-                                <a href="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}"
-                                    class="btn btn-sm btn-success py-0 px-1" title="Reactivar"
-                                    style="font-size: 0.7rem;">
-                                    <i class="bi bi-power"></i>
-                                </a>
+                                <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}"
+                                    method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success py-0 px-1"
+                                        title="Reactivar" style="font-size: 0.7rem;">
+                                        <i class="bi bi-power"></i>
+                                    </button>
+                                </form>
                                 <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{{ url_for('dashboard.delete_permanent_pc', pc_name=pc.pc_name) }}"
-                                    class="btn btn-sm btn-danger py-0 px-1"
-                                    title="Borrar Definitivamente (Irreversible)" style="font-size: 0.7rem;"
-                                    onclick="return confirm('¿Estás SEGURO de borrar DEFINITIVAMENTE este equipo {{ pc.pc_name }}? Esta acción NO se puede deshacer y borrará todo su historial.');">
-                                    <i class="bi bi-x-octagon-fill"></i>
-                                </a>
+                                <form action="{{ url_for('dashboard.delete_permanent_pc', pc_name=pc.pc_name) }}"
+                                    method="POST" class="d-inline"
+                                    onsubmit="return confirm('¿Estás SEGURO de borrar DEFINITIVAMENTE este equipo {{ pc.pc_name }}? Esta acción NO se puede deshacer y borrará todo su historial.');">
+                                    <button type="submit" class="btn btn-sm btn-danger py-0 px-1"
+                                        title="Borrar Definitivamente (Irreversible)" style="font-size: 0.7rem;">
+                                        <i class="bi bi-x-octagon-fill"></i>
+                                    </button>
+                                </form>
                                 {% endif %}
                             </div>
                         </td>
@@ -1484,7 +1761,7 @@
             // Reemplazar host dynamico. Note the \n at the end to auto-execute.
             // Para Windows 7, la asignación a 3072 puede dar error si .NET es muy viejo. Lo envolvemos en try/catch.
             // Además, si HTTPS falla por incompatibilidad de cifrado (ERR_CONNECTION_CLOSED), usamos HTTP en el puerto 8080 como fallback.
-            const cmd = "try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try { iex (New-Object System.Net.WebClient).DownloadString('" + window.location.protocol + "//" + window.location.hostname + ":5000/script') } catch { Write-Host 'Fallo HTTPS, intentando HTTP (Puerto 8080)...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('http://" + window.location.hostname + ":8080/script') }\n";
+            const cmd = "try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try { iex (New-Object System.Net.WebClient).DownloadString('{{ client_script_base_url }}/script') } catch { Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('{{ client_script_fallback_url }}/script') }\n";
 
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(cmd).then(() => {
@@ -1768,58 +2045,70 @@
     <!-- Modales -->
     <!-- Modal Crear Tarea Suelta -->
     <div class="modal fade" id="createTaskModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content task-modal-shell">
                 <form action="{{ url_for('tasks.create_loose_task') }}" method="POST">
-                    <div class="modal-header">
+                    <div class="task-modal-hero">
                         <h5 class="modal-title">Nueva Tarea General</h5>
+                        <p>Carga pedidos rápidos del día, asigna técnico si ya sabes a quién va y deja el fuero listo para el seguimiento.</p>
+                    </div>
+                    <div class="modal-header border-0 pb-0">
+                        <div class="task-mini-note">Si dejas categoría vacía, el sistema intenta detectarla automáticamente.</div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Descripción</label>
-                            <textarea name="descripcion" class="form-control" rows="3" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Categoría</label>
-                            <select name="categoria" class="form-select">
-                                <option value="">-- Automático --</option>
-                                <option value="Impresoras">Impresoras</option>
-                                <option value="Red/Conectividad">Red/Conectividad</option>
-                                <option value="Hardware">Hardware</option>
-                                <option value="Software">Software</option>
-                                <option value="Usuarios">Usuarios</option>
-                                <option value="General">General</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Fuero / Ubicación</label>
-                            <select name="fuero" class="form-select">
-                                <option value="">-- No Especificado --</option>
-                                {% for code, name in fueros.items() %}
-                                <option value="{{ name }}">{{ name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Solicitante (Quién llama)</label>
-                            <input type="text" name="solicitante" class="form-control"
-                                placeholder="Ej: Juan Pérez / Contabilidad (Requerido)" 
-                                list="usersDatalist" required autocomplete="off">
-                            <datalist id="usersDatalist">
-                                {% for user in ad_users_list %}
-                                <option value="{{ user.real_name }}">{{ user.username }}</option>
-                                {% endfor %}
-                            </datalist>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Asignar a Técnico (Opcional)</label>
-                            <select name="technician" class="form-select">
-                                <option value="">-- Sin Asignar (Bolsa) --</option>
-                                {% for tech in technicians %}
-                                <option value="{{ tech.name }}">{{ tech.name }}</option>
-                                {% endfor %}
-                            </select>
+                        <div class="task-form-grid">
+                            <div class="task-form-card">
+                                <div class="mb-3">
+                                    <label class="form-label">Descripción</label>
+                                    <textarea name="descripcion" class="form-control" rows="5" placeholder="Ej: No imprime en mesa de entradas / revisar conectividad / instalar impresora" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Solicitante (Quién llama)</label>
+                                    <input type="text" name="solicitante" class="form-control"
+                                        placeholder="Ej: Juan Pérez / Contabilidad" 
+                                        list="usersDatalist" required autocomplete="off">
+                                    <datalist id="usersDatalist">
+                                        {% for user in ad_users_list %}
+                                        <option value="{{ user.real_name }}">{{ user.username }}</option>
+                                        {% endfor %}
+                                    </datalist>
+                                </div>
+                            </div>
+
+                            <div class="task-form-card">
+                                <div class="mb-3">
+                                    <label class="form-label">Categoría</label>
+                                    <select name="categoria" class="form-select">
+                                        <option value="">-- Automático --</option>
+                                        <option value="Impresoras">Impresoras</option>
+                                        <option value="Red/Conectividad">Red/Conectividad</option>
+                                        <option value="Hardware">Hardware</option>
+                                        <option value="Software">Software</option>
+                                        <option value="Usuarios">Usuarios</option>
+                                        <option value="General">General</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Fuero / Ubicación</label>
+                                    <select name="fuero" class="form-select">
+                                        <option value="">-- No Especificado --</option>
+                                        {% for code, name in fueros.items() %}
+                                        <option value="{{ name }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label">Asignar a Técnico (Opcional)</label>
+                                    <select name="technician" class="form-select">
+                                        <option value="">-- Sin Asignar (Bolsa) --</option>
+                                        {% for tech in technicians %}
+                                        <option value="{{ tech.name }}">{{ tech.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="task-mini-note mt-2">Si no asignas técnico, la tarea queda disponible en la bolsa para el equipo.</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1863,115 +2152,217 @@
             </div>
         </div>
     </div>
-
-
-    <!-- Modal Gestión Técnicos -->
-    <div class="modal fade" id="techniciansModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Gestión de Técnicos</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Form Alta -->
-                    <form action="{{ url_for('tasks.add_technician') }}" method="POST" class="d-flex mb-3">
-                        <input type="text" name="name" class="form-control me-2" placeholder="Nombre del técnico"
-                            required>
-                        <button type="submit" class="btn btn-success">Agregar</button>
-                    </form>
-
-                    <!-- Lista -->
-                    <ul class="list-group">
-                        {% for tech in technicians %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ tech.name }}
-                            <form action="{{ url_for('tasks.delete_technician', tech_id=tech.id) }}" method="POST"
-                                style="margin:0;">
-                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('¿Borrar técnico?')">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal Gestión de Usuarios y Teléfonos -->
     <div class="modal fade" id="usersModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Gestión de Usuarios y Teléfonos</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small">Asigna números de teléfono o internos IP a los usuarios de la institución.</p>
-                    
-                    <div class="mb-3 position-relative">
-                        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                        <input type="text" id="userSearchInput" class="form-control ps-5" placeholder="Buscar usuario por nombre o username..." onkeyup="filterUsersList()">
-                    </div>
+                    <p class="text-muted small">Aquí administras dos cosas distintas: acceso interno al sistema y teléfonos del directorio institucional.</p>
 
-                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                        <table class="table table-sm table-hover align-middle" id="usersTableList">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th>Usuario AD</th>
-                                    <th>Nombre Real</th>
-                                    <th>Teléfono IP</th>
-                                    <th class="text-end" style="width: 150px;">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user in ad_users_list %}
-                                <tr class="user-item">
-                                    <td class="username-cell"><code>{{ user.username }}</code></td>
-                                    <td class="realname-cell fw-bold">{{ user.real_name }}</td>
-                                    <td>
-                                        {% if user.phone %}
-                                        <span class="badge bg-info text-dark">{{ user.phone }}</span>
-                                        {% else %}
-                                        <span class="text-muted small">Sin asignar</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="openUserPhoneEdit('{{ user.username }}', '{{ user.real_name }}', '{{ user.phone or '' }}')">
-                                            <i class="bi bi-pencil-square"></i> Editar
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <!-- Formulario de Edición (Oculto por defecto) -->
-                    <div id="userPhoneEditFormContainer" class="card mt-3 border-primary d-none">
-                        <div class="card-header bg-primary text-white py-2">
-                            <span class="fw-bold fs-6">Actualizar Teléfono</span>
-                            <button type="button" class="btn-close btn-close-white float-end" style="font-size: 0.7rem;" onclick="closeUserPhoneEdit()"></button>
+                    <div class="users-panel-card border-warning mb-4">
+                        <div class="card-header bg-warning-subtle d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="section-kicker">Acceso interno</span>
+                                <strong>Usuarios del sistema</strong>
+                                <div class="small text-muted">Modo actual: {{ auth_mode_label }}. Crea tu usuario poderoso y luego elimina al inicial `administrador`.</div>
+                            </div>
+                            <span class="badge text-bg-dark">Sesión: {{ current_user.display_name or current_user.username }}</span>
                         </div>
-                        <div class="card-body py-2">
-                            <form action="{{ url_for('dashboard.update_user_phone') }}" method="POST" class="row gx-2 align-items-center">
-                                <input type="hidden" name="username" id="editUsername">
-                                <input type="hidden" name="realname" id="editRealnameHidden">
-                                <div class="col-sm-5">
-                                    <label class="form-label mb-0 small text-muted">Usuario</label>
-                                    <input type="text" id="editRealnameDisplay" class="form-control form-control-sm" readonly>
+                        <div class="card-body">
+                            <div class="soft-note mb-3">
+                                Recomendado: crea un superusuario propio, vuelve a entrar con esa cuenta y recién entonces elimina el usuario bootstrap.
+                            </div>
+                            <form action="{{ url_for('dashboard.create_app_user') }}" method="POST" class="row g-2 align-items-end mb-3" id="appUserForm">
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted mb-1">Usuario</label>
+                                    <input type="text" name="username" id="appUsername" class="form-control" placeholder="Ej: tuusuario" required>
                                 </div>
-                                <div class="col-sm-5">
-                                    <label class="form-label mb-0 small text-muted">Teléfono IP / Interno</label>
-                                    <input type="text" name="phone" id="editPhone" class="form-control form-control-sm" placeholder="Ej: 1045">
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted mb-1">Nombre visible</label>
+                                    <input type="text" name="display_name" id="appDisplayName" class="form-control" placeholder="Ej: Juan Perez">
                                 </div>
-                                <div class="col-sm-2 text-end mt-4">
-                                    <button type="submit" class="btn btn-sm btn-success w-100">Guardar</button>
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted mb-1">Clave</label>
+                                    <input type="password" name="password" id="appPassword" class="form-control" placeholder="Nueva clave o dejar vacio para conservar">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted mb-1">Rol</label>
+                                    <select name="role" id="appRole" class="form-select" onchange="applyRolePreset()">
+                                        {% for role_name in available_roles %}
+                                        <option value="{{ role_name }}" {% if role_name == 'tecnico' %}selected{% endif %}>{{ role_name|capitalize }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" name="is_superuser" id="newIsSuperuser">
+                                        <label class="form-check-label" for="newIsSuperuser">Superusuario</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="is_active" id="newIsActive" checked>
+                                        <label class="form-check-label" for="newIsActive">Activo</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="must_change_password" id="newMustChangePassword">
+                                        <label class="form-check-label" for="newMustChangePassword">Cambio forzado</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-muted mb-1">Permisos</label>
+                                    <div class="d-flex flex-wrap gap-3 mt-1">
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_dashboard" id="permDashboard"><label class="form-check-label" for="permDashboard">Dashboard</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_mobile" id="permMobile" checked><label class="form-check-label" for="permMobile">Mobile</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_infrastructure" id="permInfrastructure"><label class="form-check-label" for="permInfrastructure">Infra/Stock</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_reports" id="permReports"><label class="form-check-label" for="permReports">Reportes</label></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-grid">
+                                    <button type="submit" class="btn btn-warning">Guardar</button>
                                 </div>
                             </form>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Usuario</th>
+                                            <th>Nombre</th>
+                                            <th>Rol</th>
+                                            <th>Accesos</th>
+                                            <th>Estado</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for app_user in app_users_list %}
+                                        <tr>
+                                            <td><code>{{ app_user.username }}</code></td>
+                                            <td>{{ app_user.display_name or '-' }}</td>
+                                            <td>
+                                                {% if app_user.is_superuser %}
+                                                <span class="badge text-bg-danger">Superusuario</span>
+                                                {% else %}
+                                                <span class="badge text-bg-secondary">{{ app_user.role or 'tecnico' }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if app_user.can_access_dashboard %}<span class="access-pill"><i class="bi bi-grid"></i>Dashboard</span>{% endif %}
+                                                {% if app_user.can_access_mobile %}<span class="access-pill"><i class="bi bi-phone"></i>Mobile</span>{% endif %}
+                                                {% if app_user.can_access_infrastructure %}<span class="access-pill"><i class="bi bi-hdd-network"></i>Infra</span>{% endif %}
+                                                {% if app_user.can_access_reports %}<span class="access-pill"><i class="bi bi-file-earmark-bar-graph"></i>Reportes</span>{% endif %}
+                                            </td>
+                                            <td>
+                                                {% if app_user.must_change_password %}
+                                                <span class="badge text-bg-warning">Debe cambiar</span>
+                                                {% else %}
+                                                <span class="badge text-bg-{{ 'success' if app_user.is_active else 'secondary' }}">{{ 'Activo' if app_user.is_active else 'Inactivo' }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick='editAppUser({{ {
+                                                    "username": app_user.username,
+                                                    "display_name": app_user.display_name,
+                                                    "role": app_user.role,
+                                                    "is_superuser": app_user.is_superuser,
+                                                    "is_active": app_user.is_active,
+                                                    "must_change_password": app_user.must_change_password,
+                                                    "can_access_dashboard": app_user.can_access_dashboard,
+                                                    "can_access_mobile": app_user.can_access_mobile,
+                                                    "can_access_infrastructure": app_user.can_access_infrastructure,
+                                                    "can_access_reports": app_user.can_access_reports
+                                                }|tojson|safe }})'>Editar</button>
+                                                {% if app_user.username != current_user.username %}
+                                                <form action="{{ url_for('dashboard.remove_app_user', user_id=app_user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar el usuario del sistema {{ app_user.username }}?');">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                                </form>
+                                                {% else %}
+                                                <span class="text-muted small">Sesión actual</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-3">No hay usuarios del sistema.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="users-panel-card border-primary">
+                        <div class="card-header bg-primary-subtle">
+                            <span class="section-kicker">Directorio institucional</span>
+                            <strong>Usuarios AD y teléfonos</strong>
+                            <div class="small text-muted">Busca personas por nombre o username y carga el interno o teléfono IP.</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="search-shell">
+                                <i class="bi bi-search"></i>
+                                <input type="text" id="userSearchInput" class="form-control" placeholder="Buscar usuario por nombre o username..." onkeyup="filterUsersList()">
+                            </div>
+
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-sm table-hover align-middle" id="usersTableList">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Usuario AD</th>
+                                            <th>Nombre Real</th>
+                                            <th>Teléfono IP</th>
+                                            <th class="text-end" style="width: 150px;">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in ad_users_list %}
+                                        <tr class="user-item">
+                                            <td class="username-cell"><code>{{ user.username }}</code></td>
+                                            <td class="realname-cell fw-bold">{{ user.real_name }}</td>
+                                            <td>
+                                                {% if user.phone %}
+                                                <span class="badge bg-info text-dark">{{ user.phone }}</span>
+                                                {% else %}
+                                                <span class="text-muted small">Sin asignar</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="openUserPhoneEdit('{{ user.username }}', '{{ user.real_name }}', '{{ user.phone or '' }}')">
+                                                    <i class="bi bi-pencil-square"></i> Editar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div id="userPhoneEditFormContainer" class="card mt-3 border-primary d-none">
+                                <div class="card-header bg-primary text-white py-2">
+                                    <span class="fw-bold fs-6">Actualizar Teléfono</span>
+                                    <button type="button" class="btn-close btn-close-white float-end" style="font-size: 0.7rem;" onclick="closeUserPhoneEdit()"></button>
+                                </div>
+                                <div class="card-body py-2">
+                                    <form action="{{ url_for('dashboard.update_user_phone') }}" method="POST" class="row gx-2 align-items-center">
+                                        <input type="hidden" name="username" id="editUsername">
+                                        <input type="hidden" name="realname" id="editRealnameHidden">
+                                        <div class="col-sm-5">
+                                            <label class="form-label mb-0 small text-muted">Usuario</label>
+                                            <input type="text" id="editRealnameDisplay" class="form-control form-control-sm" readonly>
+                                        </div>
+                                        <div class="col-sm-5">
+                                            <label class="form-label mb-0 small text-muted">Teléfono IP / Interno</label>
+                                            <input type="text" name="phone" id="editPhone" class="form-control form-control-sm" placeholder="Ej: 1045">
+                                        </div>
+                                        <div class="col-sm-2 text-end mt-4">
+                                            <button type="submit" class="btn btn-sm btn-success w-100">Guardar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -2009,6 +2400,55 @@
             var container = document.getElementById("userPhoneEditFormContainer");
             container.classList.add("d-none");
         }
+
+        const rolePresets = {
+            administrador: { dashboard: true, mobile: true, infrastructure: true, reports: true },
+            operador: { dashboard: true, mobile: true, infrastructure: false, reports: true },
+            tecnico: { dashboard: false, mobile: true, infrastructure: false, reports: false },
+            infraestructura: { dashboard: true, mobile: true, infrastructure: true, reports: true },
+            consulta: { dashboard: false, mobile: false, infrastructure: false, reports: true }
+        };
+
+        function setAccessChecks(values) {
+            document.getElementById('permDashboard').checked = !!values.dashboard;
+            document.getElementById('permMobile').checked = !!values.mobile;
+            document.getElementById('permInfrastructure').checked = !!values.infrastructure;
+            document.getElementById('permReports').checked = !!values.reports;
+        }
+
+        function applyRolePreset() {
+            const role = document.getElementById('appRole').value;
+            if (document.getElementById('newIsSuperuser').checked) {
+                setAccessChecks({ dashboard: true, mobile: true, infrastructure: true, reports: true });
+                return;
+            }
+            setAccessChecks(rolePresets[role] || rolePresets.tecnico);
+        }
+
+        function editAppUser(user) {
+            document.getElementById('appUsername').value = user.username || '';
+            document.getElementById('appDisplayName').value = user.display_name || '';
+            document.getElementById('appPassword').value = '';
+            document.getElementById('appRole').value = user.role || 'tecnico';
+            document.getElementById('newIsSuperuser').checked = !!user.is_superuser;
+            document.getElementById('newIsActive').checked = !!user.is_active;
+            document.getElementById('newMustChangePassword').checked = !!user.must_change_password;
+            setAccessChecks({
+                dashboard: !!user.can_access_dashboard,
+                mobile: !!user.can_access_mobile,
+                infrastructure: !!user.can_access_infrastructure,
+                reports: !!user.can_access_reports
+            });
+            document.getElementById('appUsername').focus();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const superuserCheck = document.getElementById('newIsSuperuser');
+            if (superuserCheck) {
+                superuserCheck.addEventListener('change', applyRolePreset);
+                applyRolePreset();
+            }
+        });
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

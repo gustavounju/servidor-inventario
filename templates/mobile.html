@@ -112,6 +112,14 @@
             color: #fff;
         }
 
+        .module-switcher {
+            margin-top: 0;
+        }
+
+        .module-switcher-link.active {
+            background: var(--mob-gradient);
+        }
+
         /* ===== TASK CARDS ===== */
         .task-card {
             background: var(--mob-card);
@@ -258,6 +266,77 @@
             filter: brightness(1.1);
         }
 
+        .login-note {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.14);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.8rem;
+            line-height: 1.45;
+        }
+
+        .status-board {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .status-board .mini-card {
+            background: #fff;
+            border: 1px solid var(--mob-border);
+            border-radius: 16px;
+            padding: 12px 14px;
+            box-shadow: 0 6px 20px rgba(15, 76, 117, 0.08);
+        }
+
+        .status-board .mini-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--mob-muted);
+            font-weight: 700;
+        }
+
+        .status-board .mini-value {
+            margin-top: 5px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--mob-text);
+        }
+
+        .secure-banner {
+            display: none;
+            margin-bottom: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border-left: 4px solid #f59e0b;
+            background: #fff7ed;
+            color: #9a3412;
+            font-size: 0.83rem;
+            line-height: 1.45;
+        }
+
+        .task-card .task-badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .task-card .meta-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef6fb;
+            color: #1d4e89;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
         /* ===== FAB ===== */
         .fab-add {
             position: fixed;
@@ -339,7 +418,15 @@
         .btn-done:hover {
             filter: brightness(1.08);
         }
+
+        @media (max-width: 520px) {
+            .status-board {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="/static/js/security.js"></script>
 </head>
 
 <body>
@@ -350,13 +437,11 @@
         <div class="login-title">Inventario GOLD</div>
         <p class="login-subtitle">Sistema de Técnicos</p>
         <div class="login-card">
-            <p class="fw-bold mb-2" style="color:#1e293b;font-size:0.9rem;">Seleccioná tu perfil:</p>
-            <select id="techSelect" class="form-select mb-0" style="border-radius:10px;">
-                <option value="">— Soy... —</option>
-            </select>
-            <button onclick="login()" class="btn btn-login mt-3">
-                <i class="bi bi-arrow-right-circle me-2"></i>Ingresar
-            </button>
+            <p class="fw-bold mb-2" style="color:#1e293b;font-size:0.9rem;">Acceso móvil validado</p>
+            <div class="alert alert-primary mb-0" style="border-radius:12px;">
+                <div class="fw-bold">Ingresas como {{ mobile_identity or current_user.display_name or current_user.username }}</div>
+                <div class="small mt-1">La identidad técnica sale de tu sesión del sistema. Ya no se puede cambiar de usuario dentro de `/mobile`.</div>
+            </div>
             <button id="btnManualInstallLogin" class="btn btn-outline-primary mt-2 w-100" style="display:none; border-radius:12px;" onclick="triggerInstall()">
                 <i class="bi bi-download me-2"></i>Instalar aplicación
             </button>
@@ -371,12 +456,15 @@
                 v{{ app_version }}
             </p>
         </div>
+        <div class="login-note">
+            Para avisos en segundo plano y mejor instalación como app, usa esta pantalla con `HTTPS` y acepta notificaciones del navegador.
+        </div>
     </div>
 
     <!-- App Header -->
     <div class="app-header" id="appHeader" style="display:none;">
         <div>
-            <div class="header-greeting">Hola,</div>
+            <div class="header-greeting">Rol {{ current_role_label }}</div>
             <div class="header-name" id="headerName">Técnico</div>
             <div class="header-sigj-status" title="Estado de SIGJ">
                 <span id="sigj-mobile-status-dot" class="status-dot-blink bg-warning"
@@ -386,7 +474,7 @@
             </div>
         </div>
         <div class="header-actions">
-            <button id="btnTestSound" class="btn-icon" onclick="tryTestSound()" title="Probar Sonido" style="background:rgba(255,255,b,0.1)">
+            <button id="btnTestSound" class="btn-icon" onclick="tryTestSound()" title="Probar Sonido" style="background:rgba(255,255,255,0.1)">
                 <i class="bi bi-music-note-beamed"></i>
             </button>
             <button id="btnSound" class="btn-icon btn-warning" onclick="toggleSound()" title="Sonido">
@@ -406,6 +494,25 @@
 
     <!-- Main Content -->
     <div class="container py-3" id="mainContent" style="display:none;">
+        <div id="secureBanner" class="secure-banner"></div>
+
+        {% include '_module_switcher.html' %}
+
+        <div class="status-board">
+            <div class="mini-card">
+                <div class="mini-label">Sesión</div>
+                <div class="mini-value" id="mobileSessionCard">Sin iniciar</div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-label">Bolsa</div>
+                <div class="mini-value" id="mobilePoolCard">0</div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-label">Avisos</div>
+                <div class="mini-value" id="mobileNotifCard">0</div>
+            </div>
+        </div>
+
         <div id="debugPanel"
             style="padding: 10px; background: #eee; font-family: monospace; font-size: 10px; margin-bottom: 10px; display:none;">
             <strong>DEBUG:</strong> <span id="debugOutput">...</span>
@@ -520,7 +627,8 @@
                         <div class="mb-3">
                             <label class="form-label">¿Quién lo solicitó?</label>
                             <input type="text" id="taskSolicitante" class="form-control"
-                                placeholder="Ej: Secretaria, Dirección... (Requerido)">
+                                placeholder="Ej: Secretaria, Dirección... (Requerido)" list="mobileRequestersList">
+                            <datalist id="mobileRequestersList"></datalist>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">PC (Opcional)</label>
@@ -573,13 +681,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // --- DATA & STATE ---
-        let currentUser = localStorage.getItem('techName');
+        let currentUser = {{ (mobile_identity or current_user.technician_name or current_user.display_name or current_user.username or '')|tojson }};
+        const preferredTechnician = currentUser;
         let currentTab = 'myTasks';
 
         let allUnassigned = [];
         let allActive = [];
         let allPCs = [];
         let allTechs = [];
+        let allRequesters = [];
 
         let soundEnabled = localStorage.getItem('soundEnabled') !== 'false'; // Default a true
         let lastTaskIds = new Set();
@@ -631,15 +741,16 @@
         });
 
         async function initApp() {
+            localStorage.removeItem('techName');
             updateSoundUI(); // Sincronizar UI del botón al iniciar
             checkDiagnostics(); // Ver estado de seguridad/permisos
             registerServiceWorker(); // Restaurado para permitir instalación PWA
             await loadData();
-            if (currentUser) {
-                showApp();
-            } else {
+            if (!currentUser) {
                 showLogin();
+                return;
             }
+            showApp();
         }
 
         function registerServiceWorker() {
@@ -719,6 +830,15 @@
             console.log(`Diagnostics: Secure=${isSecure}, SW=${hasSW}`);
             
             const dbg = document.getElementById('debugOutput');
+            const secureBanner = document.getElementById('secureBanner');
+            if (secureBanner) {
+                if (!isSecure) {
+                    secureBanner.style.display = 'block';
+                    secureBanner.innerHTML = '<strong>Conexión HTTP detectada.</strong> En este modo el navegador puede bloquear PWA, service worker y notificaciones push en segundo plano.';
+                } else {
+                    secureBanner.style.display = 'none';
+                }
+            }
             // Si hay Red X en el candado, el navegador a veces dice isSecure=true pero bloquea todo.
             // Siempre mostramos un pequeño aviso recordatorio si no hay prompt tras 5 seg.
         }
@@ -746,6 +866,14 @@
                 allUnassigned = data.unassigned || [];
                 allActive = data.active_tasks || [];
                 allPCs = data.pcs || [];
+                allRequesters = data.requesters || [];
+
+                const poolCard = document.getElementById('mobilePoolCard');
+                const notifCard = document.getElementById('mobileNotifCard');
+                const sessionCard = document.getElementById('mobileSessionCard');
+                if (poolCard) poolCard.textContent = String(allUnassigned.length || 0);
+                if (notifCard) notifCard.textContent = String(unreadNotifCount || 0);
+                if (sessionCard) sessionCard.textContent = currentUser || preferredTechnician || 'Sin iniciar';
 
                 // Sound & Vibration Alert on new unassigned tasks
                 if (allUnassigned) {
@@ -789,6 +917,8 @@
                                     notifBadge.textContent = unreadNotifCount;
                                     notifBadge.style.display = 'inline-block';
                                 }
+                                const notifCard = document.getElementById('mobileNotifCard');
+                                if (notifCard) notifCard.textContent = String(unreadNotifCount);
                                 // Mostrar toast flotante
                                 const toastEl = document.getElementById('notifToast');
                                 const toastText = document.getElementById('notifToastText');
@@ -806,8 +936,8 @@
                     }
                 } catch(eNotif) { /* silencioso, no interrumpir el poll principal */ }
 
-                populateTechSelect(allTechs);
                 populatePCSelect(allPCs);
+                populateRequesters(allRequesters);
                 renderLists();
 
                 // Poll
@@ -822,28 +952,6 @@
         }
 
         // --- RENDERERS ---
-        function populateTechSelect(techs) {
-            const sel = document.getElementById('techSelect');
-            const currentVal = sel.value;
-            sel.innerHTML = '<option value="">-- Soy... --</option>';
-
-            if (!techs || techs.length === 0) {
-                const opt = document.createElement('option');
-                opt.textContent = "(Error: Lista vacía)";
-                sel.appendChild(opt);
-                return;
-            }
-
-            techs.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.name;
-                opt.textContent = t.name;
-                sel.appendChild(opt);
-            });
-
-            if (currentVal) sel.value = currentVal;
-        }
-
         function populatePCSelect(pcs) {
             const sel = document.getElementById('taskPC');
             const selComplete = document.getElementById('completeTaskPC');
@@ -906,14 +1014,34 @@
             return `
             <div class="task-card ${type === 'mine' ? 'priority' : ''}">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div>${pcBadge}${fueroBadge}</div>
+                    <div class="task-badges">${pcBadge}${fueroBadge}</div>
                     <span class="task-time">${dateStr} ${timeStr}</span>
                 </div>
                 <div class="task-desc">${task.descripcion}</div>
-                <div class="task-meta">Solicitó: ${task.solicitante || 'Sistema'}</div>
+                <div class="task-meta">
+                    <span class="meta-badge"><i class="bi bi-person"></i>${task.solicitante || 'Sistema'}</span>
+                    ${task.assigned_to ? `<span class="meta-badge"><i class="bi bi-person-badge"></i>${task.assigned_to}</span>` : ''}
+                </div>
                 ${btn}
             </div>
             `;
+        }
+
+        function populateRequesters(items) {
+            const datalist = document.getElementById('mobileRequestersList');
+            if (!datalist) return;
+            datalist.innerHTML = '';
+            const seen = new Set();
+            (items || []).forEach(item => {
+                const value = (item.real_name || item.username || '').trim();
+                if (!value) return;
+                const key = value.toLowerCase();
+                if (seen.has(key)) return;
+                seen.add(key);
+                const opt = document.createElement('option');
+                opt.value = value;
+                datalist.appendChild(opt);
+            });
         }
 
         // --- APP FLOW ---
@@ -925,19 +1053,10 @@
             document.getElementById('fabAdd').style.display = 'none';
         }
 
-        function login() {
-            const val = document.getElementById('techSelect').value;
-            if (!val) return alert("Selecciona tu nombre");
-            currentUser = val;
-            localStorage.setItem('techName', currentUser);
-            showApp();
-        }
-
         function logout() {
             if (confirm("¿Salir?")) {
-                localStorage.removeItem('techName');
                 currentUser = null;
-                showLogin();
+                window.location.href = '/logout';
             }
         }
 
@@ -948,6 +1067,7 @@
             document.getElementById('bottomNav').style.display = 'flex';
             document.getElementById('fabAdd').style.display = 'flex';
             document.getElementById('headerName').textContent = currentUser;
+            document.getElementById('mobileSessionCard').textContent = currentUser;
             renderLists();
             // Intentar suscribir a notificaciones push al iniciar sesión
             setTimeout(() => subscribeToPush(), 2000);
@@ -970,6 +1090,8 @@
                 unreadNotifCount = 0;
                 const notifBadge = document.getElementById('navNotifCount');
                 if (notifBadge) notifBadge.style.display = 'none';
+                const notifCard = document.getElementById('mobileNotifCard');
+                if (notifCard) notifCard.textContent = '0';
                 loadNotifications();
                 startNotifRefresh();
             } else {
@@ -1066,7 +1188,6 @@
                         descripcion: desc,
                         solicitante: solicitante,
                         pc_name: pc,
-                        technician: currentUser,
                         is_done: done,
                         es_infraestructura: esInfra,
                         tecnico: tecnico
@@ -1113,7 +1234,7 @@
 
         async function updateTask(id, action, pcName = null) {
             try {
-                const payload = { id: id, action: action, technician: currentUser };
+                const payload = { id: id, action: action };
                 if (pcName) payload.pc_name = pcName;
 
                 const res = await fetch('/api/mobile/update_task', {
@@ -1399,7 +1520,7 @@
                 const res = await fetch('/api/mobile/subscribe_push', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ technician: currentUser, token: token })
+                    body: JSON.stringify({ token: token })
                 });
                 const json = await res.json();
                 if (json.status === 'success') {

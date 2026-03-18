@@ -1,21 +1,29 @@
-#!/bin/bash
-echo "=============================================="
-echo "   ACTUALIZANDO SERVIDOR INVENTARIO GOLD (Linux)"
-echo "=============================================="
-echo ""
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "1. Descargando cambios de GitLab..."
+APP_DIR="/opt/inventario"
+
+cd "$APP_DIR"
+
+echo "=============================================="
+echo "   ACTUALIZANDO SERVIDOR INVENTARIO GOLD"
+echo "=============================================="
+
+echo "[1/5] Git pull..."
 git pull
 
-echo ""
-echo "2. Verificando dependencias (fpdf2, etc)..."
-# Si existe entorno virtual, activarlo (ajustar nombre si es necesario)
-if [ -d "venv" ]; then
-    source venv/bin/activate
-fi
-pip install -r requirements.txt --break-system-packages
+echo "[2/5] Entorno virtual..."
+python3 -m venv .venv
+source .venv/bin/activate
 
-echo ""
-echo "=== LISTO ==="
-echo "La base de datos se actualizará automáticamente al iniciar."
-echo "Ahora ejecuta: python3 servidor.py"
+echo "[3/5] Dependencias..."
+pip install --upgrade pip
+pip install -r requirements.txt
+
+echo "[4/5] Reiniciando servicio..."
+sudo systemctl restart inventario
+
+echo "[5/5] Estado actual..."
+sudo systemctl status inventario --no-pager || true
+
+echo "Listo. Si algo falla revisa: sudo journalctl -u inventario -n 100 --no-pager"

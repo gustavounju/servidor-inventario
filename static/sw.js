@@ -26,6 +26,9 @@ messaging.onBackgroundMessage((payload) => {
         icon: '/static/icon-192.png',
         badge: '/static/icon-192.png',
         vibrate: [200, 100, 200],
+        requireInteraction: true,
+        renotify: true,
+        tag: 'inventario-gold-alert',
         data: { url: payload.data?.url || '/mobile' },
         actions: [
             { action: 'open', title: 'Ver tarea' }

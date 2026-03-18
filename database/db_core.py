@@ -205,4 +205,24 @@ def init_db():
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS app_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) NOT NULL UNIQUE,
+                display_name VARCHAR(255),
+                role VARCHAR(50) DEFAULT 'tecnico',
+                technician_name VARCHAR(255),
+                password_hash TEXT NOT NULL,
+                is_superuser TINYINT(1) DEFAULT 0,
+                is_active TINYINT(1) DEFAULT 1,
+                must_change_password TINYINT(1) DEFAULT 0,
+                can_access_dashboard TINYINT(1) DEFAULT 1,
+                can_access_mobile TINYINT(1) DEFAULT 1,
+                can_access_infrastructure TINYINT(1) DEFAULT 0,
+                can_access_reports TINYINT(1) DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
     print("Base de datos lista y estructura verificada.")
