@@ -1,47 +1,49 @@
-# Checklist PuTTY Manana
+# Checklist PuTTY - Deploy Automatico
 
-## Si ya existe `/opt/inventario`
+## Primera vez (o si el directorio no existe)
+
+```bash
+sudo mkdir -p /opt/inventario
+sudo git clone https://gitlab.com/gustavoeliasm/servidorinventario.git /opt/inventario
+cd /opt/inventario
+git checkout feature/migration-mysql
+bash deploy_ubuntu.sh
+```
+
+## Actualizacion normal (ya existe /opt/inventario)
 
 ```bash
 cd /opt/inventario
-git pull
-python3 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-nano .env
-sudo cp deployment/inventario.service /etc/systemd/system/inventario.service
-sudo cp deployment/nginx_inventario.conf /etc/nginx/sites-available/inventario
-sudo ln -sf /etc/nginx/sites-available/inventario /etc/nginx/sites-enabled/inventario
-sudo systemctl daemon-reload
-sudo nginx -t
-sudo systemctl restart inventario
-sudo systemctl restart nginx
-sudo systemctl status inventario --no-pager
-sudo journalctl -u inventario -n 80 --no-pager
+bash deploy_ubuntu.sh
 ```
 
-## Variables clave en `.env`
+El script hace **todo solo**:
+- git pull
+- instala dependencias
+- genera/actualiza el `.env` con los valores conocidos
+- solo pide **usuario y clave MySQL** si no están en el `.env`
+- copia configs de systemd y nginx
+- reinicia los servicios
+- muestra el estado y logs al final
 
-- `DB_HOST` = IP del servidor MySQL
-- `INVENTARIO_PUBLIC_BASE_URL` = URL/IP del servidor Inventario para las PCs
-- `INVENTARIO_PUBLIC_HTTP_FALLBACK_URL` = fallback HTTP para equipos legacy
+## Valores ya configurados en el script
 
-No tienen que ser la misma maquina.
+| Variable | Valor |
+|---|---|
+| DB_HOST | 10.15.3.20 |
+| DB_PORT | 3306 |
+| DB_NAME | inventario_prod |
+| INVENTARIO URL HTTPS | https://10.15.2.251:5000 |
+| INVENTARIO URL HTTP | http://10.15.2.251:8080 |
+
+## Solo te preguntara
+
+- `Usuario MySQL` (ej: root)
+- `Clave MySQL`
+
+(Solo si no están ya en el `.env`)
 
 ## Primer login
 
-- Usuario: `administrador`
-- Clave: `tdg729tdg`
-- Ir a `Usuarios`
-- Crear tu superusuario
-- Cerrar sesion
-- Entrar con tu usuario
-- Borrar `administrador`
-
-## Si luego quieres AD
-
-- Editar `.env`
-- Poner `AUTH_MODE=hybrid`
-- Completar `AD_SERVER`, `AD_DOMAIN`, `AD_BASE_DN`, `AD_SUPERUSERS`
-- `sudo systemctl restart inventario`
+- Usuario: `administrador` / Clave: `tdg729tdg`
+- Ir a `Usuarios` → crear tu superusuario → cerrar sesion → entrar con el tuyo → borrar `administrador`
