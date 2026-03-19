@@ -46,23 +46,9 @@
 </head>
 
 <body>
-    <!-- NAVBAR -->
-    <nav class="navbar navbar-expand-lg navbar-gold fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Inventario GOLD</a>
+    {% include '_module_switcher.html' %}
 
-            <div class="ms-auto d-flex gap-2">
-                <a href="/mobile/scanner" class="btn btn-sm btn-primary">
-                    <i class="bi bi-qr-code-scan me-1"></i>Escáner QR
-                </a>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-warning">
-                    <i class="bi bi-door-open me-1"></i>Salir
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container-fluid px-3 pt-2">
+    <div class="container-fluid px-3" style="margin-top: 110px;">
         <!-- Hero mini -->
         <div class="hero-header mb-3">
             <h1 class="hero-title">📦 Gestión de Stock</h1>

@@ -35,63 +35,23 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script defer src="/static/js/security.js"></script>
 </head>
-
 <body>
-    <!-- NAVBAR -->
-    <nav class="navbar navbar-expand-lg navbar-gold fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Inventario GOLD</a>
+    {% include '_module_switcher.html' %}
 
-            <div class="ms-auto d-flex gap-2">
-                <span class="btn btn-sm btn-outline-light disabled">
-                    <i class="bi bi-person-badge me-1"></i>{{ current_role_label }}
-                </span>
-                <a href="{{ url_for('dashboard.global_activity') }}" class="btn btn-sm btn-outline-info">
-                    <i class="bi bi-clock-history me-1"></i>Actividad
-                </a>
-                <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-sm btn-outline-light">
-                    <i class="bi bi-arrow-left me-1"></i>Dashboard
-                </a>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-warning">
-                    <i class="bi bi-door-open me-1"></i>Salir
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container-fluid px-3 pt-2 pb-4">
-        <!-- Hero -->
-        <div class="hero-header mb-3">
-            <h1 class="hero-title">🔌 Infraestructura y Stock</h1>
-            <p class="hero-subtitle">UPS, baterías, periféricos y hardware del sistema
-                <span class="badge ms-2" style="background:rgba(255,255,255,0.15);font-size:0.72rem;">v{{ app_version
-                    }}</span>
-                <span id="sigj-status-container" class="ms-3 d-inline-flex align-items-center"
-                    style="font-size: 0.85rem; opacity: 0.9;">
-                    <span class="text-white-50 me-1">SIGJ:</span>
-                    <span id="sigj-status-dot" class="status-dot-blink bg-warning"
-                        style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px;"></span>
-                    <span id="sigj-status-text" class="fw-bold">Checking...</span>
-                </span>
-            </p>
-        </div>
-
+    <div class="container-fluid px-3" style="margin-top: 110px;">
         <!-- Mensajes Flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="mb-4">
             {% for category, message in messages %}
-            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show"
-                role="alert">
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm" style="border-radius: 12px;" role="alert">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             {% endfor %}
         </div>
         {% endif %}
         {% endwith %}
-
-        {% include '_module_switcher.html' %}
 
         <div class="row">
             <!-- Columna 1: UPS (Hardware) -->
@@ -695,33 +655,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const statusDot = document.getElementById('sigj-status-dot');
-            const statusText = document.getElementById('sigj-status-text');
-
-            fetch('/infra/status_check')
-                .then(response => response.json())
-                .then(data => {
-                    statusDot.classList.remove('status-dot-blink', 'bg-warning');
-                    if (data.status === 'online') {
-                        statusDot.classList.add('bg-success');
-                        statusText.innerText = 'Online';
-                        statusText.classList.add('text-success-light');
-                        // Custom style to make it look nicer against the gradient
-                        statusText.style.color = '#afffaf';
-                    } else {
-                        statusDot.classList.add('bg-danger');
-                        statusText.innerText = 'Offline';
-                        statusText.style.color = '#ff9999';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching SIGJ status:', error);
-                    statusDot.classList.remove('status-dot-blink', 'bg-warning');
-                    statusDot.classList.add('bg-secondary');
-                    statusText.innerText = 'Error';
-                    statusText.style.color = '#ccc';
-                });
 
             // Logic for SNMP printer fetch
             const btnSnmp = document.getElementById('btnAutocompletarSNMP');
@@ -764,7 +697,6 @@
                         });
                 });
             }
-        });
     </script>
 </body>
 

@@ -850,90 +850,16 @@
 <!-- BLOQUE 2: CUERPO (navbar + KPIs + filtros + tabla) -->
 
 <body>
+    {% include '_module_switcher.html' %}
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('dashboard.dashboard') }}">
-                Inventario GOLD
-                <span class="badge bg-secondary ms-2" style="font-size: 0.70rem;">{{ app_version }}</span>
-            </a>
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarMain">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-
-                    <li class="nav-item d-flex align-items-center">
-                        <span class="nav-link disabled">
-                            <i class="bi bi-person-badge"></i> {{ current_role_label }}
-                        </span>
-                    </li>
-
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.view_graphics') }}" class="nav-link">
-                            <i class="bi bi-graph-up"></i> Gráficos
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.global_activity') }}" class="nav-link text-primary"
-                            title="Ver Registro Global de Actividad">
-                            <i class="bi bi-clock-history"></i> Actividad
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('infrastructure.index') }}" class="nav-link text-success"
-                            title="Gestionar stock de baterías y UPS">
-                            <i class="bi bi-hdd-network-fill"></i> Infra/Stock
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('tasks.report_tasks_completed') }}" class="nav-link">
-                            Tareas XLS
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('setup.download_certificate') }}" class="nav-link text-info"
-                            title="Descargar certificado SSL para móviles">
-                            <i class="bi bi-shield-lock"></i>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <span class="nav-link" title="Tareas completadas hoy">
-                            ✅ Hoy: {{ kpi_tareas_hoy }}
-                        </span>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link btn btn-link" data-bs-toggle="modal" data-bs-target="#createTaskModal">
-                            <i class="bi bi-plus-circle"></i> Nueva Tarea
-                        </button>
-                    </li>
-
-
-                    <li class="nav-item ms-2">
-                        <form action="{{ url_for('dashboard.refresh_fueros') }}" method="POST" class="d-inline">
-                            <button type="submit" class="btn btn-outline-info btn-sm" title="Actualizar Fueros">
-                                <i class="bi bi-arrow-repeat"></i> Fueros
-                            </button>
-                        </form>
-                    </li>
-                    <li class="nav-item ms-2">
-                        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-warning btn-sm">
-                            <i class="bi bi-door-open"></i> Salir
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
     <!-- CONTAINER PRINCIPAL -->
-    <div class="container-fluid" style="margin-top: 80px;">
-        {% include '_module_switcher.html' %}
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0"><i class="bi bi-clock-history text-primary"></i> Registro Global de Actividad</h2>
-            <p class="text-muted mb-0 small">Monto máximo visible: 1000 registros recientes</p>
+    <div class="container-fluid" style="margin-top: 110px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 px-3">
+            <h2 class="mb-0 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>Auditoría de Actividad</h2>
+            <div class="text-end">
+                <span class="badge bg-primary rounded-pill px-3 shadow-sm">v{{ app_version }}</span>
+                <p class="text-muted mb-0 small mt-1">Mostrando registros recientes (Límite 1000)</p>
+            </div>
         </div>
 
         <div class="card shadow-sm mb-5">

@@ -59,6 +59,30 @@ app.jinja_env.filters['datetime_es'] = format_datetime_es
 # Contexto Global para todas las plantillas (Jinja2)
 @app.context_processor
 def inject_global_vars():
+    # KPIs Globales para el Header Premium (Command Center)
+    kpis = {}
+    if is_authenticated():
+        try:
+            with get_db_connection() as conn:
+                kpis['kpi_total_activas'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+                kpis['kpi_total_graveyard'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
+                kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND pc_name NOT IN ('PC Generica', 'Infraestructura')", ("%Windows 7%",)).fetchone()["c"]
+                kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+                
+                # Impresoras
+                net_pr = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
+                loc_pr = conn.execute("""
+                    SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' 
+                    AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
+                    AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%') AND alerta_impresora_red = 0
+                """).fetchone()["c"]
+                kpis['kpi_total_impresoras'] = net_pr + loc_pr
+                
+                kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
+                kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
+        except Exception as e:
+            print(f"Error in context processor KPIs: {e}")
+
     return {
         'app_version': APP_VERSION,
         'csrf_token': generate_csrf_token,
@@ -71,6 +95,7 @@ def inject_global_vars():
         'available_roles': available_roles(),
         'client_script_base_url': get_public_app_base_url(),
         'client_script_fallback_url': get_public_script_fallback_url(),
+        **kpis 
     }
 
 

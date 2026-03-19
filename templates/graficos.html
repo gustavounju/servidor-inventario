@@ -9,18 +9,17 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            /* OCEANIC (DEFAULT) */
-            --bg-color: #f4f6f9;
-            --text-color: #333;
+            --bg-color: #f8fafc;
+            --text-color: #0f172a;
             --card-bg: #fff;
-            --primary-gradient: linear-gradient(135deg, #0f4c75 0%, #3282b8 100%);
-            --secondary-gradient: linear-gradient(135deg, #1b262c 0%, #0f4c75 100%);
-            --accent-color: #3282b8;
-            --border-color: #ddd;
-            --kpi-border-success: #22c55e;
-            --kpi-border-neutral: #6b7280;
-            --kpi-border-warning: #fbbf24;
-            --kpi-shadow: rgba(15, 76, 117, 0.4);
+            --primary-gradient: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            --secondary-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --accent-color: #3b82f6;
+            --border-color: #e2e8f0;
+            --kpi-border-success: #10b981;
+            --kpi-border-neutral: #64748b;
+            --kpi-border-warning: #f59e0b;
+            --kpi-shadow: rgba(30, 41, 59, 0.15);
         }
 
         body {
@@ -98,29 +97,10 @@
 </head>
 
 <body>
+    {% include '_module_switcher.html' %}
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('dashboard.dashboard') }}">
-                Inventario GOLD
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarMain">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.dashboard') }}" class="nav-link">
-                            <i class="bi bi-arrow-left-circle"></i> Volver a Lista
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <main class="container-fluid mt-4">
-        <h1 class="mb-4 text-center">Gráficos e Indicadores</h1>
+    <main class="container-fluid" style="margin-top: 110px;">
+        <h1 class="mb-4 text-center fw-bold"><i class="bi bi-graph-up text-primary me-2"></i>Análisis de Infraestructura</h1>
 
         <!-- Gráficos Principales -->
         <div class="row mb-5" id="chartsRow">
