@@ -8,6 +8,47 @@ from utils.constants import FUERO_COLORS, FUERO_MAPPING
 
 bp_infrastructure = Blueprint('infrastructure', __name__, url_prefix='/infra')
 
+@bp_infrastructure.app_context_processor
+def inject_infra_kpis():
+    from utils.auth import allowed_module_links, auth_mode_label, available_roles, current_user, has_permission, is_authenticated, role_label, generate_csrf_token
+    from utils.constants import APP_VERSION
+    from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
+    
+    kpis = {}
+    if is_authenticated():
+        try:
+            with get_db_connection() as conn:
+                kpis['kpi_total_activas'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+                kpis['kpi_total_graveyard'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
+                kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND pc_name NOT IN ('PC Generica', 'Infraestructura')", ("%Windows 7%",)).fetchone()["c"]
+                kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+                net_pr = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
+                loc_pr = conn.execute("""
+                    SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' 
+                    AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
+                    AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%') AND alerta_impresora_red = 0
+                """).fetchone()["c"]
+                kpis['kpi_total_impresoras'] = net_pr + loc_pr
+                kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
+                kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
+        except Exception as e:
+            print(f"Error in context processor KPIs (Infra): {e}")
+
+    return {
+        'app_version': APP_VERSION,
+        'csrf_token': generate_csrf_token,
+        'is_authenticated': is_authenticated(),
+        'current_user': current_user(),
+        'auth_mode_label': auth_mode_label(),
+        'has_access': has_permission,
+        'module_access_links': allowed_module_links(),
+        'current_role_label': role_label(),
+        'available_roles': available_roles(),
+        'client_script_base_url': get_public_app_base_url(),
+        'client_script_fallback_url': get_public_script_fallback_url(),
+        **kpis 
+    }
+
 @bp_infrastructure.route('/')
 def index():
     """Muestra el panel principal de Infraestructura: Baterías y UPS"""

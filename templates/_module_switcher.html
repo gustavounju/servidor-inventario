@@ -4,11 +4,7 @@
         <!-- Parte Izquierda: Branding & Usuario -->
         <div class="header-user-section">
             <div class="user-avatar-brief">
-                <div class="avatar-circle">
-                    <i class="bi bi-person-fill"></i>
-                </div>
                 <div class="user-info-text">
-                    <span class="user-kicker">Tu Acceso</span>
                     <div class="user-name">{{ current_user.display_name or current_user.username }}</div>
                     <div class="user-role">
                         <span class="badge-role">{{ current_role_label }}</span>
@@ -48,19 +44,9 @@
                     <i class="bi bi-plus-lg"></i>
                 </button>
 
-                <div class="dropdown d-inline-block">
-                    <button class="action-btn" id="themeDropdown" data-bs-toggle="dropdown" title="Configuración / Temas">
-                        <i class="bi bi-gear-fill"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 glass-dropdown">
-                        <li class="dropdown-header">Apariencia</li>
-                        <li><a class="dropdown-item" href="#" onclick="setTheme('oceanic')"><i class="bi bi-water me-2"></i>Oceanic</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="setTheme('emerald')"><i class="bi bi-gem me-2"></i>Emerald</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="setTheme('midnight')"><i class="bi bi-moon-stars me-2"></i>Midnight</a></li>
-                        <hr class="dropdown-divider">
-                        <li><a class="dropdown-item text-warning" href="{{ url_for('auth.logout') }}"><i class="bi bi-door-open me-2"></i>Salir</a></li>
-                    </ul>
-                </div>
+                <a href="{{ url_for('auth.logout') }}" class="action-btn" title="Salir">
+                    <i class="bi bi-door-open"></i>
+                </a>
             </div>
         </div>
     </div>
@@ -113,9 +99,13 @@
             <div class="kpi-sep"></div>
 
             <!-- Script y Versión -->
-            <div class="kpi-mini-chip clickable" onclick="copyScript()" title="Copiar Script">
+            <div class="kpi-mini-chip clickable" 
+                 data-url-https="{{ client_script_base_url }}/script" 
+                 data-url-http="{{ client_script_fallback_url }}/script"
+                 onclick="copyScript(this)" title="Copiar Script">
                 <i class="bi bi-lightning-charge"></i> <span>Script</span>
             </div>
+
             <div class="kpi-mini-chip" title="Versión">
                 <i class="bi bi-cpu"></i> <span>{{ app_version }}</span>
             </div>
