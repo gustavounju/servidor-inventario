@@ -11,9 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/static/css/gold.css">
     <style>
-        body {
-            padding-top: 62px;
-        }
+
 
         .status-stock {
             background: rgba(34, 197, 94, 0.12);
@@ -45,8 +43,9 @@
     <script defer src="/static/js/security.js"></script>
 </head>
 
-<body>
+<body class="has-fixed-header">
     {% include '_module_switcher.html' %}
+    {% include '_shared_modals.html' %}
 
     <div class="container-fluid px-3" style="margin-top: 110px;">
         <!-- Hero mini -->
@@ -70,7 +69,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Buscar (Serial / Modelo)</label>
-                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar..."
+                        <input type="text" id="stockSearchInput" class="form-control" placeholder="Buscar..."
                             onkeyup="loadComponents()">
                     </div>
                 </div>
@@ -252,7 +251,7 @@
                     tbody.innerHTML = '';
 
                     const statusFilter = document.getElementById('filterStatus').value;
-                    const searchFilter = document.getElementById('searchInput').value.toLowerCase();
+                    const searchFilter = document.getElementById('stockSearchInput').value.toLowerCase();
 
                     const filtered = data.filter(item => {
                         const matchesStatus = !statusFilter || item.status === statusFilter;

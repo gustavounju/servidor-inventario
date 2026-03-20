@@ -97,8 +97,9 @@ def dashboard():
             filter_sql = ""
             filter_params = []
             if q:
-                filter_sql += " AND p.pc_name LIKE %s"
-                filter_params.append(f"%{q}%")
+                filter_sql += " AND (p.pc_name LIKE %s OR p.last_user LIKE %s OR p.ip_address LIKE %s OR p.fuero LIKE %s OR p.os_name LIKE %s OR u.real_name LIKE %s)"
+                filter_params.extend([f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%"])
+            
             if estado in ("True", "False"):
                 filter_sql += " AND p.is_active = %s"
                 filter_params.append(estado)
@@ -120,7 +121,12 @@ def dashboard():
                 filter_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') > 0"
 
             # Ejecutar conteo
-            count_sql = "SELECT COUNT(*) as c FROM pcs p WHERE 1=1" + filter_sql
+            count_sql = """
+                SELECT COUNT(*) as c 
+                FROM pcs p 
+                LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
+                WHERE 1=1
+            """ + filter_sql
             total_rows = conn.execute(count_sql, filter_params).fetchone()["c"]
 
             unassigned_tasks = conn.execute("SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC").fetchall()

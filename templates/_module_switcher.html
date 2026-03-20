@@ -19,10 +19,12 @@
         <div class="header-nav-section">
             <div class="glass-nav-tabs">
                 {% for module in module_access_links %}
+                {% if (module.label != 'Reportes' and module.label != 'Reports') %}
                 <a href="{{ module.url }}" class="nav-tab-item {% if module.active %}active{% endif %}" title="{{ module.label }}">
                     <i class="bi {{ module.icon }}"></i>
                     <span>{{ module.label }}</span>
                 </a>
+                {% endif %}
                 {% endfor %}
             </div>
         </div>
@@ -33,6 +35,12 @@
                 {% if current_user.is_superuser %}
                 <button class="action-btn" data-bs-toggle="modal" data-bs-target="#usersModal" title="Usuarios">
                     <i class="bi bi-people"></i>
+                </button>
+                {% endif %}
+
+                {% if has_access('reports') %}
+                <button class="action-btn" data-bs-toggle="modal" data-bs-target="#reportsModal" title="Reportes">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
                 </button>
                 {% endif %}
                 
@@ -96,6 +104,35 @@
             </div>
 
             <!-- Separador Fine -->
+            <div class="kpi-sep"></div>
+
+            <form action="{{ url_for('dashboard.dashboard') }}" method="GET" class="header-search-container" id="globalSearchForm">
+                <button type="submit" class="search-btn" title="Buscar en todo el sistema">
+                    <i class="bi bi-search search-icon-default"></i>
+                    <div class="spinner-border spinner-border-sm search-spinner d-none" role="status"></div>
+                </button>
+                <input type="text" name="q" id="searchInput" 
+                       placeholder="Buscar PC, Usuario, IP, Fuero, OS..." 
+                       autocomplete="off" 
+                       value="{{ request.args.get('q', '') }}">
+                
+                {% if request.endpoint == 'dashboard.dashboard' %}
+                    {% if request.args.get('estado') %}<input type="hidden" name="estado" value="{{ request.args.get('estado') }}">{% endif %}
+                    {% if request.args.get('alerta') %}<input type="hidden" name="alerta" value="{{ request.args.get('alerta') }}">{% endif %}
+                    {% if request.args.get('os') %}<input type="hidden" name="os" value="{{ request.args.get('os') }}">{% endif %}
+                    {% if request.args.get('filter_tasks') %}<input type="hidden" name="filter_tasks" value="{{ request.args.get('filter_tasks') }}">{% endif %}
+                    {% if request.args.get('per_page') %}<input type="hidden" name="per_page" value="{{ request.args.get('per_page') }}">{% endif %}
+                {% endif %}
+            </form>
+
+            <button class="kpi-mini-chip" onclick="exportToCSV()" title="Exportar CSV">
+                <i class="bi bi-download"></i>
+            </button>
+
+            <button class="kpi-mini-chip" id="toggleCompactBtn" onclick="toggleCompactMode()" title="Modo Compacto">
+                <i class="bi bi-list-ul"></i>
+            </button>
+
             <div class="kpi-sep"></div>
 
             <!-- Script y Versión -->

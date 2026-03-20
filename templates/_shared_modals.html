@@ -1,0 +1,771 @@
+<!-- Modales Compartidos -->
+
+<!-- Modal Crear Tarea Suelta -->
+<div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content task-modal-shell">
+            <form action="{{ url_for('tasks.create_loose_task') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="task-modal-hero">
+                    <h5 class="modal-title" id="createTaskModalLabel">Nueva Tarea General</h5>
+                    <p>Carga pedidos rápidos del día, asigna técnico si ya sabes a quién va y deja el fuero listo para el seguimiento.</p>
+                </div>
+                <div class="modal-header border-0 pb-0">
+                    <div class="task-mini-note">Si dejas categoría vacía, el sistema intenta detectarla automáticamente.</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="task-form-grid">
+                        <div class="task-form-card">
+                            <div class="mb-3">
+                                <label class="form-label">Descripción</label>
+                                <textarea name="descripcion" class="form-control" rows="5" placeholder="Ej: No imprime en mesa de entradas / revisar conectividad / instalar impresora" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Solicitante (Quién llama)</label>
+                                <input type="text" name="solicitante" class="form-control"
+                                    placeholder="Ej: Juan Pérez / Contabilidad" 
+                                    list="usersDatalist" required autocomplete="off">
+                                <datalist id="usersDatalist">
+                                    {% for user in ad_users_list %}
+                                    <option value="{{ user.real_name }}">{{ user.username }}</option>
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <div class="task-form-card">
+                            <div class="mb-3">
+                                <label class="form-label">Categoría</label>
+                                <select name="categoria" class="form-select">
+                                    <option value="">-- Automático --</option>
+                                    <option value="Impresoras">Impresoras</option>
+                                    <option value="Red/Conectividad">Red/Conectividad</option>
+                                    <option value="Hardware">Hardware</option>
+                                    <option value="Software">Software</option>
+                                    <option value="Usuarios">Usuarios</option>
+                                    <option value="General">General</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Fuero / Ubicación</label>
+                                <select name="fuero" class="form-select">
+                                    <option value="">-- No Especificado --</option>
+                                    {% for code, name in fueros.items() %}
+                                    <option value="{{ name }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label">Asignar a Técnico (Opcional)</label>
+                                <select name="technician" class="form-select">
+                                    <option value="">-- Sin Asignar (Bolsa) --</option>
+                                    {% for tech in technicians %}
+                                    <option value="{{ tech.name }}">{{ tech.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="task-mini-note mt-2">Si no asignas técnico, la tarea queda disponible en la bolsa para el equipo.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Gestión de Usuarios y Teléfonos -->
+<div class="modal fade" id="usersModal" tabindex="-1" aria-labelledby="usersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="usersModalLabel">Gestión de Usuarios y Teléfonos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Aquí administras dos cosas distintas: acceso interno al sistema y teléfonos del directorio institucional.</p>
+
+                <div class="users-panel-card border-warning mb-4">
+                    <div class="card-header bg-warning-subtle d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="section-kicker">Acceso interno</span>
+                            <strong>Usuarios del sistema</strong>
+                            <div class="small text-muted">Modo actual: {{ auth_mode_label }}. Crea tu usuario poderoso y luego elimina al inicial `administrador`.</div>
+                        </div>
+                        <span class="badge text-bg-dark">Sesión: {{ current_user.display_name or current_user.username }}</span>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('dashboard.create_app_user') }}" method="POST" class="row g-2 align-items-end mb-3" id="appUserForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">Usuario</label>
+                                <input type="text" name="username" id="appUsername" class="form-control" placeholder="Ej: tuusuario" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">Nombre visible</label>
+                                <input type="text" name="display_name" id="appDisplayName" class="form-control" placeholder="Ej: Juan Perez">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">Clave</label>
+                                <input type="password" name="password" id="appPassword" class="form-control" placeholder="Nueva clave o dejar vacio para conservar">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">Rol</label>
+                                <select name="role" id="appRole" class="form-select" onchange="applyRolePreset()">
+                                    {% for role_name in available_roles %}
+                                    <option value="{{ role_name }}" {% if role_name == 'tecnico' %}selected{% endif %}>{{ role_name|capitalize }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" name="is_superuser" id="newIsSuperuser">
+                                    <label class="form-check-label" for="newIsSuperuser">Superusuario</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="newIsActive" checked>
+                                    <label class="form-check-label" for="newIsActive">Activo</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="must_change_password" id="newMustChangePassword">
+                                    <label class="form-check-label" for="newMustChangePassword">Cambio forzado</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted mb-1">Permisos</label>
+                                <div class="d-flex flex-wrap gap-3 mt-1">
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_dashboard" id="permDashboard"><label class="form-check-label" for="permDashboard">Dashboard</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_mobile" id="permMobile" checked><label class="form-check-label" for="permMobile">Mobile</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_infrastructure" id="permInfrastructure"><label class="form-check-label" for="permInfrastructure">Infra/Stock</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_reports" id="permReports"><label class="form-check-label" for="permReports">Reportes</label></div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-grid">
+                                <button type="submit" class="btn btn-warning">Guardar</button>
+                            </div>
+                        </form>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Nombre</th>
+                                        <th>Rol</th>
+                                        <th>Accesos</th>
+                                        <th>Estado</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for app_user in app_users_list %}
+                                    <tr>
+                                        <td><code>{{ app_user.username }}</code></td>
+                                        <td>{{ app_user.display_name or '-' }}</td>
+                                        <td>
+                                            {% if app_user.is_superuser %}
+                                            <span class="badge text-bg-danger">Superusuario</span>
+                                            {% else %}
+                                            <span class="badge text-bg-secondary">{{ app_user.role or 'tecnico' }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if app_user.can_access_dashboard %}<span class="access-pill"><i class="bi bi-grid"></i>Dash</span>{% endif %}
+                                            {% if app_user.can_access_mobile %}<span class="access-pill"><i class="bi bi-phone"></i>Mob</span>{% endif %}
+                                            {% if app_user.can_access_infrastructure %}<span class="access-pill"><i class="bi bi-hdd-network"></i>Infra</span>{% endif %}
+                                            {% if app_user.can_access_reports %}<span class="access-pill"><i class="bi bi-file-earmark-bar-graph"></i>Rep</span>{% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge text-bg-{{ 'success' if app_user.is_active else 'secondary' }}">{{ 'Activo' if app_user.is_active else 'Inactivo' }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" 
+                                                    data-user='{{ app_user|tojson|safe }}'
+                                                    onclick="editAppUser(JSON.parse(this.getAttribute('data-user')))">Editar</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="users-panel-card border-primary">
+                    <div class="card-header bg-primary-subtle">
+                        <span class="section-kicker">Directorio institucional</span>
+                        <strong>Usuarios AD y teléfonos</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="search-shell mb-3">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="userSearchInput" class="form-control" placeholder="Buscar usuario..." onkeyup="filterUsersList()">
+                        </div>
+
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-sm table-hover align-middle" id="usersTableList">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>Usuario AD</th>
+                                        <th>Nombre Real</th>
+                                        <th>Teléfono IP</th>
+                                        <th class="text-end">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in ad_users_list %}
+                                    <tr class="user-item">
+                                        <td class="username-cell"><code>{{ user.username }}</code></td>
+                                        <td class="realname-cell fw-bold">{{ user.real_name }}</td>
+                                        <td>{{ user.phone or '-' }}</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-primary" 
+                                                    data-username="{{ user.username|e }}"
+                                                    data-realname="{{ user.real_name|e }}"
+                                                    data-phone="{{ (user.phone or '')|e }}"
+                                                    onclick="openUserPhoneEdit(this.dataset.username, this.dataset.realname, this.dataset.phone)">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="userPhoneEditFormContainer" class="card mt-3 border-primary d-none">
+                            <div class="card-header bg-primary text-white py-2">
+                                <span class="fw-bold fs-6">Actualizar Teléfono</span>
+                                <button type="button" class="btn-close btn-close-white float-end" onclick="closeUserPhoneEdit()"></button>
+                            </div>
+                            <div class="card-body py-2">
+                                <form action="{{ url_for('dashboard.update_user_phone') }}" method="POST" class="row gx-2 align-items-center">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="username" id="editUsername">
+                                    <input type="hidden" name="realname" id="editRealnameHidden">
+                                    <div class="col-sm-5">
+                                        <input type="text" id="editRealnameDisplay" class="form-control form-control-sm" readonly>
+                                    </div>
+                                    <div class="col-sm-5">
+                                        <input type="text" name="phone" id="editPhone" class="form-control form-control-sm" placeholder="Ej: 1045">
+                                    </div>
+                                    <div class="col-sm-2 text-end">
+                                        <button type="submit" class="btn btn-sm btn-success w-100">Cargar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reportes Rápidos -->
+<div class="modal fade" id="reportsModal" tabindex="-1" aria-labelledby="reportsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="reportsModalLabel"><i class="bi bi-file-earmark-bar-graph me-2"></i>Exportar Reportes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 bg-light shadow-none">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3">Reporte de Tareas</h6>
+                                <div class="mb-3">
+                                    <label class="form-label small">Fecha específica</label>
+                                    <input type="date" id="reportDate" class="form-control" value="{{ now_date }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small">Filtrar por PC (Opcional)</label>
+                                    <input type="text" id="reportPcName" class="form-control" placeholder="Nombre de PC...">
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button onclick="downloadReport('excel')" class="btn btn-success btn-sm">
+                                        <i class="bi bi-file-earmark-excel me-2"></i>Descargar Excel
+                                    </button>
+                                    <button onclick="downloadReport('pdf')" class="btn btn-danger btn-sm">
+                                        <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 bg-light shadow-none">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3">Inventario General</h6>
+                                <p class="small text-muted">Descarga el estado actual de todas las PCs activas.</p>
+                                <div class="d-grid gap-2 mt-4">
+                                    <a href="{{ url_for('dashboard.export_inventory') }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>Inventario (Excel)
+                                    </a>
+                                    <form action="{{ url_for('dashboard.export_inventory_pdf') }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                            <i class="bi bi-file-earmark-pdf me-2"></i>Inventario (PDF)
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('tasks.report_tasks_completed') }}" class="btn btn-sm btn-link">Ver Panel Completo</a>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Asignar Tarea a PC -->
+<div class="modal fade" id="assignTaskModal" tabindex="-1" aria-labelledby="assignTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('tasks.assign_task') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="task_id" id="assignTaskId">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignTaskModalLabel">Asignar Tarea a PC</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Seleccione la PC responsable:</label>
+                        <select name="pc_name" class="form-select" required size="10">
+                            <option value="">Seleccione PC...</option>
+                            {% for pc in all_pcs %}
+                            <option value="{{ pc.pc_name }}">{{ pc.pc_name }} | {{ pc.fuero or '-' }} | {{ pc.last_user or '?' }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Puede escribir para buscar en la lista desplegada.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Asignar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Upload Manual -->
+<div class="modal fade" id="uploadManualModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('api.upload_manual_inventory') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Subir Inventario Offline</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Seleccione el archivo JSON generado en el escritorio de la PC sin conexión.</p>
+                    <input type="file" name="file" class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Subir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Salud -->
+<div class="modal fade" id="healthModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Salud del Equipo: <span id="healthPcName">...</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body overflow-auto" style="max-height: 80vh;">
+                <div id="healthLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2">Analizando diagnóstico...</p>
+                </div>
+                <div id="healthError" class="alert alert-danger d-none"></div>
+                
+                <div id="healthContent" class="d-none">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card p-3 text-center h-100 border-0 bg-light shadow-sm">
+                                <h2 id="healthUptime" class="mb-0">0</h2>
+                                <small class="text-muted d-block uppercase tracking-wider">Días Online</small>
+                                <span id="healthUptimeMsg" class="badge mt-2"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card p-3 h-100 border-0 bg-light shadow-sm">
+                                <h6 class="fw-bold mb-2">Almacenamiento (Discos)</h6>
+                                <div id="healthDiskSpaceContainer" class="row g-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold border-bottom pb-1 mb-3">Integridad Física (SMART)</h6>
+                    <ul id="healthSmartList" class="list-group list-group-flush mb-4 small"></ul>
+
+                    <h6 class="fw-bold border-bottom pb-1 mb-2">Eventos Críticos Recientes (System Logs)</h6>
+                    <ul id="healthEventsList" class="list-group list-group-flush small"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Seguridad -->
+<div class="modal fade" id="securityModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Auditoría de Seguridad: <span id="securityPcName">...</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background: #f8f9fa;">
+                <div id="securityLoading" class="text-center py-5">
+                    <div class="spinner-border text-warning"></div>
+                    <p class="mt-2">Extrayendo conexiones y procesos...</p>
+                </div>
+                <div id="securityError" class="alert alert-danger d-none"></div>
+
+                <div id="securityContent" class="d-none">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <div class="p-3 bg-primary bg-opacity-10 rounded-circle text-primary">
+                                        <i class="bi bi-shield-lock-fill fs-2"></i>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <h6 class="mb-1 fw-bold">Software de Protección</h6>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span id="securityAntivirus" class="badge fs-6 bg-secondary">Cargando...</span>
+                                        <small class="text-muted">Estado detectado al momento del reporte.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-5">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white border-0 py-3">
+                                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-lightning-auto text-warning me-1"></i> Programas de Inicio (Startup)</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
+                                            <thead class="bg-light">
+                                                <tr><th>Nombre</th><th>Comando</th></tr>
+                                            </thead>
+                                            <tbody id="securityStartupBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-7">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white border-0 py-3">
+                                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-globe text-info me-1"></i> Conexiones Externas Activas</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive" style="max-height: 500px;">
+                                        <table class="table table-sm table-striped mb-0" style="font-size: 0.8rem;">
+                                            <thead class="bg-light sticky-top">
+                                                <tr><th>Proceso</th><th>PID</th><th>Remoto</th><th>Estado</th></tr>
+                                            </thead>
+                                            <tbody id="securityTableBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function downloadReport(format) {
+        const date = document.getElementById('reportDate').value;
+        const pc = document.getElementById('reportPcName').value;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        
+        if (format === 'excel') {
+            form.action = "{{ url_for('tasks.report_tasks_completed') }}";
+        } else {
+            form.action = "{{ url_for('tasks.report_tasks_completed_pdf') }}";
+        }
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = "{{ csrf_token() }}";
+        form.appendChild(csrfInput);
+        
+        const dateInput = document.createElement('input');
+        dateInput.type = 'hidden';
+        dateInput.name = 'fecha';
+        dateInput.value = date;
+        form.appendChild(dateInput);
+        
+        const pcInput = document.createElement('input');
+        pcInput.type = 'hidden';
+        pcInput.name = 'pc_name';
+        pcInput.value = pc;
+        form.appendChild(pcInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+
+    // Diagnostics logic updated to use API and full rendering
+    function showHealth(pcName) {
+        document.getElementById('healthPcName').innerText = pcName;
+        document.getElementById('healthLoading').classList.remove('d-none');
+        document.getElementById('healthContent').classList.add('d-none');
+        document.getElementById('healthError').classList.add('d-none');
+        
+        const modal = new bootstrap.Modal(document.getElementById('healthModal'));
+        modal.show();
+        
+        fetch('/api/health/' + encodeURIComponent(pcName))
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('healthLoading').classList.add('d-none');
+                if (data.status === 'success') {
+                    document.getElementById('healthContent').classList.remove('d-none');
+                    const h = data.data || {};
+
+                    // Uptime
+                    const days = h.Uptime_Dias || 0;
+                    const uptimeEl = document.getElementById('healthUptime');
+                    uptimeEl.innerText = days;
+                    uptimeEl.className = "mb-0 " + (days > 15 ? "text-danger" : "text-success");
+                    document.getElementById('healthUptimeMsg').innerText = days > 15 ? "Crítico > 15 días" : "Estado Saludable";
+                    document.getElementById('healthUptimeMsg').className = "badge mt-2 " + (days > 15 ? "text-bg-danger" : "text-bg-success");
+
+                    // Discos Espacio
+                    const spaceContainer = document.getElementById('healthDiskSpaceContainer');
+                    spaceContainer.innerHTML = '';
+                    (h.Discos_Espacio || []).forEach(d => {
+                        let color = d.FreeGB < 5 ? 'danger' : (d.FreeGB < 15 ? 'warning' : 'success');
+                        let card = `
+                            <div class="col-md-6 mb-2">
+                                <div class="small fw-bold d-flex justify-content-between">
+                                    <span>${d.Letter}</span>
+                                    <span class="text-${color}">${d.FreeGB} GB</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-${color}" style="width: ${100 - (d.PctFree || 0)}%"></div>
+                                </div>
+                            </div>`;
+                        spaceContainer.innerHTML += card;
+                    });
+
+                    // SMART
+                    const smartList = document.getElementById('healthSmartList');
+                    smartList.innerHTML = '';
+                    (h.Discos_SMART || []).forEach(d => {
+                        let statusColor = d.Status === 'OK' ? 'text-success' : 'text-danger';
+                        smartList.innerHTML += `<li class="list-group-item bg-transparent d-flex justify-content-between p-1">
+                            <span>${d.Model}</span>
+                            <span class="fw-bold ${statusColor}">${d.Status}</span>
+                        </li>`;
+                    });
+
+                    // Eventos
+                    const eventList = document.getElementById('healthEventsList');
+                    eventList.innerHTML = '';
+                    if (h.Eventos_Criticos && h.Eventos_Criticos.length > 0) {
+                        h.Eventos_Criticos.forEach(e => {
+                            eventList.innerHTML += `<li class="list-group-item list-group-item-danger border-0 p-1 mb-1 rounded small">
+                                <strong>${e.Source}</strong>: ${e.Msg}
+                            </li>`;
+                        });
+                    } else {
+                        eventList.innerHTML = `<li class="list-group-item bg-transparent text-muted text-center py-2">Sin errores críticos detectados</li>`;
+                    }
+
+                } else {
+                    document.getElementById('healthError').innerText = data.message || "Error al cargar diagnóstico.";
+                    document.getElementById('healthError').classList.remove('d-none');
+                }
+            })
+            .catch(err => {
+                document.getElementById('healthLoading').classList.add('d-none');
+                document.getElementById('healthError').innerText = "Error de conexión: " + err;
+                document.getElementById('healthError').classList.remove('d-none');
+            });
+    }
+
+    function showSecurity(pcName) {
+        document.getElementById('securityPcName').innerText = pcName;
+        document.getElementById('securityLoading').classList.remove('d-none');
+        document.getElementById('securityContent').classList.add('d-none');
+        document.getElementById('securityError').classList.add('d-none');
+        
+        const modal = new bootstrap.Modal(document.getElementById('securityModal'));
+        modal.show();
+        
+        fetch('/api/security/' + encodeURIComponent(pcName))
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('securityLoading').classList.add('d-none');
+                if (data.status === 'success') {
+                    document.getElementById('securityContent').classList.remove('d-none');
+
+                    // 1. Antivirus
+                    const avBadge = document.getElementById('securityAntivirus');
+                    const avName = (data.seguridad_extra && data.seguridad_extra.Antivirus) || 'Desconocido';
+                    avBadge.innerText = avName;
+                    avBadge.className = 'badge fs-6 ' + (avName === 'No Detectado' ? 'bg-danger' : 'bg-success');
+
+                    // 2. Startup
+                    const startupTbody = document.getElementById('securityStartupBody');
+                    startupTbody.innerHTML = '';
+                    const startups = (data.seguridad_extra && data.seguridad_extra.Startup) || [];
+                    if (startups.length > 0) {
+                        startups.forEach(st => {
+                            startupTbody.innerHTML += `<tr><td class="fw-bold">${st.Name}</td><td class="text-muted"><small>${st.Command}</small></td></tr>`;
+                        });
+                    } else {
+                        startupTbody.innerHTML = `<tr><td colspan="2" class="text-center py-3 text-muted">No se detectaron programas extra de inicio.</td></tr>`;
+                    }
+
+                    // 3. Conexiones
+                    const tbody = document.getElementById('securityTableBody');
+                    tbody.innerHTML = '';
+                    if (data.data && data.data.length > 0) {
+                        data.data.forEach(conn => {
+                            tbody.innerHTML += `<tr>
+                                <td class="text-primary fw-bold">${conn.Process || '?'}</td>
+                                <td>${conn.PID || '-'}</td>
+                                <td><code>${conn.Remote}</code></td>
+                                <td><span class="badge ${conn.State === 'ESTABLISHED' ? 'bg-success' : 'bg-warning'}">${conn.State}</span></td>
+                            </tr>`;
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay conexiones externas activas.</td></tr>`;
+                    }
+                } else {
+                    document.getElementById('securityError').innerText = data.message || "Error al cargar auditoría.";
+                    document.getElementById('securityError').classList.remove('d-none');
+                }
+            })
+            .catch(err => {
+                document.getElementById('securityLoading').classList.add('d-none');
+                document.getElementById('securityError').innerText = "Error de red: " + err;
+                document.getElementById('securityError').classList.remove('d-none');
+            });
+    }
+
+    // Set default date to today
+    document.addEventListener('DOMContentLoaded', function() {
+        const reportDate = document.getElementById('reportDate');
+        if (reportDate) {
+            const today = new Date().toISOString().split('T')[0];
+            reportDate.value = today;
+        }
+    });
+</script>
+
+<!-- Scripts para Modales (Se incluirán una sola vez) -->
+<script>
+    function filterUsersList() {
+        var input = document.getElementById("userSearchInput").value.toLowerCase();
+        var trs = document.querySelectorAll("#usersTableList tbody tr.user-item");
+        trs.forEach(function(tr) {
+            var username = tr.querySelector(".username-cell").textContent.toLowerCase();
+            var realname = tr.querySelector(".realname-cell").textContent.toLowerCase();
+            if (username.indexOf(input) > -1 || realname.indexOf(input) > -1) {
+                tr.style.display = "";
+            } else {
+                tr.style.display = "none";
+            }
+        });
+    }
+    
+    function openUserPhoneEdit(username, realname, currentPhone) {
+        var container = document.getElementById("userPhoneEditFormContainer");
+        if (!container) return;
+        container.classList.remove("d-none");
+        document.getElementById("editUsername").value = username;
+        document.getElementById("editRealnameHidden").value = realname;
+        document.getElementById("editRealnameDisplay").value = realname + " (" + username + ")";
+        document.getElementById("editPhone").value = currentPhone;
+        document.getElementById("editPhone").focus();
+    }
+    
+    function closeUserPhoneEdit() {
+        var container = document.getElementById("userPhoneEditFormContainer");
+        if (container) container.classList.add("d-none");
+    }
+
+    const rolePresets = {
+        administrador: { dashboard: true, mobile: true, infrastructure: true, reports: true },
+        operador: { dashboard: true, mobile: true, infrastructure: false, reports: true },
+        tecnico: { dashboard: false, mobile: true, infrastructure: false, reports: false },
+        infraestructura: { dashboard: true, mobile: true, infrastructure: true, reports: true },
+        consulta: { dashboard: false, mobile: false, infrastructure: false, reports: true }
+    };
+
+    function setAccessChecks(values) {
+        if (!document.getElementById('permDashboard')) return;
+        document.getElementById('permDashboard').checked = !!values.dashboard;
+        document.getElementById('permMobile').checked = !!values.mobile;
+        document.getElementById('permInfrastructure').checked = !!values.infrastructure;
+        document.getElementById('permReports').checked = !!values.reports;
+    }
+
+    function applyRolePreset() {
+        const roleEl = document.getElementById('appRole');
+        const superuserEl = document.getElementById('newIsSuperuser');
+        if (!roleEl || !superuserEl) return;
+        const role = roleEl.value;
+        if (superuserEl.checked) {
+            setAccessChecks({ dashboard: true, mobile: true, infrastructure: true, reports: true });
+            return;
+        }
+        setAccessChecks(rolePresets[role] || rolePresets.tecnico);
+    }
+
+    function editAppUser(user) {
+        const usernameEl = document.getElementById('appUsername');
+        if (!usernameEl) return;
+        usernameEl.value = user.username || '';
+        document.getElementById('appDisplayName').value = user.display_name || '';
+        document.getElementById('appPassword').value = '';
+        document.getElementById('appRole').value = user.role || 'tecnico';
+        document.getElementById('newIsSuperuser').checked = !!user.is_superuser;
+        document.getElementById('newIsActive').checked = !!user.is_active;
+        document.getElementById('newMustChangePassword').checked = !!user.must_change_password;
+        setAccessChecks({
+            dashboard: !!user.can_access_dashboard,
+            mobile: !!user.can_access_mobile,
+            infrastructure: !!user.can_access_infrastructure,
+            reports: !!user.can_access_reports
+        });
+        usernameEl.focus();
+    }
+</script>

@@ -55,12 +55,22 @@ app.register_blueprint(bp_auth)
 # Filtros para Jinja (si queda alguno que estuviéramos usando, aunque los que se usaban ya están resueltos o no declarados como filters globales en servidor.py original excepto quizas datetime_es, pero lo importabamos donde hiciera falta).
 from services.reporting import format_datetime_es
 app.jinja_env.filters['datetime_es'] = format_datetime_es
-
 # Contexto Global para todas las plantillas (Jinja2)
 @app.context_processor
 def inject_global_vars():
+    from utils.constants import FUERO_MAPPING
+    from utils.auth import list_app_users, list_technician_users
+    
     # KPIs Globales para el Header Premium (Command Center)
     kpis = {}
+    extra_data = {
+        'ad_users_list': [],
+        'fueros': FUERO_MAPPING,
+        'technicians': [],
+        'app_users_list': [],
+        'all_pcs': []
+    }
+    
     if is_authenticated():
         try:
             with get_db_connection() as conn:
@@ -80,6 +90,31 @@ def inject_global_vars():
                 
                 kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
                 kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
+
+                # Extra Data for Shared Modals
+                extra_data['app_users_list'] = list_app_users()
+                extra_data['technicians'] = list_technician_users()
+                
+                ad_users_query = """
+                    SELECT username, real_name, phone 
+                    FROM ad_users
+                    UNION
+                    SELECT DISTINCT 
+                        LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
+                        last_user as real_name, 
+                        NULL as phone 
+                    FROM pcs 
+                    WHERE last_user IS NOT NULL 
+                      AND last_user != '' 
+                      AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
+                    ORDER BY real_name
+                """
+                extra_data['ad_users_list'] = [dict(row) for row in conn.execute(ad_users_query).fetchall()]
+                
+                extra_data['all_pcs'] = [dict(row) for row in conn.execute(
+                    "SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 'True' ORDER BY pc_name"
+                ).fetchall()]
+                
         except Exception as e:
             print(f"Error in context processor KPIs: {e}")
 
@@ -95,7 +130,8 @@ def inject_global_vars():
         'available_roles': available_roles(),
         'client_script_base_url': get_public_app_base_url(),
         'client_script_fallback_url': get_public_script_fallback_url(),
-        **kpis 
+        **kpis,
+        **extra_data
     }
 
 

@@ -37,8 +37,238 @@ function copyScript(btn) {
     });
 }
 
-// Initialize theme on load
+// ===== Buscador Global (Header) =====
+document.addEventListener('DOMContentLoaded', function () {
+    // Buscar el input de búsqueda de forma más robusta
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) {
+        console.warn("Inventario GOLD: searchInput no encontrado.");
+        return;
+    }
+
+    let searchDebounce = null;
+    let currentSearchQuery = searchInput.value;
+    let ajaxAbortController = null;
+
+    searchInput.addEventListener('input', function () {
+        const query = searchInput.value.trim();
+        const filter = query.toLowerCase();
+        const table = document.getElementById('inventoryTable');
+        
+        // 1. Filtrado Local Instantáneo
+        if (table) {
+            const rows = table.querySelectorAll('tbody tr:not(.no-results-row)');
+            let visibleCount = 0;
+            rows.forEach(function (tr) {
+                // Buscamos en el texto de la fila y también en atributos data si existen
+                const text = tr.textContent.toLowerCase();
+                const so = (tr.getAttribute('data-so') || '').toLowerCase();
+                const isMatch = text.indexOf(filter) > -1 || so.indexOf(filter) > -1;
+                
+                tr.style.display = isMatch ? '' : 'none';
+                if (isMatch) visibleCount++;
+            });
+
+            // Si no hay locales visibles y hay filtro, mostrar aviso
+            let noResultsRow = table.querySelector('.no-results-row');
+            if (visibleCount === 0 && filter.length > 0) {
+                if (!noResultsRow) {
+                    const tbody = table.querySelector('tbody');
+                    const colCount = table.querySelectorAll('thead th').length;
+                    noResultsRow = document.createElement('tr');
+                    noResultsRow.className = 'no-results-row';
+                    noResultsRow.innerHTML = `<td colspan="${colCount}" class="text-center py-4 text-muted"> <i class="bi bi-search me-2"></i> No se encontraron resultados locales. Buscando...</td>`;
+                    tbody.appendChild(noResultsRow);
+                }
+            } else if (noResultsRow) {
+                noResultsRow.remove();
+            }
+        }
+
+        // 2. Búsqueda Global AJAX (Debounced)
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+            if (searchInput.value.trim() === currentSearchQuery) return;
+            currentSearchQuery = searchInput.value.trim();
+            console.log("Inventario GOLD: Iniciando búsqueda en vivo para:", currentSearchQuery);
+            executeGlobalSearchAjax(currentSearchQuery);
+        }, 400); 
+    });
+
+    async function executeGlobalSearchAjax(q) {
+        const tableContainer = document.getElementById('inventoryTableContainer');
+        const spinner = document.querySelector('.search-spinner');
+        const defIcon = document.querySelector('.search-icon-default');
+        
+        if (!tableContainer) return; 
+
+        // Abortar búsqueda anterior si está en curso
+        if (ajaxAbortController) {
+            ajaxAbortController.abort();
+        }
+        ajaxAbortController = new AbortController();
+
+        const url = new URL(window.location.href);
+        const isDashboard = window.location.pathname === '/' || window.location.pathname.includes('dashboard');
+        
+        if (!isDashboard) {
+            console.log("Inventario GOLD: Live search omitido (fuera de Dashboard).");
+            return;
+        }
+
+        url.searchParams.set('q', q);
+        url.searchParams.set('page', 1);
+
+        // Mostrar Spinner
+        if (spinner && defIcon) {
+            spinner.classList.remove('d-none');
+            defIcon.classList.add('d-none');
+        }
+
+        try {
+            const response = await fetch(url.toString(), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                signal: ajaxAbortController.signal
+            });
+
+            if (!response.ok) throw new Error("Server error: " + response.status);
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const newTable = doc.getElementById('inventoryTableContainer');
+            if (newTable) {
+                // Efecto visual de actualización (flash amarillo)
+                tableContainer.style.transition = 'background-color 0.3s';
+                tableContainer.style.backgroundColor = 'rgba(255, 243, 205, 0.5)';
+                
+                tableContainer.innerHTML = newTable.innerHTML;
+                
+                setTimeout(() => {
+                    tableContainer.style.backgroundColor = '';
+                }, 400);
+
+                if (isCompactMode) {
+                    tableContainer.querySelectorAll('tbody tr td').forEach(td => {
+                        td.style.padding = '0.4rem 0.5rem';
+                    });
+                }
+            }
+
+            // Actualizar Paginación
+            const oldPag = document.getElementById('mainPagination');
+            const newPag = doc.getElementById('mainPagination');
+            if (oldPag && newPag) {
+                oldPag.outerHTML = newPag.outerHTML;
+            } else if (oldPag) {
+                oldPag.style.display = 'none';
+            } else if (newPag) {
+                tableContainer.after(newPag);
+            }
+
+            window.history.replaceState({ path: url.toString() }, '', url.toString());
+
+        } catch (err) {
+            if (err.name === 'AbortError') {
+                console.log("Inventario GOLD: Búsqueda abortada (nueva en curso).");
+            } else {
+                console.error('Inventario GOLD: Error en búsqueda en vivo:', err);
+            }
+        } finally {
+            if (spinner && defIcon) {
+                spinner.classList.add('d-none');
+                defIcon.classList.remove('d-none');
+            }
+        }
+    }
+});
+
+// ===== Exportar CSV Filtrado =====
+function exportToCSV() {
+    const table = document.getElementById('inventoryTable');
+    if (!table) return;
+    
+    const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
+    let csv = [];
+
+    // Headers
+    const headers = Array.from(table.querySelectorAll('thead th')).map(th =>
+        th.textContent.trim().replace(/ ↑| ↓/g, '')
+    );
+    csv.push(headers.join(','));
+
+    // Datos visibles
+    rows.forEach(row => {
+        const cols = Array.from(row.querySelectorAll('td')).map(td => {
+            let text = td.textContent.trim();
+            if (text.includes(',') || text.includes('"')) {
+                text = '"' + text.replace(/"/g, '""') + '"';
+            }
+            return text;
+        });
+        csv.push(cols.join(','));
+    });
+
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'inventario_filtrado_' + new Date().toISOString().slice(0, 10) + '.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// ===== Modo Compacto/Expandido =====
+let isCompactMode = localStorage.getItem('compactMode') === 'true';
+
+function toggleCompactMode() {
+    const table = document.getElementById('inventoryTable');
+    if (!table) return;
+    
+    isCompactMode = !isCompactMode;
+    const rows = table.querySelectorAll('tbody tr');
+
+    if (isCompactMode) {
+        table.style.fontSize = '0.75rem';
+        rows.forEach(row => {
+            row.querySelectorAll('td').forEach(td => {
+                td.style.padding = '0.4rem 0.5rem';
+            });
+        });
+    } else {
+        table.style.fontSize = '';
+        rows.forEach(row => {
+            row.querySelectorAll('td').forEach(td => {
+                td.style.padding = '';
+            });
+        });
+    }
+
+    localStorage.setItem('compactMode', isCompactMode);
+    
+    const icon = document.querySelector('#toggleCompactBtn i');
+    if (icon) {
+        icon.className = isCompactMode ? 'bi bi-distribute-vertical' : 'bi bi-list-ul';
+    }
+}
+
+// Initialize theme and compact mode on load
 (function() {
     const savedTheme = localStorage.getItem('theme') || 'oceanic';
     document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    if (isCompactMode) {
+        document.addEventListener('DOMContentLoaded', () => {
+            // Re-apply if table exists
+            const table = document.getElementById('inventoryTable');
+            if (table) {
+                isCompactMode = !isCompactMode; // Toggle back then run toggle to apply
+                toggleCompactMode();
+            }
+        });
+    }
 })();
