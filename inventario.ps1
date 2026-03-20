@@ -312,13 +312,12 @@ try {
             if ($bestPrinter.Network -eq $true -or $printerPort -like "\\*") {
                 $printerPort += " (Red)"
             }
-            # 2. Definitivamente LOCAL FÍSICO (USB, LPT, COM, DOT4 para HP)
-            elseif ($printerPort -like "USB*" -or $printerPort -like "DOT4*" -or $printerPort -like "LPT*" -or $printerPort -like "COM*") {
+            # 2. Puertos LOCALES conocidos (Físicos y Virtuales de Sisema)
+            elseif ($printerPort -like "USB*" -or $printerPort -like "DOT4*" -or $printerPort -like "LPT*" -or $printerPort -like "COM*" -or $printerPort -like "FILE:" -or $printerPort -like "NUL:" -or $printerPort -like "PORTPROMPT:" -or $printerPort -like "*PDF*" -or $printerPort -like "*XPS*") {
                 $printerPort += " (Local)"
                 
-                # Verificación PnP para USB/DOT4
+                # Verificación PnP para cables USB/DOT4
                 if ($printerPort -like "USB*" -or $printerPort -like "DOT4*") {
-                    # Escape manual para evitar errores de regex en nombres con backslash
                     $cleanName = $bestPrinter.Name -replace "[\\]", "\\"
                     try {
                         $pnp = Get-WmiObject Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Name -match [regex]::Escape($cleanName) -or $_.Description -match [regex]::Escape($cleanName) }
@@ -329,13 +328,9 @@ try {
                     catch {}
                 }
             }
-            # 3. Puertos de red modernos (TCP/IP directo, IPv4, DNS, WSD, marcas específicas como Ricoh/Konica/HP/Brother)
-            elseif ($printerPort -match "\b(?:\d{1,3}\.){3}\d{1,3}\b" -or $printerPort -match "^IP_" -or $printerPort -match "^WSD" -or $printerPort -match "^LAN_" -or $printerPort -match "^RNP_" -or $printerPort -match "^RIC" -or $printerPort -match "^RI_" -or $printerPort -match "^SEC" -or $printerPort -match "^BR[NW]" -or $printerPort -match "^NPI" -or $printerPort -match "^KON") {
-                $printerPort += " (Red)"
-            }
-            # 4. Resto (ej: FILE:, NUL:, puertos virtuales genéricos, etc)
+            # 3. TODO LO DEMÁS se asume RED (TCP/IP directo, DNS, Ricoh LAN, WSD, etc)
             else {
-                $printerPort += " (Local)"
+                $printerPort += " (Red)"
             }
         }
     }
