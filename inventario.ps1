@@ -306,6 +306,8 @@ try {
         if ($bestPrinter) {
             $printerModel = $bestPrinter.Name
             $printerPort = $bestPrinter.PortName
+            # Limpiar prefijos/sufijos internos de Windows (Ej: IP_10.15.2.50_1 -> 10.15.2.50)
+            $printerPort = $printerPort -replace "^IP_", "" -replace "_[0-9]+$", ""
             
             # Etiquetar tipo
             # 1. Definitivamente RED (Conexión a servidor de impresión o share)
