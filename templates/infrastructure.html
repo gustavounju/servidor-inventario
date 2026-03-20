@@ -34,36 +34,46 @@
         {% endwith %}
 
         <style>
+            .custom-tabs {
+                border-bottom: 1px solid var(--border-color);
+            }
+            .custom-tabs .nav-item {
+                margin-bottom: -1px;
+            }
             .custom-tabs .nav-link {
-                color: var(--text-color);
-                background: var(--card-bg);
-                border: 1px solid var(--border-color);
+                color: var(--text-muted);
+                background: transparent;
+                border: none;
+                border-bottom: 3px solid transparent;
+                border-radius: 0;
+                font-weight: 600;
+                padding: 12px 20px;
                 transition: all 0.2s;
             }
             .custom-tabs .nav-link:hover {
-                background: color-mix(in srgb, var(--accent-color) 8%, var(--card-bg));
+                color: var(--text-color);
+                background: color-mix(in srgb, var(--accent-color) 4%, transparent);
             }
             .custom-tabs .nav-link.active {
-                background: var(--primary-gradient);
-                color: #fff;
-                border-color: transparent;
-                box-shadow: 0 4px 12px var(--kpi-shadow);
+                color: var(--accent-color) !important;
+                border-bottom: 3px solid var(--accent-color);
+                background: transparent;
             }
         </style>
 
         <!-- Tabs Nav -->
-        <ul class="nav nav-pills custom-tabs mb-4 gap-2" id="infraTabs" role="tablist">
+        <ul class="nav custom-tabs mb-4 px-2" id="infraTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-bold px-4 rounded-pill" id="ups-tab" data-bs-toggle="pill" data-bs-target="#ups" type="button" role="tab" aria-selected="true"><i class="bi bi-plug-fill me-2"></i> Equipos UPS y Asignaciones</button>
+                <button class="nav-link active" id="ups-tab" data-bs-toggle="tab" data-bs-target="#ups" type="button" role="tab" aria-selected="true"><i class="bi bi-plug-fill me-2"></i> Equipos UPS y Asignaciones</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold px-4 rounded-pill" id="components-tab" data-bs-toggle="pill" data-bs-target="#components" type="button" role="tab" aria-selected="false"><i class="bi bi-cpu me-2"></i> Periféricos y Hardware</button>
+                <button class="nav-link" id="components-tab" data-bs-toggle="tab" data-bs-target="#components" type="button" role="tab" aria-selected="false"><i class="bi bi-cpu me-2"></i> Periféricos y Hardware</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold px-4 rounded-pill" id="printers-tab" data-bs-toggle="pill" data-bs-target="#printers" type="button" role="tab" aria-selected="false"><i class="bi bi-printer me-2"></i> Impresoras de Red</button>
+                <button class="nav-link" id="printers-tab" data-bs-toggle="tab" data-bs-target="#printers" type="button" role="tab" aria-selected="false"><i class="bi bi-printer me-2"></i> Impresoras de Red</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold px-4 rounded-pill" id="history-tab" data-bs-toggle="pill" data-bs-target="#history" type="button" role="tab" aria-selected="false"><i class="bi bi-clock-history me-2"></i> Historial de Actividad</button>
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-selected="false"><i class="bi bi-clock-history me-2"></i> Historial de Actividad</button>
             </li>
         </ul>
 
