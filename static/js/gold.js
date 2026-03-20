@@ -14,9 +14,51 @@ function setTheme(themeName) {
     });
 }
 
-function onFilterClick(param, value) {
-    const url = new URL(window.location.href);
-    url.searchParams.set(param, value);
+function onFilterClick(type) {
+    let url;
+    // Si estamos en cualquier otra página (ej. /infra/ o /reportes/), redirigir al Dashboard (/)
+    if (window.location.pathname !== '/' && window.location.pathname !== '/cementerio') {
+        url = new URL(window.location.protocol + "//" + window.location.host + "/");
+    } else {
+        url = new URL(window.location.href);
+    }
+
+    const currentAlerta = url.searchParams.get('alerta');
+    const currentOs = url.searchParams.get('os');
+    const currentTasks = url.searchParams.get('filter_tasks');
+
+    // Reset page param on new filter
+    url.searchParams.set('page', 1);
+
+    // Clear existing specific filters to allow toggling/switching
+    url.searchParams.delete('alerta');
+    url.searchParams.delete('os');
+    url.searchParams.delete('filter_tasks');
+
+    // Toggle logic: Si se hizo click en el que NO estaba activo, se activa.
+    // Si estaba activo (toggle-off), se quitó arriba y quedará limpio.
+    if (type === 'ram' && currentAlerta !== 'ram') {
+        url.searchParams.set('alerta', 'ram');
+    } else if (type === 'sin_impresora' && currentAlerta !== 'sinimp') {
+        url.searchParams.set('alerta', 'sinimp');
+    } else if (type === 'solo_red' && currentAlerta !== 'red') {
+        url.searchParams.set('alerta', 'red');
+    } else if (type === 'win7' && currentOs !== 'win7') {
+        url.searchParams.set('os', 'win7');
+    } else if (type === 'win10' && currentOs !== 'win10') {
+        url.searchParams.set('os', 'win10');
+    } else if (type === 'tareas' && currentTasks !== 'true') {
+        url.searchParams.set('filter_tasks', 'true');
+    }
+
+    // Always ensure active PCs (except for Graveyard which is a link)
+    if (window.location.href.includes('estado=False') && !url.searchParams.has('estado')) {
+        url.searchParams.set('estado', 'False');
+    } else if (!url.searchParams.has('estado')) {
+        // Only force True if we aren't deliberately going to Graveyard
+        url.searchParams.set('estado', 'True');
+    }
+
     window.location.href = url.toString();
 }
 

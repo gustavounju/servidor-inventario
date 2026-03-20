@@ -62,6 +62,7 @@
     <!-- Barra de Estado e Indicadores (KPIs Integrados) -->
     <div class="header-kpi-bar">
         <div class="kpi-scroll-container">
+            {% if request.blueprint != 'infrastructure' %}
             <!-- PCs Activas -->
             <a href="{{ url_for('dashboard.dashboard') }}" class="kpi-mini-chip {% if not request.args and request.path == '/' %}active{% endif %}" title="Activas">
                 <i class="bi bi-pc-display"></i> <span>Activas:</span> <strong>{{ kpi_total_activas }}</strong>
@@ -134,6 +135,7 @@
             </button>
 
             <div class="kpi-sep"></div>
+            {% endif %}
 
             <!-- Script y Versión -->
             <div class="kpi-mini-chip clickable" 

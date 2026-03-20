@@ -571,45 +571,7 @@
             }
         }
 
-        // --- KPI Filters Logic ---
-        function onFilterClick(type) {
-            const url = new URL(window.location.href);
-            const currentAlerta = url.searchParams.get('alerta');
-            const currentOs = url.searchParams.get('os');
-            const currentTasks = url.searchParams.get('filter_tasks');
-
-            // Reset page param on new filter, but KEEP sort params
-            url.searchParams.set('page', 1);
-
-            // Clear existing specific filters to allow toggling/switching
-            url.searchParams.delete('alerta');
-            url.searchParams.delete('os');
-            url.searchParams.delete('filter_tasks');
-
-            // Toggle logic: If clicked was NOT the active one, set it.
-            // If it WAS active, we just deleted it above, so it becomes a toggle-off.
-
-            if (type === 'ram' && currentAlerta !== 'ram') {
-                url.searchParams.set('alerta', 'ram');
-            } else if (type === 'sin_impresora' && currentAlerta !== 'sinimp') {
-                url.searchParams.set('alerta', 'sinimp');
-            } else if (type === 'solo_red' && currentAlerta !== 'red') {
-                url.searchParams.set('alerta', 'red');
-            } else if (type === 'win7' && currentOs !== 'win7') {
-                url.searchParams.set('os', 'win7');
-            } else if (type === 'win10' && currentOs !== 'win10') {
-                url.searchParams.set('os', 'win10');
-            } else if (type === 'tareas' && currentTasks !== 'true') {
-                url.searchParams.set('filter_tasks', 'true');
-            }
-
-            // Always ensure active PCs (except for Graveyard which is a link)
-            url.searchParams.set('estado', 'True');
-
-            window.location.href = url.toString();
-        }
-
-
+        // --- KPI Filters Logic moved to gold.js ---
 
         // --- Auto Refresh Logic (Smart) ---
         (function () {
