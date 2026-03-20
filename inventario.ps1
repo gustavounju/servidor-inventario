@@ -329,8 +329,8 @@ try {
                     catch {}
                 }
             }
-            # 3. Puertos de red modernos (TCP/IP directo, IPv4, WSD, marcas específicas)
-            elseif ($printerPort -match "\b(?:\d{1,3}\.){3}\d{1,3}\b" -or $printerPort -match "^IP_" -or $printerPort -match "^WSD" -or $printerPort -match "^SEC[0-9A-F]+" -or $printerPort -match "^BR[NW][0-9A-F]+" -or $printerPort -match "^NPI[0-9A-F]+") {
+            # 3. Puertos de red modernos (TCP/IP directo, IPv4, DNS, WSD, marcas específicas como Ricoh/Konica/HP/Brother)
+            elseif ($printerPort -match "\b(?:\d{1,3}\.){3}\d{1,3}\b" -or $printerPort -match "^IP_" -or $printerPort -match "^WSD" -or $printerPort -match "^LAN_" -or $printerPort -match "^RNP_" -or $printerPort -match "^RIC" -or $printerPort -match "^RI_" -or $printerPort -match "^SEC" -or $printerPort -match "^BR[NW]" -or $printerPort -match "^NPI" -or $printerPort -match "^KON") {
                 $printerPort += " (Red)"
             }
             # 4. Resto (ej: FILE:, NUL:, puertos virtuales genéricos, etc)
