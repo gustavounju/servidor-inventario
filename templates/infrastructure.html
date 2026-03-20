@@ -33,9 +33,43 @@
         {% endif %}
         {% endwith %}
 
-        <div class="row">
-            <!-- Columna 1: UPS (Hardware) -->
-            <div class="col-12 mb-4">
+        <style>
+            .custom-tabs .nav-link {
+                color: var(--text-color);
+                background: var(--card-bg);
+                border: 1px solid var(--border-color);
+                transition: all 0.2s;
+            }
+            .custom-tabs .nav-link:hover {
+                background: color-mix(in srgb, var(--accent-color) 8%, var(--card-bg));
+            }
+            .custom-tabs .nav-link.active {
+                background: var(--primary-gradient);
+                color: #fff;
+                border-color: transparent;
+                box-shadow: 0 4px 12px var(--kpi-shadow);
+            }
+        </style>
+
+        <!-- Tabs Nav -->
+        <ul class="nav nav-pills custom-tabs mb-4 gap-2" id="infraTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold px-4 rounded-pill" id="ups-tab" data-bs-toggle="pill" data-bs-target="#ups" type="button" role="tab" aria-selected="true"><i class="bi bi-plug-fill me-2"></i> Equipos UPS y Asignaciones</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold px-4 rounded-pill" id="components-tab" data-bs-toggle="pill" data-bs-target="#components" type="button" role="tab" aria-selected="false"><i class="bi bi-cpu me-2"></i> Periféricos y Hardware</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold px-4 rounded-pill" id="printers-tab" data-bs-toggle="pill" data-bs-target="#printers" type="button" role="tab" aria-selected="false"><i class="bi bi-printer me-2"></i> Impresoras de Red</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold px-4 rounded-pill" id="history-tab" data-bs-toggle="pill" data-bs-target="#history" type="button" role="tab" aria-selected="false"><i class="bi bi-clock-history me-2"></i> Historial de Actividad</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="infraTabsContent">
+            <!-- TAB: UPS -->
+            <div class="tab-pane fade show active" id="ups" role="tabpanel" aria-labelledby="ups-tab">
                 <div class="card shadow-sm h-100">
                     <div class="card-header gradient-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="bi bi-plug-fill me-2"></i> Equipos UPS y Asignaciones</h5>
@@ -224,14 +258,11 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> <!-- Cierra tab UPS -->
 
-
-
-            <!-- ROW 2: COMPONENTES Y PERIFÉRICOS -->
-            <div class="row mt-4">
-                <div class="col-12">
-                    <div class="card shadow-sm">
+            <!-- TAB: COMPONENTES Y PERIFÉRICOS -->
+            <div class="tab-pane fade" id="components" role="tabpanel" aria-labelledby="components-tab">
+                <div class="card shadow-sm">
                         <div class="card-header gradient-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="bi bi-cpu me-2"></i> Periféricos y Hardware (Monitores, DVRs,
                                 Teclados, etc.)</h5>
@@ -323,13 +354,11 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+            </div> <!-- Cierra tab Componentes -->
 
-            <!-- ROW 3: IMPRESORAS DE RED -->
-            <div class="row mt-4 mb-5">
-                <div class="col-12">
-                    <div class="card shadow-sm">
+            <!-- TAB: IMPRESORAS DE RED -->
+            <div class="tab-pane fade" id="printers" role="tabpanel" aria-labelledby="printers-tab">
+                <div class="card shadow-sm">
                         <div class="card-header gradient-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="bi bi-printer me-2"></i> Impresoras de Red</h5>
                             <button class="btn btn-sm btn-light text-dark fw-bold" data-bs-toggle="modal"
@@ -435,17 +464,11 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+            </div> <!-- Cierra tab Impresoras -->
 
-        </div>
-
-    </div>
-
-    <!-- ROW 4: REGISTRO DE ACTIVIDAD (INFRAESTRUCTURA) -->
-    <div class="row mt-4 mb-5">
-        <div class="col-12">
-            <div class="card shadow-sm">
+            <!-- TAB: REGISTRO DE ACTIVIDAD (INFRAESTRUCTURA) -->
+            <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+                <div class="card shadow-sm">
                 <div class="card-header gradient-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i> Historial de Actividad (Componentes
                         Eliminados)</h5>
@@ -480,9 +503,11 @@
                         </table>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
+            </div> <!-- Cierra tab Historial -->
+
+        </div> <!-- Cierra tab-content -->
+
+    </div> <!-- Cierra container-fluid -->
 
     <!-- Modal Ingreso de Componente -->
     <div class="modal fade" id="modalAddComponent" tabindex="-1" aria-hidden="true">
