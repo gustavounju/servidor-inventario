@@ -59,6 +59,15 @@
                 border-bottom: 3px solid var(--accent-color);
                 background: transparent;
             }
+            /* Quitar bordes redondeados y sombras de las tarjetas dentro de los tabs */
+            .tab-content .card {
+                border-radius: 0 !important;
+                border: none;
+                box-shadow: none !important;
+            }
+            .tab-content .card-header.gradient-header {
+                border-radius: 0 !important;
+            }
         </style>
 
         <!-- Tabs Nav -->
@@ -71,9 +80,6 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="printers-tab" data-bs-toggle="tab" data-bs-target="#printers" type="button" role="tab" aria-selected="false"><i class="bi bi-printer me-2"></i> Impresoras de Red</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-selected="false"><i class="bi bi-clock-history me-2"></i> Historial de Actividad</button>
             </li>
         </ul>
 
@@ -475,45 +481,6 @@
                         </div>
                     </div>
             </div> <!-- Cierra tab Impresoras -->
-
-            <!-- TAB: REGISTRO DE ACTIVIDAD (INFRAESTRUCTURA) -->
-            <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
-                <div class="card shadow-sm">
-                <div class="card-header gradient-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i> Historial de Actividad (Componentes
-                        Eliminados)</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                        <table class="table table-hover table-striped mb-0 align-middle">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th>Fecha y Hora</th>
-                                    <th>Actividad / Acción</th>
-                                    <th>Detalle / S/N / Código</th>
-                                    <th>Estado Final</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for log in infra_logs %}
-                                <tr>
-                                    <td>{{ log.changed_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                    <td><span class="badge bg-secondary">{{ log.field }}</span></td>
-                                    <td class="fw-bold">{{ log.old_value }}</td>
-                                    <td class="text-danger fw-bold"><i class="bi bi-x-circle me-1"></i> {{ log.new_value
-                                        }}</td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">No hay registros de actividad
-                                        eliminada en la infraestructura.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div> <!-- Cierra tab Historial -->
 
         </div> <!-- Cierra tab-content -->
 
