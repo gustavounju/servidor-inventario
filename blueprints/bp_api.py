@@ -31,6 +31,7 @@ def process_inventory_data(data):
     motherboard_model = data.get("Motherboard_Model", "N/A")
     printer_model = data.get("Printer_Model", "N/A")
     printer_port = data.get("Printer_Port", "N/A")
+    printer_sn = data.get("Printer_SN", "N/A")
         
     # ----------------------------------------------------
     # TRADUCCIÓN DE SIGLAS EDID DE MONITORES
@@ -173,15 +174,67 @@ def process_inventory_data(data):
                     conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (pc_name, field, old_val, new_val))
 
 
+    # --- OBTENER VALORES ANTIGUOS PARA LIMPIEZA ---
+    old_printer_sn = "N/A"
+    with get_db_connection() as conn:
+        old_pc = conn.execute("SELECT printer_sn FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+        if old_pc: old_printer_sn = old_pc["printer_sn"] or "N/A"
+
     sql = """
-    INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, is_active, full_json_data)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'True', %s)
+    INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, is_active, full_json_data)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'True', %s)
     ON DUPLICATE KEY UPDATE
-        fuero=VALUES(fuero), os_name=VALUES(os_name), processor=VALUES(processor), ram_gb=VALUES(ram_gb), ip_address=VALUES(ip_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_models=VALUES(disk_models), disk_speeds_rpm=VALUES(disk_speeds_rpm), motherboard_model=VALUES(motherboard_model), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), alerta_nombre_duplicado=VALUES(alerta_nombre_duplicado), is_active='True', full_json_data=VALUES(full_json_data)
+        fuero=VALUES(fuero), os_name=VALUES(os_name), processor=VALUES(processor), ram_gb=VALUES(ram_gb), ip_address=VALUES(ip_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_models=VALUES(disk_models), disk_speeds_rpm=VALUES(disk_speeds_rpm), motherboard_model=VALUES(motherboard_model), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), printer_sn=VALUES(printer_sn), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), alerta_nombre_duplicado=VALUES(alerta_nombre_duplicado), is_active='True', full_json_data=VALUES(full_json_data)
     """
     
     with get_db_connection() as conn:
-        conn.execute(sql, (pc_name, fuero_detectado, os_name, processor, ram_gb, ip_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, full_json))
+        conn.execute(sql, (pc_name, fuero_detectado, os_name, processor, ram_gb, ip_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, full_json))
+        
+        # Sincronización Total: El servidor es un reflejo del script de la PC
+        # 1. Limpiamos todas las asignaciones previas para este equipo
+        conn.execute("DELETE FROM pc_network_printers WHERE pc_name = %s", (pc_name,))
+        
+        # 2. Re-vinculamos únicamente si el script detecta una impresora que está en el catálogo
+        if (alerta_impresora_red == 1 or printer_sn != 'N/A') and (printer_port != 'N/A' or printer_sn != 'N/A'):
+            clean_ip = printer_port.split(' ')[0] if printer_port != 'N/A' else None
+            
+            # Buscar en el catálogo (Primero por SN, luego por IP)
+            known_printer = None
+            if printer_sn != 'N/A':
+                known_printer = conn.execute("SELECT id FROM network_printers WHERE serial_number = %s", (printer_sn,)).fetchone()
+            
+            if not known_printer and clean_ip and '.' in clean_ip:
+                known_printer = conn.execute("SELECT id FROM network_printers WHERE ip_address = %s", (clean_ip,)).fetchone()
+            
+            if known_printer:
+                printer_id = known_printer['id']
+                # 3. Vincular la actual
+                conn.execute("INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)", (pc_name, printer_id))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'AUTO_SYNC_PRINTER', 'Catalog', %s)", (pc_name, printer_sn if printer_sn != 'N/A' else clean_ip))
+        
+        elif alerta_sin_impresora == 1:
+            with get_db_connection() as conn:
+                # 1. LIMPIEZA DEL CATÁLOGO (Stock de infraestructura)
+                if old_printer_sn and old_printer_sn != "N/A":
+                    # Borrado total si el SN coincide (ya sabemos que esta PC reportó no encontrarla)
+                    cursor = conn.execute("DELETE FROM network_printers WHERE serial_number = %s", (old_printer_sn,))
+                    print(f"[DEBUG] Catálogo limpiado. SN: {old_printer_sn}. Filas: {cursor.rowcount}")
+
+                # 2. Limpieza de Asignaciones Internas
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'AUTO_CLEAN_PRINTER', 'Assigned', 'None')", (pc_name,))
+                
+                # 3. LIMPIEZA EN CASCADA (Misión: Clientes huérfanos)
+                host_pattern = f"%\\\\{pc_name.upper()}\\%"
+                clients = conn.execute("SELECT pc_name FROM pcs WHERE UPPER(printer_port) LIKE %s", (host_pattern,)).fetchall()
+                if clients:
+                    for c in clients:
+                        client_name = c["pc_name"]
+                        conn.execute("DELETE FROM pc_network_printers WHERE pc_name = %s", (client_name,))
+                        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'CASCADE_UNASSIGN', 'Host Offline', %s)", (client_name, pc_name))
+                
+                conn.commit()
+
+        
         conn.commit()
 
 

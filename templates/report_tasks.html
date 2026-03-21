@@ -62,6 +62,7 @@
                         <!-- Botones de descarga -->
                         <form id="formExcel" action="{{ url_for('tasks.report_tasks_completed', pc=pc_name) }}"
                             method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="fecha" id="hiddenFechaExcel">
                             <input type="hidden" name="pc_name" id="hiddenPcExcel" value="{{ pc_name or '' }}">
                             <button type="button" class="btn btn-primary download-btn w-100 mb-2" id="btnExcel"
@@ -71,6 +72,7 @@
                         </form>
 
                         <form id="formPDF" action="{{ url_for('tasks.report_tasks_completed_pdf') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="fecha" id="hiddenFechaPDF">
                             <input type="hidden" name="pc_name" id="hiddenPcPDF" value="{{ pc_name or '' }}">
                             <button type="button" class="btn btn-danger download-btn w-100" id="btnPDF"

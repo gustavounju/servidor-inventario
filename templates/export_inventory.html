@@ -26,6 +26,7 @@
         <h1 class="mb-4">Exportar inventario a Excel</h1>
 
         <form action="{{ url_for('dashboard.export_inventory') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <h5 class="mb-3">Seleccionar campos a exportar:</h5>
 

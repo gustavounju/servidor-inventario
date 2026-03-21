@@ -284,30 +284,73 @@ try {
         # Obtener todas las impresoras
         $allPrinters = Get-WmiObject -Class Win32_Printer
         
-        # 1. Intentar buscar la Default que NO sea virtual
+        # 1. Buscar la impresora PREDETERMINADA
         $virtualKeywords = "PDF|XPS|OneNote|Fax|Send To|Microsoft Print|Writer"
-        $bestPrinter = $allPrinters | Where-Object { $_.Default -eq $true -and $_.Name -notmatch $virtualKeywords } | Select-Object -First 1
+        $bestPrinter = $allPrinters | Where-Object { $_.Default -eq $true } | Select-Object -First 1
         
-        # 2. Si la default es virtual o no hay, buscar la primera local física conectada
-        if (-not $bestPrinter) {
-            $bestPrinter = $allPrinters | Where-Object { $_.Local -eq $true -and $_.Name -notmatch $virtualKeywords -and $_.WorkOffline -eq $false } | Select-Object -First 1
-        }
-        
-        # 3. Si sigue sin haber, buscar cualquier local no virtual (aunque esté offline)
-        if (-not $bestPrinter) {
-            $bestPrinter = $allPrinters | Where-Object { $_.Local -eq $true -and $_.Name -notmatch $virtualKeywords } | Select-Object -First 1
+        # 2. Si la default es virtual, forzar "SIN IMPRESORA" para que el servidor limpie el catálogo
+        if ($bestPrinter -and $bestPrinter.Name -match $virtualKeywords) {
+            $bestPrinter = $null 
         }
 
-        # 4. Último recurso: la marcada como Default (aunque sea virtual)
-        if (-not $bestPrinter) {
-            $bestPrinter = $allPrinters | Where-Object { $_.Default -eq $true } | Select-Object -First 1
-        }
-
+        # 3. Datos de la impresora
+        $printerSN = "N/A"
         if ($bestPrinter) {
             $printerModel = $bestPrinter.Name
             $printerPort = $bestPrinter.PortName
+
+            # INTENTAR OBTENER SERIAL FÍSICO (USB / PnP)
+            try {
+                # Buscamos en PnPEntity usando el nombre o parte del ID de puerto
+                $cleanName = $printerModel -replace "[\\]", "\\"
+                $pnp = Get-WmiObject Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Name -match [regex]::Escape($cleanName) -or $_.Description -match [regex]::Escape($cleanName) }
+                if ($pnp) {
+                    # El DeviceID de USBPRINT suele tener el serial al final (ej: USBPRINT\...\SERIAL)
+                    $did = $pnp.DeviceID
+                    if ($did -match "\\([^\\]+)$") {
+                        $potentialSN = $matches[1]
+                        # Filtramos si es solo un ID de puerto genérico (ej: LPT1, USB001)
+                        if ($potentialSN -notmatch "^(USB|LPT|COM)[0-9]+$") {
+                            $printerSN = $potentialSN
+                        }
+                    }
+                }
+            } catch {}
             # Limpiar prefijos/sufijos internos de Windows (Ej: IP_10.15.2.50_1 -> 10.15.2.50)
             $printerPort = $printerPort -replace "^IP_", "" -replace "_[0-9]+$", ""
+            
+            # Soporte para puertos WSD (Web Services for Devices)
+            # Intenta extraer la IP real desde el registro si el puerto es un GUID de WSD
+            if ($printerPort -like "WSD-*") {
+                try {
+                    $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\WSD Port\Ports\$($bestPrinter.PortName)"
+                    if (Test-Path $regPath) {
+                        # 1. Intentar obtener el UUID de la impresora vinculado a este puerto
+                        $pUuid = (Get-ItemProperty $regPath)."Printer UUID"
+                        if ($pUuid) {
+                            # 2. Buscar en la caché de descubrimiento de Windows (DAFWSDProvider)
+                            $dafPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\SWD\DAFWSDProvider\urn:uuid:$pUuid"
+                            $locInfo = ""
+                            
+                            # Intentar en la raíz del dispositivo o en la subclave PrinterService
+                            if (Test-Path $dafPath) {
+                                $locInfo = (Get-ItemProperty $dafPath -ErrorAction SilentlyContinue).LocationInformation
+                                if (-not $locInfo -and (Test-Path "$dafPath\PrinterService")) {
+                                    $locInfo = (Get-ItemProperty "$dafPath\PrinterService" -ErrorAction SilentlyContinue).LocationInformation
+                                }
+                            }
+
+                            # Si encontramos una URL, extraer la IP
+                            if ($locInfo -and $locInfo -match "https?://([^:/]+)") {
+                                $printerPort = $matches[1]
+                            }
+                        }
+                    }
+                }
+                catch {
+                    # Si falla cualquier paso, se mantiene el GUID original (WSD-...)
+                }
+            }
             
             # Etiquetar tipo
             # 1. Definitivamente RED (Conexión a servidor de impresión o share)
@@ -429,6 +472,7 @@ try {
     $jsonObj += """Motherboard_Model"": ""$(e $motherboardModel)"","
     $jsonObj += """Printer_Model"": ""$(e $printerModel)"","
     $jsonObj += """Printer_Port"": ""$(e $printerPort)"","
+    $jsonObj += """Printer_SN"": ""$(e $printerSN)"","
     $jsonObj += """Monitors"": ""$(e $monitorsStr)"","
     # Armamos array Conexiones
     $jsonObj += """Conexiones"": ["

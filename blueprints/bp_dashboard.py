@@ -142,7 +142,14 @@ def dashboard():
                         JOIN network_printers np ON pnp.printer_id = np.id 
                         WHERE pnp.pc_name = p.pc_name 
                         LIMIT 1
-                    ) as assigned_network_printer
+                    ) as assigned_network_printer,
+                    (
+                        SELECT np.id 
+                        FROM pc_network_printers pnp 
+                        JOIN network_printers np ON pnp.printer_id = np.id 
+                        WHERE pnp.pc_name = p.pc_name 
+                        LIMIT 1
+                    ) as assigned_network_printer_id
                 FROM pcs p
                 LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
                 WHERE 1=1
@@ -229,6 +236,11 @@ def dashboard():
             """
             ad_users_list = [dict(row) for row in conn.execute(ad_users_query).fetchall()]
             app_users_list = list_app_users()
+            
+            # --- DICCIONARIO DE PUERTOS PARA HOST OFFLINE ---
+            pc_ports_query = conn.execute("SELECT pc_name, printer_port FROM pcs WHERE is_active = 'True'").fetchall()
+            pc_ports = {row["pc_name"].upper(): (row["printer_port"] or "") for row in pc_ports_query}
+            # ------------------------------------------------
 
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
@@ -242,6 +254,7 @@ def dashboard():
     return render_template(
         "index.html",
         pcs=pcs_data,
+        pc_ports=pc_ports,
         server_url=request.host_url,
         unassigned_tasks=unassigned_tasks,
         unassigned_count=unassigned_count,
@@ -488,7 +501,7 @@ def pc_detail(pc_name):
             parts = pc["printer_port"].split("\\")
             if len(parts) >= 3:
                 potential_host = parts[2].upper()
-                sharing_pc_data = conn.execute("SELECT pc_name, is_active FROM pcs WHERE pc_name = %s LIMIT 1", (potential_host,)).fetchone()
+                sharing_pc_data = conn.execute("SELECT pc_name, is_active, printer_port FROM pcs WHERE pc_name = %s LIMIT 1", (potential_host,)).fetchone()
         # -------------------------------------------------------------------
         
         # UPS Disponibles en caso de querer asignarle una (UPS sin asignar)

@@ -361,23 +361,63 @@ def add_network_printer():
     ip_address = request.form.get('ip_address', '').strip()
     serial_number = request.form.get('serial_number', '').strip()
     brand_model = request.form.get('brand_model', '').strip()
+    assigned_pc_name = request.form.get('assigned_pc_name', '').strip()
     
     if not serial_number or not ip_address:
         flash("La Dirección IP y el Número de Serie son obligatorios.", "error")
-        return redirect(url_for('infrastructure.index'))
+        return redirect(request.referrer or url_for('infrastructure.index'))
+    
+    # Limpiar IP antes de guardar
+    ip_address = ip_address.strip().split(' ')[0]
         
     try:
         with get_db_connection() as conn:
-            conn.execute(
-                "INSERT INTO network_printers (ip_address, serial_number, brand_model) VALUES (%s, %s, %s)",
-                (ip_address, serial_number, brand_model)
-            )
+            # 1. Verificar si ya existe por SERIAL NUMBER
+            existing = conn.execute(
+                "SELECT id FROM network_printers WHERE serial_number = %s", (serial_number,)
+            ).fetchone()
+            
+            if existing:
+                printer_id = existing['id']
+                # Actualizar IP y Modelo si ya existía (por si cambiaron)
+                conn.execute(
+                    "UPDATE network_printers SET ip_address = %s, brand_model = %s WHERE id = %s",
+                    (ip_address, brand_model, printer_id)
+                )
+            else:
+                # 2. Si no existe, insertar nueva y obtener ID
+                cursor = conn.execute(
+                    "INSERT INTO network_printers (ip_address, serial_number, brand_model) VALUES (%s, %s, %s)",
+                    (ip_address, serial_number, brand_model)
+                )
+                printer_id = cursor.lastrowid
+            
+            # 3. Vincular a la PC si se especificó
+            if assigned_pc_name:
+                # Evitar duplicidad en la asignación
+                assigned_existing = conn.execute(
+                    "SELECT id FROM pc_network_printers WHERE pc_name = %s AND printer_id = %s",
+                    (assigned_pc_name, printer_id)
+                ).fetchone()
+                
+                if not assigned_existing:
+                    conn.execute(
+                        "INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)",
+                        (assigned_pc_name, printer_id)
+                    )
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
+                                 (assigned_pc_name, "Impresora Red Vinculada (Promoción)", "None", ip_address))
+                    flash(f"Impresora {ip_address} ({serial_number}) vinculada correctamente a {assigned_pc_name}.", "success")
+                else:
+                    flash(f"La impresora {ip_address} ya estaba vinculada a {assigned_pc_name}.", "info")
+            else:
+                flash(f"Datos de impresora de red ({ip_address}) actualizados/registrados.", "success")
+                
             conn.commit()
-        flash(f"Impresora de red ({ip_address}) registrada exitosamente.", "success")
     except Exception as e:
-        flash(f"Error al agregar impresora de red (¿serie duplicada?): {e}", "error")
+        flash(f"Error procesando impresora de red: {e}", "error")
         
-    return redirect(url_for('infrastructure.index'))
+    return redirect(request.referrer or url_for('infrastructure.index'))
 
 @bp_infrastructure.route('/network_printers/<int:id>/delete', methods=['POST'])
 def delete_network_printer(id):
@@ -459,6 +499,9 @@ def snmp_printer():
     ip = request.args.get('ip')
     if not ip:
         return {"error": "No IP provided"}, 400
+    
+    # Limpiar IP por si viene con texto extra (ej: "192.168.1.9 (Red)")
+    ip = ip.strip().split(' ')[0]
     
     try:
         data = asyncio.run(snmp_fetch(ip))

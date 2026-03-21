@@ -120,12 +120,14 @@
         {% if pc.is_active == 'True' %}
         <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST"
           class="d-inline" onsubmit="return confirm('¿Seguro pasar a cementerio?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="hero-stat" style="color:#fca5a5;cursor:pointer;border:0;background:none;">
             <i class="bi bi-archive me-1"></i>Dar de baja
           </button>
         </form>
         {% else %}
         <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" method="POST" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="hero-stat" style="color:#86efac;border:0;background:none;">
             <i class="bi bi-activity me-1"></i>Reactivar
           </button>
@@ -205,23 +207,71 @@
                 {% if pc.printer_port and pc.printer_port != 'N/A' %}
                 <div class="small text-primary mt-1">
                   <i class="bi bi-plug"></i> Conectada a: <code>{{ pc.printer_port }}</code>
+                  {% set is_already_assigned = [] %}
+                  {% set clean_port = pc.printer_port.split(' ')[0] if pc.printer_port else '' %}
+                  {% for np in assigned_network_printers %}
+                    {% if (np.ip_address == clean_port and clean_port != '') or (pc.printer_sn and np.serial_number == pc.printer_sn) %}
+                      {% set _ = is_already_assigned.append(np.id) %}
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if is_already_assigned %}
+                  <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=is_already_assigned[0]) }}" method="POST" class="d-inline ms-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+                    <button type="submit" class="btn btn-sm btn-link p-0 text-danger text-decoration-none" 
+                            title="Desvincular esta impresora de red del equipo"
+                            onclick="return confirm('¿Desvincular esta impresora de red del equipo?');">
+                      <i class="bi bi-dash-circle-fill" style="font-size: 0.8rem;"></i>
+                    </button>
+                  </form>
+                  {% else %}
+                  <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none ms-1" 
+                          onclick="promoteToNetworkPrinter('{{ pc.printer_port }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')"
+                          title="Stockear: Registrar esta impresora en el catálogo oficial">
+                    <i class="bi bi-plus-circle-fill" style="font-size: 0.8rem;"></i>
+                  </button>
+                  {% endif %}
                 </div>
                 {% endif %}
+                
+                {# Cartel de Pendiente en Detalle #}
+                {% if not assigned_network_printers and pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) and ("\\\\" in (pc.printer_port or "") or "IP_" in (pc.printer_port or "") or "." in (pc.printer_port or "")) %}
+                <div class="mt-2 mb-1">
+                  <span class="badge bg-warning text-dark" style="font-size: 0.75rem; border: 1px solid #cc9a06;">
+                    <i class="bi bi-clock-history"></i> Pendiente de ejecutar script
+                  </span>
+                  <div class="small text-muted mt-1">Este equipo fue desvinculado. El estado real es desconocido hasta un nuevo reporte.</div>
+                </div>
+                {% endif %}
+
                 {% if sharing_pc %}
                 <div class="mt-1" style="font-size: 0.8rem;">
                   <i class="bi bi-share-fill text-muted"></i> Compartida por:
-                  <a href="{{ url_for('dashboard.pc_detail', pc_name=sharing_pc.pc_name) }}" class="fw-bold"
-                    style="text-decoration: none;">
-                    {{ sharing_pc.pc_name }}
-                  </a>
+                  
+                  {# Chequeo de Host Offline en Detalle #}
+                  {% set host_port = sharing_pc.printer_port or "" %}
+                  {% set is_host_offline = 'USB' not in host_port and 'LPT' not in host_port and 'COM' not in host_port and 'Local' not in host_port %}
+                  
+                  {% if is_host_offline %}
+                    <span class="text-muted fw-bold">{{ sharing_pc.pc_name | upper }}</span>
+                    <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">OFFLINE</span>
+                  {% else %}
+                    <a href="{{ url_for('dashboard.pc_detail', pc_name=sharing_pc.pc_name | upper) }}" class="fw-bold text-decoration-none">
+                      {{ sharing_pc.pc_name | upper }}
+                    </a>
+                  {% endif %}
+
                   {% if sharing_pc.is_active == 'False' %}
                   <span class="badge bg-secondary" style="font-size: 0.6rem;">(Cementerio)</span>
                   {% endif %}
                 </div>
                 {% endif %}
+
                 <div class="mt-1">
                   <strong>Impresora {{ pc.printer_model }}</strong>
                 </div>
+
                 {% else %}
                 Impresora Local {{ pc.printer_model }}
                 {% endif %}
@@ -291,6 +341,7 @@
                 <!-- Botón Desvincular UPS -->
                 <form action="{{ url_for('infrastructure.assign_ups_to_pc', ups_id=pc_ups.id) }}" method="POST"
                   class="m-0">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
                   <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular UPS"
                     onclick="return confirm('¿Quitar UPS de este equipo?');">
@@ -305,6 +356,7 @@
                   <div class="modal-content">
                     <form action="{{ url_for('infrastructure.assign_battery_to_ups', ups_id=pc_ups.id) }}"
                       method="POST">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <!-- Retornamos a la página anterior de la PC -->
                       <input type="hidden" name="next" value="{{ request.path }}">
                       <div class="modal-header bg-success text-white">
@@ -390,6 +442,7 @@
                 {% endif %}
                 <form action="{{ url_for('infrastructure.assign_component_to_pc', component_id=comp.id) }}"
                   method="POST" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
                   <button type="submit" class="btn btn-sm btn-outline-danger" title="Devolver al stock y desvincular"
                     onclick="return confirm('¿Desvincular componente del equipo? Pasará a Stock.');">
@@ -408,6 +461,7 @@
               <td class="text-end">
                 <form action="{{ url_for('infrastructure.assign_component_to_component', component_id=subc.id) }}"
                   method="POST" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="parent_id" value="">
                   <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular del DVR"
                     onclick="return confirm('¿Desvincular componente del DVR?');">
@@ -458,6 +512,7 @@
               <td class="text-end">
                 <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=np.id) }}" method="POST"
                   class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
                   <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular impresora de esta PC"
                     onclick="return confirm('¿Desvincular esta impresora de red del equipo?');">
@@ -526,6 +581,7 @@
 
               <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline"
                 onsubmit="return confirm('¿Borrar esta tarea?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-sm btn-danger mb-1">
                   Borrar
                 </button>
@@ -587,6 +643,7 @@
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <form id="form-nueva-tarea" action="{{ url_for('tasks.add_task', pc_name=pc.pc_name) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="modal-header">
             <h5 class="modal-title" id="modalNuevaTareaLabel">Agregar nueva tarea</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -640,6 +697,7 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <form id="formFinalizar" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="modal-header">
             <h5 class="modal-title">Finalizar Tarea</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -675,6 +733,7 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <form action="{{ url_for('tasks.migrate_generic_tasks') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="migration_task_id" id="migration_task_id">
           <div class="modal-header">
             <h5 class="modal-title">Asignar tarea a PC Real</h5>
@@ -709,6 +768,7 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <form action="{{ url_for('dashboard.update_pc_infrastructure', pc_name=pc.pc_name) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="modal-header">
             <h5 class="modal-title">Editar Infraestructura</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -765,6 +825,7 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <form action="{{ url_for('tasks.add_manual_audit', pc_name=pc.pc_name) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="modal-header bg-dark text-white">
             <h5 class="modal-title">Registrar Cambio Manual</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
