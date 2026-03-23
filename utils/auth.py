@@ -93,6 +93,7 @@ PUBLIC_ENDPOINTS = {
     "setup.download_client_script",
     "setup.download_client_launcher",
     "setup.download_certificate",
+    "auth.change_password"
 }
 
 
@@ -583,6 +584,21 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Tru
         conn.commit()
 
 
+def update_app_user_password(username, new_password):
+    from database.db_core import get_db_connection
+    username = (username or "").strip().lower()
+    if not username or not new_password:
+        raise ValueError("Usuario y nueva clave son obligatorios")
+    
+    password_hash = hash_password(new_password)
+    with get_db_connection() as conn:
+        conn.execute(
+            "UPDATE app_users SET password_hash = %s, must_change_password = 0, updated_at = CURRENT_TIMESTAMP WHERE username = %s",
+            (password_hash, username)
+        )
+        conn.commit()
+
+
 def ensure_default_admin():
     from database.db_core import get_db_connection
 
@@ -719,6 +735,11 @@ def auth_guard():
     refreshed_user = refresh_session_user()
     if not refreshed_user:
         return unauthorized_response()
+
+    # SI EL USUARIO DEBE CAMBIAR LA CLAVE, LO FORZAMOS
+    if refreshed_user.get("must_change_password") and request.endpoint != "auth.change_password":
+        # Avisar al usuario por qué está aquí si es redireccionado
+        return redirect(url_for("auth.change_password"))
 
     permission_name = required_permission_for_endpoint()
     if permission_name and not has_permission(permission_name, refreshed_user):

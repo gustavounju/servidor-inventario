@@ -85,6 +85,7 @@ def inject_global_vars():
                     SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' 
                     AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
                     AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%') AND alerta_impresora_red = 0
+                    AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
                 """).fetchone()["c"]
                 kpis['kpi_total_impresoras'] = net_pr + loc_pr
                 
@@ -92,25 +93,58 @@ def inject_global_vars():
                 kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
 
                 # Extra Data for Shared Modals
-                extra_data['app_users_list'] = list_app_users()
-                extra_data['technicians'] = list_technician_users()
-                
+                # 1. Obtener usuarios del sistema actuales
+                sys_users = list_app_users()
+                extra_data['app_users_list'] = sys_users
+                sys_usernames = {str(u['username']).strip().lower() for u in sys_users}
+
+                # 2. Obtener usuarios potenciales de AD
                 ad_users_query = """
-                    SELECT username, real_name, phone 
+                    SELECT LOWER(TRIM(username)) as username, real_name, phone, 1 as is_official
                     FROM ad_users
                     UNION
                     SELECT DISTINCT 
-                        LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
+                        LOWER(TRIM(SUBSTRING_INDEX(last_user, '\\\\', -1))) as username, 
                         last_user as real_name, 
-                        NULL as phone 
+                        NULL as phone,
+                        0 as is_official
                     FROM pcs 
                     WHERE last_user IS NOT NULL 
                       AND last_user != '' 
-                      AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
+                      AND LOWER(TRIM(SUBSTRING_INDEX(last_user, '\\\\', -1))) 
+                          NOT IN (SELECT LOWER(TRIM(username)) FROM ad_users)
                     ORDER BY real_name
                 """
-                extra_data['ad_users_list'] = [dict(row) for row in conn.execute(ad_users_query).fetchall()]
+                all_ad_raw = [dict(row) for row in conn.execute(ad_users_query).fetchall()]
                 
+                # 3. Filtrar y Deduplicar: SI el usuario ya existe en el sistema superior, NO sale en el directorio
+                # Deduplicación para casos donde un registro histórico (PCS) coincide con uno oficial (ad_users)
+                seen_usernames = {} # username -> user_obj
+                
+                for u in all_ad_raw:
+                    uname = str(u['username']).strip().lower()
+                    if uname in sys_usernames:
+                        continue
+                    
+                    # Si ya vimos este username
+                    if uname in seen_usernames:
+                        # Prioridad al oficial
+                        if u['is_official'] and not seen_usernames[uname]['is_official']:
+                            seen_usernames[uname] = u
+                        continue
+                    
+                    seen_usernames[uname] = u
+                
+                directorio_filtrado = list(seen_usernames.values())
+                directorio_filtrado.sort(key=lambda x: str(x['real_name']).lower())
+                
+                extra_data['directorio_filtrado'] = directorio_filtrado
+                
+                # Debug log
+                import datetime
+                now = datetime.datetime.now().strftime("%H:%M:%S")
+                print(f"DEBUG [{now}]: AppUsers={len(sys_usernames)} Directorio={len(directorio_filtrado)}")
+
                 extra_data['all_pcs'] = [dict(row) for row in conn.execute(
                     "SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 'True' ORDER BY pc_name"
                 ).fetchall()]

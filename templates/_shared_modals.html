@@ -89,6 +89,20 @@
             <div class="modal-body">
                 <p class="text-muted small">Aquí administras dos cosas distintas: acceso interno al sistema y teléfonos del directorio institucional.</p>
 
+                <!-- Alertas dentro del modal -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="mb-3">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show shadow-sm small py-2" role="alert" style="border-radius: 8px;">
+                        <i class="bi bi-exclamation-circle-fill me-2"></i> {{ message }}
+                        <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
                 <div class="users-panel-card border-warning mb-4">
                     <div class="card-header bg-warning-subtle d-flex justify-content-between align-items-center">
                         <div>
@@ -101,9 +115,13 @@
                     <div class="card-body">
                         <form action="{{ url_for('dashboard.create_app_user') }}" method="POST" class="row g-2 align-items-end mb-3" id="appUserForm">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="is_edit_mode" id="isEditMode" value="0">
                             <div class="col-md-3">
                                 <label class="form-label small text-muted mb-1">Usuario</label>
-                                <input type="text" name="username" id="appUsername" class="form-control" placeholder="Ej: tuusuario" required>
+                                <input type="text" name="username" id="appUsername" class="form-control" placeholder="Ej: tuusuario" required onkeyup="checkDuplicateUser()">
+                                <div id="userDuplicateWarning" class="text-danger small mt-1 d-none">
+                                    <i class="bi bi-x-circle me-1"></i> El nombre ya está en uso.
+                                </div>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small text-muted mb-1">Nombre visible</label>
@@ -145,7 +163,7 @@
                                 </div>
                             </div>
                             <div class="col-md-2 d-grid">
-                                <button type="submit" class="btn btn-warning">Guardar</button>
+                                <button type="submit" class="btn btn-warning" id="btnSubmitAppUser">Guardar</button>
                             </div>
                         </form>
 
@@ -186,6 +204,12 @@
                                             <button type="button" class="btn btn-sm btn-outline-secondary me-1" 
                                                     data-user='{{ app_user|tojson|safe }}'
                                                     onclick="editAppUser(JSON.parse(this.getAttribute('data-user')))">Editar</button>
+                                            {% if app_user.username != current_user.username %}
+                                            <form action="{{ url_for('dashboard.remove_app_user', user_id=app_user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar al usuario {{ app_user.username }}?')">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                            </form>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -217,8 +241,8 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for user in ad_users_list %}
-                                    <tr class="user-item">
+                                    {% for user in directorio_filtrado %}
+                                    <tr class="user-item" style="cursor: pointer;" onclick="prefillAppUser('{{ user.username|e }}', '{{ user.real_name|e }}')" title="Clic para usar estos datos en el formulario de arriba">
                                         <td class="username-cell"><code>{{ user.username }}</code></td>
                                         <td class="realname-cell fw-bold">{{ user.real_name }}</td>
                                         <td>{{ user.phone or '-' }}</td>
@@ -227,7 +251,7 @@
                                                     data-username="{{ user.username|e }}"
                                                     data-realname="{{ user.real_name|e }}"
                                                     data-phone="{{ (user.phone or '')|e }}"
-                                                    onclick="openUserPhoneEdit(this.dataset.username, this.dataset.realname, this.dataset.phone)">
+                                                    onclick="event.stopPropagation(); openUserPhoneEdit(this.dataset.username, this.dataset.realname, this.dataset.phone)">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
                                         </td>
@@ -243,18 +267,22 @@
                                 <button type="button" class="btn-close btn-close-white float-end" onclick="closeUserPhoneEdit()"></button>
                             </div>
                             <div class="card-body py-2">
-                                <form action="{{ url_for('dashboard.update_user_phone') }}" method="POST" class="row gx-2 align-items-center">
+                                <form action="{{ url_for('dashboard.update_user_phone') }}" method="POST" class="row gx-1 align-items-center">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="username" id="editUsername">
-                                    <input type="hidden" name="realname" id="editRealnameHidden">
-                                    <div class="col-sm-5">
-                                        <input type="text" id="editRealnameDisplay" class="form-control form-control-sm" readonly>
+                                    <input type="hidden" name="old_username" id="editOldUsername">
+                                    <div class="col-sm-2">
+                                        <input type="text" name="username" id="editUsername" class="form-control form-control-sm" placeholder="Usuario AD" readonly>
                                     </div>
-                                    <div class="col-sm-5">
-                                        <input type="text" name="phone" id="editPhone" class="form-control form-control-sm" placeholder="Ej: 1045">
+                                    <div class="col-sm-4">
+                                        <input type="text" name="realname" id="editRealname" class="form-control form-control-sm" placeholder="Nombre completo">
                                     </div>
-                                    <div class="col-sm-2 text-end">
-                                        <button type="submit" class="btn btn-sm btn-success w-100">Cargar</button>
+                                    <div class="col-sm-3">
+                                        <input type="text" name="phone" id="editPhone" class="form-control form-control-sm" placeholder="Teléfono">
+                                    </div>
+                                    <div class="col-sm-3 d-grid">
+                                        <button type="submit" class="btn btn-sm btn-success" title="Guardar Cambios">
+                                            <i class="bi bi-floppy me-1"></i> Guardar
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -710,9 +738,10 @@
         var container = document.getElementById("userPhoneEditFormContainer");
         if (!container) return;
         container.classList.remove("d-none");
+        
+        document.getElementById("editOldUsername").value = username;
         document.getElementById("editUsername").value = username;
-        document.getElementById("editRealnameHidden").value = realname;
-        document.getElementById("editRealnameDisplay").value = realname + " (" + username + ")";
+        document.getElementById("editRealname").value = realname;
         document.getElementById("editPhone").value = currentPhone;
         document.getElementById("editPhone").focus();
     }
@@ -766,7 +795,80 @@
             infrastructure: !!user.can_access_infrastructure,
             reports: !!user.can_access_reports
         });
+        document.getElementById('isEditMode').value = '1';
+        document.getElementById('btnSubmitAppUser').innerText = 'Actualizar';
+        document.getElementById('appUsername').readOnly = true;
+        document.getElementById('appPassword').placeholder = 'Dejar vacío para no cambiar';
+        document.querySelector('#usersModal .modal-body').scrollTop = 0;
         usernameEl.focus();
+    }
+
+    function prefillAppUser(username, realname) {
+        const usernameEl = document.getElementById('appUsername');
+        if (!usernameEl) return;
+        
+        // Pre-rellenar campos de creación
+        document.getElementById('isEditMode').value = '0';
+        document.getElementById('btnSubmitAppUser').innerText = 'Guardar';
+        usernameEl.readOnly = false;
+        usernameEl.value = username || '';
+        document.getElementById('appDisplayName').value = realname || '';
+        document.getElementById('appPassword').value = '';
+        document.getElementById('appPassword').placeholder = 'Contraseña obligatoria';
+        document.getElementById('appPassword').required = true;
+        
+        // Scrollear al formulario para que el usuario sepa que ocurrió algo
+        document.querySelector('#usersModal .modal-body').scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Feedback visual rápido
+        const card = document.querySelector('.users-panel-card.border-warning');
+        card.style.transition = 'all 0.3s';
+        card.style.transform = 'scale(1.02)';
+        card.style.boxShadow = '0 0 15px rgba(255, 193, 7, 0.5)';
+        setTimeout(() => {
+            card.style.transform = 'scale(1)';
+            card.style.boxShadow = 'none';
+        }, 500);
+
+        document.getElementById('appPassword').focus();
+    }
+
+    // Mantener modal abierto tras redirect de acciones (POST)
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('manage_users') === '1') {
+            const usersModal = new bootstrap.Modal(document.getElementById('usersModal'));
+            usersModal.show();
+            
+            // Opcional: limpiar la URL para no reabrir si se pulsa F5 luego
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+
+    function checkDuplicateUser() {
+        const input = document.getElementById('appUsername');
+        const warning = document.getElementById('userDuplicateWarning');
+        const isEdit = document.getElementById('isEditMode').value === '1';
+        if (!input || !warning || isEdit) return;
+
+        const value = input.value.trim().toLowerCase();
+        if (value.length === 0) {
+            warning.classList.add('d-none');
+            input.classList.remove('is-invalid');
+            return;
+        }
+
+        // Obtener nombres de la tabla de usuarios del sistema
+        const existingUsers = Array.from(document.querySelectorAll('.users-panel-card table tbody code'))
+                                    .map(el => el.textContent.trim().toLowerCase());
+        
+        if (existingUsers.includes(value)) {
+            warning.classList.remove('d-none');
+            input.classList.add('is-invalid');
+        } else {
+            warning.classList.add('d-none');
+            input.classList.remove('is-invalid');
+        }
     }
 </script>
     <!-- Modal Ingreso Impresora de Red -->

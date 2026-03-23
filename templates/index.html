@@ -251,10 +251,11 @@
                         </td>
                         <td>
                             {% if pc.ad_real_name %}
-                            <div class="fw-bold">{{ pc.ad_real_name }}</div>
-                            <div class="small text-muted" style="font-size: 0.85rem; margin-bottom: 4px;">{{ pc.last_user }}</div>
+                            <div class="fw-bold text-dark">{{ pc.ad_real_name }}</div>
+                            <div class="small text-muted" style="font-size: 0.75rem;"><i class="bi bi-person-badge"></i> Usuario: <code>{{ pc.last_user }}</code></div>
                             {% else %}
-                            <div class="fw-bold" style="margin-bottom: 4px;">{{ pc.last_user or '-' }}</div>
+                            <div class="fw-bold text-dark">{{ pc.last_user or '-' }}</div>
+                            <div class="small text-muted" style="font-size: 0.7rem;">(Sin nombre real asignado)</div>
                             {% endif %}
                             
                             <div class="mb-1">

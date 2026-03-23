@@ -34,6 +34,7 @@ def inject_tasks_kpis():
                     SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' 
                     AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
                     AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%') AND alerta_impresora_red = 0
+                    AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
                 """).fetchone()["c"]
                 kpis['kpi_total_impresoras'] = net_pr + loc_pr
                 kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]

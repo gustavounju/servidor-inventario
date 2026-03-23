@@ -38,3 +38,36 @@ def login():
 def logout():
     clear_auth_session()
     return redirect(url_for("auth.login"))
+
+
+@bp_auth.route("/change_password", methods=["GET", "POST"])
+def change_password():
+    # Solo usuarios logueados
+    if not is_authenticated():
+        return redirect(url_for("auth.login"))
+
+    from utils.auth import current_username, update_app_user_password, refresh_session_user
+    username = current_username()
+    error = None
+
+    if request.method == "POST":
+        new_pass = request.form.get("new_password")
+        confirm_pass = request.form.get("confirm_password")
+
+        if not new_pass:
+            error = "Debes ingresar una nueva clave."
+        elif new_pass != confirm_pass:
+            error = "Las claves no coinciden."
+        elif len(new_pass) < 6:
+            error = "La clave debe tener al menos 6 caracteres."
+        else:
+            try:
+                update_app_user_password(username, new_pass)
+                # Refrescar la sesión para que must_change_password sea 0
+                refresh_session_user()
+                # Ir al dashboard o lo que corresponda
+                return redirect(url_for("dashboard.dashboard"))
+            except Exception as e:
+                error = f"Error al cambiar clave: {str(e)}"
+
+    return render_template("change_password.html", username=username, error=error)

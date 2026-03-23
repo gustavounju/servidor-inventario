@@ -124,7 +124,10 @@ def dashboard():
             count_sql = """
                 SELECT COUNT(*) as c 
                 FROM pcs p 
-                LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
+                LEFT JOIN ad_users u ON (
+                    LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username OR 
+                    LOWER(p.last_user) = LOWER(u.real_name)
+                )
                 WHERE 1=1
             """ + filter_sql
             total_rows = conn.execute(count_sql, filter_params).fetchone()["c"]
@@ -151,7 +154,10 @@ def dashboard():
                         LIMIT 1
                     ) as assigned_network_printer_id
                 FROM pcs p
-                LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
+                LEFT JOIN ad_users u ON (
+                    LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username OR 
+                    LOWER(p.last_user) = LOWER(u.real_name)
+                )
                 WHERE 1=1
             """ + filter_sql
             
@@ -184,7 +190,7 @@ def dashboard():
             # Primero: Cantidad de impresoras en el catálogo de Red
             count_network_catalog = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
             
-            # Segundo: PCs activas con impresora local (excluyendo las que sabemos que son de red por puerto UNC o alerta)
+            # Segundo: PCs activas con impresora local (excluyendo las que sabemos que son de red por puerto UNC o alerta o que ya están en el catálogo)
             count_local_printers = conn.execute("""
                 SELECT COUNT(*) as c 
                 FROM pcs 
@@ -193,6 +199,7 @@ def dashboard():
                 AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
                 AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%')
                 AND alerta_impresora_red = 0
+                AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
             """).fetchone()["c"]
             
             kpi_total_impresoras = count_network_catalog + count_local_printers
@@ -585,29 +592,52 @@ def global_activity():
         """).fetchall()
     return render_template("activity_logs.html", logs=logs)
 
+@bp_dashboard.route("/admin/users/debug")
+@superuser_required
+def debug_users():
+    from database.db_core import get_db_connection
+    from flask import jsonify
+    with get_db_connection() as conn:
+        app_users = conn.execute("SELECT username, display_name FROM app_users").fetchall()
+        ad_users = conn.execute("SELECT username, real_name FROM ad_users").fetchall()
+    return jsonify({
+        "app_users": [dict(r) for r in app_users],
+        "ad_users": [dict(r) for r in ad_users]
+    })
+
+
 @bp_dashboard.route("/update_user_phone", methods=["POST"])
 @superuser_required
 def update_user_phone():
     """Actualiza el teléfono de un usuario desde el modal."""
-    username = request.form.get("username", "").strip()
-    realname = request.form.get("realname", "").strip() or username
+    username = request.form.get("username", "").strip().lower()
+    old_username = request.form.get("old_username", "").strip().lower()
+    realname = request.form.get("realname", "").strip()
     phone = request.form.get("phone", "").strip()
+
     if username:
         try:
             with get_db_connection() as conn:
+                # Si el usuario cambió de nombre (rename), borramos el registro anterior
+                if old_username and old_username != username:
+                    conn.execute("DELETE FROM ad_users WHERE username = %s", (old_username,))
+
                 conn.execute("""
                     INSERT INTO ad_users (username, real_name, phone)
                     VALUES (%s, %s, %s)
-                    ON DUPLICATE KEY UPDATE phone = VALUES(phone)
+                    ON DUPLICATE KEY UPDATE 
+                        phone = VALUES(phone),
+                        real_name = VALUES(real_name)
                 """, (username, realname, phone))
         except Exception as e:
-            print(f"Error updating user phone: {e}")
-    return redirect(request.referrer or url_for("dashboard.dashboard"))
+            print(f"Error updating user ad data: {e}")
+    return redirect(url_for("dashboard.dashboard", manage_users=1))
 
 
 @bp_dashboard.route("/admin/users/create", methods=["POST"])
 @superuser_required
 def create_app_user():
+    is_edit_mode = request.form.get("is_edit_mode") == "1"
     username = request.form.get("username", "").strip().lower()
     display_name = request.form.get("display_name", "").strip() or username
     password = request.form.get("password", "")
@@ -623,6 +653,19 @@ def create_app_user():
         "reports": request.form.get("perm_reports") == "on",
     }
 
+    from utils.auth import _fetch_auth_user
+    existing_user = _fetch_auth_user(username)
+
+    # REGLA 1: No permitir crear un usuario que ya existe si no estamos en modo edición
+    if not is_edit_mode and existing_user:
+        flash(f"Error: El usuario '{username}' ya existe. Si desea modificarlo, use el botón 'Editar' en la lista.", "error")
+        return redirect(url_for("dashboard.dashboard", manage_users=1))
+    
+    # REGLA 2: Password obligatoria para nuevos usuarios
+    if not is_edit_mode and not password:
+        flash("Error: La contraseña es obligatoria para nuevos usuarios.", "error")
+        return redirect(url_for("dashboard.dashboard", manage_users=1))
+
     try:
         upsert_app_user(
             username=username,
@@ -635,11 +678,12 @@ def create_app_user():
             technician_name=technician_name,
             permissions=permissions,
         )
-        flash(f"Usuario del sistema '{username}' guardado correctamente.", "success")
+        msg = f"Usuario '{username}' actualizado." if is_edit_mode else f"Usuario '{username}' creado correctamente."
+        flash(msg, "success")
     except Exception as exc:
-        flash(f"No se pudo guardar el usuario: {exc}", "error")
+        flash(f"Error al procesar usuario: {exc}", "error")
 
-    return redirect(url_for("dashboard.dashboard"))
+    return redirect(url_for("dashboard.dashboard", manage_users=1))
 
 
 @bp_dashboard.route("/admin/users/<int:user_id>/delete", methods=["POST"])
@@ -650,5 +694,5 @@ def remove_app_user(user_id):
         flash("Usuario del sistema eliminado.", "success")
     except Exception as exc:
         flash(f"No se pudo eliminar el usuario: {exc}", "error")
-    return redirect(url_for("dashboard.dashboard"))
+    return redirect(url_for("dashboard.dashboard", manage_users=1))
 
