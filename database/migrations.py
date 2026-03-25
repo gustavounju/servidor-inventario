@@ -415,6 +415,17 @@ def migrate_db_v20():
     print("Migración V20 verificada.")
 
 
+def migrate_db_v21():
+    """Migración V21: Asegurar columna 'printer_sn' en pcs."""
+    print("Verificando migración de DB v21...")
+    with get_db_connection() as conn:
+        if not _column_exists(conn, "pcs", "printer_sn"):
+            print("Aplicando migración V21: Agregando 'printer_sn' a pcs...")
+            conn.execute("ALTER TABLE pcs ADD COLUMN printer_sn TEXT")
+        else:
+            print("Migración V21 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -436,3 +447,4 @@ def run_all_migrations():
     migrate_db_v18()
     migrate_db_v19()
     migrate_db_v20()
+    migrate_db_v21()

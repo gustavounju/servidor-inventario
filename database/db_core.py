@@ -100,6 +100,7 @@ def init_db():
                 monitors TEXT,
                 printer_model TEXT,
                 printer_port TEXT,
+                printer_sn TEXT,
                 ping_ms TEXT,
                 ping_loss_pct TEXT,
                 alerta_ram_baja TINYINT(1) DEFAULT 0,
