@@ -96,9 +96,14 @@ def index():
         network_printers = []
         for printer in network_printers_raw:
             p_dict = dict(printer)
-            # Obtener las PCs asignadas a esta impresora
-            assigned = conn.execute("SELECT pc_name FROM pc_network_printers WHERE printer_id = %s", (printer["id"],)).fetchall()
-            p_dict["assigned_pcs"] = [a["pc_name"] for a in assigned]
+            # Obtener las PCs asignadas a esta impresora junto con su usuario actual
+            assigned = conn.execute("""
+                SELECT p.pc_name, p.last_user 
+                FROM pc_network_printers pn
+                JOIN pcs p ON pn.pc_name = p.pc_name
+                WHERE pn.printer_id = %s
+            """, (printer["id"],)).fetchall()
+            p_dict["assigned_pcs"] = [dict(a) for a in assigned]
             network_printers.append(p_dict)
 
         # Historial de Infraestructura

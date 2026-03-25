@@ -407,20 +407,25 @@
                                             <td>
                                                 {% if printer.assigned_pcs %}
                                                 {% for pc_val in printer.assigned_pcs %}
-                                                <div class="badge bg-info text-dark me-1 mb-1 d-inline-flex align-items-center" style="font-weight: 500;">
-                                                    <a href="{{ url_for('dashboard.pc_detail', pc_name=pc_val) }}"
-                                                        class="text-dark text-decoration-none">
-                                                        {{ pc_val }}
-                                                    </a>
-                                                    <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=printer.id) }}" method="POST" class="d-inline ms-1">
-                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                        <input type="hidden" name="pc_name" value="{{ pc_val }}">
-                                                        <button type="submit" class="btn btn-link p-0 text-danger" style="line-height: 1;"
-                                                            title="Desvincular {{ pc_val }}"
-                                                            onclick="return confirm('¿Desvincular esta impresora del equipo {{ pc_val }}?');">
-                                                            <i class="bi bi-x-circle-fill" style="font-size: 0.75rem;"></i>
-                                                        </button>
-                                                    </form>
+                                                <div class="badge bg-info text-dark me-1 mb-1 d-inline-flex flex-column align-items-start p-2" style="font-weight: 500; border-radius: 8px;">
+                                                    <div class="d-flex align-items-center w-100 justify-content-between">
+                                                        <a href="{{ url_for('dashboard.pc_detail', pc_name=pc_val.pc_name) }}"
+                                                            class="text-dark text-decoration-none fw-bold">
+                                                            <i class="bi bi-pc-display me-1"></i>{{ pc_val.pc_name }}
+                                                        </a>
+                                                        <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=printer.id) }}" method="POST" class="d-inline ms-2">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                            <input type="hidden" name="pc_name" value="{{ pc_val.pc_name }}">
+                                                            <button type="submit" class="btn btn-link p-0 text-danger" style="line-height: 1;"
+                                                                title="Desvincular {{ pc_val.pc_name }}"
+                                                                onclick="return confirm('¿Desvincular esta impresora del equipo {{ pc_val.pc_name }}?');">
+                                                                <i class="bi bi-x-circle-fill" style="font-size: 0.9rem;"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                    <div class="small text-muted mt-1" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-person-fill me-1"></i>{{ pc_val.last_user or 'Sin usuario' }}
+                                                    </div>
                                                 </div>
                                                 {% endfor %}
                                                 {% else %}
