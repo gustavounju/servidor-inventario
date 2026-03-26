@@ -626,16 +626,26 @@
         });
 
         async function initApp() {
-            localStorage.removeItem('techName');
-            updateSoundUI(); // Sincronizar UI del botón al iniciar
-            checkDiagnostics(); // Ver estado de seguridad/permisos
-            registerServiceWorker(); // Restaurado para permitir instalación PWA
-            await loadData();
-            if (!currentUser) {
-                showLogin();
-                return;
+            try {
+                localStorage.removeItem('techName');
+                updateSoundUI();
+                checkDiagnostics();
+                registerServiceWorker();
+                
+                await loadData();
+                
+                if (!currentUser) {
+                    showLogin();
+                } else {
+                    showApp();
+                }
+            } catch (e) {
+                console.error("InitApp Fatal Error:", e);
+                const dbg = document.getElementById('debugPanel');
+                if (dbg) dbg.style.display = 'block';
+                const out = document.getElementById('debugOutput');
+                if (out) out.innerHTML = `<span class="text-danger fw-bold">FATAL ERROR:</span> ${e.message}<br><small>Hable con soporte técnico.</small>`;
             }
-            showApp();
         }
 
         function registerServiceWorker() {
