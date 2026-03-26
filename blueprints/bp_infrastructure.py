@@ -3,7 +3,13 @@ from database.db_core import get_db_connection
 from datetime import datetime as dt
 import requests
 import asyncio
-from pysnmp.hlapi.v3arch.asyncio import *
+try:
+    from pysnmp.hlapi.v3arch.asyncio import *
+    SNMP_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    # Backward compatibility or missing library
+    SNMP_AVAILABLE = False
+    print("WARNING: pysnmp (v5+) not found or incompatible. SNMP features will be disabled.")
 from utils.constants import FUERO_COLORS, FUERO_MAPPING
 
 bp_infrastructure = Blueprint('infrastructure', __name__, url_prefix='/infra')
@@ -505,6 +511,9 @@ def snmp_printer():
     ip = request.args.get('ip')
     if not ip:
         return {"error": "No IP provided"}, 400
+    
+    if not SNMP_AVAILABLE:
+        return {"error": "SNMP engine not available on this server version"}, 503
     
     # Limpiar IP por si viene con texto extra (ej: "192.168.1.9 (Red)")
     ip = ip.strip().split(' ')[0]
