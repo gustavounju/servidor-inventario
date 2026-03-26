@@ -128,10 +128,22 @@
                                 <input type="text" name="display_name" id="appDisplayName" class="form-control" placeholder="Ej: Juan Perez">
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small text-muted mb-1">Clave</label>
-                                <input type="password" name="password" id="appPassword" class="form-control" placeholder="Nueva clave o dejar vacio para conservar">
-                            </div>
+                                <label class="form-label small text-muted mb-1">Rol</label>
+                                <select name="role" id="appRole" class="form-select">
+                                    <option value="tecnico">Técnico</option>
+                                    <option value="administrador">Administrador</option>
+                                    <option value="operador">Operador</option>
+                                    <option value="infraestructura">Infraestructura</option>
+                                    <option value="consulta">Consulta/Directorio</option>
                                 </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">Clave</label>
+                                <input type="password" name="password" id="appPassword" class="form-control" placeholder="Clave para el usuario">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">Nombre Técnico (Móvil)</label>
+                                <input type="text" name="technician_name" id="appTechName" class="form-control" placeholder="Ej: Juan P.">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label small text-muted mb-1">Teléfono</label>
