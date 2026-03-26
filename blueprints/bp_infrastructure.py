@@ -555,23 +555,54 @@ async def snmp_fetch(ip):
                         if not result["mac_address"] and mac_str != "00:00:00:00:00:00":
                             result["mac_address"] = mac_str
 
-        # 3. Fetch Serial Number (prtGeneralSerialNumber)
-        async for errorIndication, errorStatus, errorIndex, varBinds in walk_cmd(
-            snmp_engine,
-            CommunityData('public', mpModel=0),
-            transport,
-            ContextData(),
-            ObjectType(ObjectIdentity('1.3.6.1.2.1.43.5.1.1.17')),
-            lexicographicMode=False
-        ):
-            if not errorIndication and not errorStatus and varBinds:
-                val = varBinds[0][1].prettyPrint()
-                if val and val != "No Such Instance currently exists at this OID":
-                    result["serial_number"] = val
-                    break
+        # 3. Fetch Serial Number (Multiple OIDs for better compatibility)
+        # OIDs: Standard PrtSerial, HP, Lexmark, Ricoh/Generic
+        serial_oids = [
+            '1.3.6.1.2.1.43.5.1.1.17',    # Standard (prtGeneralSerialNumber)
+            '1.3.6.1.4.1.11.2.3.9.4.2.1.1.3.3.0', # HP Serial
+            '1.3.6.1.4.1.641.2.1.2.1.6',  # Lexmark Serial
+            '1.3.6.1.2.1.43.5.1.1.17.1',  # Variation
+            '1.3.6.1.4.1.367.3.2.1.2.1.4' # Ricoh specific
+        ]
+        
+        for s_oid in serial_oids:
+            try:
+                errorIndication, errorStatus, errorIndex, varBindTable = await get_cmd(
+                    snmp_engine,
+                    CommunityData('public', mpModel=0),
+                    transport,
+                    ContextData(),
+                    ObjectType(ObjectIdentity(s_oid))
+                )
+                if not errorIndication and not errorStatus and varBindTable:
+                    val = varBindTable[0][1].prettyPrint()
+                    if val and "No Such" not in val and len(val) > 3:
+                        # Clean if it looks like a GUID or has too many symbols
+                        if not (val.startswith('{') or val.count('-') > 3):
+                            result["serial_number"] = val.strip()
+                            break
+            except Exception:
+                continue
+
+        # Fallback to Walk if direct Get didn't work for serial
+        if not result["serial_number"]:
+            async for errorIndication, errorStatus, errorIndex, varBinds in walk_cmd(
+                snmp_engine,
+                CommunityData('public', mpModel=0),
+                transport,
+                ContextData(),
+                ObjectType(ObjectIdentity('1.3.6.1.2.1.43.5.1.1.17')),
+                lexicographicMode=False
+            ):
+                if not errorIndication and not errorStatus and varBinds:
+                    val = varBinds[0][1].prettyPrint()
+                    if val and "No Such" not in val and len(val) > 3:
+                        if not (val.startswith('{') or val.count('-') > 3):
+                            result["serial_number"] = val.strip()
+                            break
                     
     except Exception as e:
-        print(f"SNMP Error: {e}")
+        print(f"SNMP Error on {ip}: {e}")
     finally:
         snmp_engine.close_dispatcher()
         

@@ -426,6 +426,17 @@ def migrate_db_v21():
             print("Migración V21 verificada.")
 
 
+def migrate_db_v22():
+    """Migración V22: Asegurar columna 'phone' en app_users."""
+    print("Verificando migración de DB v22...")
+    with get_db_connection() as conn:
+        if not _column_exists(conn, "app_users", "phone"):
+            print("Aplicando migración V22: Agregando 'phone' a app_users...")
+            conn.execute("ALTER TABLE app_users ADD COLUMN phone VARCHAR(255)")
+        else:
+            print("Migración V22 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -448,3 +459,4 @@ def run_all_migrations():
     migrate_db_v19()
     migrate_db_v20()
     migrate_db_v21()
+    migrate_db_v22()

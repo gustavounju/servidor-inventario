@@ -151,6 +151,7 @@ def build_session_user(row, auth_source):
         "permissions": permissions,
         "is_superuser": bool(row.get("is_superuser")),
         "must_change_password": bool(row.get("must_change_password")),
+        "phone": row.get("phone") or "",
         "auth_source": auth_source,
     }
 
@@ -267,7 +268,7 @@ def _fetch_auth_user(username):
         return conn.execute(
             """
             SELECT id, username, display_name, role, technician_name, password_hash,
-                   is_superuser, is_active, must_change_password,
+                   is_superuser, is_active, must_change_password, phone,
                    can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports
             FROM app_users
             WHERE username = %s
@@ -371,7 +372,7 @@ def _ensure_ad_shadow_user(ad_user):
         existing = conn.execute(
             """
             SELECT id, username, display_name, role, technician_name, password_hash,
-                   is_superuser, is_active, must_change_password,
+                   is_superuser, is_active, must_change_password, phone,
                    can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports
             FROM app_users WHERE username = %s LIMIT 1
             """,
@@ -384,10 +385,11 @@ def _ensure_ad_shadow_user(ad_user):
                 SET display_name = %s,
                     is_superuser = %s,
                     is_active = 1,
+                    phone = COALESCE(phone, %s),
                     updated_at = CURRENT_TIMESTAMP
                 WHERE username = %s
                 """,
-                (display_name, superuser_flag, username),
+                (display_name, superuser_flag, ad_user.get("phone"), username),
             )
             conn.commit()
             existing["display_name"] = display_name
@@ -400,10 +402,10 @@ def _ensure_ad_shadow_user(ad_user):
             """
             INSERT INTO app_users (
                 username, display_name, role, technician_name, password_hash,
-                is_superuser, is_active, must_change_password,
+                is_superuser, is_active, must_change_password, phone,
                 can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports
             )
-            VALUES (%s, %s, %s, NULL, %s, %s, 1, 0, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, NULL, %s, %s, 1, 0, %s, %s, %s, %s, %s)
             """,
             (
                 username,
@@ -411,6 +413,7 @@ def _ensure_ad_shadow_user(ad_user):
                 "administrador" if superuser_flag else "tecnico",
                 generated_hash,
                 superuser_flag,
+                ad_user.get("phone"),
                 1 if default_permissions["dashboard"] else 0,
                 1 if default_permissions["mobile"] else 0,
                 1 if default_permissions["infrastructure"] else 0,
@@ -431,6 +434,7 @@ def _ensure_ad_shadow_user(ad_user):
                 "can_access_mobile": default_permissions["mobile"],
                 "can_access_infrastructure": default_permissions["infrastructure"],
                 "can_access_reports": default_permissions["reports"],
+                "phone": ad_user.get("phone") or "",
             },
             "ad",
         )
@@ -472,7 +476,7 @@ def list_app_users():
         rows = conn.execute(
             """
             SELECT id, username, display_name, role, technician_name, is_superuser, is_active,
-                   must_change_password, can_access_dashboard, can_access_mobile,
+                   must_change_password, phone, can_access_dashboard, can_access_mobile,
                    can_access_infrastructure, can_access_reports, created_at, updated_at
             FROM app_users
             ORDER BY is_superuser DESC, username ASC
@@ -515,7 +519,7 @@ def list_technician_users():
     return users
 
 
-def upsert_app_user(username, password, display_name=None, is_superuser_flag=True, is_active=True, must_change_password=False, role="tecnico", technician_name=None, permissions=None):
+def upsert_app_user(username, password, display_name=None, is_superuser_flag=True, is_active=True, must_change_password=False, role="tecnico", technician_name=None, permissions=None, phone=None):
     from database.db_core import get_db_connection
 
     username = (username or "").strip().lower()
@@ -548,10 +552,10 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Tru
             """
             INSERT INTO app_users (
                 username, display_name, role, technician_name, password_hash,
-                is_superuser, is_active, must_change_password,
+                is_superuser, is_active, must_change_password, phone,
                 can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE
                 display_name = VALUES(display_name),
                 role = VALUES(role),
@@ -564,6 +568,7 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Tru
                 can_access_mobile = VALUES(can_access_mobile),
                 can_access_infrastructure = VALUES(can_access_infrastructure),
                 can_access_reports = VALUES(can_access_reports),
+                phone = VALUES(phone),
                 updated_at = CURRENT_TIMESTAMP
             """,
             (
@@ -579,6 +584,7 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Tru
                 1 if effective_permissions["mobile"] else 0,
                 1 if effective_permissions["infrastructure"] else 0,
                 1 if effective_permissions["reports"] else 0,
+                phone
             ),
         )
         conn.commit()

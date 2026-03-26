@@ -309,8 +309,9 @@ try {
                     $did = $pnp.DeviceID
                     if ($did -match "\\([^\\]+)$") {
                         $potentialSN = $matches[1]
-                        # Filtramos si es solo un ID de puerto genérico (ej: LPT1, USB001)
-                        if ($potentialSN -notmatch "^(USB|LPT|COM)[0-9]+$") {
+                        # Filtramos IDs genéricos, GUIDs o cadenas con demasiados guiones/caracteres extraños
+                        $isGuid = $potentialSN -match "^\{[A-F0-9-]+\}$" -or ($potentialSN -split "-").Count -gt 3
+                        if ($potentialSN -notmatch "^(USB|LPT|COM)[0-9]+$" -and -not $isGuid -and $potentialSN.Length -gt 3) {
                             $printerSN = $potentialSN
                         }
                     }

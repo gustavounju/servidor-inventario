@@ -131,13 +131,11 @@
                                 <label class="form-label small text-muted mb-1">Clave</label>
                                 <input type="password" name="password" id="appPassword" class="form-control" placeholder="Nueva clave o dejar vacio para conservar">
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted mb-1">Rol</label>
-                                <select name="role" id="appRole" class="form-select" onchange="applyRolePreset()">
-                                    {% for role_name in available_roles %}
-                                    <option value="{{ role_name }}" {% if role_name == 'tecnico' %}selected{% endif %}>{{ role_name|capitalize }}</option>
-                                    {% endfor %}
                                 </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted mb-1">Teléfono</label>
+                                <input type="text" name="phone" id="appPhone" class="form-control" placeholder="Ej: 4444">
                             </div>
                             <div class="col-md-2">
                                 <div class="form-check mt-4">
@@ -173,6 +171,7 @@
                                     <tr>
                                         <th>Usuario</th>
                                         <th>Nombre</th>
+                                        <th>Teléfono</th>
                                         <th>Rol</th>
                                         <th>Accesos</th>
                                         <th>Estado</th>
@@ -184,6 +183,7 @@
                                     <tr>
                                         <td><code>{{ app_user.username }}</code></td>
                                         <td>{{ app_user.display_name or '-' }}</td>
+                                        <td><small class="text-muted">{{ app_user.phone or '-' }}</small></td>
                                         <td>
                                             {% if app_user.is_superuser %}
                                             <span class="badge text-bg-danger">Superusuario</span>
@@ -784,6 +784,7 @@
         if (!usernameEl) return;
         usernameEl.value = user.username || '';
         document.getElementById('appDisplayName').value = user.display_name || '';
+        document.getElementById('appPhone').value = user.phone || '';
         document.getElementById('appPassword').value = '';
         document.getElementById('appRole').value = user.role || 'tecnico';
         document.getElementById('newIsSuperuser').checked = !!user.is_superuser;
@@ -813,6 +814,7 @@
         usernameEl.readOnly = false;
         usernameEl.value = username || '';
         document.getElementById('appDisplayName').value = realname || '';
+        document.getElementById('appPhone').value = '';
         document.getElementById('appPassword').value = '';
         document.getElementById('appPassword').placeholder = 'Contraseña obligatoria';
         document.getElementById('appPassword').required = true;

@@ -646,6 +646,7 @@ def create_app_user():
     must_change_password = request.form.get("must_change_password") == "on"
     role = request.form.get("role", "tecnico").strip().lower()
     technician_name = request.form.get("technician_name", "").strip()
+    phone = request.form.get("phone", "").strip()
     permissions = {
         "dashboard": request.form.get("perm_dashboard") == "on",
         "mobile": request.form.get("perm_mobile") == "on",
@@ -677,6 +678,7 @@ def create_app_user():
             role=role,
             technician_name=technician_name,
             permissions=permissions,
+            phone=phone,
         )
         msg = f"Usuario '{username}' actualizado." if is_edit_mode else f"Usuario '{username}' creado correctamente."
         flash(msg, "success")
