@@ -16,6 +16,16 @@ def mobile_view():
 def mobile_scanner_view():
     return render_template("mobile_scanner.html")
 
+def _json_serializable(data):
+    """Auxiliar para convertir objetos no serializables (como datetime) a string."""
+    if isinstance(data, list):
+        return [_json_serializable(i) for i in data]
+    if isinstance(data, dict):
+        return {k: _json_serializable(v) for k, v in data.items()}
+    if isinstance(data, (datetime.datetime, datetime.date)):
+        return data.strftime("%Y-%m-%d %H:%M:%S")
+    return data
+
 @bp_mobile.route("/api/mobile/data")
 def api_mobile_data():
     try:
@@ -29,19 +39,27 @@ def api_mobile_data():
                 SELECT username, real_name, phone
                 FROM ad_users
                 UNION
-                SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username,
-                                last_user as real_name,
-                                NULL as phone
-                FROM pcs
-                WHERE last_user IS NOT NULL AND last_user != ''
+                SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
+                                last_user as real_name, 
+                                NULL as phone 
+                FROM pcs 
+                WHERE last_user IS NOT NULL AND last_user != '' 
                   AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
                 ORDER BY real_name
                 """
             ).fetchall()]
             pcs = [{"name": r["pc_name"], "user": r["last_user"] or "Desconocido", "area": r["fuero"] or "Desconocido"} for r in pcs_query]
 
-        return jsonify({"technicians": techs, "unassigned": unassigned, "active_tasks": all_active, "pcs": pcs, "requesters": requesters})
+        payload = {
+            "technicians": techs, 
+            "unassigned": unassigned, 
+            "active_tasks": all_active, 
+            "pcs": pcs, 
+            "requesters": requesters
+        }
+        return jsonify(_json_serializable(payload))
     except Exception as e:
+        print(f"Error api_mobile_data: {e}")
         return jsonify({"error": str(e)}), 500
 
 @bp_mobile.route("/api/mobile/notifications")
@@ -49,13 +67,10 @@ def api_mobile_notifications():
     try:
         with get_db_connection() as conn:
             # Traer las últimas 50 notificaciones
-            rows = conn.execute("SELECT * FROM app_notifications ORDER BY created_at DESC LIMIT 50").fetchall()
-            # Convertir objetos datetime a string para JSON
-            for r in rows:
-                if isinstance(r['created_at'], datetime.datetime):
-                    r['created_at'] = r['created_at'].strftime("%Y-%m-%d %H:%M:%S")
-            return jsonify(rows)
+            rows = [dict(r) for r in conn.execute("SELECT * FROM app_notifications ORDER BY created_at DESC LIMIT 50").fetchall()]
+            return jsonify(_json_serializable(rows))
     except Exception as e:
+        print(f"Error api_mobile_notifications: {e}")
         return jsonify({"error": str(e)}), 500
 
 @bp_mobile.route("/api/mobile/create_task", methods=["POST"])
