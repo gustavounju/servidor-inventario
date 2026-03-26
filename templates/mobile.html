@@ -363,18 +363,25 @@
         </div>
     </div>
 
-    {% include '_module_switcher.html' %}
+    <!-- App Header (Solo móvil) -->
+    <header id="appHeader" style="display:none; position:fixed; top:0; left:0; width:100%; height:60px; background:var(--mob-primary); color:#fff; align-items:center; padding:0 18px; z-index:1500; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+        <div style="flex-grow:1; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em;">
+            🛠️ <span style="margin-left:5px;">GOLD Mobile</span>
+        </div>
+        <div style="text-align:right;">
+            <div id="headerName" style="font-size:0.75rem; font-weight:700; opacity:0.9; margin-bottom:-2px;">Cargando...</div>
+            <a href="#" onclick="logout()" style="color:rgba(255,255,255,0.7); font-size:0.7rem; text-decoration:none; font-weight:600;">Cerrar sesión</a>
+        </div>
+    </header>
 
     <!-- Debug Panel -->
-    <div id="debugPanel" style="display:none; margin-top: 110px; padding: 10px; background: #eee; font-family: monospace; font-size: 10px; border-bottom: 2px solid #ddd;">
+    <div id="debugPanel" style="display:none; margin-top: 70px; padding: 10px; background: #eee; font-family: monospace; font-size: 10px; border-bottom: 2px solid #ddd;">
         <strong>DIAGNÓSTICO:</strong> <span id="debugOutput">...</span>
     </div>
 
     <!-- Main Content -->
-    <div class="container py-3" id="mainContent" style="display:none;">
+    <div class="container py-3" id="mainContent" style="display:none; margin-top: 60px;">
         <div id="secureBanner" class="secure-banner"></div>
-
-        {% include '_module_switcher.html' %}
 
         <div class="status-board">
             <div class="mini-card">
@@ -936,11 +943,17 @@
 
         // --- APP FLOW ---
         function showLogin() {
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('appHeader').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'none';
-            document.getElementById('bottomNav').style.display = 'none';
-            document.getElementById('fabAdd').style.display = 'none';
+            const login = document.getElementById('loginScreen');
+            const header = document.getElementById('appHeader');
+            const content = document.getElementById('mainContent');
+            const nav = document.getElementById('bottomNav');
+            const fab = document.getElementById('fabAdd');
+
+            if (login) login.style.display = 'flex';
+            if (header) header.style.display = 'none';
+            if (content) content.style.display = 'none';
+            if (nav) nav.style.display = 'none';
+            if (fab) fab.style.display = 'none';
         }
 
         function logout() {
@@ -951,13 +964,23 @@
         }
 
         function showApp() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('appHeader').style.display = 'flex';
-            document.getElementById('mainContent').style.display = 'block';
-            document.getElementById('bottomNav').style.display = 'flex';
-            document.getElementById('fabAdd').style.display = 'flex';
-            document.getElementById('headerName').textContent = currentUser;
-            document.getElementById('mobileSessionCard').textContent = currentUser;
+            const login = document.getElementById('loginScreen');
+            const header = document.getElementById('appHeader');
+            const content = document.getElementById('mainContent');
+            const nav = document.getElementById('bottomNav');
+            const fab = document.getElementById('fabAdd');
+            const hName = document.getElementById('headerName');
+
+            if (login) login.style.display = 'none';
+            if (header) header.style.display = 'flex';
+            if (content) content.style.display = 'block';
+            if (nav) nav.style.display = 'flex';
+            if (fab) fab.style.display = 'flex';
+            
+            if (hName) hName.textContent = currentUser;
+            const sessionCard = document.getElementById('mobileSessionCard');
+            if (sessionCard) sessionCard.textContent = currentUser;
+            
             renderLists();
             // Intentar suscribir a notificaciones push al iniciar sesión
             setTimeout(() => {
