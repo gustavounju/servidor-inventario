@@ -366,11 +366,22 @@
     <!-- App Header (Solo móvil) -->
     <header id="appHeader" style="display:none; position:fixed; top:0; left:0; width:100%; height:60px; background:var(--mob-primary); color:#fff; align-items:center; padding:0 18px; z-index:1500; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
         <div style="flex-grow:1; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em;">
-            🛠️ <span style="margin-left:5px;">GOLD Mobile</span>
+            🛠️ <span id="headerName" style="margin-left:5px;">GOLD Mobile</span>
         </div>
-        <div style="text-align:right;">
-            <div id="headerName" style="font-size:0.75rem; font-weight:700; opacity:0.9; margin-bottom:-2px;">Cargando...</div>
-            <a href="#" onclick="logout()" style="color:rgba(255,255,255,0.7); font-size:0.7rem; text-decoration:none; font-weight:600;">Cerrar sesión</a>
+        <div class="header-actions" style="display:flex; gap:8px; align-items:center;">
+            <div title="Estado SIGJ" style="display:flex; align-items:center; background:rgba(0,0,0,0.15); padding:4px 8px; border-radius:10px; font-size:0.7rem; gap:5px;">
+                 <span id="sigj-mobile-status-dot" class="status-dot-blink bg-warning" style="width:7px; height:7px; border-radius:50%; display:inline-block;"></span>
+                 <span id="sigj-mobile-status-text" class="fw-bold">...</span>
+            </div>
+            <button id="btnSound" onclick="toggleSound()" class="header-btn" style="background:transparent; border:none; color:#fff; font-size:1.2rem; padding:4px;">
+                <i id="iconSound" class="bi bi-volume-up-fill"></i>
+            </button>
+            <button class="header-btn" onclick="forceRefresh()" style="background:transparent; border:none; color:#fff; font-size:1.2rem; padding:4px;">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <button class="header-btn" onclick="logout()" style="background:transparent; border:none; color:#fff; font-size:1.2rem; padding:4px;">
+                <i class="bi bi-box-arrow-right"></i>
+            </button>
         </div>
     </header>
 
@@ -1186,6 +1197,8 @@
         function updateSoundUI() {
             const btn = document.getElementById('btnSound');
             const icon = document.getElementById('iconSound');
+            if (!btn || !icon) return;
+            
             if (soundEnabled) {
                 btn.classList.add('btn-warning');
                 btn.classList.remove('btn-outline-secondary');
@@ -1393,22 +1406,28 @@
                 fetch('/infra/status_check')
                     .then(response => response.json())
                     .then(data => {
-                        statusDot.classList.remove('status-dot-blink', 'bg-warning');
+                        if (statusDot) statusDot.classList.remove('status-dot-blink', 'bg-warning');
                         if (data.status === 'online') {
-                            statusDot.classList.add('bg-success');
-                            statusText.innerText = 'ON';
-                            statusText.style.color = '#afffaf';
+                            if (statusDot) statusDot.classList.add('bg-success');
+                            if (statusText) {
+                                statusText.innerText = 'ON';
+                                statusText.style.color = '#afffaf';
+                            }
                         } else {
-                            statusDot.classList.add('bg-danger');
-                            statusText.innerText = 'OFF';
-                            statusText.style.color = '#ff9999';
+                            if (statusDot) statusDot.classList.add('bg-danger');
+                            if (statusText) {
+                                statusText.innerText = 'OFF';
+                                statusText.style.color = '#ff9999';
+                            }
                         }
                     })
                     .catch(error => {
                         console.error('Error fetching SIGJ status:', error);
-                        statusDot.classList.remove('status-dot-blink', 'bg-warning');
-                        statusDot.classList.add('bg-secondary');
-                        statusText.innerText = 'ERR';
+                        if (statusDot) {
+                           statusDot.classList.remove('status-dot-blink', 'bg-warning');
+                           statusDot.classList.add('bg-secondary');
+                        }
+                        if (statusText) statusText.innerText = 'ERR';
                     });
             }
         });
