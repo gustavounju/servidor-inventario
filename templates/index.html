@@ -300,6 +300,13 @@
                                                 </button>
                                             </form>
                                         {% else %}
+                                            {# Badge de Red para compartidas o detección directa #}
+                                            {% if "\\" in (pc.printer_port or "") or "." in (pc.printer_port or "") %}
+                                                <span class="badge bg-secondary text-white me-1" style="font-size: 0.7rem; opacity: 0.8;">
+                                                    <i class="bi bi-diagram-3"></i> Red
+                                                </span>
+                                            {% endif %}
+                                            
                                             {# Boton para stockear si el reporte tiene impresora #}
                                             {% if pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
                                             <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none me-1" 

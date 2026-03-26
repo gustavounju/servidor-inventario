@@ -196,7 +196,16 @@ def process_inventory_data(data):
         
         # 2. Re-vinculamos únicamente si el script detecta una impresora que está en el catálogo
         if (alerta_impresora_red == 1 or printer_sn != 'N/A') and (printer_port != 'N/A' or printer_sn != 'N/A'):
-            clean_ip = printer_port.split(' ')[0] if printer_port != 'N/A' else None
+            clean_ip = None
+            if printer_port != 'N/A':
+                # Intentar extraer IP de: "10.15.0.1 (Port)" o "\\10.15.0.1\Printer"
+                if printer_port.startswith('\\\\'):
+                    parts = printer_port.split('\\')
+                    if len(parts) >= 3:
+                        maybe_host = parts[2]
+                        if '.' in maybe_host: clean_ip = maybe_host
+                else:
+                    clean_ip = printer_port.split(' ')[0]
             
             # Buscar en el catálogo (Primero por SN, luego por IP)
             known_printer = None
