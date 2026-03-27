@@ -220,7 +220,6 @@
                     {% if pc.is_active == 'False' %}
                     {% set _ = row_class.append('row-graveyard') %}
                     {% endif %}
-                    {% if pc.pc_name in ['PC Generica', 'Infraestructura'] %}{% continue %}{% endif %}
                     <tr class="{{ ' '.join(row_class) }}" data-alerta-ram="{{ pc.alerta_ram_baja | default(0) }}"
                         data-alerta-sin-imp="{{ pc.alerta_sin_impresora | default(0) }}"
                         data-alerta-impresora-red="{{ pc.alerta_impresora_red | default(0) }}"
