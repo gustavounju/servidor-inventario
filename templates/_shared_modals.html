@@ -916,7 +916,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">N° Serie / MAC Address <span
-                                    class="text-danger">*</span></label>
+                                     class="text-danger" id="printer_sn_required_marker">*</span></label>
                             <input type="text" class="form-control shadow-sm" name="serial_number" id="printer_serial_number"
                                 required placeholder="SN / MAC de la impresora">
                         </div>
@@ -945,11 +945,34 @@
             const modal = (modalElement._bs_modal) || new bootstrap.Modal(modalElement);
             modalElement._bs_modal = modal;
             
-            // Limpiar IP: Si viene algo como "192.168.1.9 (Red)", extraer solo el primer bloque
+            // Limpiar IP: Si viene algo como "10.15.3.76 (Red)", extraer solo el primer bloque
             let cleanIp = (ip || '').trim().split(' ')[0];
             
-            // Si no parece una IP válida (vX.X.X.X), probablemente sea local
-            const isLocal = !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(cleanIp);
+            // Detección de impresora compartida (ej: \\10.15.3.76\Pantum)
+            const isShared = cleanIp.startsWith('\\\\');
+            if (isShared) {
+                // Quitar la obligatoriedad del serial en el modal para impresoras compartidas
+                document.getElementById('printer_serial_number').required = false;
+                document.getElementById('printer_sn_required_marker').classList.add('d-none');
+                
+                // Intentar buscar el serial del HOST automáticamente vía API
+                const hostPart = cleanIp.split('\\')[2];
+                if (hostPart && (!serialNumber || serialNumber === 'N/A')) {
+                    fetch('/api/pc_printer/' + encodeURIComponent(hostPart))
+                        .then(res => res.json())
+                        .then(apiData => {
+                            if (apiData.status === 'success' && apiData.printer_sn && apiData.printer_sn !== 'N/A') {
+                                document.getElementById('printer_serial_number').value = apiData.printer_sn;
+                            }
+                        })
+                        .catch(e => console.warn("No se pudo autodetectar serial del host:", e));
+                }
+            } else {
+                document.getElementById('printer_serial_number').required = true;
+                document.getElementById('printer_sn_required_marker').classList.remove('d-none');
+            }
+            
+            const isLocal = !isShared && !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(cleanIp);
             if (isLocal) {
                 cleanIp = cleanIp.includes('USB') ? 'USB' : (cleanIp || 'Local');
             }
@@ -974,8 +997,8 @@
 
             modal.show();
             
-            // Si hay IP, disparar autocompletar automáticamente para conveniencia
-            if (cleanIp) {
+            // Si hay IP real (no compartida), disparar autocompletar SNMP
+            if (cleanIp && !isShared && !isLocal) {
                 setTimeout(() => {
                     const btn = document.getElementById('btnAutocompletarSNMP');
                     if (btn) btn.click();

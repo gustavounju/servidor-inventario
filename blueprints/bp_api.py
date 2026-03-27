@@ -95,16 +95,40 @@ def process_inventory_data(data):
         sin_modelo = True
 
     es_virtual = ("PDF" in pm) or ("XPS" in pm) or ("ONENOTE" in pm)
-    es_red = ("IP_" in pp) or ("WSD" in pp) or ("\\" in pp) or ("\\" in pm) or ("IP_" in pm) or ("(RED)" in pp) or ("(RED)" in pm) or (pp == "RED")
+    es_compartida_unc = pp.startswith("\\\\")
+    es_red_directa = ("IP_" in pp) or ("WSD" in pp) or ("." in pp and not es_compartida_unc)
+    
+    # --- MEJORA: Herencia de Serial para Impresoras Compartidas ---
+    if es_compartida_unc and (printer_sn == "N/A" or not printer_sn):
+        try:
+            # Extraer el nombre del host (ej: \\PC01\Printer -> PC01 o \\10.x.x.x\Printer)
+            parts = printer_port.split("\\")
+            if len(parts) >= 3:
+                host_ref = parts[2].upper()
+                with get_db_connection() as conn:
+                    # Buscar por Nombre o por IP
+                    host_info = conn.execute(
+                        "SELECT printer_sn, printer_model FROM pcs WHERE UPPER(pc_name) = %s OR ip_address = %s LIMIT 1", 
+                        (host_ref, host_ref)
+                    ).fetchone()
+                    
+                    if host_info and host_info["printer_sn"] and host_info["printer_sn"] != "N/A":
+                        printer_sn = host_info["printer_sn"]
+        except:
+            pass
+    # -------------------------------------------------------------
 
     if esta_desconectada and es_local and not sin_modelo:
         alerta_impresora_red = 1
         alerta_sin_impresora = 1
     else:
-        if sin_modelo or es_virtual or esta_desconectada: alerta_sin_impresora = 1
-        else: alerta_sin_impresora = 0
+        if sin_modelo or es_virtual or esta_desconectada: 
+            alerta_sin_impresora = 1
+        else: 
+            alerta_sin_impresora = 0
 
-        alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red) else 0
+        # Solo alertar si es red DIRECTA (IP/WSD). Las compartidas se manejan como local/link
+        alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red_directa) else 0
 
         if alerta_impresora_red == 1:
             alerta_sin_impresora = 1
@@ -317,5 +341,26 @@ def api_health(pc_name):
             data = json.loads(row["full_json_data"])
             health = data.get("Salud", {})
             return jsonify({"status": "success", "data": health})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+@bp_api.route("/api/pc_printer/<string:pc_ref>")
+def api_pc_printer(pc_ref):
+    """Devuelve el serial de la impresora de una PC dada (por nombre o IP)."""
+    try:
+        pc_ref = pc_ref.upper()
+        with get_db_connection() as conn:
+            row = conn.execute(
+                "SELECT printer_sn, printer_model, printer_port FROM pcs WHERE UPPER(pc_name) = %s OR ip_address = %s LIMIT 1", 
+                (pc_ref, pc_ref)
+            ).fetchone()
+            if not row:
+                return jsonify({"status": "error", "message": "PC no encontrada"}), 404
+            
+            return jsonify({
+                "status": "success", 
+                "printer_sn": row["printer_sn"] or "N/A",
+                "printer_model": row["printer_model"] or "N/A",
+                "printer_port": row["printer_port"] or "N/A"
+            })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

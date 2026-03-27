@@ -310,9 +310,13 @@
                                                 </button>
                                             </form>
                                         {% else %}
-                                            {# Badge de Red para compartidas o detección directa #}
-                                            {% if "\\" in (pc.printer_port or "") or "." in (pc.printer_port or "") %}
-                                                <span class="badge bg-secondary text-white me-1" style="font-size: 0.7rem; opacity: 0.8;">
+                                            {# Badge de Red / Compartida #}
+                                            {% if "\\" in (pc.printer_port or "") %}
+                                                <span class="badge bg-secondary text-white me-1" style="font-size: 0.7rem;" title="{{ pc.printer_port }}">
+                                                    <i class="bi bi-share-fill"></i> Compartida
+                                                </span>
+                                            {% elif "." in (pc.printer_port or "") or "WSD" in (pc.printer_port or "") %}
+                                                <span class="badge bg-info text-dark me-1" style="font-size: 0.7rem;">
                                                     <i class="bi bi-diagram-3"></i> Red
                                                 </span>
                                             {% endif %}
