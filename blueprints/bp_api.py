@@ -9,7 +9,7 @@ from utils.constants import detect_fuero
 bp_api = Blueprint('api', __name__)
 
 def process_inventory_data(data):
-    """Lógica central para procesar el JSON de inventario e insertar/actualizar en BD."""
+    from utils.constants import detect_fuero, clean_hex_string
     pc_name = data.get("PC_Nombre")
     if not pc_name: raise ValueError("Falta PC_Nombre en el JSON")
 
@@ -31,7 +31,7 @@ def process_inventory_data(data):
     motherboard_model = data.get("Motherboard_Model", "N/A")
     printer_model = data.get("Printer_Model", "N/A")
     printer_port = data.get("Printer_Port", "N/A")
-    printer_sn = data.get("Printer_SN", "N/A")
+    printer_sn = clean_hex_string(data.get("Printer_SN", "N/A"))
         
     # ----------------------------------------------------
     # TRADUCCIÓN DE SIGLAS EDID DE MONITORES

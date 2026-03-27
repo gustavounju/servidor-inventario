@@ -720,12 +720,16 @@
             });
     }
 
-    // Set default date to today
+    // Set default date to today (robust local date)
     document.addEventListener('DOMContentLoaded', function() {
         const reportDate = document.getElementById('reportDate');
         if (reportDate) {
-            const today = new Date().toISOString().split('T')[0];
-            reportDate.value = today;
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const localToday = `${yyyy}-${mm}-${dd}`;
+            reportDate.value = localToday;
         }
     });
 </script>

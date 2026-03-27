@@ -75,10 +75,10 @@ MODULE_DEFINITIONS = [
     },
     {
         "key": "mobile",
-        "label": "Mobile",
-        "endpoint": "mobile.mobile_view",
+        "label": "Técnicos",
+        "endpoint": "tecnicos.tecnicos_view",
         "icon": "bi-phone-fill",
-        "active_prefixes": ["mobile.", "api_mobile_"],
+        "active_prefixes": ["tecnicos.", "mobile."],
     },
 ]
 
@@ -213,9 +213,14 @@ def role_label(role_name=None):
 def allowed_module_links(user=None):
     user = user or current_user()
     endpoint = request.endpoint or ""
+    ua = (request.user_agent.string or "").lower()
+    is_mobile_client = any(token in ua for token in ["android", "iphone", "ipad", "mobile"])
     links = []
     for module in MODULE_DEFINITIONS:
         if not has_permission(module["key"], user):
+            continue
+        # Ocultar el link de Técnicos en escritorio si el usuario tiene acceso al dashboard
+        if module["key"] == "mobile" and has_permission("dashboard", user) and not is_mobile_client:
             continue
         links.append({
             "key": module["key"],
@@ -580,11 +585,11 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Tru
                 1 if is_superuser_flag else 0,
                 1 if is_active else 0,
                 1 if must_change_password else 0,
+                phone,
                 1 if effective_permissions["dashboard"] else 0,
                 1 if effective_permissions["mobile"] else 0,
                 1 if effective_permissions["infrastructure"] else 0,
                 1 if effective_permissions["reports"] else 0,
-                phone
             ),
         )
         conn.commit()
@@ -655,7 +660,7 @@ def refresh_session_user():
 
 def required_permission_for_endpoint(endpoint=None):
     endpoint = endpoint or request.endpoint or ""
-    if endpoint.startswith("mobile."):
+    if endpoint.startswith("mobile.") or endpoint.startswith("tecnicos."):
         return "mobile"
     if endpoint.startswith("stock.") or endpoint.startswith("infrastructure."):
         return "infrastructure"
@@ -684,7 +689,7 @@ def default_landing_url(user=None):
     is_mobile_client = any(token in ua for token in ["android", "iphone", "ipad", "mobile"])
 
     if is_mobile_client and has_permission("mobile", user):
-        return url_for("mobile.mobile_view")
+        return url_for("tecnicos.tecnicos_view")
     if has_permission("dashboard", user):
         return url_for("dashboard.dashboard")
     if has_permission("infrastructure", user):
@@ -692,7 +697,7 @@ def default_landing_url(user=None):
     if has_permission("reports", user):
         return url_for("tasks.report_tasks_completed")
     if has_permission("mobile", user):
-        return url_for("mobile.mobile_view")
+        return url_for("tecnicos.tecnicos_view")
     return url_for("auth.logout")
 
 

@@ -108,6 +108,33 @@
 
 
 
+        <!-- Tarjetas especiales: PC Genérica e Infraestructura -->
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          {% for pc in pcs %}
+          {% if pc.pc_name in ['PC Generica', 'Infraestructura'] %}
+          <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm" style="min-width:200px; border-radius:12px; background: linear-gradient(135deg, #1e293b, #0f172a); color:#f1f5f9; cursor:pointer; transition: transform .15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+              <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-center justify-content-between gap-3">
+                  <div>
+                    <div style="font-size:.75rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em;">{% if pc.pc_name == 'PC Generica' %}Tareas sin equipo asignado{% else %}Recursos de Red / Servidores{% endif %}</div>
+                    <div style="font-size:1rem; font-weight:700;">{{ pc.pc_name }}</div>
+                  </div>
+                  <div class="text-end">
+                    {% if pc.tareas_pendientes > 0 %}
+                    <span class="badge" style="background:#ef4444; font-size:.9rem; padding:5px 10px; border-radius:8px;">{{ pc.tareas_pendientes }} tarea{{ 's' if pc.tareas_pendientes != 1 else '' }}</span>
+                    {% else %}
+                    <span class="badge" style="background:#22c55e; font-size:.85rem; padding:4px 9px; border-radius:8px;"><i class="bi bi-check-lg"></i> Sin pendientes</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </a>
+          {% endif %}
+          {% endfor %}
+        </div>
+
         <!-- Tabla de inventario -->
         <div class="table-responsive" id="inventoryTableContainer">
             <table id="inventoryTable" class="table table-striped table-hover table-sm mb-0">
@@ -193,6 +220,7 @@
                     {% if pc.is_active == 'False' %}
                     {% set _ = row_class.append('row-graveyard') %}
                     {% endif %}
+                    {% if pc.pc_name in ['PC Generica', 'Infraestructura'] %}{% continue %}{% endif %}
                     <tr class="{{ ' '.join(row_class) }}" data-alerta-ram="{{ pc.alerta_ram_baja | default(0) }}"
                         data-alerta-sin-imp="{{ pc.alerta_sin_impresora | default(0) }}"
                         data-alerta-impresora-red="{{ pc.alerta_impresora_red | default(0) }}"
@@ -201,24 +229,7 @@
                         data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}" style="cursor: pointer;"
                         onclick="if(!event.target.closest('a') && !event.target.closest('button')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
                         {% if pc.pc_name in ['PC Generica', 'Infraestructura'] %}
-                        <td
-                            style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
-                            {{ pc.pc_name }}
-                        </td>
-                        <td>
-                            <div class="fw-bold text-muted">-</div>
-                        </td>
-                        <td><span class="text-muted">-</span></td>
-                        <td><span class="text-muted">-</span></td>
-                        <td><span class="text-muted">-</span></td>
-                        <td><span class="text-muted">-</span></td>
-                        <td><span class="text-muted">-</span></td>
-                        <td><span class="text-muted">-</span></td>
-                        <td><span class="text-muted">-</span></td>
-                        <td><span class="text-muted">-</span></td>
-                        <td class="text-center p-1">
-                            <!-- Acciones reducidas porque la fila es clickeable -->
-                        </td>
+                        {# Omitir estas filas — ya se muestran como cards arriba #}
                         {% else %}
                         <td
                             style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">

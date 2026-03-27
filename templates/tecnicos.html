@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>GOLD · Técnicos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --bg: #0f1117;
+      --bg2: #181d27;
+      --bg3: #1f2637;
+      --card: #1e2535;
+      --card-hover: #252e42;
+      --border: rgba(255,255,255,0.07);
+      --accent: #4f8ef7;
+      --accent2: #6c63ff;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --text: #f1f5f9;
+      --text-muted: #7c8aa0;
+      --input-bg: #252e42;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; }
+
+    /* ── Layout ── */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+    }
+
+    /* ── Header ── */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      gap: 12px;
+    }
+    .top-bar-brand { display: flex; align-items: center; gap: 10px; }
+    .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse-dot 2s infinite; }
+    @keyframes pulse-dot { 0%,100% { opacity:1;transform:scale(1); } 50% { opacity:.6;transform:scale(1.3); } }
+    .brand-name { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; }
+    .brand-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 400; }
+    .tech-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 20px; padding: 5px 12px; font-size: 0.8rem;
+      color: var(--text); white-space: nowrap; cursor: pointer;
+    }
+    .tech-badge i { color: var(--accent); font-size: 0.9rem; }
+
+    /* ── Tab Nav ── */
+    .tab-nav {
+      display: flex;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1; padding: 11px 4px; border: none; background: none;
+      color: var(--text-muted); font-size: 0.75rem; font-weight: 600;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer; transition: color .2s; position: relative;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .tab-btn i { font-size: 1.1rem; }
+    .tab-btn.active { color: var(--accent); }
+    .tab-btn.active::after {
+      content: ''; position: absolute; bottom: 0; left: 20%; right: 20%;
+      height: 2px; background: var(--accent); border-radius: 2px 2px 0 0;
+    }
+    .tab-badge {
+      position: absolute; top: 6px; right: calc(50% - 14px);
+      background: var(--red); color: #fff; font-size: 0.6rem; font-weight: 700;
+      border-radius: 8px; padding: 1px 5px; min-width: 16px; text-align: center;
+    }
+
+    /* ── Content Panels ── */
+    .content-area { flex: 1; overflow: hidden; position: relative; }
+    .panel { position: absolute; inset: 0; overflow-y: auto; padding: 16px; display: none; }
+    .panel.active { display: block; }
+    .panel::-webkit-scrollbar { width: 4px; }
+    .panel::-webkit-scrollbar-track { background: transparent; }
+    .panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ── Cards ── */
+    .task-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px 15px;
+      margin-bottom: 10px; transition: background .15s, transform .15s;
+      position: relative; overflow: hidden;
+    }
+    .task-card:active { background: var(--card-hover); transform: scale(0.985); }
+    .task-card-accent {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 4px 0 0 4px;
+    }
+    .task-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+    .task-desc { font-size: 0.88rem; font-weight: 600; line-height: 1.4; color: var(--text); }
+    .task-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .meta-chip {
+      display: flex; align-items: center; gap: 3px; background: var(--bg3);
+      border-radius: 6px; padding: 2px 7px; font-size: 0.7rem; color: var(--text-muted);
+    }
+    .status-pill {
+      font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+      text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+    }
+    .pill-pending { background: rgba(245,158,11,0.15); color: var(--yellow); }
+    .pill-mine { background: rgba(79,142,247,0.15); color: var(--accent); }
+    .pill-done { background: rgba(34,197,94,0.15); color: var(--green); }
+
+    .card-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .btn-act {
+      flex: 1; padding: 8px; border: none; border-radius: var(--radius-sm);
+      font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+    .btn-claim { background: rgba(79,142,247,0.15); color: var(--accent); border: 1px solid rgba(79,142,247,0.25); }
+    .btn-claim:active { background: rgba(79,142,247,0.3); }
+    .btn-done { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+    .btn-done:active { background: rgba(34,197,94,0.3); }
+
+    /* ── Empty State ── */
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+    .empty-state i { font-size: 2.5rem; display: block; margin-bottom: 12px; opacity: .4; }
+    .empty-state p { font-size: 0.85rem; }
+
+    /* ── FAB – Dictado por Voz ── */
+    .fab-area {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      padding: 16px 20px 28px;
+      background: linear-gradient(to top, var(--bg) 65%, transparent);
+      display: flex; align-items: flex-end; justify-content: center; gap: 14px;
+      pointer-events: none;
+    }
+    .fab-secondary {
+      width: 48px; height: 48px; border-radius: 50%; border: none;
+      background: var(--bg3); color: var(--text-muted);
+      font-size: 1.15rem; cursor: pointer; pointer-events: all;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow); transition: all .2s;
+    }
+    .fab-secondary:active { transform: scale(.9); }
+    .fab-main {
+      width: 64px; height: 64px; border-radius: 50%; border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; font-size: 1.6rem; cursor: pointer; pointer-events: all;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 28px rgba(79,142,247,0.5); transition: all .2s;
+    }
+    .fab-main:active { transform: scale(.9); }
+    .fab-main.recording {
+      background: linear-gradient(135deg, var(--red), #c0392b);
+      box-shadow: 0 6px 28px rgba(239,68,68,0.5);
+      animation: rec-pulse 1s ease-in-out infinite;
+    }
+    @keyframes rec-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.08); } }
+
+    /* Leave space for FAB */
+    .panel { padding-bottom: 100px; }
+
+    /* ── Voice Modal ── */
+    .voice-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      backdrop-filter: blur(6px); display: none; z-index: 200;
+      flex-direction: column; align-items: center; justify-content: flex-end;
+    }
+    .voice-overlay.open { display: flex; }
+    .voice-sheet {
+      background: var(--bg2); border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 560px; padding: 24px 20px 36px;
+      border-top: 1px solid var(--border); animation: sheet-in .3s ease;
+    }
+    @keyframes sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 20px; }
+    .voice-waveform {
+      height: 56px; display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 14px;
+    }
+    .wave-bar {
+      width: 5px; border-radius: 3px; background: var(--accent);
+      transition: height .1s ease;
+    }
+    .voice-transcript {
+      background: var(--input-bg); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px; font-size: 0.9rem;
+      min-height: 56px; color: var(--text); margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .voice-result {
+      display: none; gap: 10px; flex-direction: column; margin-bottom: 14px;
+    }
+    .voice-result.show { display: flex; }
+    .voice-field {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+    }
+    .vf-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-bottom: 4px; }
+    .vf-value { font-size: 0.88rem; color: var(--text); font-weight: 500; }
+    .vf-input {
+      width: 100%; background: transparent; border: none; outline: none;
+      color: var(--text); font-size: 0.88rem; font-family: inherit; font-weight: 500;
+    }
+    .voice-actions { display: flex; gap: 10px; }
+    .btn-vact {
+      flex: 1; padding: 14px; border: none; border-radius: var(--radius-sm);
+      font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: all .2s;
+    }
+    .btn-vcancel { background: var(--bg3); color: var(--text-muted); }
+    .btn-vsave { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+    .btn-vsave-done { background: linear-gradient(135deg, var(--green), #16a34a); color: #fff; flex: 1.2; }
+    .btn-vact:active { transform: scale(.95); }
+
+    /* PC selector */
+    .pc-dropdown {
+      width: 100%; background: var(--input-bg); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.88rem;
+      color: var(--text); font-family: inherit; outline: none; margin-bottom: 10px;
+    }
+    .pc-dropdown option { background: var(--bg2); }
+
+    /* ── Manual Task Modal ── */
+    .manual-sheet {
+      background: var(--bg2); border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 560px; padding: 24px 20px 36px;
+      border-top: 1px solid var(--border); animation: sheet-in .3s ease;
+    }
+    .input-group-gold {
+      background: var(--input-bg); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 10px;
+    }
+    .input-label-gold { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-bottom: 4px; }
+    .gold-input {
+      width: 100%; background: transparent; border: none; outline: none;
+      color: var(--text); font-size: 0.9rem; font-family: inherit; font-weight: 500;
+    }
+    .gold-input::placeholder { color: var(--text-muted); font-weight: 400; }
+
+    /* ── Notifications ── */
+    .notif-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 13px 14px; margin-bottom: 8px;
+    }
+    .notif-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 3px; }
+    .notif-body { font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; white-space: pre-wrap; }
+    .notif-time { font-size: 0.68rem; color: var(--text-muted); margin-top: 5px; }
+
+    /* ── Section Title ── */
+    .section-title {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--text-muted); margin: 4px 0 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    /* Spinner */
+    .spin { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Toggle */
+    .toggle-switch {
+      display: flex; align-items: center; gap: 8px; cursor: pointer;
+      font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;
+    }
+    .toggle-switch input { display: none; }
+    .toggle-track {
+      width: 36px; height: 20px; background: var(--bg3); border-radius: 10px;
+      position: relative; transition: background .2s; flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .toggle-track::after {
+      content: ''; position: absolute; left: 3px; top: 2px;
+      width: 14px; height: 14px; border-radius: 50%; background: var(--text-muted);
+      transition: all .2s;
+    }
+    .toggle-switch input:checked + .toggle-track { background: var(--green); }
+    .toggle-switch input:checked + .toggle-track::after { left: 19px; background: #fff; }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <div class="brand-dot"></div>
+      <div>
+        <div class="brand-name">GOLD · Técnicos</div>
+        <div class="brand-sub" id="topSubtitle">Cargando...</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="tech-badge" onclick="selectTechnician()">
+        <i class="bi bi-person-circle"></i>
+        <span id="techBadgeLabel">{{ mobile_identity or 'Seleccionar' }}</span>
+      </div>
+      <a href="/logout" class="tech-badge" style="color:var(--red);border-color:rgba(239,68,68,0.25);text-decoration:none;" title="Cerrar sesión">
+        <i class="bi bi-box-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Tab Nav -->
+  <div class="tab-nav">
+    <button class="tab-btn active" id="tab-mias" onclick="switchTab('mias')">
+      <i class="bi bi-list-task"></i> Mis Tareas
+    </button>
+    <button class="tab-btn" id="tab-libres" onclick="switchTab('libres')">
+      <i class="bi bi-inbox"></i> Libres
+      <span class="tab-badge" id="badge-libres" style="display:none">0</span>
+    </button>
+    <button class="tab-btn" id="tab-avisos" onclick="switchTab('avisos')">
+      <i class="bi bi-bell"></i> Avisos
+      <span class="tab-badge" id="badge-avisos" style="display:none">0</span>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="content-area">
+
+    <!-- Panel: Mis Tareas -->
+    <div class="panel active" id="panel-mias">
+      <div id="list-mias"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
+      <div id="list-done-today" style="margin-top:6px;"></div>
+    </div>
+
+    <!-- Panel: Libres -->
+    <div class="panel" id="panel-libres">
+      <div id="list-libres"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
+    </div>
+
+    <!-- Panel: Avisos -->
+    <div class="panel" id="panel-avisos">
+      <div id="list-avisos"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
+    </div>
+
+  </div>
+
+  <!-- FAB Area -->
+  <div class="fab-area">
+    <button class="fab-secondary" onclick="openManualModal()" title="Tarea manual">
+      <i class="bi bi-pencil-square"></i>
+    </button>
+    <button class="fab-main" id="fabVoice" onclick="toggleVoice()" title="Dictar tarea por voz">
+      <i class="bi bi-mic-fill" id="fabIcon"></i>
+    </button>
+    <button class="fab-secondary" onclick="refreshData()" title="Actualizar">
+      <i class="bi bi-arrow-clockwise" id="refreshIcon"></i>
+    </button>
+  </div>
+
+</div>
+
+<!-- ── Dictado por Voz ── -->
+<div class="voice-overlay" id="voiceOverlay">
+  <div class="voice-sheet">
+    <div class="sheet-handle"></div>
+    <p style="font-size:.78rem;color:var(--text-muted);text-align:center;margin-bottom:14px;" id="voiceStatus">Escuchando... hablá con naturalidad</p>
+
+    <div class="voice-waveform" id="waveform">
+      <div class="wave-bar" style="height:8px" id="w1"></div>
+      <div class="wave-bar" style="height:16px" id="w2"></div>
+      <div class="wave-bar" style="height:24px" id="w3"></div>
+      <div class="wave-bar" style="height:32px" id="w4"></div>
+      <div class="wave-bar" style="height:24px" id="w5"></div>
+      <div class="wave-bar" style="height:16px" id="w6"></div>
+      <div class="wave-bar" style="height:8px" id="w7"></div>
+    </div>
+
+    <div class="voice-transcript" id="voiceTranscript">—</div>
+
+    <!-- Resultado parseado -->
+    <div class="voice-result" id="voiceResult">
+      <div class="voice-field">
+        <div class="vf-label">Descripción</div>
+        <input class="vf-input" id="vfDesc" type="text" placeholder="Descripción de la tarea">
+      </div>
+      <div class="voice-field">
+        <div class="vf-label">Solicitante</div>
+        <input class="vf-input" id="vfSolic" type="text" placeholder="Quién solicita">
+      </div>
+      <div class="voice-field">
+        <div class="vf-label">PC / Equipo (opcional)</div>
+        <select class="pc-dropdown" id="vfPc">
+          <option value="">— Sin PC asignada —</option>
+        </select>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="vfDone">
+        <span class="toggle-track"></span>
+        Marcar como ya resuelta
+      </label>
+    </div>
+
+    <div class="voice-actions" id="voiceActions">
+      <button class="btn-vact btn-vcancel" onclick="cancelVoice()">Cancelar</button>
+      <button class="btn-vact btn-vsave" id="btnVoiceStop" onclick="stopListening()"><i class="bi bi-stop-circle me-1"></i>Procesar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Tarea Manual ── -->
+<div class="voice-overlay" id="manualOverlay">
+  <div class="manual-sheet">
+    <div class="sheet-handle"></div>
+    <p style="font-size:.94rem;font-weight:700;margin-bottom:14px;">Nueva Tarea</p>
+    <div class="input-group-gold">
+      <div class="input-label-gold">Descripción *</div>
+      <textarea class="gold-input" id="mDesc" rows="3" placeholder="¿Qué hay que resolver?"></textarea>
+    </div>
+    <div class="input-group-gold">
+      <div class="input-label-gold">Solicitante</div>
+      <input class="gold-input" id="mSolic" type="text" placeholder="Nombre de quién pidió">
+    </div>
+    <div class="input-group-gold">
+      <div class="input-label-gold">PC / Equipo (opcional)</div>
+      <select class="pc-dropdown" id="mPc" style="background:transparent;border:none;padding:0;">
+        <option value="">— Sin PC asignada —</option>
+      </select>
+    </div>
+    <label class="toggle-switch">
+      <input type="checkbox" id="mDone">
+      <span class="toggle-track"></span>
+      Ya está resuelta
+    </label>
+    <div class="voice-actions">
+      <button class="btn-vact btn-vcancel" onclick="closeManualModal()">Cancelar</button>
+      <button class="btn-vact btn-vsave" onclick="submitManualTask()"><i class="bi bi-plus-lg"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<audio id="sndNew" preload="auto">
+  <source src="data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBAAAA..." type="audio/wav">
+</audio>
+
+<!-- ── Completar Tarea sin PC ── -->
+<div class="voice-overlay" id="completeOverlay">
+  <div class="manual-sheet">
+    <div class="sheet-handle"></div>
+    <p style="font-size:.94rem;font-weight:700;margin-bottom:6px;"><i class="bi bi-check2-circle" style="color:var(--green)"></i> Completar Tarea</p>
+    <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:14px;">Esta tarea no tiene PC asignada. Seleccioná el equipo donde se hizo el trabajo.</p>
+    <div class="input-group-gold">
+      <div class="input-label-gold">PC / Equipo</div>
+      <select class="pc-dropdown" id="completePcSelect" style="background:transparent;border:none;padding:0;">
+        <option value="PC Generica">PC Gen&eacute;rica (sin equipo espec&iacute;fico)</option>
+      </select>
+    </div>
+    <div class="voice-actions">
+      <button class="btn-vact btn-vcancel" onclick="closeCompleteModal()">Cancelar</button>
+      <button class="btn-vact btn-vsave-done" onclick="confirmComplete()"><i class="bi bi-check-lg"></i> Marcar como Hecha</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* =========================================================
+   GOLD · Técnicos — Script Principal
+   ========================================================= */
+
+const API   = '/api/mobile';
+const CSRF  = '{{ csrf_token() }}';
+let techId  = '{{ mobile_identity }}';
+let allData = {};
+let recog   = null;
+let isListening = false;
+let waveTimer   = null;
+let knownNotifIds = new Set();
+
+// Helper para POST con CSRF
+function postJSON(url, body) {
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+    body: JSON.stringify(body)
+  });
+}
+
+// ── Audio ──────────────────────────────────────────
+function playBeep(type = 'new') {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'new') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.4);
+    } else if (type === 'done') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(780, ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    } else if (type === 'start') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.25);
+    }
+  } catch(e) {}
+}
+
+// ── Tabs ──────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'avisos') loadNotifications();
+}
+
+// ── Technician selector ────────────────────────────
+function selectTechnician() {
+  const techs = allData.technicians || [];
+  if (!techs.length) { alert('Sin técnicos disponibles.'); return; }
+  const opts = techs.map((t,i) => `${i+1}. ${t.name}`).join('\n');
+  const ans = prompt('Seleccioná tu nombre:\n\n' + opts);
+  if (!ans) return;
+  const idx = parseInt(ans) - 1;
+  if (idx >= 0 && idx < techs.length) {
+    techId = techs[idx].name;
+    document.getElementById('techBadgeLabel').textContent = techId;
+    document.cookie = `tech_identity=${encodeURIComponent(techId)};path=/;max-age=31536000`;
+    renderAll();
+  }
+}
+
+// ── Data ──────────────────────────────────────────
+async function refreshData(silent=false) {
+  if (!silent) document.getElementById('refreshIcon').classList.add('spin');
+  try {
+    const res = await fetch(API + '/data');
+    const data = await res.json();
+    if (data.error) return;
+    allData = data;
+    fillPcSelects(data.pcs || []);
+    renderAll();
+    const subtitle = techId ? `Técnico: ${techId}` : 'Sin técnico seleccionado';
+    document.getElementById('topSubtitle').textContent = subtitle;
+  } catch(e) { console.error(e); }
+  if (!silent) document.getElementById('refreshIcon').classList.remove('spin');
+}
+
+function fillPcSelects(pcs) {
+  ['vfPc','mPc','completePcSelect'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    // Conservar primera opción fija
+    while (sel.options.length > 1) sel.remove(1);
+    pcs.forEach(pc => {
+      const opt = document.createElement('option');
+      opt.value = pc.name;
+      opt.textContent = `${pc.name} — ${pc.area}`;
+      sel.appendChild(opt);
+    });
+    if (cur) sel.value = cur;
+  });
+}
+
+// ── Render ────────────────────────────────────────
+function renderAll() {
+  const tasks   = allData.active_tasks || [];
+  const myTasks = tasks.filter(t => t.assigned_to && t.assigned_to.toLowerCase() === (techId||'').toLowerCase());
+  const done    = allData.done_today || [];
+  const free    = allData.unassigned || [];
+
+  renderTaskList('list-mias', myTasks, 'mine');
+  renderDoneToday(done);
+  renderTaskList('list-libres', free, 'free');
+
+  // Badges
+  const badgeL = document.getElementById('badge-libres');
+  if (free.length > 0) { badgeL.textContent = free.length; badgeL.style.display=''; }
+  else badgeL.style.display='none';
+}
+
+function renderTaskList(containerId, tasks, mode) {
+  const el = document.getElementById(containerId);
+  if (!tasks.length) {
+    el.innerHTML = `<div class="empty-state"><i class="bi bi-check2-all"></i><p>Sin tareas en esta sección</p></div>`;
+    return;
+  }
+  el.innerHTML = tasks.map(t => taskCard(t, mode)).join('');
+}
+
+function renderDoneToday(tasks) {
+  const el = document.getElementById('list-done-today');
+  if (!tasks.length) { el.innerHTML=''; return; }
+  el.innerHTML = `<div class="section-title"><i class="bi bi-check2-circle"></i> Completadas hoy (${tasks.length})</div>` +
+    tasks.map(t => `
+    <div class="task-card" style="opacity:.65;">
+      <div class="task-card-accent" style="background:var(--green)"></div>
+      <div class="task-desc" style="padding-left:10px;">${escHtml(t.descripcion)}</div>
+      <div class="task-meta" style="padding-left:10px;">
+        ${t.pc_name ? '<span class="meta-chip"><i class="bi bi-pc-display"></i>'+escHtml(t.pc_name)+'</span>' : ''}
+        <span class="meta-chip"><i class="bi bi-clock-history"></i>${fmtTime(t.completed_at)}</span>
+        <span class="status-pill pill-done">Hecha</span>
+      </div>
+    </div>`).join('');
+}
+
+function taskCard(t, mode) {
+  const color = mode === 'free' ? 'var(--yellow)' : mode === 'mine' ? 'var(--accent)' : 'var(--green)';
+  const pill  = mode === 'free' ? '<span class="status-pill pill-pending">Libre</span>'
+              : mode === 'mine' ? '<span class="status-pill pill-mine">Asignada</span>'
+              : '';
+  const pcData = t.pc_name ? `'${t.pc_name}'` : 'null';
+  const actions = mode === 'free'
+    ? `<button class="btn-act btn-claim" onclick="claimTask(${t.id})"><i class="bi bi-hand-index-thumb"></i> Tomar</button>`
+    : mode === 'mine'
+    ? `<button class="btn-act btn-done" onclick="completeTask(${t.id}, ${pcData})"><i class="bi bi-check-lg"></i> Completar</button>`
+    : '';
+
+  return `<div class="task-card" id="tc-${t.id}">
+    <div class="task-card-accent" style="background:${color}"></div>
+    <div style="padding-left:10px;">
+      <div class="task-card-header">
+        <div class="task-desc">${escHtml(t.descripcion)}</div>
+        ${pill}
+      </div>
+      <div class="task-meta">
+        ${t.pc_name ? '<span class="meta-chip"><i class="bi bi-pc-display"></i>'+escHtml(t.pc_name)+'</span>' : '<span class="meta-chip"><i class="bi bi-inbox"></i>Sin PC</span>'}
+        ${t.solicitante ? '<span class="meta-chip"><i class="bi bi-person"></i>'+escHtml(t.solicitante)+'</span>' : ''}
+        ${t.pc_fuero ? '<span class="meta-chip"><i class="bi bi-geo-alt"></i>'+escHtml(t.pc_fuero)+'</span>' : ''}
+        <span class="meta-chip"><i class="bi bi-clock"></i>${fmtRelative(t.created_at)}</span>
+      </div>
+      ${actions ? `<div class="card-actions">${actions}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+// ── Acciones ──────────────────────────────────────
+async function claimTask(id) {
+  try {
+    await postJSON(API + '/update_task', { id, action:'claim' });
+    playBeep('done');
+    flashCard(id, 'var(--accent)');
+    await refreshData(true);
+  } catch(e){}
+}
+
+async function completeTask(id, existingPc) {
+  if (!existingPc) {
+    // Sin PC: mostrar selector antes de completar
+    openCompleteModal(id);
+    return;
+  }
+  try {
+    await postJSON(API + '/update_task', { id, action:'complete', pc_name: existingPc });
+    playBeep('done');
+    flashCard(id, 'var(--green)');
+    setTimeout(() => refreshData(true), 500);
+  } catch(e) { console.error(e); }
+}
+
+function openCompleteModal(taskId) {
+  const modal = document.getElementById('completeOverlay');
+  document.getElementById('completePcSelect').value = 'PC Generica';
+  modal.dataset.taskId = taskId;
+  modal.classList.add('open');
+}
+
+function closeCompleteModal() {
+  document.getElementById('completeOverlay').classList.remove('open');
+}
+
+async function confirmComplete() {
+  const modal = document.getElementById('completeOverlay');
+  const id = modal.dataset.taskId;
+  const pc = document.getElementById('completePcSelect').value || 'PC Generica';
+  closeCompleteModal();
+  try {
+    await postJSON(API + '/update_task', { id, action:'complete', pc_name: pc });
+    playBeep('done');
+    flashCard(id, 'var(--green)');
+    setTimeout(() => refreshData(true), 500);
+  } catch(e) { console.error(e); }
+}
+
+function flashCard(id, color) {
+  const el = document.getElementById('tc-' + id);
+  if (!el) return;
+  el.style.transition = 'background .3s';
+  el.style.background = color.replace(')', ',.22)').replace('var(', 'rgba(').replace('--accent','79,142,247').replace('--green','34,197,94');
+  setTimeout(() => { el.style.background=''; }, 600);
+}
+
+async function submitTask(desc, solic, pcName, isDone) {
+  if (!desc || !techId) { alert('Completá la descripción y asegurate de tener un técnico activo.'); return false; }
+  try {
+    const res = await postJSON(API + '/create_task', {
+      descripcion: desc, solicitante: solic, pc_name: pcName||null, is_done: isDone
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      playBeep('new');
+      await refreshData(true);
+      return true;
+    }
+  } catch(e) { console.error(e); }
+  return false;
+}
+
+// ── Manual Modal ──────────────────────────────────
+function openManualModal() {
+  document.getElementById('mDesc').value = '';
+  document.getElementById('mSolic').value = '';
+  document.getElementById('mPc').value = '';
+  document.getElementById('mDone').checked = false;
+  document.getElementById('manualOverlay').classList.add('open');
+  document.getElementById('mDesc').focus();
+}
+function closeManualModal() { document.getElementById('manualOverlay').classList.remove('open'); }
+async function submitManualTask() {
+  const desc = document.getElementById('mDesc').value.trim();
+  const solic = document.getElementById('mSolic').value.trim();
+  const pc = document.getElementById('mPc').value;
+  const done = document.getElementById('mDone').checked;
+  const ok = await submitTask(desc, solic, pc, done);
+  if (ok) closeManualModal();
+}
+
+// ── Voice / Dictado ───────────────────────────────
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = SpeechRecognition ? new SpeechRecognition() : null;
+let finalTranscript = '';
+
+function toggleVoice() {
+  if (isListening) { stopListening(); return; }
+  startListening();
+}
+
+function startListening() {
+  if (!recognition) {
+    alert('Tu navegador no soporta dictado por voz. Usá Chrome o Safari en iOS.');
+    return;
+  }
+  finalTranscript = '';
+  document.getElementById('voiceTranscript').textContent = '—';
+  document.getElementById('voiceResult').classList.remove('show');
+  document.getElementById('voiceStatus').textContent = 'Escuchando... hablá con naturalidad';
+  document.getElementById('btnVoiceStop').innerHTML = '<i class="bi bi-stop-circle"></i> Procesar';
+  document.getElementById('voiceOverlay').classList.add('open');
+
+  recognition.lang = 'es-AR';
+  recognition.interimResults = false;  // Solo resultados finales — evita duplicados
+  recognition.continuous = false;       // Una sesión a la vez, se reinicia limpiamente
+
+  recognition.onresult = (e) => {
+    // Acumular SOLO el resultado final de esta sesión
+    const transcript = e.results[0][0].transcript;
+    finalTranscript += (finalTranscript ? ' ' : '') + transcript;
+    document.getElementById('voiceTranscript').textContent = finalTranscript;
+    animateWave(true);
+  };
+  recognition.onerror = (e) => {
+    // Ignorar errores de "no-speech" (silencio) — solo reiniciar
+    if (e.error === 'no-speech') {
+      if (isListening) recognition.start();
+      return;
+    }
+    document.getElementById('voiceStatus').textContent = 'Error: ' + e.error;
+    stopListening();
+  };
+  recognition.onend = () => {
+    // Reiniciar limpiamente SOLO si el usuario no tocó "Procesar"
+    if (isListening) {
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+
+  recognition.start();
+  isListening = true;
+  playBeep('start');
+  document.getElementById('fabVoice').classList.add('recording');
+  document.getElementById('fabIcon').className = 'bi bi-stop-fill';
+  startWaveAnimation();
+}
+
+function stopListening() {
+  if (!recognition) return;
+  isListening = false;
+  recognition.onend = null;
+  recognition.stop();
+  document.getElementById('fabVoice').classList.remove('recording');
+  document.getElementById('fabIcon').className = 'bi bi-mic-fill';
+  clearInterval(waveTimer);
+  animateWave(false);
+
+  const text = finalTranscript.trim();
+  if (!text) { cancelVoice(); return; }
+
+  // IA en el cliente para parsear
+  parseVoiceIA(text);
+}
+
+function parseVoiceIA(text) {
+  document.getElementById('voiceStatus').textContent = 'Procesando con IA...';
+  postJSON(API + '/parse_voice', { text })
+  .then(r => r.json())
+  .then(data => {
+    const d = data.data || {};
+    document.getElementById('vfDesc').value  = d.descripcion || text;
+    document.getElementById('vfSolic').value = d.solicitante || '';
+    document.getElementById('voiceStatus').textContent = 'Revisá y confirmá los datos →';
+    document.getElementById('voiceResult').classList.add('show');
+    document.getElementById('voiceActions').innerHTML = `
+      <button class="btn-vact btn-vcancel" onclick="cancelVoice()">Cancelar</button>
+      <button class="btn-vact btn-vsave" onclick="confirmVoiceTask(false)"><i class="bi bi-plus-lg"></i> Guardar</button>
+      <button class="btn-vact btn-vsave-done" onclick="confirmVoiceTask(true)"><i class="bi bi-check-lg"></i> Guardar (Resuelta)</button>`;
+  })
+  .catch(() => {
+    document.getElementById('vfDesc').value = text;
+    document.getElementById('vfSolic').value = '';
+    document.getElementById('voiceStatus').textContent = 'Revisá y confirmá —';
+    document.getElementById('voiceResult').classList.add('show');
+    document.getElementById('voiceActions').innerHTML = `
+      <button class="btn-vact btn-vcancel" onclick="cancelVoice()">Cancelar</button>
+      <button class="btn-vact btn-vsave" onclick="confirmVoiceTask(false)"><i class="bi bi-plus-lg"></i> Guardar</button>
+      <button class="btn-vact btn-vsave-done" onclick="confirmVoiceTask(true)"><i class="bi bi-check-lg"></i> Resuelta</button>`;
+  });
+}
+
+async function confirmVoiceTask(isDone) {
+  const desc  = document.getElementById('vfDesc').value.trim();
+  const solic = document.getElementById('vfSolic').value.trim();
+  const pc    = document.getElementById('vfPc').value;
+  const done  = isDone || document.getElementById('vfDone').checked;
+  const ok = await submitTask(desc, solic, pc, done);
+  if (ok) cancelVoice();
+}
+
+function cancelVoice() {
+  if (isListening) { isListening = false; recognition && recognition.stop(); }
+  document.getElementById('fabVoice').classList.remove('recording');
+  document.getElementById('fabIcon').className = 'bi bi-mic-fill';
+  clearInterval(waveTimer);
+  animateWave(false);
+  document.getElementById('voiceOverlay').classList.remove('open');
+  document.getElementById('voiceActions').innerHTML = `
+    <button class="btn-vact btn-vcancel" onclick="cancelVoice()">Cancelar</button>
+    <button class="btn-vact btn-vsave" id="btnVoiceStop" onclick="stopListening()"><i class="bi bi-stop-circle"></i>Procesar</button>`;
+}
+
+// ── Wave Animation ────────────────────────────────
+function startWaveAnimation() {
+  clearInterval(waveTimer);
+  waveTimer = setInterval(() => animateWave(true), 120);
+}
+
+function animateWave(active) {
+  const bars = ['w1','w2','w3','w4','w5','w6','w7'];
+  bars.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (active) {
+      const h = 6 + Math.random() * 38;
+      el.style.height = h + 'px';
+    } else {
+      el.style.height = '8px';
+    }
+  });
+}
+
+// ── Notifications ─────────────────────────────────
+async function loadNotifications() {
+  try {
+    const res = await fetch(API + '/notifications');
+    const rows = await res.json();
+    const el = document.getElementById('list-avisos');
+    if (!rows.length) {
+      el.innerHTML = `<div class="empty-state"><i class="bi bi-bell-slash"></i><p>Sin avisos recientes</p></div>`;
+      return;
+    }
+    el.innerHTML = rows.map(n => `
+      <div class="notif-card">
+        <div class="notif-title">${escHtml(n.title || '—')}</div>
+        <div class="notif-body">${escHtml(n.body || '')}</div>
+        <div class="notif-time">${fmtRelative(n.created_at)}</div>
+      </div>`).join('');
+
+    // Badge
+    const newOnes = rows.filter(n => !knownNotifIds.has(n.id));
+    if (newOnes.length && knownNotifIds.size > 0) {
+      playBeep('new');
+      const badge = document.getElementById('badge-avisos');
+      badge.textContent = newOnes.length; badge.style.display='';
+    }
+    rows.forEach(n => knownNotifIds.add(n.id));
+  } catch(e) {}
+}
+
+// ── Helpers ───────────────────────────────────────
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function fmtTime(s) {
+  if (!s) return '';
+  try {
+    const d = new Date(String(s).replace(' ', 'T'));
+    return d.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+  } catch { return s; }
+}
+
+function fmtRelative(s) {
+  if (!s) return '';
+  try {
+    const d = new Date(String(s).replace(' ','T'));
+    const diff = Math.floor((Date.now() - d) / 60000);
+    if (diff < 1) return 'ahora';
+    if (diff < 60) return `hace ${diff}m`;
+    if (diff < 1440) return `hace ${Math.floor(diff/60)}h`;
+    return `hace ${Math.floor(diff/1440)}d`;
+  } catch { return s; }
+}
+
+// ── Polling ───────────────────────────────────────
+let prevTaskCount = 0;
+async function poll() {
+  try {
+    const res = await fetch(API + '/data');
+    const data = await res.json();
+    if (data.error) return;
+    const newCount = (data.active_tasks||[]).length;
+    if (prevTaskCount > 0 && newCount > prevTaskCount) playBeep('new');
+    prevTaskCount = newCount;
+    allData = data;
+    fillPcSelects(data.pcs || []);
+    renderAll();
+  } catch(e) {}
+}
+
+// ── Init ──────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  await refreshData();
+  prevTaskCount = (allData.active_tasks||[]).length;
+  setInterval(poll, 30000);
+});
+</script>
+</body>
+</html>

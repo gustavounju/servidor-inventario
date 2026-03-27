@@ -33,6 +33,14 @@ def api_mobile_data():
             techs = list_technician_users()
             unassigned = [dict(r) for r in conn.execute("SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC").fetchall()]
             all_active = [dict(r) for r in conn.execute("SELECT t.*, p.fuero as pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado != 'Hecha' ORDER BY t.created_at DESC").fetchall()]
+            
+            # Tareas hechas hoy por el técnico actual para el historial reciente
+            tech_identity = current_technician_identity()
+            done_today = [dict(r) for r in conn.execute(
+                "SELECT t.*, p.fuero as pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado = 'Hecha' AND t.completed_by = %s AND DATE(t.completed_at) = CURDATE() ORDER BY t.completed_at DESC",
+                (tech_identity,)
+            ).fetchall()]
+
             pcs_query = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
             requesters = [dict(r) for r in conn.execute(
                 """
@@ -54,6 +62,7 @@ def api_mobile_data():
             "technicians": techs, 
             "unassigned": unassigned, 
             "active_tasks": all_active, 
+            "done_today": done_today,
             "pcs": pcs, 
             "requesters": requesters
         }

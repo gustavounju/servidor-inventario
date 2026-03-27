@@ -14,6 +14,17 @@
     <meta name="theme-color" content="#0f3d62">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
     <style>
+        :root {
+            --mob-primary: #0f4c75;
+            --mob-accent: #3282b8;
+            --mob-bg: #f8fafc;
+            --mob-card: #ffffff;
+            --mob-text: #1b262c;
+            --mob-muted: #64748b;
+            --mob-border: #e2e8f0;
+            --mob-gradient: linear-gradient(135deg, #0f4c75, #3282b8);
+        }
+
         .module-switcher {
             margin-top: 0;
         }
@@ -342,17 +353,7 @@
             <p class="fw-bold mb-2" style="color:#1e293b;font-size:0.9rem;">Acceso móvil validado</p>
             <div class="alert alert-primary mb-0" style="border-radius:12px;">
                 <div class="fw-bold">Ingresas como {{ mobile_identity or current_user.display_name or current_user.username }}</div>
-                <div class="small mt-1">La identidad técnica sale de tu sesión del sistema. Ya no se puede cambiar de usuario dentro de `/mobile`.</div>
-            </div>
-            <button id="btnManualInstallLogin" class="btn btn-outline-primary mt-2 w-100" style="display:none; border-radius:12px;" onclick="triggerInstall()">
-                <i class="bi bi-download me-2"></i>Instalar aplicación
-            </button>
-            <div id="pwaManualHelp" class="mt-3 p-2 border rounded bg-light" style="display:none; font-size: 0.75rem; color: #475569;">
-                <p class="fw-bold mb-1 text-primary"><i class="bi bi-info-circle me-1"></i>¿No ves el botón de instalar?</p>
-                <ol class="ps-3 mb-0">
-                    <li>Pulsa los <strong>3 puntos</strong> <i class="bi bi-three-dots-vertical"></i> arriba a la derecha.</li>
-                    <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla de inicio"</strong>.</li>
-                </ol>
+                <div class="small mt-1">La identidad técnica sale de tu sesión del sistema.</div>
             </div>
             <p class="text-center mt-3 mb-0" style="font-size:0.72rem;color:#94a3b8;">
                 v{{ app_version }}
@@ -385,43 +386,19 @@
         </div>
     </header>
 
-    <!-- Debug Panel -->
-    <div id="debugPanel" style="display:none; margin-top: 70px; padding: 10px; background: #eee; font-family: monospace; font-size: 10px; border-bottom: 2px solid #ddd;">
-        <strong>DIAGNÓSTICO:</strong> <span id="debugOutput">...</span>
-    </div>
 
     <!-- Main Content -->
     <div class="container py-3" id="mainContent" style="display:none; margin-top: 60px;">
-        <div id="secureBanner" class="secure-banner"></div>
 
-        <div class="status-board">
-            <div class="mini-card">
-                <div class="mini-label">Sesión</div>
-                <div class="mini-value" id="mobileSessionCard">Sin iniciar</div>
-            </div>
-            <div class="mini-card">
-                <div class="mini-label">Bolsa</div>
+        <div class="status-board mb-3">
+            <div class="mini-card" style="cursor:pointer;" onclick="switchTab('pool')">
+                <div class="mini-label">Tareas Libres</div>
                 <div class="mini-value" id="mobilePoolCard">0</div>
             </div>
-            <div class="mini-card">
-                <div class="mini-label">Avisos</div>
-                <div class="mini-value" id="mobileNotifCard">0</div>
-            </div>
+            <!-- El usuario ya sale arriba en el header, no hace falta repetirlo abajo -->
         </div>
 
-        <div id="debugPanel"
-            style="padding: 10px; background: #eee; font-family: monospace; font-size: 10px; margin-bottom: 10px; display:none;">
-            <strong>DEBUG:</strong> <span id="debugOutput">...</span>
-        </div>
 
-        <div id="pwaManualHelpApp" class="mt-0 mb-3 p-2 border rounded bg-white shadow-sm" style="display:none; font-size: 0.8rem; color: #475569; border-left: 4px solid #0f4c75 !important;">
-            <p class="fw-bold mb-1 text-primary"><i class="bi bi-download me-1"></i>Instalar aplicación</p>
-            <p class="mb-1 small">Para tener el icono en tu pantalla de inicio:</p>
-            <ol class="ps-3 mb-0 small">
-                <li>Pulsa los <strong>3 puntos</strong> <i class="bi bi-three-dots-vertical"></i> arriba a la derecha.</li>
-                <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a pantalla de inicio"</strong>.</li>
-            </ol>
-        </div>
 
         <!-- Tab: Mis Tareas -->
         <div id="tabMyTasks">
@@ -434,6 +411,13 @@
             <div id="myTasksList">
                 <div class="empty-state"><i class="bi bi-hourglass-split"></i>
                     <p>Cargando...</p>
+                </div>
+            </div>
+
+            <div class="section-title mt-4">Completadas Hoy</div>
+            <div id="doneTodayList">
+                <div class="empty-state small py-3">
+                    <p>Nada finalizado hoy todavía.</p>
                 </div>
             </div>
         </div>
@@ -478,11 +462,11 @@
     <div class="bottom-nav" id="bottomNav" style="display:none;">
         <a href="#" class="nav-item active" onclick="switchTab('myTasks')">
             <i class="bi bi-list-check"></i>
-            <span>Mis Tareas</span>
+            <span>Tareas</span>
         </a>
         <a href="#" class="nav-item" onclick="switchTab('pool')">
             <i class="bi bi-basket"></i>
-            <span>Bolsa <span id="navPoolCount" class="badge rounded-pill bg-danger ms-1"
+            <span>Libres <span id="navPoolCount" class="badge rounded-pill bg-danger ms-1"
                     style="display:none;"></span></span>
         </a>
         <a href="#" class="nav-item" onclick="switchTab('notifs')">
@@ -583,6 +567,7 @@
 
         let allUnassigned = [];
         let allActive = [];
+        let allDoneToday = [];
         let allPCs = [];
         let allTechs = [];
         let allRequesters = [];
@@ -781,6 +766,7 @@
                 allTechs = data.technicians || [];
                 allUnassigned = data.unassigned || [];
                 allActive = data.active_tasks || [];
+                allDoneToday = data.done_today || [];
                 allPCs = data.pcs || [];
                 allRequesters = data.requesters || [];
 
@@ -895,20 +881,31 @@
         }
 
         function renderLists() {
-            // My Tasks
-            const myTasks = allActive.filter(t => t.assigned_to === currentUser);
+            if (!currentUser) return;
+            const normUser = currentUser.trim().toLowerCase();
+
+            // My Tasks (Pending)
+            const myTasks = allActive.filter(t => t.assigned_to && t.assigned_to.trim().toLowerCase() === normUser);
             const myContainer = document.getElementById('myTasksList');
             if (myTasks.length === 0) {
-                myContainer.innerHTML = `<div class="text-center text-muted py-5"><i class="bi bi-emoji-smile display-4"></i><br>Sin tareas.</div>`;
+                myContainer.innerHTML = `<div class="text-center text-muted py-4"><i class="bi bi-emoji-smile display-6 opacity-50"></i><br><small>Sin tareas pendientes.</small></div>`;
             } else {
                 myContainer.innerHTML = myTasks.map(t => createTaskCard(t, 'mine')).join('');
+            }
+
+            // Done Today
+            const doneContainer = document.getElementById('doneTodayList');
+            if (allDoneToday.length === 0) {
+                doneContainer.innerHTML = `<div class="text-center text-muted py-3 small opacity-50">Nada hoy.</div>`;
+            } else {
+                doneContainer.innerHTML = allDoneToday.map(t => createTaskCard(t, 'done')).join('');
             }
 
             // Pool
             const poolTasks = allUnassigned.filter(t => !t.assigned_to);
             const poolContainer = document.getElementById('poolList');
             if (poolTasks.length === 0) {
-                poolContainer.innerHTML = `<div class="text-center text-muted py-5"><i class="bi bi-check-circle display-4"></i><br>Nada en la bolsa.</div>`;
+                poolContainer.innerHTML = `<div class="text-center text-muted py-5"><i class="bi bi-check-circle display-4 opacity-50"></i><br>Nada en la bolsa.</div>`;
             } else {
                 poolContainer.innerHTML = poolTasks.map(t => createTaskCard(t, 'pool')).join('');
             }
@@ -918,19 +915,25 @@
             const fueroText = task.fuero || task.pc_fuero;
             const fueroBadge = fueroText ? `<span class="badge bg-info text-dark me-1">${fueroText}</span>` : '';
             const pcBadge = task.pc_name ? `<span class="badge bg-secondary me-1">${task.pc_name}</span>` : '';
-            const date = new Date(task.created_at);
+            
+            const dateSource = task.completed_at || task.created_at;
+            const date = new Date(dateSource.replace(' ', 'T'));
             const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const dateStr = date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 
             let btn = '';
+            let style = '';
             if (type === 'mine') {
                 btn = `<button class="btn btn-done btn-action" onclick="completeTask(${task.id})"><i class="bi bi-check-lg me-1"></i>Marcar como hecha</button>`;
-            } else {
+            } else if (type === 'pool') {
                 btn = `<button class="btn btn-claim btn-action" onclick="claimTask(${task.id})"><i class="bi bi-hand-index-thumb me-1"></i>Tomar esta tarea</button>`;
+            } else if (type === 'done') {
+                style = 'opacity: 0.75; border-left: 4px solid #10b981;';
+                btn = `<div class="text-success small fw-bold"><i class="bi bi-check-all me-1"></i>Finalizada ${timeStr}</div>`;
             }
 
             return `
-            <div class="task-card ${type === 'mine' ? 'priority' : ''}">
+            <div class="task-card ${type === 'mine' ? 'priority' : ''}" style="${style}">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div class="task-badges">${pcBadge}${fueroBadge}</div>
                     <span class="task-time">${dateStr} ${timeStr}</span>

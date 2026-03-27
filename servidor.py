@@ -25,6 +25,7 @@ from blueprints.bp_setup import bp_setup
 from blueprints.bp_infrastructure import bp_infrastructure
 from blueprints.bp_tasks import bp_tasks
 from blueprints.bp_mobile import bp_mobile
+from blueprints.bp_tecnicos import bp_tecnicos
 from blueprints.bp_auth import bp_auth
 from utils.auth import allowed_module_links, auth_guard, auth_mode_label, available_roles, csrf_guard, current_user, ensure_default_admin, generate_csrf_token, has_permission, is_authenticated, role_label
 from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
@@ -49,6 +50,7 @@ app.register_blueprint(bp_stock)
 app.register_blueprint(bp_setup)
 app.register_blueprint(bp_tasks)
 app.register_blueprint(bp_mobile)
+app.register_blueprint(bp_tecnicos)
 app.register_blueprint(bp_infrastructure)
 app.register_blueprint(bp_auth)
 

@@ -15,29 +15,33 @@ def process_voice_command(text_command):
         client = genai.Client(api_key=api_key)
         
         prompt = f"""
-        Actúa como un asistente de inventario experto para soporte técnico.
-        Tu misión es corregir errores fonéticos comunes y estructurar la orden.
-        
-        Contexto conocido (Nombres y Lugares probables):
-        - Dr. Granados
-        - Dra. Berta
-        - Secretaria Patricia
-        - Contabilidad, Recepción, Gerencia
-        - "Autor ganado" -> Dr. Granados (Error cómun)
+Eres un asistente de soporte técnico informático. Tu única función es analizar frases dictadas por voz y extraer dos campos.
 
-        Analiza el siguiente comando de voz (que puede tener errores de transcripción) y extrae:
-        1. "descripcion": Qué tarea hay que hacer. Corrigiendo errores obvios (ej: "teclado" es teclado).
-           Si menciona "fui a ver/revisar", la tarea es "Revisar/Reparar [objeto]".
-        2. "solicitante": Quién lo pidió o de quién es la máquina.
-        
-        Texto original: "{text_command}"
-        
-        Responde SOLO con un JSON válido:
-        {{
-            "descripcion": "...",
-            "solicitante": "..."
-        }}
-        """
+REGLAS IMPORTANTES:
+1. "solicitante": La persona o cargo que tiene el problema o que lo pidió. 
+   - Si la frase empieza con "el contador", "la doctora", "secretaría", etc. → ese es el SOLICITANTE.
+   - Ejemplos: "el contador tiene problema" → solicitante: "Contador"
+               "la secretaria pide revisar" → solicitante: "Secretaria"
+               "fui a ver a Berta" → solicitante: "Berta"
+2. "descripcion": El problema o tarea en sí, SIN mencionar al solicitante.
+   - Ejemplos: "tiene problema con un cartucho" → "Problema con cartucho"
+               "pide revisar la impresora" → "Revisar impresora"
+               "no enciende la PC" → "PC no enciende"
+
+CORRECCIONES FOFONÉTICAS COMUNES:
+- "autor ganado" → Dr. Granados
+- "contaduría" / "el contador" → Contaduría / Contador  
+- "secretaria" → Secretaria
+- "cartucho" → cartucho (de impresora)
+
+Texto dictado: "{text_command}"
+
+Responde SOLO con JSON válido, sin explicaciones:
+{{
+    "descripcion": "...",
+    "solicitante": "..."
+}}
+"""
 
         print(f"IA Processing (New SDK): {text_command}")
         

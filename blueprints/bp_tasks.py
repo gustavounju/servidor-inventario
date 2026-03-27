@@ -431,6 +431,93 @@ def report_tasks_completed_pdf():
         sql_pendientes += " ORDER BY t.created_at DESC"
         tareas_pendientes = conn.execute(sql_pendientes, params_pend).fetchall()
 
+    def draw_tasks_table(pdf, tasks, widths, headers, colors):
+        # Header
+        pdf.set_font("Arial", "B", 9)
+        pdf.set_fill_color(*colors['header_bg'])
+        pdf.set_text_color(255)
+        for i, h in enumerate(headers):
+            pdf.cell(widths[i], 8, h, 0, 0, 'C', fill=True)
+        pdf.ln()
+
+        if not tasks:
+            pdf.set_font("Arial", "I", 9)
+            pdf.set_text_color(100)
+            pdf.cell(sum(widths), 10, "No hay registros para hoy.", 'B', 1, 'C')
+            return
+
+        # Data Rows
+        pdf.set_font("Arial", "", 8)
+        pdf.set_text_color(0)
+        row_idx = 0
+        for t in tasks:
+            # Prepare data
+            if 'completed_by' in t.keys(): # Hechas
+                raw_user = t["last_user"] or "N/A"
+                user_display = raw_user.split("\\")[-1] if "\\" in raw_user else raw_user
+                cols = [
+                    str(t["pc_name"]),
+                    str(user_display),
+                    str(t["descripcion"] or ""),
+                    str(t["solicitante"] or ""),
+                    str(t["completed_by"] or ""),
+                    format_datetime_es(t["created_at"])
+                ]
+            else: # Pendientes
+                cols = [
+                    str(t["pc_name"] or "N/A"),
+                    str(t["descripcion"] or ""),
+                    str(t["solicitante"] or ""),
+                    str(t["assigned_to"] or "Sin Asignar"),
+                    format_datetime_es(t["created_at"])
+                ]
+
+            # Calculate height
+            row_height = 5
+            max_lines = 1
+            split_cols = []
+            for i, text in enumerate(cols):
+                lines = pdf.multi_cell(widths[i], row_height, text, split_only=True)
+                max_lines = max(max_lines, len(lines))
+                split_cols.append(lines)
+            
+            h_row = max_lines * row_height + 2 # + padding
+
+            # Page break
+            if (pdf.get_y() + h_row) > 275:
+                pdf.add_page()
+                # Redibujar cabecera
+                pdf.set_font("Arial", "B", 9)
+                pdf.set_fill_color(*colors['header_bg'])
+                pdf.set_text_color(255)
+                for i, h in enumerate(headers): pdf.cell(widths[i], 8, h, 0, 0, 'C', fill=True)
+                pdf.ln()
+                pdf.set_font("Arial", "", 8)
+                pdf.set_text_color(0)
+
+            # Draw
+            x_row, y_row = pdf.get_x(), pdf.get_y()
+            
+            # Row Background (Striped)
+            if row_idx % 2 == 1:
+                pdf.set_fill_color(248, 249, 250)
+                pdf.rect(x_row, y_row, sum(widths), h_row, "F")
+            
+            pdf.set_text_color(0)
+            # Draw each cell
+            for i, lines in enumerate(split_cols):
+                pdf.set_xy(x_row + sum(widths[:i]), y_row + 1)
+                cell_text = "\n".join(lines)
+                pdf.multi_cell(widths[i], row_height, cell_text, 0, 'L' if i != len(widths)-1 else 'C')
+            
+            # Bottom line (Border)
+            pdf.set_draw_color(230, 230, 230)
+            pdf.line(x_row, y_row + h_row, x_row + sum(widths), y_row + h_row)
+            
+            pdf.set_xy(x_row, y_row + h_row)
+            row_idx += 1
+
+    # --- MAIN PDF CONTENT ---
     pdf = PDFReport(title="Reporte de Tareas - Inventario GOLD")
     pdf.alias_nb_pages()
     pdf.add_page()
@@ -440,118 +527,27 @@ def report_tasks_completed_pdf():
     pdf.cell(0, 10, f"Reporte del día: {fecha_display}", 0, 1)
     pdf.ln(2)
 
+    # Tabla Hechas
     pdf.set_font("Arial", "B", 11)
     pdf.set_text_color(25, 135, 84)
     pdf.cell(0, 8, f"Tareas Realizadas ({len(tareas_hechas)})", 0, 1)
-    pdf.ln(2)
+    pdf.ln(1)
+    
+    widths_hechas = [32, 25, 50, 22, 22, 39]
+    headers_hechas = ["PC", "Usuario", "Descripción", "Solic.", "Técnico", "Creada el"]
+    draw_tasks_table(pdf, tareas_hechas, widths_hechas, headers_hechas, {'header_bg': (25, 135, 84)})
 
-    headers = ["PC", "Usuario", "Descripción", "Solic.", "Técnico", "Fecha Creada"]
-    w = [28, 22, 45, 18, 18, 34]
-    pdf.set_font("Arial", "B", 9)
-    pdf.set_fill_color(25, 135, 84)
-    pdf.set_text_color(255)
-    for i, h in enumerate(headers): pdf.cell(w[i], 8, h, 1, 0, 'C', fill=True)
-    pdf.ln()
+    pdf.ln(5)
 
-    if not tareas_hechas:
-        pdf.set_font("Arial", "I", 9)
-        pdf.set_text_color(0)
-        pdf.cell(0, 8, "No hay tareas realizadas registradas para hoy.", 1, 1, 'C')
-    else:
-        pdf.set_font("Arial", "", 8)
-        pdf.set_text_color(0)
-        for t in tareas_hechas:
-            raw_user = t["last_user"] or "N/A"
-            user_display = raw_user.split("\\")[-1] if "\\" in raw_user else raw_user
-            desc, solicitante, tecnico, created_at, pc_name_dis = t["descripcion"] or "", t["solicitante"] or "", t["completed_by"] or "", t["created_at"] or "", str(t["pc_name"])
-            fecha_hora = format_datetime_es(created_at)
-
-            lines_desc = max(1, (len(desc) // 25) + 1)
-            lines_solic = max(1, (len(solicitante) // 9) + 1)
-            h_row = max(lines_desc, lines_solic) * 5
-            
-            x_start, y_start = pdf.get_x(), pdf.get_y()
-            if (y_start + h_row) > 275:
-                pdf.add_page()
-                y_start = pdf.get_y()
-            
-            pdf.set_xy(x_start, y_start)
-            pdf.cell(w[0], h_row, pc_name_dis[:16], 1)
-            pdf.cell(w[1], h_row, str(user_display)[:13], 1)
-            
-            x_desc = x_start + w[0] + w[1]
-            pdf.set_xy(x_desc, y_start)
-            pdf.multi_cell(w[2], 5, desc, 0, 'L')
-            
-            x_solic = x_desc + w[2]
-            pdf.set_xy(x_solic, y_start)
-            pdf.multi_cell(w[3], 5, solicitante, 0, 'L')
-            
-            x_tech = x_solic + w[3]
-            pdf.set_xy(x_tech, y_start)
-            pdf.cell(w[4], h_row, tecnico[:11], 1)
-            
-            x_date = x_tech + w[4]
-            pdf.set_xy(x_date, y_start)
-            pdf.cell(w[5], h_row, fecha_hora, 1, 1, 'C')
-            
-            pdf.rect(x_desc, y_start, w[2], h_row)
-            pdf.rect(x_solic, y_start, w[3], h_row)
-            pdf.set_xy(x_start, y_start + h_row)
-
-    pdf.ln(2)
-
+    # Tabla Pendientes
     pdf.set_font("Arial", "B", 11)
     pdf.set_text_color(220, 53, 69)
     pdf.cell(0, 8, f"Tareas Pendientes / Generadas Hoy ({len(tareas_pendientes)})", 0, 1)
-    pdf.ln(2)
+    pdf.ln(1)
 
-    headers_pend = ["Descripción", "Solic.", "Asignado a", "Fecha Creada"]
-    w_pend = [70, 30, 30, 35]
-    pdf.set_font("Arial", "B", 9)
-    pdf.set_fill_color(220, 53, 69)
-    pdf.set_text_color(255)
-    for i, h in enumerate(headers_pend): pdf.cell(w_pend[i], 8, h, 1, 0, 'C', fill=True)
-    pdf.ln()
-
-    if not tareas_pendientes:
-        pdf.set_font("Arial", "I", 9)
-        pdf.set_text_color(0)
-        pdf.cell(0, 8, "No hay tareas pendientes generadas hoy.", 1, 1, 'C')
-    else:
-        pdf.set_font("Arial", "", 8)
-        pdf.set_text_color(0)
-        for t in tareas_pendientes:
-            desc, solicitante, assigned, created_at = t["descripcion"] or "", str(t["solicitante"] or ""), str(t["assigned_to"] or "Sin Asignar"), t["created_at"] or ""
-            fecha_hora = format_datetime_es(created_at)
-            
-            lines_desc = max(1, (len(desc) // 35) + 1)
-            lines_solic = max(1, (len(solicitante) // 15) + 1)
-            h_row = max(lines_desc, lines_solic) * 5
-            
-            x_start, y_start = pdf.get_x(), pdf.get_y()
-            if (y_start + h_row) > 275:
-                pdf.add_page()
-                y_start = pdf.get_y()
-            
-            pdf.set_xy(x_start, y_start)
-            pdf.multi_cell(w_pend[0], 5, desc, 0, 'L')
-            
-            x_solic = x_start + w_pend[0]
-            pdf.set_xy(x_solic, y_start)
-            pdf.multi_cell(w_pend[1], 5, solicitante, 0, 'L')
-            
-            x_assign = x_solic + w_pend[1]
-            pdf.set_xy(x_assign, y_start)
-            pdf.cell(w_pend[2], h_row, assigned[:18], 1)
-            
-            x_date = x_assign + w_pend[2]
-            pdf.set_xy(x_date, y_start)
-            pdf.cell(w_pend[3], h_row, fecha_hora, 1, 1, 'C')
-            
-            pdf.rect(x_start, y_start, w_pend[0], h_row)
-            pdf.rect(x_solic, y_start, w_pend[1], h_row)
-            pdf.set_xy(x_start, y_start + h_row)
+    widths_pend = [30, 70, 30, 30, 30]
+    headers_pend = ["PC", "Descripción", "Solicitante", "Asignado a", "Creada el"]
+    draw_tasks_table(pdf, tareas_pendientes, widths_pend, headers_pend, {'header_bg': (180, 50, 60)})
 
     output = BytesIO()
     pdf_bytes = pdf.output()

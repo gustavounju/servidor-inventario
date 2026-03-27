@@ -53,3 +53,38 @@ def detect_fuero(pc_name):
         if pc_upper.startswith(prefix):
             return FUERO_MAPPING[prefix]
     return "Desconocido"
+
+def clean_hex_string(s):
+    """
+    Limpia strings que vienen como hexadecimal '0x...' decodificando el contenido ASCII
+    y eliminando prefijos binarios de control.
+    """
+    if not s or not isinstance(s, str):
+        return s
+    
+    s = s.strip()
+    if s.startswith('0x'):
+        try:
+            hex_data = s[2:]
+            # Asegurar longitud par
+            if len(hex_data) % 2 != 0:
+                hex_data = '0' + hex_data
+            
+            bytes_data = bytes.fromhex(hex_data)
+            try:
+                decoded = bytes_data.decode('utf-8', errors='ignore')
+            except:
+                decoded = bytes_data.decode('latin-1', errors='ignore')
+            
+            import re
+            # Eliminar caracteres de control no imprimibles (\x00-\x1F y otros)
+            # Solo dejamos caracteres imprimibles ASCII (0x20 a 0x7E)
+            cleaned = re.sub(r'^[^\x20-\x7E]+', '', decoded)
+            cleaned = re.sub(r'[^\x20-\x7E]+$', '', cleaned)
+            
+            if len(cleaned) > 2:
+                return cleaned.strip()
+            return decoded.strip()
+        except:
+            return s
+    return s

@@ -10,7 +10,7 @@ except (ImportError, ModuleNotFoundError):
     # Backward compatibility or missing library
     SNMP_AVAILABLE = False
     print("WARNING: pysnmp (v5+) not found or incompatible. SNMP features will be disabled.")
-from utils.constants import FUERO_COLORS, FUERO_MAPPING
+from utils.constants import FUERO_COLORS, FUERO_MAPPING, clean_hex_string
 
 bp_infrastructure = Blueprint('infrastructure', __name__, url_prefix='/infra')
 
@@ -543,7 +543,7 @@ async def snmp_fetch(ip):
             ObjectType(ObjectIdentity('1.3.6.1.2.1.1.1.0'))
         )
         if not errorIndication and not errorStatus and varBindTable:
-            val = varBindTable[0][1].prettyPrint()
+            val = clean_hex_string(varBindTable[0][1].prettyPrint())
             result["brand_model"] = val.split('/')[0].strip() if '/' in val else val.strip()
             
         # 2. Fetch MAC (ifPhysAddress)
@@ -584,7 +584,7 @@ async def snmp_fetch(ip):
                     ObjectType(ObjectIdentity(s_oid))
                 )
                 if not errorIndication and not errorStatus and varBindTable:
-                    val = varBindTable[0][1].prettyPrint()
+                    val = clean_hex_string(varBindTable[0][1].prettyPrint())
                     if val and "No Such" not in val and len(val) > 3:
                         # Clean if it looks like a GUID or has too many symbols
                         if not (val.startswith('{') or val.count('-') > 3):
@@ -604,7 +604,7 @@ async def snmp_fetch(ip):
                 lexicographicMode=False
             ):
                 if not errorIndication and not errorStatus and varBinds:
-                    val = varBinds[0][1].prettyPrint()
+                    val = clean_hex_string(varBinds[0][1].prettyPrint())
                     if val and "No Such" not in val and len(val) > 3:
                         if not (val.startswith('{') or val.count('-') > 3):
                             result["serial_number"] = val.strip()
