@@ -106,16 +106,17 @@ def process_inventory_data(data):
             if len(parts) >= 3:
                 host_ref = parts[2].upper()
                 with get_db_connection() as conn:
-                    # Buscar por Nombre o por IP
+                    # Buscar por Nombre o por IP (con LIKE por si hay múltiples IPs)
                     host_info = conn.execute(
-                        "SELECT printer_sn, printer_model FROM pcs WHERE UPPER(pc_name) = %s OR ip_address = %s LIMIT 1", 
-                        (host_ref, host_ref)
+                        "SELECT printer_sn, printer_model FROM pcs WHERE UPPER(pc_name) = %s OR ip_address LIKE %s LIMIT 1", 
+                        (host_ref, f"%{host_ref}%")
                     ).fetchone()
                     
                     if host_info and host_info["printer_sn"] and host_info["printer_sn"] != "N/A":
                         printer_sn = host_info["printer_sn"]
-        except:
-            pass
+                        print(f"[DEBUG] Herencia de serial detectada: {pc_name} hereda {printer_sn} de {host_ref}")
+        except Exception as e:
+            print(f"[DEBUG] Error en herencia de serial: {e}")
     # -------------------------------------------------------------
 
     if esta_desconectada and es_local and not sin_modelo:
@@ -267,7 +268,23 @@ def process_inventory_data(data):
                 
                 conn.commit()
 
-        
+        # --- PROPAGACIÓN EN CASCADA (SI SOY HOST) ---
+        # Si esta PC tiene un serial de impresora USB/Local válido, buscar clientes que impriman aquí
+        if printer_sn and printer_sn != "N/A" and ip_address and ip_address != "N/A":
+            # Patrón de puerto que buscaría un cliente: \\MiIP\ o \\MiNombre\
+            pattern_ip = f"%\\\\{ip_address}\\%"
+            pattern_name = f"%\\\\{pc_name.upper()}\\%"
+            
+            # Actualizar a todos los clientes que no tengan serial pero sí apunten a este host
+            conn.execute(
+                """
+                UPDATE pcs SET printer_sn = %s 
+                WHERE (printer_sn IS NULL OR printer_sn = 'N/A' OR printer_sn = '')
+                AND (UPPER(printer_port) LIKE %s OR UPPER(printer_port) LIKE %s)
+                """,
+                (printer_sn, pattern_ip, pattern_name)
+            )
+            
         conn.commit()
 
 

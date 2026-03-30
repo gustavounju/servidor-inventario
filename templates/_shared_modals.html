@@ -139,7 +139,12 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small text-muted mb-1">Clave</label>
-                                <input type="password" name="password" id="appPassword" class="form-control" placeholder="Clave para el usuario">
+                                <div class="input-group">
+                                    <input type="password" name="password" id="appPassword" class="form-control" placeholder="Clave para el usuario" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleAppPassword" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small text-muted mb-1">Nombre Técnico (Móvil)</label>
@@ -183,6 +188,7 @@
                                     <tr>
                                         <th>Usuario</th>
                                         <th>Nombre</th>
+                                        <th>Clave</th>
                                         <th>Teléfono</th>
                                         <th>Rol</th>
                                         <th>Accesos</th>
@@ -195,6 +201,9 @@
                                     <tr>
                                         <td><code>{{ app_user.username }}</code></td>
                                         <td>{{ app_user.display_name or '-' }}</td>
+                                        <td>
+                                            <span class="password-stars" title="Las claves están cifradas.">••••••••</span>
+                                        </td>
                                         <td><small class="text-muted">{{ app_user.phone or '-' }}</small></td>
                                         <td>
                                             {% if app_user.is_superuser %}
@@ -888,6 +897,21 @@
             input.classList.remove('is-invalid');
         }
     }
+
+    // Toggle de visibilidad de contraseña
+    document.getElementById('toggleAppPassword').addEventListener('click', function (e) {
+        const passwordInput = document.getElementById('appPassword');
+        const icon = this.querySelector('i');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    });
 </script>
     <!-- Modal Ingreso Impresora de Red -->
     <div class="modal fade" id="modalAddNetworkPrinter" tabindex="-1" aria-hidden="true">
