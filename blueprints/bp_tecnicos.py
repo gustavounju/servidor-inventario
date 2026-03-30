@@ -6,3 +6,7 @@ bp_tecnicos = Blueprint('tecnicos', __name__)
 @bp_tecnicos.route("/tecnicos")
 def tecnicos_view():
     return render_template("tecnicos.html", mobile_identity=current_technician_identity())
+
+@bp_tecnicos.route("/tecnicos/scanner")
+def tecnicos_scanner_view():
+    return render_template("mobile_scanner.html")

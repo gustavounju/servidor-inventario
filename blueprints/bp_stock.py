@@ -3,7 +3,7 @@ from database.db_core import get_db_connection
 
 bp_stock = Blueprint('stock', __name__)
 
-@bp_stock.route("/api/components/<string:serial_number>", methods=["GET"])
+@bp_stock.route("/api/components/<path:serial_number>", methods=["GET"])
 def get_component(serial_number):
     try:
         with get_db_connection() as conn:
@@ -61,6 +61,18 @@ def add_component():
             
         with get_db_connection() as conn:
             conn.execute("INSERT INTO components (serial_number, component_type, brand_model, status, supplier, invoice_number) VALUES (%s, %s, %s, 'Stock', %s, %s)", (serial, ctype, model, supplier, invoice))
+            
+            from utils.auth import current_technician_identity
+            tech = current_technician_identity()
+            if tech:
+                from datetime import datetime
+                now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                desc = f"Escáner: Registró nuevo componente en Stock: {ctype} {model} (S/N: {serial})"
+                conn.execute(
+                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    ('Stock (Escáner)', desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
+                )
+                
             conn.commit()
         return jsonify({"status": "success"})
     except Exception as e:
@@ -82,6 +94,18 @@ def assign_component():
             conn.execute("UPDATE components SET status = 'Installed', assigned_pc = %s WHERE serial_number = %s", (pc_name, serial))
             detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial})"
             conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'COMPONENT_ASSIGN', 'Stock', %s)", (pc_name, detalles))
+            
+            from utils.auth import current_technician_identity
+            tech = current_technician_identity()
+            if tech:
+                from datetime import datetime
+                now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                desc = f"Escáner: Instaló componente ({comp['component_type']} {comp['brand_model']})"
+                conn.execute(
+                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (pc_name, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
+                )
+
             conn.commit()
             
         return jsonify({"status": "success"})
@@ -105,6 +129,18 @@ def return_component():
             if old_pc != "Unknown":
                 detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial})"
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'COMPONENT_RETURN', %s, 'Stock')", (old_pc, detalles))
+                
+            from utils.auth import current_technician_identity
+            tech = current_technician_identity()
+            if tech:
+                from datetime import datetime
+                now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                desc = f"Escáner: Retiró componente y devolvió a Stock ({comp['component_type']} {comp['brand_model']})"
+                conn.execute(
+                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (old_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
+                )
+
             conn.commit()
             
         return jsonify({"status": "success"})

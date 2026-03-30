@@ -414,10 +414,10 @@
                 </div>
             </div>
 
-            <div class="section-title mt-4">Completadas Hoy</div>
-            <div id="doneTodayList">
+            <div class="section-title mt-4">Mi Historial Reciente</div>
+            <div id="myHistoryList">
                 <div class="empty-state small py-3">
-                    <p>Nada finalizado hoy todavía.</p>
+                    <p>No tienes tareas finalizadas recientes.</p>
                 </div>
             </div>
         </div>
@@ -567,7 +567,7 @@
 
         let allUnassigned = [];
         let allActive = [];
-        let allDoneToday = [];
+        let allMyHistory = [];
         let allPCs = [];
         let allTechs = [];
         let allRequesters = [];
@@ -766,7 +766,7 @@
                 allTechs = data.technicians || [];
                 allUnassigned = data.unassigned || [];
                 allActive = data.active_tasks || [];
-                allDoneToday = data.done_today || [];
+                allMyHistory = data.my_history || [];
                 allPCs = data.pcs || [];
                 allRequesters = data.requesters || [];
 
@@ -893,12 +893,12 @@
                 myContainer.innerHTML = myTasks.map(t => createTaskCard(t, 'mine')).join('');
             }
 
-            // Done Today
-            const doneContainer = document.getElementById('doneTodayList');
-            if (allDoneToday.length === 0) {
-                doneContainer.innerHTML = `<div class="text-center text-muted py-3 small opacity-50">Nada hoy.</div>`;
+            // My History
+            const historyContainer = document.getElementById('myHistoryList');
+            if (allMyHistory.length === 0) {
+                historyContainer.innerHTML = `<div class="text-center text-muted py-3 small opacity-50">Sin historial registrado.</div>`;
             } else {
-                doneContainer.innerHTML = allDoneToday.map(t => createTaskCard(t, 'done')).join('');
+                historyContainer.innerHTML = allMyHistory.map(t => createTaskCard(t, 'done')).join('');
             }
 
             // Pool
