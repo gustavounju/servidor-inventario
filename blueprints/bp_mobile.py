@@ -10,7 +10,8 @@ bp_mobile = Blueprint('mobile', __name__)
 
 @bp_mobile.route("/mobile")
 def mobile_view():
-    return render_template("mobile.html", mobile_identity=current_technician_identity())
+    from flask import redirect, url_for
+    return redirect(url_for("tecnicos.tecnicos_view"))
 
 @bp_mobile.route("/mobile/scanner")
 def mobile_scanner_view():
@@ -34,10 +35,15 @@ def api_mobile_data():
             unassigned = [dict(r) for r in conn.execute("SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC").fetchall()]
             all_active = [dict(r) for r in conn.execute("SELECT t.*, p.fuero as pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado != 'Hecha' ORDER BY t.created_at DESC").fetchall()]
             
-            # Tareas hechas hoy por el técnico actual para el historial reciente
+            # Registrar última actividad móvil (ping de 30seg)
             tech_identity = current_technician_identity()
-            done_today = [dict(r) for r in conn.execute(
-                "SELECT t.*, p.fuero as pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado = 'Hecha' AND t.completed_by = %s AND DATE(t.completed_at) = CURDATE() ORDER BY t.completed_at DESC",
+            if tech_identity:
+                conn.execute("UPDATE technicians SET last_mobile_activity = NOW() WHERE name = %s", (tech_identity,))
+                conn.commit()
+            
+            # Tareas hechas por el técnico actual para el historial (últimas 50)
+            my_history = [dict(r) for r in conn.execute(
+                "SELECT t.*, p.fuero as pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado = 'Hecha' AND t.completed_by = %s ORDER BY t.completed_at DESC LIMIT 50",
                 (tech_identity,)
             ).fetchall()]
 
@@ -62,7 +68,7 @@ def api_mobile_data():
             "technicians": techs, 
             "unassigned": unassigned, 
             "active_tasks": all_active, 
-            "done_today": done_today,
+            "my_history": my_history,
             "pcs": pcs, 
             "requesters": requesters
         }

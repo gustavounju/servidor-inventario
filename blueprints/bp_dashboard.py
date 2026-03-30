@@ -248,10 +248,15 @@ def dashboard():
             pc_ports_query = conn.execute("SELECT pc_name, printer_port FROM pcs WHERE is_active = 'True'").fetchall()
             pc_ports = {row["pc_name"].upper(): (row["printer_port"] or "") for row in pc_ports_query}
             # ------------------------------------------------
+            
+            # --- TECNICOS ACTIVOS MOVILES ---
+            techs_actives_query = conn.execute("SELECT name FROM technicians WHERE last_mobile_activity >= NOW() - INTERVAL 5 MINUTE").fetchall()
+            active_mobile_techs = [row["name"] for row in techs_actives_query]
+            # ------------------------------------------------
 
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
-        pcs_data = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = app_users_list = []
+        pcs_data = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = app_users_list = active_mobile_techs = []
         total_rows = kpi_total_activas = kpi_total_graveyard = kpi_alerta_ram = kpi_sin_impresora = 0
         kpi_impresora_red = kpi_total_impresoras = kpi_win7 = kpi_win10 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
         last_backup_info = "Error leyendo"
@@ -267,6 +272,7 @@ def dashboard():
         unassigned_count=unassigned_count,
         kpi_total_impresoras=kpi_total_impresoras,
         technicians=technicians_list,
+        active_mobile_techs=active_mobile_techs,
         ad_users_list=ad_users_list,
         app_users_list=app_users_list,
         kpi_tareas_hoy=kpi_tareas_hoy,

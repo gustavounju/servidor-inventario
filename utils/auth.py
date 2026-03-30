@@ -662,6 +662,17 @@ def required_permission_for_endpoint(endpoint=None):
     endpoint = endpoint or request.endpoint or ""
     if endpoint.startswith("mobile.") or endpoint.startswith("tecnicos."):
         return "mobile"
+
+    mobile_allowed_stock_endpoints = {
+        "stock.get_component", 
+        "stock.add_component", 
+        "stock.assign_component", 
+        "stock.return_component",
+        "stock.list_suppliers"
+    }
+    if endpoint in mobile_allowed_stock_endpoints:
+        return "mobile"
+
     if endpoint.startswith("stock.") or endpoint.startswith("infrastructure."):
         return "infrastructure"
     if endpoint in {"tasks.report_tasks_completed", "tasks.report_tasks_completed_pdf", "tasks.report_preview"}:

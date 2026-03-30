@@ -353,9 +353,12 @@
   </div>
 
   <!-- FAB Area -->
-  <div class="fab-area">
+  <div class="fab-area" style="gap: 12px;">
     <button class="fab-secondary" onclick="openManualModal()" title="Tarea manual">
       <i class="bi bi-pencil-square"></i>
+    </button>
+    <button class="fab-secondary" onclick="window.location.href='/tecnicos/scanner'" title="Escanear Código de Barras">
+      <i class="bi bi-upc-scan"></i>
     </button>
     <button class="fab-main" id="fabVoice" onclick="toggleVoice()" title="Dictar tarea por voz">
       <i class="bi bi-mic-fill" id="fabIcon"></i>
@@ -591,7 +594,7 @@ function fillPcSelects(pcs) {
 function renderAll() {
   const tasks   = allData.active_tasks || [];
   const myTasks = tasks.filter(t => t.assigned_to && t.assigned_to.toLowerCase() === (techId||'').toLowerCase());
-  const done    = allData.done_today || [];
+  const done    = allData.my_history || [];
   const free    = allData.unassigned || [];
 
   renderTaskList('list-mias', myTasks, 'mine');
@@ -616,7 +619,7 @@ function renderTaskList(containerId, tasks, mode) {
 function renderDoneToday(tasks) {
   const el = document.getElementById('list-done-today');
   if (!tasks.length) { el.innerHTML=''; return; }
-  el.innerHTML = `<div class="section-title"><i class="bi bi-check2-circle"></i> Completadas hoy (${tasks.length})</div>` +
+  el.innerHTML = `<div class="section-title"><i class="bi bi-check2-circle"></i> Mi Historial Reciente (${tasks.length})</div>` +
     tasks.map(t => `
     <div class="task-card" style="opacity:.65;">
       <div class="task-card-accent" style="background:var(--green)"></div>
