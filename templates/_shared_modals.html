@@ -2,7 +2,7 @@
 
 <!-- Modal Crear Tarea Suelta -->
 <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content task-modal-shell">
             <form action="{{ url_for('tasks.create_loose_task') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -51,7 +51,7 @@
                                 <label class="form-label">Fuero / Ubicación</label>
                                 <select name="fuero" class="form-select">
                                     <option value="">-- No Especificado --</option>
-                                    {% for code, name in fueros.items() %}
+                                    {% for name in fueros.values()|unique|sort %}
                                     <option value="{{ name }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>

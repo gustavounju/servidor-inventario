@@ -926,3 +926,13 @@ button.kpi-mini-chip:hover {
     .nav-tab-item span { display: none; }
     .nav-tab-item { padding: 8px 12px; }
 }
+
+/* ===== TASK MODAL STYLES (Nueva Tarea General) ===== */
+.task-modal-shell { border: none; border-radius: 20px; overflow: hidden; }
+.task-modal-hero { background: var(--primary-gradient); padding: 24px 30px; color: #fff; }
+.task-modal-hero .modal-title { font-weight: 800; font-size: 1.5rem; margin-bottom: 4px; }
+.task-modal-hero p { margin: 0; opacity: 0.85; font-size: 0.9rem; line-height: 1.4; }
+.task-mini-note { font-size: 0.75rem; color: var(--text-muted); font-style: italic; }
+.task-form-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; padding: 10px 0; }
+.task-form-card { background: rgba(0, 0, 0, 0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; }
+@media (max-width: 991px) { .task-form-grid { grid-template-columns: 1fr; } }
