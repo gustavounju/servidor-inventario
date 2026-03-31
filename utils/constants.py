@@ -25,7 +25,9 @@ FUERO_MAPPING = {
     "EQINT": "Equipo Interdisciplinario",
     "JUZMEN2": "Juzgado de Menores 2",
     "OGJ": "Oficina de Gestion Judicial",
-    "VIOGEN": "Violencia de Género 5"
+    "VIOGEN": "Violencia de Género 5",
+    "TFSIIIV": "Tribunal de Familia - Sala III",
+    "TRIBJU": "Tribunal de Juicio"
 }
 
 FUERO_COLORS = {
@@ -40,7 +42,9 @@ FUERO_COLORS = {
     "Juzgado civil y Comercial N°9 Secretaria 18": "#0dcaf0", # Cyan
     "Equipo Interdisciplinario": "#ffc107",      # Yellow
     "Juzgado de Menores 2": "#dc3545",           # Red
-    "Oficina de Gestion Judicial": "#0dcaf0"     # Cyan
+    "Oficina de Gestion Judicial": "#0dcaf0",    # Cyan
+    "Tribunal de Familia - Sala III": "#ffc107",  # Yellow
+    "Tribunal de Juicio": "#6610f2"              # Indigo
 }
 
 def detect_fuero(pc_name):

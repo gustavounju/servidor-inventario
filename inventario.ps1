@@ -288,9 +288,9 @@ try {
         $virtualKeywords = "PDF|XPS|OneNote|Fax|Send To|Microsoft Print|Writer"
         $bestPrinter = $allPrinters | Where-Object { $_.Default -eq $true } | Select-Object -First 1
         
-        # 2. Si la default es virtual, forzar "SIN IMPRESORA" para que el servidor limpie el catálogo
-        if ($bestPrinter -and $bestPrinter.Name -match $virtualKeywords) {
-            $bestPrinter = $null 
+        # 2. Si la default es virtual o nula, intentar buscar la primera que NO sea virtual
+        if (-not $bestPrinter -or $bestPrinter.Name -match $virtualKeywords) {
+            $bestPrinter = $allPrinters | Where-Object { $_.Name -notmatch $virtualKeywords } | Select-Object -First 1
         }
 
         # 3. Datos de la impresora
@@ -301,18 +301,45 @@ try {
 
             # INTENTAR OBTENER SERIAL FÍSICO (USB / PnP)
             try {
-                # Buscamos en PnPEntity usando el nombre o parte del ID de puerto
-                $cleanName = $printerModel -replace "[\\]", "\\"
-                $pnp = Get-WmiObject Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Name -match [regex]::Escape($cleanName) -or $_.Description -match [regex]::Escape($cleanName) }
-                if ($pnp) {
-                    # El DeviceID de USBPRINT suele tener el serial al final (ej: USBPRINT\...\SERIAL)
-                    $did = $pnp.DeviceID
-                    if ($did -match "\\([^\\]+)$") {
-                        $potentialSN = $matches[1]
-                        # Filtramos IDs genéricos, GUIDs o cadenas con demasiados guiones/caracteres extraños
-                        $isGuid = $potentialSN -match "^\{[A-F0-9-]+\}$" -or ($potentialSN -split "-").Count -gt 3
-                        if ($potentialSN -notmatch "^(USB|LPT|COM)[0-9]+$" -and -not $isGuid -and $potentialSN.Length -gt 3) {
-                            $printerSN = $potentialSN
+                # 1. Búsqueda directa por PnPEntity con filtrado por Service:usbprint (más certero)
+                $pnpDevices = Get-WmiObject Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Service -eq "usbprint" -or $_.Name -like "*$printerModel*" }
+                
+                foreach ($pnp in $pnpDevices) {
+                    # Si el nombre del dispositivo coincide al menos parcialmente con el modelo reportado
+                    if ($pnp.Name -match [regex]::Escape($printerModel) -or $printerModel -match [regex]::Escape($pnp.Name)) {
+                        # El DeviceID suele ser: USBPRINT\MODEL\SERIAL
+                        if ($pnp.DeviceID -match "\\([^\\]+)$") {
+                            $potentialSN = $matches[1] -replace "_\d+$", "" # Quitar sufijos de Windows si existen (_0, _1)
+                            
+                            # Validar que no sea un ID genérico o GUID
+                            $isGuid = $potentialSN -match "^\{[A-F0-9-]+\}$" -or ($potentialSN -split "-").Count -gt 3
+                            if ($potentialSN -notmatch "^(USB|LPT|COM)[0-9]+$" -and -not $isGuid -and $potentialSN.Length -gt 4) {
+                                $printerSN = $potentialSN
+                                break
+                            }
+                        }
+                    }
+                }
+
+                # 2. Fallback por Registro (Enum\USBPRINT) si falla el WMI
+                if ($printerSN -eq "N/A") {
+                    $usbPrintPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\USBPRINT"
+                    if (Test-Path $usbPrintPath) {
+                        $models = Get-ChildItem $usbPrintPath -ErrorAction SilentlyContinue
+                        foreach ($m in $models) {
+                            # Limpiamos nombres para comparar (quitar underscores, espacios)
+                            $cleanM = $m.PSChildName -replace "[_\s]", ""
+                            $cleanP = $printerModel -replace "[_\s]", ""
+                            if ($cleanP -match $cleanM -or $cleanM -match $cleanP) {
+                                $serialKeys = Get-ChildItem $m.PSPath -ErrorAction SilentlyContinue
+                                if ($serialKeys) {
+                                    $potentialSN = $serialKeys[0].PSChildName -replace "(_|\&).*$", ""
+                                    if ($potentialSN.Length -gt 5 -and $potentialSN -notmatch "^[A-F0-9]{8}-") {
+                                        $printerSN = $potentialSN
+                                        break
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -455,7 +482,13 @@ try {
     # helper rapidísimo para escapar strings en PS2.0 y manejar Nulls
     function e($s) { 
         if ($null -eq $s) { return "" }
-        return ([string]$s) -replace "\\", "\\" -replace "`"", "\`"" -replace "`r", "" -replace "`n", "" 
+        # Escapado JSON básico para PS 2.0 (Backslash y Comillas)
+        $val = [string]$s
+        $val = $val -replace "\\", "\\\\"
+        $val = $val -replace "`"", "\`""
+        $val = $val -replace "`r", ""
+        $val = $val -replace "`n", ""
+        return $val
     }
     $jsonObj = "{"
     $jsonObj += """PC_Nombre"": ""$(e $pcNombre)"","
