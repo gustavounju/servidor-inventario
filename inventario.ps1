@@ -342,16 +342,18 @@ try {
                             }
                         }
                     }
-                    # 3. Fallback por PrinterDriverData (Software\Microsoft\Windows NT\CurrentVersion\Print\Printers)
-                    if ($printerSN -eq "N/A") {
-                        $printerRegistryPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Printers\$printerModel\PrinterDriverData"
-                        if (Test-Path $printerRegistryPath) {
-                            $potentialSN = Get-ItemProperty -Path $printerRegistryPath -Name "SerialNumber" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SerialNumber -ErrorAction SilentlyContinue
-                            if ($null -ne $potentialSN -and $potentialSN.Length -gt 4) {
-                                $printerSN = $potentialSN
-                            }
+                }
+
+                # 3. Fallback por PrinterDriverData (Software\Microsoft\Windows NT\CurrentVersion\Print\Printers)
+                if ($printerSN -eq "N/A") {
+                    $printerRegistryPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Printers\$printerModel\PrinterDriverData"
+                    if (Test-Path $printerRegistryPath) {
+                        $potentialSN = Get-ItemProperty -Path $printerRegistryPath -Name "SerialNumber" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SerialNumber -ErrorAction SilentlyContinue
+                        if ($null -ne $potentialSN -and $potentialSN.Length -gt 4) {
+                            $printerSN = $potentialSN
                         }
                     }
+                }
             } catch {}
             # Limpiar prefijos/sufijos internos de Windows (Ej: IP_10.15.2.50_1 -> 10.15.2.50)
             $printerPort = $printerPort -replace "^IP_", "" -replace "_[0-9]+$", ""
