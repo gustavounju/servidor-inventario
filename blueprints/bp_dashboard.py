@@ -507,15 +507,31 @@ def pc_detail(pc_name):
             WHERE u.assigned_pc = %s
         ''', (pc_name,)).fetchall()
         
-        # --- NUEVA LÓGICA: Detección de impresora compartida por otra PC ---
         sharing_pc_data = None
         if pc and pc["printer_port"] and pc["printer_port"].startswith("\\\\"):
             # Extraer el nombre de la PC desde una ruta UNC (ej: \\SISTEMAS-105\HP Deskjet)
             parts = pc["printer_port"].split("\\")
             if len(parts) >= 3:
                 potential_host = parts[2].upper()
-                sharing_pc_data = conn.execute("SELECT pc_name, is_active, printer_port FROM pcs WHERE pc_name = %s LIMIT 1", (potential_host,)).fetchone()
-        # -------------------------------------------------------------------
+                sharing_pc_data = conn.execute(
+                    "SELECT pc_name, is_active, printer_port, printer_sn, printer_model FROM pcs WHERE UPPER(pc_name) = %s OR ip_address = %s LIMIT 1", 
+                    (potential_host, potential_host)
+                ).fetchone()
+        
+        # PCs que usan a esta PC como host de impresora (cascada)
+        clients_using_this_printer = []
+        if pc and pc["pc_name"] and pc["pc_name"] not in ('PC Generica', 'Infraestructura'):
+            # Patrones para buscar clientes
+            pat_name = f"%\\\\\\\\{pc['pc_name'].upper()}\\\\%"
+            pat_ip = f"%\\\\\\\\{pc['ip_address']}\\\\%" if pc['ip_address'] and pc['ip_address'] != 'N/A' else None
+            
+            query = "SELECT pc_name FROM pcs WHERE is_active='True' AND UPPER(printer_port) LIKE %s"
+            params = [pat_name]
+            if pat_ip:
+                query += " OR UPPER(printer_port) LIKE %s"
+                params.append(pat_ip)
+            
+            clients_using_this_printer = conn.execute(query, tuple(params)).fetchall()
         
         # UPS Disponibles en caso de querer asignarle una (UPS sin asignar)
         available_ups = conn.execute("SELECT id, code, model FROM ups_inventory WHERE assigned_pc IS NULL").fetchall()
@@ -550,7 +566,7 @@ def pc_detail(pc_name):
         available_network_printers = conn.execute("SELECT id, ip_address, brand_model FROM network_printers ORDER BY ip_address").fetchall()
 
     if pc is None: abort(404)
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, ad_users_list=ad_users_list, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups_list=pc_ups_list, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles, sharing_pc=sharing_pc_data, assigned_network_printers=assigned_network_printers, available_network_printers=available_network_printers)
+    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, ad_users_list=ad_users_list, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups_list=pc_ups_list, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles, sharing_pc=sharing_pc_data, clients_using_this_printer=clients_using_this_printer, assigned_network_printers=assigned_network_printers, available_network_printers=available_network_printers)
 
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
 def update_pc_infrastructure(pc_name):

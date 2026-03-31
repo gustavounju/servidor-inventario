@@ -204,45 +204,6 @@
                 {% else %}
                 {% if pc.alerta_impresora_red %}
                 <span class="badge bg-info text-dark mb-1">Impresora en Red <i class="bi bi-diagram-3"></i></span><br>
-                {% if pc.printer_port and pc.printer_port != 'N/A' %}
-                <div class="small text-primary mt-1">
-                  <i class="bi bi-plug"></i> Conectada a: <code>{{ pc.printer_port }}</code>
-                  {% set is_already_assigned = [] %}
-                  {% set clean_port = pc.printer_port.split(' ')[0] if pc.printer_port else '' %}
-                  {% for np in assigned_network_printers %}
-                    {% if (np.ip_address == clean_port and clean_port != '') or (pc.printer_sn and np.serial_number == pc.printer_sn) %}
-                      {% set _ = is_already_assigned.append(np.id) %}
-                    {% endif %}
-                  {% endfor %}
-
-                  {% if is_already_assigned %}
-                  <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=is_already_assigned[0]) }}" method="POST" class="d-inline ms-1">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
-                    <button type="submit" class="btn btn-sm btn-link p-0 text-danger text-decoration-none" 
-                            title="Desvincular esta impresora de red del equipo"
-                            onclick="return confirm('¿Desvincular esta impresora de red del equipo?');">
-                      <i class="bi bi-dash-circle-fill" style="font-size: 0.8rem;"></i>
-                    </button>
-                  </form>
-                  {% else %}
-                  <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none ms-1" 
-                          onclick="promoteToNetworkPrinter('{{ pc.printer_port }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')"
-                          title="Stockear: Registrar esta impresora en el catálogo oficial">
-                    <i class="bi bi-plus-circle-fill" style="font-size: 0.8rem;"></i>
-                  </button>
-                  {% endif %}
-                </div>
-                {% endif %}
-                
-                {# Cartel de Pendiente en Detalle #}
-                {% if not assigned_network_printers and pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) and ("\\\\" in (pc.printer_port or "") or "IP_" in (pc.printer_port or "") or "." in (pc.printer_port or "")) %}
-                <div class="mt-2 mb-1">
-                  <span class="badge bg-warning text-dark" style="font-size: 0.75rem; border: 1px solid #cc9a06;">
-                    <i class="bi bi-clock-history"></i> Pendiente de ejecutar script
-                  </span>
-                  <div class="small text-muted mt-1">Este equipo fue desvinculado. El estado real es desconocido hasta un nuevo reporte.</div>
-                </div>
                 {% endif %}
 
                 {% if sharing_pc %}
@@ -262,19 +223,62 @@
                     </a>
                   {% endif %}
 
-                  {% if sharing_pc.is_active == 'False' %}
-                  <span class="badge bg-secondary" style="font-size: 0.6rem;">(Cementerio)</span>
+                  {% if sharing_pc.printer_sn and sharing_pc.printer_sn != 'N/A' and (not pc.printer_sn or pc.printer_sn == 'N/A') %}
+                  <button class="btn btn-sm btn-link p-0 ms-2 text-primary" 
+                          title="Promocionar como Impresora de Red usando datos del host"
+                          onclick="promoteToNetworkPrinter('{{ pc.printer_port }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ sharing_pc.printer_sn }}')">
+                      <i class="bi bi-plus-circle-fill"></i> Promocionar
+                  </button>
                   {% endif %}
                 </div>
+                {% elif pc.printer_port and pc.printer_port.startswith('\\\\') %}
+                <div class="mt-1" style="font-size: 0.8rem;">
+                    <i class="bi bi-share-fill text-muted"></i> Compartida por:
+                    <span class="text-danger fw-bold">{{ pc.printer_port.split('\\')[2] if pc.printer_port and '\\' in pc.printer_port else 'Desconocido' }}</span> 
+                    <span class="text-muted">(PC no registrada en inventario)</span>
+                </div>
+                {% endif %}
+                
+                {# SI EL PC ACTUAL ES HOST DE OTROS #}
+                {% if clients_using_this_printer %}
+                <div class="mt-2 pt-2 border-top" style="font-size: 0.8rem;">
+                  <div class="text-muted uppercase tracking-wider mb-1" style="font-size: 0.65rem;">PCs que usan esta impresora:</div>
+                  <div class="d-flex flex-wrap gap-1">
+                    {% for client in clients_using_this_printer %}
+                    <a href="{{ url_for('dashboard.pc_detail', pc_name=client.pc_name | upper) }}" 
+                       class="badge bg-light text-secondary border text-decoration-none shadow-none">
+                       <i class="bi bi-pc-display pe-1"></i>{{ client.pc_name | upper }}
+                    </a>
+                    {% endfor %}
+                  </div>
+                </div>
                 {% endif %}
 
-                <div class="mt-1">
-                  <strong>Impresora {{ pc.printer_model }}</strong>
+                <div class="mt-3 row align-items-center">
+                  <div class="col-auto">
+                    <label class="d-block small text-muted uppercase tracking-wider mb-1">N° Serie / MAC</label>
+                    <span class="badge {{ 'bg-success' if (pc.printer_sn and pc.printer_sn != 'N/A') or (sharing_pc and sharing_pc.printer_sn and sharing_pc.printer_sn != 'N/A') else 'bg-danger' }} py-2 px-3 fw-bold shadow-sm" style="font-size: 1rem;">
+                      {% if pc.printer_sn and pc.printer_sn != 'N/A' %}
+                        {{ pc.printer_sn }}
+                      {% elif sharing_pc and sharing_pc.printer_sn and sharing_pc.printer_sn != 'N/A' %}
+                        {{ sharing_pc.printer_sn }} <small class="fw-normal">(Heredado)</small>
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="col">
+                    <div class="text-muted small uppercase tracking-wider mb-1">Modelo Detectado</div>
+                    <strong>{{ pc.printer_model }}</strong>
+                  </div>
                 </div>
 
-                {% else %}
-                Impresora Local {{ pc.printer_model }}
+                {% if pc.printer_port and pc.printer_port != 'N/A' %}
+                <div class="small text-primary mt-2">
+                  <i class="bi bi-plug"></i> Canal/Puerto: <code>{{ pc.printer_port }}</code>
+                </div>
                 {% endif %}
+
                 {% endif %}
               </td>
             </tr>

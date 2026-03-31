@@ -965,6 +965,13 @@
     <script>
         // Función para abrir el modal de impresora de red con datos pre-cargados
         function promoteToNetworkPrinter(ip, brandModel, pcName, serialNumber) {
+            // BUG FIX: Ocultar el modal de verificación si está abierto para evitar conflictos de Bootstrap
+            const detailModalEl = document.getElementById('printersDetailModal');
+            if (detailModalEl) {
+                const detailModal = bootstrap.Modal.getInstance(detailModalEl);
+                if (detailModal) detailModal.hide();
+            }
+
             const modalElement = document.getElementById('modalAddNetworkPrinter');
             const modal = (modalElement._bs_modal) || new bootstrap.Modal(modalElement);
             modalElement._bs_modal = modal;
@@ -1072,4 +1079,147 @@
                 });
             }
         });
+    </script>
+
+    <!-- Modal Detalle de Impresoras (Verificación) -->
+    <div class="modal fade" id="printersDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header bg-dark text-white p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-20 p-2 rounded-circle">
+                            <i class="bi bi-printer-fill fs-3 text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0">Verificación de Impresoras</h5>
+                            <p class="mb-0 small text-muted">Asegúrese de que cada equipo físico esté registrado en Infraestructura.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 bg-light" style="max-height: 75vh;">
+                    <!-- Cargando -->
+                    <div id="printersLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Analizando inventario de red...</p>
+                    </div>
+
+                    <div id="printersContent" class="d-none">
+                        <!-- Seccion 1: Registradas -->
+                        <div class="p-4 border-bottom bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-shield-check me-2"></i>Catálogo Oficial (Suman al KPI)</h6>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle" style="font-size: 0.7rem;">Contabilizadas en 'Imp'</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle table-hover mb-0" style="font-size: 0.85rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Marca/Modelo</th>
+                                            <th>IP / Dirección</th>
+                                            <th>N° Serie</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="netPrintersTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Seccion 2: Detectadas pero no registradas -->
+                        <div class="p-4">
+                            <h6 class="fw-bold mb-3 text-warning"><i class="bi bi-exclamation-triangle-fill me-2"></i>Detectadas en PCs (Locales/USB no registradas)</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle table-hover mb-0" style="font-size: 0.85rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>PC dueña</th>
+                                            <th>Impresora Detectada</th>
+                                            <th>Puerto / Canal</th>
+                                            <th>N° Serie</th>
+                                            <th class="text-end">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detectedPrintersTableBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-info mt-3 py-2 small" style="border-radius: 10px;">
+                                <i class="bi bi-info-circle-fill me-2"></i> Si falta una impresora que debería ser de red, use el botón <strong>Promocionar</strong> para ingresarla oficialmente.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-top-0">
+                    <button type="button" class="btn btn-secondary px-4 ripple" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showDetectedPrinters() {
+            const modalEl = document.getElementById('printersDetailModal');
+            if (!modalEl) return;
+            const modal = new bootstrap.Modal(modalEl);
+            document.getElementById('printersLoading').classList.remove('d-none');
+            document.getElementById('printersContent').classList.add('d-none');
+            modal.show();
+
+            fetch('/api/detected_printers')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('printersLoading').classList.add('d-none');
+                    if (data.status === 'success') {
+                        document.getElementById('printersContent').classList.remove('d-none');
+                        
+                        // Llenar Registradas
+                        const netBody = document.getElementById('netPrintersTableBody');
+                        netBody.innerHTML = '';
+                        if (data.network_printers.length > 0) {
+                            data.network_printers.forEach(p => {
+                                netBody.innerHTML += `
+                                    <tr>
+                                        <td><strong>${p.brand_model || 'Genérico'}</strong></td>
+                                        <td><code>${p.ip_address || 'N/A'}</code></td>
+                                        <td><span class="badge bg-light text-dark border">${p.serial_number || 'N/A'}</span></td>
+                                        <td><span class="badge bg-success bg-opacity-10 text-success border border-success-subtle"><i class="bi bi-check-circle-fill"></i> Oficial</span></td>
+                                    </tr>
+                                `;
+                            });
+                        } else {
+                            netBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No hay impresoras registradas aún en el catálogo de infraestructura.</td></tr>';
+                        }
+
+                        // Llenar Detectadas
+                        const detectedBody = document.getElementById('detectedPrintersTableBody');
+                        detectedBody.innerHTML = '';
+                        if (data.detected_printers.length > 0) {
+                            data.detected_printers.forEach(p => {
+                                detectedBody.innerHTML += `
+                                    <tr>
+                                        <td>
+                                            <a href="/pc/${encodeURIComponent(p.pc_name)}" class="text-decoration-none fw-bold text-dark">${p.pc_name}</a><br>
+                                            <small class="text-muted"><i class="bi bi-geo-alt"></i> ${p.fuero || '-'}</small>
+                                        </td>
+                                        <td>${p.printer_model}</td>
+                                        <td><code>${p.printer_port || 'Local'}</code></td>
+                                        <td><span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle">${p.printer_sn || 'N/A'}</span></td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="promoteToNetworkPrinter('${(p.printer_port || '').replace(/\\/g, '\\\\')}','${p.printer_model}','${p.pc_name}','${p.printer_sn || ''}')">
+                                                <i class="bi bi-plus-circle"></i> Promocionar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+                        } else {
+                            detectedBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No se detectaron impresoras locales adicionales fuera del catálogo.</td></tr>';
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Error cargando impresoras:", err);
+                    document.getElementById('printersLoading').innerHTML = `<div class="alert alert-danger m-3">Error al cargar datos: ${err}</div>`;
+                });
+        }
     </script>

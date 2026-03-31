@@ -81,15 +81,8 @@ def inject_global_vars():
                 kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND pc_name NOT IN ('PC Generica', 'Infraestructura')", ("%Windows 7%",)).fetchone()["c"]
                 kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
                 
-                # Impresoras
-                net_pr = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
-                loc_pr = conn.execute("""
-                    SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' 
-                    AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
-                    AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%') AND alerta_impresora_red = 0
-                    AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
-                """).fetchone()["c"]
-                kpis['kpi_total_impresoras'] = net_pr + loc_pr
+                # Impresoras: Solo contar las que están en el catálogo oficial (Infraestructura)
+                kpis['kpi_total_impresoras_oficial'] = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
                 
                 kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
                 kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]

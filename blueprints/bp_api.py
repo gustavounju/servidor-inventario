@@ -10,6 +10,7 @@ bp_api = Blueprint('api', __name__)
 
 def process_inventory_data(data):
     from utils.constants import detect_fuero, clean_hex_string
+    debug_logs = []
     pc_name = data.get("PC_Nombre")
     if not pc_name: raise ValueError("Falta PC_Nombre en el JSON")
 
@@ -106,17 +107,23 @@ def process_inventory_data(data):
             if len(parts) >= 3:
                 host_ref = parts[2].upper()
                 with get_db_connection() as conn:
-                    # Buscar por Nombre o por IP (con LIKE por si hay múltiples IPs)
-                    host_info = conn.execute(
-                        "SELECT printer_sn, printer_model FROM pcs WHERE UPPER(pc_name) = %s OR ip_address LIKE %s LIMIT 1", 
-                        (host_ref, f"%{host_ref}%")
-                    ).fetchone()
-                    
-                    if host_info and host_info["printer_sn"] and host_info["printer_sn"] != "N/A":
-                        printer_sn = host_info["printer_sn"]
-                        print(f"[DEBUG] Herencia de serial detectada: {pc_name} hereda {printer_sn} de {host_ref}")
+                    if host_ref:
+                        # Buscamos la PC host por nombre (LIKE para manejar FQDN) o por IP
+                        host_info = conn.execute(
+                            "SELECT printer_sn, printer_model, pc_name FROM pcs WHERE (UPPER(pc_name) LIKE %s OR ip_address = %s) AND printer_sn IS NOT NULL AND printer_sn != 'N/A' AND printer_sn != '' LIMIT 1", 
+                            (f"{host_ref.upper()}%", host_ref)
+                        ).fetchone()
+                        
+                        if host_info and host_info['printer_sn'] and host_info['printer_sn'] != 'N/A':
+                            printer_sn = host_info['printer_sn']
+                            # Si el cliente no reportó modelo, heredamos el del host
+                            if not printer_model or printer_model == "N/A":
+                                printer_model = host_info['printer_model']
+                            debug_logs.append(f"Herencia: Serial {printer_sn} heredado del host {host_info['pc_name']}")
+                        else:
+                            debug_logs.append(f"Herencia: No se encontró serial válido en el host {host_ref}")
         except Exception as e:
-            print(f"[DEBUG] Error en herencia de serial: {e}")
+            debug_logs.append(f"Error en herencia: {e}")
     # -------------------------------------------------------------
 
     if esta_desconectada and es_local and not sin_modelo:
@@ -258,7 +265,7 @@ def process_inventory_data(data):
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'AUTO_CLEAN_PRINTER', 'Assigned', 'None')", (pc_name,))
                 
                 # 3. LIMPIEZA EN CASCADA (Misión: Clientes huérfanos)
-                host_pattern = f"%\\\\{pc_name.upper()}\\%"
+                host_pattern = f"%\\\\\\\\{pc_name.upper()}\\\\%"
                 clients = conn.execute("SELECT pc_name FROM pcs WHERE UPPER(printer_port) LIKE %s", (host_pattern,)).fetchall()
                 if clients:
                     for c in clients:
@@ -270,20 +277,26 @@ def process_inventory_data(data):
 
         # --- PROPAGACIÓN EN CASCADA (SI SOY HOST) ---
         # Si esta PC tiene un serial de impresora USB/Local válido, buscar clientes que impriman aquí
-        if printer_sn and printer_sn != "N/A" and ip_address and ip_address != "N/A":
-            # Patrón de puerto que buscaría un cliente: \\MiIP\ o \\MiNombre\
-            pattern_ip = f"%\\\\{ip_address}\\%"
-            pattern_name = f"%\\\\{pc_name.upper()}\\%"
+        if printer_sn and printer_sn != "N/A" and printer_sn != "" and printer_sn != "Desconocido":
+            # Patrones de puerto que buscaría un cliente: \\MiIP\ o \\MiNombre\
+            # Usamos doble backslash para el LIKE de SQL
+            patterns = []
+            if ip_address and ip_address != "N/A":
+                patterns.append(f"%\\\\\\\\{ip_address}\\\\%")
+            if pc_name:
+                patterns.append(f"%\\\\\\\\{pc_name.upper()}\\\\%")
             
-            # Actualizar a todos los clientes que no tengan serial pero sí apunten a este host
-            conn.execute(
-                """
-                UPDATE pcs SET printer_sn = %s 
-                WHERE (printer_sn IS NULL OR printer_sn = 'N/A' OR printer_sn = '')
-                AND (UPPER(printer_port) LIKE %s OR UPPER(printer_port) LIKE %s)
-                """,
-                (printer_sn, pattern_ip, pattern_name)
-            )
+            for pat in patterns:
+                updated = conn.execute(
+                    """
+                    UPDATE pcs SET printer_sn = %s 
+                    WHERE (printer_sn IS NULL OR printer_sn = 'N/A' OR printer_sn = '' OR printer_sn = 'Desconocido')
+                    AND UPPER(printer_port) LIKE %s
+                    """,
+                    (printer_sn, pat)
+                )
+                if updated.rowcount > 0:
+                    debug_logs.append(f"Cascada: Se actualizó serial {printer_sn} a {updated.rowcount} cliente(s) para el patrón {pat}")
             
         conn.commit()
 
@@ -378,6 +391,34 @@ def api_pc_printer(pc_ref):
                 "printer_sn": row["printer_sn"] or "N/A",
                 "printer_model": row["printer_model"] or "N/A",
                 "printer_port": row["printer_port"] or "N/A"
+            })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/detected_printers")
+def api_detected_printers():
+    """Devuelve la lista de impresoras detectadas (locales) y registradas."""
+    try:
+        with get_db_connection() as conn:
+            # 1. Impresoras registradas en Infraestructura
+            net_printers = conn.execute("SELECT * FROM network_printers ORDER BY brand_model").fetchall()
+            
+            # 2. Impresoras detectadas en PCs (Locales/USB que no están en el catálogo)
+            detected = conn.execute("""
+                SELECT pc_name, printer_model, printer_sn, printer_port, last_report, fuero
+                FROM pcs 
+                WHERE is_active = 'True' 
+                AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
+                AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%') 
+                AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
+                AND (printer_sn IS NULL OR printer_sn = '' OR printer_sn = 'N/A' OR printer_sn NOT IN (SELECT serial_number FROM network_printers WHERE serial_number IS NOT NULL AND serial_number != ''))
+                ORDER BY pc_name
+            """).fetchall()
+            
+            return jsonify({
+                "status": "success",
+                "network_printers": [dict(p) for p in net_printers],
+                "detected_printers": [dict(p) for p in detected]
             })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

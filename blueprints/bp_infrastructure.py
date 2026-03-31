@@ -28,14 +28,8 @@ def inject_infra_kpis():
                 kpis['kpi_total_graveyard'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
                 kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND pc_name NOT IN ('PC Generica', 'Infraestructura')", ("%Windows 7%",)).fetchone()["c"]
                 kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
-                net_pr = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
-                loc_pr = conn.execute("""
-                    SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' 
-                    AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
-                    AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%') AND alerta_impresora_red = 0
-                    AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
-                """).fetchone()["c"]
-                kpis['kpi_total_impresoras'] = net_pr + loc_pr
+                # Impresoras: Solo contar las que están en el catálogo oficial (Infraestructura)
+                kpis['kpi_total_impresoras_oficial'] = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
                 kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
                 kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
         except Exception as e:
@@ -439,13 +433,9 @@ def delete_network_printer(id):
             if not printer:
                 return redirect(url_for('infrastructure.index'))
                 
-            # Verificar si está en uso en pc_network_printers
-            used_pcs = conn.execute("SELECT pc_name FROM pc_network_printers WHERE printer_id = %s", (id,)).fetchall()
-            if used_pcs:
-                pc_names = ", ".join([p["pc_name"] for p in used_pcs])
-                flash(f"No se puede eliminar: La impresora ({printer['ip_address']}) está actualmente asignada a: {pc_names}. Desvincúlela primero.", "error")
-                return redirect(url_for('infrastructure.index'))
-                
+            # NUEVA LÓGICA: Desvincular automáticamente para facilitar la vida al usuario
+            conn.execute("DELETE FROM pc_network_printers WHERE printer_id = %s", (id,))
+            
             conn.execute("DELETE FROM network_printers WHERE id = %s", (id,))
             conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES ('Infraestructura', 'Impresora de Red Eliminada', %s, 'DELETED')", 
                          (printer['ip_address'],))
