@@ -309,8 +309,12 @@ def process_inventory_data(data):
 def receive_inventory():
     try:
         raw_data = request.get_data()
-        try: data = json.loads(raw_data.decode("utf-8"))
-        except Exception: data = json.loads(raw_data.decode("utf-16"))
+        try:
+            try: data = json.loads(raw_data.decode("utf-8"))
+            except Exception: data = json.loads(raw_data.decode("utf-16"))
+        except Exception as e:
+            raise ValueError(f"JSON inválido o error de codificación: {e}")
+            
         process_inventory_data(data)
         return jsonify({"status": "success"}), 200
     except ValueError as ve:

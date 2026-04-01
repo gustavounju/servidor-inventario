@@ -501,6 +501,15 @@ try {
         $val = $val -replace "`n", ""
         return $val
     }
+    # helper para formatear números con punto decimal invariante (evita errores con coma en JSON)
+    function n($num) {
+        if ($null -eq $num) { return "0" }
+        try {
+            return [string]$num.ToString([System.Globalization.CultureInfo]::InvariantCulture)
+        } catch {
+            return [string]$num
+        }
+    }
     $jsonObj = "{"
     $jsonObj += """PC_Nombre"": ""$(e $pcNombre)"","
     $jsonObj += """Usuario_Actual"": ""$(e $usuarioActual)"","
@@ -508,7 +517,7 @@ try {
     $jsonObj += """Sistema"": {"
     $jsonObj += """OsName"": ""$(e $os.Caption)"","
     $jsonObj += """Procesador"": ""$(e $cpu.Name)"","
-    $jsonObj += """RAM (GB)"": $ramGB"
+    $jsonObj += """RAM (GB)"": $(n $ramGB)"
     $jsonObj += "},"
     $jsonObj += """Red"": [{""IPAddress"": ""$ipAddress""}],"
     $jsonObj += """RAM_Detalles"": ""$(e $ramDetalles)"","
@@ -529,7 +538,7 @@ try {
     $jsonObj += "],"
     # Armamos objeto Salud
     $jsonObj += """Salud"": {"
-    $jsonObj += """Uptime_Dias"": $($healthData.Uptime_Dias),"
+    $jsonObj += """Uptime_Dias"": $(n $healthData.Uptime_Dias),"
     $jsonObj += """Discos_SMART"": ["
     $smartArr = @()
     if ($null -ne $healthData.Discos_SMART) {
@@ -543,7 +552,7 @@ try {
     $spcArr = @()
     if ($null -ne $healthData.Discos_Espacio) {
         foreach ($v in $healthData.Discos_Espacio) {
-            $spcArr += "{""Letter"":""$(e $v.Letter)"",""FreeGB"":$($v.FreeGB),""TotalGB"":$($v.TotalGB),""PctFree"":$($v.PctFree)}"
+            $spcArr += "{""Letter"":""$(e $v.Letter)"",""FreeGB"":$(n $v.FreeGB),""TotalGB"":$(n $v.TotalGB),""PctFree"":$(n $v.PctFree)}"
         }
     }
     $jsonObj += [string]::Join(",", $spcArr)
@@ -607,10 +616,16 @@ try {
             $script:errorOccurred = $true
             Write-Host "ERROR FATAL: Falló tanto HTTPS como HTTP." -ForegroundColor Red
             Write-Host "HTTPS Error: $($_.Exception.Message)" -ForegroundColor Red
-            # Mostrar detalle si es WebException
-            if ($_.Exception.InnerException) {
-                Write-Host $_.Exception.InnerException.Message -ForegroundColor DarkRed
+            
+            # Mostrar detalle del cuerpo de la respuesta si está disponible
+            if ($_.Exception.Response) {
+                try {
+                    $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                    $errorBody = $reader.ReadToEnd()
+                    Write-Host "Respuesta del Servidor: $errorBody" -ForegroundColor Gray
+                } catch {}
             }
+
             # Backup Local de JSON en Escritorio
             $desktopPath = [Environment]::GetFolderPath("Desktop")
             $backupJson = "$desktopPath\Inventario_$pcNombre.json"
