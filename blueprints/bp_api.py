@@ -103,15 +103,27 @@ def process_inventory_data(data):
     if es_compartida_unc and (printer_sn == "N/A" or not printer_sn):
         try:
             # Extraer el nombre del host (ej: \\PC01\Printer -> PC01 o \\10.x.x.x\Printer)
-            parts = printer_port.split("\\")
-            if len(parts) >= 3:
-                host_ref = parts[2].upper()
+            parts = [p for p in printer_port.split("\\") if p]
+            if len(parts) >= 2:
+                # El host es la primera parte después de los backslashes iniciales
+                host_raw = parts[0].upper()
+                # Limpiar FQDN (ej: PC01.dominio.local -> PC01) para el LIKE
+                host_ref = host_raw.split(".")[0].strip()
+                
                 with get_db_connection() as conn:
                     if host_ref:
-                        # Buscamos la PC host por nombre (LIKE para manejar FQDN) o por IP
+                        # Buscamos la PC host por nombre (LIKE para manejar NetBIOS/FQDN) o por IP
+                        # Priorizamos coincidencia exacta o por IP
                         host_info = conn.execute(
-                            "SELECT printer_sn, printer_model, pc_name FROM pcs WHERE (UPPER(pc_name) LIKE %s OR ip_address = %s) AND printer_sn IS NOT NULL AND printer_sn != 'N/A' AND printer_sn != '' LIMIT 1", 
-                            (f"{host_ref.upper()}%", host_ref)
+                            """
+                            SELECT printer_sn, printer_model, pc_name 
+                            FROM pcs 
+                            WHERE (UPPER(pc_name) = %s OR UPPER(pc_name) LIKE %s OR ip_address = %s) 
+                            AND printer_sn IS NOT NULL AND printer_sn != 'N/A' AND printer_sn != '' 
+                            ORDER BY (UPPER(pc_name) = %s) DESC, last_report DESC 
+                            LIMIT 1
+                            """, 
+                            (host_ref, f"{host_ref}%", host_raw, host_ref)
                         ).fetchone()
                         
                         if host_info and host_info['printer_sn'] and host_info['printer_sn'] != 'N/A':
@@ -119,11 +131,11 @@ def process_inventory_data(data):
                             # Si el cliente no reportó modelo, heredamos el del host
                             if not printer_model or printer_model == "N/A":
                                 printer_model = host_info['printer_model']
-                            debug_logs.append(f"Herencia: Serial {printer_sn} heredado del host {host_info['pc_name']}")
+                            print(f"[HERENCIA] Serial {printer_sn} heredado del host {host_info['pc_name']} para {pc_name}")
                         else:
-                            debug_logs.append(f"Herencia: No se encontró serial válido en el host {host_ref}")
+                            print(f"[HERENCIA] No se encontró serial válido en el host {host_ref} para la PC {pc_name}")
         except Exception as e:
-            debug_logs.append(f"Error en herencia: {e}")
+            print(f"[HERENCIA] Error procesando herencia para {pc_name}: {e}")
     # -------------------------------------------------------------
 
     if esta_desconectada and es_local and not sin_modelo:
@@ -278,14 +290,18 @@ def process_inventory_data(data):
         # --- PROPAGACIÓN EN CASCADA (SI SOY HOST) ---
         # Si esta PC tiene un serial de impresora USB/Local válido, buscar clientes que impriman aquí
         if printer_sn and printer_sn != "N/A" and printer_sn != "" and printer_sn != "Desconocido":
-            # Patrones de puerto que buscaría un cliente: \\MiIP\ o \\MiNombre\
-            # Usamos doble backslash para el LIKE de SQL
+            # Patrones de puerto que buscaría un cliente: \\MiHost\ o \\MiHost.dominio\ o \\MiIP\
             patterns = []
+            if pc_name:
+                # Nombre NetBIOS
+                patterns.append(f"%\\\\\\\\{pc_name.upper()}\\\\%")
+                # Posible prefijo de FQDN (ej: \\EQINT... )
+                patterns.append(f"%\\\\\\\\{pc_name.upper()}.%")
+                
             if ip_address and ip_address != "N/A":
                 patterns.append(f"%\\\\\\\\{ip_address}\\\\%")
-            if pc_name:
-                patterns.append(f"%\\\\\\\\{pc_name.upper()}\\\\%")
             
+            total_cascada = 0
             for pat in patterns:
                 updated = conn.execute(
                     """
@@ -295,8 +311,10 @@ def process_inventory_data(data):
                     """,
                     (printer_sn, pat)
                 )
-                if updated.rowcount > 0:
-                    debug_logs.append(f"Cascada: Se actualizó serial {printer_sn} a {updated.rowcount} cliente(s) para el patrón {pat}")
+                total_cascada += updated.rowcount
+            
+            if total_cascada > 0:
+                print(f"[CASCADA] Se propagó serial {printer_sn} a {total_cascada} cliente(s) del host {pc_name}")
             
         conn.commit()
 
