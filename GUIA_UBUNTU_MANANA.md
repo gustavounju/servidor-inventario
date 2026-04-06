@@ -186,6 +186,26 @@ sudo systemctl restart inventario
 
 El usuario bootstrap deberia recrearse solo.
 
+### D. El dictado de voz por IA falla
+
+Si al grabar un audio en la versión móvil salta un mensaje de "Error IA":
+
+1. **Error de permisos (`[Errno 13] Permission denied`)**:
+   El servidor no tiene permiso para guardar el archivo de audio. Ejecuta en el servidor:
+   ```bash
+   cd /opt/inventario
+   sudo mkdir -p uploads
+   sudo chmod -R 777 uploads
+   ```
+
+2. **Error de módulo faltante (`No module named 'groq'`)**:
+   El servidor tiene la configuración de Python apuntando a `.venv` (con punto). Asegúrate de instalar la dependencia en esa carpeta exactamente:
+   ```bash
+   cd /opt/inventario
+   sudo /opt/inventario/.venv/bin/pip install groq python-dotenv
+   sudo systemctl restart inventario
+   ```
+
 ## 9. Flujo diario recomendado
 
 Todos los dias en el trabajo:
