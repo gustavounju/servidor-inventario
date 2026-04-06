@@ -138,7 +138,7 @@ def dashboard():
 
             base_sql = """
                 SELECT p.*, u.real_name as ad_real_name, u.phone as ad_phone,
-                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') AS tareas_pendientes,
+                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR p.pc_name = 'PC Generica')) AS tareas_pendientes,
                     (
                         SELECT CONCAT(np.ip_address, ' - ', np.brand_model) 
                         FROM pc_network_printers pnp 

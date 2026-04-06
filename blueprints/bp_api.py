@@ -443,4 +443,5 @@ def api_detected_printers():
                 "detected_printers": [dict(p) for p in detected]
             })
     except Exception as e:
+        print(f"Error en api_detected_printers: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500

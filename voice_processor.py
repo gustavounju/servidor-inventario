@@ -1,73 +1,82 @@
 import os
 import json
-from google import genai
+from dotenv import load_dotenv
+from groq import Groq
 
-def process_voice_command(text_command):
+load_dotenv()
+
+# GROQ API setup
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "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")
+client = Groq(api_key=GROQ_API_KEY)
+
+def process_voice_command(text_command=None, audio_path=None):
     """
-    Usa Gemini Flash para extraer (descripcion, solicitante) de un texto de voz desordenado.
+    Toma un comando (texto o audio) y usa Groq (Whisper + Llama3) 
+    para extraer 'descripcion' (tarea) y 'solicitante' (quien lo pidio).
+    Devuelve un diccionario.
     """
     try:
-        # Obtener clave API de forma remota y segura (Variables de entorno)
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("Falta configurar la variable de entorno GEMINI_API_KEY en el servidor")
+        current_text = text_command
 
-        client = genai.Client(api_key=api_key)
-        
+        if audio_path:
+            print(f"Groq Processing Audio: {audio_path}")
+            with open(audio_path, "rb") as file:
+                # Transcripcion usando Whisper de Groq (Extra rápido)
+                transcription = client.audio.transcriptions.create(
+                  file=(os.path.basename(audio_path), file.read()),
+                  model="whisper-large-v3", # Modelo de vanguardia para español
+                  prompt="El audio trata sobre soporte técnico, impresoras, computadoras y redes en español.",
+                  response_format="json",
+                  language="es",
+                  temperature=0.0
+                )
+                current_text = transcription.text
+            
+            print(f"Texto extraído por Whisper-Groq: {current_text}")
+
+        if not current_text or current_text.strip() == "":
+            raise Exception("No se obtuvo texto del comando de audio.")
+
+        # Extraer entidades con Llama-3.3 70B (Velocidad instantánea y altísima precisión)
         prompt = f"""
-Eres un asistente de soporte técnico informático. Tu única función es analizar frases dictadas por voz y extraer dos campos.
+Actúas como un asistente de inventario y tareas técnicas corporativas.
+Se te dará un texto dictado por un técnico. 
+Extrae o deduce estrictamente 2 campos:
+1) "descripcion": El problema o acción a realizar. 
+2) "solicitante": La persona, área o juez que pide el trabajo. Si no se menciona, déjalo vacío "".
 
-REGLAS IMPORTANTES:
-1. "solicitante": La persona o cargo que tiene el problema o que lo pidió. 
-   - Si la frase empieza con "el contador", "la doctora", "secretaría", etc. → ese es el SOLICITANTE.
-   - Ejemplos: "el contador tiene problema" → solicitante: "Contador"
-               "la secretaria pide revisar" → solicitante: "Secretaria"
-               "fui a ver a Berta" → solicitante: "Berta"
-2. "descripcion": El problema o tarea en sí, SIN mencionar al solicitante.
-   - Ejemplos: "tiene problema con un cartucho" → "Problema con cartucho"
-               "pide revisar la impresora" → "Revisar impresora"
-               "no enciende la PC" → "PC no enciende"
+Ejemplo 1: "La jueza martinez tiene problema con la impresora en la vocalía 2"
+Respuesta: {{"descripcion": "problema con la impresora en la vocalía 2", "solicitante": "jueza martinez"}}
 
-CORRECCIONES FOFONÉTICAS COMUNES:
-- "autor ganado" → Dr. Granados
-- "contaduría" / "el contador" → Contaduría / Contador  
-- "secretaria" → Secretaria
-- "cartucho" → cartucho (de impresora)
+Responde EXCLUSIVAMENTE con un JSON puro con esas dos claves.
 
-Texto dictado: "{text_command}"
-
-Responde SOLO con JSON válido, sin explicaciones:
-{{
-    "descripcion": "...",
-    "solicitante": "..."
-}}
+Texto a analizar: "{current_text}"
 """
-
-        print(f"IA Processing (New SDK): {text_command}")
         
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.0,
+            # Aseguramos que devuelva JSON
+            response_format={"type": "json_object"}
         )
         
-        raw_text = response.text.strip()
-        print(f"IA Raw Response: {raw_text}")
+        raw_text = chat_completion.choices[0].message.content.strip()
+        print(f"Groq Llama-3 Response: {raw_text}")
         
-        # Limpiar bloques de código markdown si existen
-        if raw_text.startswith("```json"):
-            raw_text = raw_text.replace("```json", "", 1)
-        if raw_text.startswith("```"):
-            raw_text = raw_text.replace("```", "", 1)
-        if raw_text.endswith("```"):
-            raw_text = raw_text[:-3]
-        
-        data = json.loads(raw_text)
-        return data
+        return json.loads(raw_text)
 
     except Exception as e:
-        print(f"Error AI: {e}")
-        # Fallback: devolver todo como descripción
+        # LOGEAR ERROR A ARCHIVO PARA DEPURAR
+        import datetime
+        os.makedirs("logs", exist_ok=True)
+        with open("logs/voice_debug.log", "a", encoding="utf-8") as logf:
+            logf.write(f"[{datetime.datetime.now()}] FATAL GROQ AI: {str(e)}\n")
+
+        print(f"Error AI MultiModal Groq: {e}")
         return {
-            "descripcion": text_command,
+            "descripcion": text_command or "Error al procesar audio. Intenta de nuevo.",
             "solicitante": ""
         }

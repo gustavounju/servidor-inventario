@@ -2,6 +2,7 @@ Flask
 openpyxl
 fpdf2
 google-genai
+groq
 python-dotenv
 pymysql
 cryptography

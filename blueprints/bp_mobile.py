@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request, render_template
 import datetime
+import os
 from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.push_notifications import notify_all_technicians
@@ -154,7 +155,19 @@ def api_mobile_update_task():
 
         with get_db_connection() as conn:
             if action == "claim":
-                conn.execute("UPDATE tasks SET assigned_to=%s WHERE id=%s", (technician, task_id))
+                cursor = conn.execute(
+                    "UPDATE tasks SET assigned_to=%s WHERE id=%s AND (assigned_to IS NULL OR assigned_to = '')", 
+                    (technician, task_id)
+                )
+                if cursor.rowcount == 0:
+                    current_task = conn.execute("SELECT assigned_to FROM tasks WHERE id=%s", (task_id,)).fetchone()
+                    if current_task:
+                        owner = current_task.get("assigned_to")
+                        if owner and owner != technician:
+                            return jsonify({"status": "error", "message": f"Muy lento, la tarea acaba de ser tomada por {owner}."}), 409
+                        elif owner == technician:
+                            return jsonify({"status": "success"})  # Ya la había tomado él mismo
+                    return jsonify({"status": "error", "message": "No se pudo tomar la tarea (ya no existe o no está libre)."}), 404
             elif action == "complete":
                  sql = "UPDATE tasks SET estado='Hecha', completed_by=%s, completed_at=NOW()"
                  params = [technician]
@@ -209,4 +222,37 @@ def api_subscribe_push():
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_mobile.route("/api/mobile/voice-upload", methods=["POST"])
+def voice_upload():
+    """Recibe audio, lo guarda temporalmente y usa Gemini para extraer descripcion/solicitante."""
+    if 'audio' not in request.files:
+        return jsonify({"status": "error", "message": "No audio file"}), 400
+    
+    audio_file = request.files['audio']
+    if audio_file.filename == '':
+        return jsonify({"status": "error", "message": "Empty filename"}), 400
+
+    upload_dir = "uploads"
+    if not os.path.exists(upload_dir): os.makedirs(upload_dir)
+    
+    # Extraer extensión real (importante para que Gemini lo procese bien)
+    ext = audio_file.filename.split('.')[-1] if '.' in audio_file.filename else "mpeg"
+    filename = f"voice_{int(datetime.datetime.now().timestamp())}.{ext}"
+    temp_path = os.path.join(upload_dir, filename)
+    print(f"DEBUG: Guardando audio recibido como {temp_path}")
+    
+    try:
+        audio_file.save(temp_path)
+        from voice_processor import process_voice_command
+        # Gemini multimodal: escucha y entiende
+        result = process_voice_command(audio_path=temp_path)
+        return jsonify({"status": "success", "result": result})
+    except Exception as e:
+        print(f"Error en voice-upload: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            try: os.remove(temp_path)
+            except: pass
 

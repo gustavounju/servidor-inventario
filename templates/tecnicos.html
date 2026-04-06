@@ -387,6 +387,9 @@
     </div>
 
     <div class="voice-transcript" id="voiceTranscript">—</div>
+    
+    <!-- Input oculto para capturar el audio -->
+    <input type="file" id="voiceFileInput" accept="audio/*" capture="microphone" style="display:none">
 
     <!-- Resultado parseado -->
     <div class="voice-result" id="voiceResult">
@@ -593,9 +596,11 @@ function fillPcSelects(pcs) {
 // ── Render ────────────────────────────────────────
 function renderAll() {
   const tasks   = allData.active_tasks || [];
+  // Mis tareas: Tienen mi técnico asignado
   const myTasks = tasks.filter(t => t.assigned_to && t.assigned_to.toLowerCase() === (techId||'').toLowerCase());
+  // Libres: NO tienen ningún técnico asignado (sin importar si tienen PC o no)
+  const free    = tasks.filter(t => !t.assigned_to || t.assigned_to.trim() === '');
   const done    = allData.my_history || [];
-  const free    = allData.unassigned || [];
 
   renderTaskList('list-mias', myTasks, 'mine');
   renderDoneToday(done);
@@ -664,12 +669,23 @@ function taskCard(t, mode) {
 
 // ── Acciones ──────────────────────────────────────
 async function claimTask(id) {
+  if (!techId) {
+    alert("Por favor, selecciona tu nombre de técnico arriba primero.");
+    return selectTechnician();
+  }
   try {
-    await postJSON(API + '/update_task', { id, action:'claim' });
-    playBeep('done');
-    flashCard(id, 'var(--accent)');
-    await refreshData(true);
-  } catch(e){}
+    const res = await postJSON(API + '/update_task', { id, action:'claim' });
+    const data = await res.json();
+    if (data.status === 'success') {
+      playBeep('done');
+      flashCard(id, 'var(--accent)');
+      await refreshData(true);
+    } else {
+      alert("Error: " + data.message);
+    }
+  } catch(e){
+    alert("Error de conexión al intentar tomar la tarea.");
+  }
 }
 
 async function completeTask(id, existingPc) {
@@ -753,146 +769,88 @@ async function submitManualTask() {
   if (ok) closeManualModal();
 }
 
-// ── Voice / Dictado ───────────────────────────────
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = SpeechRecognition ? new SpeechRecognition() : null;
-let finalTranscript = '';
+// ── Voice / Dictado (TRUCO UNIVERSAL HTTP) ─────────
+const voiceInput = document.getElementById('voiceFileInput');
 
 function toggleVoice() {
-  if (isListening) { stopListening(); return; }
-  startListening();
+  if (isListening) return;
+  voiceInput.click(); // Abre grabadora nativa
 }
 
-function startListening() {
-  if (!recognition) {
-    alert('Tu navegador no soporta dictado por voz. Usá Chrome o Safari en iOS.');
-    return;
-  }
-  finalTranscript = '';
-  document.getElementById('voiceTranscript').textContent = '—';
-  document.getElementById('voiceResult').classList.remove('show');
-  document.getElementById('voiceStatus').textContent = 'Escuchando... hablá con naturalidad';
-  document.getElementById('btnVoiceStop').innerHTML = '<i class="bi bi-stop-circle"></i> Procesar';
+voiceInput.onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
   document.getElementById('voiceOverlay').classList.add('open');
+  document.getElementById('voiceStatus').textContent = 'Analizando audio con Gemini...';
+  document.getElementById('voiceTranscript').textContent = 'Procesando grabación...';
+  document.getElementById('btnVoiceStop').disabled = true;
+  document.getElementById('voiceResult').classList.remove('show');
 
-  recognition.lang = 'es-AR';
-  recognition.interimResults = false;  // Solo resultados finales — evita duplicados
-  recognition.continuous = false;       // Una sesión a la vez, se reinicia limpiamente
+  animateWave(true);
 
-  recognition.onresult = (e) => {
-    // Acumular SOLO el resultado final de esta sesión
-    const transcript = e.results[0][0].transcript;
-    finalTranscript += (finalTranscript ? ' ' : '') + transcript;
-    document.getElementById('voiceTranscript').textContent = finalTranscript;
-    animateWave(true);
-  };
-  recognition.onerror = (e) => {
-    // Ignorar errores de "no-speech" (silencio) — solo reiniciar
-    if (e.error === 'no-speech') {
-      if (isListening) recognition.start();
-      return;
+  const formData = new FormData();
+  formData.append('audio', file);
+  
+  try {
+    const res = await fetch(API + '/voice-upload', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': CSRF },
+      body: formData
+    });
+    const data = await res.json();
+    
+    if (data.status === 'success') {
+      const result = data.result;
+      document.getElementById('vfDesc').value = result.descripcion || '';
+      document.getElementById('vfSolic').value = result.solicitante || '';
+      document.getElementById('voiceStatus').textContent = '¡Listo! Confirmá los datos:';
+      document.getElementById('voiceResult').classList.add('show');
+      document.getElementById('btnVoiceStop').disabled = false;
+      document.getElementById('btnVoiceStop').innerHTML = '<i class="bi bi-save"></i> Guardar Tarea';
+      document.getElementById('btnVoiceStop').onclick = () => confirmVoiceResult(false);
+    } else {
+      document.getElementById('voiceStatus').textContent = 'Error IA: ' + data.message;
     }
-    document.getElementById('voiceStatus').textContent = 'Error: ' + e.error;
-    stopListening();
-  };
-  recognition.onend = () => {
-    // Reiniciar limpiamente SOLO si el usuario no tocó "Procesar"
-    if (isListening) {
-      try { recognition.start(); } catch(e) {}
-    }
-  };
+  } catch(err) {
+    document.getElementById('voiceStatus').textContent = 'Error de conexión.';
+  } finally {
+    animateWave(false);
+    voiceInput.value = '';
+  }
+};
 
-  recognition.start();
-  isListening = true;
-  playBeep('start');
-  document.getElementById('fabVoice').classList.add('recording');
-  document.getElementById('fabIcon').className = 'bi bi-stop-fill';
-  startWaveAnimation();
-}
-
-function stopListening() {
-  if (!recognition) return;
-  isListening = false;
-  recognition.onend = null;
-  recognition.stop();
-  document.getElementById('fabVoice').classList.remove('recording');
-  document.getElementById('fabIcon').className = 'bi bi-mic-fill';
-  clearInterval(waveTimer);
-  animateWave(false);
-
-  const text = finalTranscript.trim();
-  if (!text) { cancelVoice(); return; }
-
-  // IA en el cliente para parsear
-  parseVoiceIA(text);
-}
-
-function parseVoiceIA(text) {
-  document.getElementById('voiceStatus').textContent = 'Procesando con IA...';
-  postJSON(API + '/parse_voice', { text })
-  .then(r => r.json())
-  .then(data => {
-    const d = data.data || {};
-    document.getElementById('vfDesc').value  = d.descripcion || text;
-    document.getElementById('vfSolic').value = d.solicitante || '';
-    document.getElementById('voiceStatus').textContent = 'Revisá y confirmá los datos →';
-    document.getElementById('voiceResult').classList.add('show');
-    document.getElementById('voiceActions').innerHTML = `
-      <button class="btn-vact btn-vcancel" onclick="cancelVoice()">Cancelar</button>
-      <button class="btn-vact btn-vsave" onclick="confirmVoiceTask(false)"><i class="bi bi-plus-lg"></i> Guardar</button>
-      <button class="btn-vact btn-vsave-done" onclick="confirmVoiceTask(true)"><i class="bi bi-check-lg"></i> Guardar (Resuelta)</button>`;
-  })
-  .catch(() => {
-    document.getElementById('vfDesc').value = text;
-    document.getElementById('vfSolic').value = '';
-    document.getElementById('voiceStatus').textContent = 'Revisá y confirmá —';
-    document.getElementById('voiceResult').classList.add('show');
-    document.getElementById('voiceActions').innerHTML = `
-      <button class="btn-vact btn-vcancel" onclick="cancelVoice()">Cancelar</button>
-      <button class="btn-vact btn-vsave" onclick="confirmVoiceTask(false)"><i class="bi bi-plus-lg"></i> Guardar</button>
-      <button class="btn-vact btn-vsave-done" onclick="confirmVoiceTask(true)"><i class="bi bi-check-lg"></i> Resuelta</button>`;
-  });
-}
-
-async function confirmVoiceTask(isDone) {
-  const desc  = document.getElementById('vfDesc').value.trim();
+async function confirmVoiceResult(isDone) {
+  const desc = document.getElementById('vfDesc').value.trim();
   const solic = document.getElementById('vfSolic').value.trim();
-  const pc    = document.getElementById('vfPc').value;
-  const done  = isDone || document.getElementById('vfDone').checked;
+  const pc = document.getElementById('vfPc').value;
+  const done = isDone || document.getElementById('vfDone').checked;
+  
   const ok = await submitTask(desc, solic, pc, done);
   if (ok) cancelVoice();
 }
 
 function cancelVoice() {
-  if (isListening) { isListening = false; recognition && recognition.stop(); }
-  document.getElementById('fabVoice').classList.remove('recording');
-  document.getElementById('fabIcon').className = 'bi bi-mic-fill';
-  clearInterval(waveTimer);
-  animateWave(false);
   document.getElementById('voiceOverlay').classList.remove('open');
-  document.getElementById('voiceActions').innerHTML = `
-    <button class="btn-vact btn-vcancel" onclick="cancelVoice()">Cancelar</button>
-    <button class="btn-vact btn-vsave" id="btnVoiceStop" onclick="stopListening()"><i class="bi bi-stop-circle"></i>Procesar</button>`;
-}
-
-// ── Wave Animation ────────────────────────────────
-function startWaveAnimation() {
-  clearInterval(waveTimer);
-  waveTimer = setInterval(() => animateWave(true), 120);
+  document.getElementById('voiceResult').classList.remove('show');
+  isListening = false;
 }
 
 function animateWave(active) {
   const bars = ['w1','w2','w3','w4','w5','w6','w7'];
-  bars.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (active) {
-      const h = 6 + Math.random() * 38;
-      el.style.height = h + 'px';
-    } else {
-      el.style.height = '8px';
-    }
-  });
+  if (active) {
+    if (waveTimer) return;
+    waveTimer = setInterval(() => {
+      bars.forEach(id => {
+        const h = 8 + Math.floor(Math.random() * 40);
+        document.getElementById(id).style.height = h + 'px';
+      });
+    }, 100);
+  } else {
+    clearInterval(waveTimer);
+    waveTimer = null;
+    bars.forEach(id => document.getElementById(id).style.height = '14px');
+  }
 }
 
 // ── Notifications ─────────────────────────────────
