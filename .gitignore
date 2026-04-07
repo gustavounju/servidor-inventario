@@ -27,3 +27,5 @@ firebase-credentials.json
 *firebase-adminsdk*.json
 
 tmp/
+
+.venv/
