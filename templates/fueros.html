@@ -1,0 +1,155 @@
+{% extends "_base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0 fw-bold">Consulta por Fuero</h2>
+    <div class="text-muted small">Gestión y revisión de dependencias</div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body bg-light rounded d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <form action="{{ url_for('dashboard.view_fueros') }}" method="GET" class="d-flex align-items-center gap-2">
+            <label class="fw-bold m-0" style="white-space:nowrap;">Seleccionar Fuero:</label>
+            <select name="fuero" class="form-select w-auto" onchange="this.form.submit()">
+                <option value="" {% if not fuero_param %}selected{% endif %}>--- Ver Elementos Huérfanos / Sin Fuero ---</option>
+                {% for name in fueros_list %}
+                <option value="{{ name }}" {% if fuero_param == name %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+            {% if fuero_param %}
+            <a href="{{ url_for('dashboard.view_fueros') }}" class="btn btn-outline-secondary btn-sm" title="Limpiar y ver huérfanos">
+                <i class="bi bi-x-circle"></i>
+            </a>
+            {% endif %}
+        </form>
+        
+        <div>
+            {% if fuero_param %}
+            <span class="badge" style="background-color: {{ fuero_colors.get(fuero_param, '#6c757d') }}; font-size: 1rem;">
+                Filtrando: {{ fuero_param }}
+            </span>
+            {% else %}
+            <span class="badge bg-danger" style="font-size: 1rem;">Elementos sin dependencia (Huérfanos)</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <!-- COLUMNA 1: Usuarios (AD) -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-people-fill text-primary me-2"></i>Usuarios ({{ users|length }})</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 500px;">
+                    <table class="table table-hover table-sm align-middle mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Usuario/Nombre</th>
+                                <th>Teléfono</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ u.real_name }}</div>
+                                    <div class="small text-muted"><code>{{ u.username }}</code></div>
+                                </td>
+                                <td>
+                                    {% if u.phone %}
+                                    <span class="badge bg-secondary"><i class="bi bi-telephone-fill me-1"></i>{{ u.phone }}</span>
+                                    {% else %}
+                                    <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center text-muted py-4">No hay usuarios con este fuero.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMNA 2: PCs -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-pc-display text-info me-2"></i>PCs ({{ pcs|length }})</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 500px;">
+                    <table class="table table-hover table-sm align-middle mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>PC / IP</th>
+                                <th>Último Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in pcs %}
+                            <tr>
+                                <td>
+                                    <a href="/pc/{{ p.pc_name|urlencode }}" class="fw-bold text-decoration-none text-primary">{{ p.pc_name }}</a>
+                                    <div class="small fw-semibold text-secondary">{{ p.ip_address }}</div>
+                                </td>
+                                <td class="small">{{ p.last_user }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center text-muted py-4">No hay PCs asignadas a este fuero.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMNA 3: Impresoras de Red -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-printer-fill text-secondary me-2"></i>Impresoras ({{ printers|length }})</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 500px;">
+                    <table class="table table-hover table-sm align-middle mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>IP</th>
+                                <th>Marca/Modelo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prnt in printers %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ prnt.ip_address }}</div>
+                                    <div class="small border-bottom border-secondary d-inline-block">{{ prnt.serial_number or '-' }}</div>
+                                </td>
+                                <td class="small">
+                                    {{ prnt.brand_model or 'No especificado' }}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center text-muted py-4">No hay impresoras asignadas a este fuero.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

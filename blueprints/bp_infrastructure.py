@@ -368,6 +368,7 @@ def add_network_printer():
     serial_number = request.form.get('serial_number', '').strip()
     brand_model = request.form.get('brand_model', '').strip()
     assigned_pc_name = request.form.get('assigned_pc_name', '').strip()
+    fuero = request.form.get('fuero', '').strip()
     
     if not serial_number or not ip_address:
         flash("La Dirección IP y el Número de Serie son obligatorios.", "error")
@@ -385,16 +386,16 @@ def add_network_printer():
             
             if existing:
                 printer_id = existing['id']
-                # Actualizar IP y Modelo si ya existía (por si cambiaron)
+                # Actualizar IP, Modelo y Fuero si ya existía (por si cambiaron)
                 conn.execute(
-                    "UPDATE network_printers SET ip_address = %s, brand_model = %s WHERE id = %s",
-                    (ip_address, brand_model, printer_id)
+                    "UPDATE network_printers SET ip_address = %s, brand_model = %s, fuero = %s WHERE id = %s",
+                    (ip_address, brand_model, fuero, printer_id)
                 )
             else:
                 # 2. Si no existe, insertar nueva y obtener ID
                 cursor = conn.execute(
-                    "INSERT INTO network_printers (ip_address, serial_number, brand_model) VALUES (%s, %s, %s)",
-                    (ip_address, serial_number, brand_model)
+                    "INSERT INTO network_printers (ip_address, serial_number, brand_model, fuero) VALUES (%s, %s, %s, %s)",
+                    (ip_address, serial_number, brand_model, fuero)
                 )
                 printer_id = cursor.lastrowid
             

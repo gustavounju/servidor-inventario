@@ -192,7 +192,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS ad_users (
                 username VARCHAR(255) PRIMARY KEY,
                 real_name TEXT,
-                phone TEXT
+                phone TEXT,
+                fuero TEXT
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
 

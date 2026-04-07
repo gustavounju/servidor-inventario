@@ -258,6 +258,7 @@
                                         <th>Usuario AD</th>
                                         <th>Nombre Real</th>
                                         <th>Teléfono IP</th>
+                                        <th>Fuero</th>
                                         <th class="text-end">Acción</th>
                                     </tr>
                                 </thead>
@@ -267,12 +268,14 @@
                                         <td class="username-cell"><code>{{ user.username }}</code></td>
                                         <td class="realname-cell fw-bold">{{ user.real_name }}</td>
                                         <td>{{ user.phone or '-' }}</td>
+                                        <td>{{ user.fuero or '-' }}</td>
                                         <td class="text-end">
                                             <button class="btn btn-sm btn-outline-primary" 
                                                     data-username="{{ user.username|e }}"
                                                     data-realname="{{ user.real_name|e }}"
                                                     data-phone="{{ (user.phone or '')|e }}"
-                                                    onclick="event.stopPropagation(); openUserPhoneEdit(this.dataset.username, this.dataset.realname, this.dataset.phone)">
+                                                    data-fuero="{{ (user.fuero or '')|e }}"
+                                                    onclick="event.stopPropagation(); openUserPhoneEdit(this.dataset.username, this.dataset.realname, this.dataset.phone, this.dataset.fuero)">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
                                         </td>
@@ -294,13 +297,21 @@
                                     <div class="col-sm-2">
                                         <input type="text" name="username" id="editUsername" class="form-control form-control-sm" placeholder="Usuario AD" readonly>
                                     </div>
-                                    <div class="col-sm-4">
+                                    <div class="col-sm-3">
                                         <input type="text" name="realname" id="editRealname" class="form-control form-control-sm" placeholder="Nombre completo">
                                     </div>
-                                    <div class="col-sm-3">
+                                    <div class="col-sm-2">
                                         <input type="text" name="phone" id="editPhone" class="form-control form-control-sm" placeholder="Teléfono">
                                     </div>
-                                    <div class="col-sm-3 d-grid">
+                                    <div class="col-sm-3">
+                                        <select name="fuero" id="editFuero" class="form-select form-select-sm">
+                                            <option value="">-- Sin Fuero --</option>
+                                            {% for name in fueros.values()|unique|sort %}
+                                            <option value="{{ name }}">{{ name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-2 d-grid">
                                         <button type="submit" class="btn btn-sm btn-success" title="Guardar Cambios">
                                             <i class="bi bi-floppy me-1"></i> Guardar
                                         </button>
@@ -759,7 +770,7 @@
         });
     }
     
-    function openUserPhoneEdit(username, realname, currentPhone) {
+    function openUserPhoneEdit(username, realname, currentPhone, currentFuero) {
         var container = document.getElementById("userPhoneEditFormContainer");
         if (!container) return;
         container.classList.remove("d-none");
@@ -768,6 +779,7 @@
         document.getElementById("editUsername").value = username;
         document.getElementById("editRealname").value = realname;
         document.getElementById("editPhone").value = currentPhone;
+        document.getElementById("editFuero").value = currentFuero;
         document.getElementById("editPhone").focus();
     }
     
@@ -948,6 +960,15 @@
                             <label class="form-label fw-bold">Marca e Información Extra</label>
                             <input type="text" class="form-control shadow-sm" name="brand_model" id="printer_brand_model"
                                 placeholder="Ej: HP LaserJet P1102w / Lexmark...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Fuero / Ubicación</label>
+                            <select name="fuero" id="printer_fuero" class="form-select shadow-sm">
+                                <option value="">-- Sin Fuero Oculto --</option>
+                                {% for name in fueros.values()|unique|sort %}
+                                <option value="{{ name }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div id="printer_assignment_info" class="alert alert-info py-2 px-3 mb-0 d-none" style="font-size: 0.85rem; border-radius: 10px;">
                             <i class="bi bi-info-circle-fill me-2"></i> Esta impresora se asignará automáticamente a <strong id="printer_assigned_pc_label"></strong> al registrarla.

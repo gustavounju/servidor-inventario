@@ -273,6 +273,7 @@ def migrate_db_v14():
                     ip_address VARCHAR(255),
                     serial_number VARCHAR(255) UNIQUE,
                     brand_model TEXT,
+                    fuero TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
                 """
@@ -437,6 +438,27 @@ def migrate_db_v22():
             print("Migración V22 verificada.")
 
 
+def migrate_db_v23():
+    """Migración V23: Agregar fuero a ad_users."""
+    print("Verificando migración de DB v23...")
+    with get_db_connection() as conn:
+        if not _column_exists(conn, "ad_users", "fuero"):
+            print("Aplicando migración V23: Agregando 'fuero' a ad_users...")
+            conn.execute("ALTER TABLE ad_users ADD COLUMN fuero TEXT")
+        else:
+            print("Migración V23 verificada.")
+
+def migrate_db_v24():
+    """Migración V24: Agregar fuero a network_printers."""
+    print("Verificando migración de DB v24...")
+    with get_db_connection() as conn:
+        if not _column_exists(conn, "network_printers", "fuero"):
+            print("Aplicando migración V24: Agregando 'fuero' a network_printers...")
+            conn.execute("ALTER TABLE network_printers ADD COLUMN fuero TEXT")
+        else:
+            print("Migración V24 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -460,3 +482,5 @@ def run_all_migrations():
     migrate_db_v20()
     migrate_db_v21()
     migrate_db_v22()
+    migrate_db_v23()
+    migrate_db_v24()

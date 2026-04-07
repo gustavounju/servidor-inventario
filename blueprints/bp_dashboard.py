@@ -228,13 +228,14 @@ def dashboard():
             # ----------------------------
             
             ad_users_query = """
-                SELECT username, real_name, phone 
+                SELECT username, real_name, phone, fuero
                 FROM ad_users
                 UNION
                 SELECT DISTINCT 
-                    LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
+                    LOWER(SUBSTRING_INDEX(last_user, '\\', -1)) as username, 
                     last_user as real_name, 
-                    NULL as phone 
+                    NULL as phone,
+                    NULL as fuero
                 FROM pcs 
                 WHERE last_user IS NOT NULL 
                   AND last_user != '' 
@@ -484,12 +485,13 @@ def pc_detail(pc_name):
         technicians = list_technician_users()
         ad_users_list = [dict(row) for row in conn.execute(
             """
-            SELECT username, real_name, phone
+            SELECT username, real_name, phone, fuero
             FROM ad_users
             UNION
-            SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username,
+            SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\', -1)) as username,
                             last_user as real_name,
-                            NULL as phone
+                            NULL as phone,
+                            NULL as fuero
             FROM pcs
             WHERE last_user IS NOT NULL AND last_user != ''
               AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
@@ -621,7 +623,7 @@ def debug_users():
     from flask import jsonify
     with get_db_connection() as conn:
         app_users = conn.execute("SELECT username, display_name FROM app_users").fetchall()
-        ad_users = conn.execute("SELECT username, real_name FROM ad_users").fetchall()
+        ad_users = conn.execute("SELECT username, real_name, fuero FROM ad_users").fetchall()
     return jsonify({
         "app_users": [dict(r) for r in app_users],
         "ad_users": [dict(r) for r in ad_users]
@@ -636,6 +638,7 @@ def update_user_phone():
     old_username = request.form.get("old_username", "").strip().lower()
     realname = request.form.get("realname", "").strip()
     phone = request.form.get("phone", "").strip()
+    fuero = request.form.get("fuero", "").strip()
 
     if username:
         try:
@@ -645,12 +648,13 @@ def update_user_phone():
                     conn.execute("DELETE FROM ad_users WHERE username = %s", (old_username,))
 
                 conn.execute("""
-                    INSERT INTO ad_users (username, real_name, phone)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO ad_users (username, real_name, phone, fuero)
+                    VALUES (%s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE 
                         phone = VALUES(phone),
-                        real_name = VALUES(real_name)
-                """, (username, realname, phone))
+                        real_name = VALUES(real_name),
+                        fuero = VALUES(fuero)
+                """, (username, realname, phone, fuero))
         except Exception as e:
             print(f"Error updating user ad data: {e}")
     return redirect(url_for("dashboard.dashboard", manage_users=1))
@@ -720,3 +724,37 @@ def remove_app_user(user_id):
         flash(f"No se pudo eliminar el usuario: {exc}", "error")
     return redirect(url_for("dashboard.dashboard", manage_users=1))
 
+ 
+ 
+@bp_dashboard.route("/fueros")
+def view_fueros():
+    """Vista para consultar usuarios, impresoras y PCs por fuero, y encontrar elementos huérfanos."""
+    fuero_param = request.args.get("fuero", "").strip()
+    
+    with get_db_connection() as conn:
+        fueros_list = list(set(FUERO_MAPPING.values()))
+        fueros_list.sort()
+        
+        pcs = []
+        users = []
+        printers = []
+        
+        if fuero_param:
+            pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura') AND fuero = %s ORDER BY pc_name", (fuero_param,)).fetchall()
+            users = conn.execute("SELECT username, real_name, phone FROM ad_users WHERE fuero = %s ORDER BY real_name", (fuero_param,)).fetchall()
+            printers = conn.execute("SELECT id, ip_address, serial_number, brand_model FROM network_printers WHERE fuero = %s ORDER BY ip_address", (fuero_param,)).fetchall()
+        else:
+            # Buscar elementos sin fuero (huerfanos)
+            pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura') AND (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY pc_name").fetchall()
+            users = conn.execute("SELECT username, real_name, phone FROM ad_users WHERE (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY real_name").fetchall()
+            printers = conn.execute("SELECT id, ip_address, serial_number, brand_model FROM network_printers WHERE (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY ip_address").fetchall()
+
+    return render_template(
+        "fueros.html",
+        fueros_list=fueros_list,
+        fuero_param=fuero_param,
+        pcs=pcs,
+        users=users,
+        printers=printers,
+        fuero_colors=FUERO_COLORS
+    )

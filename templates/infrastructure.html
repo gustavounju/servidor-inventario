@@ -394,6 +394,7 @@
                                             <th>Dirección IP</th>
                                             <th>Marca/Modelo</th>
                                             <th>N° Serie / MAC</th>
+                                            <th>Fuero</th>
                                             <th>Asignaciones</th>
                                             <th class="text-end">Acciones</th>
                                         </tr>
@@ -404,6 +405,13 @@
                                             <td class="fw-bold text-primary">{{ printer.ip_address }}</td>
                                             <td>{{ printer.brand_model }}</td>
                                             <td class="text-muted">{{ printer.serial_number }}</td>
+                                            <td>
+                                                {% if printer.fuero %}
+                                                <span class="badge" style="background-color: {{ fuero_colors.get(printer.fuero, '#6c757d') }}; color: #fff;">{{ printer.fuero }}</span>
+                                                {% else %}
+                                                <span class="text-muted small">Sin Fuero</span>
+                                                {% endif %}
+                                            </td>
                                             <td>
                                                 {% if printer.assigned_pcs %}
                                                 {% for pc_val in printer.assigned_pcs %}
