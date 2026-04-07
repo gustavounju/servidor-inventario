@@ -25,3 +25,5 @@ test_*.py
 # Firebase credentials (NUNCA subir al repositorio)
 firebase-credentials.json
 *firebase-adminsdk*.json
+
+tmp/
