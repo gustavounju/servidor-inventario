@@ -19,7 +19,7 @@ def view_cementerio():
 
 @bp_dashboard.route("/graficos")
 def view_graphics():
-    """Nueva página dedicada a KPIs y Gráficos."""
+    """Nueva pÃ¡gina dedicada a KPIs y GrÃ¡ficos."""
     try:
         with get_db_connection() as conn:
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
@@ -37,7 +37,7 @@ def view_graphics():
             cat_labels = []
             cat_values = []
             for r in rows_cats:
-                cat_name = r["categoria"] if r["categoria"] else "Sin Categoría"
+                cat_name = r["categoria"] if r["categoria"] else "Sin CategorÃ­a"
                 if cat_name == "General": continue
                 cat_labels.append(cat_name)
                 cat_values.append(r["c"])
@@ -186,11 +186,11 @@ def dashboard():
             kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
             kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
             kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
-            # Contador de Impresoras (Lógica Refinada: Red Únicas + Locales por PC)
-            # Primero: Cantidad de impresoras en el catálogo de Red
+            # Contador de Impresoras (LÃ³gica Refinada: Red Ãšnicas + Locales por PC)
+            # Primero: Cantidad de impresoras en el catÃ¡logo de Red
             count_network_catalog = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
             
-            # Segundo: PCs activas con impresora local (excluyendo las que sabemos que son de red por puerto UNC o alerta o que ya están en el catálogo)
+            # Segundo: PCs activas con impresora local (excluyendo las que sabemos que son de red por puerto UNC o alerta o que ya estÃ¡n en el catÃ¡logo)
             count_local_printers = conn.execute("""
                 SELECT COUNT(*) as c 
                 FROM pcs 
@@ -336,7 +336,7 @@ def export_inventory():
 
 @bp_dashboard.route("/export_inventory_pdf", methods=["POST"])
 def export_inventory_pdf():
-    # Ignoramos selección dinámica para PDF, usamos columnas fijas "Pro"
+    # Ignoramos selecciÃ³n dinÃ¡mica para PDF, usamos columnas fijas "Pro"
     # Columnas: PC Name, Last User, OS Name, Processor, RAM, IP
     from services.reporting import PDFReport, format_date_es
     with get_db_connection() as conn:
@@ -349,7 +349,7 @@ def export_inventory_pdf():
     
     # Fecha de reporte
     pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 8, f"Fecha de emisión: {format_date_es(datetime.datetime.now())}", 0, 1, 'C')
+    pdf.cell(0, 8, f"Fecha de emisiÃ³n: {format_date_es(datetime.datetime.now())}", 0, 1, 'C')
     pdf.ln(5)
     
     # Titulo (Conteo)
@@ -433,7 +433,7 @@ def reactivate_pc(pc_name):
 
 @bp_dashboard.route("/refresh_fueros", methods=["POST"])
 def refresh_fueros():
-    """Recalcula el fuero para todas las PCs basándose en el nombre."""
+    """Recalcula el fuero para todas las PCs basÃ¡ndose en el nombre."""
     try:
         with get_db_connection() as conn:
             pcs = conn.execute("SELECT pc_name FROM pcs").fetchall()
@@ -607,7 +607,7 @@ def update_pc_infrastructure(pc_name):
 def global_activity():
     """Muestra el historial global de actividad de todas las PCs e Infraestructura."""
     with get_db_connection() as conn:
-        # Traer los últimos 1000 registros para no sobrecargar
+        # Traer los Ãºltimos 1000 registros para no sobrecargar
         logs = conn.execute("""
             SELECT id, pc_name, field, old_value, new_value, changed_at 
             FROM audit_logs 
@@ -633,7 +633,7 @@ def debug_users():
 @bp_dashboard.route("/update_user_phone", methods=["POST"])
 @superuser_required
 def update_user_phone():
-    """Actualiza el teléfono de un usuario desde el modal."""
+    """Actualiza el telÃ©fono de un usuario desde el modal."""
     username = request.form.get("username", "").strip().lower()
     old_username = request.form.get("old_username", "").strip().lower()
     realname = request.form.get("realname", "").strip()
@@ -643,7 +643,7 @@ def update_user_phone():
     if username:
         try:
             with get_db_connection() as conn:
-                # Si el usuario cambió de nombre (rename), borramos el registro anterior
+                # Si el usuario cambiÃ³ de nombre (rename), borramos el registro anterior
                 if old_username and old_username != username:
                     conn.execute("DELETE FROM ad_users WHERE username = %s", (old_username,))
 
@@ -683,14 +683,14 @@ def create_app_user():
     from utils.auth import _fetch_auth_user
     existing_user = _fetch_auth_user(username)
 
-    # REGLA 1: No permitir crear un usuario que ya existe si no estamos en modo edición
+    # REGLA 1: No permitir crear un usuario que ya existe si no estamos en modo ediciÃ³n
     if not is_edit_mode and existing_user:
-        flash(f"Error: El usuario '{username}' ya existe. Si desea modificarlo, use el botón 'Editar' en la lista.", "error")
+        flash(f"Error: El usuario '{username}' ya existe. Si desea modificarlo, use el botÃ³n 'Editar' en la lista.", "error")
         return redirect(url_for("dashboard.dashboard", manage_users=1))
     
     # REGLA 2: Password obligatoria para nuevos usuarios
     if not is_edit_mode and not password:
-        flash("Error: La contraseña es obligatoria para nuevos usuarios.", "error")
+        flash("Error: La contraseÃ±a es obligatoria para nuevos usuarios.", "error")
         return redirect(url_for("dashboard.dashboard", manage_users=1))
 
     try:
@@ -724,11 +724,11 @@ def remove_app_user(user_id):
         flash(f"No se pudo eliminar el usuario: {exc}", "error")
     return redirect(url_for("dashboard.dashboard", manage_users=1))
 
- 
- 
+
+
 @bp_dashboard.route("/fueros")
 def view_fueros():
-    """Vista para consultar usuarios, impresoras y PCs por fuero, y encontrar elementos hu�rfanos."""
+    """Vista para consultar usuarios, impresoras y PCs por fuero, y encontrar elementos huérfanos."""
     fuero_param = request.args.get("fuero", "").strip()
     
     with get_db_connection() as conn:
