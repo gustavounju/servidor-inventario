@@ -489,7 +489,7 @@ def pc_detail(pc_name):
             SELECT username, real_name, phone, fuero
             FROM ad_users
             UNION
-            SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\', -1)) as username,
+            SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username,
                             last_user as real_name,
                             NULL as phone,
                             NULL as fuero
