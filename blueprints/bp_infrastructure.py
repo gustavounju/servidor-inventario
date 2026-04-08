@@ -379,6 +379,12 @@ def add_network_printer():
         
     try:
         with get_db_connection() as conn:
+            # Autocompletar fuero si se promovio desde una PC y se omitió manualmente
+            if not fuero and assigned_pc_name:
+                pc_info = conn.execute("SELECT fuero FROM pcs WHERE pc_name = %s", (assigned_pc_name,)).fetchone()
+                if pc_info and pc_info['fuero']:
+                    fuero = pc_info['fuero']
+                    
             # 1. Verificar si ya existe por SERIAL NUMBER
             existing = conn.execute(
                 "SELECT id FROM network_printers WHERE serial_number = %s", (serial_number,)
