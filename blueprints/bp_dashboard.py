@@ -181,6 +181,11 @@ def dashboard():
             params_base = filter_params + [per_page, offset]
             pcs_data = [dict(row) for row in conn.execute(base_sql, params_base).fetchall()]
 
+            # Fetch auxiliary PCs separately so they always appear as cards even with pagination/filters
+            auxiliary_pcs = [dict(row) for row in conn.execute(
+                "SELECT pc_name, last_report FROM pcs WHERE is_active = 'True' AND (UPPER(pc_name) LIKE 'PC%GENERICA%' OR UPPER(pc_name) LIKE 'INFRAESTRUCTURA%')"
+            ).fetchall()]
+
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%' AND UPPER(pc_name) NOT LIKE 'PC%GENERICA%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%'").fetchone()["c"]
             kpi_total_graveyard = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
             kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%' AND UPPER(pc_name) NOT LIKE 'PC%GENERICA%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%'").fetchone()["c"]
@@ -258,7 +263,7 @@ def dashboard():
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
         pc_ports = {}
-        pcs_data = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = app_users_list = active_mobile_techs = []
+        pcs_data = auxiliary_pcs = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = app_users_list = active_mobile_techs = []
         total_rows = kpi_total_activas = kpi_total_graveyard = kpi_alerta_ram = kpi_sin_impresora = 0
         kpi_impresora_red = kpi_total_impresoras = kpi_win7 = kpi_win10 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
         last_backup_info = "Error leyendo"
@@ -268,6 +273,7 @@ def dashboard():
     return render_template(
         "index.html",
         pcs=pcs_data,
+        auxiliary_pcs=auxiliary_pcs,
         pc_ports=pc_ports,
         server_url=request.host_url,
         unassigned_tasks=unassigned_tasks,
