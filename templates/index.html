@@ -88,12 +88,12 @@
               <div class="card-body py-2 px-3">
                 <div class="d-flex align-items-center justify-content-between gap-3">
                   <div>
-                    <div style="font-size:.75rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em;">{% if pc.pc_name.startswith('PC-GENERICA') %}Tareas sin equipo asignado{% else %}Recursos de Red / Servidores{% endif %}</div>
+                    <div style="font-size:.75rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em;">{% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}Tareas sin equipo asignado{% else %}Recursos de Red / Servidores{% endif %}</div>
                     <div style="font-size:1rem; font-weight:700;">{{ pc.pc_name }}</div>
                   </div>
                   <div class="text-end">
                     {% if pc.tareas_pendientes > 0 %}
-                        {% if pc.pc_name.startswith('PC-GENERICA') %}
+                        {% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}
                         <span class="badge" style="background:#ef4444; font-size:.85rem; padding:5px 10px; border-radius:8px;"><i class="bi bi-exclamation-triangle"></i> Con pendientes ({{ pc.tareas_pendientes }})</span>
                         {% else %}
                         <span class="badge" style="background:#ef4444; font-size:.9rem; padding:5px 10px; border-radius:8px;">{{ pc.tareas_pendientes }} tarea{{ 's' if pc.tareas_pendientes != 1 else '' }}</span>
