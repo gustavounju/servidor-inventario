@@ -168,6 +168,25 @@
                                         </span>
                                     </div>
                                     {% endif %}
+                                    
+                                    <div class="mt-2">
+                                        {% if prnt.assignments %}
+                                            <div class="d-flex flex-wrap gap-1">
+                                                {% for asn in prnt.assignments %}
+                                                <span class="badge bg-info text-dark border border-info d-flex flex-column align-items-start px-2 py-1" style="font-size: 0.70rem; background-color: #e0f2fe !important;">
+                                                    <span><i class="bi bi-pc-display me-1"></i>{{ asn.pc_name }}</span>
+                                                    {% if asn.real_name %}
+                                                    <span class="fw-normal" style="opacity: 0.8;"><i class="bi bi-person me-1"></i>{{ asn.real_name }}</span>
+                                                    {% elif asn.last_user %}
+                                                    <span class="fw-normal" style="opacity: 0.8;"><i class="bi bi-person me-1"></i>{{ asn.last_user.split('\\')[-1] }}</span>
+                                                    {% endif %}
+                                                </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted small fst-italic">Sin usos en red</span>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% else %}
