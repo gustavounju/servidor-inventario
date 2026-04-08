@@ -82,18 +82,18 @@
             </div>
           </button>
           {% for pc in pcs %}
-          {% if pc.pc_name in ['PC Generica', 'Infraestructura'] %}
+          {% if pc.pc_name.startswith('PC-GENERICA') or pc.pc_name.startswith('INFRAESTRUCTURA') %}
           <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="text-decoration-none">
             <div class="card border-0 shadow-sm" style="min-width:200px; border-radius:12px; background: linear-gradient(135deg, #1e293b, #0f172a); color:#f1f5f9; cursor:pointer; transition: transform .15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
               <div class="card-body py-2 px-3">
                 <div class="d-flex align-items-center justify-content-between gap-3">
                   <div>
-                    <div style="font-size:.75rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em;">{% if pc.pc_name == 'PC Generica' %}Tareas sin equipo asignado{% else %}Recursos de Red / Servidores{% endif %}</div>
+                    <div style="font-size:.75rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em;">{% if pc.pc_name.startswith('PC-GENERICA') %}Tareas sin equipo asignado{% else %}Recursos de Red / Servidores{% endif %}</div>
                     <div style="font-size:1rem; font-weight:700;">{{ pc.pc_name }}</div>
                   </div>
                   <div class="text-end">
                     {% if pc.tareas_pendientes > 0 %}
-                        {% if pc.pc_name == 'PC Generica' %}
+                        {% if pc.pc_name.startswith('PC-GENERICA') %}
                         <span class="badge" style="background:#ef4444; font-size:.85rem; padding:5px 10px; border-radius:8px;"><i class="bi bi-exclamation-triangle"></i> Con pendientes ({{ pc.tareas_pendientes }})</span>
                         {% else %}
                         <span class="badge" style="background:#ef4444; font-size:.9rem; padding:5px 10px; border-radius:8px;">{{ pc.tareas_pendientes }} tarea{{ 's' if pc.tareas_pendientes != 1 else '' }}</span>
@@ -202,7 +202,7 @@
                         data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
                         data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}" style="cursor: pointer;"
                         onclick="if(!event.target.closest('a') && !event.target.closest('button')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
-                        {% if pc.pc_name in ['PC Generica', 'Infraestructura'] %}
+                        {% if pc.pc_name.startswith('PC-GENERICA') or pc.pc_name.startswith('INFRAESTRUCTURA') %}
                         {# Omitir estas filas — ya se muestran como cards arriba #}
                         {% else %}
                         <td

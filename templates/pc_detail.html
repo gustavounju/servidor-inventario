@@ -116,7 +116,7 @@
         <span><i class="bi bi-wifi me-1"></i><strong>{{ pc.ip_address or '-' }}</strong></span>
       </p>
       <div class="d-flex gap-2 flex-wrap">
-        {% if pc.pc_name != 'PC Generica' %}
+        {% if not pc.pc_name.startswith('PC-GENERICA') and not pc.pc_name.startswith('INFRAESTRUCTURA') %}
         {% if pc.is_active == 'True' %}
         <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST"
           class="d-inline" onsubmit="return confirm('¿Seguro pasar a cementerio?')">
@@ -152,7 +152,7 @@
     </div>
     {% endif %}
 
-    {% if pc.pc_name not in ['PC Generica', 'Infraestructura'] %}
+    {% if not pc.pc_name.startswith('PC-GENERICA') and not pc.pc_name.startswith('INFRAESTRUCTURA') %}
     <!-- BLOQUE 1: Datos principales de la PC -->
     <div class="card shadow-sm mb-4">
       <div class="gold-card-header"><i class="bi bi-pc-display"></i> Información del Equipo</div>
@@ -409,7 +409,7 @@
     </div>
     {% endif %}
 
-    {% if pc.pc_name != 'PC Generica' %}
+    {% if not pc.pc_name.startswith('PC-GENERICA') %}
     <!-- BLOQUE 2.5: Componentes Asignados -->
     <div class="card shadow-sm mb-4 border-info">
       <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
@@ -487,7 +487,7 @@
     </div> <!-- /.card de componentes -->
     {% endif %}
 
-    {% if pc.pc_name not in ['PC Generica', 'Infraestructura'] %}
+    {% if not pc.pc_name.startswith('PC-GENERICA') and not pc.pc_name.startswith('INFRAESTRUCTURA') %}
     <!-- BLOQUE 2.8: Impresoras de Red Asignadas -->
     <div class="card shadow-sm mb-4 border-secondary">
       <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
@@ -540,7 +540,7 @@
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h3 class="mt-2 mb-0">Tareas</h3>
       <!-- Botón duplicado para agregar tarea (abre el mismo modal) -->
-      {% if pc.pc_name != 'PC Generica' %}
+      {% if not pc.pc_name.startswith('PC-GENERICA') and not pc.pc_name.startswith('INFRAESTRUCTURA') %}
       <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
         <i class="bi bi-plus-lg"></i> Nueva tarea
       </button>
@@ -577,7 +577,7 @@
               </button>
               {% endif %}
 
-              {% if pc.pc_name == 'PC Generica' %}
+              {% if pc.pc_name.startswith('PC-GENERICA') %}
               <button type="button" class="btn btn-sm btn-warning mb-1" onclick="openMigrateModal('{{ t.id }}')">
                 <i class="bi bi-arrow-right"></i> Asignar
               </button>

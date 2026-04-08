@@ -22,11 +22,11 @@ def view_graphics():
     """Nueva pÃ¡gina dedicada a KPIs y GrÃ¡ficos."""
     try:
         with get_db_connection() as conn:
-            kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+            kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT LIKE 'PC-GENERICA%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%'").fetchone()["c"]
             kpi_total_graveyard = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
-            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
-            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
-            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT LIKE 'PC-GENERICA%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%'").fetchone()["c"]
+            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name NOT LIKE 'PC-GENERICA%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%'").fetchone()["c"]
+            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name NOT LIKE 'PC-GENERICA%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%'").fetchone()["c"]
             kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s", ("%Windows 7%",)).fetchone()["c"]
             kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE %s OR os_name LIKE %s)", ("%Windows 10%", "%Windows 11%")).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
@@ -137,7 +137,7 @@ def dashboard():
 
             base_sql = """
                 SELECT p.*, u.real_name as ad_real_name, u.phone as ad_phone,
-                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR p.pc_name = 'PC Generica')) AS tareas_pendientes,
+                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR p.pc_name LIKE 'PC-GENERICA%')) AS tareas_pendientes,
                     (
                         SELECT CONCAT(np.ip_address, ' - ', np.brand_model) 
                         FROM pc_network_printers pnp 
@@ -172,19 +172,19 @@ def dashboard():
             base_sql += f"""
                 ORDER BY 
                 CASE 
-                    WHEN p.pc_name = 'PC Generica' THEN 0 
-                    WHEN p.pc_name = 'Infraestructura' THEN 1 
+                    WHEN p.pc_name LIKE 'PC-GENERICA%' THEN 0 
+                    WHEN p.pc_name LIKE 'INFRAESTRUCTURA%' THEN 1 
                     ELSE 2 
                 END, {sort_col_sql} {sort_dir_sql} LIMIT %s OFFSET %s
             """
             params_base = filter_params + [per_page, offset]
             pcs_data = [dict(row) for row in conn.execute(base_sql, params_base).fetchall()]
 
-            kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+            kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND pc_name NOT LIKE 'PC-GENERICA%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%'").fetchone()["c"]
             kpi_total_graveyard = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
-            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
-            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
-            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura')").fetchone()["c"]
+            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND pc_name NOT LIKE 'PC-GENERICA%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%'").fetchone()["c"]
+            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND pc_name NOT LIKE 'PC-GENERICA%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%'").fetchone()["c"]
+            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND pc_name NOT LIKE 'PC-GENERICA%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%'").fetchone()["c"]
             # Contador de Impresoras (LÃ³gica Refinada: Red Ãšnicas + Locales por PC)
             # Primero: Cantidad de impresoras en el catÃ¡logo de Red
             count_network_catalog = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
@@ -209,7 +209,7 @@ def dashboard():
 
             all_pcs_dropdown = [dict(row) for row in conn.execute(
                 """SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 'True' 
-                ORDER BY CASE WHEN pc_name = 'PC Generica' THEN 0 WHEN pc_name = 'Infraestructura' THEN 1 ELSE 2 END, pc_name ASC"""
+                ORDER BY CASE WHEN pc_name LIKE 'PC-GENERICA%' THEN 0 WHEN pc_name LIKE 'INFRAESTRUCTURA%' THEN 1 ELSE 2 END, pc_name ASC"""
             ).fetchall()]
             
             # --- STATUS ULTIMO BACKUP ---
