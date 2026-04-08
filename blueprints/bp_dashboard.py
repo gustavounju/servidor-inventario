@@ -741,12 +741,27 @@ def view_fueros():
         if fuero_param:
             pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura') AND fuero = %s ORDER BY pc_name", (fuero_param,)).fetchall()
             users = conn.execute("SELECT username, real_name, phone FROM ad_users WHERE fuero = %s ORDER BY real_name", (fuero_param,)).fetchall()
-            printers = conn.execute("SELECT id, ip_address, serial_number, brand_model FROM network_printers WHERE fuero = %s ORDER BY ip_address", (fuero_param,)).fetchall()
+            printers = conn.execute("""
+                SELECT DISTINCT np.id, np.ip_address, np.serial_number, np.brand_model, np.fuero as physical_fuero 
+                FROM network_printers np
+                LEFT JOIN pc_network_printers pnp ON np.id = pnp.printer_id
+                LEFT JOIN pcs p ON pnp.pc_name = p.pc_name
+                WHERE np.fuero = %s OR p.fuero = %s 
+                ORDER BY np.ip_address
+            """, (fuero_param, fuero_param)).fetchall()
         else:
             # Buscar elementos sin fuero (huerfanos)
             pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura') AND (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY pc_name").fetchall()
             users = conn.execute("SELECT username, real_name, phone FROM ad_users WHERE (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY real_name").fetchall()
-            printers = conn.execute("SELECT id, ip_address, serial_number, brand_model FROM network_printers WHERE (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY ip_address").fetchall()
+            printers = conn.execute("""
+                SELECT DISTINCT np.id, np.ip_address, np.serial_number, np.brand_model, np.fuero as physical_fuero 
+                FROM network_printers np
+                LEFT JOIN pc_network_printers pnp ON np.id = pnp.printer_id
+                LEFT JOIN pcs p ON pnp.pc_name = p.pc_name
+                WHERE (np.fuero IS NULL OR np.fuero = '' OR np.fuero = 'Desconocido') 
+                   OR (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido')
+                ORDER BY np.ip_address
+            """).fetchall()
 
     return render_template(
         "fueros.html",
