@@ -127,7 +127,9 @@ def dashboard():
                     LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username OR 
                     LOWER(p.last_user) = LOWER(u.real_name)
                 )
-                WHERE 1=1
+                WHERE 1=1 
+                AND UPPER(p.pc_name) NOT LIKE 'PC%%GENERICA%%' 
+                AND UPPER(p.pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
             """ + filter_sql
             total_rows = conn.execute(count_sql, filter_params).fetchone()["c"]
 
@@ -157,7 +159,9 @@ def dashboard():
                     LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username OR 
                     LOWER(p.last_user) = LOWER(u.real_name)
                 )
-                WHERE 1=1
+                WHERE 1=1 
+                AND UPPER(p.pc_name) NOT LIKE 'PC%%GENERICA%%' 
+                AND UPPER(p.pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
             """ + filter_sql
             
             allowed_sort_cols = {
@@ -187,7 +191,7 @@ def dashboard():
                     (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%')) AS tareas_pendientes
                 FROM pcs p 
                 WHERE p.is_active = 'True' 
-                AND (UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%')"""
+                AND (UPPER(p.pc_name) = 'PC GENERICA' OR UPPER(p.pc_name) = 'PC-GENERICA' OR UPPER(p.pc_name) = 'INFRAESTRUCTURA')"""
             ).fetchall()]
 
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
