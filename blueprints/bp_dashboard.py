@@ -183,7 +183,11 @@ def dashboard():
 
             # Fetch auxiliary PCs separately so they always appear as cards even with pagination/filters
             auxiliary_pcs = [dict(row) for row in conn.execute(
-                "SELECT pc_name, last_report FROM pcs WHERE is_active = 'True' AND (UPPER(pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(pc_name) LIKE 'INFRAESTRUCTURA%%')"
+                """SELECT p.pc_name, p.last_report,
+                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%')) AS tareas_pendientes
+                FROM pcs p 
+                WHERE p.is_active = 'True' 
+                AND (UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%')"""
             ).fetchall()]
 
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
