@@ -60,14 +60,13 @@ app.jinja_env.filters['datetime_es'] = format_datetime_es
 # Contexto Global para todas las plantillas (Jinja2)
 @app.context_processor
 def inject_global_vars():
-    from utils.constants import FUERO_MAPPING
     from utils.auth import list_app_users, list_technician_users
     
     # KPIs Globales para el Header Premium (Command Center)
     kpis = {}
     extra_data = {
         'ad_users_list': [],
-        'fueros': FUERO_MAPPING,
+        'fueros': {},
         'technicians': [],
         'app_users_list': [],
         'all_pcs': []
@@ -86,6 +85,9 @@ def inject_global_vars():
                 
                 kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
                 kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
+
+                fueros_rows = conn.execute("SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido' ORDER BY fuero").fetchall()
+                extra_data['fueros'] = {row['fuero']: row['fuero'] for row in fueros_rows}
 
                 # Extra Data for Shared Modals
                 # 1. Obtener usuarios del sistema actuales

@@ -63,8 +63,7 @@ def view_graphics():
         kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
         cat_labels=cat_labels,
         cat_values=cat_values,
-        hostname=socket.gethostname(),
-        fueros=FUERO_MAPPING
+        hostname=socket.gethostname()
     )
 
 @bp_dashboard.route("/", methods=["GET"])
@@ -280,7 +279,6 @@ def dashboard():
         kpi_tareas_hoy=kpi_tareas_hoy,
         kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
         all_pcs=all_pcs_dropdown,
-        fueros=FUERO_MAPPING,
         kpi_total_activas=kpi_total_activas,
         kpi_total_graveyard=kpi_total_graveyard,
         kpi_alerta_ram=kpi_alerta_ram,
@@ -733,8 +731,8 @@ def view_fueros():
     fuero_param = request.args.get("fuero", "").strip()
     
     with get_db_connection() as conn:
-        fueros_list = list(set(FUERO_MAPPING.values()))
-        fueros_list.sort()
+        fueros_rows = conn.execute("SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido' ORDER BY fuero").fetchall()
+        fueros_list = [row['fuero'] for row in fueros_rows]
         
         pcs = []
         users = []
