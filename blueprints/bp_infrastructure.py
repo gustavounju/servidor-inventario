@@ -380,10 +380,32 @@ def add_network_printer():
     try:
         with get_db_connection() as conn:
             # Autocompletar fuero si se promovio desde una PC y se omitió manualmente
-            if not fuero and assigned_pc_name:
-                pc_info = conn.execute("SELECT fuero FROM pcs WHERE pc_name = %s", (assigned_pc_name,)).fetchone()
-                if pc_info and pc_info['fuero']:
-                    fuero = pc_info['fuero']
+            if not fuero:
+                target_pc_name = assigned_pc_name
+                
+                # Intentar obtener la IP real desde DB para evitar errores de escape enviados desde frontend
+                real_ip_address = ip_address
+                if assigned_pc_name:
+                    pc_db = conn.execute("SELECT printer_port FROM pcs WHERE pc_name = %s", (assigned_pc_name,)).fetchone()
+                    if pc_db and pc_db['printer_port'] and pc_db['printer_port'].startswith('\\\\'):
+                        real_ip_address = pc_db['printer_port']
+                
+                # Si la ruta es tipo compartida (ej: \\HOST-TEST-01\Printer)
+                if real_ip_address.startswith('\\\\'):
+                    parts = [p for p in real_ip_address.split('\\') if p]
+                    if len(parts) >= 1:
+                        target_pc_name = parts[0] # El host es la primera parte
+                
+                # Validar caso de frontend cache viejo que manda \HOST...
+                elif real_ip_address.startswith('\\'):
+                    parts = [p for p in real_ip_address.split('\\') if p]
+                    if parts:
+                        target_pc_name = parts[0]
+                
+                if target_pc_name:
+                    pc_info = conn.execute("SELECT fuero FROM pcs WHERE pc_name = %s", (target_pc_name,)).fetchone()
+                    if pc_info and pc_info['fuero']:
+                        fuero = pc_info['fuero']
                     
             # 1. Verificar si ya existe por SERIAL NUMBER
             existing = conn.execute(

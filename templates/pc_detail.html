@@ -226,7 +226,7 @@
                   {% if sharing_pc.printer_sn and sharing_pc.printer_sn != 'N/A' and (not pc.printer_sn or pc.printer_sn == 'N/A') %}
                   <button class="btn btn-sm btn-link p-0 ms-2 text-primary" 
                           title="Promocionar como Impresora de Red usando datos del host"
-                          onclick="promoteToNetworkPrinter('{{ pc.printer_port }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ sharing_pc.printer_sn }}')">
+                          onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ sharing_pc.printer_sn }}')">
                       <i class="bi bi-plus-circle-fill"></i> Promocionar
                   </button>
                   {% endif %}
