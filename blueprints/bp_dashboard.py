@@ -191,7 +191,7 @@ def dashboard():
                     (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%')) AS tareas_pendientes
                 FROM pcs p 
                 WHERE p.is_active = 'True' 
-                AND (UPPER(p.pc_name) = 'PC GENERICA' OR UPPER(p.pc_name) = 'PC-GENERICA' OR UPPER(p.pc_name) = 'INFRAESTRUCTURA')"""
+                AND (UPPER(p.pc_name) = 'PC GENERICA' OR UPPER(p.pc_name) = 'INFRAESTRUCTURA')"""
             ).fetchall()]
 
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
