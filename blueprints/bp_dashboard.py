@@ -740,7 +740,24 @@ def view_fueros():
         
         if fuero_param:
             pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura') AND fuero = %s ORDER BY pc_name", (fuero_param,)).fetchall()
-            users = conn.execute("SELECT username, real_name, phone FROM ad_users WHERE fuero = %s ORDER BY real_name", (fuero_param,)).fetchall()
+            users = conn.execute("""
+                SELECT username, real_name, phone 
+                FROM ad_users 
+                WHERE fuero = %s 
+                UNION
+                SELECT DISTINCT 
+                    LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
+                    last_user as real_name, 
+                    NULL as phone
+                FROM pcs 
+                WHERE is_active = 'True' 
+                  AND pc_name NOT IN ('PC Generica', 'Infraestructura') 
+                  AND fuero = %s 
+                  AND last_user IS NOT NULL 
+                  AND last_user != '' 
+                  AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
+                ORDER BY real_name
+            """, (fuero_param, fuero_param)).fetchall()
             printers_raw = conn.execute("""
                 SELECT DISTINCT np.id, np.ip_address, np.serial_number, np.brand_model, np.fuero as physical_fuero 
                 FROM network_printers np
@@ -752,7 +769,24 @@ def view_fueros():
         else:
             # Buscar elementos sin fuero (huerfanos)
             pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name FROM pcs WHERE is_active = 'True' AND pc_name NOT IN ('PC Generica', 'Infraestructura') AND (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY pc_name").fetchall()
-            users = conn.execute("SELECT username, real_name, phone FROM ad_users WHERE (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY real_name").fetchall()
+            users = conn.execute("""
+                SELECT username, real_name, phone 
+                FROM ad_users 
+                WHERE (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') 
+                UNION
+                SELECT DISTINCT 
+                    LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
+                    last_user as real_name, 
+                    NULL as phone
+                FROM pcs 
+                WHERE is_active = 'True' 
+                  AND pc_name NOT IN ('PC Generica', 'Infraestructura') 
+                  AND (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') 
+                  AND last_user IS NOT NULL 
+                  AND last_user != '' 
+                  AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
+                ORDER BY real_name
+            """).fetchall()
             printers_raw = conn.execute("""
                 SELECT DISTINCT np.id, np.ip_address, np.serial_number, np.brand_model, np.fuero as physical_fuero 
                 FROM network_printers np
