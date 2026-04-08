@@ -232,7 +232,7 @@ def dashboard():
                 FROM ad_users
                 UNION
                 SELECT DISTINCT 
-                    LOWER(SUBSTRING_INDEX(last_user, '\\', -1)) as username, 
+                    LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
                     last_user as real_name, 
                     NULL as phone,
                     NULL as fuero
