@@ -257,6 +257,7 @@ def dashboard():
 
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
+        pc_ports = {}
         pcs_data = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = app_users_list = active_mobile_techs = []
         total_rows = kpi_total_activas = kpi_total_graveyard = kpi_alerta_ram = kpi_sin_impresora = 0
         kpi_impresora_red = kpi_total_impresoras = kpi_win7 = kpi_win10 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
