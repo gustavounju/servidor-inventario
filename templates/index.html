@@ -44,19 +44,19 @@
         <div class="d-flex gap-2 mb-3 flex-wrap">
           {% if unassigned_tasks %}
           <!-- Botón Tareas Huérfanas -->
-          <button type="button" class="btn text-start border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal" style="min-width:240px; border-radius:12px; background: linear-gradient(135deg, #7f1d1d, #450a0a); color:#f0f9ff; transition: transform .15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-            <div class="d-flex flex-column gap-1">
-              <div class="d-flex align-items-center justify-content-between gap-3">
-                <div style="font-size:.70rem; color:#fca5a5; text-transform:uppercase; letter-spacing:.06em;">
-                  <i class="bi bi-exclamation-triangle"></i> Tareas Huérfanas
+          <button type="button" class="btn text-start border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal" style="min-width:180px; border-radius:10px; padding: 5px 10px; background: linear-gradient(135deg, #7f1d1d, #450a0a); color:#f0f9ff; transition: transform .15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="d-flex flex-column gap-0">
+              <div class="d-flex align-items-center justify-content-between gap-2">
+                <div style="font-size:.60rem; color:#fca5a5; text-transform:uppercase; letter-spacing:.05em;">
+                  <i class="bi bi-exclamation-triangle"></i> Huérfanas
                 </div>
                 <div>
-                  <span class="badge" style="background:#ef4444; font-size:.75rem; padding:3px 8px; border-radius:6px;">
-                    {{ unassigned_count }} Pendientes
+                  <span class="badge" style="background:#ef4444; font-size:.65rem; padding:2px 6px; border-radius:5px;">
+                    {{ unassigned_count }}
                   </span>
                 </div>
               </div>
-              <div style="font-size:0.85rem; font-weight:600; color:#fee2e2; margin-top:4px;">
+              <div style="font-size:0.75rem; font-weight:600; color:#fee2e2; margin-top:2px;">
                 <i class="bi bi-list-task"></i> Asignar Ahora
               </div>
             </div>
@@ -64,20 +64,20 @@
           {% endif %}
 
           <!-- Botón de Técnicos Conectados (Móvil) que abre Modal -->
-          <button type="button" class="btn text-start border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#mobileTechsModal" style="min-width:240px; border-radius:12px; background: linear-gradient(135deg, #0f4c75, #1b262c); color:#f0f9ff; transition: transform .15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-            <div class="d-flex flex-column gap-1">
-              <div class="d-flex align-items-center justify-content-between gap-3">
-                <div style="font-size:.70rem; color:#bae6fd; text-transform:uppercase; letter-spacing:.06em;">
-                  <i class="bi bi-phone"></i> Actividad en Campo (Móvil)
+          <button type="button" class="btn text-start border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#mobileTechsModal" style="min-width:180px; border-radius:10px; padding: 5px 10px; background: linear-gradient(135deg, #0f4c75, #1b262c); color:#f0f9ff; transition: transform .15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="d-flex flex-column gap-0">
+              <div class="d-flex align-items-center justify-content-between gap-2">
+                <div style="font-size:.60rem; color:#bae6fd; text-transform:uppercase; letter-spacing:.05em;">
+                  <i class="bi bi-phone"></i> Actividad (Móvil)
                 </div>
                 <div>
-                  <span class="badge" style="background:rgba(255,255,255,0.15); font-size:.75rem; padding:3px 8px; border-radius:6px;">
-                    <i class="bi bi-broadcast blink text-success"></i> &nbsp;{{ active_mobile_techs | length }} / {{ technicians | length }}
+                  <span class="badge" style="background:rgba(255,255,255,0.15); font-size:.65rem; padding:2px 6px; border-radius:5px;">
+                    <i class="bi bi-broadcast blink text-success"></i> &nbsp;{{ active_mobile_techs | length }}
                   </span>
                 </div>
               </div>
-              <div style="font-size:0.85rem; font-weight:600; color:#e0f2fe; margin-top:4px;">
-                <i class="bi bi-person-lines-fill"></i> Ver Técnicos Conectados
+              <div style="font-size:0.75rem; font-weight:600; color:#e0f2fe; margin-top:2px;">
+                <i class="bi bi-person-lines-fill"></i> Ver Técnicos
               </div>
             </div>
           </button>
