@@ -337,9 +337,21 @@ def _authenticate_against_ad(username, password):
     base_dn = os.environ.get("AD_BASE_DN", "").strip()
     server = Server(ad_server, use_ssl=use_ssl, get_info=ALL, connect_timeout=connect_timeout)
 
-    for bind_user in _build_ad_login_variants(username):
+    domain = _ad_default_domain()
+    normalized = _normalize_username(username)
+    # SIMPLE auth funciona con user@domain. Probamos esa variante primero, luego las demás.
+    if domain and normalized:
+        bind_variants = [f"{normalized}@{domain}", normalized, username]
+    else:
+        bind_variants = [username, normalized]
+    # Deduplicar manteniendo orden
+    seen = set()
+    bind_variants = [v for v in bind_variants if v and not (v in seen or seen.add(v))]
+
+    for bind_user in bind_variants:
         try:
-            conn = Connection(server, user=bind_user, password=password, authentication=authentication, auto_bind=True)
+            from ldap3 import SIMPLE as LDAP_SIMPLE
+            conn = Connection(server, user=bind_user, password=password, authentication=LDAP_SIMPLE, auto_bind=True)
             display_name = _normalize_username(username)
             mail = None
             if base_dn:
