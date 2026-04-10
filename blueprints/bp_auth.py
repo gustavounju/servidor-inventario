@@ -24,9 +24,11 @@ def login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         user = validate_login(username, password)
+        is_pending = False
         if user:
             if not user.get("is_active"):
                 error = "Tu usuario está pendiente de aprobación por un administrador."
+                is_pending = True
             else:
                 session.clear()
                 session[AUTH_SESSION_KEY] = user
@@ -35,7 +37,7 @@ def login():
         else:
             error = "Usuario o clave incorrectos."
 
-    return render_template("login.html", error=error, next_url=next_url, auth_mode_label=auth_mode_label())
+    return render_template("login.html", error=error, is_pending=is_pending, next_url=next_url, auth_mode_label=auth_mode_label())
 
 
 @bp_auth.route("/logout", methods=["GET", "POST"])
