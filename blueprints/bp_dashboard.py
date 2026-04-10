@@ -697,14 +697,23 @@ def create_app_user():
     from utils.auth import _fetch_auth_user
     existing_user = _fetch_auth_user(username)
 
-    # REGLA 1: No permitir crear un usuario que ya existe si no estamos en modo ediciÃ³n
+    # REGLA 1: No permitir crear un usuario que ya existe si no estamos en modo edición
     if not is_edit_mode and existing_user:
-        flash(f"Error: El usuario '{username}' ya existe. Si desea modificarlo, use el botÃ³n 'Editar' en la lista.", "error")
+        flash(f"Error: El usuario '{username}' ya existe. Si desea modificarlo, use el botón 'Editar' en la lista.", "error")
         return redirect(url_for("dashboard.dashboard", manage_users=1))
     
-    # REGLA 2: Password obligatoria para nuevos usuarios
+    # REGLA 2: Si estamos en modo edición y algunos campos vienen vacíos (como en quickPromote), preservamos los actuales
+    if is_edit_mode and existing_user:
+        if not display_name or display_name == username:
+            display_name = existing_user["display_name"] or display_name
+        if not technician_name:
+            technician_name = existing_user["technician_name"]
+        if not phone:
+            phone = existing_user["phone"]
+
+    # REGLA 3: Password obligatoria para nuevos usuarios
     if not is_edit_mode and not password:
-        flash("Error: La contraseÃ±a es obligatoria para nuevos usuarios.", "error")
+        flash("Error: La contraseña es obligatoria para nuevos usuarios.", "error")
         return redirect(url_for("dashboard.dashboard", manage_users=1))
 
     try:

@@ -755,6 +755,7 @@ textarea.form-control {
 .header-actions-section { flex: 1; display: flex; justify-content: flex-end; }
 .action-group { display: flex; align-items: center; gap: 8px; }
 .action-btn {
+    position: relative; /* Para el posicionamiento del badge de notificaciones */
     width: 36px; height: 36px; border-radius: 10px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -762,6 +763,7 @@ textarea.form-control {
     color: rgba(255,255,255,0.7); cursor: pointer;
     transition: all 0.2s;
 }
+
 .action-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; transform: translateY(-1px); }
 .action-btn.btn-plus { background: var(--accent-color); color: #fff; border: none; }
 .action-btn.btn-plus:hover { filter: brightness(1.2); }

@@ -414,7 +414,8 @@ def _ensure_ad_shadow_user(ad_user):
         generated_hash = hash_password(secrets.token_urlsafe(32))
         default_permissions = permissions_for_role("tecnico", is_superuser=bool(superuser_flag))
         
-        # Nuevo registro
+        # REGLA SEGURIDAD: Nuevos usuarios AD nacen INACTIVOS (Pendientes de aprobación)
+        # excepto si están en la lista de AD_SUPERUSERS o si AD_AUTO_APPROVE=true
         is_active_flag = 1 if auto_activate else 0
         
         cursor = conn.execute(
@@ -449,7 +450,11 @@ def _ensure_ad_shadow_user(ad_user):
                 "role": "administrador" if superuser_flag else "tecnico",
                 "technician_name": "",
                 "is_superuser": superuser_flag,
+<<<<<<< HEAD
                 "is_active": is_active_flag,
+=======
+                "is_active": is_active_initial,
+>>>>>>> 38fcbb04ad05be282e06800b9b7bed04e5bc6294
                 "must_change_password": False,
                 "can_access_dashboard": default_permissions["dashboard"],
                 "can_access_mobile": default_permissions["mobile"],
@@ -461,9 +466,15 @@ def _ensure_ad_shadow_user(ad_user):
         )
 
 
-def validate_login(username, password):
-    username = _normalize_username(username)
+
+def validate_login(username_raw, password):
+    username = _normalize_username(username_raw)
     mode = auth_mode()
+
+    # REGLA SEGURIDAD: Bloquear cuentas que terminen en _adm (deben usar la normal)
+    if username.strip().lower().endswith("_adm"):
+        flash("Por seguridad, no se permite el ingreso con cuentas administrativas (_adm). Por favor usa tu cuenta de AD común.", "error")
+        return None
 
     if mode in {"local", "hybrid"}:
         user = _fetch_auth_user(username)
@@ -476,9 +487,14 @@ def validate_login(username, password):
     if mode in {"ad", "hybrid"}:
         ad_user = _authenticate_against_ad(username, password)
         if ad_user:
-            return _ensure_ad_shadow_user(ad_user)
+            session_user = _ensure_ad_shadow_user(ad_user)
+            if not session_user.get("is_active") and not session_user.get("is_superuser"):
+                flash("Tu cuenta de AD ha sido reconocida, pero está en estado 'Pendiente de Aprobación'. Contacta a un administrador para activarla.", "warning")
+                return None
+            return session_user
 
     return None
+
 
 
 def count_superusers(exclude_username=None):
