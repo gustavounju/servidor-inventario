@@ -495,11 +495,7 @@ def validate_login(username_raw, password):
     if mode in {"ad", "hybrid"}:
         ad_user = _authenticate_against_ad(username, password)
         if ad_user:
-            session_user = _ensure_ad_shadow_user(ad_user)
-            if not session_user.get("is_active") and not session_user.get("is_superuser"):
-                flash("Tu cuenta de AD ha sido reconocida, pero está en estado 'Pendiente de Aprobación'. Contacta a un administrador para activarla.", "warning")
-                return None
-            return session_user
+            return _ensure_ad_shadow_user(ad_user)
 
     return None
 
