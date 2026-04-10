@@ -258,15 +258,12 @@
                                         <td>
                                             {% if app_user.is_active %}
                                                 <span class="badge text-bg-success">Activo</span>
-<<<<<<< HEAD
                                             {% else %}
-                                                <span class="badge text-bg-warning"><i class="bi bi-clock-history"></i> Pendiente</span>
-=======
-                                            {% elif ad_usernames and app_user.username in ad_usernames %}
-                                                <span class="badge text-bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Pendiente</span>
-                                            {% else %}
-                                                <span class="badge text-bg-secondary">Inactivo</span>
->>>>>>> 38fcbb04ad05be282e06800b9b7bed04e5bc6294
+                                                {% if ad_usernames and app_user.username in ad_usernames %}
+                                                    <span class="badge text-bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Pendiente</span>
+                                                {% else %}
+                                                    <span class="badge text-bg-secondary">Inactivo</span>
+                                                {% endif %}
                                             {% endif %}
                                         </td>
 
