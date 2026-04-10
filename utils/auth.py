@@ -403,6 +403,11 @@ def _ensure_ad_shadow_user(ad_user):
 
         generated_hash = hash_password(secrets.token_urlsafe(32))
         default_permissions = permissions_for_role("tecnico", is_superuser=bool(superuser_flag))
+        
+        # REGLA SEGURIDAD: Nuevos usuarios AD nacen INACTIVOS (Pendientes de aprobacion)
+        # excepto si están en la lista de AD_SUPERUSERS configurada en .env
+        is_active_initial = 1 if superuser_flag else 0
+        
         cursor = conn.execute(
             """
             INSERT INTO app_users (
@@ -410,7 +415,7 @@ def _ensure_ad_shadow_user(ad_user):
                 is_superuser, is_active, must_change_password, phone,
                 can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports
             )
-            VALUES (%s, %s, %s, NULL, %s, %s, 1, 0, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, NULL, %s, %s, %s, 0, %s, %s, %s, %s, %s)
             """,
             (
                 username,
@@ -418,6 +423,7 @@ def _ensure_ad_shadow_user(ad_user):
                 "administrador" if superuser_flag else "tecnico",
                 generated_hash,
                 superuser_flag,
+                is_active_initial,
                 ad_user.get("phone"),
                 1 if default_permissions["dashboard"] else 0,
                 1 if default_permissions["mobile"] else 0,
@@ -434,6 +440,7 @@ def _ensure_ad_shadow_user(ad_user):
                 "role": "administrador" if superuser_flag else "tecnico",
                 "technician_name": "",
                 "is_superuser": superuser_flag,
+                "is_active": is_active_initial,
                 "must_change_password": False,
                 "can_access_dashboard": default_permissions["dashboard"],
                 "can_access_mobile": default_permissions["mobile"],
@@ -445,9 +452,15 @@ def _ensure_ad_shadow_user(ad_user):
         )
 
 
-def validate_login(username, password):
-    username = _normalize_username(username)
+
+def validate_login(username_raw, password):
+    username = _normalize_username(username_raw)
     mode = auth_mode()
+
+    # REGLA SEGURIDAD: Bloquear cuentas que terminen en _adm (deben usar la normal)
+    if username.strip().lower().endswith("_adm"):
+        flash("Por seguridad, no se permite el ingreso con cuentas administrativas (_adm). Por favor usa tu cuenta de AD común.", "error")
+        return None
 
     if mode in {"local", "hybrid"}:
         user = _fetch_auth_user(username)
@@ -457,9 +470,14 @@ def validate_login(username, password):
     if mode in {"ad", "hybrid"}:
         ad_user = _authenticate_against_ad(username, password)
         if ad_user:
-            return _ensure_ad_shadow_user(ad_user)
+            session_user = _ensure_ad_shadow_user(ad_user)
+            if not session_user.get("is_active") and not session_user.get("is_superuser"):
+                flash("Tu cuenta de AD ha sido reconocida, pero está en estado 'Pendiente de Aprobación'. Contacta a un administrador para activarla.", "warning")
+                return None
+            return session_user
 
     return None
+
 
 
 def count_superusers(exclude_username=None):

@@ -113,7 +113,18 @@
                         <span class="badge text-bg-dark">Sesión: {{ current_user.display_name or current_user.username }}</span>
                     </div>
                     <div class="card-body">
-                        <form action="{{ url_for('dashboard.create_app_user') }}" method="POST" class="row g-2 align-items-end mb-3" id="appUserForm">
+                        <div class="row align-items-center mb-3">
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm mb-0">
+                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-person-search"></i></span>
+                                    <input type="text" id="sysUserSearchInput" class="form-control border-start-0" placeholder="Buscar en usuarios del sistema..." onkeyup="filterSysUsersList()">
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <span class="badge text-bg-dark">Sesión: {{ current_user.display_name or current_user.username }}</span>
+                            </div>
+                        </div>
+                        <form action="{{ url_for('dashboard.create_app_user') }}" method="POST" class="row g-2 align-items-end mb-4 p-3 bg-light rounded-3 shadow-sm border" id="appUserForm">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="is_edit_mode" id="isEditMode" value="0">
                             <div class="col-md-3">
@@ -182,7 +193,7 @@
                             </div>
                         </form>
 
-                        <div class="table-responsive">
+                        <div class="table-responsive" style="overflow: visible;">
                             <table class="table table-sm align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
@@ -198,19 +209,45 @@
                                 </thead>
                                 <tbody>
                                     {% for app_user in app_users_list %}
-                                    <tr>
-                                        <td><code>{{ app_user.username }}</code></td>
-                                        <td>{{ app_user.display_name or '-' }}</td>
+                                    <tr class="sys-user-item">
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <code>{{ app_user.username }}</code>
+                                                {% if ad_usernames and app_user.username in ad_usernames %}
+                                                <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle" style="font-size: 0.6rem; padding: 1px 6px;" title="Usuario vinculado a Active Directory">
+                                                    <i class="bi bi-windows"></i> AD
+                                                </span>
+                                                {% else %}
+                                                <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle" style="font-size: 0.6rem; padding: 1px 6px;" title="Usuario local del sistema">
+                                                    <i class="bi bi-person-lock"></i> Local
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="sys-user-display-name">{{ app_user.display_name or '-' }}</td>
                                         <td>
                                             <span class="password-stars" title="Las claves están cifradas.">••••••••</span>
                                         </td>
                                         <td><small class="text-muted">{{ app_user.phone or '-' }}</small></td>
                                         <td>
-                                            {% if app_user.is_superuser %}
-                                            <span class="badge text-bg-danger">Superusuario</span>
-                                            {% else %}
-                                            <span class="badge text-bg-secondary">{{ app_user.role or 'tecnico' }}</span>
-                                            {% endif %}
+                                            <div class="dropdown d-inline-block">
+                                                {% if app_user.is_superuser %}
+                                                    <span class="badge text-bg-danger px-2 py-1" style="cursor: default;"><i class="bi bi-shield-check me-1"></i>Superusuario</span>
+                                                {% else %}
+                                                    <button class="btn btn-xs btn-outline-secondary dropdown-toggle py-0 px-1 d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-person-gear"></i> {{ (app_user.role or 'tecnico') | capitalize }}
+                                                    </button>
+                                                    <ul class="dropdown-menu shadow-lg border-0" style="font-size: 0.8rem; border-radius: 10px; z-index: 1060;">
+                                                        <li><h6 class="dropdown-header text-uppercase opacity-50" style="font-size: 0.65rem;">Cambiar Rol a {{ app_user.username }}</h6></li>
+                                                        <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'tecnico', {{ 'true' if app_user.is_superuser else 'false' }})"><i class="bi bi-phone me-2 text-primary"></i>Técnico (Solo Móvil)</button></li>
+                                                        <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'operador', {{ 'true' if app_user.is_superuser else 'false' }})"><i class="bi bi-display me-2 text-success"></i>Operador (Dashboard)</button></li>
+                                                        <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'administrador', {{ 'true' if app_user.is_superuser else 'false' }})"><i class="bi bi-shield-lock me-2 text-warning"></i>Administrador</button></li>
+                                                        <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'infraestructura', {{ 'true' if app_user.is_superuser else 'false' }})"><i class="bi bi-hdd-network me-2 text-info"></i>Infraestructura</button></li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li><button class="dropdown-item py-2 text-danger fw-bold" onclick="quickPromote('{{ app_user.username }}', 'superuser', false)"><i class="bi bi-lightning-charge-fill me-2"></i>Hacer Superusuario</button></li>
+                                                    </ul>
+                                                {% endif %}
+                                            </div>
                                         </td>
                                         <td>
                                             {% if app_user.can_access_dashboard %}<span class="access-pill"><i class="bi bi-grid"></i>Dash</span>{% endif %}
@@ -219,8 +256,15 @@
                                             {% if app_user.can_access_reports %}<span class="access-pill"><i class="bi bi-file-earmark-bar-graph"></i>Rep</span>{% endif %}
                                         </td>
                                         <td>
-                                            <span class="badge text-bg-{{ 'success' if app_user.is_active else 'secondary' }}">{{ 'Activo' if app_user.is_active else 'Inactivo' }}</span>
+                                            {% if app_user.is_active %}
+                                                <span class="badge text-bg-success">Activo</span>
+                                            {% elif ad_usernames and app_user.username in ad_usernames %}
+                                                <span class="badge text-bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Pendiente</span>
+                                            {% else %}
+                                                <span class="badge text-bg-secondary">Inactivo</span>
+                                            {% endif %}
                                         </td>
+
                                         <td class="text-end">
                                             <button type="button" class="btn btn-sm btn-outline-secondary me-1" 
                                                     data-user='{{ app_user|tojson|safe }}'
@@ -756,6 +800,68 @@
 
 <!-- Scripts para Modales (Se incluirán una sola vez) -->
 <script>
+    // Lista de usuarios detectados como AD para lógica de interfaz
+    const adUsernamesSet = new Set({{ (ad_usernames|list if ad_usernames else []) | tojson | safe }});
+
+    function filterSysUsersList() {
+
+        var input = document.getElementById("sysUserSearchInput").value.toLowerCase();
+        var trs = document.querySelectorAll("#usersModal table tbody tr.sys-user-item");
+        trs.forEach(function(tr) {
+            var username = tr.querySelector("code").textContent.toLowerCase();
+            var realname = tr.querySelector(".sys-user-display-name").textContent.toLowerCase();
+            if (username.indexOf(input) > -1 || realname.indexOf(input) > -1) {
+                tr.style.display = "";
+            } else {
+                tr.style.display = "none";
+            }
+        });
+    }
+
+    function quickPromote(username, role, currentIsSuper) {
+        let msg = `¿Promover a ${username} como ${role}?`;
+        if (role === 'superuser') msg = `¿Convertir a ${username} en SUPERUSUARIO (Control Total)?`;
+        
+        if (!confirm(msg)) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ url_for('dashboard.create_app_user') }}";
+        
+        const fields = {
+            'csrf_token': "{{ csrf_token() }}",
+            'username': username,
+            'is_edit_mode': '1',
+            'is_active': 'on'
+        };
+
+        if (role === 'superuser') {
+            fields['is_superuser'] = 'on';
+            fields['role'] = 'administrador';
+        } else {
+            fields['role'] = role;
+            if (currentIsSuper) fields['is_superuser'] = 'on';
+        }
+
+        // Aplicar presets de permisos según el rol
+        const preset = rolePresets[role === 'superuser' ? 'administrador' : role] || rolePresets.tecnico;
+        if (preset.dashboard) fields['perm_dashboard'] = 'on';
+        if (preset.mobile) fields['perm_mobile'] = 'on';
+        if (preset.infrastructure) fields['perm_infrastructure'] = 'on';
+        if (preset.reports) fields['perm_reports'] = 'on';
+
+        for (const [key, value] of Object.entries(fields)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value;
+            form.appendChild(input);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
     function filterUsersList() {
         var input = document.getElementById("userSearchInput").value.toLowerCase();
         var trs = document.querySelectorAll("#usersTableList tbody tr.user-item");
@@ -833,13 +939,27 @@
             infrastructure: !!user.can_access_infrastructure,
             reports: !!user.can_access_reports
         });
+        const passwordEl = document.getElementById('appPassword');
+        const isAD = adUsernamesSet.has((user.username || '').toLowerCase());
+
+        if (isAD) {
+            passwordEl.disabled = true;
+            passwordEl.placeholder = 'Clave gestionada por Active Directory';
+            passwordEl.value = '';
+            document.getElementById('toggleAppPassword').disabled = true;
+        } else {
+            passwordEl.disabled = false;
+            passwordEl.placeholder = 'Dejar vacío para no cambiar';
+            document.getElementById('toggleAppPassword').disabled = false;
+        }
+
         document.getElementById('isEditMode').value = '1';
         document.getElementById('btnSubmitAppUser').innerText = 'Actualizar';
         document.getElementById('appUsername').readOnly = true;
-        document.getElementById('appPassword').placeholder = 'Dejar vacío para no cambiar';
         document.querySelector('#usersModal .modal-body').scrollTop = 0;
         usernameEl.focus();
     }
+
 
     function prefillAppUser(username, realname) {
         const usernameEl = document.getElementById('appUsername');

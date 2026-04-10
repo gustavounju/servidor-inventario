@@ -69,7 +69,8 @@ def inject_global_vars():
         'fueros': {},
         'technicians': [],
         'app_users_list': [],
-        'all_pcs': []
+        'all_pcs': [],
+        'kpi_usuarios_pendientes': 0
     }
     
     if is_authenticated():
@@ -85,6 +86,8 @@ def inject_global_vars():
                 
                 kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
                 kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
+                
+                extra_data['kpi_usuarios_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM app_users WHERE is_active = 0").fetchone()["c"]
 
                 fueros_rows = conn.execute("SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido' ORDER BY fuero").fetchall()
                 extra_data['fueros'] = {row['fuero']: row['fuero'] for row in fueros_rows}
@@ -96,30 +99,26 @@ def inject_global_vars():
                 sys_usernames = {str(u['username']).strip().lower() for u in sys_users}
 
                 # 2. Obtener usuarios potenciales de AD
+                # 2. Obtener usuarios oficiales del directorio (AD_USERS)
+                # Ya no incluimos UNION con PCS para evitar "basura" de nombres detectados por scripts
                 ad_users_query = """
                     SELECT LOWER(TRIM(username)) as username, real_name, phone, 1 as is_official
                     FROM ad_users
-                    UNION
-                    SELECT DISTINCT 
-                        LOWER(TRIM(SUBSTRING_INDEX(last_user, '\\\\', -1))) as username, 
-                        last_user as real_name, 
-                        NULL as phone,
-                        0 as is_official
-                    FROM pcs 
-                    WHERE last_user IS NOT NULL 
-                      AND last_user != '' 
-                      AND LOWER(TRIM(SUBSTRING_INDEX(last_user, '\\\\', -1))) 
-                          NOT IN (SELECT LOWER(TRIM(username)) FROM ad_users)
                     ORDER BY real_name
                 """
                 all_ad_raw = [dict(row) for row in conn.execute(ad_users_query).fetchall()]
+
                 
                 # 3. Filtrar y Deduplicar: SI el usuario ya existe en el sistema superior, NO sale en el directorio
                 # Deduplicación para casos donde un registro histórico (PCS) coincide con uno oficial (ad_users)
                 seen_usernames = {} # username -> user_obj
+                ad_usernames = set() # usernames que sabemos que son de AD
                 
                 for u in all_ad_raw:
                     uname = str(u['username']).strip().lower()
+                    if u['is_official']:
+                        ad_usernames.add(uname)
+
                     if uname in sys_usernames:
                         continue
                     
@@ -136,11 +135,12 @@ def inject_global_vars():
                 directorio_filtrado.sort(key=lambda x: str(x['real_name']).lower())
                 
                 extra_data['directorio_filtrado'] = directorio_filtrado
+                extra_data['ad_usernames'] = ad_usernames
                 
                 # Debug log
                 import datetime
                 now = datetime.datetime.now().strftime("%H:%M:%S")
-                print(f"DEBUG [{now}]: AppUsers={len(sys_usernames)} Directorio={len(directorio_filtrado)}")
+                print(f"DEBUG [{now}]: AppUsers={len(sys_usernames)} Directorio={len(directorio_filtrado)} AD_Total={len(ad_usernames)}")
 
                 extra_data['all_pcs'] = [dict(row) for row in conn.execute(
                     "SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 'True' ORDER BY pc_name"
@@ -183,6 +183,11 @@ def serve_sw():
 @app.route('/manifest.json')
 def serve_manifest():
     return send_from_directory('static', 'manifest.json', mimetype='application/json')
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 
+                               'icon-192.png', mimetype='image/png')
 
 # Configuración y Migraciones iniciales
 with app.app_context():

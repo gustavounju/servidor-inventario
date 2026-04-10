@@ -35,7 +35,13 @@
                 {% if current_user.is_superuser %}
                 <button class="action-btn" data-bs-toggle="modal" data-bs-target="#usersModal" title="Usuarios">
                     <i class="bi bi-people"></i>
+                    {% if kpi_usuarios_pendientes > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light" style="font-size: 0.6rem; padding: 3px 5px;">
+                        {{ kpi_usuarios_pendientes }}
+                    </span>
+                    {% endif %}
                 </button>
+
                 {% endif %}
 
                 {% if has_access('reports') %}
