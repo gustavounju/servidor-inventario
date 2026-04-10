@@ -450,11 +450,7 @@ def _ensure_ad_shadow_user(ad_user):
                 "role": "administrador" if superuser_flag else "tecnico",
                 "technician_name": "",
                 "is_superuser": superuser_flag,
-<<<<<<< HEAD
                 "is_active": is_active_flag,
-=======
-                "is_active": is_active_initial,
->>>>>>> 38fcbb04ad05be282e06800b9b7bed04e5bc6294
                 "must_change_password": False,
                 "can_access_dashboard": default_permissions["dashboard"],
                 "can_access_mobile": default_permissions["mobile"],
