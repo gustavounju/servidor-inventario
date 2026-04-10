@@ -257,6 +257,8 @@ def dashboard():
             """
             ad_users_list = [dict(row) for row in conn.execute(ad_users_query).fetchall()]
             app_users_list = list_app_users()
+            # Usuarios AD que se registraron pero aún no fueron aprobados
+            pending_users_list = [u for u in app_users_list if not u.get("is_active")]
             
             # --- DICCIONARIO DE PUERTOS PARA HOST OFFLINE ---
             pc_ports_query = conn.execute("SELECT pc_name, printer_port FROM pcs WHERE is_active = 'True'").fetchall()
@@ -271,6 +273,7 @@ def dashboard():
     except Exception as exc:
         print(f"Error cargando dashboard: {exc}")
         pc_ports = {}
+        pending_users_list = []
         pcs_data = auxiliary_pcs = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = app_users_list = active_mobile_techs = []
         total_rows = kpi_total_activas = kpi_total_graveyard = kpi_alerta_ram = kpi_sin_impresora = 0
         kpi_impresora_red = kpi_total_impresoras = kpi_win7 = kpi_win10 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
@@ -312,7 +315,8 @@ def dashboard():
         order=order,
         os_param=os_param,
         filter_tasks=filter_tasks,
-        last_backup_info=last_backup_info
+        last_backup_info=last_backup_info,
+        pending_users_list=pending_users_list
     )
 
 @bp_dashboard.route("/export", methods=["GET", "POST"])
