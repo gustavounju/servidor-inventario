@@ -18,13 +18,13 @@ def login():
         return redirect(normalize_next_url(request.args.get("next")))
 
     error = None
+    is_pending = False
     next_url = normalize_next_url(request.args.get("next") or request.form.get("next"))
 
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         user = validate_login(username, password)
-        is_pending = False
         if user:
             if not user.get("is_active"):
                 error = "Tu usuario está pendiente de aprobación por un administrador."
