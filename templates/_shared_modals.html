@@ -198,7 +198,7 @@
                                 </thead>
                                 <tbody>
                                     {% for app_user in app_users_list %}
-                                    <tr>
+                                    <tr class="{{ 'table-warning' if not app_user.is_active else '' }}">
                                         <td><code>{{ app_user.username }}</code></td>
                                         <td>{{ app_user.display_name or '-' }}</td>
                                         <td>
@@ -219,12 +219,16 @@
                                             {% if app_user.can_access_reports %}<span class="access-pill"><i class="bi bi-file-earmark-bar-graph"></i>Rep</span>{% endif %}
                                         </td>
                                         <td>
-                                            <span class="badge text-bg-{{ 'success' if app_user.is_active else 'secondary' }}">{{ 'Activo' if app_user.is_active else 'Inactivo' }}</span>
+                                            {% if app_user.is_active %}
+                                                <span class="badge text-bg-success">Activo</span>
+                                            {% else %}
+                                                <span class="badge text-bg-warning"><i class="bi bi-clock-history"></i> Pendiente</span>
+                                            {% endif %}
                                         </td>
                                         <td class="text-end">
                                             <button type="button" class="btn btn-sm btn-outline-secondary me-1" 
                                                     data-user='{{ app_user|tojson|safe }}'
-                                                    onclick="editAppUser(JSON.parse(this.getAttribute('data-user')))">Editar</button>
+                                                    onclick="editAppUser(JSON.parse(this.getAttribute('data-user')))">Editar / Aprobar</button>
                                             {% if app_user.username != current_user.username %}
                                             <form action="{{ url_for('dashboard.remove_app_user', user_id=app_user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar al usuario {{ app_user.username }}?')">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

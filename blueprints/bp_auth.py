@@ -25,11 +25,15 @@ def login():
         password = request.form.get("password", "")
         user = validate_login(username, password)
         if user:
-            session.clear()
-            session[AUTH_SESSION_KEY] = user
-            generate_csrf_token()
-            return redirect(next_url or default_landing_url(user))
-        error = "Usuario o clave incorrectos."
+            if not user.get("is_active"):
+                error = "Tu usuario está pendiente de aprobación por un administrador."
+            else:
+                session.clear()
+                session[AUTH_SESSION_KEY] = user
+                generate_csrf_token()
+                return redirect(next_url or default_landing_url(user))
+        else:
+            error = "Usuario o clave incorrectos."
 
     return render_template("login.html", error=error, next_url=next_url, auth_mode_label=auth_mode_label())
 

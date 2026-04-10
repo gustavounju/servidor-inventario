@@ -151,6 +151,7 @@ def build_session_user(row, auth_source):
         "permissions": permissions,
         "is_superuser": bool(row.get("is_superuser")),
         "must_change_password": bool(row.get("must_change_password")),
+        "is_active": bool(row.get("is_active", True)),
         "phone": row.get("phone") or "",
         "auth_source": auth_source,
     }
@@ -372,6 +373,8 @@ def _ensure_ad_shadow_user(ad_user):
     username = _normalize_username(ad_user.get("username"))
     display_name = ad_user.get("display_name") or username
     superuser_flag = 1 if ad_user.get("is_superuser") else 0
+    # Los AD_SUPERUSERS se activan siempre. Otros dependen de la configuración (por defecto requieren aprobación)
+    auto_activate = superuser_flag or os.environ.get("AD_AUTO_APPROVE", "false").lower() == "true"
 
     with get_db_connection() as conn:
         existing = conn.execute(
@@ -384,25 +387,36 @@ def _ensure_ad_shadow_user(ad_user):
             (username,),
         ).fetchone()
         if existing:
+            # Si el usuario ya existe, actualizamos su info básica pero NO tocamos is_active 
+            # (a menos que sea para activarlo si es superuser y estaba inactivo)
+            new_active_status = existing["is_active"]
+            if superuser_flag:
+                new_active_status = 1
+
             conn.execute(
                 """
                 UPDATE app_users
                 SET display_name = %s,
                     is_superuser = %s,
-                    is_active = 1,
+                    is_active = %s,
                     phone = COALESCE(phone, %s),
                     updated_at = CURRENT_TIMESTAMP
                 WHERE username = %s
                 """,
-                (display_name, superuser_flag, ad_user.get("phone"), username),
+                (display_name, superuser_flag, new_active_status, ad_user.get("phone"), username),
             )
             conn.commit()
             existing["display_name"] = display_name
             existing["is_superuser"] = superuser_flag
+            existing["is_active"] = new_active_status
             return build_session_user(existing, "ad")
 
         generated_hash = hash_password(secrets.token_urlsafe(32))
         default_permissions = permissions_for_role("tecnico", is_superuser=bool(superuser_flag))
+        
+        # Nuevo registro
+        is_active_flag = 1 if auto_activate else 0
+        
         cursor = conn.execute(
             """
             INSERT INTO app_users (
@@ -410,7 +424,7 @@ def _ensure_ad_shadow_user(ad_user):
                 is_superuser, is_active, must_change_password, phone,
                 can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports
             )
-            VALUES (%s, %s, %s, NULL, %s, %s, 1, 0, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, NULL, %s, %s, %s, 0, %s, %s, %s, %s, %s)
             """,
             (
                 username,
@@ -418,6 +432,7 @@ def _ensure_ad_shadow_user(ad_user):
                 "administrador" if superuser_flag else "tecnico",
                 generated_hash,
                 superuser_flag,
+                is_active_flag,
                 ad_user.get("phone"),
                 1 if default_permissions["dashboard"] else 0,
                 1 if default_permissions["mobile"] else 0,
@@ -434,6 +449,7 @@ def _ensure_ad_shadow_user(ad_user):
                 "role": "administrador" if superuser_flag else "tecnico",
                 "technician_name": "",
                 "is_superuser": superuser_flag,
+                "is_active": is_active_flag,
                 "must_change_password": False,
                 "can_access_dashboard": default_permissions["dashboard"],
                 "can_access_mobile": default_permissions["mobile"],
@@ -451,7 +467,10 @@ def validate_login(username, password):
 
     if mode in {"local", "hybrid"}:
         user = _fetch_auth_user(username)
-        if user and user.get("is_active") and verify_password(password, user.get("password_hash")):
+        # Verificamos la clave primero. Si coincide, retornamos el usuario 
+        # independientemente de si está activo o no, para que el login pueda
+        # mostrar el mensaje de "pendiente de aprobación".
+        if user and verify_password(password, user.get("password_hash")):
             return build_session_user(user, "local")
 
     if mode in {"ad", "hybrid"}:
