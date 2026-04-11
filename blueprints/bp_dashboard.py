@@ -741,6 +741,23 @@ def create_app_user():
     return redirect(url_for("dashboard.dashboard", manage_users=1))
 
 
+@bp_dashboard.route("/admin/users/reset_password", methods=["POST"])
+@superuser_required
+def reset_app_user_password():
+    username = request.form.get("username", "").strip().lower()
+    new_password = request.form.get("password", "")
+    if not username or not new_password:
+        flash("Usuario y nueva clave son obligatorios.", "error")
+    else:
+        try:
+            from utils.auth import update_app_user_password
+            update_app_user_password(username, new_password)
+            flash(f"Clave de '{username}' actualizada correctamente.", "success")
+        except Exception as exc:
+            flash(f"Error al restablecer clave: {exc}", "error")
+    return redirect(url_for("dashboard.dashboard", manage_users=1))
+
+
 @bp_dashboard.route("/admin/users/<int:user_id>/delete", methods=["POST"])
 @superuser_required
 def remove_app_user(user_id):
@@ -761,10 +778,32 @@ def view_fueros():
     with get_db_connection() as conn:
         fueros_rows = conn.execute("SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido' ORDER BY fuero").fetchall()
         fueros_list = [row['fuero'] for row in fueros_rows]
-        
+
+        # Conteos por fuero para las cards de la grilla
+        pc_counts_rows = conn.execute("""
+            SELECT fuero, COUNT(*) as cnt
+            FROM pcs
+            WHERE is_active = 'True'
+              AND fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido'
+              AND UPPER(pc_name) NOT IN ('PC GENERICA','INFRAESTRUCTURA','PC-GENERICA')
+            GROUP BY fuero
+        """).fetchall()
+        printer_counts_rows = conn.execute("""
+            SELECT fuero, COUNT(*) as cnt
+            FROM network_printers
+            WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido'
+            GROUP BY fuero
+        """).fetchall()
+        fuero_stats = {}
+        for row in pc_counts_rows:
+            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0})['pcs'] = row['cnt']
+        for row in printer_counts_rows:
+            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0})['printers'] = row['cnt']
+
         pcs = []
         users = []
         printers = []
+
         
         if fuero_param:
             pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND fuero = %s ORDER BY pc_name", (fuero_param,)).fetchall()
@@ -838,12 +877,24 @@ def view_fueros():
             p_dict['assignments'] = [dict(a) for a in assigned_pcs]
             printers.append(p_dict)
 
+    # ── Respuesta JSON (para el modal de topología) ──────────────
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('json'):
+        from flask import jsonify
+        return jsonify({
+            'fuero_param': fuero_param,
+            'users':    [dict(u) for u in users],
+            'pcs':      [dict(p) for p in pcs],
+            'printers': printers,
+        })
+
     return render_template(
         "fueros.html",
         fueros_list=fueros_list,
         fuero_param=fuero_param,
+        fuero_stats=fuero_stats,
         pcs=pcs,
         users=users,
         printers=printers,
         fuero_colors=FUERO_COLORS
     )
+

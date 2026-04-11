@@ -2,205 +2,376 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Fueros | Inventario GOLD</title>
+    <title>Consulta por Fuero | Inventario GOLD</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/static/css/gold.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script defer src="/static/js/security.js"></script>
-    <script defer src="/static/js/gold.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── Backdrop Simulada ── */
+        .fueros-bg-blur {
+            position: fixed;
+            inset: 0;
+            background: url('/static/img/dashboard_bg.webp') center/cover;
+            filter: blur(10px) brightness(0.4);
+            z-index: 1;
+        }
+
+        /* ── Ventana Flotante (Tipo Modal de Gestión) ── */
+        .fueros-floating-window {
+            position: relative;
+            z-index: 10;
+            width: 92vw;
+            height: 88vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: modalFadeUp 0.4s ease-out;
+        }
+
+        @keyframes modalFadeUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Header de la ventana */
+        .window-header {
+            background: linear-gradient(90deg, #1e293b, #334155);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #fff;
+        }
+        .window-title { display:flex; align-items:center; gap:12px; }
+        .window-title h1 { font-size: 1.1rem; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+
+        /* Contenido dividido */
+        .window-main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar dentro de la ventana */
+        .window-sidebar {
+            width: 300px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-search { padding: 15px; }
+        .sidebar-search input { 
+            border-radius: 10px!important; font-size: 0.8rem!important; 
+            border: 1.5px solid #e2e8f0!important;
+        }
+
+        .sidebar-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .fuero-item {
+            display: flex; align-items: center; gap: 10px; padding: 12px;
+            border-radius: 12px; cursor: pointer; transition: all 0.2s;
+            margin-bottom: 4px; color: #475569; text-decoration: none!important;
+        }
+        .fuero-item:hover { background: #f1f5f9; color: #1e293b; }
+        .fuero-item.active { background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; color: #0284c7; }
+
+        .fuero-dot { width: 10px; height: 10px; border-radius: 3px; background: var(--dot-color); }
+        .fuero-name { font-weight: 700; font-size: 0.8rem; flex: 1; }
+        .fuero-stats { font-size: 0.65rem; color: #94a3b8; font-weight: 700; display: flex; gap: 6px; }
+
+        /* Área de Mapa */
+        .window-content { flex: 1; overflow-y: auto; background: #fff; position: relative; padding: 25px; }
+
+        /* Estilos Topología (Simplificados para Ventana) */
+        .topo-canvas { position: relative; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; min-width: 900px; }
+        .topo-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+        .topo-col { display: flex; flex-direction: column; gap: 12px; z-index: 2; }
+        .topo-col-label { 
+            font-size: 0.65rem; font-weight: 800; text-transform: uppercase; 
+            color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 10px;
+            border-bottom: 1.5px solid #f1f5f9; padding-bottom: 6px;
+        }
+
+        .topo-node {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+            border-radius: 10px; border: 1.5px solid #e2e8f0; background: #fff;
+            transition: all 0.2s; position: relative;
+        }
+        .topo-node:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+        .topo-node.highlighted { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        .topo-node.dimmed { opacity: 0.15; }
+
+        .topo-icon { 
+            width: 32px; height: 32px; border-radius: 8px; display: flex; 
+            align-items: center; justify-content: center; color: #fff; font-size: 0.8rem;
+        }
+        .icon-u { background: #3b82f6; } .icon-pc { background: #06b6d4; } .icon-pr { background: #8b5cf6; }
+
+        .node-info { min-width: 0; flex: 1; }
+        .node-title { font-weight: 700; font-size: 0.78rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .node-sub { font-size: 0.65rem; color: #64748b; }
+
+        .path-line { fill: none; stroke: #cbd5e1; stroke-width: 1.5; opacity: 0.4; transition: 0.3s; }
+        .path-active { stroke: #3b82f6; stroke-width: 2; opacity: 1; }
+
+        /* KPIs en Header Ventana */
+        .header-kpi { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; margin-left: 15px; display: flex; gap: 15px; }
+        .kpi-item { text-align: right; }
+        .kpi-val { font-size: 1rem; font-weight: 800; line-height: 1; }
+        .kpi-lab { font-size: 0.6rem; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; }
+
+        #windowLoading {
+            position: absolute; inset: 0; background: rgba(255,255,255,0.9);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50;
+        }
+    </style>
 </head>
-<body class="has-fixed-header">
-    {% include '_module_switcher.html' %}
-    {% include '_shared_modals.html' %}
+<body>
+    <div class="fueros-bg-blur"></div>
 
-    <main class="container-fluid" style="margin-top: 110px;">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="h4 mb-0 fw-bold">Consulta por Fuero</h2>
-    <div class="text-muted small">Gestión y revisión de dependencias</div>
-</div>
-
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-body bg-light rounded d-flex align-items-center justify-content-between flex-wrap gap-3">
-        <form action="{{ url_for('dashboard.view_fueros') }}" method="GET" class="d-flex align-items-center gap-2">
-            <label class="fw-bold m-0" style="white-space:nowrap;">Seleccionar Fuero:</label>
-            <select name="fuero" class="form-select w-auto" onchange="this.form.submit()">
-                <option value="" {% if not fuero_param %}selected{% endif %}>--- Ver Elementos Huérfanos / Sin Fuero ---</option>
-                {% for name in fueros_list %}
-                <option value="{{ name }}" {% if fuero_param == name %}selected{% endif %}>{{ name }}</option>
-                {% endfor %}
-            </select>
-            {% if fuero_param %}
-            <a href="{{ url_for('dashboard.view_fueros') }}" class="btn btn-outline-secondary btn-sm" title="Limpiar y ver huérfanos">
-                <i class="bi bi-x-circle"></i>
-            </a>
-            {% endif %}
-        </form>
-        
-        <div>
-            {% if fuero_param %}
-            <span class="badge" style="background-color: {{ fuero_colors.get(fuero_param, '#6c757d') }}; font-size: 1rem;">
-                Filtrando: {{ fuero_param }}
-            </span>
-            {% else %}
-            <span class="badge bg-danger" style="font-size: 1rem;">Elementos sin dependencia (Huérfanos)</span>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<div class="row g-4 mb-5">
-    <!-- COLUMNA 1: Usuarios (AD) -->
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100 border-0">
-            <div class="card-header bg-white border-0 py-3">
-                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-people-fill text-primary me-2"></i>Usuarios ({{ users|length }})</h6>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive" style="max-height: 500px;">
-                    <table class="table table-hover table-sm align-middle mb-0">
-                        <thead class="table-light sticky-top">
-                            <tr>
-                                <th>Usuario/Nombre</th>
-                                <th>Teléfono</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for u in users %}
-                            <tr>
-                                <td>
-                                    <div class="fw-bold text-dark">{{ u.real_name }}</div>
-                                    <div class="small text-muted"><code>{{ u.username }}</code></div>
-                                </td>
-                                <td>
-                                    {% if u.phone %}
-                                    <span class="badge bg-secondary"><i class="bi bi-telephone-fill me-1"></i>{{ u.phone }}</span>
-                                    {% else %}
-                                    <span class="text-muted small">-</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="2" class="text-center text-muted py-4">No hay usuarios con este fuero.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <div class="fueros-floating-window">
+        <!-- Header -->
+        <div class="window-header">
+            <div class="window-title">
+                <i class="bi bi-diagram-3-fill" style="font-size: 1.4rem;"></i>
+                <div>
+                    <h1>Topología por Fuero</h1>
+                    <div style="font-size: 0.65rem; color: rgba(255,255,255,0.5);">Mapa de infraestructura y conexiones</div>
                 </div>
             </div>
+
+            <div class="header-kpi" id="headerKpis" style="display: none;">
+                <div class="kpi-item">
+                    <div class="kpi-val" id="kpiU">0</div><div class="kpi-lab">Usuarios</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="kpi-val" id="kpiPc">0</div><div class="kpi-lab">Equipos</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="kpi-val" id="kpiPr">0</div><div class="kpi-lab">Impresoras</div>
+                </div>
+            </div>
+
+            <a href="/" class="btn-close btn-close-white" style="margin-left: 30px;"></a>
+        </div>
+
+        <div class="window-main">
+            <!-- Sidebar -->
+            <aside class="window-sidebar">
+                <div class="sidebar-search">
+                    <input type="text" class="form-control form-control-sm" placeholder="Buscar dependencia..." onkeyup="filterList(this.value)">
+                </div>
+                <div class="sidebar-list" id="sidebarList">
+                    {% set palette = ['#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#6366f1'] %}
+                    
+                    <div class="fuero-item" onclick="loadFuero('', 'Huérfanos / Sin Fuero', '#ef4444', this)">
+                        <div class="fuero-dot" style="--dot-color: #ef4444;"></div>
+                        <div class="fuero-name">Huérfanos / Sin Fuero</div>
+                    </div>
+
+                    {% for name in fueros_list %}
+                    {% set color = palette[loop.index0 % palette|length] %}
+                    {% set stats = fuero_stats.get(name, {'pcs': 0, 'printers': 0}) %}
+                    <div class="fuero-item" onclick="loadFuero('{{ name | urlencode }}', '{{ name }}', '{{ color }}', this)">
+                        <div class="fuero-dot" style="--dot-color: {{ color }};"></div>
+                        <div class="fuero-name">{{ name }}</div>
+                        <div class="fuero-item-stats">
+                            <span><i class="bi bi-pc-display"></i> {{ stats.pcs }}</span>
+                            <span><i class="bi bi-printer"></i> {{ stats.printers }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </aside>
+
+            <!-- Topology -->
+            <div class="window-content" id="windowContent">
+                <div id="windowLoading" style="display:none;">
+                    <div class="spinner-border text-primary mb-3"></div>
+                    <div class="fw-bold text-muted">Cargando topología...</div>
+                </div>
+
+                <div id="initialState" class="text-center" style="margin-top: 20vh;">
+                    <i class="bi bi-geo-fill text-muted" style="font-size: 4rem; opacity: 0.2;"></i>
+                    <h2 class="text-muted mt-3">Seleccioná una dependencia</h2>
+                    <p class="text-muted small">Elegí un fuero de la lista para mapear su red.</p>
+                </div>
+
+                <div id="topoTarget" style="display: none;"></div>
+            </div>
         </div>
     </div>
 
-    <!-- COLUMNA 2: PCs -->
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100 border-0">
-            <div class="card-header bg-white border-0 py-3">
-                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-pc-display text-info me-2"></i>PCs ({{ pcs|length }})</h6>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive" style="max-height: 500px;">
-                    <table class="table table-hover table-sm align-middle mb-0">
-                        <thead class="table-light sticky-top">
-                            <tr>
-                                <th>PC / IP</th>
-                                <th>Último Usuario</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for p in pcs %}
-                            <tr>
-                                <td>
-                                    <a href="/pc/{{ p.pc_name|urlencode }}" class="fw-bold text-decoration-none text-primary">{{ p.pc_name }}</a>
-                                    <div class="small fw-semibold text-secondary">{{ p.ip_address }}</div>
-                                </td>
-                                <td class="small">{{ p.last_user }}</td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="2" class="text-center text-muted py-4">No hay PCs asignadas a este fuero.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+    <script>
+        let userToPc = {};
+        let pcToPr = {};
+        let pcIdMap = {};
 
-    <!-- COLUMNA 3: Impresoras de Red -->
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100 border-0">
-            <div class="card-header bg-white border-0 py-3">
-                {% set own_printers = printers | selectattr('physical_fuero', 'equalto', fuero_param) | list if fuero_param else printers %}
-                <h6 class="fw-bold mb-0 text-dark">
-                    <i class="bi bi-printer-fill text-secondary me-2"></i>
-                    {% if fuero_param %}
-                        Impresoras propias ({{ own_printers|length }}) <span class="text-muted small fw-normal ms-1">/ Ext. ({{ printers|length - own_printers|length }})</span>
-                    {% else %}
-                        Impresoras huérfanas ({{ printers|length }})
-                    {% endif %}
-                </h6>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive" style="max-height: 500px;">
-                    <table class="table table-hover table-sm align-middle mb-0">
-                        <thead class="table-light sticky-top">
-                            <tr>
-                                <th>IP</th>
-                                <th>Marca/Modelo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for prnt in printers %}
-                            <tr>
-                                <td>
-                                    <div class="fw-bold">{{ prnt.ip_address }}</div>
-                                    <div class="small border-bottom border-secondary d-inline-block">{{ prnt.serial_number or '-' }}</div>
-                                </td>
-                                <td class="small">
-                                    {{ prnt.brand_model or 'No especificado' }}
-                                    {% if fuero_param and prnt.physical_fuero and prnt.physical_fuero != fuero_param %}
-                                    <div class="mt-1">
-                                        <span class="badge bg-warning text-dark border border-warning" style="font-size: 0.70rem;">
-                                            <i class="bi bi-geo-alt-fill me-1"></i> Físicamente en: {{ prnt.physical_fuero }}
-                                        </span>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    <div class="mt-2">
-                                        {% if prnt.assignments %}
-                                            <div class="d-flex flex-wrap gap-1">
-                                                {% for asn in prnt.assignments %}
-                                                <span class="badge bg-info text-dark border border-info d-flex flex-column align-items-start px-2 py-1" style="font-size: 0.70rem; background-color: #e0f2fe !important;">
-                                                    <span><i class="bi bi-pc-display me-1"></i>{{ asn.pc_name }}</span>
-                                                    {% if asn.real_name %}
-                                                    <span class="fw-normal" style="opacity: 0.8;"><i class="bi bi-person me-1"></i>{{ asn.real_name }}</span>
-                                                    {% elif asn.last_user %}
-                                                    <span class="fw-normal" style="opacity: 0.8;"><i class="bi bi-person me-1"></i>{{ asn.last_user.split('\\')[-1] }}</span>
-                                                    {% endif %}
-                                                </span>
-                                                {% endfor %}
-                                            </div>
-                                        {% else %}
-                                            <span class="text-muted small fst-italic">Sin usos en red</span>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="2" class="text-center text-muted py-4">No hay impresoras asignadas a este fuero.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        function loadFuero(param, name, color, el) {
+            document.querySelectorAll('.fuero-item').forEach(i => i.classList.remove('active'));
+            if(el) el.classList.add('active');
+
+            document.getElementById('initialState').style.display = 'none';
+            document.getElementById('windowLoading').style.display = 'flex';
+            document.getElementById('topoTarget').style.display = 'none';
+            document.getElementById('headerKpis').style.display = 'flex';
+
+            const url = param ? `/fueros?fuero=${param}&json=1` : `/fueros?json=1`;
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.json())
+                .then(data => {
+                    renderMap(data, param);
+                    document.getElementById('windowLoading').style.display = 'none';
+                    document.getElementById('topoTarget').style.display = 'block';
+                });
+        }
+
+        function renderMap(data, param) {
+            const { users, pcs, printers } = data;
+            document.getElementById('kpiU').textContent = users.length;
+            document.getElementById('kpiPc').textContent = pcs.length;
+            document.getElementById('kpiPr').textContent = printers.length;
+
+            const safe = s => (s||'').toString().replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            
+            const html = `
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                <div class="topo-canvas" id="canvas">
+                    <svg class="topo-svg" id="svg"></svg>
+                    
+                    <!-- Usuarios -->
+                    <div class="topo-col">
+                        <div class="topo-col-label">Usuarios (${users.length})</div>
+                        ${users.map((u,i) => `
+                            <div class="topo-node" id="u${i}" data-type="u" data-key="${safe(u.username.toLowerCase())}" onmouseenter="hNode(this)" onmouseleave="cHover()">
+                                <div class="topo-icon icon-u">${(u.real_name||'U').slice(0,1)}</div>
+                                <div class="node-info"><div class="node-title">${safe(u.real_name||u.username)}</div><div class="node-sub">${safe(u.username)}</div></div>
+                                <div style="position:absolute; right:-5px; width:8px; height:8px; background:#3b82f6; border-radius:50%; border:2px solid #fff;"></div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <!-- PCs -->
+                    <div class="topo-col">
+                        <div class="topo-col-label">Equipos (${pcs.length})</div>
+                        ${pcs.map((p,i) => {
+                            const lu = (p.last_user||'').split('\\').pop().toLowerCase();
+                            return `
+                            <div class="topo-node" id="pc${i}" data-type="pc" data-pc="${safe(p.pc_name)}" data-lu="${safe(lu)}" onmouseenter="hNode(this)" onmouseleave="cHover()">
+                                <div style="position:absolute; left:-5px; width:8px; height:8px; background:#06b6d4; border-radius:50%; border:2px solid #fff;"></div>
+                                <div class="topo-icon icon-pc"><i class="bi bi-pc-display"></i></div>
+                                <div class="node-info"><div class="node-title">${safe(p.pc_name)}</div><div class="node-sub">${safe(p.ip_address)}</div></div>
+                                <div style="position:absolute; right:-5px; width:8px; height:8px; background:#8b5cf6; border-radius:50%; border:2px solid #fff;"></div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+
+                    <!-- Impresoras -->
+                    <div class="topo-col">
+                        <div class="topo-col-label">Impresoras (${printers.length})</div>
+                        ${printers.map((pr,i) => {
+                            const ass = JSON.stringify((pr.assignments||[]).map(a=>a.pc_name)).replace(/"/g,'&quot;');
+                            const isExt = param && pr.physical_fuero !== decodeURIComponent(param);
+                            return `
+                            <div class="topo-node" id="pr${i}" data-type="pr" data-ass="${ass}" onmouseenter="hNode(this)" onmouseleave="cHover()" ${isExt ? 'style="border-style:dashed; opacity:0.8;"' : ''}>
+                                <div style="position:absolute; left:-5px; width:8px; height:8px; background:#8b5cf6; border-radius:50%; border:2px solid #fff;"></div>
+                                <div class="topo-icon icon-pr"><i class="bi bi-printer"></i></div>
+                                <div class="node-info"><div class="node-title">${safe(pr.ip_address)}</div><div class="node-sub">${safe((pr.brand_model||'').slice(0,25))}</div></div>
+                                ${isExt ? `<span class="badge bg-warning text-dark" style="font-size:0.5rem; position:absolute; right:5px; top:2px;">Red</span>` : ''}
+                            </div>`;
+                        }).join('')}
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-    </main>
+            </div>`;
+
+            document.getElementById('topoTarget').innerHTML = html;
+            
+            // Build Maps and Draw
+            setTimeout(() => {
+                userToPc = {}; pcToPr = {}; pcIdMap = {};
+                document.querySelectorAll('[data-type="pc"]').forEach(el => pcIdMap[el.dataset.pc] = el.id);
+                document.querySelectorAll('[data-type="u"]').forEach(uEl => {
+                    userToPc[uEl.id] = [];
+                    document.querySelectorAll('[data-type="pc"]').forEach(pcEl => { if(pcEl.dataset.lu === uEl.dataset.key) userToPc[uEl.id].push(pcEl.id); });
+                });
+                document.querySelectorAll('[data-type="pr"]').forEach(prEl => {
+                    let a = []; try { a = JSON.parse(prEl.dataset.ass||'[]'); } catch(e){}
+                    a.forEach(pcn => { const pid = pcIdMap[pcn]; if(pid) { (pcToPr[pid] = pcToPr[pid]||[]).push(prEl.id); } });
+                });
+                requestAnimationFrame(drawLines);
+            }, 50);
+        }
+
+        function drawLines() {
+            const svg = document.getElementById('svg'); if(!svg) return;
+            const can = document.getElementById('canvas'); const cr = can.getBoundingClientRect();
+            const getPos = id => { const el = document.getElementById(id); const r = el.getBoundingClientRect(); return { y: r.top-cr.top+r.height/2, xL: r.left-cr.left, xR: r.left-cr.left+r.width }; };
+
+            Object.entries(userToPc).forEach(([uid, pids]) => {
+                const uPos = getPos(uid);
+                pids.forEach(pid => {
+                    const pPos = getPos(pid);
+                    drawCurve(svg, uPos.xR, uPos.y, pPos.xL, pPos.y, uid, pid);
+                });
+            });
+            Object.entries(pcToPr).forEach(([pid, prids]) => {
+                const pPos = getPos(pid);
+                prids.forEach(prid => {
+                    const prPos = getPos(prid);
+                    drawCurve(svg, pPos.xR, pPos.y, prPos.xL, prPos.y, pid, prid);
+                });
+            });
+        }
+
+        function drawCurve(svg, x1, y1, x2, y2, f, t) {
+            const cp = Math.max(30, Math.abs(x2-x1)*0.4);
+            const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+            p.setAttribute('d', `M${x1},${y1} C${x1+cp},${y1} ${x2-cp},${y2} ${x2},${y2}`);
+            p.setAttribute('class', 'path-line'); p.dataset.f = f; p.dataset.t = t;
+            svg.appendChild(p);
+        }
+
+        function hNode(el) {
+            const rel = new Set([el.id]);
+            if(el.dataset.type === 'u') { (userToPc[el.id]||[]).forEach(pid => { rel.add(pid); (pcToPr[pid]||[]).forEach(prid=>rel.add(prid)); }); }
+            else if(el.dataset.type === 'pc') { Object.entries(userToPc).forEach(([u,ps])=>{if(ps.includes(el.id)) rel.add(u);}); (pcToPr[el.id]||[]).forEach(p=>rel.add(p)); }
+            else if(el.dataset.type === 'pr') { Object.entries(pcToPr).forEach(([p,prs])=>{if(prs.includes(el.id)) { rel.add(p); Object.entries(userToPc).forEach(([u,ps])=>{if(ps.includes(p)) rel.add(u);}); }}); }
+            
+            document.querySelectorAll('.topo-node').forEach(n => { n.classList.toggle('dimmed', !rel.has(n.id)); n.classList.toggle('highlighted', rel.has(n.id)); });
+            document.querySelectorAll('.path-line').forEach(p => p.classList.toggle('path-active', rel.has(p.dataset.f) && rel.has(p.dataset.t)));
+        }
+
+        function cHover() {
+            document.querySelectorAll('.topo-node').forEach(n => n.classList.remove('dimmed','highlighted'));
+            document.querySelectorAll('.path-line').forEach(p => p.classList.remove('path-active'));
+        }
+
+        function filterList(q) {
+            const low = q.toLowerCase();
+            document.querySelectorAll('.fuero-item').forEach(item => {
+                const txt = item.querySelector('.fuero-name').textContent.toLowerCase();
+                item.style.display = txt.includes(low) ? 'flex' : 'none';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const first = document.querySelector('.fuero-item:not([style*="display: none"])');
+            if(first) first.click();
+        });
+    </script>
 </body>
 </html>

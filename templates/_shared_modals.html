@@ -78,299 +78,338 @@
     </div>
 </div>
 
-<!-- Modal Gestión de Usuarios y Teléfonos -->
+<!-- Modal Gestión de Usuarios -->
 <div class="modal fade" id="usersModal" tabindex="-1" aria-labelledby="usersModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="usersModalLabel">Gestión de Usuarios y Teléfonos</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted small">Aquí administras dos cosas distintas: acceso interno al sistema y teléfonos del directorio institucional.</p>
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
 
-                <!-- Alertas dentro del modal -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                <div class="mb-3">
-                    {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show shadow-sm small py-2" role="alert" style="border-radius: 8px;">
-                        <i class="bi bi-exclamation-circle-fill me-2"></i> {{ message }}
-                        <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% endwith %}
-
-                <div class="users-panel-card border-warning mb-4">
-                    <div class="card-header bg-warning-subtle d-flex justify-content-between align-items-center">
+            <!-- Header moderno con gradiente y tabs -->
+            <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 0;">
+                <div style="padding: 20px 24px 0; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.12); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.15);">
+                            <i class="bi bi-people-fill" style="color: #fff; font-size: 1.1rem;"></i>
+                        </div>
                         <div>
-                            <span class="section-kicker">Acceso interno</span>
-                            <strong>Usuarios del sistema</strong>
-                            <div class="small text-muted">Modo actual: {{ auth_mode_label }}. Crea tu usuario poderoso y luego elimina al inicial `administrador`.</div>
-                        </div>
-                        <span class="badge text-bg-dark">Sesión: {{ current_user.display_name or current_user.username }}</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="row align-items-center mb-3">
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm mb-0">
-                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-person-search"></i></span>
-                                    <input type="text" id="sysUserSearchInput" class="form-control border-start-0" placeholder="Buscar en usuarios del sistema..." onkeyup="filterSysUsersList()">
-                                </div>
+                            <h5 class="modal-title mb-0 fw-bold text-white" id="usersModalLabel" style="font-size: 1.05rem; letter-spacing: -0.02em;">Gestión de Usuarios</h5>
+                            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 2px;">
+                                Modo: <strong style="color: rgba(255,255,255,0.8);">{{ auth_mode_label }}</strong>
+                                &nbsp;·&nbsp; Sesión: <strong style="color: rgba(255,255,255,0.8);">{{ current_user.display_name or current_user.username }}</strong>
                             </div>
-                            <div class="col-md-6 text-end">
-                                <span class="badge text-bg-dark">Sesión: {{ current_user.display_name or current_user.username }}</span>
-                            </div>
-                        </div>
-                        <form action="{{ url_for('dashboard.create_app_user') }}" method="POST" class="row g-2 align-items-end mb-4 p-3 bg-light rounded-3 shadow-sm border" id="appUserForm">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="is_edit_mode" id="isEditMode" value="0">
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted mb-1">Usuario</label>
-                                <input type="text" name="username" id="appUsername" class="form-control" placeholder="Ej: tuusuario" required onkeyup="checkDuplicateUser()">
-                                <div id="userDuplicateWarning" class="text-danger small mt-1 d-none">
-                                    <i class="bi bi-x-circle me-1"></i> El nombre ya está en uso.
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted mb-1">Nombre visible</label>
-                                <input type="text" name="display_name" id="appDisplayName" class="form-control" placeholder="Ej: Juan Perez">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted mb-1">Rol</label>
-                                <select name="role" id="appRole" class="form-select">
-                                    <option value="tecnico">Técnico</option>
-                                    <option value="administrador">Administrador</option>
-                                    <option value="operador">Operador</option>
-                                    <option value="infraestructura">Infraestructura</option>
-                                    <option value="consulta">Consulta/Directorio</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted mb-1">Clave</label>
-                                <div class="input-group">
-                                    <input type="password" name="password" id="appPassword" class="form-control" placeholder="Clave para el usuario" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
-                                    <button class="btn btn-outline-secondary" type="button" id="toggleAppPassword" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted mb-1">Nombre Técnico (Móvil)</label>
-                                <input type="text" name="technician_name" id="appTechName" class="form-control" placeholder="Ej: Juan P.">
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label small text-muted mb-1">Teléfono</label>
-                                <input type="text" name="phone" id="appPhone" class="form-control" placeholder="Ej: 4444">
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-check mt-4">
-                                    <input class="form-check-input" type="checkbox" name="is_superuser" id="newIsSuperuser">
-                                    <label class="form-check-label" for="newIsSuperuser">Superusuario</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="is_active" id="newIsActive" checked>
-                                    <label class="form-check-label" for="newIsActive">Activo</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="must_change_password" id="newMustChangePassword">
-                                    <label class="form-check-label" for="newMustChangePassword">Cambio forzado</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small text-muted mb-1">Permisos</label>
-                                <div class="d-flex flex-wrap gap-3 mt-1">
-                                    <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_dashboard" id="permDashboard"><label class="form-check-label" for="permDashboard">Dashboard</label></div>
-                                    <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_mobile" id="permMobile" checked><label class="form-check-label" for="permMobile">Mobile</label></div>
-                                    <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_infrastructure" id="permInfrastructure"><label class="form-check-label" for="permInfrastructure">Infra/Stock</label></div>
-                                    <div class="form-check"><input class="form-check-input" type="checkbox" name="perm_reports" id="permReports"><label class="form-check-label" for="permReports">Reportes</label></div>
-                                </div>
-                            </div>
-                            <div class="col-md-2 d-grid">
-                                <button type="submit" class="btn btn-warning" id="btnSubmitAppUser">Guardar</button>
-                            </div>
-                        </form>
-
-                        <div class="table-responsive" style="overflow: visible;">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Usuario</th>
-                                        <th>Nombre</th>
-                                        <th>Clave</th>
-                                        <th>Teléfono</th>
-                                        <th>Rol</th>
-                                        <th>Accesos</th>
-                                        <th>Estado</th>
-                                        <th class="text-end">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for app_user in app_users_list %}
-                                    <tr class="sys-user-item {{ 'table-warning' if not app_user.is_active else '' }}">
-                                        <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <code>{{ app_user.username }}</code>
-                                                {% if ad_usernames and app_user.username in ad_usernames %}
-                                                <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle" style="font-size: 0.6rem; padding: 1px 6px;" title="Usuario vinculado a Active Directory">
-                                                    <i class="bi bi-windows"></i> AD
-                                                </span>
-                                                {% else %}
-                                                <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle" style="font-size: 0.6rem; padding: 1px 6px;" title="Usuario local del sistema">
-                                                    <i class="bi bi-person-lock"></i> Local
-                                                </span>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                        <td class="sys-user-display-name">{{ app_user.display_name or '-' }}</td>
-                                        <td>
-                                            <span class="password-stars" title="Las claves están cifradas.">••••••••</span>
-                                        </td>
-                                        <td><small class="text-muted">{{ app_user.phone or '-' }}</small></td>
-                                        <td>
-                                            <div class="dropdown d-inline-block">
-                                                {% if app_user.is_superuser %}
-                                                    <span class="badge text-bg-danger px-2 py-1" style="cursor: default;"><i class="bi bi-shield-check me-1"></i>Superusuario</span>
-                                                {% else %}
-                                                    <button class="btn btn-xs btn-outline-secondary dropdown-toggle py-0 px-1 d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" style="font-size: 0.7rem;">
-                                                        <i class="bi bi-person-gear"></i> {{ (app_user.role or 'tecnico') | capitalize }}
-                                                    </button>
-                                                    <ul class="dropdown-menu shadow-lg border-0" style="font-size: 0.8rem; border-radius: 10px; z-index: 1060;">
-                                                        <li><h6 class="dropdown-header text-uppercase opacity-50" style="font-size: 0.65rem;">Cambiar Rol a {{ app_user.username }}</h6></li>
-                                                        <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'tecnico', {{ 'true' if app_user.is_superuser else 'false' }})"><i class="bi bi-phone me-2 text-primary"></i>Técnico (Solo Móvil)</button></li>
-                                                        <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'operador', {{ 'true' if app_user.is_superuser else 'false' }})"><i class="bi bi-display me-2 text-success"></i>Operador (Dashboard)</button></li>
-                                                        <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'administrador', {{ 'true' if app_user.is_superuser else 'false' }})"><i class="bi bi-shield-lock me-2 text-warning"></i>Administrador</button></li>
-                                                        <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'infraestructura', {{ 'true' if app_user.is_superuser else 'false' }})"><i class="bi bi-hdd-network me-2 text-info"></i>Infraestructura</button></li>
-                                                        <li><hr class="dropdown-divider"></li>
-                                                        <li><button class="dropdown-item py-2 text-danger fw-bold" onclick="quickPromote('{{ app_user.username }}', 'superuser', false)"><i class="bi bi-lightning-charge-fill me-2"></i>Hacer Superusuario</button></li>
-                                                    </ul>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {% if app_user.can_access_dashboard %}<span class="access-pill"><i class="bi bi-grid"></i>Dash</span>{% endif %}
-                                            {% if app_user.can_access_mobile %}<span class="access-pill"><i class="bi bi-phone"></i>Mob</span>{% endif %}
-                                            {% if app_user.can_access_infrastructure %}<span class="access-pill"><i class="bi bi-hdd-network"></i>Infra</span>{% endif %}
-                                            {% if app_user.can_access_reports %}<span class="access-pill"><i class="bi bi-file-earmark-bar-graph"></i>Rep</span>{% endif %}
-                                        </td>
-                                        <td>
-                                            {% if app_user.is_active %}
-                                                <span class="badge text-bg-success">Activo</span>
-                                            {% else %}
-                                                {% if ad_usernames and app_user.username in ad_usernames %}
-                                                    <span class="badge text-bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Pendiente</span>
-                                                {% else %}
-                                                    <span class="badge text-bg-secondary">Inactivo</span>
-                                                {% endif %}
-                                            {% endif %}
-                                        </td>
-
-                                        <td class="text-end">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" 
-                                                    data-user='{{ app_user|tojson|safe }}'
-                                                    onclick="editAppUser(JSON.parse(this.getAttribute('data-user')))">Editar / Aprobar</button>
-                                            {% if app_user.username != current_user.username %}
-                                            <form action="{{ url_for('dashboard.remove_app_user', user_id=app_user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar al usuario {{ app_user.username }}?')">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                                            </form>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
                         </div>
                     </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
                 </div>
 
-                <div class="users-panel-card border-primary">
-                    <div class="card-header bg-primary-subtle">
-                        <span class="section-kicker">Directorio institucional</span>
-                        <strong>Usuarios AD y teléfonos</strong>
-                    </div>
-                    <div class="card-body">
-                        <div class="search-shell mb-3">
-                            <i class="bi bi-search"></i>
-                            <input type="text" id="userSearchInput" class="form-control" placeholder="Buscar usuario..." onkeyup="filterUsersList()">
-                        </div>
+                <!-- Tabs de navegación -->
+                <div style="display: flex; gap: 4px; padding: 12px 24px 0; margin-top: 4px;">
+                    <button class="um-tab-btn active" onclick="switchUsersTab('tab-sistema', this)" id="btnTabSistema">
+                        <i class="bi bi-shield-lock"></i> Acceso al Sistema
+                    </button>
+                    <button class="um-tab-btn" onclick="switchUsersTab('tab-directorio', this)" id="btnTabDirectorio">
+                        <i class="bi bi-building"></i> Directorio Institucional
+                    </button>
+                </div>
+            </div>
 
-                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                            <table class="table table-sm table-hover align-middle" id="usersTableList">
-                                <thead class="table-light sticky-top">
-                                    <tr>
-                                        <th>Usuario AD</th>
-                                        <th>Nombre Real</th>
-                                        <th>Teléfono IP</th>
-                                        <th>Fuero</th>
-                                        <th class="text-end">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for user in directorio_filtrado %}
-                                    <tr class="user-item" style="cursor: pointer;" onclick="prefillAppUser('{{ user.username|e }}', '{{ user.real_name|e }}')" title="Clic para usar estos datos en el formulario de arriba">
-                                        <td class="username-cell"><code>{{ user.username }}</code></td>
-                                        <td class="realname-cell fw-bold">{{ user.real_name }}</td>
-                                        <td>{{ user.phone or '-' }}</td>
-                                        <td>{{ user.fuero or '-' }}</td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-primary" 
-                                                    data-username="{{ user.username|e }}"
-                                                    data-realname="{{ user.real_name|e }}"
-                                                    data-phone="{{ (user.phone or '')|e }}"
-                                                    data-fuero="{{ (user.fuero or '')|e }}"
-                                                    onclick="event.stopPropagation(); openUserPhoneEdit(this.dataset.username, this.dataset.realname, this.dataset.phone, this.dataset.fuero)">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
+            <!-- Alertas flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div style="padding: 12px 20px 0;">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show py-2 small" role="alert" style="border-radius: 10px; margin-bottom: 8px;">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i> {{ message }}
+                    <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
 
-                        <div id="userPhoneEditFormContainer" class="card mt-3 border-primary d-none">
-                            <div class="card-header bg-primary text-white py-2">
-                                <span class="fw-bold fs-6">Actualizar Teléfono</span>
-                                <button type="button" class="btn-close btn-close-white float-end" onclick="closeUserPhoneEdit()"></button>
+            <div class="modal-body" style="padding: 20px; background: #f8fafc;">
+
+                <!-- ====== TAB: SISTEMA ====== -->
+                <div id="tab-sistema" class="um-tab-panel">
+
+                    <!-- Panel de edición/creación colapsable -->
+                    <div class="um-form-panel" id="umFormPanel">
+                        <div class="um-form-panel-header" onclick="toggleUserForm()">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="um-form-icon" id="umFormIcon">
+                                    <i class="bi bi-person-plus-fill"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold" id="umFormTitle" style="font-size: 0.9rem;">Nuevo Usuario</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">Haz clic para expandir el formulario</div>
+                                </div>
                             </div>
-                            <div class="card-body py-2">
-                                <form action="{{ url_for('dashboard.update_user_phone') }}" method="POST" class="row gx-1 align-items-center">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="old_username" id="editOldUsername">
-                                    <div class="col-sm-2">
-                                        <input type="text" name="username" id="editUsername" class="form-control form-control-sm" placeholder="Usuario AD" readonly>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span id="umFormResetBtn" class="um-reset-btn d-none" onclick="event.stopPropagation(); resetUserForm()">
+                                    <i class="bi bi-x-circle me-1"></i>Cancelar edición
+                                </span>
+                                <i class="bi bi-chevron-down um-chevron" id="umChevron"></i>
+                            </div>
+                        </div>
+
+                        <div id="umFormBody" class="um-form-body" style="display: none;">
+                            <form action="{{ url_for('dashboard.create_app_user') }}" method="POST" id="appUserForm">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="is_edit_mode" id="isEditMode" value="0">
+
+                                <div class="um-form-grid">
+                                    <div class="um-field">
+                                        <label class="um-label">Usuario</label>
+                                        <input type="text" name="username" id="appUsername" class="form-control" placeholder="ej: jperez" required onkeyup="checkDuplicateUser()">
+                                        <div id="userDuplicateWarning" class="text-danger small mt-1 d-none"><i class="bi bi-x-circle me-1"></i> Ya en uso.</div>
                                     </div>
-                                    <div class="col-sm-3">
-                                        <input type="text" name="realname" id="editRealname" class="form-control form-control-sm" placeholder="Nombre completo">
+                                    <div class="um-field">
+                                        <label class="um-label">Nombre Visible</label>
+                                        <input type="text" name="display_name" id="appDisplayName" class="form-control" placeholder="ej: Juan Pérez">
                                     </div>
-                                    <div class="col-sm-2">
-                                        <input type="text" name="phone" id="editPhone" class="form-control form-control-sm" placeholder="Teléfono">
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <select name="fuero" id="editFuero" class="form-select form-select-sm">
-                                            <option value="">-- Sin Fuero --</option>
-                                            {% for name in fueros.values()|unique|sort %}
-                                            <option value="{{ name }}">{{ name }}</option>
-                                            {% endfor %}
+                                    <div class="um-field">
+                                        <label class="um-label">Rol</label>
+                                        <select name="role" id="appRole" class="form-select" onchange="applyRolePreset()">
+                                            <option value="tecnico">🔧 Técnico</option>
+                                            <option value="operador">🖥️ Operador</option>
+                                            <option value="administrador">🛡️ Administrador</option>
+                                            <option value="infraestructura">🌐 Infraestructura</option>
+                                            <option value="consulta">📋 Consulta</option>
                                         </select>
                                     </div>
-                                    <div class="col-sm-2 d-grid">
-                                        <button type="submit" class="btn btn-sm btn-success" title="Guardar Cambios">
+                                    <div class="um-field">
+                                        <label class="um-label">Contraseña</label>
+                                        <div class="input-group">
+                                            <input type="password" name="password" id="appPassword" class="form-control" placeholder="Clave del usuario">
+                                            <button class="btn btn-outline-secondary" type="button" id="toggleAppPassword"><i class="bi bi-eye"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="um-field">
+                                        <label class="um-label">Nombre en Móvil</label>
+                                        <input type="text" name="technician_name" id="appTechName" class="form-control" placeholder="ej: Juan P.">
+                                    </div>
+                                    <div class="um-field">
+                                        <label class="um-label">Teléfono Interno</label>
+                                        <input type="text" name="phone" id="appPhone" class="form-control" placeholder="ej: 4444">
+                                    </div>
+                                </div>
+
+                                <div class="um-form-footer">
+                                    <div class="um-perms-row">
+                                        <span class="um-label" style="margin-right: 8px;">Permisos:</span>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_dashboard" id="permDashboard"><span><i class="bi bi-grid"></i> Dashboard</span></label>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_mobile" id="permMobile" checked><span><i class="bi bi-phone"></i> Móvil</span></label>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_infrastructure" id="permInfrastructure"><span><i class="bi bi-hdd-network"></i> Infra</span></label>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_reports" id="permReports"><span><i class="bi bi-file-bar-graph"></i> Reportes</span></label>
+                                    </div>
+                                    <div class="um-flags-row">
+                                        <label class="um-flag-chip"><input type="checkbox" name="is_superuser" id="newIsSuperuser" onchange="applyRolePreset()"><span><i class="bi bi-lightning-fill text-warning"></i> Superusuario</span></label>
+                                        <label class="um-flag-chip"><input type="checkbox" name="is_active" id="newIsActive" checked><span><i class="bi bi-check-circle-fill text-success"></i> Activo</span></label>
+                                        <label class="um-flag-chip"><input type="checkbox" name="must_change_password" id="newMustChangePassword"><span><i class="bi bi-key text-secondary"></i> Cambio forzado</span></label>
+                                        <button type="submit" class="btn btn-sm ms-auto" id="btnSubmitAppUser" style="background: linear-gradient(135deg, #334155, #1e293b); color: #fff; border: none; padding: 6px 20px; border-radius: 8px; font-weight: 700;">
                                             <i class="bi bi-floppy me-1"></i> Guardar
                                         </button>
                                     </div>
-                                </form>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Buscador -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                        <div class="input-group input-group-sm" style="max-width: 340px;">
+                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0;"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="sysUserSearchInput" class="form-control" placeholder="Buscar usuario..." onkeyup="filterSysUsersList()" style="border-color: #e2e8f0; border-left: none;">
+                        </div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center; margin-left: 4px;">{{ app_users_list | length }} usuarios registrados</span>
+                    </div>
+
+                    <!-- Grid de tarjetas de usuarios -->
+                    <div class="um-users-grid">
+                        {% for app_user in app_users_list %}
+                        {% set is_ad = ad_usernames and app_user.username in ad_usernames %}
+                        {% set initials = (app_user.display_name or app_user.username)[:2] | upper %}
+                        <div class="um-user-card sys-user-item {{ 'um-user-pending' if not app_user.is_active else '' }}" data-username="{{ app_user.username }}" data-displayname="{{ app_user.display_name or '' }}">
+                            
+                            <!-- Avatar + Info -->
+                            <div class="um-user-card-top">
+                                <div class="um-avatar {{ 'um-avatar-super' if app_user.is_superuser else ('um-avatar-ad' if is_ad else 'um-avatar-local') }}">
+                                    {{ initials }}
+                                    {% if is_ad %}<span class="um-avatar-badge um-badge-ad"><i class="bi bi-windows"></i></span>
+                                    {% else %}<span class="um-avatar-badge um-badge-local"><i class="bi bi-person-lock"></i></span>{% endif %}
+                                </div>
+                                <div class="um-user-info">
+                                    <div class="um-user-name">{{ app_user.display_name or app_user.username }}</div>
+                                    <code class="um-user-code">{{ app_user.username }}</code>
+                                </div>
+                                <!-- Estado badge -->
+                                <div class="ms-auto">
+                                    {% if app_user.is_active %}
+                                        <span class="um-status-badge um-status-active"><i class="bi bi-check-circle-fill"></i> Activo</span>
+                                    {% elif is_ad %}
+                                        <span class="um-status-badge um-status-pending"><i class="bi bi-clock-history"></i> Pendiente</span>
+                                    {% else %}
+                                        <span class="um-status-badge um-status-inactive"><i class="bi bi-pause-circle"></i> Inactivo</span>
+                                    {% endif %}
+                                </div>
                             </div>
+
+                            <!-- Rol + Accesos -->
+                            <div class="um-user-card-mid">
+                                <div class="um-role-section">
+                                    <div class="dropdown">
+                                        {% if app_user.is_superuser %}
+                                            <span class="um-role-chip um-role-super"><i class="bi bi-shield-fill-check me-1"></i>Superusuario</span>
+                                        {% else %}
+                                            <button class="um-role-chip um-role-{{ app_user.role or 'tecnico' }} dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">
+                                                {% if app_user.role == 'administrador' %}<i class="bi bi-shield-lock me-1"></i>
+                                                {% elif app_user.role == 'operador' %}<i class="bi bi-display me-1"></i>
+                                                {% elif app_user.role == 'infraestructura' %}<i class="bi bi-hdd-network me-1"></i>
+                                                {% elif app_user.role == 'consulta' %}<i class="bi bi-book me-1"></i>
+                                                {% else %}<i class="bi bi-phone me-1"></i>{% endif %}
+                                                {{ (app_user.role or 'tecnico') | capitalize }}
+                                            </button>
+                                            <ul class="dropdown-menu shadow-lg border-0" style="font-size: 0.8rem; border-radius: 10px; z-index: 1060; min-width: 200px;">
+                                                <li><h6 class="dropdown-header text-uppercase opacity-50" style="font-size: 0.6rem;">Cambiar rol — {{ app_user.username }}</h6></li>
+                                                <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'tecnico', false)"><i class="bi bi-phone me-2 text-primary"></i>Técnico (Solo Móvil)</button></li>
+                                                <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'operador', false)"><i class="bi bi-display me-2 text-success"></i>Operador (Dashboard)</button></li>
+                                                <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'administrador', false)"><i class="bi bi-shield-lock me-2 text-warning"></i>Administrador</button></li>
+                                                <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'infraestructura', false)"><i class="bi bi-hdd-network me-2 text-info"></i>Infraestructura</button></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><button class="dropdown-item py-2 text-danger fw-bold" onclick="quickPromote('{{ app_user.username }}', 'superuser', false)"><i class="bi bi-lightning-charge-fill me-2"></i>Hacer Superusuario</button></li>
+                                            </ul>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="um-access-pills">
+                                    {% if app_user.can_access_dashboard %}<span class="um-access-dot" title="Dashboard"><i class="bi bi-grid-fill"></i></span>{% endif %}
+                                    {% if app_user.can_access_mobile %}<span class="um-access-dot" title="Móvil"><i class="bi bi-phone-fill"></i></span>{% endif %}
+                                    {% if app_user.can_access_infrastructure %}<span class="um-access-dot" title="Infraestructura"><i class="bi bi-hdd-network-fill"></i></span>{% endif %}
+                                    {% if app_user.can_access_reports %}<span class="um-access-dot" title="Reportes"><i class="bi bi-file-earmark-bar-graph-fill"></i></span>{% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Acciones -->
+                            <div class="um-user-card-actions">
+                                <button class="um-action-btn um-action-edit" 
+                                        data-user='{{ app_user|tojson|safe }}'
+                                        onclick="editAppUser(JSON.parse(this.getAttribute('data-user')))">
+                                    <i class="bi bi-pencil-fill"></i> Editar
+                                </button>
+                                {% if not is_ad %}
+                                <button class="um-action-btn um-action-key" onclick="openResetPasswordModal('{{ app_user.username }}')">
+                                    <i class="bi bi-key-fill"></i> Clave
+                                </button>
+                                {% endif %}
+                                {% if app_user.username != current_user.username %}
+                                <form action="{{ url_for('dashboard.remove_app_user', user_id=app_user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar a {{ app_user.username }}? Esta acción no se puede deshacer.')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="um-action-btn um-action-delete"><i class="bi bi-trash3-fill"></i></button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- ====== TAB: DIRECTORIO ====== -->
+                <div id="tab-directorio" class="um-tab-panel" style="display: none;">
+                    <div class="um-form-panel" style="margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%); border-radius: 12px; color: #fff;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span style="font-size: 0.82rem;">El directorio contiene los teléfonos y fueros de los usuarios de AD. Haz clic en una fila para pre-cargar sus datos en el formulario de acceso.</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                        <div class="input-group input-group-sm" style="max-width: 340px;">
+                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0;"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="userSearchInput" class="form-control" placeholder="Buscar en directorio..." onkeyup="filterUsersList()" style="border-color: #e2e8f0; border-left: none;">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <table class="table table-sm table-hover align-middle mb-0" id="usersTableList" style="font-size: 0.85rem;">
+                            <thead style="background: #334155; color: #fff; position: sticky; top: 0; z-index: 2;">
+                                <tr>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Usuario AD</th>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Nombre Real</th>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Teléfono</th>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Fuero</th>
+                                    <th style="padding: 10px 14px; text-align: right; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Editar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in directorio_filtrado %}
+                                <tr class="user-item" style="cursor: pointer;" onclick="prefillAppUser('{{ user.username|e }}', '{{ user.real_name|e }}')" title="Clic para usar en formulario de acceso">
+                                    <td class="username-cell" style="padding: 9px 14px;"><code style="background: #f1f5f9; padding: 2px 7px; border-radius: 5px; color: #0369a1; font-size: 0.8rem;">{{ user.username }}</code></td>
+                                    <td class="realname-cell" style="padding: 9px 14px; font-weight: 600;">{{ user.real_name }}</td>
+                                    <td style="padding: 9px 14px; color: #64748b;">{{ user.phone or '—' }}</td>
+                                    <td style="padding: 9px 14px;">
+                                        {% if user.fuero %}
+                                        <span style="background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600;">{{ user.fuero }}</span>
+                                        {% else %}<span style="color: #cbd5e1;">—</span>{% endif %}
+                                    </td>
+                                    <td style="padding: 9px 14px; text-align: right;">
+                                        <button class="btn btn-xs btn-outline-primary py-0 px-2" 
+                                                data-username="{{ user.username|e }}"
+                                                data-realname="{{ user.real_name|e }}"
+                                                data-phone="{{ (user.phone or '')|e }}"
+                                                data-fuero="{{ (user.fuero or '')|e }}"
+                                                onclick="event.stopPropagation(); openUserPhoneEdit(this.dataset.username, this.dataset.realname, this.dataset.phone, this.dataset.fuero)">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Form de edición de teléfono inline -->
+                    <div id="userPhoneEditFormContainer" class="d-none" style="margin-top: 16px; background: #fff; border: 1.5px solid #0369a1; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(3,105,161,0.12);">
+                        <div style="background: linear-gradient(135deg, #0369a1, #0284c7); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <span class="fw-bold text-white" style="font-size: 0.88rem;"><i class="bi bi-pencil-square me-2"></i>Actualizar datos del usuario</span>
+                            <button type="button" class="btn-close btn-close-white btn-sm" onclick="closeUserPhoneEdit()"></button>
+                        </div>
+                        <div style="padding: 14px 16px;">
+                            <form action="{{ url_for('dashboard.update_user_phone') }}" method="POST" class="row g-2 align-items-end">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="old_username" id="editOldUsername">
+                                <div class="col-sm-2">
+                                    <label class="um-label">Usuario</label>
+                                    <input type="text" name="username" id="editUsername" class="form-control form-control-sm" placeholder="Usuario AD" readonly style="background: #f8fafc;">
+                                </div>
+                                <div class="col-sm-3">
+                                    <label class="um-label">Nombre Completo</label>
+                                    <input type="text" name="realname" id="editRealname" class="form-control form-control-sm" placeholder="Nombre completo">
+                                </div>
+                                <div class="col-sm-2">
+                                    <label class="um-label">Teléfono IP</label>
+                                    <input type="text" name="phone" id="editPhone" class="form-control form-control-sm" placeholder="Ej: 4321">
+                                </div>
+                                <div class="col-sm-3">
+                                    <label class="um-label">Fuero / Área</label>
+                                    <select name="fuero" id="editFuero" class="form-select form-select-sm">
+                                        <option value="">-- Sin Fuero --</option>
+                                        {% for name in fueros.values()|unique|sort %}
+                                        <option value="{{ name }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-sm-2">
+                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                        <i class="bi bi-floppy me-1"></i> Guardar
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
 
-            </div>
-        </div>
-    </div>
+            </div><!-- /.modal-body -->
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
 </div>
 
 <!-- Modal Reportes Rápidos -->
@@ -800,8 +839,199 @@
     });
 </script>
 
+<!-- Estilos del nuevo modal de usuarios -->
+<style>
+/* ── Tabs ── */
+.um-tab-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 10px 10px 0 0; border: none;
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
+    font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+    border-bottom: 2px solid transparent;
+}
+.um-tab-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
+.um-tab-btn.active { background: rgba(255,255,255,0.18); color: #fff; border-bottom-color: #f59e0b; }
+
+/* ── Form Panel ── */
+.um-form-panel {
+    background: #fff; border-radius: 14px; border: 1.5px solid #e2e8f0;
+    margin-bottom: 20px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.um-form-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; cursor: pointer; transition: background 0.15s;
+    user-select: none;
+}
+.um-form-panel-header:hover { background: #f8fafc; }
+.um-form-icon {
+    width: 36px; height: 36px; background: linear-gradient(135deg, #334155, #1e293b);
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1rem; flex-shrink: 0;
+}
+.um-form-icon.editing { background: linear-gradient(135deg, #b45309, #f59e0b); }
+.um-chevron { color: #94a3b8; transition: transform 0.25s; font-size: 0.9rem; }
+.um-chevron.open { transform: rotate(180deg); }
+.um-reset-btn {
+    font-size: 0.75rem; color: #ef4444; cursor: pointer; padding: 3px 10px;
+    border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca;
+    transition: all 0.15s; font-weight: 600;
+}
+.um-reset-btn:hover { background: #fee2e2; }
+
+.um-form-body { padding: 16px 18px; border-top: 1px solid #f0f4f8; }
+.um-form-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin-bottom: 14px;
+}
+.um-field {}
+.um-label { font-size: 0.75rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.um-form-footer { background: #f8fafc; border-radius: 10px; padding: 12px 14px; border: 1px solid #e2e8f0; }
+.um-perms-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.um-flags-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+.um-perm-chip input, .um-flag-chip input { display: none; }
+.um-perm-chip span, .um-flag-chip span {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 11px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+    border: 1.5px solid #e2e8f0; background: #fff; color: #475569;
+    cursor: pointer; transition: all 0.18s; user-select: none;
+}
+.um-perm-chip span:hover, .um-flag-chip span:hover { border-color: #94a3b8; background: #f8fafc; }
+.um-perm-chip input:checked + span { background: #1e293b; color: #fff; border-color: #1e293b; }
+.um-flag-chip input:checked + span { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+
+/* ── Grid de usuarios ── */
+.um-users-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px;
+}
+.um-user-card {
+    background: #fff; border-radius: 14px; border: 1.5px solid #e2e8f0;
+    padding: 14px 16px; transition: all 0.2s; display: flex; flex-direction: column; gap: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.um-user-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.um-user-card.um-user-pending { border-color: #fde68a; background: #fffbeb; }
+
+.um-user-card-top { display: flex; align-items: center; gap: 10px; }
+.um-avatar {
+    width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center;
+    justify-content: center; font-size: 1rem; font-weight: 800; color: #fff;
+    position: relative; flex-shrink: 0; letter-spacing: -0.02em;
+}
+.um-avatar-local { background: linear-gradient(135deg, #334155, #475569); }
+.um-avatar-ad { background: linear-gradient(135deg, #0369a1, #0284c7); }
+.um-avatar-super { background: linear-gradient(135deg, #b91c1c, #dc2626); }
+.um-avatar-badge {
+    position: absolute; bottom: -4px; right: -4px;
+    width: 18px; height: 18px; border-radius: 6px; font-size: 0.55rem;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; border: 2px solid #fff;
+}
+.um-badge-ad { background: #0369a1; }
+.um-badge-local { background: #475569; }
+.um-user-info { min-width: 0; }
+.um-user-name { font-weight: 700; font-size: 0.88rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.um-user-code { font-size: 0.72rem; color: #64748b; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; }
+
+.um-status-badge {
+    font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+}
+.um-status-active { background: #dcfce7; color: #16a34a; }
+.um-status-pending { background: #fef9c3; color: #a16207; }
+.um-status-inactive { background: #f1f5f9; color: #64748b; }
+
+.um-user-card-mid { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.um-role-section {}
+.um-role-chip {
+    display: inline-flex; align-items: center; font-size: 0.76rem; font-weight: 700;
+    padding: 4px 10px; border-radius: 8px; border: 1.5px solid; cursor: pointer;
+    transition: all 0.15s; background: #fff; white-space: nowrap;
+}
+.um-role-chip.dropdown-toggle::after { margin-left: 4px; }
+.um-role-tecnico { border-color: #bfdbfe; color: #1d4ed8; }
+.um-role-tecnico:hover { background: #eff6ff; }
+.um-role-administrador { border-color: #fde68a; color: #b45309; }
+.um-role-administrador:hover { background: #fffbeb; }
+.um-role-operador { border-color: #bbf7d0; color: #15803d; }
+.um-role-operador:hover { background: #f0fdf4; }
+.um-role-infraestructura { border-color: #a5f3fc; color: #0e7490; }
+.um-role-infraestructura:hover { background: #ecfeff; }
+.um-role-consulta { border-color: #e9d5ff; color: #7e22ce; }
+.um-role-consulta:hover { background: #faf5ff; }
+.um-role-super { border-color: #fecaca; color: #b91c1c; cursor: default; }
+
+.um-access-pills { display: flex; gap: 4px; align-items: center; }
+.um-access-dot {
+    width: 26px; height: 26px; border-radius: 7px; background: #f1f5f9;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; color: #475569; transition: all 0.15s;
+}
+.um-access-dot:hover { background: #e2e8f0; }
+
+.um-user-card-actions { display: flex; gap: 6px; border-top: 1px solid #f0f4f8; padding-top: 10px; }
+.um-action-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px; border-radius: 8px; font-size: 0.76rem; font-weight: 700;
+    border: 1.5px solid #e2e8f0; background: #fff; color: #475569;
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.um-action-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+.um-action-edit:hover { border-color: #334155; color: #1e293b; }
+.um-action-key { border-color: #fde68a; color: #b45309; }
+.um-action-key:hover { background: #fffbeb; border-color: #f59e0b; }
+.um-action-delete { border-color: #fecaca; color: #dc2626; padding: 5px 10px; }
+.um-action-delete:hover { background: #fef2f2; border-color: #ef4444; }
+</style>
+
 <!-- Scripts para Modales (Se incluirán una sola vez) -->
 <script>
+    // ──────────────────────────────────────────
+    //  Nuevo modal de usuarios — UI Logic
+    // ──────────────────────────────────────────
+
+    function switchUsersTab(tabId, btn) {
+        document.querySelectorAll('.um-tab-panel').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.um-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).style.display = 'block';
+        btn.classList.add('active');
+    }
+
+    let umFormOpen = false;
+    function toggleUserForm() {
+        const body = document.getElementById('umFormBody');
+        const chevron = document.getElementById('umChevron');
+        umFormOpen = !umFormOpen;
+        body.style.display = umFormOpen ? 'block' : 'none';
+        chevron.classList.toggle('open', umFormOpen);
+    }
+
+    function resetUserForm() {
+        document.getElementById('appUsername').value = '';
+        document.getElementById('appDisplayName').value = '';
+        document.getElementById('appPassword').value = '';
+        document.getElementById('appTechName').value = '';
+        document.getElementById('appPhone').value = '';
+        document.getElementById('appRole').value = 'tecnico';
+        document.getElementById('isEditMode').value = '0';
+        document.getElementById('newIsSuperuser').checked = false;
+        document.getElementById('newIsActive').checked = true;
+        document.getElementById('newMustChangePassword').checked = false;
+        document.getElementById('appUsername').readOnly = false;
+        document.getElementById('btnSubmitAppUser').innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar';
+        document.getElementById('umFormTitle').innerText = 'Nuevo Usuario';
+        document.getElementById('umFormIcon').className = 'um-form-icon';
+        document.getElementById('umFormIcon').innerHTML = '<i class="bi bi-person-plus-fill"></i>';
+        document.getElementById('umFormResetBtn').classList.add('d-none');
+        applyRolePreset();
+    }
+
+</script>
+
+<script>
+
     // Lista de usuarios detectados como AD para lógica de interfaz
     const adUsernamesSet = new Set({{ (ad_usernames|list if ad_usernames else []) | tojson | safe }});
 
@@ -915,8 +1145,16 @@
     function applyRolePreset() {
         const roleEl = document.getElementById('appRole');
         const superuserEl = document.getElementById('newIsSuperuser');
+        const activeEl = document.getElementById('newIsActive');
         if (!roleEl || !superuserEl) return;
+        
         const role = roleEl.value;
+        
+        // Auto-activar si se elige un rol (asumimos que el admin está aprobando al usuario)
+        if (activeEl && !activeEl.checked) {
+            activeEl.checked = true;
+        }
+
         if (superuserEl.checked) {
             setAccessChecks({ dashboard: true, mobile: true, infrastructure: true, reports: true });
             return;
@@ -933,7 +1171,9 @@
         document.getElementById('appPassword').value = '';
         document.getElementById('appRole').value = user.role || 'tecnico';
         document.getElementById('newIsSuperuser').checked = !!user.is_superuser;
-        document.getElementById('newIsActive').checked = !!user.is_active;
+        // Si el usuario está inactivo (especialmente si es un pendiente de AD), 
+        // lo marcamos como activo por defecto al abrir el panel para "Aprobarlo".
+        document.getElementById('newIsActive').checked = true; 
         document.getElementById('newMustChangePassword').checked = !!user.must_change_password;
         setAccessChecks({
             dashboard: !!user.can_access_dashboard,
@@ -956,8 +1196,25 @@
         }
 
         document.getElementById('isEditMode').value = '1';
-        document.getElementById('btnSubmitAppUser').innerText = 'Actualizar';
+        document.getElementById('btnSubmitAppUser').innerHTML = '<i class="bi bi-floppy me-1"></i> Actualizar';
         document.getElementById('appUsername').readOnly = true;
+
+        // Actualizar UI del panel: modo edición
+        document.getElementById('umFormTitle').innerText = 'Editando: ' + (user.display_name || user.username);
+        const icon = document.getElementById('umFormIcon');
+        icon.className = 'um-form-icon editing';
+        icon.innerHTML = '<i class="bi bi-pencil-fill"></i>';
+        document.getElementById('umFormResetBtn').classList.remove('d-none');
+
+        // Abrir el formulario si está cerrado
+        if (!umFormOpen) { toggleUserForm(); }
+
+        // Asegurar que estamos en el tab de sistema
+        const tabSistema = document.getElementById('tab-sistema');
+        if (tabSistema.style.display === 'none') {
+            switchUsersTab('tab-sistema', document.getElementById('btnTabSistema'));
+        }
+
         document.querySelector('#usersModal .modal-body').scrollTop = 0;
         usernameEl.focus();
     }
@@ -967,9 +1224,13 @@
         const usernameEl = document.getElementById('appUsername');
         if (!usernameEl) return;
         
+        // Ir al tab de sistema y abrir formulario  
+        switchUsersTab('tab-sistema', document.getElementById('btnTabSistema'));
+        if (!umFormOpen) { toggleUserForm(); }
+
         // Pre-rellenar campos de creación
         document.getElementById('isEditMode').value = '0';
-        document.getElementById('btnSubmitAppUser').innerText = 'Guardar';
+        document.getElementById('btnSubmitAppUser').innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar';
         usernameEl.readOnly = false;
         usernameEl.value = username || '';
         document.getElementById('appDisplayName').value = realname || '';
@@ -1365,4 +1626,63 @@
                     document.getElementById('printersLoading').innerHTML = `<div class="alert alert-danger m-3">Error al cargar datos: ${err}</div>`;
                 });
         }
+    </script>
+
+    <!-- Modal Restablecer Clave (Rápido) -->
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true" style="z-index: 1100;">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content shadow-lg border-warning">
+                <form action="{{ url_for('dashboard.reset_app_user_password') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="username" id="resetPassUsername">
+                    <div class="modal-header bg-warning py-2">
+                        <h6 class="modal-title fw-bold"><i class="bi bi-key-fill me-2"></i>Nueva Clave</h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body py-3">
+                        <p class="small text-muted mb-2">Usuario: <strong id="resetPassUserLabel">...</strong></p>
+                        <div class="input-group">
+                            <input type="password" name="password" id="resetPassField" class="form-control" placeholder="Escriba la nueva clave" required>
+                            <button class="btn btn-outline-secondary" type="button" id="toggleResetPass">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-warning fw-bold">Actualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openResetPasswordModal(username) {
+            document.getElementById('resetPassUsername').value = username;
+            document.getElementById('resetPassUserLabel').innerText = username;
+            document.getElementById('resetPassField').value = '';
+            
+            // Usar la instancia si ya existe o crear una nueva
+            const modalEl = document.getElementById('resetPasswordModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+            
+            setTimeout(() => {
+                const input = document.getElementById('resetPassField');
+                if (input) input.focus();
+            }, 500);
+        }
+
+        document.getElementById('toggleResetPass')?.addEventListener('click', function() {
+            const input = document.getElementById('resetPassField');
+            const icon = this.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('bi-eye', 'bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('bi-eye-slash', 'bi-eye');
+            }
+        });
     </script>
