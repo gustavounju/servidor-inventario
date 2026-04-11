@@ -38,7 +38,10 @@ def inject_tasks_kpis():
                 """).fetchone()["c"]
                 kpis['kpi_total_impresoras'] = net_pr + loc_pr
                 kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
+                # Mejoramos la consistencia del conteo de pendientes
                 kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
+                # Usuarios pendientes de aprobación (AD)
+                kpis['kpi_usuarios_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM app_users WHERE is_active = 'False'").fetchone()["c"]
         except Exception as e:
             print(f"Error in context processor KPIs (Tasks): {e}")
 
@@ -56,6 +59,39 @@ def inject_tasks_kpis():
         'client_script_fallback_url': get_public_script_fallback_url(),
         **kpis 
     }
+
+@bp_tasks.route("/api/pending_tasks")
+def api_pending_tasks():
+    """API para obtener todas las tareas pendientes para el modal global."""
+    try:
+        with get_db_connection() as conn:
+            tasks = conn.execute("""
+                SELECT t.id, t.pc_name, t.descripcion, t.solicitante, t.categoria, 
+                       t.estado, t.assigned_to, t.created_at, t.fuero,
+                       p.last_user, u.phone
+                FROM tasks t
+                LEFT JOIN pcs p ON t.pc_name = p.pc_name
+                LEFT JOIN ad_users u ON t.solicitante = u.real_name OR t.solicitante = u.username
+                WHERE t.estado != 'Hecha'
+                ORDER BY t.created_at DESC
+            """).fetchall()
+            
+            # Formatear fechas para JSON
+            result = []
+            for t in tasks:
+                d = dict(t)
+                if d['created_at']:
+                    # Formato legible: "11 Abr, 14:30"
+                    d['created_at_fmt'] = d['created_at'].strftime("%d %b, %H:%M")
+                result.append(d)
+
+            return jsonify({
+                "status": "success",
+                "tasks": result
+            })
+    except Exception as e:
+        print(f"Error en api_pending_tasks: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @bp_tasks.route("/pc/migrate_tasks", methods=["POST"])
 def migrate_generic_tasks():

@@ -1,77 +1,116 @@
 <!-- Modales Compartidos -->
 
 <!-- Modal Crear Tarea Suelta -->
+<!-- Modal Crear Tarea Suelta -->
 <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content task-modal-shell">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 950px;">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
             <form action="{{ url_for('tasks.create_loose_task') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="task-modal-hero">
-                    <h5 class="modal-title" id="createTaskModalLabel">Nueva Tarea General</h5>
-                    <p>Carga pedidos rápidos del día, asigna técnico si ya sabes a quién va y deja el fuero listo para el seguimiento.</p>
-                </div>
-                <div class="modal-header border-0 pb-0">
-                    <div class="task-mini-note">Si dejas categoría vacía, el sistema intenta detectarla automáticamente.</div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="task-form-grid">
-                        <div class="task-form-card">
-                            <div class="mb-3">
-                                <label class="form-label">Descripción</label>
-                                <textarea name="descripcion" class="form-control" rows="5" placeholder="Ej: No imprime en mesa de entradas / revisar conectividad / instalar impresora" required></textarea>
+                
+                <!-- Header moderno con gradiente -->
+                <div style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 0;">
+                    <div style="padding: 24px 28px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.12); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.15);">
+                                <i class="bi bi-plus-circle-fill" style="color: #fff; font-size: 1.2rem;"></i>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Solicitante (Quién llama)</label>
-                                <input type="text" name="solicitante" class="form-control"
-                                    placeholder="Ej: Juan Pérez / Contabilidad" 
-                                    list="usersDatalist" required autocomplete="off">
-                                <datalist id="usersDatalist">
-                                    {% for user in ad_users_list %}
-                                    <option value="{{ user.real_name }}">{{ user.username }}</option>
-                                    {% endfor %}
-                                </datalist>
+                            <div>
+                                <h5 class="modal-title mb-0 fw-bold text-white" id="createTaskModalLabel" style="font-size: 1.1rem; letter-spacing: -0.02em;">Nueva Tarea General</h5>
+                                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 3px;">
+                                    Carga pedidos rápidos del día y asigna técnicos a la bolsa global.
+                                </div>
                             </div>
                         </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                    </div>
+                </div>
 
-                        <div class="task-form-card">
-                            <div class="mb-3">
-                                <label class="form-label">Categoría</label>
-                                <select name="categoria" class="form-select">
-                                    <option value="">-- Automático --</option>
-                                    <option value="Impresoras">Impresoras</option>
-                                    <option value="Red/Conectividad">Red/Conectividad</option>
-                                    <option value="Hardware">Hardware</option>
-                                    <option value="Software">Software</option>
-                                    <option value="Usuarios">Usuarios</option>
-                                    <option value="General">General</option>
-                                </select>
+                <div class="modal-body" style="padding: 30px; background: #f8fafc;">
+                    <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                        <div class="row g-4">
+                            <!-- Columna Izquierda: Información Principal -->
+                            <div class="col-lg-7">
+                                <div class="mb-4">
+                                    <label class="um-label">Descripción del Problema</label>
+                                    <textarea name="descripcion" class="form-control" rows="6" 
+                                              style="border-radius: 12px; border-color: #e2e8f0; font-size: 0.9rem; padding: 14px;"
+                                              placeholder="Ej: El usuario no puede imprimir en mesa de entradas. El equipo parece estar offline o el driver está corrupto." required></textarea>
+                                </div>
+                                <div class="mb-0">
+                                    <label class="um-label">Solicitante (Quién realiza el pedido)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-person"></i></span>
+                                        <input type="text" name="solicitante" class="form-control"
+                                            style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;"
+                                            placeholder="Ej: Juan Pérez / Contabilidad" 
+                                            list="usersDatalist" required autocomplete="off">
+                                    </div>
+                                    <datalist id="usersDatalist">
+                                        {% for user in ad_users_list %}
+                                        <option value="{{ user.real_name }}">{{ user.username }}</option>
+                                        {% endfor %}
+                                    </datalist>
+                                    <div style="font-size: 0.7rem; color: #94a3b8; mt-2 ms-1">Puedes escribir el nombre completo o el usuario de red.</div>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Fuero / Ubicación</label>
-                                <select name="fuero" class="form-select">
-                                    <option value="">-- No Especificado --</option>
-                                    {% for name in fueros.values()|unique|sort %}
-                                    <option value="{{ name }}">{{ name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="mb-0">
-                                <label class="form-label">Asignar a Técnico (Opcional)</label>
-                                <select name="technician" class="form-select">
-                                    <option value="">-- Sin Asignar (Bolsa) --</option>
-                                    {% for tech in technicians %}
-                                    <option value="{{ tech.name }}">{{ tech.name }}</option>
-                                    {% endfor %}
-                                </select>
-                                <div class="task-mini-note mt-2">Si no asignas técnico, la tarea queda disponible en la bolsa para el equipo.</div>
+
+                            <!-- Columna Derecha: Categorización y Asignación -->
+                            <div class="col-lg-5">
+                                <div class="mb-4">
+                                    <label class="um-label">Categoría</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-tag"></i></span>
+                                        <select name="categoria" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
+                                            <option value="">-- Detección Automática --</option>
+                                            <option value="Impresoras">🖨️ Impresoras</option>
+                                            <option value="Red/Conectividad">🌐 Red / Conectividad</option>
+                                            <option value="Hardware">🔌 Hardware</option>
+                                            <option value="Software">💿 Software</option>
+                                            <option value="Usuarios">👤 Usuarios / Cuentas</option>
+                                            <option value="General">📦 General</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="um-label">Fuero / Ubicación</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-geo-alt"></i></span>
+                                        <select name="fuero" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
+                                            <option value="">-- No Especificado --</option>
+                                            {% for name in fueros.values()|unique|sort %}
+                                            <option value="{{ name }}">{{ name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-0">
+                                    <label class="um-label">Asignar a Técnico</label>
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-tools"></i></span>
+                                        <select name="technician" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
+                                            <option value="">-- Sin Asignar (Bolsa Global) --</option>
+                                            {% for tech in technicians %}
+                                            <option value="{{ tech.name }}">{{ tech.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div style="background: #eff6ff; color: #1e40af; padding: 10px; border-radius: 10px; font-size: 0.72rem; border: 1px solid #dbeafe;">
+                                        <i class="bi bi-info-circle-fill me-1"></i> Si no asignas un técnico, el sistema notificará a todo el equipo vía móvil.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+
+                <div class="modal-footer" style="padding: 16px 30px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="button" class="btn btn-link text-decoration-none text-muted fw-bold" data-bs-dismiss="modal" style="font-size: 0.85rem;">Cancelar</button>
+                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #1e293b, #334155); color: #fff; border: none; padding: 10px 32px; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s;">
+                        <i class="bi bi-send-fill me-2"></i> Crear Tarea
+                    </button>
                 </div>
             </form>
         </div>
@@ -414,61 +453,102 @@
 
 <!-- Modal Reportes Rápidos -->
 <div class="modal fade" id="reportsModal" tabindex="-1" aria-labelledby="reportsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title" id="reportsModalLabel"><i class="bi bi-file-earmark-bar-graph me-2"></i>Exportar Reportes</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 bg-light shadow-none">
-                            <div class="card-body">
-                                <h6 class="fw-bold mb-3">Reporte de Tareas</h6>
-                                <div class="mb-3">
-                                    <label class="form-label small">Fecha específica</label>
-                                    <input type="date" id="reportDate" class="form-control" value="{{ now_date }}">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label small">Filtrar por PC (Opcional)</label>
-                                    <input type="text" id="reportPcName" class="form-control" placeholder="Nombre de PC...">
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <button onclick="downloadReport('excel')" class="btn btn-success btn-sm">
-                                        <i class="bi bi-file-earmark-excel me-2"></i>Descargar Excel
-                                    </button>
-                                    <button onclick="downloadReport('pdf')" class="btn btn-danger btn-sm">
-                                        <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF
-                                    </button>
-                                </div>
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 900px;">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+            
+            <!-- Header moderno con gradiente (Esmeralda para Reportes) -->
+            <div style="background: linear-gradient(135deg, #064e3b 0%, #10b981 100%); padding: 0;">
+                <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2);">
+                            <i class="bi bi-file-earmark-bar-graph-fill" style="color: #fff; font-size: 1.2rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0 fw-bold text-white" id="reportsModalLabel" style="font-size: 1.1rem; letter-spacing: -0.02em;">Exportar Reportes</h5>
+                            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 3px;">
+                                Genera documentos Excel y PDF del estado del inventario y tareas.
                             </div>
                         </div>
                     </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                </div>
+            </div>
+
+            <div class="modal-body" style="padding: 30px; background: #f8fafc;">
+                <div class="row g-4">
+                    <!-- Card: Reporte de Tareas -->
                     <div class="col-md-6">
-                        <div class="card h-100 border-0 bg-light shadow-none">
-                            <div class="card-body">
-                                <h6 class="fw-bold mb-3">Inventario General</h6>
-                                <p class="small text-muted">Descarga el estado actual de todas las PCs activas.</p>
-                                <div class="d-grid gap-2 mt-4">
-                                    <a href="{{ url_for('dashboard.export_inventory') }}" class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>Inventario (Excel)
-                                    </a>
-                                    <form action="{{ url_for('dashboard.export_inventory_pdf') }}" method="POST">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                                            <i class="bi bi-file-earmark-pdf me-2"></i>Inventario (PDF)
-                                        </button>
-                                    </form>
+                        <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; height: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                                <div style="width: 32px; height: 32px; background: #ecfdf5; color: #10b981; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                    <i class="bi bi-calendar-check"></i>
                                 </div>
+                                <h6 class="fw-bold mb-0" style="color: #065f46; font-size: 0.95rem;">Registro de Actividad</h6>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="um-label">Fecha del Reporte</label>
+                                <input type="date" id="reportDate" class="form-control" style="border-radius: 10px; border-color: #e2e8f0; font-size: 0.85rem;" value="{{ now_date }}">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="um-label">PC Específica (Opcional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="background: #f8fafc; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-pc-display"></i></span>
+                                    <input type="text" id="reportPcName" class="form-control" style="border-color: #e2e8f0; font-size: 0.85rem;" placeholder="Nombre de la PC...">
+                                </div>
+                            </div>
+                            
+                            <div class="mt-auto d-grid gap-2">
+                                <button onclick="downloadReport('excel')" class="btn btn-success" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px; background: #10b981; border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                                    <i class="bi bi-file-earmark-excel me-2"></i>Descargar Excel
+                                </button>
+                                <button onclick="downloadReport('pdf')" class="btn btn-danger" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px; background: #ef4444; border: none; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                                    <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card: Inventario General -->
+                    <div class="col-md-6">
+                        <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; height: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                                <div style="width: 32px; height: 32px; background: #eff6ff; color: #3b82f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0" style="color: #1e40af; font-size: 0.95rem;">Estado de Inventario</h6>
+                            </div>
+                            
+                            <p class="text-muted" style="font-size: 0.8rem; line-height: 1.5;">
+                                Descarga un resumen detallado de todo el hardware activo, especificaciones técnicas y estados de salud detectados.
+                            </p>
+                            
+                            <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px dashed #cbd5e1; margin-bottom: 20px; font-size: 0.72rem; color: #64748b;">
+                                <i class="bi bi-info-circle me-1"></i> Este reporte incluye PCs activas, monitores e impresoras catalogadas.
+                            </div>
+                            
+                            <div class="mt-auto d-grid gap-2">
+                                <a href="{{ url_for('dashboard.export_inventory') }}" class="btn btn-outline-primary" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px;">
+                                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>Catálogo Completo (Excel)
+                                </a>
+                                <form action="{{ url_for('dashboard.export_inventory_pdf') }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-outline-danger w-100" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px;">
+                                        <i class="bi bi-file-earmark-pdf me-2"></i>Inventario Físico (PDF)
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <a href="{{ url_for('tasks.report_tasks_completed') }}" class="btn btn-sm btn-link">Ver Panel Completo</a>
-                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+
+            <div class="modal-footer" style="padding: 16px 30px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                <a href="{{ url_for('tasks.report_tasks_completed') }}" class="text-decoration-none fw-bold" style="font-size: 0.8rem; color: #065f46;">
+                    <i class="bi bi-arrow-right-circle me-1"></i>Ir al Panel de Reportes
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 10px; font-size: 0.85rem; font-weight: 700; padding: 8px 20px;">Cerrar</button>
             </div>
         </div>
     </div>
@@ -1685,4 +1765,320 @@
                 icon.classList.replace('bi-eye-slash', 'bi-eye');
             }
         });
+    </script>
+
+    <!-- Modal Gestión de Tareas Pendientes -->
+    <div class="modal fade" id="pendingTasksModal" tabindex="-1" aria-labelledby="pendingTasksModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
+            <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+
+                <!-- Header moderno con gradiente (Ambar/Naranja para Pendientes) -->
+                <div style="background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%); padding: 0;">
+                    <div style="padding: 20px 24px 18px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2);">
+                                <i class="bi bi-bell-fill" style="color: #fff; font-size: 1.1rem;"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title mb-0 fw-bold text-white" id="pendingTasksModalLabel" style="font-size: 1.05rem; letter-spacing: -0.02em;">Tareas Pendientes</h5>
+                                <div style="font-size: 0.72rem; color: rgba(255,255,255,0.8); margin-top: 2px;">
+                                    Bolsa global de pedidos registrados &nbsp;·&nbsp; Total: <strong id="ptCount">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.8;"></button>
+                    </div>
+                </div>
+
+                <div class="modal-body" style="padding: 20px; background: #f8fafc; min-height: 400px;">
+                    
+                    <!-- Buscador y Filtros -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <div class="input-group input-group-sm" style="max-width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0;"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="ptSearchInput" class="form-control" placeholder="Buscar por PC, solicitante, descripción o fuero..." onkeyup="filterPendingTasks()" style="border-color: #e2e8f0; border-left: none; padding: 10px 12px;">
+                        </div>
+                        <div class="ms-auto d-flex align-items-center gap-2">
+                             <button class="btn btn-sm btn-white border" onclick="loadPendingTasks()" title="Refrescar listado" style="background: #fff; border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-arrow-clockwise"></i>
+                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Estado de Carga -->
+                    <div id="ptLoading" class="text-center py-5">
+                        <div class="spinner-border text-warning" style="width: 3rem; height: 3rem; border-width: .25em;"></div>
+                        <p class="mt-3 text-muted fw-bold">Recuperando bolsa de tareas...</p>
+                    </div>
+
+                    <!-- Lista Vacía -->
+                    <div id="ptEmpty" class="text-center py-5 d-none">
+                        <div style="font-size: 3rem; color: #e2e8f0; margin-bottom: 10px;"><i class="bi bi-check2-circle"></i></div>
+                        <h6 class="fw-bold text-dark">¡No hay tareas pendientes!</h6>
+                        <p class="text-muted small">Todo el equipo está al día. ¡Buen trabajo!</p>
+                    </div>
+
+                    <!-- Grid de Tarjetas (Similar a Users) -->
+                    <div class="pt-grid" id="pendingTasksGrid">
+                        <!-- Se llena vía JS -->
+                    </div>
+
+                </div><!-- /.modal-body -->
+                <div class="modal-footer bg-light" style="padding: 12px 24px; border-top: 1px solid #e2e8f0;">
+                    <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted" data-bs-dismiss="modal">Cerrar</button>
+                    <button class="btn btn-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#createTaskModal" style="border-radius: 8px; font-weight: 700;">
+                        <i class="bi bi-plus-lg me-1"></i> Nueva Tarea
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estilos específicos para el modal de tareas -->
+    <style>
+    .pt-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 14px;
+    }
+
+    .pt-card {
+        background: #fff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pt-card:hover {
+        border-color: #fbbf24;
+        box-shadow: 0 8px 24px rgba(180, 83, 9, 0.08);
+        transform: translateY(-3px);
+    }
+
+    /* Indicador lateral según categoría */
+    .pt-card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        background: #e2e8f0;
+    }
+    .pt-card[data-cat="Impresoras"]::before { background: #3b82f6; }
+    .pt-card[data-cat="Red/Conectividad"]::before { background: #8b5cf6; }
+    .pt-card[data-cat="Hardware"]::before { background: #f43f5e; }
+    .pt-card[data-cat="Software"]::before { background: #10b981; }
+
+    .pt-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .pt-pc-info { min-width: 0; }
+    .pt-pc-name { font-weight: 800; font-size: 0.95rem; color: #1e293b; display: flex; align-items: center; gap: 6px; }
+    .pt-pc-name a { color: inherit; text-decoration: none; }
+    .pt-pc-name a:hover { color: #f59e0b; }
+    .pt-date { font-size: 0.68rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; margin-top: 2px; }
+
+    .pt-cat-badge {
+        font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;
+        background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+        text-transform: uppercase; letter-spacing: 0.02em;
+    }
+
+    .pt-desc {
+        font-size: 0.85rem; color: #334155; line-height: 1.4;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        overflow: hidden; font-weight: 500;
+        min-height: 3.6em;
+    }
+
+    .pt-requester-box {
+        background: #f8fafc; border-radius: 10px; padding: 8px 10px;
+        display: flex; align-items: center; justify-content: space-between;
+        border: 1px solid #f1f5f9;
+        margin-top: auto;
+    }
+    .pt-req-info { display: flex; flex-direction: column; }
+    .pt-req-name { font-size: 0.78rem; font-weight: 700; color: #1e293b; }
+    .pt-req-sub { font-size: 0.7rem; color: #64748b; }
+    
+    .pt-actions {
+        display: flex; align-items: center; gap: 8px; margin-top: 4px; border-top: 1px solid #f1f5f9; padding-top: 12px;
+    }
+    
+    .btn-pt-action {
+        flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        padding: 7px; border-radius: 10px; font-size: 0.78rem; font-weight: 700;
+        border: 1.5px solid; transition: all 0.2s; cursor: pointer;
+        text-decoration: none;
+    }
+    
+    .btn-pt-confirm { border-color: #dcfce7; background: #f0fdf4; color: #16a34a; }
+    .btn-pt-confirm:hover { background: #16a34a; color: #fff; border-color: #16a34a; }
+    
+    .btn-pt-delete { border-color: #fee2e2; background: #fef2f2; color: #ef4444; flex: 0 0 38px; }
+    .btn-pt-delete:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+
+    .pt-assigned-chip {
+        font-size: 0.65rem; font-weight: 700; color: #b45309; background: #fef3c7;
+        padding: 3px 8px; border-radius: 100px; display: inline-flex; align-items: center; gap: 4px;
+    }
+
+    @keyframes fadeInSlide {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .pt-card { animation: fadeInSlide 0.3s ease-out forwards; }
+    </style>
+
+    <script>
+    let allPendingTasksData = [];
+
+    function showPendingTasksModal() {
+        const modalEl = document.getElementById('pendingTasksModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+        loadPendingTasks();
+    }
+
+    function loadPendingTasks() {
+        const grid = document.getElementById('pendingTasksGrid');
+        const loading = document.getElementById('ptLoading');
+        const empty = document.getElementById('ptEmpty');
+        const countEl = document.getElementById('ptCount');
+
+        grid.innerHTML = '';
+        loading.classList.remove('d-none');
+        empty.classList.add('d-none');
+        
+        fetch('/api/pending_tasks')
+            .then(res => res.json())
+            .then(data => {
+                loading.classList.add('d-none');
+                if (data.status === 'success') {
+                    allPendingTasksData = data.tasks;
+                    countEl.innerText = allPendingTasksData.length;
+                    
+                    if (allPendingTasksData.length === 0) {
+                        empty.classList.remove('d-none');
+                        return;
+                    }
+                    
+                    renderTasks(allPendingTasksData);
+                }
+            })
+            .catch(err => {
+                loading.classList.add('d-none');
+                grid.innerHTML = `<div class="alert alert-danger w-100">Error: ${err}</div>`;
+            });
+    }
+
+    function renderTasks(tasks) {
+        const grid = document.getElementById('pendingTasksGrid');
+        grid.innerHTML = '';
+        
+        tasks.forEach((t, index) => {
+            const pcName = t.pc_name || 'PC Genérica';
+            const isGeneric = pcName.toUpperCase().includes('GENERICA');
+            
+            const card = document.createElement('div');
+            card.className = 'pt-card';
+            card.setAttribute('data-cat', t.categoria || 'General');
+            card.style.animationDelay = (index * 0.03) + 's';
+            
+            card.innerHTML = `
+                <div class="pt-header">
+                    <div class="pt-pc-info">
+                        <div class="pt-pc-name">
+                            <i class="bi bi-pc-display"></i>
+                            <a href="/pc/${encodeURIComponent(pcName)}">${pcName}</a>
+                            ${t.assigned_to ? `<span class="pt-assigned-chip" title="Asignada a ${t.assigned_to}"><i class="bi bi-person-fill"></i> ${t.assigned_to}</span>` : ''}
+                        </div>
+                        <div class="pt-date"><i class="bi bi-clock"></i> ${t.created_at_fmt || ''}</div>
+                    </div>
+                    <span class="pt-cat-badge">${t.categoria || 'General'}</span>
+                </div>
+                
+                <div class="pt-desc" title="${t.descripcion}">${t.descripcion}</div>
+                
+                <div class="pt-requester-box">
+                    <div class="pt-req-info">
+                        <span class="pt-req-name"><i class="bi bi-person me-1"></i>${t.solicitante || 'Sin nombre'}</span>
+                        <span class="pt-req-sub">${t.fuero || (isGeneric ? 'Solicitud abierta' : t.last_user || '')}</span>
+                    </div>
+                    ${t.phone ? `<a href="tel:${t.phone}" class="btn btn-xs btn-outline-secondary p-1" style="border-radius: 6px;" title="Llamar: ${t.phone}"><i class="bi bi-telephone-fill"></i></a>` : ''}
+                </div>
+                
+                <div class="pt-actions">
+                    <button class="btn-pt-action btn-pt-confirm" onclick="quickTaskDone(${t.id})">
+                        <i class="bi bi-check-lg"></i> Confirmar
+                    </button>
+                    <button class="btn-pt-action btn-pt-delete" onclick="quickDeleteTask(${t.id})" title="Eliminar">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                    ${isGeneric ? `
+                        <button class="btn-pt-action border-secondary bg-white text-secondary" style="flex:0 0 38px;" onclick="openAssignModal(${t.id})" title="Asignar a PC">
+                            <i class="bi bi-arrow-right-short" style="font-size: 1.4rem; line-height: 0;"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function filterPendingTasks() {
+        const query = document.getElementById('ptSearchInput').value.toLowerCase();
+        const filtered = allPendingTasksData.filter(t => {
+            return (t.pc_name || '').toLowerCase().includes(query) ||
+                   (t.descripcion || '').toLowerCase().includes(query) ||
+                   (t.solicitante || '').toLowerCase().includes(query) ||
+                   (t.fuero || '').toLowerCase().includes(query) ||
+                   (t.categoria || '').toLowerCase().includes(query);
+        });
+        renderTasks(filtered);
+    }
+
+    function quickTaskDone(taskId) {
+        if (!confirm('¿Marcar esta tarea como finalizada?')) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/tasks/${taskId}/done`;
+        
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrf_token';
+        csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+        
+        const tech = document.createElement('input');
+        tech.type = 'hidden';
+        tech.name = 'technician_name';
+        tech.value = '{{ current_user.display_name or current_user.username }}';
+        form.appendChild(tech);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function quickDeleteTask(taskId) {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta tarea permanentemente?')) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/tasks/${taskId}/delete`;
+        
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrf_token';
+        csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
     </script>

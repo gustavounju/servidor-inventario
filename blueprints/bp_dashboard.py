@@ -327,21 +327,79 @@ def export_inventory():
     
     campos_seleccionados = request.form.getlist("campos")
     if not campos_seleccionados:
-        campos_seleccionados = ["pc_name", "os_name", "processor", "ram_gb", "ip_address"]
+        # Añadimos fuero y printer_model por defecto si no hay selección
+        campos_seleccionados = ["pc_name", "last_user", "fuero", "os_name", "processor", "ram_gb", "ip_address", "printer_model"]
     
     with get_db_connection() as conn:
-        rows = conn.execute("SELECT * FROM pcs ORDER BY last_report DESC").fetchall()
+        # Mejoramos la consulta para traer info de red e impresoras compartidas
+        sql = """
+            SELECT p.*,
+                (SELECT GROUP_CONCAT(CONCAT(np.brand_model, ' (', np.ip_address, ')') SEPARATOR ' | ') 
+                 FROM pc_network_printers pnp 
+                 JOIN network_printers np ON pnp.printer_id = np.id 
+                 WHERE pnp.pc_name = p.pc_name) as net_printers_info,
+                (SELECT COUNT(*) FROM pcs p2 WHERE p2.is_active = 'True' AND p2.printer_port LIKE CONCAT('%\\\\\\\\', p.pc_name, '%')) as clients_count
+            FROM pcs p 
+            WHERE p.is_active = 'True' 
+            ORDER BY p.fuero ASC, p.pc_name ASC
+        """
+        rows = conn.execute(sql).fetchall()
     if not rows: return "Sin datos", 404
     
     wb = Workbook()
     ws = wb.active
     ws.title = "Inventario"
-    ws.append(campos_seleccionados)
+    
+    # Mapeo para cabeceras amigables
+    headers_map = {
+        "pc_name": "Nombre PC", "last_user": "Último Usuario", "fuero": "Fuero / Área",
+        "os_name": "Sistema Operativo", "processor": "Procesador", "ram_gb": "RAM (GB)",
+        "ip_address": "Dirección IP", "printer_model": "Impresora", "motherboard_model": "Motherboard",
+        "monitors": "Monitores", "disk_models": "Discos", "last_report": "Última Sincro"
+    }
+    
+    ws.append([headers_map.get(c, c) for c in campos_seleccionados])
     
     for row in rows:
-        fila = [row[campo] for campo in campos_seleccionados]
+        # Lógica para campo Impresora enriquecido
+        printer_str = row["printer_model"] or "-"
+        port = row["printer_port"] or ""
+        
+        if port.startswith("\\\\"):
+            # Es una impresora compartida desde otro host
+            host = port.split("\\")[2] if len(port.split("\\")) > 2 else "Red"
+            printer_str = f"COMPARTIDA desde {host} ({printer_str})"
+        elif row["net_printers_info"]:
+            # Es una impresora de red del catálogo
+            printer_str = f"RED: {row['net_printers_info']}"
+        
+        # Si esta PC comparte a otros
+        if row["clients_count"] > 0:
+            printer_str = f"Local y COMPARTIDA (Hosting a {row['clients_count']} PCs) - {printer_str}"
+        elif printer_str != "-" and not printer_str.startswith(("COMPARTIDA", "RED:")):
+            printer_str = f"Local: {printer_str}"
+
+        # Creamos la fila mapeando campos
+        fila = []
+        for campo in campos_seleccionados:
+            if campo == "printer_model":
+                fila.append(printer_str)
+            else:
+                fila.append(row[campo])
         ws.append(fila)
     
+    # --- AUTO-AJUSTE DE COLUMNAS ---
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except: pass
+        ws.column_dimensions[column].width = max_length + 2
+    # -------------------------------
+
     output = BytesIO()
     wb.save(output)
     
@@ -349,65 +407,127 @@ def export_inventory():
         output,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name=f"Inventario_{dt.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+        download_name=f"Inventario_Completo_{dt.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
     )
 
 @bp_dashboard.route("/export_inventory_pdf", methods=["POST"])
 def export_inventory_pdf():
-    # Ignoramos selecciÃ³n dinÃ¡mica para PDF, usamos columnas fijas "Pro"
-    # Columnas: PC Name, Last User, OS Name, Processor, RAM, IP
     from services.reporting import PDFReport, format_date_es
     with get_db_connection() as conn:
-        rows = conn.execute("SELECT pc_name, last_user, os_name, processor, ram_gb, ip_address FROM pcs WHERE UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') ORDER BY last_report DESC").fetchall()
+        rows = conn.execute("""
+            SELECT p.pc_name, p.last_user, p.fuero, p.os_name, p.printer_model, p.printer_port, p.processor, p.ram_gb, p.ip_address,
+                   (SELECT GROUP_CONCAT(np.brand_model) FROM pc_network_printers pnp JOIN network_printers np ON pnp.printer_id = np.id WHERE pnp.pc_name = p.pc_name) as net_printers,
+                   (SELECT COUNT(*) FROM pcs p2 WHERE p2.is_active = 'True' AND p2.printer_port LIKE CONCAT('%\\\\\\\\', p.pc_name, '%')) as is_sharing_host
+            FROM pcs p 
+            WHERE p.is_active = 'True' 
+              AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') 
+            ORDER BY p.fuero ASC, p.pc_name ASC
+        """).fetchall()
     
-    pdf = PDFReport(title="Inventario General - Inventario GOLD", orientation='L')
+    pdf = PDFReport(title="Inventario Físico - Inventario GOLD", orientation='L')
     pdf.alias_nb_pages()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Fecha de reporte
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 8, f"Fecha de emisiÃ³n: {format_date_es(datetime.datetime.now())}", 0, 1, 'C')
-    pdf.ln(5)
+    pdf.set_font("Arial", "", 10)
+    pdf.cell(0, 8, f"Generado el: {format_date_es(datetime.datetime.now())}", 0, 1, 'C')
+    pdf.ln(2)
     
-    # Titulo (Conteo)
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, f"Total Equipos Inventariados: {len(rows)}", 0, 1, 'C')
-    pdf.ln(5)
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, f"Total Equipos Activos: {len(rows)}", 0, 1, 'C')
+    pdf.ln(4)
     
-    # Headers
-    # Landscape A4 ~ 297mm ancho. Margen 10+10=20. Util: 277.
-    # PC(40), User(40), OS(50), CPU(70), RAM(20), IP(35) -> Total 255
-    headers = ["Nombre PC", "Usuario", "Sistema Operativo", "Procesador", "RAM", "IP Address"]
-    w = [40, 40, 50, 70, 20, 35]
+    # Headers optimizados (A4 Landscape = 277 total útil)
+    headers = ["Nombre PC", "Usuario", "Fuero/Área", "OS", "Impresora", "Procesador", "RAM", "IP Address"]
+    # [PC:31, User:28, Fuero:44, OS:28, Prn:38, CPU:64, RAM:14, IP:30] = 277
+    widths = [31, 28, 44, 28, 38, 64, 14, 30]
     
-    pdf.set_font("Arial", "B", 9)
-    pdf.set_fill_color(13, 110, 253)
+    pdf.set_font("Arial", "B", 8)
+    pdf.set_fill_color(30, 41, 59) # Slate 800
     pdf.set_text_color(255)
     
     for i, h in enumerate(headers):
-        pdf.cell(w[i], 8, h, 1, 0, 'C', fill=True)
+        pdf.cell(widths[i], 8, h, 1, 0, 'C', fill=True)
     pdf.ln()
     
     pdf.set_font("Arial", "", 8)
     pdf.set_text_color(0)
     
+    def draw_multiline_row(pdf, cols, widths, row_height=6):
+        # 1. Calcular altura necesaria (buscando el campo con más líneas)
+        max_lines = 1
+        split_cols = []
+        for i, text in enumerate(cols):
+            lines = pdf.multi_cell(widths[i], row_height, str(text), split_only=True)
+            max_lines = max(max_lines, len(lines))
+            split_cols.append(lines)
+        
+        h_row = max_lines * row_height
+        
+        # 2. Salto de página preventivo
+        if (pdf.get_y() + h_row) > 190: 
+            pdf.add_page()
+            # Redibujar cabecera
+            pdf.set_font("Arial", "B", 8)
+            pdf.set_fill_color(30, 41, 59)
+            pdf.set_text_color(255)
+            for i, h in enumerate(headers): pdf.cell(widths[i], 8, h, 1, 0, 'C', fill=True)
+            pdf.ln()
+            pdf.set_font("Arial", "", 8)
+            pdf.set_text_color(0)
+
+        # 3. Dibujar las celdas de la fila
+        x_start, y_start = pdf.get_x(), pdf.get_y()
+        for i, lines in enumerate(split_cols):
+            curr_x = x_start + sum(widths[:i])
+            pdf.set_xy(curr_x, y_start)
+            # Dibujar borde de la celda
+            pdf.rect(curr_x, y_start, widths[i], h_row)
+            cell_text = "\n".join(lines)
+            pdf.multi_cell(widths[i], row_height, cell_text, 0, 'L')
+        
+        pdf.set_xy(x_start, y_start + h_row)
+
     for row in rows:
-        # User clean
+        # Limpieza de datos
         raw_user = row["last_user"] or "N/A"
-        if "\\" in raw_user: user = raw_user.split("\\")[-1]
-        else: user = raw_user
+        user = raw_user.split("\\")[-1] if "\\" in raw_user else raw_user
         
-        # CPU truncate
-        cpu = row["processor"] or "N/A"
-        if len(cpu) > 40: cpu = cpu[:37] + "..."
+        os_str = (row["os_name"] or "N/A").replace("Microsoft ", "")
         
-        pdf.cell(w[0], 7, str(row["pc_name"]), 1)
-        pdf.cell(w[1], 7, str(user)[:20], 1)
-        pdf.cell(w[2], 7, str(row["os_name"]), 1)
-        pdf.cell(w[3], 7, cpu, 1)
-        pdf.cell(w[4], 7, f'{row["ram_gb"]} GB', 1, 0, 'C')
-        pdf.cell(w[5], 7, str(row["ip_address"]), 1, 1, 'C')
+        # --- Lógica de Impresora Detallada ---
+        printer = row["printer_model"] or "-"
+        port = row["printer_port"] or ""
+        
+        if port.startswith("\\\\"):
+            # Caso: Impresora en red compartida por otra PC
+            host_srv = port.split("\\")[2] if len(port.split("\\")) > 2 else "Server"
+            printer = f"Compartida (desde {host_srv})"
+        elif row["net_printers"]:
+            # Caso: Impresora de red directa (Catálogo)
+            printer = f"Red ({row['net_printers']})"
+        elif printer.upper() in ("N/A", "SIN IMPRESORA", "NONE", "-"):
+            printer = "-"
+        else:
+            # Es local, ver si la comparte
+            if row["is_sharing_host"] > 0:
+                printer = f"Local y Compartida (Hosting a {row['is_sharing_host']} PCs) - {printer}"
+            else:
+                printer = f"Local ({printer})"
+        # -------------------------------------
+        
+        data_to_draw = [
+            str(row["pc_name"]),
+            str(user),
+            str(row["fuero"] or "N/A"),
+            str(os_str),
+            str(printer),
+            str(row["processor"] or "N/A"),
+            f'{row["ram_gb"]}G',
+            str(row["ip_address"])
+        ]
+        
+        draw_multiline_row(pdf, data_to_draw, widths)
 
     output = BytesIO()
     pdf_bytes = pdf.output()
@@ -418,7 +538,7 @@ def export_inventory_pdf():
         output,
         mimetype="application/pdf",
         as_attachment=True,
-        download_name=f"Inventario_Reporte_{dt.now().strftime('%Y%m%d')}.pdf",
+        download_name=f"Inventario_Fisico_{dt.now().strftime('%Y%m%d')}.pdf",
     )
 
 @bp_dashboard.route("/download_db")
