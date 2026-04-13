@@ -47,6 +47,8 @@ function onFilterClick(type) {
         url.searchParams.set('os', 'win7');
     } else if (type === 'win10' && currentOs !== 'win10') {
         url.searchParams.set('os', 'win10');
+    } else if (type === 'win11' && currentOs !== 'win11') {
+        url.searchParams.set('os', 'win11');
     } else if (type === 'tareas' && currentTasks !== 'true') {
         url.searchParams.set('filter_tasks', 'true');
     }

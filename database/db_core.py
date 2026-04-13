@@ -145,6 +145,14 @@ def init_db():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
 
+        # Intentar añadir columna office_version si no existe (Migración automática)
+        try:
+            conn.execute("ALTER TABLE pcs ADD COLUMN office_version TEXT AFTER printer_sn")
+            print("Migración: Columna 'office_version' añadida exitosamente.")
+        except Exception:
+            # Si falla es porque probablemente ya existe
+            pass
+
         conn.execute("""
             CREATE TABLE IF NOT EXISTS components (
                 id INT AUTO_INCREMENT PRIMARY KEY,

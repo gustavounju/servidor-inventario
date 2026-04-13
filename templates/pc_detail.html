@@ -181,7 +181,11 @@
             </tr>
             <tr>
               <th>Sistema Operativo</th>
-              <td>{{ pc.os_name }}</td>
+              <td class="fw-bold text-primary">{{ pc.os_name or 'N/A' }}</td>
+            </tr>
+            <tr>
+              <th>Microsoft Office</th>
+              <td class="fw-medium text-success">{{ pc.office_version or 'N/A' }}</td>
             </tr>
             <tr>
               <th>CPU</th>

@@ -277,6 +277,45 @@ try {
         if ($mb) { $motherboardModel = "$($mb.Manufacturer) $($mb.Product)" }
     }
     catch {}
+    
+    # 5.1) Versión de Office (Nueva mejora - Ultra Reforzada)
+    $officeVersion = "No detectado"
+    try {
+        # 1. Chequeo por Objeto COM (El más fiable si Office está activo)
+        try {
+            # Intentamos crear una instancia invisible de Word para ver su versión real
+            $word = New-Object -ComObject Word.Application -ErrorAction SilentlyContinue
+            if ($word) {
+                $v = $word.Version
+                $word.Quit()
+                $map = @{"16.0"="2016"; "15.0"="2013"; "14.0"="2010"; "12.0"="2007"}
+                $dispVer = $v
+                if ($map.ContainsKey($v)) { $dispVer = $map[$v] }
+                $officeVersion = "Microsoft Office $dispVer"
+            }
+        } catch {}
+
+        # 2. Si falló el COM, buscar por carpetas de rastro (Office16 = 2016/19/21)
+        if ($officeVersion -eq "No detectado") {
+            if (Test-Path "C:\Program Files\Microsoft Office\Office16") { $officeVersion = "Microsoft Office 2016/2019 (Path-x64)" }
+            elseif (Test-Path "C:\Program Files (x86)\Microsoft Office\Office16") { $officeVersion = "Microsoft Office 2016/2019 (Path-x86)" }
+            elseif (Test-Path "C:\Program Files\Microsoft Office\root\Office16") { $officeVersion = "Microsoft 365 / 2016 C2R" }
+        }
+
+        # 3. Búsqueda exhaustiva en Desinstaladores (Fallback final)
+        if ($officeVersion -eq "No detectado") {
+            $paths = @(
+                "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+            )
+            $officeApp = Get-ItemProperty $paths -ErrorAction SilentlyContinue | 
+                Where-Object { ($_.DisplayName -match "Office") -and ($_.DisplayName -notmatch "MUI|Proof|Component|Language|Viewer|Runtime|Project|Visio|Standard") } | 
+                Select-Object -First 1
+            if ($officeApp) { $officeVersion = $officeApp.DisplayName }
+        }
+    } catch {}
+
     # 6) Impresora
     $printerModel = "N/A"
     $printerPort = "N/A"
@@ -517,7 +556,8 @@ try {
     $jsonObj += """Sistema"": {"
     $jsonObj += """OsName"": ""$(e $os.Caption)"","
     $jsonObj += """Procesador"": ""$(e $cpu.Name)"","
-    $jsonObj += """RAM (GB)"": $(n $ramGB)"
+    $jsonObj += """RAM (GB)"": $(n $ramGB),"
+    $jsonObj += """Office"": ""$(e $officeVersion)"""
     $jsonObj += "},"
     $jsonObj += """Red"": [{""IPAddress"": ""$ipAddress""}],"
     $jsonObj += """RAM_Detalles"": ""$(e $ramDetalles)"","
