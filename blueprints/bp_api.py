@@ -269,28 +269,25 @@ def process_inventory_data(data):
                              (pc_name, 'AUTO_SYNC_PRINTER', 'Catalog', printer_sn if printer_sn != 'N/A' else clean_ip, "SISTEMA", "AUTO_SYNC", request.remote_addr))
         
         elif alerta_sin_impresora == 1:
-            with get_db_connection() as conn:
-                # 1. LIMPIEZA DEL CATÁLOGO (Stock de infraestructura)
-                if old_printer_sn and old_printer_sn != "N/A":
-                    # Borrado total si el SN coincide (ya sabemos que esta PC reportó no encontrarla)
-                    cursor = conn.execute("DELETE FROM network_printers WHERE serial_number = %s", (old_printer_sn,))
-                    print(f"[DEBUG] Catálogo limpiado. SN: {old_printer_sn}. Filas: {cursor.rowcount}")
+            # 1. LIMPIEZA DEL CATÁLOGO (Stock de infraestructura)
+            if old_printer_sn and old_printer_sn != "N/A":
+                # Borrado total si el SN coincide (ya sabemos que esta PC reportó no encontrarla)
+                cursor = conn.execute("DELETE FROM network_printers WHERE serial_number = %s", (old_printer_sn,))
+                print(f"[DEBUG] Catálogo limpiado. SN: {old_printer_sn}. Filas: {cursor.rowcount}")
 
-                # 2. Limpieza de Asignaciones Internas
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                             (pc_name, 'AUTO_CLEAN_PRINTER', 'Assigned', 'None', "SISTEMA", "AUTO_SYNC", request.remote_addr))
+            # 2. Limpieza de Asignaciones Internas
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         (pc_name, 'AUTO_CLEAN_PRINTER', 'Assigned', 'None', "SISTEMA", "AUTO_SYNC", request.remote_addr))
                 
-                # 3. LIMPIEZA EN CASCADA (Misión: Clientes huérfanos)
-                host_pattern = f"%\\\\\\\\{pc_name.upper()}\\\\%"
-                clients = conn.execute("SELECT pc_name FROM pcs WHERE UPPER(printer_port) LIKE %s", (host_pattern,)).fetchall()
-                if clients:
-                    for c in clients:
-                        client_name = c["pc_name"]
-                        conn.execute("DELETE FROM pc_network_printers WHERE pc_name = %s", (client_name,))
-                        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                                     (client_name, 'CASCADE_UNASSIGN', 'Host Offline', pc_name, "SISTEMA", "CASCADE_ACTION", request.remote_addr))
-                
-                conn.commit()
+            # 3. LIMPIEZA EN CASCADA (Misión: Clientes huérfanos)
+            host_pattern = f"%\\\\\\\\{pc_name.upper()}\\\\%"
+            clients = conn.execute("SELECT pc_name FROM pcs WHERE UPPER(printer_port) LIKE %s", (host_pattern,)).fetchall()
+            if clients:
+                for c in clients:
+                    client_name = c["pc_name"]
+                    conn.execute("DELETE FROM pc_network_printers WHERE pc_name = %s", (client_name,))
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                 (client_name, 'CASCADE_UNASSIGN', 'Host Offline', pc_name, "SISTEMA", "CASCADE_ACTION", request.remote_addr))
 
         # --- PROPAGACIÓN EN CASCADA (SI SOY HOST) ---
         # Si esta PC tiene un serial de impresora USB/Local válido, buscar clientes que impriman aquí
