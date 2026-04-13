@@ -459,6 +459,22 @@ def migrate_db_v24():
             print("Migración V24 verificada.")
 
 
+def migrate_db_v25():
+    """Migración V25: Asegurar columnas user_name, action_type e ip_address en audit_logs."""
+    print("Verificando migración de DB v25...")
+    new_columns = {
+        "user_name": "VARCHAR(255) DEFAULT 'SISTEMA'",
+        "action_type": "VARCHAR(100) DEFAULT 'UPDATE'",
+        "ip_address": "VARCHAR(100)"
+    }
+    with get_db_connection() as conn:
+        for col, dtype in new_columns.items():
+            if not _column_exists(conn, "audit_logs", col):
+                print(f"Aplicando migración V25: Agregando '{col}' a audit_logs...")
+                conn.execute(f"ALTER TABLE audit_logs ADD COLUMN {col} {dtype}")
+    print("Migración V25 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -484,3 +500,4 @@ def run_all_migrations():
     migrate_db_v22()
     migrate_db_v23()
     migrate_db_v24()
+    migrate_db_v25()
