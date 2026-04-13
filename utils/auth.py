@@ -802,6 +802,20 @@ def auth_guard():
         # Avisar al usuario por qué está aquí si es redireccionado
         return redirect(url_for("auth.change_password"))
 
+    # --- REGLA DE ACCESO MÓVIL (Fuerza /tecnicos en celulares) ---
+    ua = (request.user_agent.string or "").lower()
+    is_mobile_client = any(token in ua for token in ["android", "iphone", "ipad", "mobile"])
+    
+    if is_mobile_client:
+        permission_name = required_permission_for_endpoint()
+        # Si estamos en móvil, solo permitimos endpoints de la categoría 'mobile'
+        # o endpoints públicos (que ya pasaron el primer filtro de should_enforce_auth).
+        if permission_name != "mobile":
+            # Si tiene permiso de móvil, lo mandamos allá. Si no, login/logout manejarán el resto.
+            if refreshed_user.get("can_access_mobile") or refreshed_user.get("is_superuser"):
+                return redirect(url_for("tecnicos.tecnicos_view"))
+    # -------------------------------------------------------------
+
     permission_name = required_permission_for_endpoint()
     if permission_name and not has_permission(permission_name, refreshed_user):
         return forbidden_response(permission_name)
