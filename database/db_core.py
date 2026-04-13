@@ -169,6 +169,9 @@ def init_db():
                 field VARCHAR(255),
                 old_value TEXT,
                 new_value TEXT,
+                user_name VARCHAR(255) DEFAULT 'SISTEMA',
+                action_type VARCHAR(100) DEFAULT 'UPDATE',
+                ip_address VARCHAR(100),
                 changed_at DATETIME DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)

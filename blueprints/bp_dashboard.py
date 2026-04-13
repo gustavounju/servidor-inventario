@@ -28,7 +28,8 @@ def view_graphics():
             kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
             kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
             kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'", ("%Windows 7%",)).fetchone()["c"]
-            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE %s OR os_name LIKE %s) AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'", ("%Windows 10%", "%Windows 11%")).fetchone()["c"]
+            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'", ("%Windows 10%",)).fetchone()["c"]
+            kpi_win11 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'", ("%Windows 11%",)).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
             kpi_tareas_pendientes_count = conn.execute("SELECT COUNT(DISTINCT pc_name) as c FROM tasks WHERE estado != 'Hecha' AND pc_name IS NOT NULL AND pc_name != ''").fetchone()["c"]
             kpi_tareas_pendientes_total = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
@@ -58,6 +59,7 @@ def view_graphics():
         kpi_impresora_red=kpi_impresora_red,
         kpi_win7=kpi_win7,
         kpi_win10=kpi_win10,
+        kpi_win11=kpi_win11,
         kpi_tareas_hoy=kpi_tareas_hoy,
         kpi_tareas_pendientes_count=kpi_tareas_pendientes_count,
         kpi_tareas_pendientes_total=kpi_tareas_pendientes_total,
@@ -113,8 +115,11 @@ def dashboard():
                 filter_sql += " AND p.os_name LIKE %s"
                 filter_params.append("%Windows 7%")
             elif os_param == "win10":
-                filter_sql += " AND (p.os_name LIKE %s OR p.os_name LIKE %s)"
-                filter_params.extend(["%Windows 10%", "%Windows 11%"])
+                filter_sql += " AND p.os_name LIKE %s"
+                filter_params.append("%Windows 10%")
+            elif os_param == "win11":
+                filter_sql += " AND p.os_name LIKE %s"
+                filter_params.append("%Windows 11%")
             
             if filter_tasks == "true":
                 filter_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') > 0"
@@ -217,7 +222,8 @@ def dashboard():
             
             kpi_total_impresoras = count_network_catalog + count_local_printers
             kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
-            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND (os_name LIKE %s OR os_name LIKE %s) AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 10%", "%Windows 11%")).fetchone()["c"]
+            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 10%",)).fetchone()["c"]
+            kpi_win11 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 11%",)).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
             kpi_tareas_pendientes_total = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
 
@@ -276,7 +282,7 @@ def dashboard():
         pending_users_list = []
         pcs_data = auxiliary_pcs = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = app_users_list = active_mobile_techs = []
         total_rows = kpi_total_activas = kpi_total_graveyard = kpi_alerta_ram = kpi_sin_impresora = 0
-        kpi_impresora_red = kpi_total_impresoras = kpi_win7 = kpi_win10 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
+        kpi_impresora_red = kpi_total_impresoras = kpi_win7 = kpi_win10 = kpi_win11 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
         last_backup_info = "Error leyendo"
 
     total_pages = (total_rows + per_page - 1) // per_page if per_page > 0 else 1
@@ -304,6 +310,7 @@ def dashboard():
         kpi_impresora_red=kpi_impresora_red,
         kpi_win7=kpi_win7,
         kpi_win10=kpi_win10,
+        kpi_win11=kpi_win11,
         q=q,
         estado=estado,
         alerta=alerta,
@@ -402,6 +409,7 @@ def export_inventory():
 
     output = BytesIO()
     wb.save(output)
+    output.seek(0)
     
     return send_file(
         output,
@@ -599,8 +607,8 @@ def delete_permanent_pc(pc_name):
             conn.execute("DELETE FROM tasks WHERE pc_name = %s", (pc_name,))
             conn.execute("DELETE FROM pcs WHERE pc_name = %s", (pc_name,))
             conn.execute(
-                "INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'PERMANENT_DELETE', 'Active/Inactive', 'DELETED')",
-                (pc_name,)
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (pc_name, 'PERMANENT_DELETE', 'Active/Inactive', 'DELETED', current_username(), "BORRADO_PERMANENTE", request.remote_addr)
             )
             conn.commit()
     except Exception as exc:
@@ -735,7 +743,8 @@ def update_pc_infrastructure(pc_name):
                     old_str = str(old) if old is not None else ""
                     new_str = str(new) if new is not None else ""
                     if old_str != new_str:
-                        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (pc_name, field, old_str, new_str))
+                        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                     (pc_name, field, old_str, new_str, current_username(), "EDICION_INFRAESTRUCTURA", request.remote_addr))
             conn.commit()
         return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
     except Exception as e:
@@ -747,7 +756,7 @@ def global_activity():
     with get_db_connection() as conn:
         # Traer los Ãºltimos 1000 registros para no sobrecargar
         logs = conn.execute("""
-            SELECT id, pc_name, field, old_value, new_value, changed_at 
+            SELECT id, pc_name, field, old_value, new_value, user_name, action_type, ip_address, changed_at 
             FROM audit_logs 
             ORDER BY changed_at DESC 
             LIMIT 1000
@@ -899,7 +908,7 @@ def view_fueros():
         fueros_rows = conn.execute("SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido' ORDER BY fuero").fetchall()
         fueros_list = [row['fuero'] for row in fueros_rows]
 
-        # Conteos por fuero para las cards de la grilla
+        # Conteos por fuero físicos (Patrimonio real del sector)
         pc_counts_rows = conn.execute("""
             SELECT fuero, COUNT(*) as cnt
             FROM pcs
@@ -908,17 +917,50 @@ def view_fueros():
               AND UPPER(pc_name) NOT IN ('PC GENERICA','INFRAESTRUCTURA','PC-GENERICA')
             GROUP BY fuero
         """).fetchall()
-        printer_counts_rows = conn.execute("""
+
+        # Contar Usuarios por Fuero (AD + Distintos en PCs)
+        user_counts_rows = conn.execute("""
+            SELECT f.fuero, COUNT(DISTINCT u.username) as cnt
+            FROM (SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '') f
+            JOIN (
+                SELECT username, fuero FROM ad_users
+                UNION
+                SELECT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, fuero 
+                FROM pcs 
+                WHERE is_active = 'True' AND last_user IS NOT NULL AND last_user != ''
+            ) u ON u.fuero = f.fuero
+            GROUP BY f.fuero
+        """).fetchall()
+
+        # Contar Impresoras de Red físicas del Fuero
+        net_printer_counts = conn.execute("""
             SELECT fuero, COUNT(*) as cnt
             FROM network_printers
             WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido'
             GROUP BY fuero
         """).fetchall()
+
+        # Contar Impresoras Locales físicas del Fuero (Excluyendo las que ya están en el catálogo de Red)
+        local_printer_counts = conn.execute("""
+            SELECT fuero, COUNT(*) as cnt
+            FROM pcs
+            WHERE is_active = 'True'
+              AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
+              AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%')
+              AND fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido'
+              AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
+            GROUP BY fuero
+        """).fetchall()
+
         fuero_stats = {}
         for row in pc_counts_rows:
-            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0})['pcs'] = row['cnt']
-        for row in printer_counts_rows:
-            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0})['printers'] = row['cnt']
+            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0, 'users': 0})['pcs'] = row['cnt']
+        for row in user_counts_rows:
+            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0, 'users': 0})['users'] = row['cnt']
+        for row in net_printer_counts:
+            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0, 'users': 0})['printers'] += row['cnt']
+        for row in local_printer_counts:
+            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0, 'users': 0})['printers'] += row['cnt']
 
         pcs = []
         users = []
@@ -926,7 +968,7 @@ def view_fueros():
 
         
         if fuero_param:
-            pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND fuero = %s ORDER BY pc_name", (fuero_param,)).fetchall()
+            pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name, printer_model, printer_port FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND fuero = %s ORDER BY pc_name", (fuero_param,)).fetchall()
             users = conn.execute("""
                 SELECT username, real_name, phone 
                 FROM ad_users 
@@ -955,7 +997,7 @@ def view_fueros():
             """, (fuero_param, fuero_param)).fetchall()
         else:
             # Buscar elementos sin fuero (huerfanos)
-            pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY pc_name").fetchall()
+            pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name, printer_model, printer_port FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY pc_name").fetchall()
             users = conn.execute("""
                 SELECT username, real_name, phone 
                 FROM ad_users 

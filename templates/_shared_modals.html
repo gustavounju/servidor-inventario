@@ -1,5 +1,26 @@
 <!-- Modales Compartidos -->
 
+<!-- Modal de Topografía (Iframe) -->
+<div class="modal fade" id="topoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content" style="background: #0f172a; border: none;">
+            <div class="modal-body p-0" style="overflow: hidden;">
+                <iframe id="topoIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Cargar el iframe solo cuando se abre el modal para ahorrar recursos
+    document.getElementById('topoModal').addEventListener('show.bs.modal', function () {
+        const iframe = document.getElementById('topoIframe');
+        if (!iframe.src || iframe.src === window.location.href) {
+            iframe.src = "{{ url_for('dashboard.view_fueros', embed=1) }}";
+        }
+    });
+</script>
+
 <!-- Modal Crear Tarea Suelta -->
 <!-- Modal Crear Tarea Suelta -->
 <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">

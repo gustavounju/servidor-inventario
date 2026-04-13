@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard de Inventario | Inventario GOLD</title>
+    <title>Auditoría de Actividad | Inventario GOLD</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,20 +13,118 @@
     <link rel="stylesheet" href="/static/css/gold.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Estilos específicos para la tabla de auditoría */
-        #globalActivityTable thead th {
-            background: var(--table-header-bg);
-            color: #fff;
-            padding: 12px 15px;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            border: none;
+        /* Ajustes específicos para Auditoría Premium */
+        .audit-container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        #globalActivityTable tbody td {
-            padding: 10px 12px;
-            font-size: 0.875rem;
-            border-bottom: 1px solid var(--border-color);
+        
+        .audit-table-card {
+            border-radius: 20px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            background: #fff;
+        }
+
+        .audit-table thead th {
+            background: #1e293b;
+            color: #fff;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            padding: 14px 20px;
+            border-bottom: none;
+        }
+
+        .audit-table tbody td {
+            padding: 14px 20px;
+            font-size: 0.85rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .audit-table tbody tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .val-badge {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.78rem;
+            font-weight: 500;
+            display: inline-block;
+            word-break: break-all;
+            max-width: 250px;
+        }
+
+        .val-old {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fee2e2;
+        }
+
+        .val-new {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #dcfce7;
+        }
+
+        .field-chip {
+            background: #eff6ff;
+            color: #1e40af;
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            border: 1px solid #dbeafe;
+        }
+        
+        .action-badge {
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        
+        .action-update { background: #f1f5f9; color: #475569; }
+        .action-manual { background: #fff7ed; color: #9a3412; }
+        .action-task { background: #f0fdf4; color: #166534; }
+        .action-delete { background: #fef2f2; color: #991b1b; }
+        .action-system { background: #eef2ff; color: #3730a3; }
+        
+        .pc-link {
+            font-weight: 700;
+            color: #0f172a;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .pc-link:hover {
+            color: #3b82f6;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .user-avatar {
+            width: 24px;
+            height: 24px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #475569;
         }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -34,65 +132,153 @@
 </head>
 <!-- FIN BLOQUE 1 -->
 
-
-<!-- BLOQUE 2: CUERPO (navbar + KPIs + filtros + tabla) -->
-
 <body class="has-fixed-header">
     {% include '_module_switcher.html' %}
     {% include '_shared_modals.html' %}
 
-    <!-- CONTAINER PRINCIPAL -->
-    <div class="container-fluid" style="margin-top: 110px;">
-        <div class="d-flex justify-content-between align-items-center mb-4 px-3">
-            <h2 class="mb-0 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>Auditoría de Actividad</h2>
-            <div class="text-end">
-                <span class="badge bg-primary rounded-pill px-3 shadow-sm">v{{ app_version }}</span>
-                <p class="text-muted mb-0 small mt-1">Mostrando registros recientes (Límite 1000)</p>
+    <div class="audit-container" style="margin-top: 110px;">
+        
+        <!-- HERO HEADER PREMIUM -->
+        <header class="hero-header mb-4" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.15);">
+                            <i class="bi bi-clock-history text-white fs-4"></i>
+                        </div>
+                        <div>
+                            <h1 class="hero-title">Auditoría Extendida</h1>
+                            <p class="hero-subtitle">Registro detallado de cambios, usuarios y acciones del sistema.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="badge bg-white bg-opacity-10 py-2 px-3 border border-white border-opacity-10 mb-2">
+                        <i class="bi bi-shield-lock-fill me-1 text-info"></i> Trazabilidad Completa
+                    </div>
+                    <div class="text-white opacity-50 small">Versión del Sistema v{{ app_version }}</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- TABLA DE AUDITORÍA -->
+        <div class="audit-table-card">
+            <div class="table-responsive">
+                <table class="table audit-table mb-0" id="globalActivityTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%">Fecha / Hora</th>
+                            <th style="width: 15%">Responsable</th>
+                            <th style="width: 12%">Acción</th>
+                            <th style="width: 13%">Origen</th>
+                            <th style="width: 24%">Valor Anterior</th>
+                            <th style="width: 24%">Valor Nuevo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        {# LOGICA PARA LENGUAJE HUMANO #}
+                        {% set pc = log.pc_name %}
+                        {% set user = log.user_name or 'SISTEMA' %}
+                        {% set field = log.field %}
+                        {% set old = log.old_value or '(nada)' %}
+                        {% set new = log.new_value or '(vacío)' %}
+                        
+                        {% set human_desc = "Cambio genérico registrado en " ~ pc %}
+                        {% if 'Tarea #' in field %}
+                            {% if 'Completada' in field %}
+                                {% set human_desc = "El usuario " ~ user ~ " finalizó una tarea que estaba pendiente en " ~ pc ~ ". El trabajo fue: " ~ new %}
+                            {% else %}
+                                {% set human_desc = user ~ " actualizó una tarea en " ~ pc %}
+                            {% endif %}
+                        {% elif log.action_type == 'INVENTARIO_AUTOMATICO' %}
+                            {% set human_desc = "El script de inventario detectó automáticamente que " ~ field ~ " cambió de " ~ old ~ " a " ~ new ~ " en " ~ pc %}
+                        {% elif log.action_type == 'GESTION_INFRAESTRUCTURA' %}
+                            {% set human_desc = user ~ " realizó una gestión de hardware físico (" ~ field ~ ") en " ~ pc %}
+                        {% elif log.action_type == 'EDICION_MANUAL' %}
+                            {% set human_desc = user ~ " editó manualmente la información técnica de " ~ pc ~ " (Campo: " ~ field ~ ")" %}
+                        {% elif log.action_type == 'BORRADO_PERMANENTE' %}
+                            {% set human_desc = user ~ " eliminó permanentemente un registro del sistema: " ~ old %}
+                        {% else %}
+                            {% set human_desc = "Se actualizó " ~ field ~ " en " ~ pc ~ " (de " ~ old ~ " a " ~ new ~ ")" %}
+                        {% endif %}
+
+                        <tr data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ human_desc }}">
+                            <td>
+                                <div class="fw-bold text-dark">{{ log.changed_at.strftime('%d/%m/%Y') if log.changed_at else 'N/A' }}</div>
+                                <div style="font-size: 0.75rem;" class="text-muted">{{ log.changed_at.strftime('%H:%M:%S') if log.changed_at else '' }}</div>
+                            </td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">
+                                        {{ (log.user_name[:1] if log.user_name else 'S') | upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.8rem;">{{ log.user_name or 'SISTEMA' }}</div>
+                                        <div class="text-muted" style="font-size: 0.65rem;">{{ log.ip_address or '0.0.0.0' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% set act_class = 'action-update' %}
+                                {% if log.action_type == 'INVENTARIO_AUTOMATICO' %}{% set act_class = 'action-system' %}
+                                {% elif 'TAREAS' in log.action_type %}{% set act_class = 'action-task' %}
+                                {% elif 'MANUAL' in log.action_type %}{% set act_class = 'action-manual' %}
+                                {% elif 'BORRADO' in log.action_type %}{% set act_class = 'action-delete' %}
+                                {% endif %}
+                                <span class="action-badge {{ act_class }}">{{ log.action_type.replace('_', ' ') if log.action_type else 'UPDATE' }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('dashboard.pc_detail', pc_name=log.pc_name) }}" class="pc-link">
+                                    <i class="bi bi-pc-display me-1 opacity-50"></i>{{ log.pc_name }}
+                                </a>
+                                <div class="text-muted" style="font-size: 0.72rem;">{{ log.field }}</div>
+                            </td>
+                            <td>
+                                {% if log.old_value and log.old_value != 'None' and log.old_value != 'NULL' %}
+                                <div class="val-badge val-old">{{ log.old_value }}</div>
+                                {% else %}
+                                <span class="text-muted small opacity-50"><i>(Vacío)</i></span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.new_value and log.new_value != 'None' and log.new_value != 'NULL' %}
+                                <div class="val-badge val-new">{{ log.new_value }}</div>
+                                {% else %}
+                                <span class="text-muted small opacity-50"><i>(Sin dato/Eliminado)</i></span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <i class="bi bi-clipboard-x fs-1 text-muted opacity-25 d-block mb-3"></i>
+                                <div class="text-muted fw-bold">No se encontraron registros de actividad</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="card shadow-sm mb-5">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0" id="globalActivityTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th style="width: 15%">Fecha</th>
-                                <th style="width: 15%">PC / Origen</th>
-                                <th style="width: 20%">Acción / Campo</th>
-                                <th style="width: 25%">Detalle Anterior</th>
-                                <th style="width: 25%">Detalle Nuevo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for log in logs %}
-                            <tr>
-                                <td>{{ log.changed_at.strftime('%Y-%m-%d %H:%M:%S') if log.changed_at else 'N/A' }}</td>
-                                <td>
-                                    <a href="{{ url_for('dashboard.pc_detail', pc_name=log.pc_name) }}"
-                                        class="fw-bold text-decoration-none">
-                                        {{ log.pc_name }}
-                                    </a>
-                                </td>
-                                <td><span class="badge bg-secondary">{{ log.field }}</span></td>
-                                <td class="text-danger small">{{ log.old_value }}</td>
-                                <td class="text-success small">{{ log.new_value }}</td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-4">No hay actividad registrada en el
-                                    sistema.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        
+        <div class="mt-4 text-center">
+            <p class="text-muted small"><i class="bi bi-shield-check me-1"></i> La integridad de estos registros está protegida por el módulo de seguridad del sistema.</p>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/theme.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+        });
+    </script>
 </body>
 
 </html>
+

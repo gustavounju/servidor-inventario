@@ -191,8 +191,8 @@ def process_inventory_data(data):
             # Check for reactivation from Cementerio
             if str(current_pc.get("is_active", "True")) == "False":
                 reactivado = True
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                             (pc_name, "Estado de PC", "Cementerio (Baja)", "Reactivado (Activo)"))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             (pc_name, "Estado de PC", "Cementerio (Baja)", "Reactivado (Activo)", "SISTEMA", "INVENTARIO_AUTOMATICO", request.remote_addr))
 
             # Deduplicate check: if hardware (motherboard & processor) drastically changed, it's likely another physical machine
             old_mb = str(current_pc.get("motherboard_model", "")).strip()
@@ -215,7 +215,8 @@ def process_inventory_data(data):
             for field, old_val in fields_to_check.items():
                 new_val = new_values_map.get(field, "N/A")
                 if old_val.strip() != new_val.strip():
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (pc_name, field, old_val, new_val))
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                 (pc_name, field, old_val, new_val, "SISTEMA", "INVENTARIO_AUTOMATICO", request.remote_addr))
 
 
     # --- OBTENER VALORES ANTIGUOS PARA LIMPIEZA ---
@@ -263,7 +264,8 @@ def process_inventory_data(data):
                 printer_id = known_printer['id']
                 # 3. Vincular la actual
                 conn.execute("INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)", (pc_name, printer_id))
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'AUTO_SYNC_PRINTER', 'Catalog', %s)", (pc_name, printer_sn if printer_sn != 'N/A' else clean_ip))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             (pc_name, 'AUTO_SYNC_PRINTER', 'Catalog', printer_sn if printer_sn != 'N/A' else clean_ip, "SISTEMA", "AUTO_SYNC", request.remote_addr))
         
         elif alerta_sin_impresora == 1:
             with get_db_connection() as conn:
@@ -274,7 +276,8 @@ def process_inventory_data(data):
                     print(f"[DEBUG] Catálogo limpiado. SN: {old_printer_sn}. Filas: {cursor.rowcount}")
 
                 # 2. Limpieza de Asignaciones Internas
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'AUTO_CLEAN_PRINTER', 'Assigned', 'None')", (pc_name,))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             (pc_name, 'AUTO_CLEAN_PRINTER', 'Assigned', 'None', "SISTEMA", "AUTO_SYNC", request.remote_addr))
                 
                 # 3. LIMPIEZA EN CASCADA (Misión: Clientes huérfanos)
                 host_pattern = f"%\\\\\\\\{pc_name.upper()}\\\\%"
@@ -283,7 +286,8 @@ def process_inventory_data(data):
                     for c in clients:
                         client_name = c["pc_name"]
                         conn.execute("DELETE FROM pc_network_printers WHERE pc_name = %s", (client_name,))
-                        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, 'CASCADE_UNASSIGN', 'Host Offline', %s)", (client_name, pc_name))
+                        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                     (client_name, 'CASCADE_UNASSIGN', 'Host Offline', pc_name, "SISTEMA", "CASCADE_ACTION", request.remote_addr))
                 
                 conn.commit()
 

@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database.db_core import get_db_connection
 from datetime import datetime as dt
 import requests
+from utils.auth import current_username
 import asyncio
 try:
     from pysnmp.hlapi.v3arch.asyncio import *
@@ -163,8 +164,8 @@ def assign_battery_to_ups(ups_id):
                 old_bat_data = conn.execute("SELECT serial_number FROM components WHERE id = %s", (old_battery_id,)).fetchone()
                 old_bat_sn = old_bat_data['serial_number'] if old_bat_data else str(old_battery_id)
                 conn.execute("UPDATE components SET status = 'Stock' WHERE id = %s", (old_battery_id,))
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                             (f"UPS:{ups['code']}", "Bateria Retirada", old_bat_sn, "None"))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             (f"UPS:{ups['code']}", "Bateria Retirada", old_bat_sn, "None", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
                 
             # If assigning a new battery
             if battery_id:
@@ -172,8 +173,8 @@ def assign_battery_to_ups(ups_id):
                 new_bat_sn = new_bat_data['serial_number'] if new_bat_data else str(battery_id)
                 conn.execute("UPDATE ups_inventory SET assigned_battery_id = %s WHERE id = %s", (battery_id, ups_id))
                 conn.execute("UPDATE components SET status = 'Instalado' WHERE id = %s", (battery_id,))
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                             (f"UPS:{ups['code']}", "Bateria RAM", "None", new_bat_sn))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             (f"UPS:{ups['code']}", "Bateria RAM", "None", new_bat_sn, current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             else:
                 # Just removing
                 conn.execute("UPDATE ups_inventory SET assigned_battery_id = NULL WHERE id = %s", (ups_id,))
@@ -199,13 +200,13 @@ def assign_ups_to_pc(ups_id):
             
             if pc_name:
                 conn.execute("UPDATE ups_inventory SET assigned_pc = %s WHERE id = %s", (pc_name, ups_id))
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                             (pc_name, "UPS Asignada", str(old_pc), f"{ups['code']}"))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             (pc_name, "UPS Asignada", str(old_pc), f"{ups['code']}", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             else:
                 conn.execute("UPDATE ups_inventory SET assigned_pc = NULL WHERE id = %s", (ups_id,))
                 if old_pc:
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                                 (old_pc, "UPS Retirada", f"{ups['code']}", "None"))
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                 (old_pc, "UPS Retirada", f"{ups['code']}", "None", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             
             conn.commit()
             flash("Asignación de equipo actualizada.", "success")
@@ -245,7 +246,7 @@ def delete_ups(id):
                 conn.execute("UPDATE components SET status = 'Stock' WHERE id = %s", (ups['assigned_battery_id'],))
             
             conn.execute("DELETE FROM ups_inventory WHERE id = %s", (id,))
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES ('Infraestructura', 'UPS Eliminada', %s, 'DELETED')", (ups['code'],))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES ('Infraestructura', 'UPS Eliminada', %s, 'DELETED', %s, 'BORRADO_PERMANENTE', %s)", (ups['code'], current_username(), request.remote_addr))
             conn.commit()
             flash("UPS eliminada y registrada en el historial de infraestructura.", "success")
     except Exception as e:
@@ -290,13 +291,13 @@ def assign_component_to_pc(component_id):
             
             if pc_name:
                 conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = 'Instalado' WHERE id = %s", (pc_name, component_id))
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                             (pc_name, f"{comp['component_type']} Asignado", str(old_pc), comp['serial_number']))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             (pc_name, f"{comp['component_type']} Asignado", str(old_pc), comp['serial_number'], current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             else:
                 conn.execute("UPDATE components SET assigned_pc = NULL, status = 'Stock' WHERE id = %s", (component_id,))
                 if old_pc:
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                                 (old_pc, f"{comp['component_type']} Retirado", comp['serial_number'], "None"))
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                 (old_pc, f"{comp['component_type']} Retirado", comp['serial_number'], "None", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             
             conn.commit()
             flash("Asignación de componente a PC actualizada.", "success")
@@ -322,8 +323,8 @@ def assign_component_to_component(component_id):
                              (parent_id, parent['assigned_pc'], component_id))
                 
                 pc_context = parent["assigned_pc"] or f"COMP:{parent['serial_number']}"
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                             (pc_context, f"Sub-componente {comp['component_type']} Asignado a {parent['component_type']}", "None", comp['serial_number']))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             (pc_context, f"Sub-componente {comp['component_type']} Asignado a {parent['component_type']}", "None", comp['serial_number'], current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             else:
                 conn.execute("UPDATE components SET assigned_to_component_id = NULL, assigned_pc = NULL, status = 'Stock' WHERE id = %s", (component_id,))
             
@@ -354,8 +355,8 @@ def delete_component(id):
             
             # Now delete the component
             conn.execute("DELETE FROM components WHERE id = %s", (id,))
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES ('Infraestructura', %s, %s, 'DELETED')", 
-                         (f"Componente Eliminado ({comp['component_type']})", comp['serial_number']))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES ('Infraestructura', %s, %s, 'DELETED', %s, 'BORRADO_PERMANENTE', %s)", 
+                         (f"Componente Eliminado ({comp['component_type']})", comp['serial_number'], current_username(), request.remote_addr))
             conn.commit()
             flash("Componente eliminado del inventario y registrado en el historial.", "success")
     except Exception as e:
@@ -440,8 +441,8 @@ def add_network_printer():
                         "INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)",
                         (assigned_pc_name, printer_id)
                     )
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                                 (assigned_pc_name, "Impresora Red Vinculada (Promoción)", "None", ip_address))
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                 (assigned_pc_name, "Impresora Red Vinculada (Promoción)", "None", ip_address, current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
                     flash(f"Impresora {ip_address} ({serial_number}) vinculada correctamente a {assigned_pc_name}.", "success")
                 else:
                     flash(f"La impresora {ip_address} ya estaba vinculada a {assigned_pc_name}.", "info")
@@ -466,8 +467,8 @@ def delete_network_printer(id):
             conn.execute("DELETE FROM pc_network_printers WHERE printer_id = %s", (id,))
             
             conn.execute("DELETE FROM network_printers WHERE id = %s", (id,))
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES ('Infraestructura', 'Impresora de Red Eliminada', %s, 'DELETED')", 
-                         (printer['ip_address'],))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES ('Infraestructura', 'Impresora de Red Eliminada', %s, 'DELETED', %s, 'BORRADO_PERMANENTE', %s)", 
+                         (printer['ip_address'], current_username(), request.remote_addr))
             conn.commit()
             flash("Impresora de red eliminada del catálogo y registrada en el historial.", "success")
     except Exception as e:
@@ -496,8 +497,8 @@ def assign_network_printer(printer_id):
                 return redirect(request.referrer or url_for('infrastructure.index'))
                 
             conn.execute("INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)", (pc_name, printer_id))
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                         (pc_name, "Impresora Red Asignada", "None", printer['ip_address']))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         (pc_name, "Impresora Red Asignada", "None", printer['ip_address'], current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             conn.commit()
             flash(f"Impresora {printer['ip_address']} asignada a {pc_name} exitosamente.", "success")
     except Exception as e:
@@ -516,8 +517,8 @@ def unassign_network_printer(printer_id):
                 return redirect(request.referrer or url_for('infrastructure.index'))
                 
             conn.execute("DELETE FROM pc_network_printers WHERE printer_id = %s AND pc_name = %s", (printer_id, pc_name))
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                         (pc_name, "Impresora Red Desvinculada", printer['ip_address'], "None"))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         (pc_name, "Impresora Red Desvinculada", printer['ip_address'], "None", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             conn.commit()
             flash(f"Impresora {printer['ip_address']} desvinculada de {pc_name}.", "success")
     except Exception as e:

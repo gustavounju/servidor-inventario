@@ -624,6 +624,22 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Manejo de tabs via Hash URL (#printers, #ups, etc) para saltar desde otros módulos
+        document.addEventListener('DOMContentLoaded', function() {
+            var hash = window.location.hash;
+            if (hash) {
+                // El link apunta a #printers, el botón del tab tiene data-bs-target="#printers"
+                var tabEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+                if (tabEl) {
+                    var tab = new bootstrap.Tab(tabEl);
+                    tab.show();
+                    // Scroll suave hacia arriba para ver la cabecera
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        });
+    </script>
 </body>
 </html>
 </body>

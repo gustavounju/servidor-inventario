@@ -8,179 +8,263 @@
     <link rel="stylesheet" href="/static/css/gold.css">
     <style>
         body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background-color: #f1f5f9;
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
             height: 100vh;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin: 0;
         }
 
-        /* ── Backdrop Simulada ── */
-        .fueros-bg-blur {
-            position: fixed;
-            inset: 0;
-            background: url('/static/img/dashboard_bg.webp') center/cover;
-            filter: blur(10px) brightness(0.4);
-            z-index: 1;
-        }
-
-        /* ── Ventana Flotante (Tipo Modal de Gestión) ── */
-        .fueros-floating-window {
-            position: relative;
-            z-index: 10;
-            width: 92vw;
-            height: 88vh;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        /* ── WINDOW ARCHITECTURE ── */
+        .dashboard-window {
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: modalFadeUp 0.4s ease-out;
         }
 
-        @keyframes modalFadeUp {
-            from { opacity: 0; transform: translateY(30px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        /* Header de la ventana */
         .window-header {
-            background: linear-gradient(90deg, #1e293b, #334155);
-            padding: 16px 24px;
+            background: #1e293b;
+            height: 70px;
+            padding: 0 40px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
         }
-        .window-title { display:flex; align-items:center; gap:12px; }
-        .window-title h1 { font-size: 1.1rem; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
 
-        /* Contenido dividido */
         .window-main {
             flex: 1;
             display: flex;
+            padding: 24px;
+            gap: 24px;
+            overflow: hidden;
+            background: #f1f5f9;
+        }
+
+        /* ── SIDEBAR (Light Gold) ── */
+        .window-sidebar {
+            width: 340px;
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
             overflow: hidden;
         }
 
-        /* Sidebar dentro de la ventana */
-        .window-sidebar {
-            width: 300px;
-            background: #f8fafc;
-            border-right: 1px solid #e2e8f0;
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .sidebar-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .fuero-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 6px;
+            color: #64748b;
+            border: 1px solid transparent;
+        }
+
+        .fuero-item:hover { background: #f8fafc; color: #1e293b; }
+        .fuero-item.active {
+            background: #3b82f6;
+            color: #fff;
+            box-shadow: 0 8px 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .fuero-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background-color: var(--dot-color);
+            border: 2px solid #fff;
+        }
+
+        /* ── WORKSPACE (The White Card) ── */
+        .window-content {
+            flex: 1;
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            position: relative;
+            overflow: auto; /* Allow scrolling if many nodes */
+        }
+
+        .topology-board {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.2fr;
+            width: 100%;
+            min-height: 100%;
+            padding: 40px 60px;
+            gap: 60px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .board-column {
             display: flex;
             flex-direction: column;
         }
-        .sidebar-search { padding: 15px; }
-        .sidebar-search input { 
-            border-radius: 10px!important; font-size: 0.8rem!important; 
-            border: 1.5px solid #e2e8f0!important;
+
+        .column-header {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f1f5f9;
         }
 
-        .sidebar-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .fuero-item {
-            display: flex; align-items: center; gap: 10px; padding: 12px;
-            border-radius: 12px; cursor: pointer; transition: all 0.2s;
-            margin-bottom: 4px; color: #475569; text-decoration: none!important;
-        }
-        .fuero-item:hover { background: #f1f5f9; color: #1e293b; }
-        .fuero-item.active { background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; color: #0284c7; }
-
-        .fuero-dot { width: 10px; height: 10px; border-radius: 3px; background: var(--dot-color); }
-        .fuero-name { font-weight: 700; font-size: 0.8rem; flex: 1; }
-        .fuero-stats { font-size: 0.65rem; color: #94a3b8; font-weight: 700; display: flex; gap: 6px; }
-
-        /* Área de Mapa */
-        .window-content { flex: 1; overflow-y: auto; background: #fff; position: relative; padding: 25px; }
-
-        /* Estilos Topología (Simplificados para Ventana) */
-        .topo-canvas { position: relative; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; min-width: 900px; }
-        .topo-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
-        .topo-col { display: flex; flex-direction: column; gap: 12px; z-index: 2; }
-        .topo-col-label { 
-            font-size: 0.65rem; font-weight: 800; text-transform: uppercase; 
-            color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 10px;
-            border-bottom: 1.5px solid #f1f5f9; padding-bottom: 6px;
-        }
-
+        /* ── NODES (USER MANAGEMENT CLONE) ── */
         .topo-node {
-            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-            border-radius: 10px; border: 1.5px solid #e2e8f0; background: #fff;
-            transition: all 0.2s; position: relative;
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04) !important;
+            min-height: 68px !important; /* Spacing AIR */
+            padding: 12px 16px !important;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
         }
-        .topo-node:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-        .topo-node.highlighted { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-        .topo-node.dimmed { opacity: 0.15; }
 
-        .topo-icon { 
-            width: 32px; height: 32px; border-radius: 8px; display: flex; 
-            align-items: center; justify-content: center; color: #fff; font-size: 0.8rem;
+        .topo-node:hover {
+            transform: scale(1.02) translateY(-4px);
+            border-color: #3b82f6 !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
+            z-index: 50;
         }
-        .icon-u { background: #3b82f6; } .icon-pc { background: #06b6d4; } .icon-pr { background: #8b5cf6; }
 
-        .node-info { min-width: 0; flex: 1; }
-        .node-title { font-weight: 700; font-size: 0.78rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .node-sub { font-size: 0.65rem; color: #64748b; }
+        .avatar-initials {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 1rem; color: #fff; margin-right: 15px;
+        }
 
-        .path-line { fill: none; stroke: #cbd5e1; stroke-width: 1.5; opacity: 0.4; transition: 0.3s; }
-        .path-active { stroke: #3b82f6; stroke-width: 2; opacity: 1; }
+        .badge-activo {
+            background: #ecfdf5; color: #059669; font-size: 0.6rem; font-weight: 900;
+            padding: 3px 10px; border-radius: 100px; display: flex; align-items: center; gap: 4px;
+        }
 
-        /* KPIs en Header Ventana */
-        .header-kpi { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; margin-left: 15px; display: flex; gap: 15px; }
-        .kpi-item { text-align: right; }
-        .kpi-val { font-size: 1rem; font-weight: 800; line-height: 1; }
-        .kpi-lab { font-size: 0.6rem; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; }
+        .badge-role {
+            background: #f1f5f9; color: #64748b; font-size: 0.6rem; font-weight: 800;
+            padding: 2px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;
+        }
+
+        /* Tooltip style */
+        #topoTooltip {
+            position: fixed; z-index: 9999; pointer-events: none;
+            padding: 14px 20px; background: #1e293b; border-radius: 14px;
+            color: #fff; font-size: 0.75rem; max-width: 300px; opacity: 0;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+            transition: opacity 0.3s ease; line-height: 1.5;
+        }
+        .tt-title { color: #3b82f6; font-weight: 900; text-transform: uppercase; font-size: 0.65rem; margin-bottom: 5px; }
+
+        .topo-svg {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 2;
+        }
+        
+        .path-line {
+            fill: none; stroke: #cbd5e1; stroke-width: 2.5; stroke-dasharray: 8 6;
+            opacity: 0.3; transition: 0.4s;
+        }
+        .path-active { stroke: #3b82f6; opacity: 1; stroke-width: 4; stroke-dasharray: none; }
+
+        .header-kpis { display: flex; align-items: center; }
+        .kpi-item { display: flex; align-items: center; gap: 10px; margin-left: 35px; }
+        .kpi-val { font-size: 1.6rem; font-weight: 950; color: #fff; line-height: 1; }
+        .kpi-lab { font-size: 0.6rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+
+        .sidebar-footer {
+            padding: 20px;
+            background: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+            text-align: center;
+        }
+        .instruction-hint {
+            font-size: 0.7rem;
+            color: #64748b;
+            font-weight: 700;
+            line-height: 1.4;
+        }
 
         #windowLoading {
-            position: absolute; inset: 0; background: rgba(255,255,255,0.9);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50;
+            position: absolute; inset: 0; background: #ffffff; z-index: 2000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
     </style>
 </head>
-<body>
-    <div class="fueros-bg-blur"></div>
-
-    <div class="fueros-floating-window">
-        <!-- Header -->
-        <div class="window-header">
-            <div class="window-title">
-                <i class="bi bi-diagram-3-fill" style="font-size: 1.4rem;"></i>
+<body {% if request.args.get('embed') %}style="background: transparent; overflow: hidden;"{% endif %}>
+    <div class="dashboard-window" {% if request.args.get('embed') %}style="height: 100vh; border-radius: 0; box-shadow: none; border: none;"{% endif %}>
+        <!-- Dashboard Header -->
+        <div class="window-header" {% if request.args.get('embed') %}style="padding: 10px 20px; border-radius: 0; background: #1e293b;"{% endif %}>
+            <div class="d-flex align-items-center">
+                <div class="header-icon" style="background:#3b82f6; width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-right:12px;">
+                    <i class="bi bi-geo-fill text-white" style="font-size: 1rem;"></i>
+                </div>
                 <div>
-                    <h1>Topología por Fuero</h1>
-                    <div style="font-size: 0.65rem; color: rgba(255,255,255,0.5);">Mapa de infraestructura y conexiones</div>
+                    <h1 class="h5 mb-0 fw-900 text-white" style="letter-spacing: -0.5px; font-size: 0.95rem;">Topografía Activa</h1>
+                    <div class="text-muted" style="font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Panel Táctico</div>
+                </div>
+
+                <div class="header-kpis" id="headerKpis" style="display: none; margin-left: 30px;">
+                    <div class="kpi-item">
+                        <div class="kpi-val" id="kpiU">0</div><div class="kpi-lab">Usuarios</div>
+                    </div>
+                    <div class="kpi-item">
+                        <div class="kpi-val" id="kpiPc">0</div><div class="kpi-lab">Equipos</div>
+                    </div>
+                    <div class="kpi-item">
+                        <div class="kpi-val" id="kpiPr">0</div><div class="kpi-lab">Impresoras</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="header-kpi" id="headerKpis" style="display: none;">
-                <div class="kpi-item">
-                    <div class="kpi-val" id="kpiU">0</div><div class="kpi-lab">Usuarios</div>
-                </div>
-                <div class="kpi-item">
-                    <div class="kpi-val" id="kpiPc">0</div><div class="kpi-lab">Equipos</div>
-                </div>
-                <div class="kpi-item">
-                    <div class="kpi-val" id="kpiPr">0</div><div class="kpi-lab">Impresoras</div>
-                </div>
-            </div>
-
-            <a href="/" class="btn-close btn-close-white" style="margin-left: 30px;"></a>
+            {% if request.args.get('embed') %}
+            <!-- Botón Cerrar (Estilo Gestión de Usuarios) -->
+            <button type="button" class="btn-close btn-close-white" 
+                    onclick="window.parent.bootstrap.Modal.getInstance(window.parent.document.getElementById('topoModal')).hide();"
+                    style="opacity: 0.7; transition: opacity 0.2s;" 
+                    aria-label="Close"></button>
+            <style>
+                .btn-close:hover { opacity: 1 !important; }
+            </style>
+            {% else %}
+            <a href="/" class="btn-close btn-close-white"></a>
+            {% endif %}
         </div>
 
         <div class="window-main">
             <!-- Sidebar -->
             <aside class="window-sidebar">
-                <div class="sidebar-search">
-                    <input type="text" class="form-control form-control-sm" placeholder="Buscar dependencia..." onkeyup="filterList(this.value)">
+                <div class="sidebar-header">
+                    <input type="text" class="form-control" placeholder="Buscar por fuero..." onkeyup="filterList(this.value)" 
+                           style="border-radius:12px; border:1px solid #e2e8f0; background:#f8fafc; font-size:0.85rem; padding:10px 15px;">
                 </div>
                 <div class="sidebar-list" id="sidebarList">
                     {% set palette = ['#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#6366f1'] %}
                     
                     <div class="fuero-item" onclick="loadFuero('', 'Huérfanos / Sin Fuero', '#ef4444', this)">
                         <div class="fuero-dot" style="--dot-color: #ef4444;"></div>
-                        <div class="fuero-name">Huérfanos / Sin Fuero</div>
+                        <div class="fuero-name fw-bold" style="font-size: 0.85rem;">Huérfanos / Sin Fuero</div>
                     </div>
 
                     {% for name in fueros_list %}
@@ -188,176 +272,412 @@
                     {% set stats = fuero_stats.get(name, {'pcs': 0, 'printers': 0}) %}
                     <div class="fuero-item" onclick="loadFuero('{{ name | urlencode }}', '{{ name }}', '{{ color }}', this)">
                         <div class="fuero-dot" style="--dot-color: {{ color }};"></div>
-                        <div class="fuero-name">{{ name }}</div>
-                        <div class="fuero-item-stats">
-                            <span><i class="bi bi-pc-display"></i> {{ stats.pcs }}</span>
-                            <span><i class="bi bi-printer"></i> {{ stats.printers }}</span>
+                        <div class="fuero-name fw-bold" style="font-size: 0.85rem; flex:1;">{{ name }}</div>
+                        <div class="text-muted d-flex gap-2" style="font-size: 0.65rem; font-weight:700;">
+                            <span>{{ stats.users }} <i class="bi bi-people-fill"></i></span>
+                            <span>{{ stats.pcs }} <i class="bi bi-pc-display"></i></span>
+                            <span>{{ stats.printers }} <i class="bi bi-printer-fill"></i></span>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
+                <div class="sidebar-footer">
+                    <div class="instruction-hint">
+                        <i class="bi bi-lightbulb-fill text-warning me-1"></i>
+                        Seleccione una dependencia lateral para monitorizar la red activa.
+                    </div>
+                </div>
             </aside>
 
-            <!-- Topology -->
+            <!-- Topology Workspace -->
             <div class="window-content" id="windowContent">
+                <!-- Loading State -->
                 <div id="windowLoading" style="display:none;">
-                    <div class="spinner-border text-primary mb-3"></div>
-                    <div class="fw-bold text-muted">Cargando topología...</div>
+                    <div class="spinner-grow text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+                    <div class="mt-3 fw-900 text-uppercase" style="font-size:0.75rem; color:#64748b; letter-spacing:2px;">Sincronizando Infraestructura...</div>
                 </div>
 
-                <div id="initialState" class="text-center" style="margin-top: 20vh;">
-                    <i class="bi bi-geo-fill text-muted" style="font-size: 4rem; opacity: 0.2;"></i>
-                    <h2 class="text-muted mt-3">Seleccioná una dependencia</h2>
-                    <p class="text-muted small">Elegí un fuero de la lista para mapear su red.</p>
+                <!-- Initial state: professional welcome -->
+                <div id="initialState" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                    <div style="width: 80px; height: 80px; background: #f1f5f9; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                        <i class="bi bi-diagram-3" style="font-size: 2.5rem; color: #94a3b8;"></i>
+                    </div>
+                    <h4 class="fw-900 text-dark mb-2">Monitor de Topografía</h4>
+                    <p class="text-muted small mb-0" style="max-width: 320px;">Seleccione una dependencia en el panel lateral para visualizar la interconexión de activos y el estado de la red en tiempo real.</p>
                 </div>
 
-                <div id="topoTarget" style="display: none;"></div>
+                <!-- The Board -->
+                <div id="topoBoard" class="topology-board" style="display: none;">
+                    <svg id="topologySvg" class="topo-svg"></svg>
+                    
+                    <div class="board-column" id="colUsers">
+                        <div class="column-header">Estructura de Usuarios</div>
+                        <div class="column-content" id="nodesUsers"></div>
+                    </div>
+                    
+                    <div class="board-column" id="colPcs">
+                        <div class="column-header">Estaciones de Trabajo</div>
+                        <div class="column-content" id="nodesPcs"></div>
+                    </div>
+                    
+                    <div class="board-column" id="colPrinters">
+                        <div class="column-header">Inventario de Impresoras</div>
+                        <div class="column-content" id="nodesPrinters"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Tactical Information Tooltip (Custom HUD) -->
+    <div id="topoTooltip">
+        <div class="tt-title"><i class="bi bi-info-circle-fill"></i> Contexto Táctico</div>
+        <div class="tt-body"></div>
+    </div>
+
     <script>
-        let userToPc = {};
-        let pcToPr = {};
-        let pcIdMap = {};
+        let currentData = null;
 
         function loadFuero(param, name, color, el) {
             document.querySelectorAll('.fuero-item').forEach(i => i.classList.remove('active'));
             if(el) el.classList.add('active');
 
-            document.getElementById('initialState').style.display = 'none';
-            document.getElementById('windowLoading').style.display = 'flex';
-            document.getElementById('topoTarget').style.display = 'none';
-            document.getElementById('headerKpis').style.display = 'flex';
+            const initialState = document.getElementById('initialState');
+            if (initialState) initialState.style.display = 'none';
+            
+            const windowLoading = document.getElementById('windowLoading');
+            if (windowLoading) windowLoading.style.display = 'flex';
+
+            const topoBoard = document.getElementById('topoBoard');
+            if (topoBoard) topoBoard.style.display = 'none';
+
+            const headerKpis = document.getElementById('headerKpis');
+            if (headerKpis) headerKpis.style.display = 'flex';
 
             const url = param ? `/fueros?fuero=${param}&json=1` : `/fueros?json=1`;
             fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(r => r.json())
                 .then(data => {
-                    renderMap(data, param);
-                    document.getElementById('windowLoading').style.display = 'none';
-                    document.getElementById('topoTarget').style.display = 'block';
+                    currentData = data;
+                    renderAdaptiveBoard(data);
+                    if (windowLoading) windowLoading.style.display = 'none';
+                    if (topoBoard) topoBoard.style.display = 'grid';
+                })
+                .catch(err => {
+                    console.error("Error loading fuero:", err);
+                    if (windowLoading) windowLoading.style.display = 'none';
                 });
         }
 
-        function renderMap(data, param) {
-            const { users, pcs, printers } = data;
-            document.getElementById('kpiU').textContent = users.length;
-            document.getElementById('kpiPc').textContent = pcs.length;
-            document.getElementById('kpiPr').textContent = printers.length;
-
-            const safe = s => (s||'').toString().replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        function renderAdaptiveBoard(data) {
+            const nodesU = document.getElementById('nodesUsers');
+            const nodesP = document.getElementById('nodesPcs');
+            const nodesPr = document.getElementById('nodesPrinters');
+            const svg = document.getElementById('topologySvg');
             
-            const html = `
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
-                <div class="topo-canvas" id="canvas">
-                    <svg class="topo-svg" id="svg"></svg>
-                    
-                    <!-- Usuarios -->
-                    <div class="topo-col">
-                        <div class="topo-col-label">Usuarios (${users.length})</div>
-                        ${users.map((u,i) => `
-                            <div class="topo-node" id="u${i}" data-type="u" data-key="${safe(u.username.toLowerCase())}" onmouseenter="hNode(this)" onmouseleave="cHover()">
-                                <div class="topo-icon icon-u">${(u.real_name||'U').slice(0,1)}</div>
-                                <div class="node-info"><div class="node-title">${safe(u.real_name||u.username)}</div><div class="node-sub">${safe(u.username)}</div></div>
-                                <div style="position:absolute; right:-5px; width:8px; height:8px; background:#3b82f6; border-radius:50%; border:2px solid #fff;"></div>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <!-- PCs -->
-                    <div class="topo-col">
-                        <div class="topo-col-label">Equipos (${pcs.length})</div>
-                        ${pcs.map((p,i) => {
-                            const lu = (p.last_user||'').split('\\').pop().toLowerCase();
-                            return `
-                            <div class="topo-node" id="pc${i}" data-type="pc" data-pc="${safe(p.pc_name)}" data-lu="${safe(lu)}" onmouseenter="hNode(this)" onmouseleave="cHover()">
-                                <div style="position:absolute; left:-5px; width:8px; height:8px; background:#06b6d4; border-radius:50%; border:2px solid #fff;"></div>
-                                <div class="topo-icon icon-pc"><i class="bi bi-pc-display"></i></div>
-                                <div class="node-info"><div class="node-title">${safe(p.pc_name)}</div><div class="node-sub">${safe(p.ip_address)}</div></div>
-                                <div style="position:absolute; right:-5px; width:8px; height:8px; background:#8b5cf6; border-radius:50%; border:2px solid #fff;"></div>
-                            </div>`;
-                        }).join('')}
-                    </div>
-
-                    <!-- Impresoras -->
-                    <div class="topo-col">
-                        <div class="topo-col-label">Impresoras (${printers.length})</div>
-                        ${printers.map((pr,i) => {
-                            const ass = JSON.stringify((pr.assignments||[]).map(a=>a.pc_name)).replace(/"/g,'&quot;');
-                            const isExt = param && pr.physical_fuero !== decodeURIComponent(param);
-                            return `
-                            <div class="topo-node" id="pr${i}" data-type="pr" data-ass="${ass}" onmouseenter="hNode(this)" onmouseleave="cHover()" ${isExt ? 'style="border-style:dashed; opacity:0.8;"' : ''}>
-                                <div style="position:absolute; left:-5px; width:8px; height:8px; background:#8b5cf6; border-radius:50%; border:2px solid #fff;"></div>
-                                <div class="topo-icon icon-pr"><i class="bi bi-printer"></i></div>
-                                <div class="node-info"><div class="node-title">${safe(pr.ip_address)}</div><div class="node-sub">${safe((pr.brand_model||'').slice(0,25))}</div></div>
-                                ${isExt ? `<span class="badge bg-warning text-dark" style="font-size:0.5rem; position:absolute; right:5px; top:2px;">Red</span>` : ''}
-                            </div>`;
-                        }).join('')}
-                    </div>
-                </div>
-            </div>`;
-
-            document.getElementById('topoTarget').innerHTML = html;
+            nodesU.innerHTML = ''; nodesP.innerHTML = ''; nodesPr.innerHTML = '';
+            svg.innerHTML = '';
             
-            // Build Maps and Draw
+            const { users, pcs, printers: netPrinters } = data;
+            if (document.getElementById('kpiU')) document.getElementById('kpiU').textContent = users.length;
+            if (document.getElementById('kpiPc')) document.getElementById('kpiPc').textContent = pcs.length;
+            
+            // Build Unified Printers List (Net + Local)
+            let allPrinters = [];
+            
+            // Add Network Printers
+            netPrinters.forEach(p => {
+                const isExternal = p.physical_fuero && p.physical_fuero !== currentData.fuero_param;
+                const isShared = (p.ip_address || '').startsWith('\\\\');
+                
+                let subText = p.ip_address;
+                let hostName = '';
+                if (isShared) {
+                    const parts = p.ip_address.split('\\').filter(x => x);
+                    hostName = parts[0];
+                    subText = `Compartida por ${hostName}`;
+                }
+
+                allPrinters.push({
+                    id: `pr-net-${p.id}`,
+                    title: p.brand_model,
+                    sub: subText,
+                    badge: isShared ? 'COMPARTIDA' : (isExternal ? 'EXTERNA' : 'RED DIRECTA'),
+                    badgeColor: isShared ? '#3b82f6' : (isExternal ? '#ef4444' : '#10b981'),
+                    icon: isShared ? '<i class="bi bi-share-fill"></i>' : '<i class="bi bi-ethernet"></i>',
+                    isNet: true,
+                    isShared: isShared,
+                    hostName: hostName,
+                    isExternal: isExternal,
+                    externalFuero: p.physical_fuero,
+                    raw: p
+                });
+            });
+
+            // Add Local Printers from PCs
+            pcs.forEach(pc => {
+                if (pc.printer_model && pc.printer_model !== 'N/A' && pc.printer_model !== 'None' && !pc.printer_model.toUpperCase().includes('SIN IMPRESORA')) {
+                    const port = (pc.printer_port || '');
+                    const isUNC = port.startsWith('\\\\');
+                    const isIP = /^\d{1,3}(\.\d{1,3}){3}/.test(port);
+
+                    const alreadyNetMatched = allPrinters.find(ap => 
+                        ap.isNet && (
+                            (ap.raw && (ap.raw.assignments || []).some(as => as.pc_name === pc.pc_name)) ||
+                            (ap.sub && port && ap.sub.includes(port.split('\\').pop()))
+                        )
+                    );
+                    if (alreadyNetMatched) return;
+
+                    if (isUNC || isIP) {
+                        let subText = port;
+                        let hostName = '';
+                        if (isUNC) {
+                            const parts = port.split('\\').filter(x => x);
+                            hostName = parts[0];
+                            subText = `Compartida por ${hostName}`;
+                        }
+
+                        allPrinters.push({
+                            id: `pr-det-${pc.pc_name}`,
+                            title: pc.printer_model,
+                            sub: subText,
+                            badge: isUNC ? 'COMPARTIDA' : 'RED DIRECTA',
+                            badgeColor: isUNC ? '#3b82f6' : '#10b981',
+                            icon: isUNC ? '<i class="bi bi-share-fill"></i>' : '<i class="bi bi-ethernet"></i>',
+                            isNet: true,
+                            isShared: isUNC,
+                            hostName: hostName,
+                            pc_name: pc.pc_name
+                        });
+                    } else {
+                        allPrinters.push({
+                            id: `pr-loc-${pc.pc_name}`,
+                            title: pc.printer_model,
+                            sub: `Conectada a ${pc.pc_name}`,
+                            badge: 'LOCAL (USB)',
+                            badgeColor: '#f59e0b',
+                            icon: '<i class="bi bi-usb-symbol"></i>',
+                            isNet: false,
+                            pc_name: pc.pc_name
+                        });
+                    }
+                }
+            });
+
+            if (document.getElementById('kpiPr')) {
+                document.getElementById('kpiPr').textContent = allPrinters.filter(p => !p.isExternal).length;
+            }
+
+            const boardHeight = document.getElementById('topoBoard').offsetHeight - 140;
+            const maxNodes = Math.max(users.length, pcs.length, allPrinters.length, 1);
+            const adaptiveGap = Math.max(10, Math.min(25, (boardHeight / maxNodes) - 68));
+
+            // Color Generation for Avatars
+            const getAvatarStyle = (name) => {
+                const colors = ['#3b82f6', '#06b6d4', '#8b5cf6', '#dc2626', '#1e293b', '#2563eb'];
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                const color = colors[Math.abs(hash) % colors.length];
+                const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                return { color, initials };
+            };
+
+            // Render Groups
+            users.forEach((u, i) => {
+                const av = getAvatarStyle(u.real_name || u.username);
+                const html = `
+                    <div class="avatar-initials" style="background:${av.color}">${av.initials}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.75rem; font-weight:800; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.real_name || u.username}</div>
+                        <div style="font-size:0.6rem; color:#64748b; margin-top:-2px;">${u.username}</div>
+                        <div class="mt-1"><span class="badge-role"><i class="bi bi-person"></i> Staff</span></div>
+                    </div>
+                `;
+                const node = createBoardNode(`u-${i}`, 'node-u', html, {type: 'u', data: u});
+                node.style.marginBottom = adaptiveGap + 'px';
+                nodesU.appendChild(node);
+            });
+
+            pcs.forEach((pc, i) => {
+                const os = (pc.os_name || '').includes('11') ? 'Win 11' : (pc.os_name || '').includes('10') ? 'Win 10' : 'Win 7';
+                const av = getAvatarStyle(pc.pc_name);
+                const html = `
+                    <div class="avatar-initials" style="background:${av.color}">${av.initials}</div>
+                    <div style="flex:1; min-width:0;">
+                         <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="font-size:0.75rem; font-weight:800; color:#1e293b;">${pc.pc_name}</div>
+                            <span class="badge-activo"><i class="bi bi-check-circle-fill"></i> Activo</span>
+                        </div>
+                        <div style="font-size:0.6rem; color:#64748b; margin-top:-2px;">${pc.ip_address}</div>
+                        <div class="mt-1 d-flex gap-1">
+                            <span class="badge-role" style="background:#e0f2fe; color:#0369a1;"><i class="bi bi-microsoft"></i> ${os}</span>
+                        </div>
+                    </div>
+                `;
+                const node = createBoardNode(`pc-${i}`, 'node-pc', html, {type: 'pc', data: pc});
+                node.style.marginBottom = adaptiveGap + 'px';
+                nodesP.appendChild(node);
+            });
+
+            allPrinters.forEach((pr, i) => {
+                const av = { color: pr.badgeColor, initials: pr.badge[0] + (pr.badge[1] || '') };
+                const html = `
+                    <div class="avatar-initials" style="background:${av.color}">${av.initials}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.75rem; font-weight:800; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${pr.title}</div>
+                        <div style="font-size:0.6rem; color:#64748b; margin-top:-2px;">${pr.sub}</div>
+                        <div class="mt-1"><span class="badge-role" style="background:${pr.badgeColor}11; color:${pr.badgeColor};"><i class="bi bi-printer"></i> ${pr.badge}</span></div>
+                    </div>
+                `;
+                
+                let humanTooltip = "";
+                if (pr.isShared) {
+                    humanTooltip = `<div class="mb-2"><span class="badge bg-warning text-dark"><i class="bi bi-share-fill"></i> SERVICIO COMPARTIDO</span></div>
+                                   Esta impresora no tiene red propia. Está conectada físicamente a la PC <b>${pr.hostName}</b> por cable USB. 
+                                   <div class="mt-2 text-warning fw-bold">⚠️ CRÍTICO: Si la PC ${pr.hostName} se apaga o se bloquea, toda la oficina dejará de imprimir.</div>`;
+                } else if (pr.isNet) {
+                    humanTooltip = `<div class="mb-2"><span class="badge bg-success text-white"><i class="bi bi-ethernet"></i> NODO AUTÓNOMO</span></div>
+                                   Equipo independiente conectado directamente al Switch por RJ45. <b>No depende de ninguna PC</b> para estar online. Es el método de conexión más fiable para esta oficina.`;
+                } else {
+                    humanTooltip = `<div class="mb-2"><span class="badge bg-secondary text-white"><i class="bi bi-usb-symbol"></i> PERIFÉRICO LOCAL</span></div>
+                                   Conectada solo a este equipo por USB. No está compartida. Solo el usuario de esta PC puede enviar trabajos de impresión.`;
+                }
+
+                if (pr.isExternal) {
+                    humanTooltip += `<hr style="border-top:1px solid rgba(255,255,255,0.1); margin:8px 0;">
+                                    <div class="text-info"><i class="bi bi-geo-alt"></i> Ubicación Física: Pertenece al sector <b>${pr.externalFuero}</b>.</div>`;
+                }
+
+                const node = createBoardNode(pr.id, 'node-pr', html, {type: 'pr', data: pr, human: humanTooltip});
+                node.style.marginBottom = adaptiveGap + 'px';
+                nodesPr.appendChild(node);
+            });
+
+            // Draw Relationships after layout
             setTimeout(() => {
-                userToPc = {}; pcToPr = {}; pcIdMap = {};
-                document.querySelectorAll('[data-type="pc"]').forEach(el => pcIdMap[el.dataset.pc] = el.id);
-                document.querySelectorAll('[data-type="u"]').forEach(uEl => {
-                    userToPc[uEl.id] = [];
-                    document.querySelectorAll('[data-type="pc"]').forEach(pcEl => { if(pcEl.dataset.lu === uEl.dataset.key) userToPc[uEl.id].push(pcEl.id); });
+                users.forEach((u, ui) => {
+                    const pcIndex = pcs.findIndex(p => (p.last_user || '').toLowerCase().includes(u.username.toLowerCase()));
+                    if (pcIndex !== -1) drawCircuitLine(svg, `u-${ui}`, `pc-${pcIndex}`, '#3b82f6');
                 });
-                document.querySelectorAll('[data-type="pr"]').forEach(prEl => {
-                    let a = []; try { a = JSON.parse(prEl.dataset.ass||'[]'); } catch(e){}
-                    a.forEach(pcn => { const pid = pcIdMap[pcn]; if(pid) { (pcToPr[pid] = pcToPr[pid]||[]).push(prEl.id); } });
+
+                pcs.forEach((pc, pi) => {
+                    const port = (pc.printer_port || '');
+                    allPrinters.forEach(ap => {
+                        if (ap.isNet && ap.raw && (ap.raw.assignments || []).some(as => as.pc_name === pc.pc_name)) {
+                            drawCircuitLine(svg, `pc-${pi}`, ap.id, '#8b5cf6');
+                        }
+                    });
+                    allPrinters.forEach(ap => {
+                        if (ap.sub && port && (ap.sub.toLowerCase().includes(port.toLowerCase()) || port.toLowerCase().includes(ap.sub.toLowerCase()))) {
+                            drawCircuitLine(svg, `pc-${pi}`, ap.id, '#3b82f6');
+                        }
+                    });
                 });
-                requestAnimationFrame(drawLines);
-            }, 50);
+            }, 500);
         }
 
-        function drawLines() {
-            const svg = document.getElementById('svg'); if(!svg) return;
-            const can = document.getElementById('canvas'); const cr = can.getBoundingClientRect();
-            const getPos = id => { const el = document.getElementById(id); const r = el.getBoundingClientRect(); return { y: r.top-cr.top+r.height/2, xL: r.left-cr.left, xR: r.left-cr.left+r.width }; };
+        function createBoardNode(id, className, html, meta) {
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = `topo-node ${className} d-flex align-items-center mb-1`;
+            div.innerHTML = html;
 
-            Object.entries(userToPc).forEach(([uid, pids]) => {
-                const uPos = getPos(uid);
-                pids.forEach(pid => {
-                    const pPos = getPos(pid);
-                    drawCurve(svg, uPos.xR, uPos.y, pPos.xL, pPos.y, uid, pid);
+            div.onclick = () => {
+                let url = '';
+                if (meta.type === 'pc') url = `/pc/${meta.data.pc_name}`;
+                else if (meta.type === 'pr') url = `/infra#printers`;
+                else if (meta.type === 'u') url = `/?q=${meta.data.username}`;
+                
+                if (window.parent && window.parent !== window) {
+                    window.parent.location.href = url;
+                } else {
+                    window.location.href = url;
+                }
+            };
+
+            div.onmouseenter = (e) => {
+                highlightPath(id, meta);
+                if (meta.human) {
+                    const tt = document.getElementById('topoTooltip');
+                    tt.querySelector('.tt-body').innerHTML = meta.human;
+                    tt.style.opacity = '1';
+                    const moveHandler = (ev) => {
+                        tt.style.left = (ev.clientX + 20) + 'px';
+                        tt.style.top = (ev.clientY + 20) + 'px';
+                    };
+                    div.addEventListener('mousemove', moveHandler);
+                    div._moveHandler = moveHandler;
+                }
+            };
+            div.onmouseleave = () => {
+                clearHighlight();
+                const tt = document.getElementById('topoTooltip');
+                tt.style.opacity = '0';
+                if (div._moveHandler) {
+                    div.removeEventListener('mousemove', div._moveHandler);
+                }
+            };
+            return div;
+        }
+
+        function drawCircuitLine(svg, fId, tId, color) {
+            const from = document.getElementById(fId);
+            const to = document.getElementById(tId);
+            if(!from || !to) return;
+
+            const bRect = document.getElementById('topoBoard').getBoundingClientRect();
+            const fR = from.getBoundingClientRect();
+            const tR = to.getBoundingClientRect();
+
+            const x1 = fR.right - bRect.left;
+            const y1 = fR.top + fR.height/2 - bRect.top;
+            const x2 = tR.left - bRect.left;
+            const y2 = tR.top + tR.height/2 - bRect.top;
+
+            const midX = (x1 + x2) / 2;
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", `M${x1},${y1} L${midX},${y1} L${midX},${y2} L${x2},${y2}`);
+            path.setAttribute("class", "path-line");
+            path.dataset.from = fId;
+            path.dataset.to = tId;
+            svg.appendChild(path);
+        }
+
+        function highlightPath(nodeId, meta) {
+            const relatedNodes = new Set([nodeId]);
+            const relatedPaths = new Set();
+            let changed = true;
+            while (changed) {
+                changed = false;
+                document.querySelectorAll('.path-line').forEach(p => {
+                    const f = p.dataset.from;
+                    const t = p.dataset.to;
+                    if (!relatedPaths.has(p) && (relatedNodes.has(f) || relatedNodes.has(t))) {
+                        relatedPaths.add(p);
+                        relatedNodes.add(f); relatedNodes.add(t);
+                        changed = true;
+                    }
                 });
+            }
+            document.querySelectorAll('.topo-node').forEach(n => {
+                const isRel = relatedNodes.has(n.id);
+                n.style.opacity = isRel ? '1' : '0.15';
+                n.style.filter = isRel ? 'none' : 'grayscale(1)';
             });
-            Object.entries(pcToPr).forEach(([pid, prids]) => {
-                const pPos = getPos(pid);
-                prids.forEach(prid => {
-                    const prPos = getPos(prid);
-                    drawCurve(svg, pPos.xR, pPos.y, prPos.xL, prPos.y, pid, prid);
-                });
+            document.querySelectorAll('.path-line').forEach(p => {
+                p.classList.toggle('path-active', relatedPaths.has(p));
             });
         }
 
-        function drawCurve(svg, x1, y1, x2, y2, f, t) {
-            const cp = Math.max(30, Math.abs(x2-x1)*0.4);
-            const p = document.createElementNS('http://www.w3.org/2000/svg','path');
-            p.setAttribute('d', `M${x1},${y1} C${x1+cp},${y1} ${x2-cp},${y2} ${x2},${y2}`);
-            p.setAttribute('class', 'path-line'); p.dataset.f = f; p.dataset.t = t;
-            svg.appendChild(p);
-        }
-
-        function hNode(el) {
-            const rel = new Set([el.id]);
-            if(el.dataset.type === 'u') { (userToPc[el.id]||[]).forEach(pid => { rel.add(pid); (pcToPr[pid]||[]).forEach(prid=>rel.add(prid)); }); }
-            else if(el.dataset.type === 'pc') { Object.entries(userToPc).forEach(([u,ps])=>{if(ps.includes(el.id)) rel.add(u);}); (pcToPr[el.id]||[]).forEach(p=>rel.add(p)); }
-            else if(el.dataset.type === 'pr') { Object.entries(pcToPr).forEach(([p,prs])=>{if(prs.includes(el.id)) { rel.add(p); Object.entries(userToPc).forEach(([u,ps])=>{if(ps.includes(p)) rel.add(u);}); }}); }
-            
-            document.querySelectorAll('.topo-node').forEach(n => { n.classList.toggle('dimmed', !rel.has(n.id)); n.classList.toggle('highlighted', rel.has(n.id)); });
-            document.querySelectorAll('.path-line').forEach(p => p.classList.toggle('path-active', rel.has(p.dataset.f) && rel.has(p.dataset.t)));
-        }
-
-        function cHover() {
-            document.querySelectorAll('.topo-node').forEach(n => n.classList.remove('dimmed','highlighted'));
-            document.querySelectorAll('.path-line').forEach(p => p.classList.remove('path-active'));
+        function clearHighlight() {
+            document.querySelectorAll('.topo-node').forEach(n => {
+                n.style.opacity = '1';
+                n.style.filter = 'none';
+            });
+            document.querySelectorAll('.path-line').forEach(p => {
+                p.classList.remove('path-active');
+            });
         }
 
         function filterList(q) {
@@ -369,8 +689,11 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const first = document.querySelector('.fuero-item:not([style*="display: none"])');
-            if(first) first.click();
+             // Auto-cargar el primer fuero de la lista después de un breve delay para asegurar estabilidad
+             setTimeout(() => {
+                 const first = document.querySelector('.fuero-item');
+                 if(first) first.click();
+             }, 300);
         });
     </script>
 </body>

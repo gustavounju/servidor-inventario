@@ -11,7 +11,7 @@ from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.reporting import PDFReport, format_datetime_es, format_date_es
 from services.push_notifications import notify_all_technicians
-from utils.auth import superuser_required
+from utils.auth import superuser_required, current_username
 
 bp_tasks = Blueprint('tasks', __name__)
 
@@ -103,15 +103,16 @@ def migrate_generic_tasks():
         if task_id:
             conn.execute("UPDATE tasks SET pc_name = %s WHERE id = %s AND pc_name = 'PC Generica'", (target_pc, task_id))
             audit_msg = f"Se importó la tarea #{task_id} de PC Generica"
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                         ('PC Generica', f"Tarea #{task_id} Transferida", "", f"Enviada a {target_pc}"))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         ('PC Generica', f"Tarea #{task_id} Transferida", "", f"Enviada a {target_pc}", current_username(), "MIGRACION_TAREAS", request.remote_addr))
         else:
             conn.execute("UPDATE tasks SET pc_name = %s WHERE pc_name = 'PC Generica'", (target_pc,))
             audit_msg = "Se importaron TODAS las tareas de PC Generica"
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                         ('PC Generica', "Todas las tareas transferidas", "", f"Enviadas a {target_pc}"))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         ('PC Generica', "Todas las tareas transferidas", "", f"Enviadas a {target_pc}", current_username(), "MIGRACION_TAREAS", request.remote_addr))
         
-        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (target_pc, "MIGRACION", "PC Generica", audit_msg))
+        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                     (target_pc, "MIGRACION", "PC Generica", audit_msg, current_username(), "MIGRACION_TAREAS", request.remote_addr))
         conn.commit()
     return redirect(url_for("dashboard.pc_detail", pc_name="PC Generica"))
 
@@ -127,8 +128,8 @@ def add_task(pc_name):
     with get_db_connection() as conn:
         cursor = conn.execute("INSERT INTO tasks (pc_name, descripcion, solicitante, categoria) VALUES (%s, %s, %s, %s)", (pc_name, descripcion, solicitante, categoria))
         task_id = cursor.lastrowid
-        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                     (pc_name, "Tarea Creada", "", f"#{task_id}: {descripcion[:30]}..."))
+        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                     (pc_name, "Tarea Creada", "", f"#{task_id}: {descripcion[:30]}...", current_username(), "GESTION_TAREAS", request.remote_addr))
         conn.commit()
 
     # Notify technicians
@@ -201,8 +202,8 @@ def mark_task_done(task_id):
                 (technician, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), task_id)
             )
             pc_name = row["pc_name"]
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                         (pc_name, f"Tarea #{task_id} Completada", "Pendiente", f"Por {technician}"))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         (pc_name, f"Tarea #{task_id} Completada", "Pendiente", f"Por {technician}", current_username(), "GESTION_TAREAS", request.remote_addr))
             conn.commit()
         else: pc_name = ""
     if not pc_name: return redirect(url_for("dashboard.dashboard"))
@@ -216,8 +217,8 @@ def delete_task(task_id):
             conn.execute("DELETE FROM tasks WHERE id = %s", (task_id,))
             pc_name = row["pc_name"]
             descripcion = row.get("descripcion", "Sin descripción")
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                         (pc_name, "Tarea Eliminada", f"#{task_id}", f"Desc: {descripcion[:50]}"))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         (pc_name, "Tarea Eliminada", f"#{task_id}", f"Desc: {descripcion[:50]}", current_username(), "GESTION_TAREAS", request.remote_addr))
             conn.commit()
         else: pc_name = ""
     if not pc_name: return redirect(url_for("dashboard.dashboard"))
@@ -301,11 +302,11 @@ def assign_task():
                 conn.execute("UPDATE tasks SET pc_name = %s WHERE id = %s", (pc_name, task_id))
                 
                 # Log on both the new and old PC if they differ
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                             (pc_name, f"Tarea #{task_id} Asignada aquí", old_pc, f"Asignada a {pc_name}"))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             (pc_name, f"Tarea #{task_id} Asignada aquí", old_pc, f"Asignada a {pc_name}", current_username(), "GESTION_TAREAS", request.remote_addr))
                 if old_pc and old_pc != pc_name:
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", 
-                                 (old_pc, f"Tarea #{task_id} Transferida", pc_name, f"Transferida a {pc_name}"))
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                 (old_pc, f"Tarea #{task_id} Transferida", pc_name, f"Transferida a {pc_name}", current_username(), "GESTION_TAREAS", request.remote_addr))
                 conn.commit()
     return redirect(url_for("dashboard.dashboard"))
 
@@ -317,7 +318,8 @@ def add_manual_audit(pc_name):
     if not campo or not valor_nuevo: return jsonify({"status": "error", "message": "Faltan datos"}), 400
     try:
         with get_db_connection() as conn:
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value) VALUES (%s, %s, %s, %s)", (pc_name, campo, valor_anterior, valor_nuevo))
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         (pc_name, campo, valor_anterior, valor_nuevo, current_username(), "AUDITORIA_MANUAL", request.remote_addr))
             conn.commit()
         return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
     except Exception as e:
