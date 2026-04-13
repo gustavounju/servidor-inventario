@@ -975,16 +975,16 @@ def view_fueros():
                 WHERE fuero = %s 
                 UNION
                 SELECT DISTINCT 
-                    LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
-                    last_user as real_name, 
-                    NULL as phone
-                FROM pcs 
-                WHERE is_active = 'True' 
-                  AND pc_name NOT IN ('PC Generica', 'Infraestructura') 
-                  AND fuero = %s 
-                  AND last_user IS NOT NULL 
-                  AND last_user != '' 
-                  AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
+                    LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) as username, 
+                    COALESCE(u.real_name, p.last_user) as real_name, 
+                    u.phone
+                FROM pcs p
+                LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
+                WHERE p.is_active = 'True' 
+                  AND p.pc_name NOT IN ('PC Generica', 'Infraestructura') 
+                  AND p.fuero = %s 
+                  AND p.last_user IS NOT NULL 
+                  AND p.last_user != ''
                 ORDER BY real_name
             """, (fuero_param, fuero_param)).fetchall()
             printers_raw = conn.execute("""
@@ -1004,16 +1004,16 @@ def view_fueros():
                 WHERE (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') 
                 UNION
                 SELECT DISTINCT 
-                    LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
-                    last_user as real_name, 
-                    NULL as phone
-                FROM pcs 
-                WHERE is_active = 'True' 
-                  AND pc_name NOT IN ('PC Generica', 'Infraestructura') 
-                  AND (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') 
-                  AND last_user IS NOT NULL 
-                  AND last_user != '' 
-                  AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
+                    LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) as username, 
+                    COALESCE(u.real_name, p.last_user) as real_name, 
+                    u.phone
+                FROM pcs p
+                LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
+                WHERE p.is_active = 'True' 
+                  AND p.pc_name NOT IN ('PC Generica', 'Infraestructura') 
+                  AND (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido') 
+                  AND p.last_user IS NOT NULL 
+                  AND p.last_user != ''
                 ORDER BY real_name
             """).fetchall()
             printers_raw = conn.execute("""
