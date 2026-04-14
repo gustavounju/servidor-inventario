@@ -98,8 +98,8 @@ def dashboard():
             filter_sql = ""
             filter_params = []
             if q:
-                filter_sql += " AND (p.pc_name LIKE %s OR p.last_user LIKE %s OR p.ip_address LIKE %s OR p.fuero LIKE %s OR p.os_name LIKE %s OR u.real_name LIKE %s)"
-                filter_params.extend([f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%"])
+                filter_sql += " AND (p.pc_name LIKE %s OR p.last_user LIKE %s OR p.ip_address LIKE %s OR p.fuero LIKE %s OR p.os_name LIKE %s OR u.real_name LIKE %s OR au.display_name LIKE %s)"
+                filter_params.extend([f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%"])
             
             if estado in ("True", "False"):
                 filter_sql += " AND p.is_active = %s"
@@ -132,6 +132,9 @@ def dashboard():
                     LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username OR 
                     LOWER(p.last_user) = LOWER(u.real_name)
                 )
+                LEFT JOIN app_users au ON (
+                    LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = au.username
+                )
                 WHERE 1=1 
                 AND UPPER(p.pc_name) NOT LIKE 'PC%%GENERICA%%' 
                 AND UPPER(p.pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
@@ -143,7 +146,9 @@ def dashboard():
             technicians_list = list_technician_users()
 
             base_sql = """
-                SELECT p.*, u.real_name as ad_real_name, u.phone as ad_phone,
+                SELECT p.*, 
+                    COALESCE(u.real_name, au.display_name) as ad_real_name, 
+                    COALESCE(u.phone, au.phone) as ad_phone,
                     (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%')) AS tareas_pendientes,
                     (
                         SELECT CONCAT(np.ip_address, ' - ', np.brand_model) 
@@ -163,6 +168,9 @@ def dashboard():
                 LEFT JOIN ad_users u ON (
                     LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username OR 
                     LOWER(p.last_user) = LOWER(u.real_name)
+                )
+                LEFT JOIN app_users au ON (
+                    LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = au.username
                 )
                 WHERE 1=1 
                 AND UPPER(p.pc_name) NOT LIKE 'PC%%GENERICA%%' 
@@ -622,9 +630,10 @@ def delete_permanent_pc(pc_name):
 def pc_detail(pc_name):
     with get_db_connection() as conn:
         pc = conn.execute("""
-            SELECT p.*, u.real_name as ad_real_name 
+            SELECT p.*, COALESCE(u.real_name, au.display_name) as ad_real_name 
             FROM pcs p 
             LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username 
+            LEFT JOIN app_users au ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = au.username
             WHERE p.pc_name = %s
         """, (pc_name,)).fetchone()
         tareas = conn.execute("SELECT id, pc_name, created_at, descripcion, estado, solicitante, assigned_to FROM tasks WHERE pc_name = %s ORDER BY created_at DESC", (pc_name,)).fetchall()
