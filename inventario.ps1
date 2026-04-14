@@ -398,9 +398,11 @@ try {
                         "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$printerModel\PrinterDriverData",
                         "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Printers\$printerModel\PrinterDriverData",
                         "HKLM:\SOFTWARE\Brother\Brother MFL-Pro\$printerModel",
-                        "HKLM:\SOFTWARE\WOW6432Node\Brother\Brother MFL-Pro\$printerModel"
+                        "HKLM:\SOFTWARE\WOW6432Node\Brother\Brother MFL-Pro\$printerModel",
+                        "HKLM:\SOFTWARE\Pantum\$printerModel",
+                        "HKLM:\SOFTWARE\WOW6432Node\Pantum\$printerModel"
                     )
-                    $serialValueNames = @("SerialNumber", "SSN", "SN", "SerialNo", "UID")
+                    $serialValueNames = @("SerialNumber", "SSN", "SN", "SerialNo", "UID", "MachineID", "ProductSerial")
                     
                     foreach ($regPath in $regPaths) {
                         # Reemplazar asteriscos por el nombre del modelo si es necesario
