@@ -473,6 +473,16 @@ def migrate_db_v25():
                 print(f"Aplicando migración V25: Agregando '{col}' a audit_logs...")
                 conn.execute(f"ALTER TABLE audit_logs ADD COLUMN {col} {dtype}")
     print("Migración V25 verificada.")
+    
+def migrate_db_v26():
+    """Migración V26: Asegurar columna 'mac_address' en pcs."""
+    print("Verificando migración de DB v26...")
+    with get_db_connection() as conn:
+        if not _column_exists(conn, "pcs", "mac_address"):
+            print("Aplicando migración V26: Agregando 'mac_address' a pcs...")
+            conn.execute("ALTER TABLE pcs ADD COLUMN mac_address VARCHAR(100)")
+        else:
+            print("Migración V26 verificada.")
 
 
 def run_all_migrations():
@@ -501,3 +511,4 @@ def run_all_migrations():
     migrate_db_v23()
     migrate_db_v24()
     migrate_db_v25()
+    migrate_db_v26()

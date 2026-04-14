@@ -228,9 +228,13 @@ try {
     }
     # 2) Red
     $ipAddress = "N/A"
+    $macAddress = "N/A"
     try {
-        $ipObj = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled = True" | Select-Object -First 1 -ExpandProperty IPAddress
-        if ($ipObj -is [array]) { $ipAddress = $ipObj[0] } else { $ipAddress = $ipObj }
+        $netCfg = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled = True" | Select-Object -First 1
+        if ($netCfg) {
+            if ($netCfg.IPAddress -is [array]) { $ipAddress = $netCfg.IPAddress[0] } else { $ipAddress = $netCfg.IPAddress }
+            $macAddress = $netCfg.MACAddress
+        }
     }
     catch {}
     # 3) RAM Detalles
@@ -350,9 +354,14 @@ try {
                         if ($pnp.DeviceID -match "\\([^\\]+)$") {
                             $potentialSN = $matches[1] -replace "_\d+$", "" # Quitar sufijos de Windows si existen (_0, _1)
                             
-                            # Validar que no sea un ID genérico o GUID
+                            # VALIDACIÓN REFORZADA:
+                            # 1. No debe ser un GUID
+                            # 2. No debe ser un ID de puerto genérico (USB, LPT...)
+                            # 3. No debe tener '&' (Esto indica que es un ID de hub/puerto de Windows, no físico)
                             $isGuid = $potentialSN -match "^\{[A-F0-9-]+\}$" -or ($potentialSN -split "-").Count -gt 3
-                            if ($potentialSN -notmatch "^(USB|LPT|COM)[0-9]+$" -and -not $isGuid -and $potentialSN.Length -gt 4) {
+                            $isWindowsID = $potentialSN -contains "&" -or $potentialSN -match "&"
+                            
+                            if ($potentialSN -notmatch "^(USB|LPT|COM)[0-9]+$" -and -not $isGuid -and -not $isWindowsID -and $potentialSN.Length -gt 4) {
                                 $printerSN = $potentialSN
                                 break
                             }
@@ -383,14 +392,25 @@ try {
                     }
                 }
 
-                # 3. Fallback por PrinterDriverData (Software\Microsoft\Windows NT\CurrentVersion\Print\Printers)
-                if ($printerSN -eq "N/A") {
+                # 3. Fallback por PrinterDriverData o Subclaves de Fabricante (Brother/Ricoh)
+                if ($printerSN -eq "N/A" -or $printerSN -match "&") {
                     $printerRegistryPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Printers\$printerModel\PrinterDriverData"
                     if (Test-Path $printerRegistryPath) {
                         $potentialSN = Get-ItemProperty -Path $printerRegistryPath -Name "SerialNumber" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SerialNumber -ErrorAction SilentlyContinue
-                        if ($null -ne $potentialSN -and $potentialSN.Length -gt 4) {
+                        if ($null -ne $potentialSN -and $potentialSN.Length -gt 4 -and $potentialSN -notmatch "&") {
                             $printerSN = $potentialSN
                         }
+                    }
+                }
+                
+                # 4. Fallback específico Brother (MFL-Pro)
+                if ($printerSN -eq "N/A" -or $printerSN -match "&") {
+                    $brotherPaths = @("HKLM:\SOFTWARE\Brother\Brother MFL-Pro\*", "HKLM:\SOFTWARE\Wow6432Node\Brother\Brother MFL-Pro\*")
+                    foreach ($bp in $brotherPaths) {
+                        try {
+                            $serial = Get-ItemProperty $bp -Name "SerialNo" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SerialNo -ErrorAction SilentlyContinue
+                            if ($serial -and $serial.Length -gt 5) { $printerSN = $serial; break }
+                        } catch {}
                     }
                 }
             } catch {}
@@ -559,7 +579,7 @@ try {
     $jsonObj += """RAM (GB)"": $(n $ramGB),"
     $jsonObj += """Office"": ""$(e $officeVersion)"""
     $jsonObj += "},"
-    $jsonObj += """Red"": [{""IPAddress"": ""$ipAddress""}],"
+    $jsonObj += """Red"": [{""IPAddress"": ""$ipAddress"", ""MACAddress"": ""$macAddress""}],"
     $jsonObj += """RAM_Detalles"": ""$(e $ramDetalles)"","
     $jsonObj += """Disk_Models"": ""$(e $diskModelsStr)"","
     $jsonObj += """Disk_Speeds_RPM"": ""$(e $diskSpeedsStr)"","
