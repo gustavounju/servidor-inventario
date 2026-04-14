@@ -392,26 +392,44 @@ try {
                     }
                 }
 
-                # 3. Fallback por PrinterDriverData o Subclaves de Fabricante (Brother/Ricoh)
+                # 3. Fallback Avanzado por Registro (HP, Brother, Ricoh)
                 if ($printerSN -eq "N/A" -or $printerSN -match "&") {
-                    $printerRegistryPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Printers\$printerModel\PrinterDriverData"
-                    if (Test-Path $printerRegistryPath) {
-                        $potentialSN = Get-ItemProperty -Path $printerRegistryPath -Name "SerialNumber" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SerialNumber -ErrorAction SilentlyContinue
-                        if ($null -ne $potentialSN -and $potentialSN.Length -gt 4 -and $potentialSN -notmatch "&") {
-                            $printerSN = $potentialSN
+                    $regPaths = @(
+                        "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$printerModel\PrinterDriverData",
+                        "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Printers\$printerModel\PrinterDriverData",
+                        "HKLM:\SOFTWARE\Brother\Brother MFL-Pro\$printerModel",
+                        "HKLM:\SOFTWARE\WOW6432Node\Brother\Brother MFL-Pro\$printerModel"
+                    )
+                    $serialValueNames = @("SerialNumber", "SSN", "SN", "SerialNo", "UID")
+                    
+                    foreach ($regPath in $regPaths) {
+                        # Reemplazar asteriscos por el nombre del modelo si es necesario
+                        $finalPath = $regPath -replace "\*", $printerModel 
+                        if (Test-Path $finalPath) {
+                            foreach ($valName in $serialValueNames) {
+                                $potential = Get-ItemProperty -Path $finalPath -Name $valName -ErrorAction SilentlyContinue | Select-Object -ExpandProperty $valName -ErrorAction SilentlyContinue
+                                if ($potential -and $potential.Length -gt 5 -and $potential -notmatch '[&{]') {
+                                    $printerSN = $potential
+                                    break
+                                }
+                            }
                         }
+                        if ($printerSN -ne "N/A" -and $printerSN -notmatch "&") { break }
                     }
                 }
-                
-                # 4. Fallback específico Brother (MFL-Pro)
-                if ($printerSN -eq "N/A" -or $printerSN -match "&") {
-                    $brotherPaths = @("HKLM:\SOFTWARE\Brother\Brother MFL-Pro\*", "HKLM:\SOFTWARE\Wow6432Node\Brother\Brother MFL-Pro\*")
-                    foreach ($bp in $brotherPaths) {
-                        try {
-                            $serial = Get-ItemProperty $bp -Name "SerialNo" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty SerialNo -ErrorAction SilentlyContinue
-                            if ($serial -and $serial.Length -gt 5) { $printerSN = $serial; break }
-                        } catch {}
-                    }
+
+                # 4. Limpieza final de IDs virtuales si es USB
+                if (($printerSN -match '&' -or $printerSN -eq "N/A") -and $printerPort -match 'USB') {
+                   $pnpId = $bestPrinter.PNPDeviceID
+                   if ($pnpId -match "USBPRINT\\") {
+                        $pnpSerial = $pnpId.Split('\')[-1] -replace "_\d+$", ""
+                        if ($pnpSerial -match '&') {
+                            $subParts = $pnpSerial.Split('&')
+                            if ($subParts.Count -ge 2) { $printerSN = $subParts[1] }
+                        } else {
+                            $printerSN = $pnpSerial
+                        }
+                   }
                 }
             } catch {}
             # Limpiar prefijos/sufijos internos de Windows (Ej: IP_10.15.2.50_1 -> 10.15.2.50)
