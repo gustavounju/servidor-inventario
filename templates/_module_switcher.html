@@ -62,6 +62,12 @@
                     <i class="bi bi-plus-lg"></i>
                 </button>
 
+                {% if current_user.username == 'gmurad' %}
+                <a href="{{ url_for('vault.vault_index') }}" class="action-btn" title="Recursos Internos" style="border-radius: 50%; background: rgba(99, 102, 241, 0.1);">
+                    <i class="bi bi-shield-shaded" style="color: #6366f1;"></i>
+                </a>
+                {% endif %}
+
                 <a href="{{ url_for('auth.logout') }}" class="action-btn" title="Salir">
                     <i class="bi bi-door-open"></i>
                 </a>
