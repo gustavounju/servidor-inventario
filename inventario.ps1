@@ -341,7 +341,8 @@ try {
         if ($bestPrinter) {
             $printerModel = $bestPrinter.Name
             $printerPort = $bestPrinter.PortName
-
+            # INTENTAR OBTENER SERIAL FÍSICO (USB / PnP)
+            try {
                 # 0. Chequeo directo por PNPDeviceID de la impresora (Suele ser USBPRINT\MODEL\SERIAL)
                 if ($bestPrinter.PNPDeviceID -match "([^\\]+)$") {
                     $potentialSN = $matches[1] -replace "_\d+$", ""
