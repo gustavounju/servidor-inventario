@@ -10,16 +10,41 @@ bp_vault = Blueprint("vault", __name__)
 VAULT_BASE = os.path.join("uploads", "vault")
 DEFAULT_LIMIT_MB = 300
 
-def get_user_vault_path(username):
-    """Obtiene o crea la carpeta de archivos para un usuario específico."""
-    path = os.path.join(VAULT_BASE, username)
+# Usuarios autorizados para el Vault
+VAULT_ALLOWED_USERS = ['gmurad', 'dquiros']
+# Carpeta compartida única para estos usuarios
+VAULT_SHARED_FOLDER = "shared_admin_vault"
+
+def is_vault_authorized(username):
+    """Verifica si el usuario actual está en la lista de permitidos."""
+    return username in VAULT_ALLOWED_USERS
+
+def get_vault_path():
+    """Obtiene o crea la carpeta compartida para el vault."""
+    path = os.path.join(VAULT_BASE, VAULT_SHARED_FOLDER)
     if not os.path.exists(path):
         os.makedirs(path, exist_ok=True)
+    
+    # Migración: Si existe la carpeta vieja de 'gmurad', mover archivos a la compartida
+    old_path = os.path.join(VAULT_BASE, "gmurad")
+    if os.path.exists(old_path) and old_path != path:
+        try:
+            for item in os.listdir(old_path):
+                s = os.path.join(old_path, item)
+                d = os.path.join(path, item)
+                if not os.path.exists(d):
+                    os.rename(s, d)
+            # Intentar borrar carpeta vieja si está vacía
+            if not os.listdir(old_path):
+                os.rmdir(old_path)
+        except:
+            pass
+            
     return path
 
-def get_vault_config(username):
-    """Lee la configuración de espacio del usuario (límite)."""
-    path = get_user_vault_path(username)
+def get_vault_config():
+    """Lee la configuración de espacio compartido (límite)."""
+    path = get_vault_path()
     config_file = os.path.join(path, ".config.json")
     if os.path.exists(config_file):
         try:
@@ -29,9 +54,9 @@ def get_vault_config(username):
             pass
     return {"limit_mb": DEFAULT_LIMIT_MB}
 
-def save_vault_config(username, config):
-    """Guarda la configuración de espacio del usuario."""
-    path = get_user_vault_path(username)
+def save_vault_config(config):
+    """Guarda la configuración de espacio compartido."""
+    path = get_vault_path()
     config_file = os.path.join(path, ".config.json")
     with open(config_file, "w") as f:
         json.dump(config, f)
@@ -52,13 +77,11 @@ def vault_index():
         return redirect(url_for("auth.login"))
     
     user = current_user()
-    # Restricción exclusiva para gmurad
-    if user.get('username') != 'gmurad':
+    if not is_vault_authorized(user.get('username')):
         return redirect(url_for("dashboard.dashboard"))
     
-    username = user['username']
-    path = get_user_vault_path(username)
-    config = get_vault_config(username)
+    path = get_vault_path()
+    config = get_vault_config()
     
     files = []
     if os.path.exists(path):
@@ -90,7 +113,7 @@ def vault_index():
 @bp_vault.route("/recursos_internos/upload", methods=["POST"])
 def upload_file():
     user = current_user()
-    if not is_authenticated() or user.get('username') != 'gmurad':
+    if not is_authenticated() or not is_vault_authorized(user.get('username')):
         return redirect(url_for("dashboard.dashboard"))
     
     if 'file' not in request.files:
@@ -102,24 +125,18 @@ def upload_file():
         flash("Nombre de archivo vacío.", "warning")
         return redirect(url_for("vault.vault_index"))
     
-    username = user['username']
-    path = get_user_vault_path(username)
-    config = get_vault_config(username)
+    path = get_vault_path()
+    config = get_vault_config()
     
-    # Verificar límite de espacio
-    # (El tamaño real solo se sabe al final, pero podemos estimar o chequear después)
-    # Aquí hacemos un chequeo preventivo si es posible
     current_size = get_folder_size(path)
     limit_bytes = config.get('limit_mb', DEFAULT_LIMIT_MB) * 1024 * 1024
     
-    # Save file
     file_path = os.path.join(path, file.filename)
     file.save(file_path)
     
-    # Chequeo post-save para ser estrictos
     if get_folder_size(path) > limit_bytes:
         os.remove(file_path)
-        flash("Error: El archivo excede el límite de espacio disponible (300MB). Libera espacio o amplía el límite.", "danger")
+        flash("Error: El archivo excede el límite de espacio compartido disponible.", "danger")
     else:
         flash(f"Archivo '{file.filename}' subido correctamente.", "success")
         
@@ -128,19 +145,19 @@ def upload_file():
 @bp_vault.route("/recursos_internos/download/<path:filename>")
 def download_file(filename):
     user = current_user()
-    if not is_authenticated() or user.get('username') != 'gmurad':
+    if not is_authenticated() or not is_vault_authorized(user.get('username')):
         return redirect(url_for("dashboard.dashboard"))
     
-    path = get_user_vault_path(user['username'])
+    path = get_vault_path()
     return send_from_directory(path, filename, as_attachment=True)
 
 @bp_vault.route("/recursos_internos/delete/<path:filename>")
 def delete_file(filename):
     user = current_user()
-    if not is_authenticated() or user.get('username') != 'gmurad':
+    if not is_authenticated() or not is_vault_authorized(user.get('username')):
         return redirect(url_for("dashboard.dashboard"))
     
-    path = get_user_vault_path(user['username'])
+    path = get_vault_path()
     file_path = os.path.join(path, filename)
     
     if os.path.exists(file_path) and os.path.isfile(file_path):
@@ -152,15 +169,12 @@ def delete_file(filename):
 @bp_vault.route("/recursos_internos/expand", methods=["POST"])
 def expand_storage():
     user = current_user()
-    if not is_authenticated() or user.get('username') != 'gmurad':
+    if not is_authenticated() or not is_vault_authorized(user.get('username')):
         return redirect(url_for("dashboard.dashboard"))
     
-    username = user['username']
-    config = get_vault_config(username)
-    
-    # Ampliar en bloques de 300MB
+    config = get_vault_config()
     config['limit_mb'] = config.get('limit_mb', DEFAULT_LIMIT_MB) + 300
-    save_vault_config(username, config)
+    save_vault_config(config)
     
-    flash(f"Espacio ampliado exitosamente a {config['limit_mb']} MB.", "success")
+    flash(f"Espacio compartido ampliado a {config['limit_mb']} MB.", "success")
     return redirect(url_for("vault.vault_index"))
