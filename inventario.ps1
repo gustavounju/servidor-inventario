@@ -435,7 +435,8 @@ try {
                 }
             } catch {}
             # Limpiar prefijos/sufijos internos de Windows (Ej: IP_10.15.2.50_1 -> 10.15.2.50)
-            $printerPort = $printerPort -replace "^IP_", "" -replace "_[0-9]+$", ""
+            # Ahora también limpia IPP_ que es común en impresoras Pantum/mDNS
+            $printerPort = $printerPort -replace "^(IP|IPP)_", "" -replace "_[0-9]+$", ""
             
             # Soporte para puertos WSD (Web Services for Devices)
             # Intenta extraer la IP real desde el registro si el puerto es un GUID de WSD
@@ -467,6 +468,29 @@ try {
                 }
                 catch {
                     # Si falla cualquier paso, se mantiene el GUID original (WSD-...)
+                }
+            }
+
+            # RESOLUCIÓN PROACTIVA DE IP (Para hostnames, nombres mDNS o IPP)
+            # Si a estas alturas no es una IP y no es un puerto local físico (USB, LPT, COM...)
+            if ($printerPort -notmatch "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$" -and 
+                $printerPort -notmatch "^(USB|LPT|COM|DOT4|FILE|PORTPROMPT|NUL|WSD-|\\)") {
+                try {
+                    # A. Intentar por WMI de Puertos TCP (Estándar de Windows)
+                    $tcpPort = Get-WmiObject Win32_TcpIpPrinterPort -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $bestPrinter.PortName }
+                    if ($tcpPort -and $tcpPort.HostAddress -match "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}") {
+                        $printerPort = $tcpPort.HostAddress
+                    }
+                    else {
+                        # B. Resolución DNS/mDNS (Útil para nombres como Pantum-30E70E)
+                        $hostIps = [System.Net.Dns]::GetHostAddresses($printerPort)
+                        if ($hostIps) {
+                            $ipv4 = $hostIps | Where-Object { $_.AddressFamily.ToString() -eq "InterNetwork" } | Select-Object -First 1
+                            if ($ipv4) { $printerPort = $ipv4.IPAddressToString }
+                        }
+                    }
+                } catch {
+                    # Si falla la resolución, se queda con el nombre original (Pantum-30E70E)
                 }
             }
             
