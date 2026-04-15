@@ -440,6 +440,14 @@ try {
                    }
                 }
             } catch {}
+            # Normalizar rutas UNC con exceso de backslashes (Ej: \\\\\10.15.2.42\\Printer -> \\10.15.2.42\Printer)
+            if ($printerPort -match '\\\\') {
+                $printerPort = ($printerPort -replace "\\+", "\") -replace "^\\", "\\"
+            }
+            if ($printerModel -match '\\\\') {
+                $printerModel = ($printerModel -replace "\\+", "\") -replace "^\\", "\\"
+            }
+            
             # Limpiar prefijos/sufijos internos de Windows (Ej: IP_10.15.2.50_1 -> 10.15.2.50)
             # Ahora también limpia IPP_ que es común en impresoras Pantum/mDNS
             $printerPort = $printerPort -replace "^(IP|IPP)_", "" -replace "_[0-9]+$", ""
