@@ -342,53 +342,59 @@ try {
             $printerModel = $bestPrinter.Name
             $printerPort = $bestPrinter.PortName
 
-            # INTENTAR OBTENER SERIAL FÍSICO (USB / PnP)
-            try {
-                # 1. Búsqueda directa por PnPEntity con filtrado por Service:usbprint (más certero)
-                $pnpDevices = Get-WmiObject Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Service -eq "usbprint" -or $_.Name -like "*$printerModel*" }
-                
-                foreach ($pnp in $pnpDevices) {
-                    # Si el nombre del dispositivo coincide al menos parcialmente con el modelo reportado
-                    if ($pnp.Name -match [regex]::Escape($printerModel) -or $printerModel -match [regex]::Escape($pnp.Name)) {
-                        # El DeviceID suele ser: USBPRINT\MODEL\SERIAL
-                        if ($pnp.DeviceID -match "\\([^\\]+)$") {
-                            $potentialSN = $matches[1] -replace "_\d+$", "" # Quitar sufijos de Windows si existen (_0, _1)
-                            
-                            # VALIDACIÓN REFORZADA:
-                            # 1. No debe ser un GUID
-                            # 2. No debe ser un ID de puerto genérico (USB, LPT...)
-                            # 3. No debe tener '&' (Esto indica que es un ID de hub/puerto de Windows, no físico)
-                            $isGuid = $potentialSN -match "^\{[A-F0-9-]+\}$" -or ($potentialSN -split "-").Count -gt 3
-                            $isWindowsID = $potentialSN -contains "&" -or $potentialSN -match "&"
-                            
-                            if ($potentialSN -notmatch "^(USB|LPT|COM)[0-9]+$" -and -not $isGuid -and -not $isWindowsID -and $potentialSN.Length -gt 4) {
-                                $printerSN = $potentialSN
-                                break
+                # 0. Chequeo directo por PNPDeviceID de la impresora (Suele ser USBPRINT\MODEL\SERIAL)
+                if ($bestPrinter.PNPDeviceID -match "([^\\]+)$") {
+                    $potentialSN = $matches[1] -replace "_\d+$", ""
+                    if ($potentialSN.Length -gt 5 -and $potentialSN -notmatch '[&{]') {
+                        $printerSN = $potentialSN
+                    }
+                }
+
+                # 1. Búsqueda por PnPEntity con filtrado por Service (usbprint, dot4, bpusb, etc)
+                if ($printerSN -eq "N/A") {
+                    $pnpDevices = Get-WmiObject Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Service -match "usbprint|dot4|bpusb" -or $_.Name -like "*$printerModel*" }
+                    
+                    foreach ($pnp in $pnpDevices) {
+                        # Limpiar nombre para una comparación más flexible (HP LaserJet Pro M12w -> HP LaserJet M12)
+                        $cleanP = $printerModel -replace "Series|PCL[0-9]*|Professional|Class Driver", ""
+                        if ($pnp.Name -match [regex]::Escape($cleanP.Trim()) -or $printerModel -match [regex]::Escape($pnp.Name)) {
+                            if ($pnp.DeviceID -match "\\([^\\]+)$") {
+                                $potentialSN = $matches[1] -replace "_\d+$", ""
+                                
+                                $isGuid = $potentialSN -match "^\{[A-F0-9-]+\}$" -or ($potentialSN -split "-").Count -gt 3
+                                $isWindowsID = $potentialSN -contains "&" -or $potentialSN -match "&"
+                                
+                                if ($potentialSN -notmatch "^(USB|LPT|COM)[0-9]+$" -and -not $isGuid -and -not $isWindowsID -and $potentialSN.Length -gt 4) {
+                                    $printerSN = $potentialSN
+                                    break
+                                }
                             }
                         }
                     }
                 }
 
-                # 2. Fallback por Registro (Enum\USBPRINT) si falla el WMI
+                # 2. Fallback por Registro (Enum\USBPRINT y Enum\DOT4PRT) si falla el WMI
                 if ($printerSN -eq "N/A") {
-                    $usbPrintPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\USBPRINT"
-                    if (Test-Path $usbPrintPath) {
-                        $models = Get-ChildItem $usbPrintPath -ErrorAction SilentlyContinue
-                        foreach ($m in $models) {
-                            # Limpiamos nombres para comparar (quitar underscores, espacios)
-                            $cleanM = $m.PSChildName -replace "[_\s]", ""
-                            $cleanP = $printerModel -replace "[_\s]", ""
-                            if ($cleanP -match $cleanM -or $cleanM -match $cleanP) {
-                                $serialKeys = Get-ChildItem $m.PSPath -ErrorAction SilentlyContinue
-                                if ($serialKeys) {
-                                    $potentialSN = $serialKeys[0].PSChildName -replace "(_|\&).*$", ""
-                                    if ($potentialSN.Length -gt 5 -and $potentialSN -notmatch "^[A-F0-9]{8}-") {
-                                        $printerSN = $potentialSN
-                                        break
+                    $regEnumPaths = @("HKLM:\SYSTEM\CurrentControlSet\Enum\USBPRINT", "HKLM:\SYSTEM\CurrentControlSet\Enum\DOT4PRT")
+                    foreach ($enumPath in $regEnumPaths) {
+                        if (Test-Path $enumPath) {
+                            $models = Get-ChildItem $enumPath -ErrorAction SilentlyContinue
+                            foreach ($m in $models) {
+                                $cleanM = $m.PSChildName -replace "[_\s-]", ""
+                                $cleanP = $printerModel -replace "[_\s-]|Series|Professional", ""
+                                if ($cleanP -match $cleanM -or $cleanM -match $cleanP) {
+                                    $serialKeys = Get-ChildItem $m.PSPath -ErrorAction SilentlyContinue
+                                    if ($serialKeys) {
+                                        $potentialSN = $serialKeys[0].PSChildName -replace "(_|\&).*$", ""
+                                        if ($potentialSN.Length -gt 5 -and $potentialSN -notmatch "^[A-F0-9]{8}-") {
+                                            $printerSN = $potentialSN
+                                            break
+                                        }
                                     }
                                 }
                             }
                         }
+                        if ($printerSN -ne "N/A") { break }
                     }
                 }
 
@@ -397,19 +403,19 @@ try {
                     $regPaths = @(
                         "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$printerModel\PrinterDriverData",
                         "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Printers\$printerModel\PrinterDriverData",
+                        "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$printerModel",
+                        "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Printers\$printerModel",
                         "HKLM:\SOFTWARE\Brother\Brother MFL-Pro\$printerModel",
                         "HKLM:\SOFTWARE\WOW6432Node\Brother\Brother MFL-Pro\$printerModel",
                         "HKLM:\SOFTWARE\Pantum\$printerModel",
                         "HKLM:\SOFTWARE\WOW6432Node\Pantum\$printerModel"
                     )
-                    $serialValueNames = @("SerialNumber", "SSN", "SN", "SerialNo", "UID", "MachineID", "ProductSerial")
+                    $serialValueNames = @("SerialNumber", "SSN", "SN", "SerialNo", "UID", "MachineID", "ProductSerial", "HP_SerialNumber")
                     
                     foreach ($regPath in $regPaths) {
-                        # Reemplazar asteriscos por el nombre del modelo si es necesario
-                        $finalPath = $regPath -replace "\*", $printerModel 
-                        if (Test-Path $finalPath) {
+                        if (Test-Path $regPath) {
                             foreach ($valName in $serialValueNames) {
-                                $potential = Get-ItemProperty -Path $finalPath -Name $valName -ErrorAction SilentlyContinue | Select-Object -ExpandProperty $valName -ErrorAction SilentlyContinue
+                                $potential = Get-ItemProperty -Path $regPath -Name $valName -ErrorAction SilentlyContinue | Select-Object -ExpandProperty $valName -ErrorAction SilentlyContinue
                                 if ($potential -and $potential.Length -gt 5 -and $potential -notmatch '[&{]') {
                                     $printerSN = $potential
                                     break
@@ -420,10 +426,10 @@ try {
                     }
                 }
 
-                # 4. Limpieza final de IDs virtuales si es USB
-                if (($printerSN -match '&' -or $printerSN -eq "N/A") -and $printerPort -match 'USB') {
+                # 4. Limpieza final de IDs virtuales si es Local
+                if (($printerSN -match '&' -or $printerSN -eq "N/A") -and ($printerPort -match 'USB|DOT4' -or $bestPrinter.Network -eq $false)) {
                    $pnpId = $bestPrinter.PNPDeviceID
-                   if ($pnpId -match "USBPRINT\\") {
+                   if ($pnpId -match "USBPRINT\\|DOT4PRT\\") {
                         $pnpSerial = $pnpId.Split('\')[-1] -replace "_\d+$", ""
                         if ($pnpSerial -match '&') {
                             $subParts = $pnpSerial.Split('&')
@@ -499,12 +505,12 @@ try {
             if ($bestPrinter.Network -eq $true -or $printerPort -like "\\*") {
                 $printerPort += " (Red)"
             }
-            # 2. Puertos LOCALES conocidos (Físicos y Virtuales de Sisema)
-            elseif ($printerPort -like "USB*" -or $printerPort -like "DOT4*" -or $printerPort -like "LPT*" -or $printerPort -like "COM*" -or $printerPort -like "FILE:" -or $printerPort -like "NUL:" -or $printerPort -like "PORTPROMPT:" -or $printerPort -like "*PDF*" -or $printerPort -like "*XPS*") {
+            # 2. Puertos LOCALES conocidos o detectados por Windows como locales
+            elseif ($bestPrinter.Network -eq $false -or $printerPort -like "USB*" -or $printerPort -like "DOT4*" -or $printerPort -like "LPT*" -or $printerPort -like "COM*" -or $printerPort -like "FILE:" -or $printerPort -like "NUL:" -or $printerPort -like "PORTPROMPT:" -or $printerPort -like "*PDF*" -or $printerPort -like "*XPS*") {
                 $printerPort += " (Local)"
                 
                 # Verificación PnP para cables USB/DOT4
-                if ($printerPort -like "USB*" -or $printerPort -like "DOT4*") {
+                if ($printerPort -like "*USB*" -or $printerPort -like "*DOT4*") {
                     $cleanName = $bestPrinter.Name -replace "[\\]", "\\"
                     try {
                         $pnp = Get-WmiObject Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Name -match [regex]::Escape($cleanName) -or $_.Description -match [regex]::Escape($cleanName) }
