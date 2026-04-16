@@ -351,14 +351,16 @@ try {
                     }
                 }
 
-                # 1. Búsqueda por PnPEntity con filtrado por Service (usbprint, dot4, bpusb, etc)
+                # 1. Búsqueda por PnPEntity (Soporte de impresión USB o coincidencias de nombre)
                 if ($printerSN -eq "N/A") {
-                    $pnpDevices = Get-WmiObject Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Service -match "usbprint|dot4|bpusb" -or $_.Name -like "*$printerModel*" }
+                    $cleanP = $printerModel -replace "Series|PCL[0-9]*|Professional|Class Driver", ""
+                    $pnpDevices = Get-WmiObject Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Service -match "usbprint|dot4|bpusb" -or ($_.Name -ne $null -and $_.Name -match [regex]::Escape($cleanP.Trim())) }
                     
                     foreach ($pnp in $pnpDevices) {
-                        # Limpiar nombre para una comparación más flexible (HP LaserJet Pro M12w -> HP LaserJet M12)
-                        $cleanP = $printerModel -replace "Series|PCL[0-9]*|Professional|Class Driver", ""
-                        if ($pnp.Name -match [regex]::Escape($cleanP.Trim()) -or $printerModel -match [regex]::Escape($pnp.Name)) {
+                        $nameMatches = ($pnp.Name -ne $null -and ($pnp.Name -match [regex]::Escape($cleanP.Trim()) -or $printerModel -match [regex]::Escape($pnp.Name)))
+                        
+                        # Si el nombre coincide o si es el nodo físico USB con el servicio adecuado
+                        if ($nameMatches -or ($pnp.DeviceID -match "^USB\\" -and $pnp.Service -match "usbprint|dot4|bpusb")) {
                             if ($pnp.DeviceID -match "\\([^\\]+)$") {
                                 $potentialSN = $matches[1] -replace "_\d+$", ""
                                 
@@ -434,11 +436,13 @@ try {
                         $pnpSerial = $pnpId.Split('\')[-1] -replace "_\d+$", ""
                         if ($pnpSerial -match '&') {
                             $subParts = $pnpSerial.Split('&')
-                            if ($subParts.Count -ge 2) { $printerSN = $subParts[1] }
+                            if ($subParts.Count -ge 2 -and $subParts[1].Length -gt 4 -and $subParts[1] -notmatch "^[0-9]+$") { 
+                                $printerSN = $subParts[1] 
+                            }
                         } else {
-                            $printerSN = $pnpSerial
+                            if ($pnpSerial.Length -gt 4) { $printerSN = $pnpSerial }
                         }
-                   }
+                    }
                 }
             } catch {}
             # Normalizar rutas UNC con exceso de backslashes (Ej: \\\\\10.15.2.42\\Printer -> \\10.15.2.42\Printer)
@@ -535,8 +539,7 @@ try {
                 $printerPort += " (Red)"
             }
         }
-    }
-    catch {
+    } catch {
         Write-Host "Error detectando impresora: $($_.Exception.Message)" -ForegroundColor Yellow
     }
     # 7) Monitores (WmiMonitorID a veces falla en Win7 si no hay permisos, try-catch)
