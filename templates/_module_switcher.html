@@ -76,37 +76,37 @@
     </div>
 
     <!-- Barra de Estado e Indicadores (KPIs Integrados) -->
-    <div class="header-kpi-bar">
-        <div class="kpi-scroll-container" {% if request.blueprint == 'infrastructure' %}style="justify-content: center; width: 100%;"{% endif %}>
+    <div class="header-kpi-bar" style="height: auto; padding: 4px 10px;">
+        <div class="kpi-scroll-container d-flex flex-wrap justify-content-center align-items-center" style="gap: 12px; overflow: visible; white-space: normal; width: 100%;">
             {% if request.blueprint != 'infrastructure' %}
             <!-- PCs Activas -->
-            <a href="{{ url_for('dashboard.dashboard') }}" class="kpi-mini-chip {% if not request.args and request.path == '/' %}active{% endif %}" title="Activas">
+            <a href="{{ url_for('dashboard.dashboard') }}" class="kpi-mini-chip {% if not request.args and request.path == '/' %}active{% endif %}" title="PCs Activas">
                 <i class="bi bi-pc-display"></i> <span>Activas:</span> <strong>{{ kpi_total_activas }}</strong>
             </a>
 
             <!-- Cementerio -->
-            <a href="{{ url_for('dashboard.view_cementerio') }}" class="kpi-mini-chip {% if request.path == '/cementerio' %}active{% endif %}" title="Bajas">
-                <i class="bi bi-archive"></i> <span>Baja:</span> <strong>{{ kpi_total_graveyard }}</strong>
+            <a href="{{ url_for('dashboard.view_cementerio') }}" class="kpi-mini-chip {% if request.path == '/cementerio' %}active{% endif %}" title="Bajas / Cementerio">
+                <i class="bi bi-archive"></i> <span>Bajas:</span> <strong>{{ kpi_total_graveyard }}</strong>
             </a>
 
             <!-- Windows 7 -->
             <div class="kpi-mini-chip {% if request.args.get('os') == 'win7' %}active{% endif %}" onclick="onFilterClick('win7')" title="Windows 7">
-                <i class="bi bi-window"></i> <span>Win 7:</span> <strong>{{ kpi_win7 }}</strong>
+                <i class="bi bi-window"></i> <span>W7:</span> <strong>{{ kpi_win7 }}</strong>
             </div>
 
             <!-- Windows 10 -->
             <div class="kpi-mini-chip {% if request.args.get('os') == 'win10' %}active{% endif %}" onclick="onFilterClick('win10')" title="Windows 10">
-                <i class="bi bi-window-sidebar"></i> <span>Win 10:</span> <strong>{{ kpi_win10 }}</strong>
+                <i class="bi bi-window-sidebar"></i> <span>W10:</span> <strong>{{ kpi_win10 }}</strong>
             </div>
 
             <!-- Windows 11 -->
             <div class="kpi-mini-chip {% if request.args.get('os') == 'win11' %}active{% endif %}" onclick="onFilterClick('win11')" title="Windows 11">
-                <i class="bi bi-window-stack"></i> <span>Win 11:</span> <strong>{{ kpi_win11 }}</strong>
+                <i class="bi bi-window-stack"></i> <span>W11:</span> <strong>{{ kpi_win11 }}</strong>
             </div>
 
             <!-- RAM baja -->
-            <div class="kpi-mini-chip {% if request.args.get('alerta') == 'ram' %}active{% endif %}" onclick="onFilterClick('ram')" title="RAM < 8GB">
-                <i class="bi bi-exclamation-triangle"></i> <span>RAM &lt;8GB:</span> <strong>{{ kpi_alerta_ram }}</strong>
+            <div class="kpi-mini-chip {% if request.args.get('alerta') == 'ram' %}active{% endif %}" onclick="onFilterClick('ram')" title="Filtro de RAM < 8GB">
+                <i class="bi bi-memory"></i> <span>RAM_LOW:</span> <strong>{{ kpi_alerta_ram }}</strong>
             </div>
 
             <!-- Impresoras -->
@@ -115,13 +115,13 @@
             </div>
 
             <!-- Tareas Hoy -->
-            <div class="kpi-mini-chip" title="Hoy">
-                <i class="bi bi-check2-circle"></i> <span>Hoy:</span> <strong>{{ kpi_tareas_hoy }}</strong>
+            <div class="kpi-mini-chip" title="Tareas Hoy">
+                <i class="bi bi-calendar-event"></i> <span>Hoy:</span> <strong>{{ kpi_tareas_hoy }}</strong>
             </div>
 
             <!-- Pendientes -->
             <div class="kpi-mini-chip highlight-orange" title="Pendientes" onclick="showPendingTasksModal()" style="cursor: pointer;">
-                <i class="bi bi-bell"></i> <span>Pendientes:</span> <strong>{{ kpi_total_pendientes }}</strong>
+                <i class="bi bi-bell"></i> <span>Pend:</span> <strong>{{ kpi_total_pendientes }}</strong>
             </div>
 
             <!-- SIGJ -->
