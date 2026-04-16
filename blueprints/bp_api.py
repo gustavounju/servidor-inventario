@@ -319,6 +319,25 @@ def process_inventory_data(data):
             if total_cascada > 0:
                 print(f"[CASCADA] Se propagó serial {printer_sn} a {total_cascada} cliente(s) del host {pc_name}")
             
+        # --- PROCESAR IMPRESORAS MULTIPLES (Printers_Extra) ---
+        printers_extra = data.get("Printers_Extra", [])
+        if printers_extra:
+            # Limpiamos todo el buffer de esta PC
+            conn.execute("DELETE FROM pc_detected_printers WHERE pc_name = %s", (pc_name,))
+            for p in printers_extra:
+                pm_extra = p.get("Model", "N/A")
+                pp_extra = p.get("Port", "N/A")
+                psn_extra = clean_hex_string(p.get("SN", "N/A"))
+                
+                # Insertar en la nueva tabla de impresoras secundarias
+                conn.execute(
+                    """
+                    INSERT INTO pc_detected_printers (pc_name, printer_model, printer_port, printer_sn)
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (pc_name, pm_extra, pp_extra, psn_extra)
+                )
+
         conn.commit()
 
 
@@ -436,16 +455,24 @@ def api_detected_printers():
             # 1. Impresoras registradas en Infraestructura
             net_printers = conn.execute("SELECT * FROM network_printers ORDER BY brand_model").fetchall()
             
-            # 2. Impresoras detectadas en PCs (Locales/USB que no están en el catálogo)
+            # 2. Impresoras detectadas en PCs (Locales/USB o Multiples que no están en el catálogo o que han sido descartadas)
             detected = conn.execute("""
-                SELECT pc_name, printer_model, printer_sn, printer_port, last_report, fuero
-                FROM pcs 
-                WHERE is_active = 'True' 
-                AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
-                AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%') 
-                AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
-                AND (printer_sn IS NULL OR printer_sn = '' OR printer_sn = 'N/A' OR printer_sn NOT IN (SELECT serial_number FROM network_printers WHERE serial_number IS NOT NULL AND serial_number != ''))
-                ORDER BY pc_name
+                SELECT 
+                    dp.pc_name, 
+                    dp.printer_model, 
+                    dp.printer_sn, 
+                    dp.printer_port, 
+                    pcs.last_report, 
+                    pcs.fuero,
+                    dp.id AS detect_id
+                FROM pc_detected_printers dp
+                INNER JOIN pcs ON pcs.pc_name = dp.pc_name
+                WHERE pcs.is_active = 'True'
+                  AND dp.is_ignored = 0
+                  AND (dp.printer_model IS NOT NULL AND dp.printer_model != '' AND dp.printer_model != 'N/A' AND UPPER(dp.printer_model) NOT LIKE '%%SIN IMPRESORA%%')
+                  AND (dp.printer_port IS NULL OR dp.printer_port NOT LIKE '\\\\\\\\%%') 
+                  AND (dp.printer_sn IS NULL OR dp.printer_sn = '' OR dp.printer_sn = 'N/A' OR dp.printer_sn NOT IN (SELECT serial_number FROM network_printers WHERE serial_number IS NOT NULL AND serial_number != ''))
+                ORDER BY dp.pc_name
             """).fetchall()
             
             return jsonify({
@@ -455,4 +482,13 @@ def api_detected_printers():
             })
     except Exception as e:
         print(f"Error en api_detected_printers: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/ignore_detected_printer/<int:detect_id>", methods=["POST"])
+def ignore_detected_printer(detect_id):
+    try:
+        with get_db_connection() as conn:
+            conn.execute("UPDATE pc_detected_printers SET is_ignored = 1 WHERE id = %s", (detect_id,))
+            return jsonify({"status": "success", "message": "Impresora ignorada correctamente."})
+    except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

@@ -139,6 +139,19 @@ def init_db():
         """)
 
         conn.execute("""
+            CREATE TABLE IF NOT EXISTS pc_detected_printers (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                pc_name VARCHAR(255),
+                printer_model TEXT,
+                printer_port TEXT,
+                printer_sn TEXT,
+                is_ignored TINYINT(1) DEFAULT 0,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (pc_name) REFERENCES pcs(pc_name) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS technicians (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL UNIQUE

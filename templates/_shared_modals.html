@@ -1721,9 +1721,14 @@
                                         <td><code>${p.printer_port || 'Local'}</code></td>
                                         <td><span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle">${p.printer_sn || 'N/A'}</span></td>
                                         <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-primary" onclick="promoteToNetworkPrinter('${(p.printer_port || '').replace(/\\/g, '\\\\')}','${p.printer_model}','${p.pc_name}','${p.printer_sn || ''}')">
-                                                <i class="bi bi-plus-circle"></i> Promocionar
-                                            </button>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="promoteToNetworkPrinter('${(p.printer_port || '').replace(/\\/g, '\\\\')}','${p.printer_model}','${p.pc_name}','${p.printer_sn || ''}')" title="Agregar al catálogo">
+                                                    <i class="bi bi-plus-circle"></i> Promocionar
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="ignoreDetectedPrinter(${p.detect_id})" title="Ocultar de esta lista">
+                                                    <i class="bi bi-eye-slash"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 `;
@@ -1737,6 +1742,19 @@
                     console.error("Error cargando impresoras:", err);
                     document.getElementById('printersLoading').innerHTML = `<div class="alert alert-danger m-3">Error al cargar datos: ${err}</div>`;
                 });
+        }
+
+        function ignoreDetectedPrinter(detectId) {
+            if (!confirm('¿Seguro que desea ocultar esta impresora de la lista de pendientes? Podrá volver a ingresarla manualmente si lo necesita.')) return;
+            fetch('/api/ignore_detected_printer/' + detectId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || '' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') { showDetectedPrinters(); }
+                else { alert("Error: " + data.message); }
+            });
         }
     </script>
 

@@ -320,27 +320,32 @@ try {
         }
     } catch {}
 
-    # 6) Impresora
+    # 6) Impresoras (Soporte Multiple)
     $printerModel = "N/A"
     $printerPort = "N/A"
+    $printerSN = "N/A"
+    $detectedPrintersList = @()
+    
     try {
         # Obtener todas las impresoras
         $allPrinters = Get-WmiObject -Class Win32_Printer
         
-        # 1. Buscar la impresora PREDETERMINADA
         $virtualKeywords = "PDF|XPS|OneNote|Fax|Send To|Microsoft Print|Writer"
-        $bestPrinter = $allPrinters | Where-Object { $_.Default -eq $true } | Select-Object -First 1
         
-        # 2. Si la default es virtual o nula, intentar buscar la primera que NO sea virtual
-        if (-not $bestPrinter -or $bestPrinter.Name -match $virtualKeywords) {
-            $bestPrinter = $allPrinters | Where-Object { $_.Name -notmatch $virtualKeywords } | Select-Object -First 1
+        # Retrocompatibilidad: Identificar la principal como antes
+        $primaryP = $allPrinters | Where-Object { $_.Default -eq $true } | Select-Object -First 1
+        if (-not $primaryP -or $primaryP.Name -match $virtualKeywords) {
+            $primaryP = $allPrinters | Where-Object { $_.Name -notmatch $virtualKeywords } | Select-Object -First 1
         }
+        $primaryPName = if ($primaryP) { $primaryP.Name } else { "" }
 
-        # 3. Datos de la impresora
-        $printerSN = "N/A"
-        if ($bestPrinter) {
+        $realPrinters = $allPrinters | Where-Object { $_.Name -notmatch $virtualKeywords }
+        
+        foreach ($currentPrinter in $realPrinters) {
+            $bestPrinter = $currentPrinter
             $printerModel = $bestPrinter.Name
             $printerPort = $bestPrinter.PortName
+            $printerSN = "N/A"
             # INTENTAR OBTENER SERIAL FÍSICO (USB / PnP)
             try {
                 # 0. Chequeo directo por PNPDeviceID de la impresora (Suele ser USBPRINT\MODEL\SERIAL)
@@ -538,6 +543,34 @@ try {
             else {
                 $printerPort += " (Red)"
             }
+            
+            # Guardar en array múltiple
+            $detectedPrintersList += @{
+                "Model" = $printerModel
+                "Port" = $printerPort
+                "SN" = $printerSN
+                "IsPrimary" = ($bestPrinter.Name -eq $primaryPName)
+            }
+            
+            if ($bestPrinter.Name -eq $primaryPName) {
+                # Guardamos copia local para la raiz del JSON
+                $mainModel = $printerModel
+                $mainPort = $printerPort
+                $mainSN = $printerSN
+            }
+        } # END FOREACH PRINTER
+        
+        if ($detectedPrintersList.Count -gt 0) {
+            # Restaurar var globales para compatibilidad 1 a 1 de la PC
+            if ($mainModel) {
+                $printerModel = $mainModel; $printerPort = $mainPort; $printerSN = $mainSN
+            } else {
+                $printerModel = $detectedPrintersList[0].Model
+                $printerPort = $detectedPrintersList[0].Port
+                $printerSN = $detectedPrintersList[0].SN
+            }
+        } else {
+            $printerModel = "N/A"; $printerPort = "N/A"; $printerSN = "N/A"
         }
     } catch {
         Write-Host "Error detectando impresora: $($_.Exception.Message)" -ForegroundColor Yellow
@@ -649,6 +682,15 @@ try {
     $jsonObj += """Printer_Model"": ""$(e $printerModel)"","
     $jsonObj += """Printer_Port"": ""$(e $printerPort)"","
     $jsonObj += """Printer_SN"": ""$(e $printerSN)"","
+    $jsonObj += """Printers_Extra"": ["
+    $peArr = @()
+    if ($null -ne $detectedPrintersList) {
+        foreach ($pe in $detectedPrintersList) {
+            $peArr += "{""Model"":""$(e $pe.Model)"",""Port"":""$(e $pe.Port)"",""SN"":""$(e $pe.SN)""}"
+        }
+    }
+    $jsonObj += [string]::Join(",", $peArr)
+    $jsonObj += "],"
     $jsonObj += """Monitors"": ""$(e $monitorsStr)"","
     # Armamos array Conexiones
     $jsonObj += """Conexiones"": ["
