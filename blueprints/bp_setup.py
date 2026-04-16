@@ -79,6 +79,7 @@ def install_page():
                 <strong>2. Descarga los archivos</strong> en esa carpeta:
                 <a href="/download/script" class="btn">📄 1. Descargar Script (inventario.ps1)</a>
                 <a href="/download/launcher" class="btn">🚀 2. Descargar Ejecutable (ejecutar_inventario.bat)</a>
+                <a href="/download/gpo" class="btn" style="background:#198754;">🏢 Descargar Script para GPO (inventario_gpo.ps1)</a>
             </div>
 
             <div class="step">
@@ -151,6 +152,22 @@ def download_client_script():
 def download_client_launcher():
     try:
         return send_file("ejecutar_inventario.bat", as_attachment=True, download_name="ejecutar_inventario.bat")
+    except Exception as e:
+        return f"Error: {e}", 404
+
+@bp_setup.route("/download/gpo")
+def download_gpo_script():
+    """Devuelve el script inventario_gpo.ps1 con las IPs corregidas para despliegue por GPO."""
+    try:
+        with open("deployment/inventario_gpo.ps1", "r", encoding="utf-8") as f:
+            content = f.read()
+        _, _, modified_content = _rewrite_client_script(content)
+        
+        mem = BytesIO()
+        mem.write(modified_content.encode("utf-8"))
+        mem.seek(0)
+        
+        return send_file(mem, as_attachment=True, download_name="inventario_gpo.ps1")
     except Exception as e:
         return f"Error: {e}", 404
 
