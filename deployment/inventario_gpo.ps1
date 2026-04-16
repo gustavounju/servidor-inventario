@@ -1,6 +1,6 @@
 & {
 # Inventario GOLD - Versión Silenciosa Completa para GPO (SYSTEM)
-# V2.2 - Incluye Detección de Office, Monitores, Discos y Motherboard
+# V2.3 - Sincronizado con lógica probada de impresoras y hardware
 # -----------------------------------------------------------
 
 $ErrorActionPreference = "SilentlyContinue"
@@ -21,7 +21,7 @@ function e($s) {
     return $val
 }
 
-Write-Log "Iniciando recolección completa..."
+Write-Log "Iniciando recolección sincronizada..."
 
 # -----------------------------------------------------------
 # CONFIGURACIÓN DE SEGURIDAD
@@ -69,72 +69,95 @@ try {
     }
     $monitorsStr = [string]::Join(" | ", $monList)
 
-    # Versión de Office
+    # Office
     $officeVersion = "No detectado"
     try {
         $word = New-Object -ComObject Word.Application -ErrorAction SilentlyContinue
-        if ($word) {
-            $v = $word.Version
-            $word.Quit()
-            $map = @{"16.0"="2016/365"; "15.0"="2013"; "14.0"="2010"; "12.0"="2007"}
-            $officeVersion = if ($map.ContainsKey($v)) { "Microsoft Office " + $map[$v] } else { "Microsoft Office " + $v }
+        if ($word) { $officeVersion = "Microsoft Office " + $word.Version; $word.Quit() }
+    } catch {}
+
+    # -----------------------------------------------------------
+    # LÓGICA DE IMPRESORAS (COPIADA DE INVENTARIO.PS1 PROBADO)
+    # -----------------------------------------------------------
+    $printerModel = "N/A"
+    $printerPort = "N/A"
+    $printerSN = "N/A"
+    try {
+        $allPrinters = Get-WmiObject -Class Win32_Printer
+        $virtualKeywords = "PDF|XPS|OneNote|Fax|Send To|Microsoft Print|Writer"
+        $bestPrinter = $allPrinters | Where-Object { $_.Default -eq $true } | Select-Object -First 1
+        
+        if (-not $bestPrinter -or $bestPrinter.Name -match $virtualKeywords) {
+            $bestPrinter = $allPrinters | Where-Object { $_.Name -notmatch $virtualKeywords } | Select-Object -First 1
+        }
+
+        if ($bestPrinter) {
+            $printerModel = $bestPrinter.Name
+            $printerPort = $bestPrinter.PortName
+
+            # RESOLUCIÓN DE WSD A IP
+            if ($printerPort -like "WSD-*") {
+                try {
+                    $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\WSD Port\Ports\$($bestPrinter.PortName)"
+                    if (Test-Path $regPath) {
+                        $pUuid = (Get-ItemProperty $regPath)."Printer UUID"
+                        if ($pUuid) {
+                            $dafPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\SWD\DAFWSDProvider\urn:uuid:$pUuid"
+                            $locInfo = (Get-ItemProperty $dafPath -ErrorAction SilentlyContinue).LocationInformation
+                            if ($locInfo -and $locInfo -match "https?://([^:/]+)") { $printerPort = $matches[1] }
+                        }
+                    }
+                } catch {}
+            }
+
+            # RESOLUCIÓN PROACTIVA DE IP (DNS/mDNS)
+            if ($printerPort -notmatch "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$" -and $printerPort -notmatch "^(USB|LPT|COM|DOT4|FILE|PORTPROMPT|NUL|WSD-|\\)") {
+                try {
+                    $hostIps = [System.Net.Dns]::GetHostAddresses($printerPort)
+                    if ($hostIps) { $printerPort = ($hostIps | Where-Object { $_.AddressFamily.ToString() -eq "InterNetwork" } | Select-Object -First 1).IPAddressToString }
+                } catch {}
+            }
+
+            # DETECCIÓN DE SERIAL (USB/Registry)
+            $regPaths = @(
+                "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$printerModel\PrinterDriverData",
+                "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Printers\$printerModel\PrinterDriverData"
+            )
+            foreach ($rp in $regPaths) {
+                if (Test-Path $rp) {
+                    $val = Get-ItemProperty $rp -ErrorAction SilentlyContinue
+                    if ($val.SerialNumber) { $printerSN = $val.SerialNumber; break }
+                    if ($val.SSN) { $printerSN = $val.SSN; break }
+                }
+            }
         }
     } catch {}
 
-    # Impresoras
-    $allPrinters = Get-WmiObject Win32_Printer
-    $bestPrinter = $allPrinters | Where-Object { $_.Default -eq $true } | Select-Object -First 1
-    if (-not $bestPrinter -or $bestPrinter.Name -match "PDF|XPS|OneNote") {
-        $bestPrinter = $allPrinters | Where-Object { $_.Name -notmatch "PDF|XPS|OneNote" } | Select-Object -First 1
-    }
-    
-    $printerSN = "N/A"
-    if ($bestPrinter) {
-        $regPaths = @(
-            "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$($bestPrinter.Name)\PrinterDriverData",
-            "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Print\Printers\$($bestPrinter.Name)\PrinterDriverData"
-        )
-        foreach ($rp in $regPaths) {
-            if (Test-Path $rp) {
-                $val = Get-ItemProperty $rp -Name "SerialNumber" -ErrorAction SilentlyContinue
-                if ($val.SerialNumber) { $printerSN = $val.SerialNumber; break }
-            }
-        }
-    }
-
     # -----------------------------------------------------------
-    # CONSTRUCCIÓN DEL JSON COMPLETO
+    # ENVÍO
     # -----------------------------------------------------------
     $json = "{
         ""PC_Nombre"": ""$(e $env:COMPUTERNAME)"",
         ""Usuario_Actual"": ""$(e $env:USERNAME)"",
         ""Fecha_Reporte"": ""$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"",
-        ""Sistema"": {
-            ""OsName"": ""$(e $os.Caption)"",
-            ""Procesador"": ""$(e $cpu.Name)"",
-            ""RAM (GB)"": $ramGB,
-            ""Office"": ""$(e $officeVersion)""
-        },
+        ""Sistema"": { ""OsName"": ""$(e $os.Caption)"", ""Procesador"": ""$(e $cpu.Name)"", ""RAM (GB)"": $ramGB, ""Office"": ""$(e $officeVersion)"" },
         ""Red"": [{""IPAddress"": ""$ip"", ""MACAddress"": ""$($netCfg.MACAddress)""}],
         ""Motherboard_Model"": ""$(e $mb.Manufacturer) $(e $mb.Product)"",
         ""Disk_Models"": ""$(e $diskModelsStr)"",
         ""Monitors"": ""$(e $monitorsStr)"",
-        ""Printer_Model"": ""$(e $bestPrinter.Name)"",
-        ""Printer_Port"": ""$(e $bestPrinter.PortName)"",
+        ""Printer_Model"": ""$(e $printerModel)"",
+        ""Printer_Port"": ""$(e $printerPort)"",
         ""Printer_SN"": ""$(e $printerSN)"",
         ""Salud"": { ""Uptime_Dias"": 0 }
     }"
 
-    # -----------------------------------------------------------
-    # ENVÍO
-    # -----------------------------------------------------------
     $servidor = "__INVENTARIO_SERVER_URL__/submit_inventory"
     $wc = New-Object System.Net.WebClient
     $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
     $wc.Encoding = [System.Text.Encoding]::UTF8
     [void]$wc.UploadString($servidor, "POST", $json)
     
-    Write-Log "Inventario COMPLETO enviado exitosamente."
+    Write-Log "Inventario SINCRONIZADO enviado exitosamente."
 } catch {
     Write-Log "ERROR: $($_.Exception.Message)"
 }
