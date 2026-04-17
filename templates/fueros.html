@@ -410,6 +410,7 @@
                     hostName: hostName,
                     isExternal: isExternal,
                     externalFuero: p.physical_fuero,
+                    isStocked: true, // Network printers are always logically cataloged
                     raw: p
                 });
             });
@@ -448,7 +449,8 @@
                             isNet: true,
                             isShared: isUNC,
                             hostName: hostName,
-                            pc_name: pc.pc_name
+                            pc_name: pc.pc_name,
+                            isStocked: pc.is_stocked > 0
                         });
                     } else {
                         allPrinters.push({
@@ -459,7 +461,8 @@
                             badgeColor: '#f59e0b',
                             icon: '<i class="bi bi-usb-symbol"></i>',
                             isNet: false,
-                            pc_name: pc.pc_name
+                            pc_name: pc.pc_name,
+                            isStocked: pc.is_stocked > 0
                         });
                     }
                 }
@@ -547,6 +550,15 @@
                 if (pr.isExternal) {
                     humanTooltip += `<hr style="border-top:1px solid rgba(255,255,255,0.1); margin:8px 0;">
                                     <div class="text-info"><i class="bi bi-geo-alt"></i> Ubicación Física: Pertenece al sector <b>${pr.externalFuero}</b>.</div>`;
+                }
+
+                humanTooltip += `<hr style="border-top:1px solid rgba(255,255,255,0.1); margin:8px 0;">`;
+                if (pr.isStocked) {
+                    humanTooltip += `<div style="color: #34d399; font-weight: 900;"><i class="bi bi-check-circle-fill"></i> INVENTARIADA OFICIALMENTE</div>
+                                     <div style="font-size: 0.65rem; color: #94a3b8;">El hardware se encuentra registrado en el sistema central de Stock/Infraestructura.</div>`;
+                } else {
+                    humanTooltip += `<div style="color: #fbbf24; font-weight: 900;"><i class="bi bi-exclamation-triangle-fill"></i> EQUIPO NO INVENTARIADO</div>
+                                     <div style="font-size: 0.65rem; color: #94a3b8;">La PC detectó esta impresora, pero no existe un registro formal de ella en la base de Stock.</div>`;
                 }
 
                 const node = createBoardNode(pr.id, 'node-pr', html, {type: 'pr', data: pr, human: humanTooltip});

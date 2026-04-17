@@ -1030,7 +1030,17 @@ def view_fueros():
 
         
         if fuero_param:
-            pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name, printer_model, printer_port FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND fuero = %s ORDER BY pc_name", (fuero_param,)).fetchall()
+            pcs = conn.execute("""
+                SELECT p.pc_name, p.last_user, p.ip_address, p.os_name, p.printer_model, p.printer_port, p.printer_sn,
+                (CASE 
+                    WHEN p.printer_sn IS NOT NULL AND p.printer_sn != '' AND p.printer_sn != 'N/A' AND p.printer_sn != 'USB' THEN 
+                        (SELECT COUNT(*) FROM components c WHERE c.serial_number = p.printer_sn)
+                    ELSE 0 
+                END) as is_stocked
+                FROM pcs p
+                WHERE p.is_active = 'True' AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND p.fuero = %s 
+                ORDER BY p.pc_name
+            """, (fuero_param,)).fetchall()
             users = conn.execute("""
                 SELECT username, real_name, phone 
                 FROM ad_users 
@@ -1059,7 +1069,17 @@ def view_fueros():
             """, (fuero_param, fuero_param)).fetchall()
         else:
             # Buscar elementos sin fuero (huerfanos)
-            pcs = conn.execute("SELECT pc_name, last_user, ip_address, os_name, printer_model, printer_port FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') ORDER BY pc_name").fetchall()
+            pcs = conn.execute("""
+                SELECT p.pc_name, p.last_user, p.ip_address, p.os_name, p.printer_model, p.printer_port, p.printer_sn,
+                (CASE 
+                    WHEN p.printer_sn IS NOT NULL AND p.printer_sn != '' AND p.printer_sn != 'N/A' AND p.printer_sn != 'USB' THEN 
+                        (SELECT COUNT(*) FROM components c WHERE c.serial_number = p.printer_sn)
+                    ELSE 0 
+                END) as is_stocked
+                FROM pcs p
+                WHERE p.is_active = 'True' AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido') 
+                ORDER BY p.pc_name
+            """).fetchall()
             users = conn.execute("""
                 SELECT username, real_name, phone 
                 FROM ad_users 
