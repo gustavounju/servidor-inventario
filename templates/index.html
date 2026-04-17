@@ -206,6 +206,27 @@
             </div>
           </a>
           {% endfor %}
+
+          <!-- Botón Recalcular Fueros (solo superuser) -->
+          {% if current_user and current_user.is_superuser %}
+          <form method="POST" action="{{ url_for('dashboard.refresh_fueros') }}" title="Recalcula el Fuero/Sector de cada PC en base a su nombre de equipo">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn text-start border-0 shadow-sm h-100"
+              style="min-width:160px; border-radius:10px; padding: 5px 10px; background: linear-gradient(135deg, #1e3a5f, #0c2340); color:#f0f9ff; transition: transform .15s;"
+              onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+              <div class="d-flex flex-column gap-0">
+                <div class="d-flex align-items-center gap-2">
+                  <div style="font-size:.60rem; color:#93c5fd; text-transform:uppercase; letter-spacing:.05em;">
+                    <i class="bi bi-arrow-repeat"></i> Admin
+                  </div>
+                </div>
+                <div style="font-size:0.75rem; font-weight:600; color:#bfdbfe; margin-top:2px;">
+                  <i class="bi bi-diagram-3"></i> Recalcular Fueros
+                </div>
+              </div>
+            </button>
+          </form>
+          {% endif %}
         </div>
 
         <!-- Tabla de inventario -->
