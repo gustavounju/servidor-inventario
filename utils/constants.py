@@ -1,6 +1,6 @@
 import os
 
-APP_VERSION = "v2.1.0-mysql"
+APP_VERSION = "v3.0.0-dashboard-ux"
 DB_FILE = "inventario.db"
 LOG_FOLDER = "logs"
 UPLOAD_FOLDER = "uploads"

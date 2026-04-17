@@ -242,6 +242,39 @@ def dashboard():
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
             kpi_tareas_pendientes_total = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
 
+            # --- KPIs EJECUTIVOS: SALUD DE LA FLOTA ---
+            kpi_saludables = conn.execute("""
+                SELECT COUNT(*) as c FROM pcs 
+                WHERE is_active = 'True' 
+                AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
+                AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
+                AND alerta_ram_baja = 0 AND alerta_sin_impresora = 0 
+                AND alerta_disco = 0 AND alerta_uptime = 0 AND alerta_nombre_duplicado = 0
+            """).fetchone()["c"]
+            kpi_alerta_media = conn.execute("""
+                SELECT COUNT(*) as c FROM pcs 
+                WHERE is_active = 'True' 
+                AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
+                AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
+                AND (alerta_ram_baja + alerta_sin_impresora + alerta_disco + alerta_uptime + alerta_nombre_duplicado) = 1
+            """).fetchone()["c"]
+            kpi_criticas = conn.execute("""
+                SELECT COUNT(*) as c FROM pcs 
+                WHERE is_active = 'True' 
+                AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
+                AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
+                AND (alerta_ram_baja + alerta_sin_impresora + alerta_disco + alerta_uptime + alerta_nombre_duplicado) >= 2
+            """).fetchone()["c"]
+            kpi_sin_impresora_inventario = conn.execute("""
+                SELECT COUNT(*) as c FROM pcs 
+                WHERE is_active = 'True'
+                AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
+                AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
+                AND (printer_model IS NULL OR printer_model = '' OR printer_model = 'N/A' OR UPPER(printer_model) LIKE '%%SIN IMPRESORA%%')
+                AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
+            """).fetchone()["c"]
+            # --------------------------------------------
+
             all_pcs_dropdown = [dict(row) for row in conn.execute(
                 """SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 'True' 
                 ORDER BY CASE WHEN UPPER(pc_name) LIKE 'PC%%GENERICA%%' THEN 0 WHEN UPPER(pc_name) LIKE 'INFRAESTRUCTURA%%' THEN 1 ELSE 2 END, pc_name ASC"""
@@ -298,6 +331,7 @@ def dashboard():
         pcs_data = auxiliary_pcs = technicians_list = unassigned_tasks = all_pcs_dropdown = ad_users_list = app_users_list = active_mobile_techs = []
         total_rows = kpi_total_activas = kpi_total_graveyard = kpi_alerta_ram = kpi_sin_impresora = 0
         kpi_impresora_red = kpi_total_impresoras = kpi_win7 = kpi_win10 = kpi_win11 = kpi_tareas_hoy = kpi_tareas_pendientes_total = unassigned_count = 0
+        kpi_saludables = kpi_alerta_media = kpi_criticas = kpi_sin_impresora_inventario = 0
         last_backup_info = "Error leyendo"
 
     total_pages = (total_rows + per_page - 1) // per_page if per_page > 0 else 1
@@ -326,6 +360,10 @@ def dashboard():
         kpi_win7=kpi_win7,
         kpi_win10=kpi_win10,
         kpi_win11=kpi_win11,
+        kpi_saludables=kpi_saludables,
+        kpi_alerta_media=kpi_alerta_media,
+        kpi_criticas=kpi_criticas,
+        kpi_sin_impresora_inventario=kpi_sin_impresora_inventario,
         q=q,
         estado=estado,
         alerta=alerta,
