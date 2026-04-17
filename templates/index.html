@@ -208,7 +208,7 @@
           {% endfor %}
 
           <!-- Botón Recalcular Fueros (solo superuser) -->
-          {% if current_user and current_user.is_superuser %}
+          {% if current_user and current_user.get('is_superuser') %}
           <form method="POST" action="{{ url_for('dashboard.refresh_fueros') }}" title="Recalcula el Fuero/Sector de cada PC en base a su nombre de equipo">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn text-start border-0 shadow-sm h-100"
