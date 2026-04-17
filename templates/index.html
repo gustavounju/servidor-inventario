@@ -466,7 +466,7 @@
                                                 {% if pc.detected_printers_count > 1 %}
                                                     <button type="button" class="btn btn-xs btn-warning fw-bold py-0 px-2" 
                                                             style="font-size: 0.65rem; border-radius: 4px;"
-                                                            onclick="showDetectedPrinters()"
+                                                            onclick="showDetectedPrinters('{{ pc.pc_name }}')"
                                                             title="¡Atención! Hemos detectado {{ pc.detected_printers_count }} impresoras en este equipo que no están en el inventario oficial. Haz clic para gestionarlas.">
                                                         <i class="bi bi-plus-circle-dotted"></i> INVENTARIAR ({{ pc.detected_printers_count }})
                                                     </button>

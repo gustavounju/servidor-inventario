@@ -1673,15 +1673,28 @@
     </div>
 
     <script>
-        function showDetectedPrinters() {
+        function showDetectedPrinters(pcName) {
             const modalEl = document.getElementById('printersDetailModal');
             if (!modalEl) return;
             const modal = new bootstrap.Modal(modalEl);
             document.getElementById('printersLoading').classList.remove('d-none');
             document.getElementById('printersContent').classList.add('d-none');
+
+            // Actualizar título del modal según contexto
+            const titleEl = modalEl.querySelector('.modal-title');
+            if (titleEl) {
+                titleEl.innerHTML = pcName
+                    ? `<i class="bi bi-printer-fill me-2"></i>Impresoras de ${pcName}`
+                    : `<i class="bi bi-printer-fill me-2"></i>Verificación de Impresoras`;
+            }
+
             modal.show();
 
-            fetch('/api/detected_printers')
+            const apiUrl = pcName
+                ? `/api/detected_printers?pc_name=${encodeURIComponent(pcName)}`
+                : '/api/detected_printers';
+
+            fetch(apiUrl)
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('printersLoading').classList.add('d-none');

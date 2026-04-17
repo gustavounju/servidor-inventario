@@ -454,14 +454,15 @@ def api_pc_printer(pc_ref):
 
 @bp_api.route("/api/detected_printers")
 def api_detected_printers():
-    """Devuelve la lista de impresoras detectadas (locales) y registradas."""
+    """Devuelve la lista de impresoras detectadas (locales) y registradas. Opcionalmente filtra por pc_name."""
+    pc_filter = request.args.get('pc_name', '').strip()
     try:
         with get_db_connection() as conn:
             # 1. Impresoras registradas en Infraestructura
             net_printers = conn.execute("SELECT * FROM network_printers ORDER BY brand_model").fetchall()
             
-            # 2. Impresoras detectadas en PCs (Locales/USB o Multiples que no están en el catálogo o que han sido descartadas)
-            detected = conn.execute("""
+            # 2. Impresoras detectadas en PCs — con filtro opcional por PC
+            base_query = """
                 SELECT 
                     dp.pc_name, 
                     dp.printer_model, 
@@ -477,8 +478,13 @@ def api_detected_printers():
                   AND (dp.printer_model IS NOT NULL AND dp.printer_model != '' AND dp.printer_model != 'N/A' AND UPPER(dp.printer_model) NOT LIKE '%%SIN IMPRESORA%%')
                   AND (dp.printer_port IS NULL OR dp.printer_port NOT LIKE '\\\\\\\\%%') 
                   AND (dp.printer_sn IS NULL OR dp.printer_sn = '' OR dp.printer_sn = 'N/A' OR dp.printer_sn NOT IN (SELECT serial_number FROM network_printers WHERE serial_number IS NOT NULL AND serial_number != ''))
-                ORDER BY dp.pc_name
-            """).fetchall()
+            """
+            if pc_filter:
+                base_query += " AND dp.pc_name = %s ORDER BY dp.pc_name"
+                detected = conn.execute(base_query, (pc_filter,)).fetchall()
+            else:
+                base_query += " ORDER BY dp.pc_name"
+                detected = conn.execute(base_query).fetchall()
             
             return jsonify({
                 "status": "success",
