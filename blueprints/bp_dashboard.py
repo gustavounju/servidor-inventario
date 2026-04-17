@@ -110,6 +110,14 @@ def dashboard():
                 filter_sql += " AND p.alerta_sin_impresora = 1"
             elif alerta == "red":
                 filter_sql += " AND p.alerta_impresora_red = 1"
+            elif alerta == "critica":
+                filter_sql += " AND (p.alerta_ram_baja + p.alerta_sin_impresora + p.alerta_disco + p.alerta_uptime + p.alerta_nombre_duplicado) >= 2"
+            elif alerta == "media":
+                filter_sql += " AND (p.alerta_ram_baja + p.alerta_sin_impresora + p.alerta_disco + p.alerta_uptime + p.alerta_nombre_duplicado) = 1"
+            elif alerta == "ninguna":
+                filter_sql += " AND p.alerta_ram_baja = 0 AND p.alerta_sin_impresora = 0 AND p.alerta_disco = 0 AND p.alerta_uptime = 0 AND p.alerta_nombre_duplicado = 0"
+            elif alerta == "sin_impresora":
+                filter_sql += " AND (p.printer_model IS NULL OR p.printer_model = '' OR p.printer_model = 'N/A' OR UPPER(p.printer_model) LIKE '%%SIN IMPRESORA%%') AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers)"
             
             if os_param == "win7":
                 filter_sql += " AND p.os_name LIKE %s"

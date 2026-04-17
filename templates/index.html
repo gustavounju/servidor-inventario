@@ -76,44 +76,64 @@
         </div>
         {% endif %}
 
-        <!-- PANEL DE RESUMEN EJECUTIVO -->
-        <div class="d-flex gap-2 mb-3 flex-wrap" id="executiveSummaryPanel">
+        <!-- BARRA DE ESTADO EJECUTIVO (v3) -->
+        <div class="d-flex align-items-center gap-2 mb-3 flex-wrap p-2 rounded-3 shadow-sm" 
+             style="background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(8px);">
+            <span style="font-size:.65rem; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:.1em; white-space:nowrap;">Estado de la Flota:</span>
+
             <!-- Saludables -->
-            <div class="d-flex flex-column justify-content-center px-3 py-2 shadow-sm"
-                 style="min-width:130px; border-radius:10px; background: linear-gradient(135deg, #064e3b, #065f46); color:#d1fae5; cursor:pointer; border: 1px solid #059669;"
-                 onclick="window.location.href='/?alerta=none'"
-                 title="PCs sin ninguna alerta activa. Haz clic para filtrar.">
-                <div style="font-size:.58rem; text-transform:uppercase; letter-spacing:.07em; color:#6ee7b7;">🟢 Saludables</div>
-                <div style="font-size:1.4rem; font-weight:800; line-height:1.1;">{{ kpi_saludables }}</div>
-                <div style="font-size:.65rem; color:#a7f3d0;">Sin alertas</div>
-            </div>
-            <!-- Con Alerta -->
-            <div class="d-flex flex-column justify-content-center px-3 py-2 shadow-sm"
-                 style="min-width:130px; border-radius:10px; background: linear-gradient(135deg, #78350f, #92400e); color:#fef3c7; cursor:pointer; border: 1px solid #d97706;"
-                 onclick="window.location.href='/?alerta=ram'"
-                 title="PCs con exactamente una alerta activa (RAM, disco, impresora, etc.). Haz clic para filtrar.">
-                <div style="font-size:.58rem; text-transform:uppercase; letter-spacing:.07em; color:#fcd34d;">🟡 Con Alerta</div>
-                <div style="font-size:1.4rem; font-weight:800; line-height:1.1;">{{ kpi_alerta_media }}</div>
-                <div style="font-size:.65rem; color:#fde68a;">1 alerta activa</div>
-            </div>
+            <a href="/?alerta=ninguna&estado=True" 
+               class="text-decoration-none d-flex align-items-center gap-1 px-2 py-1 rounded-pill {% if alerta == 'ninguna' %}active-fleet-pill{% else %}fleet-pill{% endif %}"
+               style="background:{% if alerta == 'ninguna' %}rgba(16,185,129,0.3); border:1px solid #10b981;{% else %}rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3);{% endif %} transition: all .2s;"
+               title="Ver solo las PCs sin ninguna alerta activa">
+                <span style="font-size:.8rem;">🟢</span>
+                <span style="font-size:.7rem; color:#6ee7b7; font-weight:600;">{{ kpi_saludables }}</span>
+                <span style="font-size:.62rem; color:rgba(255,255,255,0.6);">Saludables</span>
+            </a>
+
+            <span style="color:rgba(255,255,255,0.15);">|</span>
+
+            <!-- Con Alerta Media -->
+            <a href="/?alerta=media&estado=True"
+               class="text-decoration-none d-flex align-items-center gap-1 px-2 py-1 rounded-pill"
+               style="background:{% if alerta == 'media' %}rgba(245,158,11,0.3); border:1px solid #f59e0b;{% else %}rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3);{% endif %} transition: all .2s;"
+               title="Ver PCs con exactamente 1 alerta activa (RAM baja, disco, etc.)">
+                <span style="font-size:.8rem;">🟡</span>
+                <span style="font-size:.7rem; color:#fcd34d; font-weight:600;">{{ kpi_alerta_media }}</span>
+                <span style="font-size:.62rem; color:rgba(255,255,255,0.6);">Con Alerta</span>
+            </a>
+
             <!-- Críticas -->
-            <div class="d-flex flex-column justify-content-center px-3 py-2 shadow-sm"
-                 style="min-width:130px; border-radius:10px; background: linear-gradient(135deg, #7f1d1d, #991b1b); color:#fee2e2; cursor:pointer; border: 1px solid #ef4444; animation: pulse-subtle 2s infinite;"
-                 onclick="window.location.href='/?alerta=critica'"
-                 title="PCs con 2 o más alertas simultáneas. Requieren atención urgente.">
-                <div style="font-size:.58rem; text-transform:uppercase; letter-spacing:.07em; color:#fca5a5;">🔴 Críticas</div>
-                <div style="font-size:1.4rem; font-weight:800; line-height:1.1;">{{ kpi_criticas }}</div>
-                <div style="font-size:.65rem; color:#fecaca;">2+ alertas</div>
-            </div>
+            <a href="/?alerta=critica&estado=True"
+               class="text-decoration-none d-flex align-items-center gap-1 px-2 py-1 rounded-pill"
+               style="background:{% if alerta == 'critica' %}rgba(239,68,68,0.3); border:1px solid #ef4444;{% else %}rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3);{% endif %} transition: all .2s;"
+               title="Ver PCs con 2 o más alertas activas simultáneas. Requieren atención urgente.">
+                <span style="font-size:.8rem;">🔴</span>
+                <span style="font-size:.7rem; color:#fca5a5; font-weight:600;">{{ kpi_criticas }}</span>
+                <span style="font-size:.62rem; color:rgba(255,255,255,0.6);">Críticas</span>
+            </a>
+
+            <span style="color:rgba(255,255,255,0.15);">|</span>
+
             <!-- Sin Impresora -->
-            <div class="d-flex flex-column justify-content-center px-3 py-2 shadow-sm"
-                 style="min-width:130px; border-radius:10px; background: linear-gradient(135deg, #1e3a5f, #1e40af); color:#dbeafe; cursor:pointer; border: 1px solid #3b82f6;"
-                 onclick="window.location.href='/?alerta=sin_impresora'"
-                 title="PCs que aún no tienen ninguna impresora registrada en el inventario. Haz clic para filtrar.">
-                <div style="font-size:.58rem; text-transform:uppercase; letter-spacing:.07em; color:#93c5fd;">🖨️ Sin Impresora</div>
-                <div style="font-size:1.4rem; font-weight:800; line-height:1.1;">{{ kpi_sin_impresora_inventario }}</div>
-                <div style="font-size:.65rem; color:#bfdbfe;">Sin inventariar</div>
-            </div>
+            <a href="/?alerta=sin_impresora&estado=True"
+               class="text-decoration-none d-flex align-items-center gap-1 px-2 py-1 rounded-pill"
+               style="background:{% if alerta == 'sin_impresora' %}rgba(59,130,246,0.3); border:1px solid #3b82f6;{% else %}rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3);{% endif %} transition: all .2s;"
+               title="Ver PCs que no tienen ninguna impresora registrada en el inventario">
+                <span style="font-size:.8rem;">🖨️</span>
+                <span style="font-size:.7rem; color:#93c5fd; font-weight:600;">{{ kpi_sin_impresora_inventario }}</span>
+                <span style="font-size:.62rem; color:rgba(255,255,255,0.6);">Sin Impresora</span>
+            </a>
+
+            <span style="color:rgba(255,255,255,0.15);">|</span>
+
+            <!-- Total -->
+            <a href="/?estado=True" 
+               class="text-decoration-none d-flex align-items-center gap-1 px-2 py-1 rounded-pill"
+               style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); transition: all .2s;"
+               title="Ver todas las PCs activas">
+                <span style="font-size:.7rem; color:rgba(255,255,255,0.8); font-weight:700;">{{ kpi_total_activas }} Total</span>
+            </a>
         </div>
 
         <!-- Tarjetas especiales y Tableros (Huérfanas, Técnicos, PC Genérica, Infraestructura) -->
