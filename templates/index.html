@@ -82,7 +82,9 @@
           {% endif %}
 
           <!-- Botón de Técnicos Conectados (Móvil) que abre Modal -->
-          <button type="button" class="btn text-start border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#mobileTechsModal" style="min-width:180px; border-radius:10px; padding: 5px 10px; background: linear-gradient(135deg, #0f4c75, #1b262c); color:#f0f9ff; transition: transform .15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          <button type="button" class="btn text-start border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#mobileTechsModal" 
+                  title="Ver los técnicos que están operando actualmente desde dispositivos móviles en tiempo real"
+                  style="min-width:180px; border-radius:10px; padding: 5px 10px; background: linear-gradient(135deg, #0f4c75, #1b262c); color:#f0f9ff; transition: transform .15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
             <div class="d-flex flex-column gap-0">
               <div class="d-flex align-items-center justify-content-between gap-2">
                 <div style="font-size:.60rem; color:#bae6fd; text-transform:uppercase; letter-spacing:.05em;">
@@ -101,7 +103,13 @@
           </button>
           {% for pc in auxiliary_pcs %}
           <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="text-decoration-none">
-            <div class="card border-0 shadow-sm" style="min-width:180px; border-radius:10px; background: linear-gradient(135deg, #1e293b, #0f172a); color:#f1f5f9; cursor:pointer; transition: transform .15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="card border-0 shadow-sm" 
+                 {% if 'GENERICA' in pc.pc_name.upper() %}
+                    title="Tareas y mantenimientos que no están asociados a un equipo físico específico (Tareas huérfanas)"
+                 {% elif 'INFRAESTRUCTURA' in pc.pc_name.upper() %}
+                    title="Acceso al catálogo oficial de Impresoras y Recursos de Red de la institución"
+                 {% endif %}
+                 style="min-width:180px; border-radius:10px; background: linear-gradient(135deg, #1e293b, #0f172a); color:#f1f5f9; cursor:pointer; transition: transform .15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
               <div class="card-body py-1 px-2">
                 <div class="d-flex align-items-center justify-content-between gap-2">
                   <div>
@@ -223,22 +231,22 @@
                             <span class="float-end">
                                 {% if pc.os_name and 'Windows 11' in pc.os_name %}
                                 <i class="bi bi-windows text-primary" style="font-size: 1rem;"
-                                    title="{{ pc.os_name }}"></i>
+                                    title="Sistema Operativo: {{ pc.os_name }} (Estándar de seguridad actual)"></i>
                                 <span class="badge bg-primary text-white"
                                     style="font-size: 0.5rem; vertical-align: top; padding: 2px 4px;">11</span>
                                 {% elif pc.os_name and 'Windows 10' in pc.os_name %}
                                 <i class="bi bi-windows text-info" style="font-size: 1rem;"
-                                    title="{{ pc.os_name }}"></i>
+                                    title="Sistema Operativo: {{ pc.os_name }} (Versión corporativa estable)"></i>
                                 <span class="badge bg-info text-dark"
                                     style="font-size: 0.5rem; vertical-align: top; padding: 2px 4px;">10</span>
                                 {% elif pc.os_name and 'Windows 7' in pc.os_name %}
                                 <i class="bi bi-windows text-danger" style="font-size: 1rem;"
-                                    title="{{ pc.os_name }}"></i>
+                                    title="Sistema Operativo: {{ pc.os_name }} (Versión obsoleta - Requiere actualización)"></i>
                                 <span class="badge bg-danger text-white"
                                     style="font-size: 0.5rem; vertical-align: top; padding: 2px 4px;">7</span>
                                 {% elif pc.os_name and 'Windows' in pc.os_name %}
                                 <i class="bi bi-windows text-secondary" style="font-size: 1rem;"
-                                    title="{{ pc.os_name }}"></i>
+                                    title="Sistema Operativo: {{ pc.os_name }}"></i>
                                 {% endif %}
 
                                 {# Badge de Office (Nueva Mejora) #}
@@ -266,10 +274,10 @@
                         </td>
                         <td>
                             {% if pc.ad_real_name %}
-                            <div class="fw-bold text-dark">{{ pc.ad_real_name }}</div>
-                            <div class="small text-muted" style="font-size: 0.75rem;"><i class="bi bi-person-badge"></i> Usuario: <code>{{ pc.last_user }}</code></div>
+                            <div class="fw-bold text-dark" title="Nombre registrado en el servidor de usuarios de la institución">{{ pc.ad_real_name }}</div>
+                            <div class="small text-muted" style="font-size: 0.75rem;"><i class="bi bi-person-badge"></i> ID Usuario: <code title="Identificador técnico de inicio de sesión">{{ pc.last_user }}</code></div>
                             {% else %}
-                            <div class="fw-bold text-dark">{{ pc.last_user or '-' }}</div>
+                            <div class="fw-bold text-dark" title="Este usuario aún no tiene un nombre real asociado">{{ pc.last_user or '-' }}</div>
                             <div class="small text-muted" style="font-size: 0.7rem;">(Sin nombre real asignado)</div>
                             {% endif %}
                             
@@ -299,56 +307,77 @@
                                 <div class="small mt-1" style="font-size: 0.75rem;">
                                     <div class="d-flex align-items-center">
                                         {% if pc.assigned_network_printer %}
-                                            {# Estilo para impresora asignada oficialmente #}
-                                            <span class="badge bg-info text-dark" style="font-size: 0.7rem;" title="Port: {{ pc.printer_port }}">
-                                                <i class="bi bi-diagram-3-fill"></i> Red
-                                            </span>
-                                            
-                                            <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=pc.assigned_network_printer_id) }}" 
-                                                  method="POST" class="d-inline ms-1">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
-                                                <button type="submit" class="btn btn-sm btn-link p-0 text-danger text-decoration-none" 
-                                                        title="Desvincular esta impresora de red del equipo"
-                                                        onclick="return confirm('¿Desvincular esta impresora de red del equipo?');">
-                                                    <i class="bi bi-dash-circle-fill" style="font-size: 0.8rem;"></i>
-                                                </button>
-                                            </form>
-                                        {% else %}
-                                            {# Badge de Red / Compartida #}
-                                            {% if "\\" in (pc.printer_port or "") %}
-                                                <span class="badge bg-secondary text-white me-1" style="font-size: 0.7rem;" title="{{ pc.printer_port }}">
-                                                    <i class="bi bi-share-fill"></i> Compartida
-                                                </span>
-                                            {% elif "." in (pc.printer_port or "") or "WSD" in (pc.printer_port or "") %}
-                                                <span class="badge bg-info text-dark me-1" style="font-size: 0.7rem;">
-                                                    <i class="bi bi-diagram-3"></i> Red
-                                                </span>
-                                            {% endif %}
-                                            
-                                            {# Boton para stockear si el reporte tiene impresora #}
-                                            {% if pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
-                                            <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none me-1" 
-                                                    onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')"
-                                                    title="Stockear: Registrar esta impresora en el catálogo oficial">
-                                                <i class="bi bi-plus-circle-fill" style="font-size: 0.8rem;"></i>
-                                            </button>
-                                            <span class="text-muted opacity-75" style="font-size: 0.65rem; font-style: italic;">No stockeada</span>
+                                            {# Estilo para impresoras asignadas oficialmente (pueden ser varias) #}
+                                            {% for prn in pc.assigned_network_printer.split(' | ') %}
+                                                <div class="mb-1" title="Esta es una impresora oficial registrada en el catálogo">
+                                                    <span class="badge bg-info text-dark" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-diagram-3-fill"></i> Red
+                                                    </span>
+                                                    <span class="fw-bold" style="font-size: 0.8rem;">{{ prn }}</span>
+                                                    
+                                                    {% set prn_id = (pc.assigned_network_printer_id.split(',')[loop.index0]) if pc.assigned_network_printer_id else '' %}
+                                                    {% if prn_id %}
+                                                    <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=prn_id) }}" 
+                                                          method="POST" class="d-inline ms-1">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+                                                        <button type="submit" class="btn btn-sm btn-link p-0 text-danger text-decoration-none" 
+                                                                title="Desvincular esta impresora"
+                                                                onclick="return confirm('¿Desvincular esta impresora del equipo?');">
+                                                            <i class="bi bi-dash-circle-fill" style="font-size: 0.8rem;"></i>
+                                                        </button>
+                                                    </form>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+
+                                        {% if not pc.assigned_network_printer or pc.detected_printers_count > 0 %}
+                                            {# Badge de Red / Compartida / Local detectada #}
+                                            <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                                                {% if "\\" in (pc.printer_port or "") %}
+                                                    <span class="badge bg-secondary text-white" style="font-size: 0.7rem;" 
+                                                          title="Esta PC imprime a través de otra PC que actúa como servidor (Puerto: {{ pc.printer_port }})">
+                                                        <i class="bi bi-share-fill"></i> Compartida
+                                                    </span>
+                                                {% elif "." in (pc.printer_port or "") or "WSD" in (pc.printer_port or "") %}
+                                                    <span class="badge bg-info text-dark" style="font-size: 0.7rem;"
+                                                          title="Este equipo tiene conectividad directa por IP con la impresora">
+                                                        <i class="bi bi-diagram-3"></i> Red
+                                                    </span>
+                                                {% endif %}
+                                                
+                                                {% if pc.detected_printers_count > 1 %}
+                                                    <button type="button" class="btn btn-xs btn-warning fw-bold py-0 px-2" 
+                                                            style="font-size: 0.65rem; border-radius: 4px;"
+                                                            onclick="showDetectedPrinters()"
+                                                            title="¡Atención! Hemos detectado {{ pc.detected_printers_count }} impresoras en este equipo que no están en el inventario oficial. Haz clic para gestionarlas.">
+                                                        <i class="bi bi-plus-circle-dotted"></i> INVENTARIAR ({{ pc.detected_printers_count }})
+                                                    </button>
+                                                {% elif pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
+                                                    <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" 
+                                                            onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')"
+                                                            title="Clic para registrar esta impresora local oficialmente en el catálogo">
+                                                        <i class="bi bi-plus-circle-fill"></i>
+                                                    </button>
+                                                    <span class="text-muted opacity-75" style="font-size: 0.65rem; font-style: italic;" title="Esta impresora existe físicamente pero aún no ha sido cargada al sistema">No stockeada</span>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+
+                                        {# Mostrar Modelo o Pendiente (Solo si no hay nada promocionado aún o para la primaria) #}
+                                        {% if not pc.assigned_network_printer %}
+                                            {% if pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) and ("\\\\" in (pc.printer_port or "") or "IP_" in (pc.printer_port or "") or "." in (pc.printer_port or "")) %}
+                                                <div class="mt-1" title="Se detectó una impresora de red o compartida, pero falta validarla o registrarla oficialmente. La PC debe volver a reportar para confirmar el cambio.">
+                                                    <span class="badge bg-warning text-dark" style="font-size: 0.7rem; border: 1px solid #cc9a06;">
+                                                        <i class="bi bi-clock-history"></i> SINCRONIZACIÓN PENDIENTE
+                                                    </span>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.75rem;" title="Este fue el último modelo reportado por el equipo">(Última: {{ pc.printer_model }})</div>
+                                            {% elif pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
+                                                <div class="fw-bold" style="font-size: 0.85rem;">{{ pc.printer_model }}</div>
                                             {% endif %}
                                         {% endif %}
-                                    </div>
-
-                                    {# Mostrar Modelo o Pendiente #}
-                                    {% if not pc.assigned_network_printer and pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) and ("\\\\" in (pc.printer_port or "") or "IP_" in (pc.printer_port or "") or "." in (pc.printer_port or "")) %}
-                                        <div class="mt-1">
-                                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem; border: 1px solid #cc9a06;">
-                                                <i class="bi bi-clock-history"></i> Pendiente de ejecutar script
-                                            </span>
-                                        </div>
-                                        <div class="text-muted" style="font-size: 0.75rem;">(Última: {{ pc.printer_model }})</div>
-                                    {% elif pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
-                                        <div class="fw-bold" style="font-size: 0.85rem;">{{ pc.printer_model }}</div>
-                                    {% endif %}
                                 </div>
                             {% endif %}
 

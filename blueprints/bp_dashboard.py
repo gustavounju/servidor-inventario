@@ -151,19 +151,26 @@ def dashboard():
                     COALESCE(u.phone, au.phone) as ad_phone,
                     (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%')) AS tareas_pendientes,
                     (
-                        SELECT CONCAT(np.ip_address, ' - ', np.brand_model) 
+                        SELECT GROUP_CONCAT(CONCAT(np.ip_address, ' - ', np.brand_model) SEPARATOR ' | ') 
                         FROM pc_network_printers pnp 
                         JOIN network_printers np ON pnp.printer_id = np.id 
-                        WHERE pnp.pc_name = p.pc_name 
-                        LIMIT 1
+                        WHERE pnp.pc_name = p.pc_name
                     ) as assigned_network_printer,
                     (
-                        SELECT np.id 
+                        SELECT GROUP_CONCAT(np.id) 
                         FROM pc_network_printers pnp 
                         JOIN network_printers np ON pnp.printer_id = np.id 
-                        WHERE pnp.pc_name = p.pc_name 
-                        LIMIT 1
-                    ) as assigned_network_printer_id
+                        WHERE pnp.pc_name = p.pc_name
+                    ) as assigned_network_printer_id,
+                    (
+                        SELECT COUNT(*) 
+                        FROM pc_detected_printers dp 
+                        WHERE dp.pc_name = p.pc_name 
+                          AND dp.is_ignored = 0
+                          AND (dp.printer_model IS NOT NULL AND dp.printer_model != '' AND dp.printer_model != 'N/A' AND UPPER(dp.printer_model) NOT LIKE '%%SIN IMPRESORA%%')
+                          AND (dp.printer_port IS NULL OR dp.printer_port NOT LIKE '\\\\\\\\%%')
+                          AND (dp.printer_sn IS NULL OR dp.printer_sn = '' OR dp.printer_sn = 'N/A' OR dp.printer_sn NOT IN (SELECT serial_number FROM network_printers WHERE serial_number IS NOT NULL AND serial_number != ''))
+                    ) as detected_printers_count
                 FROM pcs p
                 LEFT JOIN ad_users u ON (
                     LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username OR 

@@ -104,9 +104,9 @@
                 <i class="bi bi-window-stack"></i> <span>W11:</span> <strong>{{ kpi_win11 }}</strong>
             </div>
 
-            <!-- RAM baja -->
+            <!-- RAM < 8GB -->
             <div class="kpi-mini-chip {% if request.args.get('alerta') == 'ram' %}active{% endif %}" onclick="onFilterClick('ram')" title="Filtro de RAM < 8GB">
-                <i class="bi bi-memory"></i> <span>RAM_LOW:</span> <strong>{{ kpi_alerta_ram }}</strong>
+                <i class="bi bi-memory"></i> <span>RAM < 8GB:</span> <strong>{{ kpi_alerta_ram }}</strong>
             </div>
 
             <!-- Impresoras -->

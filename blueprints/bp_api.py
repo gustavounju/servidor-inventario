@@ -329,13 +329,18 @@ def process_inventory_data(data):
                 pp_extra = p.get("Port", "N/A")
                 psn_extra = clean_hex_string(p.get("SN", "N/A"))
                 
+                # Auto-filtrado de impresoras virtuales (PDF, XPS, OneNote, Fax)
+                pm_upper = pm_extra.upper()
+                is_virtual_extra = ("PDF" in pm_upper) or ("XPS" in pm_upper) or ("ONENOTE" in pm_upper) or ("FAX" in pm_upper) or ("SEND TO" in pm_upper) or ("MICROSOFT" in pm_upper and "DOCUMENT" in pm_upper)
+                
                 # Insertar en la nueva tabla de impresoras secundarias
+                # Las virtuales se insertan como ignoradas automáticamente
                 conn.execute(
                     """
-                    INSERT INTO pc_detected_printers (pc_name, printer_model, printer_port, printer_sn)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO pc_detected_printers (pc_name, printer_model, printer_port, printer_sn, is_ignored)
+                    VALUES (%s, %s, %s, %s, %s)
                     """,
-                    (pc_name, pm_extra, pp_extra, psn_extra)
+                    (pc_name, pm_extra, pp_extra, psn_extra, 1 if is_virtual_extra else 0)
                 )
 
         conn.commit()

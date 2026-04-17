@@ -1748,7 +1748,7 @@
             if (!confirm('¿Seguro que desea ocultar esta impresora de la lista de pendientes? Podrá volver a ingresarla manualmente si lo necesita.')) return;
             fetch('/api/ignore_detected_printer/' + detectId, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || '' }
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value || '' }
             })
             .then(res => res.json())
             .then(data => {

@@ -1,0 +1,49 @@
+{
+  "PC_Nombre": "WIN7-PC-TEST",
+  "Usuario_Actual": "Tecnico",
+  "Fecha_Reporte": "2026-04-15 20:15:00",
+  "Sistema": {
+    "OsName": "Microsoft Windows 7 Professional",
+    "Procesador": "Intel(R) Core(TM) i3-2100 CPU @ 3.10GHz",
+    "RAM (GB)": 4,
+    "Office": "Microsoft Office 2010"
+  },
+  "Red": [
+    {
+      "IPAddress": "192.168.1.50",
+      "MACAddress": "00:1A:2B:3C:4D:5E"
+    }
+  ],
+  "RAM_Detalles": "4GB @ 1333MHz",
+  "Disk_Models": "ST500DM002-1BD142 (500GB)",
+  "Disk_Speeds_RPM": "ST500DM002-1BD142: 7200 RPM",
+  "Motherboard_Model": "ASUSTeK COMPUTER INC. P8H61-M LX",
+  "Printer_Model": "HP LaserJet Pro M12w",
+  "Printer_Port": "USB001 (Local)",
+  "Printer_SN": "VNC3G05432",
+  "Monitors": "Monitor PnP genérico",
+  "Conexiones": [],
+  "Salud": {
+    "Uptime_Dias": 1.5,
+    "Discos_SMART": [
+      {
+        "Model": "ST500DM002-1BD142",
+        "Status": "OK",
+        "DeviceID": "\\\\.\\PHYSICALDRIVE0"
+      }
+    ],
+    "Discos_Espacio": [
+      {
+        "Letter": "C:",
+        "FreeGB": 150.5,
+        "TotalGB": 465.2,
+        "PctFree": 32.3
+      }
+    ],
+    "Eventos_Criticos": []
+  },
+  "Seguridad_Extra": {
+    "Antivirus": "Microsoft Security Essentials",
+    "Startup": []
+  }
+}
