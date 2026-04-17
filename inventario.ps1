@@ -447,7 +447,7 @@ try {
                 # 4. Limpieza final de IDs virtuales si es Local
                 if (($printerSN -match '&' -or $printerSN -eq "N/A") -and ($printerPort -match 'USB|DOT4' -or $bestPrinter.Network -eq $false)) {
                    $pnpId = $bestPrinter.PNPDeviceID
-                   if ($pnpId -match "USBPRINT\\|DOT4PRT\\") {
+                    if ($pnpId -match "USBPRINT\\|DOT4PRT\\") {
                         $pnpSerial = $pnpId.Split('\')[-1] -replace "_\d+$", ""
                         if ($pnpSerial -match '&') {
                             $subParts = $pnpSerial.Split('&')
@@ -459,6 +459,11 @@ try {
                             if (& $isValidSN $pnpSerial) { $printerSN = $pnpSerial }
                         }
                     }
+                }
+                
+                # Request del usuario: Si definitivamente fracasó todo y es USB, dejar 'USB' como marca visible.
+                if ($printerSN -eq "N/A" -and ($printerPort -match 'USB|DOT4')) {
+                    $printerSN = "USB"
                 }
             } catch {}
             # Normalizar rutas UNC con exceso de backslashes (Ej: \\\\\10.15.2.42\\Printer -> \\10.15.2.42\Printer)
