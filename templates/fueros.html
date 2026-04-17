@@ -586,7 +586,7 @@
             div.onclick = () => {
                 let url = '';
                 if (meta.type === 'pc') url = `/pc/${meta.data.pc_name}`;
-                else if (meta.type === 'pr') url = `/infra#printers`;
+                else if (meta.type === 'pr') url = `/infra/#printers`;
                 else if (meta.type === 'u') url = `/?q=${meta.data.username}`;
                 
                 if (window.parent && window.parent !== window) {
