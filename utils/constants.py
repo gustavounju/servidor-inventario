@@ -21,6 +21,8 @@ FUERO_MAPPING = {
     "JCC8SEC16": "Juzgado civil y Comercial N°8 Secretaria 16",
     "JCC9SEC18": "Juzgado civil y Comercial N°9 Secretaria 18",
     "JCC": "Juzgado Civil y Comercial",
+    "CCYCSIV": "Cámara Civil y Comercial Sala IV",
+    "CCYC": "Cámara Civil y Comercial",
     "PRENSA": "Prensa Poder Judicial de San Pedro de Jujuy",
     "SUPINT": "Superintendencia",
     "EQINT": "Equipo Interdisciplinario",
@@ -66,6 +68,8 @@ FUERO_COLORS = {
     "Juzgado civil y Comercial N°8 Secretaria 16": "#0dcaf0", # Cyan
     "Juzgado civil y Comercial N°9 Secretaria 18": "#0dcaf0", # Cyan
     "Juzgado Civil y Comercial": "#0dcaf0",      # Cyan
+    "Cámara Civil y Comercial Sala IV": "#0dcaf0", # Cyan
+    "Cámara Civil y Comercial": "#0dcaf0", # Cyan
     "Equipo Interdisciplinario": "#ffc107",      # Yellow
     "Juzgado de Menores 2": "#dc3545",           # Red
     "Juzgado de Menores": "#dc3545",             # Red
