@@ -1034,8 +1034,9 @@ def view_fueros():
                 SELECT p.pc_name, p.last_user, p.ip_address, p.os_name, p.printer_model, p.printer_port, p.printer_sn,
                 (CASE 
                     WHEN p.printer_sn IS NOT NULL AND p.printer_sn != '' AND p.printer_sn != 'N/A' AND p.printer_sn != 'USB' THEN 
-                        (SELECT COUNT(*) FROM components c WHERE c.serial_number = p.printer_sn)
-                    ELSE 0 
+                        (SELECT COUNT(*) FROM components c WHERE c.serial_number = p.printer_sn OR (c.component_type LIKE 'Imp%%' AND c.assigned_pc = p.pc_name))
+                    ELSE 
+                        (SELECT COUNT(*) FROM components c WHERE c.component_type LIKE 'Imp%%' AND c.assigned_pc = p.pc_name)
                 END) as is_stocked
                 FROM pcs p
                 WHERE p.is_active = 'True' AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND p.fuero = %s 
@@ -1073,8 +1074,9 @@ def view_fueros():
                 SELECT p.pc_name, p.last_user, p.ip_address, p.os_name, p.printer_model, p.printer_port, p.printer_sn,
                 (CASE 
                     WHEN p.printer_sn IS NOT NULL AND p.printer_sn != '' AND p.printer_sn != 'N/A' AND p.printer_sn != 'USB' THEN 
-                        (SELECT COUNT(*) FROM components c WHERE c.serial_number = p.printer_sn)
-                    ELSE 0 
+                        (SELECT COUNT(*) FROM components c WHERE c.serial_number = p.printer_sn OR (c.component_type LIKE 'Imp%%' AND c.assigned_pc = p.pc_name))
+                    ELSE 
+                        (SELECT COUNT(*) FROM components c WHERE c.component_type LIKE 'Imp%%' AND c.assigned_pc = p.pc_name)
                 END) as is_stocked
                 FROM pcs p
                 WHERE p.is_active = 'True' AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido') 
