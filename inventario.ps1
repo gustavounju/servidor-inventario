@@ -460,6 +460,45 @@ try {
                         }
                     }
                 }
+
+                # 5. Busqueda directa en Enum\USB por VID/PID (HP P1102w y similares guardan serial aca)
+                if ($printerSN -eq "N/A" -or $printerSN -eq "USB") {
+                    try {
+                        $usbEnumPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\USB"
+                        if (Test-Path $usbEnumPath) {
+                            $vidPidKeys = Get-ChildItem $usbEnumPath -ErrorAction SilentlyContinue | Where-Object {
+                                $_.PSChildName -match "^VID_"
+                            }
+                            foreach ($vidPid in $vidPidKeys) {
+                                $serialInstances = Get-ChildItem $vidPid.PSPath -ErrorAction SilentlyContinue
+                                foreach ($instance in $serialInstances) {
+                                    $instanceSN = $instance.PSChildName
+                                    # Saltear instancias con & (IDs compuestos de Windows, no seriales reales)
+                                    if ($instanceSN -match '&') { continue }
+                                    if ($instanceSN -match '^[A-F0-9]{20,}$') { continue } # Excluir IDs hexadecimales puros
+
+                                    # Verificar si este dispositivo USB corresponde a una impresora
+                                    $devProps = Get-ItemProperty -Path $instance.PSPath -ErrorAction SilentlyContinue
+                                    $devClass = $devProps.Class
+                                    $devService = $devProps.Service
+                                    $devDesc = $devProps.DeviceDesc
+                                    $deviceFriendlyName = $devProps.FriendlyName
+
+                                    $isPrinterDevice = ($devClass -eq "Printer") -or 
+                                                       ($devService -match "usbprint|dot4") -or
+                                                       ($devDesc -match [regex]::Escape(($printerModel -replace "Series|Professional|PCL\d*|Class Driver", "").Trim())) -or
+                                                       ($deviceFriendlyName -match [regex]::Escape(($printerModel -replace "Series|Professional|PCL\d*|Class Driver", "").Trim()))
+
+                                    if ($isPrinterDevice -and (& $isValidSN $instanceSN)) {
+                                        $printerSN = $instanceSN
+                                        break
+                                    }
+                                }
+                                if ($printerSN -ne "N/A" -and $printerSN -ne "USB") { break }
+                            }
+                        }
+                    } catch {}
+                }
                 
                 # Request del usuario: Si definitivamente fracasó todo y es USB, dejar 'USB' como marca visible.
                 if ($printerSN -eq "N/A" -and ($printerPort -match 'USB|DOT4')) {
