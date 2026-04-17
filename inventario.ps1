@@ -348,10 +348,20 @@ try {
             $printerSN = "N/A"
             # INTENTAR OBTENER SERIAL FÍSICO (USB / PnP)
             try {
+                # Función inline rápida para validar serial
+                $isValidSN = {
+                    param($sn)
+                    if ([string]::IsNullOrEmpty($sn) -or $sn.Length -lt 5) { return $false }
+                    if ($sn -match '^[0-9]+$') { return $false } # Solo números (suele ser ID interno o índice)
+                    if ($sn -match '[&{]') { return $false } # IDs internos de Windows con & o GUIDs
+                    if ($sn -match '^(USB|LPT|COM|DOT4|WSD)[0-9]*(\.[0-9]+)?$') { return $false } # Nombres de puertos
+                    return $true
+                }
+
                 # 0. Chequeo directo por PNPDeviceID de la impresora (Suele ser USBPRINT\MODEL\SERIAL)
                 if ($bestPrinter.PNPDeviceID -match "([^\\]+)$") {
                     $potentialSN = $matches[1] -replace "_\d+$", ""
-                    if ($potentialSN.Length -gt 5 -and $potentialSN -notmatch '[&{]') {
+                    if (& $isValidSN $potentialSN) {
                         $printerSN = $potentialSN
                     }
                 }
@@ -370,9 +380,9 @@ try {
                                 $potentialSN = $matches[1] -replace "_\d+$", ""
                                 
                                 $isGuid = $potentialSN -match "^\{[A-F0-9-]+\}$" -or ($potentialSN -split "-").Count -gt 3
-                                $isWindowsID = $potentialSN -contains "&" -or $potentialSN -match "&"
+                                $isWindowsID = $potentialSN -contains "&"
                                 
-                                if ($potentialSN -notmatch "^(USB|LPT|COM)[0-9]+$" -and -not $isGuid -and -not $isWindowsID -and $potentialSN.Length -gt 4) {
+                                if (-not $isGuid -and -not $isWindowsID -and (& $isValidSN $potentialSN)) {
                                     $printerSN = $potentialSN
                                     break
                                 }
@@ -394,7 +404,7 @@ try {
                                     $serialKeys = Get-ChildItem $m.PSPath -ErrorAction SilentlyContinue
                                     if ($serialKeys) {
                                         $potentialSN = $serialKeys[0].PSChildName -replace "(_|\&).*$", ""
-                                        if ($potentialSN.Length -gt 5 -and $potentialSN -notmatch "^[A-F0-9]{8}-") {
+                                        if (-not ($potentialSN -match "^[A-F0-9]{8}-") -and (& $isValidSN $potentialSN)) {
                                             $printerSN = $potentialSN
                                             break
                                         }
@@ -424,7 +434,7 @@ try {
                         if (Test-Path $regPath) {
                             foreach ($valName in $serialValueNames) {
                                 $potential = Get-ItemProperty -Path $regPath -Name $valName -ErrorAction SilentlyContinue | Select-Object -ExpandProperty $valName -ErrorAction SilentlyContinue
-                                if ($potential -and $potential.Length -gt 5 -and $potential -notmatch '[&{]') {
+                                if (& $isValidSN $potential) {
                                     $printerSN = $potential
                                     break
                                 }
@@ -441,11 +451,12 @@ try {
                         $pnpSerial = $pnpId.Split('\')[-1] -replace "_\d+$", ""
                         if ($pnpSerial -match '&') {
                             $subParts = $pnpSerial.Split('&')
-                            if ($subParts.Count -ge 2 -and $subParts[1].Length -gt 4 -and $subParts[1] -notmatch "^[0-9]+$") { 
-                                $printerSN = $subParts[1] 
+                            if ($subParts.Count -ge 2 -and $subParts[1].Length -gt 4) { 
+                                $potential = $subParts[1]
+                                if (& $isValidSN $potential) { $printerSN = $potential }
                             }
                         } else {
-                            if ($pnpSerial.Length -gt 4) { $printerSN = $pnpSerial }
+                            if (& $isValidSN $pnpSerial) { $printerSN = $pnpSerial }
                         }
                     }
                 }
