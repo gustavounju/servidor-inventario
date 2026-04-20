@@ -69,7 +69,7 @@ function copyScript(btn) {
     const urlHttp = btn.getAttribute('data-url-http');
     
     // Add SSL bypass and use DownloadString like in the /install page
-    const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try { iex (New-Object System.Net.WebClient).DownloadString('${urlHttps}') } catch { Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('${urlHttp}') }\r\n`;
+    const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try { iex (New-Object System.Net.WebClient).DownloadString('${urlHttps}') } catch { Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('${urlHttp}') }\n\n`;
     
     navigator.clipboard.writeText(command).then(() => {
         const originalHtml = btn.innerHTML;
