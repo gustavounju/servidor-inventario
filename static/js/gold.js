@@ -68,9 +68,8 @@ function copyScript(btn) {
     const urlHttps = btn.getAttribute('data-url-https');
     const urlHttp = btn.getAttribute('data-url-http');
     
-    // Usar WebClient en lugar de 'iwr' para compatibilidad con Windows 7 (PowerShell 2.0). 
-    // Atrapar el error del protocolo de seguridad TLS 1.2 (3072) por si el .NET de Win7 es antiguo (falla silenciosamente y cae al http).
-    const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; try { [System.Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; $wc = New-Object System.Net.WebClient; $u1='${urlHttps}'; $u2='${urlHttp}'; try { $wc.DownloadFile($u1, "$env:TEMP\\i.ps1") } catch { $wc.DownloadFile($u2, "$env:TEMP\\i.ps1") }; if (Test-Path "$env:TEMP\\i.ps1") { & "$env:TEMP\\i.ps1" }\r\nWrite-Host "Ejecutando Inventario GOLD..."\r\n`;
+    // Add SSL bypass and use DownloadString like in the /install page
+    const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try { iex (New-Object System.Net.WebClient).DownloadString('${urlHttps}') } catch { Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('${urlHttp}') }\r\n`;
     
     navigator.clipboard.writeText(command).then(() => {
         const originalHtml = btn.innerHTML;
