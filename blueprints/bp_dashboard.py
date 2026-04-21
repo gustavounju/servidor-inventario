@@ -92,6 +92,12 @@ def dashboard():
     offset = (page - 1) * per_page
     total_rows = 0
 
+    legacy_alerta_aliases = {
+        "sinimp": "sin_impresora_alerta",
+        "sin_impresora": "sin_impresora_inventario",
+    }
+    alerta = legacy_alerta_aliases.get(alerta, alerta)
+
     try:
         with get_db_connection() as conn:
             # Construir filtros comunes
@@ -106,7 +112,7 @@ def dashboard():
                 filter_params.append(estado)
             if alerta == "ram":
                 filter_sql += " AND p.alerta_ram_baja = 1"
-            elif alerta == "sinimp":
+            elif alerta == "sin_impresora_alerta":
                 filter_sql += " AND p.alerta_sin_impresora = 1"
             elif alerta == "red":
                 filter_sql += " AND p.alerta_impresora_red = 1"
@@ -116,7 +122,7 @@ def dashboard():
                 filter_sql += " AND (p.alerta_ram_baja + p.alerta_sin_impresora + p.alerta_disco + p.alerta_uptime + p.alerta_nombre_duplicado) = 1"
             elif alerta == "ninguna":
                 filter_sql += " AND p.alerta_ram_baja = 0 AND p.alerta_sin_impresora = 0 AND p.alerta_disco = 0 AND p.alerta_uptime = 0 AND p.alerta_nombre_duplicado = 0"
-            elif alerta == "sin_impresora":
+            elif alerta == "sin_impresora_inventario":
                 filter_sql += " AND (p.printer_model IS NULL OR p.printer_model = '' OR p.printer_model = 'N/A' OR UPPER(p.printer_model) LIKE '%%SIN IMPRESORA%%') AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers)"
             
             if os_param == "win7":
@@ -344,8 +350,7 @@ def dashboard():
 
     total_pages = (total_rows + per_page - 1) // per_page if per_page > 0 else 1
 
-    return render_template(
-        "index.html",
+    template_context = dict(
         pcs=pcs_data,
         auxiliary_pcs=auxiliary_pcs,
         pc_ports=pc_ports,
@@ -384,7 +389,15 @@ def dashboard():
         os_param=os_param,
         filter_tasks=filter_tasks,
         last_backup_info=last_backup_info,
-        pending_users_list=pending_users_list
+        pending_users_list=pending_users_list,
+    )
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template("_dashboard_table_region.html", **template_context)
+
+    return render_template(
+        "index.html",
+        **template_context
     )
 
 @bp_dashboard.route("/export", methods=["GET", "POST"])

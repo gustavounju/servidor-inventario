@@ -16,6 +16,12 @@ function setTheme(themeName) {
 
 function onFilterClick(type) {
     let url;
+    const filterParamMap = {
+        ram: 'ram',
+        sin_impresora_alerta: 'sin_impresora_alerta',
+        sin_impresora_inventario: 'sin_impresora_inventario',
+        solo_red: 'red',
+    };
     // Si estamos en cualquier otra página (ej. /infra/ o /reportes/), redirigir al Dashboard (/)
     if (window.location.pathname !== '/' && window.location.pathname !== '/cementerio') {
         url = new URL(window.location.protocol + "//" + window.location.host + "/");
@@ -37,12 +43,9 @@ function onFilterClick(type) {
 
     // Toggle logic: Si se hizo click en el que NO estaba activo, se activa.
     // Si estaba activo (toggle-off), se quitó arriba y quedará limpio.
-    if (type === 'ram' && currentAlerta !== 'ram') {
-        url.searchParams.set('alerta', 'ram');
-    } else if (type === 'sin_impresora' && currentAlerta !== 'sinimp') {
-        url.searchParams.set('alerta', 'sinimp');
-    } else if (type === 'solo_red' && currentAlerta !== 'red') {
-        url.searchParams.set('alerta', 'red');
+    const alertaParam = filterParamMap[type];
+    if (alertaParam && currentAlerta !== alertaParam) {
+        url.searchParams.set('alerta', alertaParam);
     } else if (type === 'win7' && currentOs !== 'win7') {
         url.searchParams.set('os', 'win7');
     } else if (type === 'win10' && currentOs !== 'win10') {
@@ -163,11 +166,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     async function executeGlobalSearchAjax(q) {
-        const tableContainer = document.getElementById('inventoryTableContainer');
+        const tableRegion = document.getElementById('dashboardTableRegion');
         const spinner = document.querySelector('.search-spinner');
         const defIcon = document.querySelector('.search-icon-default');
         
-        if (!tableContainer) return; 
+        if (!tableRegion) return; 
 
         // Abortar búsqueda anterior si está en curso
         if (ajaxAbortController) {
@@ -204,34 +207,26 @@ document.addEventListener('DOMContentLoaded', function () {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
 
-            const newTable = doc.getElementById('inventoryTableContainer');
-            if (newTable) {
+            const newRegion = doc.getElementById('dashboardTableRegion');
+            if (newRegion) {
                 // Efecto visual de actualización (flash amarillo)
-                tableContainer.style.transition = 'background-color 0.3s';
-                tableContainer.style.backgroundColor = 'rgba(255, 243, 205, 0.5)';
+                tableRegion.style.transition = 'background-color 0.3s';
+                tableRegion.style.backgroundColor = 'rgba(255, 243, 205, 0.5)';
                 
-                tableContainer.innerHTML = newTable.innerHTML;
+                tableRegion.outerHTML = newRegion.outerHTML;
                 
                 setTimeout(() => {
-                    tableContainer.style.backgroundColor = '';
+                    const refreshedRegion = document.getElementById('dashboardTableRegion');
+                    if (refreshedRegion) {
+                        refreshedRegion.style.backgroundColor = '';
+                    }
                 }, 400);
 
                 if (isCompactMode) {
-                    tableContainer.querySelectorAll('tbody tr td').forEach(td => {
+                    document.querySelectorAll('#dashboardTableRegion tbody tr td').forEach(td => {
                         td.style.padding = '0.4rem 0.5rem';
                     });
                 }
-            }
-
-            // Actualizar Paginación
-            const oldPag = document.getElementById('mainPagination');
-            const newPag = doc.getElementById('mainPagination');
-            if (oldPag && newPag) {
-                oldPag.outerHTML = newPag.outerHTML;
-            } else if (oldPag) {
-                oldPag.style.display = 'none';
-            } else if (newPag) {
-                tableContainer.after(newPag);
             }
 
             window.history.replaceState({ path: url.toString() }, '', url.toString());
