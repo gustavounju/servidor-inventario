@@ -15,6 +15,7 @@ from database.migrations import run_all_migrations
 
 # Utils e IA
 from utils.constants import UPLOAD_FOLDER, LOG_FOLDER, APP_VERSION
+APP_VERSION = "3.0.1"
 from services.ai_assistant import train_ai_model
 
 # Blueprints
@@ -191,7 +192,7 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'), 
                                'icon-192.png', mimetype='image/png')
 
-# Configuración y Migraciones iniciales
+# Configuracin y Migraciones iniciales
 with app.app_context():
     init_db()
     run_all_migrations()
@@ -200,7 +201,7 @@ with app.app_context():
         print("Usuario inicial creado: administrador / tdg729tdg")
     
     def ensure_generic_pc():
-        """Asegura que exista una PC genérica y una de Infraestructura para asignar tareas a hardware no inventariado."""
+        """Asegura que exista una PC genrica y una de Infraestructura para asignar tareas a hardware no inventariado."""
         try:
             with get_db_connection() as conn:
                 exists = conn.execute("SELECT 1 FROM pcs WHERE pc_name = 'PC Generica'").fetchone()
@@ -231,17 +232,25 @@ if __name__ == "__main__":
         print("\n" + "="*64)
         print(" MODO DESARROLLO (Windows)")
         print(f" Servidor iniciado en hostname: {socket.gethostname()}")
+        print(" - Principal: http://0.0.0.0:5000")
+        print(" - Fallback:  http://0.0.0.0:8080")
         print("="*64)
-        app.run(host="0.0.0.0", port=5000, debug=True)
+        
+        def run_fallback():
+            try:
+                app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
+            except Exception as e:
+                print(f"Error en fallback 8080: {e}")
+        
+        threading.Thread(target=run_fallback, daemon=True).start()
+        app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
     else:
         print("\n" + "="*64)
         print(" MODO PRODUCCIÓN (Linux)")
         
-        # Intentar detectar certificados SSL
         cert_file = 'cert.pem'
         key_file = 'key.pem'
         
-        # Si no existe cert.pem, probar con inventario-cert.crt (que vimos en el listado de archivos)
         if not os.path.exists(cert_file) and os.path.exists('inventario-cert.crt'):
             cert_file = 'inventario-cert.crt'
             print(f" - Usando certificado alternativo: {cert_file}")
@@ -251,7 +260,7 @@ if __name__ == "__main__":
         if use_ssl:
             print(" Iniciando servidor Flask con HTTPS y HTTP...")
             print(f" - HTTPS: https://0.0.0.0:5000 (Cert: {cert_file})")
-            print(" - HTTP:  http://0.0.0.0:8080 (para móviles)")
+            print(" - HTTP:  http://0.0.0.0:8080 (para mviles)")
             
             def run_https():
                 try:
@@ -272,6 +281,4 @@ if __name__ == "__main__":
             threading.Thread(target=run_http_alt, daemon=True).start()
 
         print("="*64)
-        
-        # El hilo principal corre el puerto 8080 (móviles/fallback)
         app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)

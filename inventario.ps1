@@ -877,8 +877,8 @@ if ($script:errorOccurred) {
     Start-Sleep -Seconds 10
 }
 else {
+    Start-Sleep -Seconds 5
     Stop-Process -Id $PID
 }
 }
-
 

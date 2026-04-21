@@ -71,7 +71,7 @@ function copyScript(btn) {
     // Add SSL bypass and use DownloadString like in the /install page
     const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try { iex (New-Object System.Net.WebClient).DownloadString('${urlHttps}') } catch { Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('${urlHttp}') };\r\n\r\n\r\n`;
     
-    navigator.clipboard.writeText(command).then(() => {
+    function showSuccess() {
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="bi bi-check-all"></i> <span>¡Copiado!</span>';
         btn.classList.add('text-success');
@@ -79,7 +79,29 @@ function copyScript(btn) {
             btn.innerHTML = originalHtml;
             btn.classList.remove('text-success');
         }, 2000);
-    });
+    }
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(command).then(showSuccess);
+    } else {
+        // Fallback for HTTP contexts
+        const textArea = document.createElement("textarea");
+        textArea.value = command;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showSuccess();
+        } catch (err) {
+            console.error('Fallback copy failed', err);
+            alert("No se pudo copiar automáticamente. Por favor, usa la sección de Instalación.");
+        }
+        textArea.remove();
+    }
 }
 
 // ===== Buscador Global (Header) =====
