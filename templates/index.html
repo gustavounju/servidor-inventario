@@ -56,6 +56,8 @@
     </div>
 
     <main class="container-fluid" style="padding-top: 10px;">
+        {% set fleet_attention_count = kpi_alerta_media + kpi_criticas %}
+        {% set fleet_attention_pct = ((fleet_attention_count * 100 / kpi_total_activas) if kpi_total_activas else 0) | round(0, 'floor') | int %}
 
 
         <!-- Banner de Usuarios Pendientes de Aprobación -->
@@ -76,7 +78,117 @@
         </div>
         {% endif %}
 
+        <section class="dashboard-hero p-4 p-xl-4 mb-4">
+            <div class="dashboard-hero__content row g-4 align-items-start">
+                <div class="col-xl-8">
+                    <div class="dashboard-hero__eyebrow">Centro de Decisión</div>
+                    <h1 class="dashboard-hero__title">Abrí la jornada sabiendo qué resolver primero.</h1>
+                    <p class="dashboard-hero__lead">
+                        Hoy tenés <strong>{{ fleet_attention_count }}</strong> equipos que requieren atención
+                        y <strong>{{ kpi_criticas }}</strong> con prioridad alta. Este resumen transforma métricas
+                        dispersas en un orden claro de intervención para sostener continuidad operativa.
+                    </p>
+
+                    <div class="dashboard-hero__meta">
+                        <span class="dashboard-hero__meta-item">
+                            <i class="bi bi-pc-display"></i> {{ kpi_total_activas }} equipos activos
+                        </span>
+                        <span class="dashboard-hero__meta-item">
+                            <i class="bi bi-exclamation-diamond"></i> {{ fleet_attention_pct }}% de la flota requiere revisión
+                        </span>
+                        <span class="dashboard-hero__meta-item">
+                            <i class="bi bi-shield-check"></i> Backup: {{ last_backup_info }}
+                        </span>
+                        <span class="dashboard-hero__meta-item">
+                            <i class="bi bi-person-workspace"></i> {{ active_mobile_techs | length }} técnicos móviles activos
+                        </span>
+                    </div>
+
+                    <div class="decision-grid">
+                        <a href="/?alerta=critica&estado=True" class="decision-card decision-card--danger">
+                            <div class="decision-card__label">
+                                <span>Críticas</span>
+                                <span>Atender ya</span>
+                            </div>
+                            <div class="decision-card__value">{{ kpi_criticas }}</div>
+                            <div class="decision-card__hint">Equipos con 2 o más alertas simultáneas. Son el frente más riesgoso de la jornada.</div>
+                        </a>
+
+                        <a href="/?alerta=media&estado=True" class="decision-card decision-card--warning">
+                            <div class="decision-card__label">
+                                <span>Seguimiento</span>
+                                <span>Ventana corta</span>
+                            </div>
+                            <div class="decision-card__value">{{ kpi_alerta_media }}</div>
+                            <div class="decision-card__hint">Equipos con una alerta activa. Conviene resolverlos antes de que migren a criticidad.</div>
+                        </a>
+
+                        <a href="/?alerta=sin_impresora_inventario&estado=True" class="decision-card decision-card--info">
+                            <div class="decision-card__label">
+                                <span>Inventario incompleto</span>
+                                <span>Auditar</span>
+                            </div>
+                            <div class="decision-card__value">{{ kpi_sin_impresora_inventario }}</div>
+                            <div class="decision-card__hint">Puestos sin impresora registrada. Útil para detectar huecos de inventario y soporte.</div>
+                        </a>
+
+                        <a href="/?os=win7&estado=True" class="decision-card decision-card--neutral">
+                            <div class="decision-card__label">
+                                <span>Obsolescencia</span>
+                                <span>Planificar</span>
+                            </div>
+                            <div class="decision-card__value">{{ kpi_win7 }}</div>
+                            <div class="decision-card__hint">Equipos con Windows 7. Son focos de riesgo tecnológico y priorización futura.</div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-xl-4">
+                    <aside class="priority-panel">
+                        <div class="priority-panel__eyebrow">Plan sugerido</div>
+                        <h2 class="priority-panel__title">Qué conviene revisar primero</h2>
+                        <div class="small text-muted">Secuencia operativa para abrir la jornada y enfocar soporte donde más impacta.</div>
+
+                        <div class="priority-list">
+                            <a href="/?alerta=critica&estado=True" class="priority-link">
+                                <span class="priority-link__icon priority-link__icon--danger"><i class="bi bi-fire"></i></span>
+                                <span>
+                                    <span class="priority-link__title">{{ kpi_criticas }} equipos críticos</span>
+                                    <span class="priority-link__desc">Abrí este grupo primero para cortar incidentes con mayor probabilidad de impacto.</span>
+                                </span>
+                            </a>
+
+                            <a href="/?alerta=sin_impresora_inventario&estado=True" class="priority-link">
+                                <span class="priority-link__icon priority-link__icon--info"><i class="bi bi-printer"></i></span>
+                                <span>
+                                    <span class="priority-link__title">{{ kpi_sin_impresora_inventario }} puestos sin impresora registrada</span>
+                                    <span class="priority-link__desc">Sirve para limpiar inventario y detectar dependencias operativas no formalizadas.</span>
+                                </span>
+                            </a>
+
+                            <a href="/?os=win7&estado=True" class="priority-link">
+                                <span class="priority-link__icon priority-link__icon--warning"><i class="bi bi-windows"></i></span>
+                                <span>
+                                    <span class="priority-link__title">{{ kpi_win7 }} equipos obsoletos</span>
+                                    <span class="priority-link__desc">Úsalo para plan de renovación, seguridad y priorización de intervención preventiva.</span>
+                                </span>
+                            </a>
+
+                            <a href="{{ url_for('dashboard.dashboard', estado='True', filter_tasks='true') }}" class="priority-link">
+                                <span class="priority-link__icon priority-link__icon--success"><i class="bi bi-list-check"></i></span>
+                                <span>
+                                    <span class="priority-link__title">{{ kpi_tareas_pendientes_total }} tareas pendientes</span>
+                                    <span class="priority-link__desc">Consolidá pendientes abiertos para asignación rápida y seguimiento del día.</span>
+                                </span>
+                            </a>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </section>
+
         <!-- BARRA DE ESTADO EJECUTIVO (v3) -->
+        <div class="section-kicker">Vista de Flota</div>
         <div class="d-flex align-items-center gap-2 mb-3 flex-wrap p-2 rounded-3 shadow-sm" 
              style="background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(8px);">
             <span style="font-size:.65rem; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:.1em; white-space:nowrap;">💻 Inventario Informático:</span>
@@ -137,6 +249,7 @@
         </div>
 
         <!-- Tarjetas especiales y Tableros (Huérfanas, Técnicos, PC Genérica, Infraestructura) -->
+        <div class="section-kicker">Accesos Operativos</div>
         <div class="d-flex gap-2 mb-3 flex-wrap">
           {% if unassigned_tasks %}
           <!-- Botón Tareas Huérfanas -->

@@ -1,6 +1,6 @@
 <div id="dashboardTableRegion">
         <div class="table-responsive" id="inventoryTableContainer">
-            <table id="inventoryTable" class="table table-striped table-hover table-sm mb-0">
+            <table id="inventoryTable" class="table table-striped table-hover table-sm mb-0 inventory-table">
                 <thead>
                     <tr>
                         <th class="text-center" style="width:36px;" title="Estado general de salud del equipo (semáforo de alertas)">🩺</th>
@@ -97,8 +97,23 @@
                         </td>
                         <td
                             style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
-                            {{ pc.pc_name }}
-                            <span class="float-end">
+                            <div class="inventory-pc-name">
+                                <div>
+                                    {{ pc.pc_name }}
+                                    <div class="inventory-pc-meta">
+                                        {% if alerta_count == 0 %}
+                                        <span class="inventory-priority inventory-priority--healthy">Estable</span>
+                                        {% elif alerta_count == 1 %}
+                                        <span class="inventory-priority inventory-priority--warning">Revisar hoy</span>
+                                        {% else %}
+                                        <span class="inventory-priority inventory-priority--critical">Prioridad alta</span>
+                                        {% endif %}
+                                        {% if pc.tareas_pendientes %}
+                                        <span class="inventory-mini-badge inventory-mini-badge--task">{{ pc.tareas_pendientes }} tarea{{ 's' if pc.tareas_pendientes != 1 else '' }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <span class="float-end">
                                 {% if pc.os_name and 'Windows 11' in pc.os_name %}
                                 <i class="bi bi-windows text-primary" style="font-size: 1rem;"
                                     title="Sistema Operativo: {{ pc.os_name }} (Estándar de seguridad actual)"></i>
@@ -140,19 +155,24 @@
                                 <span class="badge bg-danger text-white ms-1" style="font-size: 0.6rem;"
                                     title="Posible nombre de PC duplicado en la red">DUP</span>
                                 {% endif %}
-                            </span>
+                                </span>
+                            </div>
                         </td>
                         <td>
                             {% if pc.ad_real_name %}
-                            <div class="fw-bold text-dark" title="Nombre registrado en el servidor de usuarios de la institución">{{ pc.ad_real_name }}</div>
-                            <div class="small text-muted" style="font-size: 0.75rem;"><i class="bi bi-person-badge"></i> ID Usuario: <code title="Identificador técnico de inicio de sesión">{{ pc.last_user }}</code></div>
+                            <div class="inventory-operator">
+                                <div class="inventory-operator__name" title="Nombre registrado en el servidor de usuarios de la institución">{{ pc.ad_real_name }}</div>
+                                <div class="inventory-operator__meta"><i class="bi bi-person-badge"></i> {{ pc.last_user }}</div>
+                            </div>
                             {% else %}
-                            <div class="fw-bold text-dark" title="Este usuario aún no tiene un nombre real asociado">{{ pc.last_user or '-' }}</div>
-                            <div class="small text-muted" style="font-size: 0.7rem;">(Sin nombre real asignado)</div>
+                            <div class="inventory-operator">
+                                <div class="inventory-operator__name" title="Este usuario aún no tiene un nombre real asociado">{{ pc.last_user or '-' }}</div>
+                                <div class="inventory-operator__meta">Sin nombre real asignado</div>
+                            </div>
                             {% endif %}
                             
                             <div class="mb-1">
-                                <span class="badge text-white"
+                                <span class="badge text-white inventory-fuero-badge"
                                     style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }}; white-space: normal; text-align: center; display: inline-block; font-size: 0.75rem;">
                                     {{ pc.fuero or '-' }}
                                 </span>
@@ -176,7 +196,7 @@
                                     {{ pc.ram_gb }} GB
                                 </span>
                                 {% if pc.ram_detalles and pc.ram_detalles != 'N/A' %}
-                                <div class="text-muted" style="font-size:0.65rem; margin-top:2px;">{{ pc.ram_detalles }}</div>
+                                <div class="inventory-cell-note">{{ pc.ram_detalles }}</div>
                                 {% endif %}
                             {% else %}
                                 <span class="text-muted">-</span>
@@ -295,26 +315,25 @@
                         <td>{{ pc.ip_address }}</td>
 
                         <td class="text-center p-1">
-                            <div class="d-grid gap-1"
-                                style="grid-template-columns: repeat(2, 1fr); max-width: 60px; margin: 0 auto;">
+                            <div class="inventory-alert-stack">
                                 <!-- Alertas -->
                                 {% if pc.alerta_ram_baja %}
-                                <div title="RAM Baja (< 8GB)">💾</div>
+                                <div class="inventory-alert-chip inventory-alert-chip--warning" title="RAM Baja (< 8GB)">💾 RAM</div>
                                 {% endif %}
                                 {% if pc.alerta_sin_impresora %}
-                                <div title="Sin Impresora">🖨️</div>
+                                <div class="inventory-alert-chip inventory-alert-chip--info" title="Sin Impresora">🖨️ Sin imp.</div>
                                 {% endif %}
                                 {% if pc.alerta_impresora_red %}
-                                <div title="Impresora en Red">🌐</div>
+                                <div class="inventory-alert-chip inventory-alert-chip--info" title="Impresora en Red">🌐 Red</div>
                                 {% endif %}
                                 {% if pc.alerta_disco %}
-                                <div title="Falla de Disco / Espacio Bajo" class="text-danger">💿</div>
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Falla de Disco / Espacio Bajo">💿 Disco</div>
                                 {% endif %}
                                 {% if pc.alerta_uptime %}
-                                <div title="Uptime Alto (>15 días)" class="text-danger">⏳</div>
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Uptime Alto (>15 días)">⏳ Uptime</div>
                                 {% endif %}
                                 {% if pc.alerta_nombre_duplicado %}
-                                <div title="Nombre Duplicado" class="text-danger fw-bold">⚠️</div>
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Nombre Duplicado">⚠️ Duplicado</div>
                                 {% endif %}
 
                                 <!-- Acciones -->
