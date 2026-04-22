@@ -69,11 +69,11 @@
                 {% for u in pending_users_list %}
                 <span class="badge bg-dark ms-1">{{ u.display_name or u.username }}</span>
                 {% endfor %}
-                <div class="small text-muted mt-1">Abrí <strong>Gestión de Usuarios</strong> → hacé clic en <strong>"Editar / Aprobar"</strong> → marcá "Activo" y asigná el rol.</div>
+                <div class="small text-muted mt-1">Abrí <strong>Gestión de Usuarios</strong> y aprueba cada alta desde una vista administrativa separada del dashboard.</div>
             </div>
-            <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#usersModal">
+            <a href="{{ url_for('users.users_admin') }}" class="btn btn-warning btn-sm">
                 <i class="bi bi-person-check-fill me-1"></i> Aprobar Ahora
-            </button>
+            </a>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         {% endif %}

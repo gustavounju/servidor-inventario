@@ -514,6 +514,31 @@ def migrate_db_v27():
     print("Migración V27 verificada.")
 
 
+def migrate_db_v28():
+    """Migración V28: crear auditoría administrativa para gestión de usuarios."""
+    print("Verificando migración de DB v28...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "admin_audit_logs"):
+            print("Aplicando migración V28: creando tabla admin_audit_logs...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS admin_audit_logs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    action_type VARCHAR(100) NOT NULL,
+                    actor_username VARCHAR(255),
+                    target_username VARCHAR(255),
+                    ip_address VARCHAR(100),
+                    details LONGTEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+        if not _index_exists(conn, "admin_audit_logs", "idx_admin_audit_created"):
+            print("Aplicando migración V28: creando índice idx_admin_audit_created...")
+            conn.execute("CREATE INDEX idx_admin_audit_created ON admin_audit_logs (created_at)")
+    print("Migración V28 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -542,3 +567,4 @@ def run_all_migrations():
     migrate_db_v25()
     migrate_db_v26()
     migrate_db_v27()
+    migrate_db_v28()

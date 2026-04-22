@@ -69,10 +69,8 @@ def change_password():
         else:
             try:
                 update_app_user_password(username, new_pass)
-                # Refrescar la sesión para que must_change_password sea 0
-                refresh_session_user()
-                # Ir al dashboard o lo que corresponda
-                return redirect(url_for("dashboard.dashboard"))
+                refreshed_user = refresh_session_user()
+                return redirect(default_landing_url(refreshed_user))
             except Exception as e:
                 error = f"Error al cambiar clave: {str(e)}"
 

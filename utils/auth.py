@@ -565,7 +565,7 @@ def list_technician_users():
     return users
 
 
-def upsert_app_user(username, password, display_name=None, is_superuser_flag=True, is_active=True, must_change_password=False, role="tecnico", technician_name=None, permissions=None, phone=None):
+def upsert_app_user(username, password, display_name=None, is_superuser_flag=False, is_active=True, must_change_password=False, role="tecnico", technician_name=None, permissions=None, phone=None):
     from database.db_core import get_db_connection
 
     username = (username or "").strip().lower()
