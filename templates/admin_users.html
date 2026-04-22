@@ -6,395 +6,193 @@
     <title>Gestión de Usuarios | Inventario GOLD</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --bg: #f5f1e8;
-            --surface: rgba(255,255,255,0.88);
-            --surface-strong: #fffdf8;
-            --ink: #1f2a21;
-            --muted: #5b665f;
-            --line: rgba(31,42,33,0.12);
-            --accent: #0f766e;
-            --accent-soft: rgba(15,118,110,0.12);
-            --warning: #d97706;
-            --warning-soft: rgba(217,119,6,0.12);
-            --danger: #b91c1c;
-            --danger-soft: rgba(185,28,28,0.1);
-            --shadow: 0 24px 60px rgba(42, 50, 44, 0.12);
-            --radius: 20px;
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: 'Manrope', sans-serif;
-            color: var(--ink);
-            background:
-                radial-gradient(circle at top left, rgba(15,118,110,0.08), transparent 28%),
-                radial-gradient(circle at right, rgba(217,119,6,0.09), transparent 24%),
-                linear-gradient(180deg, #f8f5ee 0%, var(--bg) 100%);
-        }
-        .page {
-            width: min(1320px, calc(100% - 32px));
-            margin: 24px auto 40px;
-        }
-        .hero {
-            background: linear-gradient(145deg, rgba(15,118,110,0.95), rgba(18,52,59,0.92));
-            color: white;
-            border-radius: 28px;
-            padding: 28px;
-            box-shadow: var(--shadow);
-            display: grid;
-            gap: 18px;
-        }
-        .hero-top {
-            display: flex;
-            justify-content: space-between;
-            gap: 18px;
-            align-items: flex-start;
-            flex-wrap: wrap;
-        }
-        .hero h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 3vw, 2.7rem); line-height: 1.05; }
-        .hero p { margin: 0; max-width: 70ch; line-height: 1.6; color: rgba(255,255,255,0.88); }
-        .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-        .hero-kpis {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-        }
-        .hero-kpi {
-            border-radius: 18px;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.14);
-            padding: 14px 16px;
-        }
-        .hero-kpi strong { display: block; font-size: 1.5rem; margin-bottom: 4px; }
-        .hero-kpi span { color: rgba(255,255,255,0.78); font-size: 0.9rem; }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border: 0;
-            border-radius: 999px;
-            padding: 12px 16px;
-            font: inherit;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .btn-primary { background: white; color: #0f766e; }
-        .btn-secondary { background: rgba(255,255,255,0.14); color: white; border: 1px solid rgba(255,255,255,0.18); }
-        .grid {
-            margin-top: 22px;
-            display: grid;
-            grid-template-columns: 1.1fr 1.4fr;
-            gap: 18px;
-            align-items: start;
-        }
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(14px);
-            overflow: hidden;
-        }
-        .card-head {
-            padding: 18px 20px 14px;
-            border-bottom: 1px solid var(--line);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-        .card-head h2, .card-head h3 { margin: 0; font-size: 1.05rem; }
-        .card-head p { margin: 6px 0 0; color: var(--muted); font-size: 0.92rem; }
-        .card-body { padding: 18px 20px 20px; }
-        .flash-wrap { margin-top: 18px; display: grid; gap: 10px; }
-        .flash {
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-weight: 600;
-        }
-        .flash.success { background: rgba(34,197,94,0.12); color: #166534; }
-        .flash.error { background: rgba(239,68,68,0.12); color: #991b1b; }
-        .flash.message { background: rgba(15,118,110,0.12); color: #115e59; }
-        .stack { display: grid; gap: 18px; }
-        .field-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-        }
-        label { display: block; font-size: 0.84rem; font-weight: 700; margin-bottom: 6px; color: var(--muted); }
-        input, select {
-            width: 100%;
-            padding: 12px 13px;
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            background: var(--surface-strong);
-            font: inherit;
-            color: var(--ink);
-        }
-        .checks {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-        }
-        .check {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            padding: 10px 12px;
-            border-radius: 14px;
-            background: #fffcf6;
-            border: 1px solid var(--line);
-        }
-        .check input { width: auto; margin: 0; }
-        .section-note {
-            border-radius: 16px;
-            padding: 12px 14px;
-            background: var(--warning-soft);
-            color: #92400e;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-        .pending-list, .user-list, .audit-list { display: grid; gap: 12px; }
-        .pending-item, .user-item, .audit-item {
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            padding: 14px;
-            background: rgba(255,255,255,0.7);
-        }
-        .pending-item {
-            border-left: 5px solid var(--warning);
-            background: linear-gradient(180deg, rgba(255,248,235,0.95), rgba(255,255,255,0.84));
-        }
-        .user-item-head, .audit-item-head {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            align-items: flex-start;
-            flex-wrap: wrap;
-        }
-        .user-meta, .audit-meta {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            background: #f4f1ea;
-            color: var(--muted);
-        }
-        .chip.warn { background: var(--warning-soft); color: #9a3412; }
-        .chip.ok { background: var(--accent-soft); color: #0f766e; }
-        .chip.danger { background: var(--danger-soft); color: #991b1b; }
-        .inline-form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-        .inline-form input, .inline-form select { flex: 1 1 150px; min-width: 140px; }
-        .inline-form .btn { padding: 11px 14px; border-radius: 14px; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-soft { background: var(--accent-soft); color: var(--accent); }
-        .empty { color: var(--muted); padding: 14px; border: 1px dashed var(--line); border-radius: 16px; text-align: center; }
-        .small { font-size: 0.88rem; color: var(--muted); }
-        pre {
-            white-space: pre-wrap;
-            word-break: break-word;
-            margin: 10px 0 0;
-            padding: 10px 12px;
-            background: #faf8f2;
-            border-radius: 14px;
-            border: 1px solid var(--line);
-            color: var(--muted);
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 0.78rem;
-        }
-        @media (max-width: 1024px) {
-            .grid { grid-template-columns: 1fr; }
-            .hero-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-        @media (max-width: 640px) {
-            .page { width: min(100% - 20px, 1320px); }
-            .hero, .card-head, .card-body { padding-left: 16px; padding-right: 16px; }
-            .hero-kpis, .field-grid, .checks { grid-template-columns: 1fr; }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/gold.css">
 </head>
-<body>
-    <div class="page">
-        <section class="hero">
-            <div class="hero-top">
+<body class="has-fixed-header">
+    {% include '_module_switcher.html' %}
+
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div class="ops-hero__top">
                 <div>
-                    <h1>Gestión de Usuarios</h1>
-                    <p>Administra altas, aprobaciones, permisos y reseteos desde una vista operativa separada del dashboard principal. La idea es que acá tomes decisiones administrativas sin mezclar inventario ni métricas de la flota.</p>
+                    <div class="ops-hero__eyebrow">Gobierno de Accesos</div>
+                    <h1 class="ops-hero__title">Gestión de Usuarios</h1>
+                    <p class="ops-hero__lead">
+                        Administra altas, aprobaciones, permisos y reseteos desde una vista operativa separada del dashboard principal.
+                        La idea es resolver decisiones administrativas con el mismo criterio visual del sistema, sin mezclar inventario ni métricas de la flota.
+                    </p>
                 </div>
-                <div class="hero-actions">
-                    <a class="btn btn-primary" href="{{ url_for('dashboard.dashboard') }}"><i class="bi bi-grid-1x2-fill"></i> Volver al Dashboard</a>
-                    <a class="btn btn-secondary" href="#crear-usuario"><i class="bi bi-person-plus-fill"></i> Crear Usuario</a>
+                <div class="ops-hero__actions">
+                    <a class="btn btn-light" href="{{ url_for('dashboard.dashboard') }}"><i class="bi bi-grid-1x2-fill me-1"></i> Volver al Dashboard</a>
+                    <a class="btn btn-outline-light" href="#crear-usuario"><i class="bi bi-person-plus-fill me-1"></i> Crear Usuario</a>
                 </div>
             </div>
-            <div class="hero-kpis">
-                <div class="hero-kpi"><strong>{{ app_users_list|length }}</strong><span>Usuarios del sistema</span></div>
-                <div class="hero-kpi"><strong>{{ pending_users_list|length }}</strong><span>Pendientes de aprobación</span></div>
-                <div class="hero-kpi"><strong>{{ app_users_list | selectattr('is_superuser') | list | length }}</strong><span>Superusuarios</span></div>
-                <div class="hero-kpi"><strong>{{ admin_audit_logs|length }}</strong><span>Eventos recientes</span></div>
+
+            <div class="ops-kpi-grid">
+                <div class="ops-kpi"><strong>{{ app_users_list|length }}</strong><span>Usuarios del sistema</span></div>
+                <div class="ops-kpi"><strong>{{ pending_users_list|length }}</strong><span>Pendientes de aprobación</span></div>
+                <div class="ops-kpi"><strong>{{ app_users_list | selectattr('is_superuser') | list | length }}</strong><span>Superusuarios</span></div>
+                <div class="ops-kpi"><strong>{{ admin_audit_logs|length }}</strong><span>Eventos recientes</span></div>
             </div>
         </section>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        <div class="flash-wrap">
+        <div class="ops-flash-wrap">
             {% for category, message in messages %}
-            <div class="flash {{ category }}">{{ message }}</div>
+            <div class="ops-flash {{ category }}">{{ message }}</div>
             {% endfor %}
         </div>
         {% endif %}
         {% endwith %}
 
-        <div class="grid">
-            <div class="stack">
-                <section class="card" id="crear-usuario">
-                    <div class="card-head">
+        <div class="ops-grid mt-4">
+            <div class="ops-stack">
+                <section class="ops-surface ops-surface--soft" id="crear-usuario">
+                    <div class="ops-card-head">
                         <div>
                             <h2>Alta y Edición</h2>
                             <p>Usa este formulario para crear usuarios locales o corregir permisos y perfil de uno existente.</p>
                         </div>
                     </div>
-                    <div class="card-body">
+                    <div class="ops-card-body">
                         <form method="post" action="{{ url_for('users.create_app_user') }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <div class="field-grid">
+                            <div class="ops-field-grid">
                                 <div>
-                                    <label for="username">Usuario</label>
-                                    <input id="username" name="username" type="text" required>
+                                    <label class="ops-label" for="username">Usuario</label>
+                                    <input class="ops-input" id="username" name="username" type="text" required>
                                 </div>
                                 <div>
-                                    <label for="display_name">Nombre visible</label>
-                                    <input id="display_name" name="display_name" type="text">
+                                    <label class="ops-label" for="display_name">Nombre visible</label>
+                                    <input class="ops-input" id="display_name" name="display_name" type="text">
                                 </div>
                                 <div>
-                                    <label for="password">Clave</label>
-                                    <input id="password" name="password" type="password" placeholder="Obligatoria solo al crear">
+                                    <label class="ops-label" for="password">Clave</label>
+                                    <input class="ops-input" id="password" name="password" type="password" placeholder="Obligatoria solo al crear">
                                 </div>
                                 <div>
-                                    <label for="role">Rol</label>
-                                    <select id="role" name="role">
+                                    <label class="ops-label" for="role">Rol</label>
+                                    <select class="ops-select" id="role" name="role">
                                         {% for role in available_roles %}
                                         <option value="{{ role }}">{{ role|capitalize }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
                                 <div>
-                                    <label for="technician_name">Identidad móvil / técnico</label>
-                                    <input id="technician_name" name="technician_name" type="text">
+                                    <label class="ops-label" for="technician_name">Identidad móvil / técnico</label>
+                                    <input class="ops-input" id="technician_name" name="technician_name" type="text">
                                 </div>
                                 <div>
-                                    <label for="phone">Teléfono</label>
-                                    <input id="phone" name="phone" type="text">
+                                    <label class="ops-label" for="phone">Teléfono</label>
+                                    <input class="ops-input" id="phone" name="phone" type="text">
                                 </div>
                             </div>
-                            <div class="checks" style="margin-top:14px;">
-                                <label class="check"><input type="checkbox" name="is_active"> Activo</label>
-                                <label class="check"><input type="checkbox" name="is_superuser"> Superusuario</label>
-                                <label class="check"><input type="checkbox" name="must_change_password"> Forzar cambio de clave</label>
-                                <label class="check"><input type="checkbox" name="is_edit_mode"> Modo edición</label>
+
+                            <div class="ops-check-grid">
+                                <label class="ops-check"><input type="checkbox" name="is_active"> Activo</label>
+                                <label class="ops-check"><input type="checkbox" name="is_superuser"> Superusuario</label>
+                                <label class="ops-check"><input type="checkbox" name="must_change_password"> Forzar cambio de clave</label>
+                                <label class="ops-check"><input type="checkbox" name="is_edit_mode"> Modo edición</label>
                             </div>
-                            <div class="checks" style="margin-top:14px;">
-                                <label class="check"><input type="checkbox" name="perm_dashboard"> Dashboard</label>
-                                <label class="check"><input type="checkbox" name="perm_mobile"> Técnicos</label>
-                                <label class="check"><input type="checkbox" name="perm_infrastructure"> Infraestructura</label>
-                                <label class="check"><input type="checkbox" name="perm_reports"> Reportes</label>
+
+                            <div class="ops-check-grid">
+                                <label class="ops-check"><input type="checkbox" name="perm_dashboard"> Dashboard</label>
+                                <label class="ops-check"><input type="checkbox" name="perm_mobile"> Técnicos</label>
+                                <label class="ops-check"><input type="checkbox" name="perm_infrastructure"> Infraestructura</label>
+                                <label class="ops-check"><input type="checkbox" name="perm_reports"> Reportes</label>
                             </div>
-                            <div class="section-note" style="margin-top:14px;">Para editar un usuario existente, marca <strong>Modo edición</strong>, completa el username y solo cambia lo que quieras corregir.</div>
-                            <div style="margin-top:14px;">
-                                <button class="btn btn-primary" type="submit"><i class="bi bi-person-check-fill"></i> Guardar Usuario</button>
+
+                            <div class="ops-note">Para editar un usuario existente, marca <strong>Modo edición</strong>, completa el username y solo cambia lo que quieras corregir.</div>
+
+                            <div class="mt-3">
+                                <button class="btn btn-primary" type="submit"><i class="bi bi-person-check-fill me-1"></i> Guardar Usuario</button>
                             </div>
                         </form>
                     </div>
                 </section>
 
-                <section class="card">
-                    <div class="card-head">
+                <section class="ops-surface">
+                    <div class="ops-card-head">
                         <div>
                             <h2>Pendientes de Aprobación</h2>
                             <p>Los usuarios de AD que ingresan por primera vez caen acá hasta que un administrador los active y les asigne un rol.</p>
                         </div>
                     </div>
-                    <div class="card-body">
+                    <div class="ops-card-body">
                         {% if pending_users_list %}
-                        <div class="pending-list">
+                        <div class="ops-list">
                             {% for user in pending_users_list %}
-                            <div class="pending-item">
-                                <div class="user-item-head">
+                            <div class="ops-list-item ops-list-item--warning">
+                                <div class="ops-item-head">
                                     <div>
                                         <strong>{{ user.display_name or user.username }}</strong>
-                                        <div class="small">{{ user.username }}</div>
+                                        <div class="small text-muted">{{ user.username }}</div>
                                     </div>
-                                    <span class="chip warn"><i class="bi bi-hourglass-split"></i> Pendiente</span>
+                                    <span class="ops-chip ops-chip--warn"><i class="bi bi-hourglass-split"></i> Pendiente</span>
                                 </div>
-                                <form class="inline-form" method="post" action="{{ url_for('users.approve_app_user', username=user.username) }}">
+                                <form class="ops-inline-form" method="post" action="{{ url_for('users.approve_app_user', username=user.username) }}">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <select name="role">
+                                    <select class="ops-select" name="role">
                                         {% for role in available_roles %}
                                         <option value="{{ role }}" {% if user.role == role %}selected{% endif %}>{{ role|capitalize }}</option>
                                         {% endfor %}
                                     </select>
-                                    <button class="btn btn-soft" type="submit"><i class="bi bi-person-check-fill"></i> Aprobar y activar</button>
+                                    <button class="btn btn-outline-primary" type="submit"><i class="bi bi-person-check-fill me-1"></i> Aprobar y activar</button>
                                 </form>
                             </div>
                             {% endfor %}
                         </div>
                         {% else %}
-                        <div class="empty">No hay usuarios pendientes ahora.</div>
+                        <div class="ops-empty">No hay usuarios pendientes ahora.</div>
                         {% endif %}
                     </div>
                 </section>
             </div>
 
-            <div class="stack">
-                <section class="card">
-                    <div class="card-head">
+            <div class="ops-stack">
+                <section class="ops-surface">
+                    <div class="ops-card-head">
                         <div>
                             <h2>Usuarios del Sistema</h2>
                             <p>Vista consolidada para activar, corregir permisos, resetear claves y detectar cuentas con exceso de privilegios.</p>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div class="user-list">
+                    <div class="ops-card-body">
+                        <div class="ops-list">
                             {% for user in app_users_list %}
-                            <div class="user-item">
-                                <div class="user-item-head">
+                            <div class="ops-list-item">
+                                <div class="ops-item-head">
                                     <div>
                                         <strong>{{ user.display_name or user.username }}</strong>
-                                        <div class="small">{{ user.username }}</div>
+                                        <div class="small text-muted">{{ user.username }}</div>
                                     </div>
-                                    <div class="user-meta">
-                                        <span class="chip {% if user.is_active %}ok{% else %}warn{% endif %}">{{ 'Activo' if user.is_active else 'Pendiente' }}</span>
-                                        <span class="chip">{{ user.role or 'sin rol' }}</span>
-                                        {% if user.is_superuser %}<span class="chip danger">Superusuario</span>{% endif %}
+                                    <div class="ops-meta mt-0">
+                                        <span class="ops-chip {% if user.is_active %}ops-chip--ok{% else %}ops-chip--warn{% endif %}">{{ 'Activo' if user.is_active else 'Pendiente' }}</span>
+                                        <span class="ops-chip">{{ user.role or 'sin rol' }}</span>
+                                        {% if user.is_superuser %}<span class="ops-chip ops-chip--danger">Superusuario</span>{% endif %}
                                     </div>
                                 </div>
-                                <div class="user-meta">
-                                    {% if user.technician_name %}<span class="chip"><i class="bi bi-phone"></i>{{ user.technician_name }}</span>{% endif %}
-                                    {% if user.phone %}<span class="chip"><i class="bi bi-telephone"></i>{{ user.phone }}</span>{% endif %}
-                                    {% if user.must_change_password %}<span class="chip warn"><i class="bi bi-key"></i>Cambio de clave pendiente</span>{% endif %}
+
+                                <div class="ops-meta">
+                                    {% if user.technician_name %}<span class="ops-chip"><i class="bi bi-phone"></i>{{ user.technician_name }}</span>{% endif %}
+                                    {% if user.phone %}<span class="ops-chip"><i class="bi bi-telephone"></i>{{ user.phone }}</span>{% endif %}
+                                    {% if user.must_change_password %}<span class="ops-chip ops-chip--warn"><i class="bi bi-key"></i>Cambio de clave pendiente</span>{% endif %}
                                 </div>
-                                <form class="inline-form" method="post" action="{{ url_for('users.reset_app_user_password') }}">
+
+                                <form class="ops-inline-form" method="post" action="{{ url_for('users.reset_app_user_password') }}">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <input type="hidden" name="username" value="{{ user.username }}">
-                                    <input type="text" name="password" placeholder="Nueva clave temporal">
-                                    <button class="btn btn-soft" type="submit"><i class="bi bi-key-fill"></i> Resetear clave</button>
+                                    <input class="ops-input" type="text" name="password" placeholder="Nueva clave temporal">
+                                    <button class="btn btn-outline-primary" type="submit"><i class="bi bi-key-fill me-1"></i> Resetear clave</button>
                                 </form>
-                                <form class="inline-form" method="post" action="{{ url_for('users.remove_app_user', user_id=user.id) }}" onsubmit="return confirm('¿Eliminar a {{ user.username }}?');">
+
+                                <form class="ops-inline-form" method="post" action="{{ url_for('users.remove_app_user', user_id=user.id) }}" onsubmit="return confirm('¿Eliminar a {{ user.username }}?');">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button class="btn btn-danger" type="submit"><i class="bi bi-trash3-fill"></i> Eliminar usuario</button>
+                                    <button class="btn btn-danger" type="submit"><i class="bi bi-trash3-fill me-1"></i> Eliminar usuario</button>
                                 </form>
                             </div>
                             {% endfor %}
@@ -402,40 +200,42 @@
                     </div>
                 </section>
 
-                <section class="card">
-                    <div class="card-head">
+                <section class="ops-surface">
+                    <div class="ops-card-head">
                         <div>
                             <h3>Auditoría Administrativa</h3>
                             <p>Últimos cambios sensibles sobre cuentas y permisos.</p>
                         </div>
                     </div>
-                    <div class="card-body">
+                    <div class="ops-card-body">
                         {% if admin_audit_logs %}
-                        <div class="audit-list">
+                        <div class="ops-list">
                             {% for row in admin_audit_logs %}
-                            <div class="audit-item">
-                                <div class="audit-item-head">
+                            <div class="ops-list-item">
+                                <div class="ops-item-head">
                                     <strong>{{ row.action_type }}</strong>
-                                    <span class="small">{{ row.created_at }}</span>
+                                    <span class="small text-muted">{{ row.created_at }}</span>
                                 </div>
-                                <div class="audit-meta">
-                                    <span class="chip"><i class="bi bi-person-badge"></i>{{ row.actor_username or 'SISTEMA' }}</span>
-                                    <span class="chip"><i class="bi bi-person"></i>{{ row.target_username or 'sin destino' }}</span>
-                                    {% if row.ip_address %}<span class="chip"><i class="bi bi-globe"></i>{{ row.ip_address }}</span>{% endif %}
+                                <div class="ops-meta">
+                                    <span class="ops-chip"><i class="bi bi-person-badge"></i>{{ row.actor_username or 'SISTEMA' }}</span>
+                                    <span class="ops-chip"><i class="bi bi-person"></i>{{ row.target_username or 'sin destino' }}</span>
+                                    {% if row.ip_address %}<span class="ops-chip"><i class="bi bi-globe"></i>{{ row.ip_address }}</span>{% endif %}
                                 </div>
                                 {% if row.details %}
-                                <pre>{{ row.details }}</pre>
+                                <pre class="ops-pre">{{ row.details }}</pre>
                                 {% endif %}
                             </div>
                             {% endfor %}
                         </div>
                         {% else %}
-                        <div class="empty">Todavía no hay eventos en la auditoría administrativa.</div>
+                        <div class="ops-empty">Todavía no hay eventos en la auditoría administrativa.</div>
                         {% endif %}
                     </div>
                 </section>
             </div>
         </div>
-    </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

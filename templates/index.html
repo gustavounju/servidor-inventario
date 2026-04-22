@@ -189,154 +189,144 @@
 
         <!-- BARRA DE ESTADO EJECUTIVO (v3) -->
         <div class="section-kicker">Vista de Flota</div>
-        <div class="d-flex align-items-center gap-2 mb-3 flex-wrap p-2 rounded-3 shadow-sm" 
-             style="background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(8px);">
-            <span style="font-size:.65rem; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:.1em; white-space:nowrap;">💻 Inventario Informático:</span>
-
-            <!-- Saludables -->
-            <a href="/?alerta=ninguna&estado=True" 
-               class="text-decoration-none d-flex align-items-center gap-1 px-2 py-1 rounded-pill {% if alerta == 'ninguna' %}active-fleet-pill{% else %}fleet-pill{% endif %}"
-               style="background:{% if alerta == 'ninguna' %}rgba(16,185,129,0.3); border:1px solid #10b981;{% else %}rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3);{% endif %} transition: all .2s;"
+        <div class="fleet-filter-grid mb-3">
+            <a href="/?alerta=ninguna&estado=True"
+               class="fleet-filter fleet-filter--healthy {% if alerta == 'ninguna' %}active-fleet-filter{% endif %}"
                title="Ver solo las PCs sin ninguna alerta activa">
-                <span style="font-size:.8rem;">🟢</span>
-                <span style="font-size:.7rem; color:#6ee7b7; font-weight:600;">{{ kpi_saludables }}</span>
-                <span style="font-size:.62rem; color:rgba(255,255,255,0.6);">Saludables</span>
+                <span class="fleet-filter__top">
+                    <span>
+                        <span class="fleet-filter__eyebrow">Operaci?n estable</span>
+                        <span class="fleet-filter__value">{{ kpi_saludables }}</span>
+                    </span>
+                    <span class="fleet-filter__title">Saludables</span>
+                </span>
+                <span class="fleet-filter__hint">Equipos sin alertas activas y listos para trabajar sin intervenci?n inmediata.</span>
             </a>
 
-            <span style="color:rgba(255,255,255,0.15);">|</span>
-
-            <!-- Con Alerta Media -->
             <a href="/?alerta=media&estado=True"
-               class="text-decoration-none d-flex align-items-center gap-1 px-2 py-1 rounded-pill"
-               style="background:{% if alerta == 'media' %}rgba(245,158,11,0.3); border:1px solid #f59e0b;{% else %}rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3);{% endif %} transition: all .2s;"
+               class="fleet-filter fleet-filter--warning {% if alerta == 'media' %}active-fleet-filter{% endif %}"
                title="Ver PCs con exactamente 1 alerta activa (RAM baja, disco, etc.)">
-                <span style="font-size:.8rem;">🟡</span>
-                <span style="font-size:.7rem; color:#fcd34d; font-weight:600;">{{ kpi_alerta_media }}</span>
-                <span style="font-size:.62rem; color:rgba(255,255,255,0.6);">Con Alerta</span>
+                <span class="fleet-filter__top">
+                    <span>
+                        <span class="fleet-filter__eyebrow">Seguimiento</span>
+                        <span class="fleet-filter__value">{{ kpi_alerta_media }}</span>
+                    </span>
+                    <span class="fleet-filter__title">Con Alerta</span>
+                </span>
+                <span class="fleet-filter__hint">Equipos con una se?al t?cnica activa. Conviene revisarlos antes de que escalen.</span>
             </a>
 
-            <!-- Críticas -->
             <a href="/?alerta=critica&estado=True"
-               class="text-decoration-none d-flex align-items-center gap-1 px-2 py-1 rounded-pill"
-               style="background:{% if alerta == 'critica' %}rgba(239,68,68,0.3); border:1px solid #ef4444;{% else %}rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3);{% endif %} transition: all .2s;"
-               title="Ver PCs con 2 o más alertas activas simultáneas. Requieren atención urgente.">
-                <span style="font-size:.8rem;">🔴</span>
-                <span style="font-size:.7rem; color:#fca5a5; font-weight:600;">{{ kpi_criticas }}</span>
-                <span style="font-size:.62rem; color:rgba(255,255,255,0.6);">Críticas</span>
+               class="fleet-filter fleet-filter--danger {% if alerta == 'critica' %}active-fleet-filter{% endif %}"
+               title="Ver PCs con 2 o m?s alertas activas simult?neas. Requieren atenci?n urgente.">
+                <span class="fleet-filter__top">
+                    <span>
+                        <span class="fleet-filter__eyebrow">Riesgo alto</span>
+                        <span class="fleet-filter__value">{{ kpi_criticas }}</span>
+                    </span>
+                    <span class="fleet-filter__title">Cr?ticas</span>
+                </span>
+                <span class="fleet-filter__hint">Equipos con m?ltiples alertas concurrentes y alta probabilidad de incidente.</span>
             </a>
 
-            <span style="color:rgba(255,255,255,0.15);">|</span>
-
-            <!-- Sin Impresora -->
             <a href="/?alerta=sin_impresora_inventario&estado=True"
-               class="text-decoration-none d-flex align-items-center gap-1 px-2 py-1 rounded-pill"
-               style="background:{% if alerta == 'sin_impresora_inventario' %}rgba(59,130,246,0.3); border:1px solid #3b82f6;{% else %}rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3);{% endif %} transition: all .2s;"
+               class="fleet-filter fleet-filter--info {% if alerta == 'sin_impresora_inventario' %}active-fleet-filter{% endif %}"
                title="Ver PCs que no tienen ninguna impresora registrada en el inventario">
-                <span style="font-size:.8rem;">🖨️</span>
-                <span style="font-size:.7rem; color:#93c5fd; font-weight:600;">{{ kpi_sin_impresora_inventario }}</span>
-                <span style="font-size:.62rem; color:rgba(255,255,255,0.6);">Sin Impresora</span>
+                <span class="fleet-filter__top">
+                    <span>
+                        <span class="fleet-filter__eyebrow">Brecha de inventario</span>
+                        <span class="fleet-filter__value">{{ kpi_sin_impresora_inventario }}</span>
+                    </span>
+                    <span class="fleet-filter__title">Sin Impresora</span>
+                </span>
+                <span class="fleet-filter__hint">Equipos activos sin una impresora cargada oficialmente en el inventario.</span>
             </a>
 
-            <span style="color:rgba(255,255,255,0.15);">|</span>
-
-            <!-- Total -->
-            <a href="/?estado=True" 
-               class="text-decoration-none d-flex align-items-center gap-1 px-2 py-1 rounded-pill"
-               style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); transition: all .2s;"
+            <a href="/?estado=True"
+               class="fleet-filter fleet-filter--neutral"
                title="Ver todas las PCs activas">
-                <span style="font-size:.7rem; color:rgba(255,255,255,0.8); font-weight:700;">{{ kpi_total_activas }} Total</span>
+                <span class="fleet-filter__top">
+                    <span>
+                        <span class="fleet-filter__eyebrow">Cobertura total</span>
+                        <span class="fleet-filter__value">{{ kpi_total_activas }}</span>
+                    </span>
+                    <span class="fleet-filter__title">Activas</span>
+                </span>
+                <span class="fleet-filter__hint">Vista completa del parque activo para revisar distribuci?n y carga general.</span>
             </a>
         </div>
 
-        <!-- Tarjetas especiales y Tableros (Huérfanas, Técnicos, PC Genérica, Infraestructura) -->
+        <!-- Tarjetas especiales y Tableros (Hu?rfanas, T?cnicos, PC Gen?rica, Infraestructura) -->
         <div class="section-kicker">Accesos Operativos</div>
-        <div class="d-flex gap-2 mb-3 flex-wrap">
+        <div class="shortcut-grid mb-3">
           {% if unassigned_tasks %}
-          <!-- Botón Tareas Huérfanas -->
-          <button type="button" class="btn text-start border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal" style="min-width:180px; border-radius:10px; padding: 5px 10px; background: linear-gradient(135deg, #7f1d1d, #450a0a); color:#f0f9ff; transition: transform .15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-            <div class="d-flex flex-column gap-0">
-              <div class="d-flex align-items-center justify-content-between gap-2">
-                <div style="font-size:.60rem; color:#fca5a5; text-transform:uppercase; letter-spacing:.05em;">
-                  <i class="bi bi-exclamation-triangle"></i> Huérfanas
-                </div>
-                <div>
-                  <span class="badge" style="background:#ef4444; font-size:.65rem; padding:2px 6px; border-radius:5px;">
-                    {{ unassigned_count }}
-                  </span>
-                </div>
-              </div>
-              <div style="font-size:0.75rem; font-weight:600; color:#fee2e2; margin-top:2px;">
-                <i class="bi bi-list-task"></i> Asignar Ahora
-              </div>
-            </div>
+          <button type="button" class="shortcut-card shortcut-card--danger btn text-start border-0" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal">
+            <span class="shortcut-card__top">
+              <span>
+                <span class="shortcut-card__eyebrow"><i class="bi bi-exclamation-triangle me-1"></i>Hu?rfanas</span>
+                <span class="shortcut-card__title">Asignar Ahora</span>
+              </span>
+              <span class="shortcut-card__badge">{{ unassigned_count }}</span>
+            </span>
+            <span class="shortcut-card__hint">Tareas pendientes sin equipo asociado que requieren clasificaci?n operativa.</span>
           </button>
           {% endif %}
 
-          <!-- Botón de Técnicos Conectados (Móvil) que abre Modal -->
-          <button type="button" class="btn text-start border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#mobileTechsModal" 
-                  title="Ver los técnicos que están operando actualmente desde dispositivos móviles en tiempo real"
-                  style="min-width:180px; border-radius:10px; padding: 5px 10px; background: linear-gradient(135deg, #0f4c75, #1b262c); color:#f0f9ff; transition: transform .15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-            <div class="d-flex flex-column gap-0">
-              <div class="d-flex align-items-center justify-content-between gap-2">
-                <div style="font-size:.60rem; color:#bae6fd; text-transform:uppercase; letter-spacing:.05em;">
-                  <i class="bi bi-phone"></i> Actividad (Móvil)
-                </div>
-                <div>
-                  <span class="badge" style="background:rgba(255,255,255,0.15); font-size:.65rem; padding:2px 6px; border-radius:5px;">
-                    <i class="bi bi-broadcast blink text-success"></i> &nbsp;{{ active_mobile_techs | length }}
-                  </span>
-                </div>
-              </div>
-              <div style="font-size:0.75rem; font-weight:600; color:#e0f2fe; margin-top:2px;">
-                <i class="bi bi-person-lines-fill"></i> Ver Técnicos
-              </div>
-            </div>
+          <button type="button" class="shortcut-card shortcut-card--info btn text-start border-0" data-bs-toggle="modal" data-bs-target="#mobileTechsModal"
+                  title="Ver los t?cnicos que est?n operando actualmente desde dispositivos m?viles en tiempo real">
+            <span class="shortcut-card__top">
+              <span>
+                <span class="shortcut-card__eyebrow"><i class="bi bi-phone me-1"></i>Actividad m?vil</span>
+                <span class="shortcut-card__title">Ver T?cnicos</span>
+              </span>
+              <span class="shortcut-card__badge"><i class="bi bi-broadcast status-dot-blink me-1"></i>{{ active_mobile_techs | length }}</span>
+            </span>
+            <span class="shortcut-card__hint">Estado en tiempo real de t?cnicos conectados y operando desde celular.</span>
           </button>
+
           {% for pc in auxiliary_pcs %}
           <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="text-decoration-none">
-            <div class="card border-0 shadow-sm" 
+            <div class="shortcut-card shortcut-card--dark"
                  {% if 'GENERICA' in pc.pc_name.upper() %}
-                    title="Tareas y mantenimientos que no están asociados a un equipo físico específico (Tareas huérfanas)"
+                    title="Tareas y mantenimientos que no est?n asociados a un equipo f?sico espec?fico (Tareas hu?rfanas)"
                  {% elif 'INFRAESTRUCTURA' in pc.pc_name.upper() %}
-                    title="Acceso al catálogo oficial de Impresoras y Recursos de Red de la institución"
-                 {% endif %}
-                 style="min-width:180px; border-radius:10px; background: linear-gradient(135deg, #1e293b, #0f172a); color:#f1f5f9; cursor:pointer; transition: transform .15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
-              <div class="card-body py-1 px-2">
-                <div class="d-flex align-items-center justify-content-between gap-2">
-                  <div>
-                    <div style="font-size:.6rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em;">{% if 'GENERICA' in pc.pc_name.upper() %}Tareas sin equipo{% else %}Recursos Red{% endif %}</div>
-                    <div style="font-size:.85rem; font-weight:700;">{{ pc.pc_name }}</div>
-                  </div>
-                  <div class="text-end">
-                    {% if pc.tareas_pendientes > 0 %}
-                        <span class="badge" style="background:#ef4444; font-size:.7rem; padding:3px 7px; border-radius:6px;"><i class="bi bi-exclamation-triangle"></i> {{ pc.tareas_pendientes }}</span>
-                    {% else %}
-                        <span class="badge" style="background:#22c55e; font-size:.7rem; padding:3px 7px; border-radius:6px;"><i class="bi bi-check-lg"></i></span>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
+                    title="Acceso al cat?logo oficial de Impresoras y Recursos de Red de la instituci?n"
+                 {% endif %}>
+              <span class="shortcut-card__top">
+                <span>
+                  <span class="shortcut-card__eyebrow">{% if 'GENERICA' in pc.pc_name.upper() %}Tareas sin equipo{% else %}Recursos red{% endif %}</span>
+                  <span class="shortcut-card__title">{{ pc.pc_name }}</span>
+                </span>
+                <span class="shortcut-card__badge">
+                  {% if pc.tareas_pendientes > 0 %}
+                    <i class="bi bi-exclamation-triangle me-1"></i>{{ pc.tareas_pendientes }}
+                  {% else %}
+                    <i class="bi bi-check-lg"></i>
+                  {% endif %}
+                </span>
+              </span>
+              <span class="shortcut-card__hint">
+                {% if 'GENERICA' in pc.pc_name.upper() %}
+                Entrada r?pida para resolver tareas que todav?a no est?n vinculadas a un activo f?sico.
+                {% else %}
+                Acceso directo al nodo especial de infraestructura y recursos compartidos de red.
+                {% endif %}
+              </span>
             </div>
           </a>
           {% endfor %}
 
-          <!-- Botón Recalcular Fueros (solo superuser) -->
           {% if current_user and current_user.get('is_superuser') %}
           <form method="POST" action="{{ url_for('dashboard.refresh_fueros') }}" title="Recalcula el Fuero/Sector de cada PC en base a su nombre de equipo">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn text-start border-0 shadow-sm h-100"
-              style="min-width:160px; border-radius:10px; padding: 5px 10px; background: linear-gradient(135deg, #1e3a5f, #0c2340); color:#f0f9ff; transition: transform .15s;"
-              onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-              <div class="d-flex flex-column gap-0">
-                <div class="d-flex align-items-center gap-2">
-                  <div style="font-size:.60rem; color:#93c5fd; text-transform:uppercase; letter-spacing:.05em;">
-                    <i class="bi bi-arrow-repeat"></i> Admin
-                  </div>
-                </div>
-                <div style="font-size:0.75rem; font-weight:600; color:#bfdbfe; margin-top:2px;">
-                  <i class="bi bi-diagram-3"></i> Recalcular Fueros
-                </div>
-              </div>
+            <button type="submit" class="shortcut-card shortcut-card--admin btn text-start border-0 h-100">
+              <span class="shortcut-card__top">
+                <span>
+                  <span class="shortcut-card__eyebrow"><i class="bi bi-arrow-repeat me-1"></i>Admin</span>
+                  <span class="shortcut-card__title">Recalcular Fueros</span>
+                </span>
+              </span>
+              <span class="shortcut-card__hint">Reconstruye sector y topograf?a de cada equipo a partir de su nombre registrado.</span>
             </button>
           </form>
           {% endif %}
