@@ -206,6 +206,61 @@ sudo journalctl -u inventario -n 100 --no-pager
 sudo journalctl -u inventario -f
 ```
 
+## 11.1 Rama viva del servidor
+
+Si decides trabajar durante un tiempo largo sobre una rama operativa en vez de `main`, formaliza ese criterio para no desplegar mezclas accidentales.
+
+Ejemplo real actual:
+
+```bash
+cd /opt/inventario
+git fetch origin
+git switch fix/dashboard-filter-contract-v1 || git switch -c fix/dashboard-filter-contract-v1 --track origin/fix/dashboard-filter-contract-v1
+git pull --ff-only origin fix/dashboard-filter-contract-v1
+```
+
+Checks previos recomendados:
+
+```bash
+git status
+git branch --show-current
+git log --oneline -1
+```
+
+Si `git status` muestra cambios locales, no cambies de rama a ciegas. Revisa primero si son cambios del servidor, hotfixes o archivos no versionados.
+
+## 11.2 Checklist post-deploy
+
+Después de cada actualización:
+
+```bash
+sudo systemctl restart inventario
+sudo systemctl status inventario --no-pager
+curl -I http://127.0.0.1:8080/
+curl -I https://127.0.0.1:5000/ -k
+sudo journalctl -u inventario -n 50 --no-pager
+```
+
+Conviene validar además:
+
+- login local
+- dashboard principal
+- búsqueda en vivo
+- tareas pendientes
+- infraestructura / impresoras
+
+## 11.3 Si algo falla
+
+Rollback rápido a la rama/commit anterior:
+
+```bash
+cd /opt/inventario
+git reflog -n 10
+git switch <rama-anterior>
+git pull --ff-only
+sudo systemctl restart inventario
+```
+
 ## 12. Checks rapidos
 
 App:

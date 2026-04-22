@@ -10,6 +10,8 @@ from io import BytesIO
 from openpyxl import Workbook
 from utils.constants import FUERO_MAPPING, FUERO_COLORS
 from utils.auth import current_username, delete_app_user, list_app_users, list_technician_users, superuser_required, upsert_app_user
+from services.audit import log_audit_event
+from services.dashboard_contract import normalize_alerta, sanitize_sort_column, sanitize_sort_direction
 
 bp_dashboard = Blueprint('dashboard', __name__)
 
@@ -92,11 +94,7 @@ def dashboard():
     offset = (page - 1) * per_page
     total_rows = 0
 
-    legacy_alerta_aliases = {
-        "sinimp": "sin_impresora_alerta",
-        "sin_impresora": "sin_impresora_inventario",
-    }
-    alerta = legacy_alerta_aliases.get(alerta, alerta)
+    alerta = normalize_alerta(alerta)
 
     try:
         with get_db_connection() as conn:
@@ -198,15 +196,8 @@ def dashboard():
                 AND UPPER(p.pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
             """ + filter_sql
             
-            allowed_sort_cols = {
-                "pc_name": "p.pc_name", "last_user": "p.last_user", "fuero": "p.fuero",
-                "motherboard_model": "p.motherboard_model", "os_name": "p.os_name",
-                "processor": "p.processor", "ram_gb": "p.ram_gb", "ram_detalles": "p.ram_detalles",
-                "disk_models": "p.disk_models", "printer_model": "p.printer_model",
-                "monitors": "p.monitors", "ip_address": "p.ip_address"
-            }
-            sort_col_sql = allowed_sort_cols.get(sort_by, "p.pc_name")
-            sort_dir_sql = "DESC" if order == "desc" else "ASC"
+            sort_col_sql = sanitize_sort_column(sort_by)
+            sort_dir_sql = sanitize_sort_direction(order)
             base_sql += f"""
                 ORDER BY 
                 CASE 
@@ -680,9 +671,14 @@ def delete_permanent_pc(pc_name):
         with get_db_connection() as conn:
             conn.execute("DELETE FROM tasks WHERE pc_name = %s", (pc_name,))
             conn.execute("DELETE FROM pcs WHERE pc_name = %s", (pc_name,))
-            conn.execute(
-                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                (pc_name, 'PERMANENT_DELETE', 'Active/Inactive', 'DELETED', current_username(), "BORRADO_PERMANENTE", request.remote_addr)
+            log_audit_event(
+                conn,
+                pc_name=pc_name,
+                field="PERMANENT_DELETE",
+                old_value="Active/Inactive",
+                new_value="DELETED",
+                action_type="BORRADO_PERMANENTE",
+                request_ip=request.remote_addr,
             )
             conn.commit()
     except Exception as exc:
@@ -818,8 +814,15 @@ def update_pc_infrastructure(pc_name):
                     old_str = str(old) if old is not None else ""
                     new_str = str(new) if new is not None else ""
                     if old_str != new_str:
-                        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                                     (pc_name, field, old_str, new_str, current_username(), "EDICION_INFRAESTRUCTURA", request.remote_addr))
+                        log_audit_event(
+                            conn,
+                            pc_name=pc_name,
+                            field=field,
+                            old_value=old_str,
+                            new_value=new_str,
+                            action_type="EDICION_INFRAESTRUCTURA",
+                            request_ip=request.remote_addr,
+                        )
             conn.commit()
         return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
     except Exception as e:

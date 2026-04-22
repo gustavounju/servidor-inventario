@@ -21,6 +21,7 @@ logs/
 voice_processor.py
 # Tests temporales
 test_*.py
+!test_dashboard_contracts.py
 .env
 # Firebase credentials (NUNCA subir al repositorio)
 firebase-credentials.json

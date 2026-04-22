@@ -29,6 +29,18 @@ def _table_exists(conn, table):
     return result and result["cnt"] > 0
 
 
+def _index_exists(conn, table, index_name):
+    db_name = _get_db_name()
+    result = conn.execute(
+        """
+        SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.STATISTICS
+        WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_NAME = %s
+        """,
+        (db_name, table, index_name),
+    ).fetchone()
+    return result and result["cnt"] > 0
+
+
 def migrate_db_v2():
     """Migración V2: Asegurar columna 'solicitante' en tasks."""
     print("Verificando migración de DB v2...")
@@ -485,6 +497,23 @@ def migrate_db_v26():
             print("Migración V26 verificada.")
 
 
+def migrate_db_v27():
+    """Migración V27: agregar índices operativos para dashboard, tareas y auditoría."""
+    print("Verificando migración de DB v27...")
+    indexes = [
+        ("pcs", "idx_pcs_active_name", "CREATE INDEX idx_pcs_active_name ON pcs (is_active, pc_name(100))"),
+        ("tasks", "idx_tasks_pc_estado", "CREATE INDEX idx_tasks_pc_estado ON tasks (pc_name(100), estado(30))"),
+        ("tasks", "idx_tasks_estado_completed", "CREATE INDEX idx_tasks_estado_completed ON tasks (estado(30), completed_at)"),
+        ("audit_logs", "idx_audit_logs_pc_changed", "CREATE INDEX idx_audit_logs_pc_changed ON audit_logs (pc_name(100), changed_at)"),
+    ]
+    with get_db_connection() as conn:
+        for table, index_name, ddl in indexes:
+            if _table_exists(conn, table) and not _index_exists(conn, table, index_name):
+                print(f"Aplicando migración V27: creando índice '{index_name}'...")
+                conn.execute(ddl)
+    print("Migración V27 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -512,3 +541,4 @@ def run_all_migrations():
     migrate_db_v24()
     migrate_db_v25()
     migrate_db_v26()
+    migrate_db_v27()
