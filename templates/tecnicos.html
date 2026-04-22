@@ -267,6 +267,46 @@
       display: flex; align-items: center; gap: 6px;
     }
     .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+    .ops-overview {
+      background: linear-gradient(160deg, rgba(79,142,247,0.16), rgba(15,17,23,0.92));
+      border: 1px solid rgba(79,142,247,0.2);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+    .ops-title { font-size: 0.72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #cddaf6; margin-bottom: 6px; }
+    .ops-headline { font-size: 1rem; font-weight: 700; line-height: 1.35; margin-bottom: 12px; }
+    .ops-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .ops-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 10px 10px 11px;
+    }
+    .ops-kpi { font-size: 1.1rem; font-weight: 800; margin-bottom: 3px; }
+    .ops-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+    .ops-focus {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: rgba(15,17,23,0.62);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: var(--text);
+    }
+    .ops-focus i { color: #f8c14f; margin-top: 2px; }
+    .meta-chip-priority-high { color: #fca5a5; background: rgba(239,68,68,0.14); }
+    .meta-chip-priority-medium { color: #fcd34d; background: rgba(245,158,11,0.14); }
+    .meta-chip-priority-low { color: #93c5fd; background: rgba(79,142,247,0.14); }
 
     /* Spinner */
     .spin { animation: spin .8s linear infinite; }
@@ -336,6 +376,28 @@
 
     <!-- Panel: Mis Tareas -->
     <div class="panel active" id="panel-mias">
+      <div class="ops-overview" id="opsOverview">
+        <div class="ops-title">Centro de Guardia</div>
+        <div class="ops-headline" id="opsHeadline">Cargando foco operativo...</div>
+        <div class="ops-grid">
+          <div class="ops-card">
+            <div class="ops-kpi" id="opsMineCount">0</div>
+            <div class="ops-label">Mías</div>
+          </div>
+          <div class="ops-card">
+            <div class="ops-kpi" id="opsFreeCount">0</div>
+            <div class="ops-label">Libres</div>
+          </div>
+          <div class="ops-card">
+            <div class="ops-kpi" id="opsResolvedCount">0</div>
+            <div class="ops-label">Hechas</div>
+          </div>
+        </div>
+        <div class="ops-focus">
+          <i class="bi bi-lightning-charge-fill"></i>
+          <div id="opsFocusText">Estamos preparando el resumen de prioridad.</div>
+        </div>
+      </div>
       <div id="list-mias"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
       <div id="list-done-today" style="margin-top:6px;"></div>
     </div>
@@ -593,6 +655,49 @@ function fillPcSelects(pcs) {
   });
 }
 
+function taskAgeHours(task) {
+  if (!task || !task.created_at) return 0;
+  const created = new Date(task.created_at.replace(' ', 'T'));
+  if (Number.isNaN(created.getTime())) return 0;
+  return Math.max(0, (Date.now() - created.getTime()) / 3600000);
+}
+
+function classifyTaskPriority(task, mode) {
+  const ageHours = taskAgeHours(task);
+  if ((!task.pc_name && mode === 'free') || ageHours >= 24) {
+    return { label: 'Atender primero', css: 'meta-chip-priority-high' };
+  }
+  if (mode === 'mine' || ageHours >= 8) {
+    return { label: 'Resolver hoy', css: 'meta-chip-priority-medium' };
+  }
+  return { label: 'En flujo', css: 'meta-chip-priority-low' };
+}
+
+function renderOpsOverview(myTasks, free, done) {
+  const urgentMine = myTasks.filter(t => classifyTaskPriority(t, 'mine').label !== 'En flujo').length;
+  const missingPc = free.filter(t => !t.pc_name).length;
+  const headline = techId
+    ? `${techId} tiene ${myTasks.length} tarea${myTasks.length === 1 ? '' : 's'} activa${myTasks.length === 1 ? '' : 's'} y ${free.length} por tomar.`
+    : `Hay ${free.length} tareas libres esperando asignación.`;
+
+  let focus = 'La carga está pareja. Conviene sostener el ritmo actual y cerrar pendientes antes de abrir nuevas intervenciones.';
+  if (free.length >= 6) {
+    focus = `Hay acumulación de tareas libres. Conviene absorber primero ${Math.min(free.length, 3)} para evitar cola operativa.`;
+  } else if (missingPc > 0) {
+    focus = `Hay ${missingPc} tarea${missingPc === 1 ? '' : 's'} sin PC asignada. Conviene identificar equipo o sector antes de cerrarlas.`;
+  } else if (urgentMine > 0) {
+    focus = `Tienes ${urgentMine} tarea${urgentMine === 1 ? '' : 's'} que ya pide seguimiento hoy. Priorizá cierre antes de tomar más trabajo.`;
+  } else if ((done || []).length >= 5) {
+    focus = `Buen ritmo de resolución: ya cerraste ${(done || []).length} tarea${(done || []).length === 1 ? '' : 's'} recientes.`;
+  }
+
+  document.getElementById('opsHeadline').textContent = headline;
+  document.getElementById('opsMineCount').textContent = myTasks.length;
+  document.getElementById('opsFreeCount').textContent = free.length;
+  document.getElementById('opsResolvedCount').textContent = (done || []).length;
+  document.getElementById('opsFocusText').textContent = focus;
+}
+
 // ── Render ────────────────────────────────────────
 function renderAll() {
   const tasks   = allData.active_tasks || [];
@@ -605,6 +710,7 @@ function renderAll() {
   renderTaskList('list-mias', myTasks, 'mine');
   renderDoneToday(done);
   renderTaskList('list-libres', free, 'free');
+  renderOpsOverview(myTasks, free, done);
 
   // Badges
   const badgeL = document.getElementById('badge-libres');
@@ -642,6 +748,7 @@ function taskCard(t, mode) {
   const pill  = mode === 'free' ? '<span class="status-pill pill-pending">Libre</span>'
               : mode === 'mine' ? '<span class="status-pill pill-mine">Asignada</span>'
               : '';
+  const priority = classifyTaskPriority(t, mode);
   const pcData = t.pc_name ? `'${t.pc_name}'` : 'null';
   const actions = mode === 'free'
     ? `<button class="btn-act btn-claim" onclick="claimTask(${t.id})"><i class="bi bi-hand-index-thumb"></i> Tomar</button>`
@@ -657,6 +764,7 @@ function taskCard(t, mode) {
         ${pill}
       </div>
       <div class="task-meta">
+        <span class="meta-chip ${priority.css}"><i class="bi bi-flag"></i>${priority.label}</span>
         ${t.pc_name ? '<span class="meta-chip"><i class="bi bi-pc-display"></i>'+escHtml(t.pc_name)+'</span>' : '<span class="meta-chip"><i class="bi bi-inbox"></i>Sin PC</span>'}
         ${t.solicitante ? '<span class="meta-chip"><i class="bi bi-person"></i>'+escHtml(t.solicitante)+'</span>' : ''}
         ${t.pc_fuero ? '<span class="meta-chip"><i class="bi bi-geo-alt"></i>'+escHtml(t.pc_fuero)+'</span>' : ''}
