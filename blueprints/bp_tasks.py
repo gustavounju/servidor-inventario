@@ -121,15 +121,24 @@ def add_task(pc_name):
     descripcion = request.form.get("descripcion", "").strip()
     solicitante = request.form.get("solicitante", "").strip()
     categoria = request.form.get("categoria", "").strip()
+    tipo_actividad = request.form.get("tipo_actividad", "tarea").strip()
+    prioridad = request.form.get("prioridad", "1").strip()
+    impacto_valor = request.form.get("impacto_valor", "1").strip()
+    resumen_impacto = request.form.get("resumen_impacto", "").strip()
+
     if not solicitante: solicitante = "No Especificado (Dashboard)"
     if not descripcion: return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
     if not categoria: categoria = predict_category(descripcion)
 
     with get_db_connection() as conn:
-        cursor = conn.execute("INSERT INTO tasks (pc_name, descripcion, solicitante, categoria) VALUES (%s, %s, %s, %s)", (pc_name, descripcion, solicitante, categoria))
+        cursor = conn.execute(
+            """INSERT INTO tasks (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto) 
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""", 
+            (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto)
+        )
         task_id = cursor.lastrowid
         conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                     (pc_name, "Tarea Creada", "", f"#{task_id}: {descripcion[:30]}...", current_username(), "GESTION_TAREAS", request.remote_addr))
+                     (pc_name, f"Tarea {tipo_actividad.upper()} Creada", "", f"#{task_id}: {descripcion[:30]}...", current_username(), "GESTION_TAREAS", request.remote_addr))
         conn.commit()
 
     # Notify technicians
@@ -232,6 +241,11 @@ def create_loose_task():
     technician = request.form.get("technician")
     fuero = request.form.get("fuero")
 
+    tipo_actividad = request.form.get("tipo_actividad", "tarea").strip()
+    prioridad = request.form.get("prioridad", "1").strip()
+    impacto_valor = request.form.get("impacto_valor", "1").strip()
+    resumen_impacto = request.form.get("resumen_impacto", "").strip()
+
     if not descripcion or not solicitante: return "Faltan datos", 400
     if not categoria: categoria = predict_category(descripcion)
     
@@ -243,8 +257,9 @@ def create_loose_task():
 
     with get_db_connection() as conn:
         cursor = conn.execute(
-            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name) VALUES (%s, %s, %s, NOW(), %s, %s, %s, NULL)""",
-            (descripcion, solicitante, estado, categoria, assigned_to, fuero)
+            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name, tipo_actividad, prioridad, impacto_valor, resumen_impacto) 
+               VALUES (%s, %s, %s, NOW(), %s, %s, %s, NULL, %s, %s, %s, %s)""",
+            (descripcion, solicitante, estado, categoria, assigned_to, fuero, tipo_actividad, prioridad, impacto_valor, resumen_impacto)
         )
         conn.commit()
 

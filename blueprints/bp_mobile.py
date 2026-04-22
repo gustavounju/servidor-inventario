@@ -34,7 +34,16 @@ def api_mobile_data():
         with get_db_connection() as conn:
             techs = list_technician_users()
             unassigned = [dict(r) for r in conn.execute("SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC").fetchall()]
-            all_active = [dict(r) for r in conn.execute("SELECT t.*, p.fuero as pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado != 'Hecha' ORDER BY t.created_at DESC").fetchall()]
+            all_active = [dict(r) for r in conn.execute("""
+                SELECT t.*, p.fuero as pc_fuero 
+                FROM tasks t 
+                LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                WHERE t.estado != 'Hecha' 
+                ORDER BY 
+                    CASE WHEN t.tipo_actividad = 'incidente' THEN 0 WHEN t.tipo_actividad = 'riesgo' THEN 1 ELSE 2 END,
+                    t.prioridad DESC, 
+                    t.created_at DESC
+            """).fetchall()]
             
             # Registrar última actividad móvil (ping de 30seg)
             tech_identity = current_technician_identity()
@@ -75,7 +84,8 @@ def api_mobile_data():
         }
         return jsonify(_json_serializable(payload))
     except Exception as e:
-        print(f"Error api_mobile_data: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 @bp_mobile.route("/api/mobile/notifications")
@@ -120,10 +130,15 @@ def api_mobile_create_task():
         if not pc_name:
             pc_name = None
 
+        tipo_actividad = data.get("tipo_actividad", "tarea").lower()
+        prioridad = data.get("prioridad", 2)
+        impacto_valor = data.get("impacto_valor", 2)
+
         with get_db_connection() as conn:
              cursor = conn.execute(
-                "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to)
+                """INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, tipo_actividad, prioridad, impacto_valor) 
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, tipo_actividad, prioridad, impacto_valor)
             )
              new_id = cursor.lastrowid
              conn.commit()

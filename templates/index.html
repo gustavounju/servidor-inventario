@@ -105,40 +105,40 @@
                     </div>
 
                     <div class="decision-grid">
-                        <a href="/?alerta=critica&estado=True" class="decision-card decision-card--danger">
+                        <a href="/?filter_tasks=true&tipo_actividad=incidente" class="decision-card decision-card--danger">
                             <div class="decision-card__label">
-                                <span>Críticas</span>
+                                <span>Incidentes</span>
                                 <span>Atender ya</span>
                             </div>
+                            <div class="decision-card__value">{{ kpi_incidentes }}</div>
+                            <div class="decision-card__hint">Fallas activas que bloquean la operación. Prioridad máxima de resolución.</div>
+                        </a>
+
+                        <a href="/?alerta=critica&estado=True" class="decision-card decision-card--warning">
+                            <div class="decision-card__label">
+                                <span>Críticas</span>
+                                <span>Riesgo alto</span>
+                            </div>
                             <div class="decision-card__value">{{ kpi_criticas }}</div>
-                            <div class="decision-card__hint">Equipos con 2 o más alertas simultáneas. Son el frente más riesgoso de la jornada.</div>
+                            <div class="decision-card__hint">Equipos con 2 o más alertas técnicas. Alta probabilidad de convertirse en incidente.</div>
                         </a>
 
-                        <a href="/?alerta=media&estado=True" class="decision-card decision-card--warning">
+                        <a href="/?filter_tasks=true&tipo_actividad=riesgo" class="decision-card decision-card--info">
                             <div class="decision-card__label">
-                                <span>Seguimiento</span>
-                                <span>Ventana corta</span>
+                                <span>Riesgos</span>
+                                <span>Preventivo</span>
                             </div>
-                            <div class="decision-card__value">{{ kpi_alerta_media }}</div>
-                            <div class="decision-card__hint">Equipos con una alerta activa. Conviene resolverlos antes de que migren a criticidad.</div>
+                            <div class="decision-card__value">{{ kpi_riesgos }}</div>
+                            <div class="decision-card__hint">Alertas tempranas y mantenimientos preventivos para evitar caídas de servicio.</div>
                         </a>
 
-                        <a href="/?alerta=sin_impresora_inventario&estado=True" class="decision-card decision-card--info">
+                        <a href="/?filter_tasks=true&tipo_actividad=tarea" class="decision-card decision-card--neutral">
                             <div class="decision-card__label">
-                                <span>Inventario incompleto</span>
-                                <span>Auditar</span>
+                                <span>Tareas</span>
+                                <span>En flujo</span>
                             </div>
-                            <div class="decision-card__value">{{ kpi_sin_impresora_inventario }}</div>
-                            <div class="decision-card__hint">Puestos sin impresora registrada. Útil para detectar huecos de inventario y soporte.</div>
-                        </a>
-
-                        <a href="/?os=win7&estado=True" class="decision-card decision-card--neutral">
-                            <div class="decision-card__label">
-                                <span>Obsolescencia</span>
-                                <span>Planificar</span>
-                            </div>
-                            <div class="decision-card__value">{{ kpi_win7 }}</div>
-                            <div class="decision-card__hint">Equipos con Windows 7. Son focos de riesgo tecnológico y priorización futura.</div>
+                            <div class="decision-card__value">{{ kpi_tareas }}</div>
+                            <div class="decision-card__hint">Pedidos de soporte y configuraciones de rutina sin impacto crítico inmediato.</div>
                         </a>
                     </div>
                 </div>
@@ -150,35 +150,35 @@
                         <div class="small text-muted">Secuencia operativa para abrir la jornada y enfocar soporte donde más impacta.</div>
 
                         <div class="priority-list">
-                            <a href="/?alerta=critica&estado=True" class="priority-link">
+                            <a href="/?filter_tasks=true&tipo_actividad=incidente" class="priority-link">
                                 <span class="priority-link__icon priority-link__icon--danger"><i class="bi bi-fire"></i></span>
                                 <span>
-                                    <span class="priority-link__title">{{ kpi_criticas }} equipos críticos</span>
-                                    <span class="priority-link__desc">Abrí este grupo primero para cortar incidentes con mayor probabilidad de impacto.</span>
+                                    <span class="priority-link__title">{{ kpi_incidentes }} incidentes activos</span>
+                                    <span class="priority-link__desc">Priorizá estos casos para restablecer servicios interrumpidos de inmediato.</span>
                                 </span>
                             </a>
 
-                            <a href="/?alerta=sin_impresora_inventario&estado=True" class="priority-link">
-                                <span class="priority-link__icon priority-link__icon--info"><i class="bi bi-printer"></i></span>
+                            <a href="/?alerta=critica&estado=True" class="priority-link">
+                                <span class="priority-link__icon priority-link__icon--warning"><i class="bi bi-exclamation-triangle-fill"></i></span>
                                 <span>
-                                    <span class="priority-link__title">{{ kpi_sin_impresora_inventario }} puestos sin impresora registrada</span>
-                                    <span class="priority-link__desc">Sirve para limpiar inventario y detectar dependencias operativas no formalizadas.</span>
+                                    <span class="priority-link__title">{{ kpi_criticas }} equipos en riesgo crítico</span>
+                                    <span class="priority-link__desc">Anticipate a fallas mayores revisando los equipos con múltiples alertas técnicas.</span>
                                 </span>
                             </a>
 
-                            <a href="/?os=win7&estado=True" class="priority-link">
-                                <span class="priority-link__icon priority-link__icon--warning"><i class="bi bi-windows"></i></span>
+                            <a href="/?filter_tasks=true&tipo_actividad=riesgo" class="priority-link">
+                                <span class="priority-link__icon priority-link__icon--info"><i class="bi bi-shield-exclamation"></i></span>
                                 <span>
-                                    <span class="priority-link__title">{{ kpi_win7 }} equipos obsoletos</span>
-                                    <span class="priority-link__desc">Úsalo para plan de renovación, seguridad y priorización de intervención preventiva.</span>
+                                    <span class="priority-link__title">{{ kpi_riesgos }} riesgos preventivos</span>
+                                    <span class="priority-link__desc">Mantenimientos y alertas tempranas para blindar la operación a mediano plazo.</span>
                                 </span>
                             </a>
 
                             <a href="{{ url_for('dashboard.dashboard', estado='True', filter_tasks='true') }}" class="priority-link">
                                 <span class="priority-link__icon priority-link__icon--success"><i class="bi bi-list-check"></i></span>
                                 <span>
-                                    <span class="priority-link__title">{{ kpi_tareas_pendientes_total }} tareas pendientes</span>
-                                    <span class="priority-link__desc">Consolidá pendientes abiertos para asignación rápida y seguimiento del día.</span>
+                                    <span class="priority-link__title">{{ kpi_tareas_pendientes_total }} tareas totales</span>
+                                    <span class="priority-link__desc">Consolidado general de pedidos de soporte y tareas de rutina del día.</span>
                                 </span>
                             </a>
                         </div>

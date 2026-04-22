@@ -539,6 +539,23 @@ def migrate_db_v28():
     print("Migración V28 verificada.")
 
 
+def migrate_db_v29():
+    """Migración V29: Categorización de tareas en tipos (Incidente, Tarea, Riesgo) e Impacto."""
+    print("Verificando migración de DB v29...")
+    new_columns = {
+        "tipo_actividad": "VARCHAR(50) DEFAULT 'tarea'",  # 'incidente', 'tarea', 'riesgo', 'mantenimiento'
+        "prioridad": "INT DEFAULT 1",                    # 1: Baja, 2: Media, 3: Alta, 4: Crítica
+        "impacto_valor": "INT DEFAULT 1",                # Escala de impacto en el negocio
+        "resumen_impacto": "TEXT"                        # Texto explicativo del porqué del impacto
+    }
+    with get_db_connection() as conn:
+        for col, dtype in new_columns.items():
+            if not _column_exists(conn, "tasks", col):
+                print(f"Aplicando migración V29: Agregando '{col}' a tasks...")
+                conn.execute(f"ALTER TABLE tasks ADD COLUMN {col} {dtype}")
+    print("Migración V29 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -568,3 +585,4 @@ def run_all_migrations():
     migrate_db_v26()
     migrate_db_v27()
     migrate_db_v28()
+    migrate_db_v29()

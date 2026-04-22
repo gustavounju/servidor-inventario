@@ -502,6 +502,25 @@
         <option value="">— Sin PC asignada —</option>
       </select>
     </div>
+    <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <div class="input-group-gold" style="flex:1;">
+        <div class="input-label-gold">Tipo</div>
+        <select class="pc-dropdown" id="mTipo" style="background:transparent;border:none;padding:0;">
+          <option value="tarea">📝 Tarea</option>
+          <option value="incidente">🔥 Incidente</option>
+          <option value="riesgo">⚠️ Riesgo</option>
+        </select>
+      </div>
+      <div class="input-group-gold" style="flex:1;">
+        <div class="input-label-gold">Prioridad</div>
+        <select class="pc-dropdown" id="mPrioridad" style="background:transparent;border:none;padding:0;">
+          <option value="1">1-Baja</option>
+          <option value="2" selected>2-Media</option>
+          <option value="3">3-Alta</option>
+          <option value="4">4-Crit.</option>
+        </select>
+      </div>
+    </div>
     <label class="toggle-switch">
       <input type="checkbox" id="mDone">
       <span class="toggle-track"></span>
@@ -663,14 +682,25 @@ function taskAgeHours(task) {
 }
 
 function classifyTaskPriority(task, mode) {
+  // Prioridad explícita si existe (1-4)
+  if (task.prioridad && task.prioridad >= 3) {
+      return { label: 'Prioridad ALTA', css: 'meta-chip-priority-high' };
+  }
+  if (task.tipo_actividad === 'incidente') {
+      return { label: '🔥 Incidente', css: 'meta-chip-priority-high' };
+  }
+  if (task.tipo_actividad === 'riesgo') {
+      return { label: '⚠️ Riesgo', css: 'meta-chip-priority-medium' };
+  }
+
   const ageHours = taskAgeHours(task);
   if ((!task.pc_name && mode === 'free') || ageHours >= 24) {
-    return { label: 'Atender primero', css: 'meta-chip-priority-high' };
+    return { label: 'Atender pronto', css: 'meta-chip-priority-high' };
   }
   if (mode === 'mine' || ageHours >= 8) {
     return { label: 'Resolver hoy', css: 'meta-chip-priority-medium' };
   }
-  return { label: 'En flujo', css: 'meta-chip-priority-low' };
+  return { label: 'En curso', css: 'meta-chip-priority-low' };
 }
 
 function renderOpsOverview(myTasks, free, done) {
@@ -756,11 +786,13 @@ function taskCard(t, mode) {
     ? `<button class="btn-act btn-done" onclick="completeTask(${t.id}, ${pcData})"><i class="bi bi-check-lg"></i> Completar</button>`
     : '';
 
+  const emoji = t.tipo_actividad === 'incidente' ? '🔥 ' : t.tipo_actividad === 'riesgo' ? '⚠️ ' : '';
+
   return `<div class="task-card" id="tc-${t.id}">
     <div class="task-card-accent" style="background:${color}"></div>
     <div style="padding-left:10px;">
       <div class="task-card-header">
-        <div class="task-desc">${escHtml(t.descripcion)}</div>
+        <div class="task-desc">${emoji}${escHtml(t.descripcion)}</div>
         ${pill}
       </div>
       <div class="task-meta">
@@ -842,11 +874,16 @@ function flashCard(id, color) {
   setTimeout(() => { el.style.background=''; }, 600);
 }
 
-async function submitTask(desc, solic, pcName, isDone) {
+async function submitTask(desc, solic, pcName, isDone, tipo, prio) {
   if (!desc || !techId) { alert('Completá la descripción y asegurate de tener un técnico activo.'); return false; }
   try {
     const res = await postJSON(API + '/create_task', {
-      descripcion: desc, solicitante: solic, pc_name: pcName||null, is_done: isDone
+      descripcion: desc, 
+      solicitante: solic, 
+      pc_name: pcName||null, 
+      is_done: isDone,
+      tipo_actividad: tipo || 'tarea',
+      prioridad: prio || 2
     });
     const data = await res.json();
     if (data.status === 'success') {
@@ -873,7 +910,9 @@ async function submitManualTask() {
   const solic = document.getElementById('mSolic').value.trim();
   const pc = document.getElementById('mPc').value;
   const done = document.getElementById('mDone').checked;
-  const ok = await submitTask(desc, solic, pc, done);
+  const tipo = document.getElementById('mTipo').value;
+  const prio = document.getElementById('mPrioridad').value;
+  const ok = await submitTask(desc, solic, pc, done, tipo, prio);
   if (ok) closeManualModal();
 }
 

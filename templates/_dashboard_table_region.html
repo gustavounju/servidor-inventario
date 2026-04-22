@@ -70,14 +70,28 @@
                     {% if not (pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') or pc.pc_name.upper().startswith('INFRAESTRUCTURA')) %}
                     {% set alerta_count = (pc.alerta_ram_baja|int) + (pc.alerta_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
                     {% set row_class = [] %}
+                    {% set alert_reasons = [] %}
+                    
+                    {% if pc.alerta_ram_baja %}{% set _ = alert_reasons.append('Memoria RAM insuficiente (< 8GB)') %}{% endif %}
+                    {% if pc.alerta_sin_impresora %}{% set _ = alert_reasons.append('Sin impresora instalada') %}{% endif %}
+                    {% if pc.alerta_disco %}{% set _ = alert_reasons.append('Alerta de Disco (Falla o poco espacio)') %}{% endif %}
+                    {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('Uptime crítico: equipo encendido hace más de 15 días') %}{% endif %}
+                    {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Conflicto: nombre de PC duplicado en la red') %}{% endif %}
+                    {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('SO Obsoleto: requiere actualizar Windows 7') %}{% endif %}
+                    
+                    {% set tooltip_text = "Estado: Saludable" if not alert_reasons else "Alertas detectadas:\n• " + alert_reasons|join('\n• ') %}
+
                     {% if pc.is_active == 'False' %}
                     {% set _ = row_class.append('row-graveyard') %}
-                    {% elif alerta_count >= 2 %}
+                    {% set tooltip_text = "Equipo dado de baja (Cementerio)" %}
+                    {% elif alerta_count >= 2 or (pc.os_name and 'Windows 7' in pc.os_name and alerta_count >= 1) %}
                     {% set _ = row_class.append('tr-riesgo-critico') %}
-                    {% elif alerta_count == 1 %}
+                    {% elif alerta_count == 1 or (pc.os_name and 'Windows 7' in pc.os_name) %}
                     {% set _ = row_class.append('tr-riesgo-medio') %}
                     {% endif %}
-                    <tr class="{{ ' '.join(row_class) }}" data-alerta-ram="{{ pc.alerta_ram_baja | default(0) }}"
+                    <tr class="{{ ' '.join(row_class) }}" 
+                        title="{{ tooltip_text }}"
+                        data-alerta-ram="{{ pc.alerta_ram_baja | default(0) }}"
                         data-alerta-sin-imp="{{ pc.alerta_sin_impresora | default(0) }}"
                         data-alerta-impresora-red="{{ pc.alerta_impresora_red | default(0) }}"
                         data-so="{{ pc.os_name | default('') }}"

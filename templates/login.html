@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -7,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
         :root {
             --bg-1: #082f49;
@@ -191,6 +193,45 @@
             font-size: 0.78rem;
             font-weight: 700;
         }
+
+        .script-section {
+            padding: 0 28px 28px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 8px 0;
+        }
+
+        .script-btn {
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font: inherit;
+            font-weight: 700;
+            color: var(--accent);
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .script-btn:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .script-btn.text-success {
+            color: #10b981 !important;
+            border-color: #10b981 !important;
+            background: #f0fdf4;
+        }
     </style>
 </head>
 <body>
@@ -233,8 +274,65 @@
                 <input id="password" name="password" type="password" autocomplete="current-password" required>
             </div>
             <button type="submit">Ingresar</button>
-            <div class="hint">Después de iniciar sesión verás solo los módulos habilitados para tu usuario y el sistema te ofrecerá accesos rápidos según tu dispositivo.</div>
+            <div class="hint">Después de iniciar sesión verás solo los módulos habilitados para tu usuario.</div>
         </form>
+
+        <div class="script-section">
+            <div class="divider"></div>
+            <div class="hint" style="text-align: center; font-weight: 700; color: var(--accent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                Ejecución Manual
+            </div>
+            <button type="button" class="script-btn" 
+                    data-url-https="{{ client_script_base_url }}/script" 
+                    data-url-http="{{ client_script_fallback_url }}/script"
+                    onclick="copyScript(this)" title="Copiar Script de Inventario">
+                <i class="bi bi-lightning-charge"></i> <span>Copiar Script de Inventario</span>
+            </button>
+            <div class="hint" style="font-size: 0.75rem; text-align: center;">
+                Copiá y pegá el comando en <strong>PowerShell</strong> para informar los datos de este equipo.
+            </div>
+        </div>
     </div>
+
+    <script>
+        function copyScript(btn) {
+            const urlHttps = btn.getAttribute('data-url-https');
+            const urlHttp = btn.getAttribute('data-url-http');
+            
+            // Script logic identical to gold.js
+            const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try { iex (New-Object System.Net.WebClient).DownloadString('${urlHttps}') } catch { Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('${urlHttp}') };\r\n\r\n\r\n`;
+            
+            function showSuccess() {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check-all"></i> <span>¡Copiado!</span>';
+                btn.classList.add('text-success');
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.remove('text-success');
+                }, 2000);
+            }
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(command).then(showSuccess);
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = command;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showSuccess();
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                    alert("No se pudo copiar automáticamente.");
+                }
+                textArea.remove();
+            }
+        }
+    </script>
 </body>
 </html>

@@ -12,6 +12,9 @@ from utils.constants import FUERO_MAPPING, FUERO_COLORS
 from utils.auth import current_username, list_technician_users
 from services.audit import log_audit_event
 from services.dashboard_overview import load_dashboard_overview
+from services.pc_actions import decommission_pc_service, reactivate_pc_service, update_pc_infrastructure_service, delete_permanent_pc_service
+from services.pc_details_service import get_pc_detail_context
+from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data
 
 bp_dashboard = Blueprint('dashboard', __name__)
 
@@ -80,6 +83,8 @@ def dashboard():
     filter_tasks = request.args.get("filter_tasks", "").strip()
     sort_by = request.args.get("sort_by", "pc_name").strip()
     order = request.args.get("order", "asc").strip()
+    tipo_actividad = request.args.get("tipo_actividad", "").strip()
+
 
     try: page = int(request.args.get("page", 1))
     except ValueError: page = 1
@@ -96,6 +101,7 @@ def dashboard():
         order=order,
         page=page,
         per_page=per_page,
+        tipo_actividad=tipo_actividad,
     )
     template_context.update(
         server_url=request.host_url,
@@ -339,27 +345,17 @@ def download_db():
 
 @bp_dashboard.route("/decommission/<string:pc_name>", methods=["POST"])
 def decommission_pc(pc_name):
-    with get_db_connection() as conn:
-        conn.execute(
-            "UPDATE pcs SET is_active = 'False' WHERE pc_name = %s", (pc_name,)
-        )
-        conn.commit()
-    return redirect(url_for("dashboard.dashboard"))
+    """Pasar una PC al cementerio."""
+    if decommission_pc_service(pc_name, request.remote_addr):
+        return redirect(url_for("dashboard.dashboard"))
+    return "Error al dar de baja", 500
 
 @bp_dashboard.route("/reactivate/<pc_name>", methods=["POST"])
 def reactivate_pc(pc_name):
-    """Reactivar una PC (sacarla del cementerio)."""
-    try:
-        with get_db_connection() as conn:
-            conn.execute(
-                "UPDATE pcs SET is_active = 'True' WHERE pc_name = %s",
-                (pc_name,),
-            )
-            conn.commit()
-    except Exception as exc:
-        print(f"Error reactivating PC {pc_name}: {exc}")
-
-    return redirect(url_for("dashboard.dashboard"))
+    """Reactivar una PC."""
+    if reactivate_pc_service(pc_name, request.remote_addr):
+        return redirect(url_for("dashboard.dashboard"))
+    return "Error al reactivar", 500
 
 @bp_dashboard.route("/refresh_fueros", methods=["POST"])
 def refresh_fueros():
@@ -386,125 +382,20 @@ def refresh_fueros():
 @bp_dashboard.route("/delete_permanent/<string:pc_name>", methods=["POST"])
 def delete_permanent_pc(pc_name):
     """Borrado definitivo de una PC y sus tareas asociadas."""
-    try:
-        with get_db_connection() as conn:
-            conn.execute("DELETE FROM tasks WHERE pc_name = %s", (pc_name,))
-            conn.execute("DELETE FROM pcs WHERE pc_name = %s", (pc_name,))
-            log_audit_event(
-                conn,
-                pc_name=pc_name,
-                field="PERMANENT_DELETE",
-                old_value="Active/Inactive",
-                new_value="DELETED",
-                action_type="BORRADO_PERMANENTE",
-                request_ip=request.remote_addr,
-            )
-            conn.commit()
-    except Exception as exc:
-        print(f"Error deleting PC {pc_name}: {exc}")
-
-    return redirect(url_for("dashboard.dashboard"))
+    if delete_permanent_pc_service(pc_name, request.remote_addr):
+        return redirect(url_for("dashboard.dashboard"))
+    return "Error al borrar permanentemente", 500
 
 
 
 @bp_dashboard.route("/pc/<pc_name>")
 def pc_detail(pc_name):
-    with get_db_connection() as conn:
-        pc = conn.execute("""
-            SELECT p.*, COALESCE(u.real_name, au.display_name) as ad_real_name 
-            FROM pcs p 
-            LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username 
-            LEFT JOIN app_users au ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = au.username
-            WHERE p.pc_name = %s
-        """, (pc_name,)).fetchone()
-        tareas = conn.execute("SELECT id, pc_name, created_at, descripcion, estado, solicitante, assigned_to FROM tasks WHERE pc_name = %s ORDER BY created_at DESC", (pc_name,)).fetchall()
-        technicians = list_technician_users()
-        ad_users_list = [dict(row) for row in conn.execute(
-            """
-            SELECT username, real_name, phone, fuero
-            FROM ad_users
-            UNION
-            SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username,
-                            last_user as real_name,
-                            NULL as phone,
-                            NULL as fuero
-            FROM pcs
-            WHERE last_user IS NOT NULL AND last_user != ''
-              AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
-            ORDER BY real_name
-            """
-        ).fetchall()]
-        audit_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = %s ORDER BY changed_at DESC", (pc_name,)).fetchall()
-        all_pcs = conn.execute("SELECT pc_name, fuero, last_user FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
-        
-        # Buscar Data de la UPS asignada
-        pc_ups_list = conn.execute('''
-            SELECT u.*, b.serial_number as battery_code 
-            FROM ups_inventory u
-            LEFT JOIN components b ON u.assigned_battery_id = b.id
-            WHERE u.assigned_pc = %s
-        ''', (pc_name,)).fetchall()
-        
-        sharing_pc_data = None
-        if pc and pc["printer_port"] and pc["printer_port"].startswith("\\\\"):
-            # Extraer el nombre de la PC desde una ruta UNC (ej: \\SISTEMAS-105\HP Deskjet)
-            parts = pc["printer_port"].split("\\")
-            if len(parts) >= 3:
-                potential_host = parts[2].upper()
-                sharing_pc_data = conn.execute(
-                    "SELECT pc_name, is_active, printer_port, printer_sn, printer_model FROM pcs WHERE UPPER(pc_name) = %s OR ip_address = %s LIMIT 1", 
-                    (potential_host, potential_host)
-                ).fetchone()
-        
-        # PCs que usan a esta PC como host de impresora (cascada)
-        clients_using_this_printer = []
-        if pc and pc["pc_name"] and (pc["pc_name"].upper() not in ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')):
-            # Patrones para buscar clientes
-            pat_name = f"%\\\\\\\\{pc['pc_name'].upper()}\\\\%"
-            pat_ip = f"%\\\\\\\\{pc['ip_address']}\\\\%" if pc['ip_address'] and pc['ip_address'] != 'N/A' else None
-            
-            query = "SELECT pc_name FROM pcs WHERE is_active='True' AND UPPER(printer_port) LIKE %s"
-            params = [pat_name]
-            if pat_ip:
-                query += " OR UPPER(printer_port) LIKE %s"
-                params.append(pat_ip)
-            
-            clients_using_this_printer = conn.execute(query, tuple(params)).fetchall()
-        
-        # UPS Disponibles en caso de querer asignarle una (UPS sin asignar)
-        available_ups = conn.execute("SELECT id, code, model FROM ups_inventory WHERE assigned_pc IS NULL").fetchall()
-        
-        # Buscar componentes asignados a la PC (y sus hijos)
-        pc_components = conn.execute('''
-            SELECT id, serial_number, component_type, brand_model, status, assigned_to_component_id 
-            FROM components 
-            WHERE assigned_pc = %s
-            ORDER BY assigned_to_component_id ASC, component_type
-        ''', (pc_name,)).fetchall()
-        
-        # Componentes en Stock disponibles para asignar
-        available_components = conn.execute('''
-            SELECT id, serial_number, component_type, brand_model 
-            FROM components 
-            WHERE status = 'Stock' AND component_type NOT LIKE 'Bat%'
-        ''').fetchall()
-        
-        # Baterias disponibles para asignar a la UPS de esta PC
-        baterias_disponibles = conn.execute("SELECT id, serial_number as code, brand_model FROM components WHERE component_type LIKE 'Bat%' AND status = 'Stock'").fetchall()
-
-        # Impresoras de red asignadas a esta PC
-        assigned_network_printers = conn.execute('''
-            SELECT np.id, np.ip_address, np.brand_model, np.serial_number 
-            FROM network_printers np
-            JOIN pc_network_printers pnp ON np.id = pnp.printer_id
-            WHERE pnp.pc_name = %s
-        ''', (pc_name,)).fetchall()
-        
-        # Impresoras de red disponibles para asignar (todas)
-        available_network_printers = conn.execute("SELECT id, ip_address, brand_model FROM network_printers ORDER BY ip_address").fetchall()
-
-    if pc is None: abort(404)
-    return render_template("pc_detail.html", pc=pc, tareas=tareas, technicians=technicians, ad_users_list=ad_users_list, audit_logs=audit_logs, all_pcs=all_pcs, fuero_colors=FUERO_COLORS, pc_ups_list=pc_ups_list, available_ups=available_ups, pc_components=pc_components, available_components=available_components, baterias_disponibles=baterias_disponibles, sharing_pc=sharing_pc_data, clients_using_this_printer=clients_using_this_printer, assigned_network_printers=assigned_network_printers, available_network_printers=available_network_printers)
+    """Detalle de una PC."""
+    ctx = get_pc_detail_context(pc_name)
+    if not ctx:
+        from flask import abort
+        abort(404)
+    return render_template("pc_detail.html", **ctx, fuero_colors=FUERO_COLORS)
 
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
 def update_pc_infrastructure(pc_name):
@@ -562,167 +453,11 @@ def global_activity():
 
 @bp_dashboard.route("/fueros")
 def view_fueros():
-    """Vista para consultar usuarios, impresoras y PCs por fuero, y encontrar elementos huérfanos."""
+    """Vista para consultar usuarios, impresoras y PCs por fuero."""
     fuero_param = request.args.get("fuero", "").strip()
-    
-    with get_db_connection() as conn:
-        fueros_rows = conn.execute("SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido' ORDER BY fuero").fetchall()
-        fueros_list = [row['fuero'] for row in fueros_rows]
+    fueros_list, fuero_stats = get_fuero_summary_data()
+    pcs, users, printers = get_fuero_detail_data(fuero_param)
 
-        # Conteos por fuero físicos (Patrimonio real del sector)
-        pc_counts_rows = conn.execute("""
-            SELECT fuero, COUNT(*) as cnt
-            FROM pcs
-            WHERE is_active = 'True'
-              AND fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido'
-              AND UPPER(pc_name) NOT IN ('PC GENERICA','INFRAESTRUCTURA','PC-GENERICA')
-            GROUP BY fuero
-        """).fetchall()
-
-        # Contar Usuarios por Fuero (AD + Distintos en PCs)
-        user_counts_rows = conn.execute("""
-            SELECT f.fuero, COUNT(DISTINCT u.username) as cnt
-            FROM (SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '') f
-            JOIN (
-                SELECT username, fuero FROM ad_users
-                UNION
-                SELECT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, fuero 
-                FROM pcs 
-                WHERE is_active = 'True' AND last_user IS NOT NULL AND last_user != ''
-            ) u ON u.fuero = f.fuero
-            GROUP BY f.fuero
-        """).fetchall()
-
-        # Contar Impresoras de Red físicas del Fuero
-        net_printer_counts = conn.execute("""
-            SELECT fuero, COUNT(*) as cnt
-            FROM network_printers
-            WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido'
-            GROUP BY fuero
-        """).fetchall()
-
-        # Contar Impresoras Locales físicas del Fuero (Excluyendo las que ya están en el catálogo de Red)
-        local_printer_counts = conn.execute("""
-            SELECT fuero, COUNT(*) as cnt
-            FROM pcs
-            WHERE is_active = 'True'
-              AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
-              AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%')
-              AND fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido'
-              AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
-            GROUP BY fuero
-        """).fetchall()
-
-        fuero_stats = {}
-        for row in pc_counts_rows:
-            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0, 'users': 0})['pcs'] = row['cnt']
-        for row in user_counts_rows:
-            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0, 'users': 0})['users'] = row['cnt']
-        for row in net_printer_counts:
-            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0, 'users': 0})['printers'] += row['cnt']
-        for row in local_printer_counts:
-            fuero_stats.setdefault(row['fuero'], {'pcs': 0, 'printers': 0, 'users': 0})['printers'] += row['cnt']
-
-        pcs = []
-        users = []
-        printers = []
-
-        
-        if fuero_param:
-            pcs = conn.execute("""
-                SELECT p.pc_name, p.last_user, p.ip_address, p.os_name, p.printer_model, p.printer_port, p.printer_sn,
-                (CASE 
-                    WHEN p.printer_sn IS NOT NULL AND p.printer_sn != '' AND p.printer_sn != 'N/A' AND p.printer_sn != 'USB' THEN 
-                        (SELECT COUNT(*) FROM components c WHERE c.serial_number = p.printer_sn OR (c.component_type LIKE 'Imp%%' AND c.assigned_pc = p.pc_name))
-                    ELSE 
-                        (SELECT COUNT(*) FROM components c WHERE c.component_type LIKE 'Imp%%' AND c.assigned_pc = p.pc_name)
-                END) as is_stocked
-                FROM pcs p
-                WHERE p.is_active = 'True' AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND p.fuero = %s 
-                ORDER BY p.pc_name
-            """, (fuero_param,)).fetchall()
-            users = conn.execute("""
-                SELECT username, real_name, phone 
-                FROM ad_users 
-                WHERE fuero = %s 
-                UNION
-                SELECT DISTINCT 
-                    LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) as username, 
-                    COALESCE(u.real_name, p.last_user) as real_name, 
-                    u.phone
-                FROM pcs p
-                LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
-                WHERE p.is_active = 'True' 
-                  AND p.pc_name NOT IN ('PC Generica', 'Infraestructura') 
-                  AND p.fuero = %s 
-                  AND p.last_user IS NOT NULL 
-                  AND p.last_user != ''
-                ORDER BY real_name
-            """, (fuero_param, fuero_param)).fetchall()
-            printers_raw = conn.execute("""
-                SELECT DISTINCT np.id, np.ip_address, np.serial_number, np.brand_model, np.fuero as physical_fuero 
-                FROM network_printers np
-                LEFT JOIN pc_network_printers pnp ON np.id = pnp.printer_id
-                LEFT JOIN pcs p ON pnp.pc_name = p.pc_name
-                WHERE np.fuero = %s OR p.fuero = %s 
-                ORDER BY np.ip_address
-            """, (fuero_param, fuero_param)).fetchall()
-        else:
-            # Buscar elementos sin fuero (huerfanos)
-            pcs = conn.execute("""
-                SELECT p.pc_name, p.last_user, p.ip_address, p.os_name, p.printer_model, p.printer_port, p.printer_sn,
-                (CASE 
-                    WHEN p.printer_sn IS NOT NULL AND p.printer_sn != '' AND p.printer_sn != 'N/A' AND p.printer_sn != 'USB' THEN 
-                        (SELECT COUNT(*) FROM components c WHERE c.serial_number = p.printer_sn OR (c.component_type LIKE 'Imp%%' AND c.assigned_pc = p.pc_name))
-                    ELSE 
-                        (SELECT COUNT(*) FROM components c WHERE c.component_type LIKE 'Imp%%' AND c.assigned_pc = p.pc_name)
-                END) as is_stocked
-                FROM pcs p
-                WHERE p.is_active = 'True' AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido') 
-                ORDER BY p.pc_name
-            """).fetchall()
-            users = conn.execute("""
-                SELECT username, real_name, phone 
-                FROM ad_users 
-                WHERE (fuero IS NULL OR fuero = '' OR fuero = 'Desconocido') 
-                UNION
-                SELECT DISTINCT 
-                    LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) as username, 
-                    COALESCE(u.real_name, p.last_user) as real_name, 
-                    u.phone
-                FROM pcs p
-                LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
-                WHERE p.is_active = 'True' 
-                  AND p.pc_name NOT IN ('PC Generica', 'Infraestructura') 
-                  AND (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido') 
-                  AND p.last_user IS NOT NULL 
-                  AND p.last_user != ''
-                ORDER BY real_name
-            """).fetchall()
-            printers_raw = conn.execute("""
-                SELECT DISTINCT np.id, np.ip_address, np.serial_number, np.brand_model, np.fuero as physical_fuero 
-                FROM network_printers np
-                LEFT JOIN pc_network_printers pnp ON np.id = pnp.printer_id
-                LEFT JOIN pcs p ON pnp.pc_name = p.pc_name
-                WHERE (np.fuero IS NULL OR np.fuero = '' OR np.fuero = 'Desconocido') 
-                   OR (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido')
-                ORDER BY np.ip_address
-            """).fetchall()
-
-        # Agregar asignaciones (PCs cliente) a cada impresora
-        for p_row in printers_raw:
-            p_dict = dict(p_row)
-            assigned_pcs = conn.execute("""
-                SELECT p.pc_name, p.last_user, u.real_name 
-                FROM pc_network_printers pnp
-                JOIN pcs p ON pnp.pc_name = p.pc_name
-                LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
-                WHERE pnp.printer_id = %s
-            """, (p_dict['id'],)).fetchall()
-            p_dict['assignments'] = [dict(a) for a in assigned_pcs]
-            printers.append(p_dict)
-
-    # ── Respuesta JSON (para el modal de topología) ──────────────
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('json'):
         from flask import jsonify
         return jsonify({

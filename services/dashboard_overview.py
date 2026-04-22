@@ -11,7 +11,7 @@ from services.dashboard_contract import (
 )
 
 
-def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_by, order, page, per_page):
+def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_by, order, page, per_page, tipo_actividad=""):
     """Carga el contexto del dashboard para mantener la ruta Flask más delgada."""
     pcs_data = []
     auxiliary_pcs = []
@@ -40,6 +40,9 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
     kpi_alerta_media = 0
     kpi_criticas = 0
     kpi_sin_impresora_inventario = 0
+    kpi_incidentes = 0
+    kpi_riesgos = 0
+    kpi_tareas = 0
     total_rows = 0
     last_backup_info = "Sin backups"
 
@@ -83,7 +86,11 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 filter_params.append("%Windows 11%")
 
             if filter_tasks == "true":
-                filter_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') > 0"
+                if tipo_actividad:
+                    filter_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha' AND t.tipo_actividad = %s) > 0"
+                    filter_params.append(tipo_actividad)
+                else:
+                    filter_sql += " AND (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') > 0"
 
             count_sql = """
                 SELECT COUNT(*) as c
@@ -192,6 +199,9 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             kpi_win11 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 11%",)).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
             kpi_tareas_pendientes_total = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
+            kpi_incidentes = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha' AND tipo_actividad = 'incidente'").fetchone()["c"]
+            kpi_riesgos = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha' AND tipo_actividad = 'riesgo'").fetchone()["c"]
+            kpi_tareas = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha' AND tipo_actividad = 'tarea'").fetchone()["c"]
 
             kpi_saludables = conn.execute("""
                 SELECT COUNT(*) as c FROM pcs
@@ -286,6 +296,9 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
         "app_users_list": app_users_list,
         "kpi_tareas_hoy": kpi_tareas_hoy,
         "kpi_tareas_pendientes_total": kpi_tareas_pendientes_total,
+        "kpi_incidentes": kpi_incidentes,
+        "kpi_riesgos": kpi_riesgos,
+        "kpi_tareas": kpi_tareas,
         "all_pcs": all_pcs_dropdown,
         "kpi_total_activas": kpi_total_activas,
         "kpi_total_graveyard": kpi_total_graveyard,

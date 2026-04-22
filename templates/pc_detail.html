@@ -699,8 +699,38 @@
               <input type="text" name="descripcion" id="descripcion" class="form-control"
                 placeholder="Descripción de la tarea" required>
             </div>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="tipo_actividad" class="form-label">Tipo de Actividad</label>
+                <select name="tipo_actividad" id="tipo_actividad" class="form-select">
+                  <option value="tarea">📝 Tarea</option>
+                  <option value="incidente">🔥 Incidente</option>
+                  <option value="riesgo">⚠️ Riesgo</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="prioridad" class="form-label">Prioridad</label>
+                <select name="prioridad" id="prioridad" class="form-select">
+                  <option value="1">1 - Baja</option>
+                  <option value="2" selected>2 - Media</option>
+                  <option value="3">3 - Alta</option>
+                  <option value="4">4 - Crítica</option>
+                </select>
+              </div>
+            </div>
+
             <div class="form-group mb-3">
-              <label for="categoria">Categoría</label>
+              <label for="impacto_valor" class="form-label">Impacto esperado (1-4)</label>
+              <select name="impacto_valor" id="impacto_valor" class="form-select">
+                <option value="1">1 - Mínimo</option>
+                <option value="2">2 - Parcial</option>
+                <option value="3">3 - Generalizado</option>
+                <option value="4">4 - Bloqueante</option>
+              </select>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="categoria">Categoría Técnica</label>
               <select name="categoria" id="categoria" class="form-control">
                 <option value="">-- Automático --</option>
                 <option value="Impresoras">Impresoras</option>
@@ -711,7 +741,8 @@
                 <option value="General">General</option>
               </select>
             </div>
-            <div class="form-group">
+
+            <div class="form-group mb-3">
               <label for="solicitante">Solicitante</label>
               <input type="text" name="solicitante" id="solicitante" class="form-control"
                 placeholder="Quién solicita (Dirección, Escuela, etc.)" list="pcUsersDatalist" required>
@@ -720,6 +751,11 @@
                 <option value="{{ user.real_name }}">{{ user.username }}</option>
                 {% endfor %}
               </datalist>
+            </div>
+
+            <div class="form-group">
+              <label for="resumen_impacto" class="form-label">Justificación de Impacto (Opcional)</label>
+              <textarea name="resumen_impacto" id="resumen_impacto" class="form-control" rows="2" placeholder="Por qué es crítico..."></textarea>
             </div>
 
           </div>

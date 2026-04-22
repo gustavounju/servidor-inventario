@@ -78,11 +78,42 @@
 
                             <!-- Columna Derecha: Categorización y Asignación -->
                             <div class="col-lg-5">
-                                <div class="mb-4">
-                                    <label class="um-label">Categoría</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-tag"></i></span>
-                                        <select name="categoria" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="um-label">Tipo de Actividad</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-briefcase"></i></span>
+                                            <select name="tipo_actividad" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
+                                                <option value="tarea">📝 Tarea (Mantenimiento / Pedido)</option>
+                                                <option value="incidente">🔥 Incidente (Falla / Interrupción)</option>
+                                                <option value="riesgo">⚠️ Riesgo (Alerta Preventiva)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-6">
+                                        <label class="um-label">Prioridad</label>
+                                        <select name="prioridad" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
+                                            <option value="1">1 - Baja</option>
+                                            <option value="2">2 - Media</option>
+                                            <option value="3">3 - Alta</option>
+                                            <option value="4">4 - Crítica</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <label class="um-label">Impacto (1-4)</label>
+                                        <select name="impacto_valor" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
+                                            <option value="1">1 - Mínimo</option>
+                                            <option value="2">2 - Parcial</option>
+                                            <option value="3">3 - Generalizado</option>
+                                            <option value="4">4 - Bloqueante</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="um-label">Categoría Técnica</label>
+                                        <select name="categoria" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
                                             <option value="">-- Detección Automática --</option>
                                             <option value="Impresoras">🖨️ Impresoras</option>
                                             <option value="Red/Conectividad">🌐 Red / Conectividad</option>
@@ -92,34 +123,34 @@
                                             <option value="General">📦 General</option>
                                         </select>
                                     </div>
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <label class="um-label">Fuero / Ubicación</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-geo-alt"></i></span>
-                                        <select name="fuero" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
-                                            <option value="">-- No Especificado --</option>
-                                            {% for name in fueros.values()|unique|sort %}
-                                            <option value="{{ name }}">{{ name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
 
-                                <div class="mb-0">
-                                    <label class="um-label">Asignar a Técnico</label>
-                                    <div class="input-group mb-2">
-                                        <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-tools"></i></span>
-                                        <select name="technician" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
+                                    <div class="col-12">
+                                        <label class="um-label">Fuero / Ubicación</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-geo-alt"></i></span>
+                                            <select name="fuero" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
+                                                <option value="">-- No Especificado --</option>
+                                                {% for name in fueros.values()|unique|sort %}
+                                                <option value="{{ name }}">{{ name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="um-label">Asignar a Técnico</label>
+                                        <select name="technician" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
                                             <option value="">-- Sin Asignar (Bolsa Global) --</option>
                                             {% for tech in technicians %}
                                             <option value="{{ tech.name }}">{{ tech.name }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <div style="background: #eff6ff; color: #1e40af; padding: 10px; border-radius: 10px; font-size: 0.72rem; border: 1px solid #dbeafe;">
-                                        <i class="bi bi-info-circle-fill me-1"></i> Si no asignas un técnico, el sistema notificará a todo el equipo vía móvil.
+                                    
+                                    <div class="col-12">
+                                        <div style="background: #eff6ff; color: #1e40af; padding: 10px; border-radius: 10px; font-size: 0.72rem; border: 1px solid #dbeafe;">
+                                            <i class="bi bi-info-circle-fill me-1"></i> El impacto y la prioridad definen el orden en el "Centro de Decisión".
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -212,7 +243,7 @@
                         </div>
 
                         <div id="umFormBody" class="um-form-body" style="display: none;">
-                            <form action="{{ url_for('dashboard.create_app_user') }}" method="POST" id="appUserForm">
+                            <form action="{{ url_for('users.create_app_user') }}" method="POST" id="appUserForm">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="is_edit_mode" id="isEditMode" value="0">
 
@@ -361,7 +392,7 @@
                                 </button>
                                 {% endif %}
                                 {% if app_user.username != current_user.username %}
-                                <form action="{{ url_for('dashboard.remove_app_user', user_id=app_user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar a {{ app_user.username }}? Esta acción no se puede deshacer.')">
+                                <form action="{{ url_for('users.remove_app_user', user_id=app_user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar a {{ app_user.username }}? Esta acción no se puede deshacer.')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="um-action-btn um-action-delete"><i class="bi bi-trash3-fill"></i></button>
                                 </form>
@@ -433,7 +464,7 @@
                             <button type="button" class="btn-close btn-close-white btn-sm" onclick="closeUserPhoneEdit()"></button>
                         </div>
                         <div style="padding: 14px 16px;">
-                            <form action="{{ url_for('dashboard.update_user_phone') }}" method="POST" class="row g-2 align-items-end">
+                            <form action="{{ url_for('users.update_user_phone') }}" method="POST" class="row g-2 align-items-end">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="old_username" id="editOldUsername">
                                 <div class="col-sm-2">
@@ -1170,7 +1201,7 @@
         
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = "{{ url_for('dashboard.create_app_user') }}";
+        form.action = "{{ url_for('users.create_app_user') }}";
         
         const fields = {
             'csrf_token': "{{ csrf_token() }}",
@@ -1775,7 +1806,7 @@
     <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true" style="z-index: 1100;">
         <div class="modal-dialog modal-sm">
             <div class="modal-content shadow-lg border-warning">
-                <form action="{{ url_for('dashboard.reset_app_user_password') }}" method="POST">
+                <form action="{{ url_for('users.reset_app_user_password') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="username" id="resetPassUsername">
                     <div class="modal-header bg-warning py-2">

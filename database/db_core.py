@@ -134,6 +134,10 @@ def init_db():
                 categoria TEXT,
                 assigned_to TEXT,
                 fuero TEXT,
+                tipo_actividad VARCHAR(50) DEFAULT 'tarea',
+                prioridad INT DEFAULT 1,
+                impacto_valor INT DEFAULT 1,
+                resumen_impacto TEXT,
                 FOREIGN KEY (pc_name) REFERENCES pcs(pc_name) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
