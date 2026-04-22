@@ -111,9 +111,9 @@
                         </td>
                         <td
                             style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
-                            <div class="inventory-pc-name">
-                                <div>
-                                    {{ pc.pc_name }}
+                            <div class="inventory-pc-name d-flex align-items-start justify-content-between">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="text-truncate" title="{{ pc.pc_name }}">{{ pc.pc_name }}</div>
                                     <div class="inventory-pc-meta">
                                         {% if alerta_count == 0 %}
                                         <span class="inventory-priority inventory-priority--healthy">Estable</span>
@@ -123,53 +123,48 @@
                                         <span class="inventory-priority inventory-priority--critical">Prioridad alta</span>
                                         {% endif %}
                                         {% if pc.tareas_pendientes %}
-                                        <span class="inventory-mini-badge inventory-mini-badge--task">{{ pc.tareas_pendientes }} tarea{{ 's' if pc.tareas_pendientes != 1 else '' }}</span>
+                                        <span class="inventory-mini-badge inventory-mini-badge--task">{{ pc.tareas_pendientes }}</span>
                                         {% endif %}
                                     </div>
                                 </div>
-                                <span class="float-end">
-                                {% if pc.os_name and 'Windows 11' in pc.os_name %}
-                                <i class="bi bi-windows text-primary" style="font-size: 1rem;"
-                                    title="Sistema Operativo: {{ pc.os_name }} (Estándar de seguridad actual)"></i>
-                                <span class="badge bg-primary text-white"
-                                    style="font-size: 0.5rem; vertical-align: top; padding: 2px 4px;">11</span>
-                                {% elif pc.os_name and 'Windows 10' in pc.os_name %}
-                                <i class="bi bi-windows text-info" style="font-size: 1rem;"
-                                    title="Sistema Operativo: {{ pc.os_name }} (Versión corporativa estable)"></i>
-                                <span class="badge bg-info text-dark"
-                                    style="font-size: 0.5rem; vertical-align: top; padding: 2px 4px;">10</span>
-                                {% elif pc.os_name and 'Windows 7' in pc.os_name %}
-                                <i class="bi bi-windows text-danger" style="font-size: 1rem;"
-                                    title="Sistema Operativo: {{ pc.os_name }} (Versión obsoleta - Requiere actualización)"></i>
-                                <span class="badge bg-danger text-white"
-                                    style="font-size: 0.5rem; vertical-align: top; padding: 2px 4px;">7</span>
-                                {% elif pc.os_name and 'Windows' in pc.os_name %}
-                                <i class="bi bi-windows text-secondary" style="font-size: 1rem;"
-                                    title="Sistema Operativo: {{ pc.os_name }}"></i>
-                                {% endif %}
+                                <div class="d-flex flex-column align-items-end ms-1" style="min-width: 42px;">
+                                    {% if pc.os_name and 'Windows' in pc.os_name %}
+                                    <div class="position-relative mb-1" style="line-height: 1;">
+                                        {% if 'Windows 11' in pc.os_name %}
+                                        <i class="bi bi-windows text-primary" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
+                                        <span class="badge bg-primary text-white p-0 px-1 position-absolute top-0 start-100 translate-middle" style="font-size: 0.45rem; border-radius: 3px;">11</span>
+                                        {% elif 'Windows 10' in pc.os_name %}
+                                        <i class="bi bi-windows text-info" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
+                                        <span class="badge bg-info text-dark p-0 px-1 position-absolute top-0 start-100 translate-middle" style="font-size: 0.45rem; border-radius: 3px;">10</span>
+                                        {% elif 'Windows 7' in pc.os_name %}
+                                        <i class="bi bi-windows text-danger" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
+                                        <span class="badge bg-danger text-white p-0 px-1 position-absolute top-0 start-100 translate-middle" style="font-size: 0.45rem; border-radius: 3px;">7</span>
+                                        {% else %}
+                                        <i class="bi bi-windows text-secondary" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
 
-                                {# Badge de Office (Nueva Mejora) #}
-                                {% if pc.office_version and pc.office_version != 'No detectado' and pc.office_version != 'N/A' %}
-                                <span class="badge bg-success text-white ms-1" style="font-size: 0.6rem; vertical-align: middle; padding: 2px 4px; border-radius: 4px;" 
-                                      title="Software: {{ pc.office_version }}">
-                                    <i class="bi bi-microsoft" style="font-size: 0.6rem;"></i> 
-                                    {% if '2016' in pc.office_version %}16
-                                    {% elif '2019' in pc.office_version %}19
-                                    {% elif '2021' in pc.office_version %}21
-                                    {% elif '365' in pc.office_version %}365
-                                    {% elif '2013' in pc.office_version %}13
-                                    {% elif '2010' in pc.office_version %}10
-                                    {% elif '2007' in pc.office_version %}07
-                                    {% elif '2003' in pc.office_version %}03
-                                    {% else %}OFF{% endif %}
-                                </span>
-                                {% endif %}
+                                    {% if pc.office_version and pc.office_version != 'No detectado' and pc.office_version != 'N/A' %}
+                                    <span class="badge bg-success text-white d-flex align-items-center justify-content-center" 
+                                          style="font-size: 0.55rem; padding: 2px 4px; border-radius: 4px; min-width: 24px;" 
+                                          title="Software: {{ pc.office_version }}">
+                                        {% if '2016' in pc.office_version %}16
+                                        {% elif '2019' in pc.office_version %}19
+                                        {% elif '2021' in pc.office_version %}21
+                                        {% elif '365' in pc.office_version %}365
+                                        {% elif '2013' in pc.office_version %}13
+                                        {% elif '2010' in pc.office_version %}10
+                                        {% elif '2007' in pc.office_version %}07
+                                        {% elif '2003' in pc.office_version %}03
+                                        {% else %}OFF{% endif %}
+                                    </span>
+                                    {% endif %}
 
-                                {% if pc.alerta_nombre_duplicado %}
-                                <span class="badge bg-danger text-white ms-1" style="font-size: 0.6rem;"
-                                    title="Posible nombre de PC duplicado en la red">DUP</span>
-                                {% endif %}
-                                </span>
+                                    {% if pc.alerta_nombre_duplicado %}
+                                    <span class="badge bg-danger text-white mt-1" style="font-size: 0.5rem;" title="Nombre duplicado">DUP</span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </td>
                         <td>
