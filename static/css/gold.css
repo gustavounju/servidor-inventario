@@ -1122,6 +1122,70 @@ body {
     font-weight: 700;
 }
 
+.dashboard-compact-mode .dashboard-hero {
+    padding: 1rem !important;
+}
+
+.dashboard-compact-mode .dashboard-hero__lead {
+    font-size: 0.84rem;
+    max-width: 58ch;
+}
+
+.dashboard-compact-mode .dashboard-hero__meta {
+    gap: 0.4rem;
+}
+
+.dashboard-compact-mode .dashboard-hero__meta-item,
+.dashboard-compact-mode .ops-shortcuts-lead,
+.dashboard-compact-mode .inventory-table-shell__lead {
+    font-size: 0.72rem;
+}
+
+.inventory-table--compact {
+    font-size: 0.74rem;
+}
+
+.inventory-table--compact tbody td {
+    padding: 0.42rem 0.5rem;
+}
+
+.inventory-table--compact .inventory-table-shell__head {
+    padding-bottom: 0.7rem;
+}
+
+.inventory-table--compact .inventory-pc-meta,
+.inventory-table--compact .inventory-cell-note,
+.inventory-table--compact .inventory-operator__meta,
+.inventory-table--compact .inventory-fuero-badge,
+.inventory-table--compact .inventory-actions-menu .dropdown-item i,
+.inventory-table--compact .inventory-hardware__meta,
+.inventory-table--compact .inventory-row-actions .inventory-alert-stack {
+    display: none !important;
+}
+
+.inventory-table--compact .inventory-hardware,
+.inventory-table--compact .inventory-network,
+.inventory-table--compact .inventory-operator {
+    gap: 0.16rem;
+}
+
+.inventory-table--compact .inventory-hardware__main,
+.inventory-table--compact .inventory-operator__name,
+.inventory-table--compact .inventory-ip {
+    font-size: 0.73rem;
+    line-height: 1.22;
+}
+
+.inventory-table--compact .inventory-col-hardware,
+.inventory-table--compact .inventory-col-network {
+    min-width: 160px;
+}
+
+.inventory-table--compact .inventory-actions-toggle {
+    min-width: 32px;
+    padding: 0.1rem 0.32rem;
+}
+
 .inventory-priority {
     display: inline-flex;
     align-items: center;

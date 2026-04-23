@@ -223,9 +223,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 }, 400);
 
                 if (isCompactMode) {
-                    document.querySelectorAll('#dashboardTableRegion tbody tr td').forEach(td => {
-                        td.style.padding = '0.4rem 0.5rem';
-                    });
+                    const refreshedTable = document.getElementById('inventoryTable');
+                    if (refreshedTable) {
+                        refreshedTable.classList.add('inventory-table--compact');
+                    }
+                    document.body.classList.add('dashboard-compact-mode');
                 }
             }
 
@@ -292,23 +294,8 @@ function toggleCompactMode() {
     if (!table) return;
     
     isCompactMode = !isCompactMode;
-    const rows = table.querySelectorAll('tbody tr');
-
-    if (isCompactMode) {
-        table.style.fontSize = '0.75rem';
-        rows.forEach(row => {
-            row.querySelectorAll('td').forEach(td => {
-                td.style.padding = '0.4rem 0.5rem';
-            });
-        });
-    } else {
-        table.style.fontSize = '';
-        rows.forEach(row => {
-            row.querySelectorAll('td').forEach(td => {
-                td.style.padding = '';
-            });
-        });
-    }
+    table.classList.toggle('inventory-table--compact', isCompactMode);
+    document.body.classList.toggle('dashboard-compact-mode', isCompactMode);
 
     localStorage.setItem('compactMode', isCompactMode);
     
@@ -328,8 +315,12 @@ function toggleCompactMode() {
             // Re-apply if table exists
             const table = document.getElementById('inventoryTable');
             if (table) {
-                isCompactMode = !isCompactMode; // Toggle back then run toggle to apply
-                toggleCompactMode();
+                table.classList.add('inventory-table--compact');
+                document.body.classList.add('dashboard-compact-mode');
+                const icon = document.querySelector('#toggleCompactBtn i');
+                if (icon) {
+                    icon.className = 'bi bi-distribute-vertical';
+                }
             }
         });
     }
