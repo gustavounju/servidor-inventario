@@ -313,7 +313,8 @@
                         </td>
 
                         <td class="text-center p-1">
-                            <div class="inventory-alert-stack">
+                            <div class="inventory-row-actions">
+                                <div class="inventory-alert-stack">
                                 <!-- Alertas -->
                                 {% if pc.alerta_ram_baja %}
                                 <div class="inventory-alert-chip inventory-alert-chip--warning" title="RAM Baja (< 8GB)">💾 RAM</div>
@@ -333,54 +334,64 @@
                                 {% if pc.alerta_nombre_duplicado %}
                                 <div class="inventory-alert-chip inventory-alert-chip--danger" title="Nombre Duplicado">⚠️ Duplicado</div>
                                 {% endif %}
+                            </div>
 
-                                <!-- Acciones -->
-                                {% if pc.is_active == 'True' %}
-                                {% if pc.pc_name.upper() != 'PC GENERICA' and pc.pc_name.upper() != 'PC-GENERICA' %}
-                                <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}"
-                                    method="POST" class="d-inline"
-                                    onsubmit="return confirm('¿Seguro pasar este equipo al cementerio?');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1"
-                                        title="Dar de Baja" style="font-size: 0.7rem;">
-                                        <i class="bi bi-trash"></i>
+                                <div class="dropdown" onclick="event.stopPropagation();">
+                                    <button class="btn btn-sm inventory-actions-toggle dropdown-toggle"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false"
+                                            title="Más acciones">
+                                        <i class="bi bi-three-dots"></i>
                                     </button>
-                                </form>
-                                {% endif %}
-                                <button onclick="showSecurity('{{ pc.pc_name }}')"
-                                    class="btn btn-sm btn-outline-warning py-0 px-1" title="Ver Conexiones / Seguridad"
-                                    style="font-size: 0.7rem;">
-                                    <i class="bi bi-shield-shaded"></i>
-                                </button>
-                                <button onclick="showHealth('{{ pc.pc_name }}')"
-                                    class="btn btn-sm btn-outline-info py-0 px-1" title="Diagnóstico y Salud"
-                                    style="font-size: 0.7rem;">
-                                    <i class="bi bi-activity"></i>
-                                </button>
-                                {% else %}
-                                <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}"
-                                    method="POST" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-sm btn-success py-0 px-1"
-                                        title="Reactivar" style="font-size: 0.7rem;">
-                                        <i class="bi bi-power"></i>
-                                    </button>
-                                </form>
-                                 <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" 
-                                    class="btn btn-sm btn-outline-light py-0 px-1" title="Ver Detalle Completos"
-                                    style="font-size: 0.7rem;">
-                                    <i class="bi bi-eye"></i>
-                                 </a>
-                                <form action="{{ url_for('dashboard.delete_permanent_pc', pc_name=pc.pc_name) }}"
-                                    method="POST" class="d-inline"
-                                    onsubmit="return confirm('¿Estás SEGURO de borrar DEFINITIVAMENTE este equipo {{ pc.pc_name }}? Esta acción NO se puede deshacer y borrará todo su historial.');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-sm btn-danger py-0 px-1"
-                                        title="Borrar Definitivamente (Irreversible)" style="font-size: 0.7rem;">
-                                        <i class="bi bi-x-octagon-fill"></i>
-                                    </button>
-                                </form>
-                                {% endif %}
+                                    <div class="dropdown-menu dropdown-menu-end inventory-actions-menu">
+                                        <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}"
+                                           class="dropdown-item"
+                                           onclick="event.stopPropagation();">
+                                            <i class="bi bi-eye"></i> Ver detalle
+                                        </a>
+
+                                        {% if pc.is_active == 'True' %}
+                                        <button type="button"
+                                                class="dropdown-item"
+                                                onclick="event.stopPropagation(); showSecurity('{{ pc.pc_name }}')">
+                                            <i class="bi bi-shield-shaded"></i> Seguridad
+                                        </button>
+                                        <button type="button"
+                                                class="dropdown-item"
+                                                onclick="event.stopPropagation(); showHealth('{{ pc.pc_name }}')">
+                                            <i class="bi bi-activity"></i> Diagnóstico
+                                        </button>
+                                        {% if pc.pc_name.upper() != 'PC GENERICA' and pc.pc_name.upper() != 'PC-GENERICA' %}
+                                        <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}"
+                                              method="POST"
+                                              onsubmit="event.stopPropagation(); return confirm('¿Seguro pasar este equipo al cementerio?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-trash"></i> Dar de baja
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% else %}
+                                        <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}"
+                                              method="POST"
+                                              onsubmit="event.stopPropagation();">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item text-success">
+                                                <i class="bi bi-power"></i> Reactivar
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('dashboard.delete_permanent_pc', pc_name=pc.pc_name) }}"
+                                              method="POST"
+                                              onsubmit="event.stopPropagation(); return confirm('¿Estás SEGURO de borrar DEFINITIVAMENTE este equipo {{ pc.pc_name }}? Esta acción NO se puede deshacer y borrará todo su historial.');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-x-octagon-fill"></i> Borrar definitivo
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
                         </td>
                     </tr>
