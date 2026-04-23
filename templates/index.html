@@ -81,12 +81,12 @@
         <section class="dashboard-hero p-4 p-xl-4 mb-4">
             <div class="dashboard-hero__content row g-4 align-items-start">
                 <div class="col-xl-8">
-                    <div class="dashboard-hero__eyebrow">Centro de Decisión</div>
-                    <h1 class="dashboard-hero__title">Abrí la jornada sabiendo qué resolver primero.</h1>
+                    <div class="dashboard-hero__eyebrow">Centro de Decision</div>
+                    <h1 class="dashboard-hero__title">Primero prioriza, despues filtra y por ultimo actua sobre la tabla.</h1>
                     <p class="dashboard-hero__lead">
-                        Hoy tenés <strong>{{ fleet_attention_count }}</strong> equipos que requieren atención
-                        y <strong>{{ kpi_criticas }}</strong> con prioridad alta. Este resumen transforma métricas
-                        dispersas en un orden claro de intervención para sostener continuidad operativa.
+                        Hoy tenes <strong>{{ fleet_attention_count }}</strong> equipos que requieren atencion
+                        y <strong>{{ kpi_criticas }}</strong> con prioridad alta. El recorrido sugerido es simple:
+                        detectar urgencias, elegir el filtro correcto y resolver desde la vista central del inventario.
                     </p>
 
                     <div class="dashboard-hero__meta">
@@ -144,43 +144,48 @@
                 </div>
 
                 <div class="col-xl-4">
-                    <aside class="priority-panel">
-                        <div class="priority-panel__eyebrow">Plan sugerido</div>
-                        <h2 class="priority-panel__title">Qué conviene revisar primero</h2>
-                        <div class="small text-muted">Secuencia operativa para abrir la jornada y enfocar soporte donde más impacta.</div>
+                    <aside class="hero-radar">
+                        <div class="hero-radar__eyebrow">Orden del turno</div>
+                        <h2 class="hero-radar__title">Una lectura mas directa del dia</h2>
+                        <p class="hero-radar__lead">El flujo diario queda ordenado en tres pasos: urgencias, seguimiento y trabajo rutinario. Sin repetir accesos ni duplicar decisiones.</p>
 
-                        <div class="priority-list">
-                            <a href="/?filter_tasks=true&tipo_actividad=incidente" class="priority-link">
-                                <span class="priority-link__icon priority-link__icon--danger"><i class="bi bi-fire"></i></span>
-                                <span>
-                                    <span class="priority-link__title">{{ kpi_incidentes }} incidentes activos</span>
-                                    <span class="priority-link__desc">Priorizá estos casos para restablecer servicios interrumpidos de inmediato.</span>
+                        <div class="hero-radar__list">
+                            <div class="hero-radar__item hero-radar__item--danger">
+                                <span class="hero-radar__metric">{{ kpi_incidentes }}</span>
+                                <span class="hero-radar__copy">
+                                    <strong>Incidentes</strong>
+                                    <small>Casos que hoy frenan la operacion.</small>
                                 </span>
-                            </a>
+                            </div>
 
-                            <a href="/?alerta=critica&estado=True" class="priority-link">
-                                <span class="priority-link__icon priority-link__icon--warning"><i class="bi bi-exclamation-triangle-fill"></i></span>
-                                <span>
-                                    <span class="priority-link__title">{{ kpi_criticas }} equipos en riesgo crítico</span>
-                                    <span class="priority-link__desc">Anticipate a fallas mayores revisando los equipos con múltiples alertas técnicas.</span>
+                            <div class="hero-radar__item hero-radar__item--warning">
+                                <span class="hero-radar__metric">{{ kpi_criticas }}</span>
+                                <span class="hero-radar__copy">
+                                    <strong>Criticas</strong>
+                                    <small>Equipos con riesgo alto antes de caer.</small>
                                 </span>
-                            </a>
+                            </div>
 
-                            <a href="/?filter_tasks=true&tipo_actividad=riesgo" class="priority-link">
-                                <span class="priority-link__icon priority-link__icon--info"><i class="bi bi-shield-exclamation"></i></span>
-                                <span>
-                                    <span class="priority-link__title">{{ kpi_riesgos }} riesgos preventivos</span>
-                                    <span class="priority-link__desc">Mantenimientos y alertas tempranas para blindar la operación a mediano plazo.</span>
+                            <div class="hero-radar__item hero-radar__item--info">
+                                <span class="hero-radar__metric">{{ kpi_riesgos }}</span>
+                                <span class="hero-radar__copy">
+                                    <strong>Riesgos</strong>
+                                    <small>Mantenimiento preventivo y alertas tempranas.</small>
                                 </span>
-                            </a>
+                            </div>
 
-                            <a href="{{ url_for('dashboard.dashboard', estado='True', filter_tasks='true') }}" class="priority-link">
-                                <span class="priority-link__icon priority-link__icon--success"><i class="bi bi-list-check"></i></span>
-                                <span>
-                                    <span class="priority-link__title">{{ kpi_tareas_pendientes_total }} tareas totales</span>
-                                    <span class="priority-link__desc">Consolidado general de pedidos de soporte y tareas de rutina del día.</span>
+                            <div class="hero-radar__item hero-radar__item--neutral">
+                                <span class="hero-radar__metric">{{ kpi_tareas_pendientes_total }}</span>
+                                <span class="hero-radar__copy">
+                                    <strong>Tareas</strong>
+                                    <small>Flujo general para soporte y seguimiento.</small>
                                 </span>
-                            </a>
+                            </div>
+                        </div>
+
+                        <div class="hero-radar__footer">
+                            <i class="bi bi-arrow-up-right-circle"></i>
+                            Los accesos principales quedan concentrados en las tarjetas superiores y en los filtros de flota.
                         </div>
                     </aside>
                 </div>
@@ -258,17 +263,28 @@
 
         <!-- Tarjetas especiales y Tableros (Hu?rfanas, T?cnicos, PC Gen?rica, Infraestructura) -->
         <div class="section-kicker">Accesos Operativos</div>
-        <div class="shortcut-grid mb-3">
+        <section class="ops-shortcuts-shell mb-4">
+        <div class="ops-shortcuts-head">
+          <div>
+            <h2 class="ops-shortcuts-title">Atajos utiles, sin ruido visual</h2>
+            <p class="ops-shortcuts-lead">Dejamos arriba solo accesos de gestion puntual y el resto del trabajo vive en la tabla y los filtros.</p>
+          </div>
+          <div class="ops-shortcuts-badge">
+            <i class="bi bi-layout-text-window-reverse"></i>
+            Vista compacta
+          </div>
+        </div>
+        <div class="shortcut-grid shortcut-grid--compact mb-0">
           {% if unassigned_tasks %}
           <button type="button" class="shortcut-card shortcut-card--danger btn text-start border-0" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal">
             <span class="shortcut-card__top">
               <span>
                 <span class="shortcut-card__eyebrow"><i class="bi bi-exclamation-triangle me-1"></i>Hu?rfanas</span>
-                <span class="shortcut-card__title">Asignar Ahora</span>
+                <span class="shortcut-card__title">Tareas sin equipo</span>
               </span>
               <span class="shortcut-card__badge">{{ unassigned_count }}</span>
             </span>
-            <span class="shortcut-card__hint">Tareas pendientes sin equipo asociado que requieren clasificaci?n operativa.</span>
+            <span class="shortcut-card__hint">Pendientes que necesitan clasificaci?n antes de entrar al flujo normal.</span>
           </button>
           {% endif %}
 
@@ -277,16 +293,16 @@
             <span class="shortcut-card__top">
               <span>
                 <span class="shortcut-card__eyebrow"><i class="bi bi-phone me-1"></i>Actividad m?vil</span>
-                <span class="shortcut-card__title">Ver T?cnicos</span>
+                <span class="shortcut-card__title">T?cnicos m?viles</span>
               </span>
               <span class="shortcut-card__badge"><i class="bi bi-broadcast status-dot-blink me-1"></i>{{ active_mobile_techs | length }}</span>
             </span>
-            <span class="shortcut-card__hint">Estado en tiempo real de t?cnicos conectados y operando desde celular.</span>
+            <span class="shortcut-card__hint">Seguimiento r?pido del equipo conectado desde celular.</span>
           </button>
 
           {% for pc in auxiliary_pcs %}
           <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="text-decoration-none">
-            <div class="shortcut-card shortcut-card--dark"
+            <div class="shortcut-card shortcut-card--dark shortcut-card--utility"
                  {% if 'GENERICA' in pc.pc_name.upper() %}
                     title="Tareas y mantenimientos que no est?n asociados a un equipo f?sico espec?fico (Tareas hu?rfanas)"
                  {% elif 'INFRAESTRUCTURA' in pc.pc_name.upper() %}
@@ -307,9 +323,9 @@
               </span>
               <span class="shortcut-card__hint">
                 {% if 'GENERICA' in pc.pc_name.upper() %}
-                Entrada r?pida para resolver tareas que todav?a no est?n vinculadas a un activo f?sico.
+                Casos generales que todav?a no est?n vinculados a un activo f?sico.
                 {% else %}
-                Acceso directo al nodo especial de infraestructura y recursos compartidos de red.
+                Nodo especial para impresoras y recursos compartidos de red.
                 {% endif %}
               </span>
             </div>
@@ -319,7 +335,7 @@
           {% if current_user and current_user.get('is_superuser') %}
           <form method="POST" action="{{ url_for('dashboard.refresh_fueros') }}" title="Recalcula el Fuero/Sector de cada PC en base a su nombre de equipo">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="shortcut-card shortcut-card--admin btn text-start border-0 h-100">
+            <button type="submit" class="shortcut-card shortcut-card--admin shortcut-card--utility btn text-start border-0 h-100">
               <span class="shortcut-card__top">
                 <span>
                   <span class="shortcut-card__eyebrow"><i class="bi bi-arrow-repeat me-1"></i>Admin</span>
@@ -331,6 +347,7 @@
           </form>
           {% endif %}
         </div>
+        </section>
 
         {% include '_dashboard_table_region.html' %}
 
