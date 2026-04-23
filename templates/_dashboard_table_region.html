@@ -4,14 +4,14 @@
                 <div>
                     <div class="inventory-table-shell__eyebrow">Mapa de Equipos</div>
                     <h3 class="inventory-table-shell__title">Vista central del inventario activo</h3>
-                    <p class="inventory-table-shell__lead">La tabla queda como espacio principal de trabajo: menos bloques arriba y m?s foco en diagn?stico, usuario y acciones.</p>
+                    <p class="inventory-table-shell__lead">La tabla queda como espacio principal de trabajo: menos bloques arriba y más foco en diagnóstico, usuario y acciones.</p>
                 </div>
                 <div class="inventory-table-shell__meta">
                     <span class="inventory-table-pill">
                         <i class="bi bi-pc-display"></i> {{ pcs|length }} visibles
                     </span>
                     <span class="inventory-table-pill">
-                        <i class="bi bi-layers"></i> P?gina {{ page }} / {{ total_pages if total_pages else 1 }}
+                        <i class="bi bi-layers"></i> Página {{ page }} / {{ total_pages if total_pages else 1 }}
                     </span>
                     <span class="inventory-table-pill">
                         <i class="bi bi-filter-circle"></i> {{ 'Filtrado' if q or estado or alerta or os_param or filter_tasks else 'Vista general' }}
@@ -45,7 +45,7 @@
                         <th>
                             <a href="{{ url_for('dashboard.dashboard', sort_by='printer_model', order='desc' if sort_by == 'printer_model' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
-                                Red / Impresion {% if sort_by == 'printer_model' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                                Red / Impresión {% if sort_by == 'printer_model' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
                             </a>
                         </th>
                         <th class="text-center">Acciones</th>
