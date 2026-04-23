@@ -571,7 +571,21 @@
             </td>
             <td>{{ t.descripcion }}</td>
             <td>{{ t.solicitante or '' }}</td>
-            <td>{{ t.assigned_to or '-' }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                {% if t.estado == 'Hecha' %}
+                  <span class="text-success fw-medium">{{ t.completed_by or t.assigned_to or '-' }}</span>
+                {% else %}
+                  <span>{{ t.assigned_to or '-' }}</span>
+                {% endif %}
+                <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1" 
+                  style="font-size: 0.75rem; border-radius: 4px;" 
+                  onclick="openReassignModal('{{ t.id }}', '{{ t.completed_by or t.assigned_to or '' }}')" 
+                  title="Cambiar Técnico">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </div>
+            </td>
             <td>{{ t.estado }}</td>
             <td>
               {% if t.estado != 'Hecha' %}
@@ -739,6 +753,16 @@
                 <option value="Software">Software</option>
                 <option value="Usuarios">Usuarios</option>
                 <option value="General">General</option>
+              </select>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="technician">Asignar a Técnico (Opcional)</label>
+              <select name="technician" id="technician" class="form-control">
+                <option value="">-- Sin Asignar --</option>
+                {% for tech in technicians %}
+                <option value="{{ tech.name }}">{{ tech.name }}</option>
+                {% endfor %}
               </select>
             </div>
 
@@ -1089,6 +1113,38 @@
     </div>
   </div>
 
+  <!-- Modal Reasignar Técnico -->
+  <div class="modal fade" id="modalReasignar" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content border-0 shadow">
+        <form action="{{ url_for('tasks.reassign_task') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="task_id" id="reassign_task_id">
+          <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+          <div class="modal-header bg-primary text-white border-0">
+            <h5 class="modal-title fs-6 fw-bold">Reasignar Técnico</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="mb-0">
+              <label class="form-label small fw-bold text-muted text-uppercase mb-2">Técnico Responsable</label>
+              <select name="technician" id="reassign_tech_select" class="form-select" required>
+                <option value="">-- Seleccionar --</option>
+                {% for tech in technicians %}
+                <option value="{{ tech.name }}">{{ tech.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer border-0 p-3 pt-0">
+            <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary btn-sm px-3">Confirmar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
       document.addEventListener('DOMContentLoaded', function () {
@@ -1133,6 +1189,13 @@
       }
 
       var modal = new bootstrap.Modal(document.getElementById('modalFinalizarTarea'));
+      modal.show();
+    }
+
+    function openReassignModal(taskId, currentTech) {
+      document.getElementById('reassign_task_id').value = taskId;
+      document.getElementById('reassign_tech_select').value = currentTech;
+      var modal = new bootstrap.Modal(document.getElementById('modalReasignar'));
       modal.show();
     }
 

@@ -16,7 +16,7 @@ def get_pc_detail_context(pc_name):
             return None
 
         tareas = conn.execute("""
-            SELECT id, pc_name, created_at, descripcion, estado, solicitante, assigned_to 
+            SELECT id, pc_name, created_at, descripcion, estado, solicitante, assigned_to, completed_by
             FROM tasks WHERE pc_name = %s ORDER BY created_at DESC
         """, (pc_name,)).fetchall()
         

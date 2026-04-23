@@ -126,15 +126,23 @@ def add_task(pc_name):
     impacto_valor = request.form.get("impacto_valor", "1").strip()
     resumen_impacto = request.form.get("resumen_impacto", "").strip()
 
+    technician = request.form.get("technician", "").strip()
+
     if not solicitante: solicitante = "No Especificado (Dashboard)"
     if not descripcion: return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
     if not categoria: categoria = predict_category(descripcion)
 
+    estado = "Pendiente"
+    assigned_to = None
+    if technician:
+        assigned_to = technician
+        estado = "Asignada"
+
     with get_db_connection() as conn:
         cursor = conn.execute(
-            """INSERT INTO tasks (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto) 
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""", 
-            (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto)
+            """INSERT INTO tasks (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto, assigned_to, estado) 
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
+            (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto, assigned_to, estado)
         )
         task_id = cursor.lastrowid
         conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
@@ -202,13 +210,15 @@ def delete_technician(tech_id):
 
 @bp_tasks.route("/tasks/<int:task_id>/done", methods=["POST"])
 def mark_task_done(task_id):
-    technician = request.form.get("technician_name", None)
+    technician = request.form.get("technician_name")
+    if not technician:
+        technician = request.form.get("technician_name_hidden")
     with get_db_connection() as conn:
         row = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
         if row:
             conn.execute(
-                "UPDATE tasks SET estado = 'Hecha', completed_by = %s, completed_at = %s WHERE id = %s",
-                (technician, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), task_id)
+                "UPDATE tasks SET estado = 'Hecha', completed_by = %s, completed_at = %s, assigned_to = COALESCE(assigned_to, %s) WHERE id = %s",
+                (technician, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), technician, task_id)
             )
             pc_name = row["pc_name"]
             conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
@@ -258,7 +268,7 @@ def create_loose_task():
     with get_db_connection() as conn:
         cursor = conn.execute(
             """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name, tipo_actividad, prioridad, impacto_valor, resumen_impacto) 
-               VALUES (%s, %s, %s, NOW(), %s, %s, %s, NULL, %s, %s, %s, %s)""",
+               VALUES (%s, %s, %s, NOW(), %s, %s, %s, 'PC Generica', %s, %s, %s, %s)""",
             (descripcion, solicitante, estado, categoria, assigned_to, fuero, tipo_actividad, prioridad, impacto_valor, resumen_impacto)
         )
         conn.commit()
@@ -306,6 +316,8 @@ def create_loose_task():
 def assign_task():
     task_id = request.form.get("task_id")
     pc_name = request.form.get("pc_name", "").strip()
+    technician = request.form.get("technician", "").strip()
+
     if task_id and pc_name:
         with get_db_connection() as conn:
             t = conn.execute("SELECT 1 FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
@@ -314,15 +326,38 @@ def assign_task():
                 old_task = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
                 old_pc = old_task['pc_name'] if old_task else 'PC Generica'
                 
-                conn.execute("UPDATE tasks SET pc_name = %s WHERE id = %s", (pc_name, task_id))
+                estado = "Asignada" if technician else "Pendiente"
+                assigned_to = technician if technician else None
+
+                conn.execute(
+                    "UPDATE tasks SET pc_name = %s, assigned_to = COALESCE(%s, assigned_to), estado = %s WHERE id = %s",
+                    (pc_name, assigned_to, estado, task_id)
+                )
                 
                 # Log on both the new and old PC if they differ
+                tech_log = f" (Técnico: {technician})" if technician else ""
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                             (pc_name, f"Tarea #{task_id} Asignada aquí", old_pc, f"Asignada a {pc_name}", current_username(), "GESTION_TAREAS", request.remote_addr))
+                             (pc_name, f"Tarea #{task_id} Asignada aquí", old_pc, f"Asignada a {pc_name}{tech_log}", current_username(), "GESTION_TAREAS", request.remote_addr))
                 if old_pc and old_pc != pc_name:
                     conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                                  (old_pc, f"Tarea #{task_id} Transferida", pc_name, f"Transferida a {pc_name}", current_username(), "GESTION_TAREAS", request.remote_addr))
                 conn.commit()
+    return redirect(url_for("dashboard.dashboard"))
+
+@bp_tasks.route("/tasks/reassign", methods=["POST"])
+def reassign_task():
+    task_id = request.form.get("task_id")
+    technician = request.form.get("technician")
+    pc_name = request.form.get("pc_name")
+    
+    if task_id and technician:
+        with get_db_connection() as conn:
+            conn.execute("UPDATE tasks SET assigned_to = %s, estado = 'Asignada' WHERE id = %s", (technician, task_id))
+            conn.commit()
+    
+    if pc_name:
+        return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
+    return redirect(url_for("dashboard.dashboard"))
     return redirect(url_for("dashboard.dashboard"))
 
 @bp_tasks.route("/api/audit/<pc_name>/add", methods=["POST"])

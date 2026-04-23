@@ -494,7 +494,13 @@
                                 <form id="form-assign-{{ task.id }}" action="{{ url_for('tasks.assign_task') }}" method="POST" class="d-none gap-2 align-items-center justify-content-end">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <input type="hidden" name="task_id" value="{{ task.id }}">
-                                    <input class="form-control form-control-sm" list="datalistOptions" name="pc_name" placeholder="Asignar PC..." required autocomplete="off" style="width: 200px;">
+                                    <input class="form-control form-control-sm" list="datalistOptions" name="pc_name" placeholder="Asignar PC..." required autocomplete="off" style="width: 180px;">
+                                    <select name="technician" class="form-select form-select-sm" style="width: 140px;">
+                                        <option value="">Técnico...</option>
+                                        {% for tech in technicians %}
+                                        <option value="{{ tech.name }}">{{ tech.name }}</option>
+                                        {% endfor %}
+                                    </select>
                                     <button type="submit" class="btn btn-sm btn-success" title="Guardar"><i class="bi bi-check-lg"></i></button>
                                     <button type="button" class="btn btn-sm btn-secondary" title="Cancelar" onclick="toggleAssignForm('{{ task.id }}')"><i class="bi bi-x-lg"></i></button>
                                 </form>
