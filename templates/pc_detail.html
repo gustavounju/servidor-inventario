@@ -119,10 +119,10 @@
         {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
         {% if pc.is_active == 'True' %}
         <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST"
-          class="d-inline" onsubmit="return confirm('¿Seguro pasar a cementerio?')">
+          class="d-inline" onsubmit="return confirm('¿Pasar esta PC al cementerio? Si el script de inventario vuelve a ejecutarse en este equipo, se reactivará sola.')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="hero-stat" style="color:#fca5a5;cursor:pointer;border:0;background:none;">
-            <i class="bi bi-archive me-1"></i>Dar de baja
+            <i class="bi bi-archive me-1"></i>Pasar a cementerio
           </button>
         </form>
         {% else %}
@@ -197,7 +197,15 @@
             </tr>
             <tr>
               <th>Discos</th>
-              <td>{{ pc.disk_models }}</td>
+              <td>
+                {% if disk_summary_lines %}
+                  {% for disk_line in disk_summary_lines %}
+                  <div>{{ disk_line }}</div>
+                  {% endfor %}
+                {% else %}
+                  {{ pc.disk_models }}
+                {% endif %}
+              </td>
             </tr>
             <tr>
               <th>Impresora</th>
@@ -261,9 +269,12 @@
                 <div class="mt-3 row align-items-center">
                   <div class="col-auto">
                     <label class="d-block small text-muted uppercase tracking-wider mb-1">N° Serie / MAC</label>
-                    <span class="badge {{ 'bg-success' if (pc.printer_sn and pc.printer_sn != 'N/A') or (sharing_pc and sharing_pc.printer_sn and sharing_pc.printer_sn != 'N/A') else 'bg-danger' }} py-2 px-3 fw-bold shadow-sm" style="font-size: 1rem;">
-                      {% if pc.printer_sn and pc.printer_sn != 'N/A' %}
-                        {{ pc.printer_sn }}
+                    <span class="badge {{ 'bg-success' if (preferred_printer_serial and preferred_printer_serial != 'N/A') or (sharing_pc and sharing_pc.printer_sn and sharing_pc.printer_sn != 'N/A') else 'bg-danger' }} py-2 px-3 fw-bold shadow-sm" style="font-size: 1rem;">
+                      {% if preferred_printer_serial and preferred_printer_serial != 'N/A' %}
+                        {{ preferred_printer_serial }}
+                        {% if preferred_printer_serial_source == 'assigned_network_printer' %}
+                        <small class="fw-normal">(Catálogo)</small>
+                        {% endif %}
                       {% elif sharing_pc and sharing_pc.printer_sn and sharing_pc.printer_sn != 'N/A' %}
                         {{ sharing_pc.printer_sn }} <small class="fw-normal">(Heredado)</small>
                       {% else %}

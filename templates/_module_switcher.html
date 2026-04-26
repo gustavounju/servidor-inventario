@@ -1,5 +1,78 @@
 {% if is_authenticated and module_access_links %}
-<header class="app-shell-header">
+{% set is_dashboard_home = request.endpoint == 'dashboard.dashboard' %}
+{% set is_compact_shell = is_dashboard_home or request.blueprint == 'infrastructure' %}
+{% if is_dashboard_home %}
+{% set fleet_attention_count = kpi_alerta_media + kpi_criticas %}
+{% set fleet_attention_pct = ((fleet_attention_count * 100 / kpi_total_activas) if kpi_total_activas else 0) | round(0, 'floor') | int %}
+{% endif %}
+<header class="app-shell-header {% if is_compact_shell %}app-shell-header--dashboard{% endif %}">
+    {% if is_compact_shell %}
+    <div class="system-work-header">
+        <div class="system-work-header__summary">
+            {% if is_dashboard_home %}
+            <span><i class="bi bi-pc-display"></i> {{ kpi_total_activas }} activas</span>
+            <span><i class="bi bi-exclamation-diamond"></i> {{ fleet_attention_pct }}% con revisión</span>
+            <span><i class="bi bi-shield-check"></i> Backup: {{ last_backup_info }}</span>
+            {% else %}
+            <span><i class="bi bi-pc-display"></i> {{ kpi_total_activas | default(0) }} activas</span>
+            <span><i class="bi bi-archive"></i> {{ kpi_total_graveyard | default(0) }} bajas</span>
+            <span><i class="bi bi-printer"></i> {{ kpi_total_impresoras_oficial | default(0) }} impresoras</span>
+            {% endif %}
+        </div>
+        <div class="system-work-header__right">
+            <div class="system-work-header__tools">
+                <div class="system-user-mini" title="{{ current_user.display_name or current_user.username }} / {{ current_role_label }} / {{ auth_mode_label }}">
+                    <i class="bi bi-person-circle"></i>
+                    <span>{{ current_user.display_name or current_user.username }}</span>
+                </div>
+                <div class="system-icon-group">
+                    {% for module in module_access_links %}
+                    {% if (module.label != 'Reportes' and module.label != 'Reports') %}
+                    <a href="{{ module.url }}" class="system-icon-btn {% if module.active %}active{% endif %}" title="{{ module.label }}" aria-label="{{ module.label }}">
+                        <i class="bi {{ module.icon }}"></i>
+                    </a>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="system-icon-group">
+                    {% if current_user.is_superuser %}
+                    <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#usersModal" title="Usuarios">
+                        <i class="bi bi-people"></i>
+                        {% if kpi_usuarios_pendientes > 0 %}
+                        <span class="system-icon-badge">{{ kpi_usuarios_pendientes }}</span>
+                        {% endif %}
+                    </button>
+                    {% endif %}
+                    {% if has_access('reports') %}
+                    <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#reportsModal" title="Reportes">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                    </button>
+                    {% endif %}
+                    <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Topografía (Fueros)">
+                        <i class="bi bi-diagram-3"></i>
+                    </button>
+                    <a href="{{ url_for('dashboard.global_activity') }}" class="system-icon-btn" title="Actividad">
+                        <i class="bi bi-clock-history"></i>
+                    </a>
+                    <button class="system-icon-btn system-icon-btn--primary" data-bs-toggle="modal" data-bs-target="#createTaskModal" title="Nueva Tarea">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    {% if current_user.username in ['gmurad', 'dquiros'] %}
+                    <a href="{{ url_for('vault.vault_index') }}" class="system-icon-btn" title="Recursos Internos">
+                        <i class="bi bi-shield-shaded"></i>
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="system-icon-btn" title="Salir">
+                        <i class="bi bi-door-open"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="system-work-header__brand">SISTEMA DE INVENTARIO</div>
+    </div>
+    {% endif %}
+
+    {% if not is_compact_shell %}
     <div class="header-main-container">
         <!-- Parte Izquierda: Branding & Usuario -->
         <div class="header-user-section">
@@ -8,7 +81,7 @@
                     <div class="user-name">{{ current_user.display_name or current_user.username }}</div>
                     <div class="user-role">
                         <span class="badge-role">{{ current_role_label }}</span>
-                        <span class="sep">·</span>
+                        <span class="sep">/</span>
                         <span class="auth-mode">{{ auth_mode_label }}</span>
                     </div>
                 </div>
@@ -20,9 +93,8 @@
             <div class="glass-nav-tabs">
                 {% for module in module_access_links %}
                 {% if (module.label != 'Reportes' and module.label != 'Reports') %}
-                <a href="{{ module.url }}" class="nav-tab-item {% if module.active %}active{% endif %}" title="{{ module.label }}">
+                <a href="{{ module.url }}" class="nav-tab-item nav-tab-item--icon {% if module.active %}active{% endif %}" title="{{ module.label }}" aria-label="{{ module.label }}">
                     <i class="bi {{ module.icon }}"></i>
-                    <span>{{ module.label }}</span>
                 </a>
                 {% endif %}
                 {% endfor %}
@@ -74,9 +146,10 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Barra de Estado e Indicadores (KPIs Integrados) -->
-    <div class="header-kpi-bar" style="height: auto; padding: 4px 10px;">
+    <div class="header-kpi-bar {% if is_compact_shell %}header-kpi-bar--dashboard{% endif %}" style="height: auto; padding: 4px 10px;">
         <div class="kpi-scroll-container d-flex flex-wrap justify-content-center align-items-center" style="gap: 12px; overflow: visible; white-space: normal; width: 100%;">
             {% if request.blueprint != 'infrastructure' %}
             <!-- PCs Activas -->

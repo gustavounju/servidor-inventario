@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime as dt
 
 from database.db_core import get_db_connection
@@ -9,6 +10,95 @@ from services.dashboard_contract import (
     sanitize_sort_column,
     sanitize_sort_direction,
 )
+
+
+def _normalize_printer_endpoint(value):
+    raw = (value or "").strip()
+    if not raw or raw.upper() == "N/A":
+        return ""
+
+    raw = re.sub(r"\s+\((RED|LOCAL)\)$", "", raw, flags=re.IGNORECASE).strip()
+    raw = re.sub(r"\s+\[DESCONECTADA\]$", "", raw, flags=re.IGNORECASE).strip()
+
+    if raw.startswith("\\"):
+        raw = re.sub(r"\\+", r"\\", raw)
+        parts = [part.strip().lower() for part in raw.split("\\") if part.strip()]
+        if len(parts) >= 2:
+            return f"\\\\{parts[0]}\\{parts[1]}"
+        if len(parts) == 1:
+            return f"\\\\{parts[0]}"
+        return ""
+
+    token = raw.split(" ")[0].strip().lower()
+    return token.rstrip("\\/")
+
+
+def _normalize_printer_model(value):
+    model = (value or "").strip().lower()
+    if not model or model == "n/a":
+        return ""
+
+    model = re.sub(r"\bseries\b", " ", model)
+    model = re.sub(r"\bprinter\b", " ", model)
+    model = re.sub(r"\bclass driver\b", " ", model)
+    model = re.sub(r"\bpcl\d*\b", " ", model)
+    model = re.sub(r"\s+", " ", model)
+    return model.strip()
+
+
+def _build_printer_match_key(model, port):
+    normalized_model = _normalize_printer_model(model)
+    normalized_port = _normalize_printer_endpoint(port)
+    if normalized_model and normalized_port:
+        return f"{normalized_model}|{normalized_port}"
+    return ""
+
+
+def _infer_disk_kind(model, speed_text):
+    model_text = (model or "").strip()
+    speed_value = (speed_text or "").strip()
+    combined = f"{model_text} {speed_value}".upper()
+
+    rpm_match = re.search(r"(\d+)\s*RPM", combined)
+    if rpm_match:
+        rpm = int(rpm_match.group(1))
+        if rpm > 0:
+            return f"HDD {rpm} RPM"
+
+    if any(token in combined for token in ("SSD", "NVME", "M.2", "SOLID")):
+        return "SSD"
+
+    if re.search(r"\b(SN[VMP]?\w*|SU\d+|EVO|KINGSTON|ADATA)\b", combined) and "HITACHI" not in combined:
+        return "SSD"
+
+    if any(token in combined for token in ("HITACHI", "WD ", "WESTERN DIGITAL", "SEAGATE", "TOSHIBA", "HUA7")):
+        return "HDD"
+
+    if "FIXED HARD DISK" in combined or "HDD" in combined:
+        return "HDD"
+
+    return "Tipo no detectado"
+
+
+def _build_disk_summary_lines(disk_models, disk_speeds):
+    models = [part.strip() for part in (disk_models or "").split("|") if part.strip()]
+    speed_parts = [part.strip() for part in (disk_speeds or "").split("|") if part.strip()]
+    speed_map = {}
+
+    for part in speed_parts:
+        if ":" in part:
+            model_name, kind = part.split(":", 1)
+            speed_map[model_name.strip().upper()] = kind.strip()
+
+    lines = []
+    for model_entry in models:
+        model_name = model_entry.split(" (")[0].strip()
+        kind = speed_map.get(model_name.upper(), "")
+        if not kind or kind.upper() in ("RPM", "0 RPM", "N/A"):
+            kind = _infer_disk_kind(model_entry, kind)
+        lines.append(f"{model_entry} - {kind}")
+
+    return lines
 
 
 def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_by, order, page, per_page, tipo_actividad=""):
@@ -131,15 +221,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                         JOIN network_printers np ON pnp.printer_id = np.id
                         WHERE pnp.pc_name = p.pc_name
                     ) as assigned_network_printer_id,
-                    (
-                        SELECT COUNT(*)
-                        FROM pc_detected_printers dp
-                        WHERE dp.pc_name = p.pc_name
-                          AND dp.is_ignored = 0
-                          AND (dp.printer_model IS NOT NULL AND dp.printer_model != '' AND dp.printer_model != 'N/A' AND UPPER(dp.printer_model) NOT LIKE '%%SIN IMPRESORA%%')
-                          AND (dp.printer_port IS NULL OR dp.printer_port NOT LIKE '\\\\\\\\%%')
-                          AND (dp.printer_sn IS NULL OR dp.printer_sn = '' OR dp.printer_sn = 'N/A' OR dp.printer_sn NOT IN (SELECT serial_number FROM network_printers WHERE serial_number IS NOT NULL AND serial_number != ''))
-                    ) as detected_printers_count
+                    0 as detected_printers_count
                 FROM pcs p
                 LEFT JOIN ad_users u ON (
                     LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username OR
@@ -166,6 +248,107 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             """
             params_base = filter_params + [per_page, offset]
             pcs_data = [dict(row) for row in conn.execute(base_sql, params_base).fetchall()]
+
+            if pcs_data:
+                pc_names = [pc["pc_name"] for pc in pcs_data]
+                placeholders = ",".join(["%s"] * len(pc_names))
+                detected_rows = [dict(row) for row in conn.execute(
+                    f"""
+                    SELECT id, pc_name, printer_model, printer_port, printer_sn
+                    FROM pc_detected_printers
+                    WHERE is_ignored = 0
+                      AND pc_name IN ({placeholders})
+                      AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
+                      AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%')
+                    """,
+                    pc_names,
+                ).fetchall()]
+
+                assigned_rows = [dict(row) for row in conn.execute(
+                    f"""
+                    SELECT pnp.pc_name, np.serial_number, np.ip_address, np.brand_model
+                    FROM pc_network_printers pnp
+                    JOIN network_printers np ON pnp.printer_id = np.id
+                    WHERE pnp.pc_name IN ({placeholders})
+                    """,
+                    pc_names,
+                ).fetchall()]
+
+                net_printers = [dict(row) for row in conn.execute(
+                    "SELECT serial_number, ip_address, brand_model FROM network_printers"
+                ).fetchall()]
+
+                catalog_serials = {
+                    (p["serial_number"] or "").strip().upper()
+                    for p in net_printers
+                    if p.get("serial_number") and str(p["serial_number"]).strip().upper() != "N/A"
+                }
+                catalog_ports = {
+                    _normalize_printer_endpoint(p.get("ip_address"))
+                    for p in net_printers
+                    if _normalize_printer_endpoint(p.get("ip_address"))
+                }
+
+                assigned_by_pc = {}
+                for row in assigned_rows:
+                    pc_name = row["pc_name"]
+                    assigned_by_pc.setdefault(pc_name, {"serials": set(), "ports": set(), "keys": set()})
+                    serial = (row.get("serial_number") or "").strip().upper()
+                    port = _normalize_printer_endpoint(row.get("ip_address"))
+                    key = _build_printer_match_key(row.get("brand_model"), row.get("ip_address"))
+                    if serial and serial != "N/A":
+                        assigned_by_pc[pc_name]["serials"].add(serial)
+                    if port:
+                        assigned_by_pc[pc_name]["ports"].add(port)
+                    if key:
+                        assigned_by_pc[pc_name]["keys"].add(key)
+
+                detected_by_pc = {pc_name: [] for pc_name in pc_names}
+                seen_detected = set()
+                for row in detected_rows:
+                    detect_serial = (row.get("printer_sn") or "").strip().upper()
+                    detect_port = _normalize_printer_endpoint(row.get("printer_port"))
+                    detect_key = _build_printer_match_key(row.get("printer_model"), row.get("printer_port"))
+                    pc_name = row["pc_name"]
+
+                    if detect_serial and detect_serial != "N/A" and detect_serial in catalog_serials:
+                        continue
+                    if detect_port and detect_port in catalog_ports:
+                        continue
+
+                    pc_info = next((pc for pc in pcs_data if pc["pc_name"] == pc_name), None)
+                    if pc_info:
+                        primary_serial = (pc_info.get("printer_sn") or "").strip().upper()
+                        primary_port = _normalize_printer_endpoint(pc_info.get("printer_port"))
+                        primary_key = _build_printer_match_key(pc_info.get("printer_model"), pc_info.get("printer_port"))
+
+                        if detect_serial and detect_serial != "N/A" and detect_serial == primary_serial:
+                            continue
+                        if detect_key and detect_key == primary_key:
+                            continue
+                        if detect_port and primary_port and detect_port == primary_port and _normalize_printer_model(row.get("printer_model")) == _normalize_printer_model(pc_info.get("printer_model")):
+                            continue
+
+                    assigned = assigned_by_pc.get(pc_name, {"serials": set(), "ports": set(), "keys": set()})
+                    if detect_serial and detect_serial != "N/A" and detect_serial in assigned["serials"]:
+                        continue
+                    if detect_port and detect_port in assigned["ports"]:
+                        continue
+                    if detect_key and detect_key in assigned["keys"]:
+                        continue
+
+                    dedupe_key = (pc_name, detect_serial or "", detect_key or "", detect_port or "")
+                    if dedupe_key in seen_detected:
+                        continue
+                    seen_detected.add(dedupe_key)
+                    detected_by_pc.setdefault(pc_name, []).append(row)
+
+                for pc in pcs_data:
+                    pc["detected_printers_count"] = len(detected_by_pc.get(pc["pc_name"], []))
+                    pc["disk_summary_lines"] = _build_disk_summary_lines(
+                        pc.get("disk_models"),
+                        pc.get("disk_speeds_rpm"),
+                    )
 
             auxiliary_pcs = [dict(row) for row in conn.execute(
                 """SELECT p.pc_name, p.last_report,

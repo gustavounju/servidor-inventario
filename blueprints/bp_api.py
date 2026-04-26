@@ -2,11 +2,55 @@ from flask import Blueprint, request, jsonify, redirect, url_for
 import json
 import datetime
 import os
+import re
 
 from database.db_core import get_db_connection
 from utils.constants import detect_fuero
 
 bp_api = Blueprint('api', __name__)
+
+
+def _normalize_printer_endpoint(value):
+    raw = (value or "").strip()
+    if not raw or raw.upper() == "N/A":
+        return ""
+
+    raw = re.sub(r"\s+\((RED|LOCAL)\)$", "", raw, flags=re.IGNORECASE).strip()
+    raw = re.sub(r"\s+\[DESCONECTADA\]$", "", raw, flags=re.IGNORECASE).strip()
+
+    if raw.startswith("\\"):
+        raw = re.sub(r"\\+", r"\\", raw)
+        parts = [part.strip().lower() for part in raw.split("\\") if part.strip()]
+        if len(parts) >= 2:
+            return f"\\\\{parts[0]}\\{parts[1]}"
+        if len(parts) == 1:
+            return f"\\\\{parts[0]}"
+        return ""
+
+    token = raw.split(" ")[0].strip().lower()
+    token = token.rstrip("\\/")
+    return token
+
+
+def _normalize_printer_model(value):
+    model = (value or "").strip().lower()
+    if not model or model == "n/a":
+        return ""
+
+    model = re.sub(r"\bseries\b", " ", model)
+    model = re.sub(r"\bprinter\b", " ", model)
+    model = re.sub(r"\bclass driver\b", " ", model)
+    model = re.sub(r"\bpcl\d*\b", " ", model)
+    model = re.sub(r"\s+", " ", model)
+    return model.strip()
+
+
+def _build_printer_match_key(model, port):
+    normalized_model = _normalize_printer_model(model)
+    normalized_port = _normalize_printer_endpoint(port)
+    if normalized_model and normalized_port:
+        return f"{normalized_model}|{normalized_port}"
+    return ""
 
 def process_inventory_data(data):
     from utils.constants import detect_fuero, clean_hex_string
@@ -470,26 +514,107 @@ def api_detected_printers():
                     dp.printer_port, 
                     pcs.last_report, 
                     pcs.fuero,
-                    dp.id AS detect_id
+                    dp.id AS detect_id,
+                    pcs.printer_model AS primary_printer_model,
+                    pcs.printer_port AS primary_printer_port,
+                    pcs.printer_sn AS primary_printer_sn
                 FROM pc_detected_printers dp
                 INNER JOIN pcs ON pcs.pc_name = dp.pc_name
                 WHERE pcs.is_active = 'True'
                   AND dp.is_ignored = 0
                   AND (dp.printer_model IS NOT NULL AND dp.printer_model != '' AND dp.printer_model != 'N/A' AND UPPER(dp.printer_model) NOT LIKE '%%SIN IMPRESORA%%')
                   AND (dp.printer_port IS NULL OR dp.printer_port NOT LIKE '\\\\\\\\%%') 
-                  AND (dp.printer_sn IS NULL OR dp.printer_sn = '' OR dp.printer_sn = 'N/A' OR dp.printer_sn NOT IN (SELECT serial_number FROM network_printers WHERE serial_number IS NOT NULL AND serial_number != ''))
             """
             if pc_filter:
                 base_query += " AND dp.pc_name = %s ORDER BY dp.pc_name"
-                detected = conn.execute(base_query, (pc_filter,)).fetchall()
+                detected_rows = conn.execute(base_query, (pc_filter,)).fetchall()
             else:
                 base_query += " ORDER BY dp.pc_name"
-                detected = conn.execute(base_query).fetchall()
+                detected_rows = conn.execute(base_query).fetchall()
+
+            assigned_rows = conn.execute("""
+                SELECT pnp.pc_name, np.serial_number, np.ip_address, np.brand_model
+                FROM pc_network_printers pnp
+                JOIN network_printers np ON np.id = pnp.printer_id
+            """).fetchall()
+
+            catalog_serials = {
+                (p["serial_number"] or "").strip().upper()
+                for p in net_printers
+                if p.get("serial_number") and str(p["serial_number"]).strip().upper() != "N/A"
+            }
+            catalog_ports = {
+                _normalize_printer_endpoint(p.get("ip_address"))
+                for p in net_printers
+                if _normalize_printer_endpoint(p.get("ip_address"))
+            }
+
+            assigned_by_pc = {}
+            for row in assigned_rows:
+                pc_name = row["pc_name"]
+                assigned_by_pc.setdefault(pc_name, {"serials": set(), "ports": set(), "keys": set()})
+                serial = (row.get("serial_number") or "").strip().upper()
+                port = _normalize_printer_endpoint(row.get("ip_address"))
+                key = _build_printer_match_key(row.get("brand_model"), row.get("ip_address"))
+                if serial and serial != "N/A":
+                    assigned_by_pc[pc_name]["serials"].add(serial)
+                if port:
+                    assigned_by_pc[pc_name]["ports"].add(port)
+                if key:
+                    assigned_by_pc[pc_name]["keys"].add(key)
+
+            filtered_detected = []
+            seen_detected_keys = set()
+            for row in detected_rows:
+                row_dict = dict(row)
+                detect_serial = (row_dict.get("printer_sn") or "").strip().upper()
+                detect_port = _normalize_printer_endpoint(row_dict.get("printer_port"))
+                detect_key = _build_printer_match_key(row_dict.get("printer_model"), row_dict.get("printer_port"))
+                pc_name = row_dict["pc_name"]
+
+                if detect_serial and detect_serial != "N/A" and detect_serial in catalog_serials:
+                    continue
+                if detect_port and detect_port in catalog_ports:
+                    continue
+
+                primary_serial = (row_dict.get("primary_printer_sn") or "").strip().upper()
+                primary_port = _normalize_printer_endpoint(row_dict.get("primary_printer_port"))
+                primary_key = _build_printer_match_key(row_dict.get("primary_printer_model"), row_dict.get("primary_printer_port"))
+
+                if detect_serial and detect_serial != "N/A" and detect_serial == primary_serial:
+                    continue
+                if detect_key and detect_key == primary_key:
+                    continue
+                if detect_port and primary_port and detect_port == primary_port and _normalize_printer_model(row_dict.get("printer_model")) == _normalize_printer_model(row_dict.get("primary_printer_model")):
+                    continue
+
+                assigned = assigned_by_pc.get(pc_name, {"serials": set(), "ports": set(), "keys": set()})
+                if detect_serial and detect_serial != "N/A" and detect_serial in assigned["serials"]:
+                    continue
+                if detect_port and detect_port in assigned["ports"]:
+                    continue
+                if detect_key and detect_key in assigned["keys"]:
+                    continue
+
+                dedupe_key = (pc_name, detect_serial or "", detect_key or "", detect_port or "")
+                if dedupe_key in seen_detected_keys:
+                    continue
+                seen_detected_keys.add(dedupe_key)
+
+                filtered_detected.append({
+                    "pc_name": row_dict["pc_name"],
+                    "printer_model": row_dict["printer_model"],
+                    "printer_sn": row_dict["printer_sn"],
+                    "printer_port": row_dict["printer_port"],
+                    "last_report": row_dict["last_report"],
+                    "fuero": row_dict["fuero"],
+                    "detect_id": row_dict["detect_id"],
+                })
             
             return jsonify({
                 "status": "success",
                 "network_printers": [dict(p) for p in net_printers],
-                "detected_printers": [dict(p) for p in detected]
+                "detected_printers": filtered_detected
             })
     except Exception as e:
         print(f"Error en api_detected_printers: {e}")

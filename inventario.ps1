@@ -242,10 +242,39 @@ try {
     try {
         $ramModulos = Get-WmiObject -Class Win32_PhysicalMemory
         if ($ramModulos) {
+            $ramTypeMap = @{
+                20 = "DDR"
+                21 = "DDR2"
+                24 = "DDR3"
+                26 = "DDR4"
+                34 = "DDR5"
+            }
             $detalles = @()
             foreach ($r in $ramModulos) {
                 $cap = [math]::Round($r.Capacity / 1GB, 0)
-                $detalles += "$($cap)GB @ $($r.Speed)MHz"
+                $speed = $r.ConfiguredClockSpeed
+                if (-not $speed -or $speed -eq 0) { $speed = $r.Speed }
+
+                $ramType = ""
+                if ($r.SMBIOSMemoryType -and $ramTypeMap.ContainsKey([int]$r.SMBIOSMemoryType)) {
+                    $ramType = $ramTypeMap[[int]$r.SMBIOSMemoryType]
+                }
+                elseif ($r.MemoryType -and $ramTypeMap.ContainsKey([int]$r.MemoryType)) {
+                    $ramType = $ramTypeMap[[int]$r.MemoryType]
+                }
+
+                if ($ramType -and $speed) {
+                    $detalles += "$($cap)GB $ramType @ $($speed)MHz"
+                }
+                elseif ($ramType) {
+                    $detalles += "$($cap)GB $ramType"
+                }
+                elseif ($speed) {
+                    $detalles += "$($cap)GB @ $($speed)MHz"
+                }
+                else {
+                    $detalles += "$($cap)GB"
+                }
             }
             $ramDetalles = [string]::Join(" | ", $detalles)
         }
@@ -255,6 +284,24 @@ try {
     $diskModelsStr = "N/A"
     $diskSpeedsStr = "N/A"
     try {
+        function Get-DiskKindLabel($disk) {
+            $model = [string]($disk.Model)
+            $mediaType = [string]($disk.MediaType)
+            $spindle = 0
+            try { $spindle = [int]$disk.SpindleSpeed } catch { $spindle = 0 }
+
+            if ($model -match "SSD|NVME|M\.2" -or $mediaType -match "SSD|Solid") {
+                return "SSD"
+            }
+            if ($spindle -gt 0) {
+                return "HDD $($spindle) RPM"
+            }
+            if ($mediaType -match "Fixed hard disk") {
+                return "HDD"
+            }
+            return "Tipo no detectado"
+        }
+
         $diskDrives = Get-WmiObject -Class Win32_DiskDrive
         if ($diskDrives) {
             $models = @()
@@ -262,12 +309,7 @@ try {
             foreach ($d in $diskDrives) {
                 $size = [math]::Round($d.Size / 1GB, 0)
                 $models += "$($d.Model) ($($size)GB)"
-                if ($d.Model -match "SSD" -or $d.MediaType -eq "SSD") {
-                    $speeds += "$($d.Model): SSD"
-                }
-                else {
-                    $speeds += "$($d.Model): $($d.SpindleSpeed) RPM"
-                }
+                $speeds += "$($d.Model): $(Get-DiskKindLabel $d)"
             }
             $diskModelsStr = [string]::Join(" | ", $models)
             $diskSpeedsStr = [string]::Join(" | ", $speeds)

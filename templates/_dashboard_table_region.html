@@ -4,7 +4,6 @@
                 <div>
                     <div class="inventory-table-shell__eyebrow">Mapa de Equipos</div>
                     <h3 class="inventory-table-shell__title">Vista central del inventario activo</h3>
-                    <p class="inventory-table-shell__lead">La tabla queda como espacio principal de trabajo: menos bloques arriba y más foco en diagnóstico, usuario y acciones.</p>
                 </div>
                 <div class="inventory-table-shell__meta">
                     <span class="inventory-table-pill">
@@ -23,7 +22,6 @@
             <table id="inventoryTable" class="table table-striped table-hover table-sm mb-0 inventory-table table-gold">
                 <thead>
                     <tr>
-                        <th class="text-center" style="width:36px;" title="Estado general de salud del equipo (semáforo de alertas)">🩺</th>
                         <th>
                             <a href="{{ url_for('dashboard.dashboard', sort_by='pc_name', order='desc' if sort_by == 'pc_name' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
                                 class="text-dark text-decoration-none">
@@ -84,17 +82,6 @@
                         data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
                         data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}" style="cursor: pointer;"
                         onclick="if(!event.target.closest('a') && !event.target.closest('button')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
-                        <!-- COLUMNA SALUD -->
-                        <td class="text-center" style="width:36px; padding: 4px;"
-                            title="{% if alerta_count == 0 %}✅ Equipo saludable, sin alertas activas{% elif alerta_count == 1 %}⚠️ Atención: tiene 1 alerta activa{% else %}🔴 Crítico: {{ alerta_count }} alertas simultáneas{% endif %}">
-                            {% if alerta_count == 0 %}
-                                <span style="font-size:1rem;">🟢</span>
-                            {% elif alerta_count == 1 %}
-                                <span style="font-size:1rem;">🟡</span>
-                            {% else %}
-                                <span style="font-size:1rem; animation: pulse-subtle 1.5s infinite;">🔴</span>
-                            {% endif %}
-                        </td>
                         <td
                             style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
                             <div class="inventory-pc-name d-flex align-items-start justify-content-between">
@@ -184,25 +171,36 @@
                                 <div class="inventory-hardware__main" title="{{ pc.processor }}">{{ pc.processor or '-' }}</div>
                                 <div class="inventory-hardware__meta">
                                     <span class="inventory-spec-chip" title="Placa madre">{{ pc.motherboard_model or 'Sin placa' }}</span>
-                                    {% if pc.ram_gb %}
-                                        {% set ram_val = pc.ram_gb | float %}
-                                        <span class="inventory-spec-chip {% if ram_val < 8 %}inventory-spec-chip--danger{% elif ram_val < 16 %}inventory-spec-chip--warning{% else %}inventory-spec-chip--ok{% endif %}"
-                                              title="{% if ram_val < 8 %}RAM insuficiente{% elif ram_val < 16 %}RAM aceptable{% else %}RAM óptima{% endif %}">
-                                            RAM {{ pc.ram_gb }} GB
-                                        </span>
-                                    {% endif %}
                                 </div>
-                                {% if pc.disk_models %}
-                                <div class="inventory-cell-note" title="{{ pc.disk_models }}">Discos: {{ pc.disk_models }}</div>
+                                {% if pc.ram_detalles and pc.ram_detalles != 'N/A' %}
+                                <div class="inventory-cell-note" title="Detalle útil para taller: capacidad, tipo DDR y velocidad por módulo">
+                                    Memoria instalada: {{ pc.ram_detalles }}
+                                </div>
+                                {% endif %}
+                                {% if pc.disk_summary_lines %}
+                                <div class="inventory-cell-note" title="{{ pc.disk_models }}">
+                                    Discos:
+                                    {% for disk_line in pc.disk_summary_lines %}
+                                        {% if not loop.first %} | {% endif %}{{ disk_line }}
+                                    {% endfor %}
+                                </div>
                                 {% endif %}
                             </div>
                         </td>
                         <td class="inventory-col-network">
+                            {% set printer_port_value = pc.printer_port or '' %}
+                            {% set printer_is_shared = printer_port_value.startswith('\\\\') %}
+                            {% set printer_is_direct_network = ('.' in printer_port_value) or ('WSD' in printer_port_value) or ('IP_' in printer_port_value) %}
+                            {% set printer_has_catalog = pc.assigned_network_printer %}
                             <div class="inventory-network">
                                 <div class="inventory-network__top">
-                                    <span class="inventory-ip">{{ pc.ip_address or '-' }}</span>
+                                    <span class="inventory-ip" title="Dirección IP actual de la PC">
+                                        IP PC: {{ pc.ip_address or '-' }}
+                                    </span>
                                     {% if pc.monitors %}
-                                    <span class="inventory-mini-badge inventory-mini-badge--os" title="Monitores">{{ pc.monitors }}</span>
+                                    <span class="inventory-mini-badge inventory-mini-badge--os" title="Monitor o fabricante detectado">
+                                        Monitor: {{ pc.monitors }}
+                                    </span>
                                     {% endif %}
                                 </div>
                             {% if not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in pc.printer_model | upper %}
@@ -215,7 +213,7 @@
                                             {% for prn in pc.assigned_network_printer.split(' | ') %}
                                                 <div class="mb-1" title="Esta es una impresora oficial registrada en el catálogo">
                                                     <span class="badge bg-info text-dark" style="font-size: 0.7rem;">
-                                                        <i class="bi bi-diagram-3-fill"></i> Red
+                                                        <i class="bi bi-check2-circle"></i> Catálogo oficial
                                                     </span>
                                                     <span class="fw-bold" style="font-size: 0.8rem;">{{ prn }}</span>
                                                     
@@ -239,15 +237,20 @@
                                         {% if not pc.assigned_network_printer or pc.detected_printers_count > 0 %}
                                             {# Badge de Red / Compartida / Local detectada #}
                                             <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
-                                                {% if "\\" in (pc.printer_port or "") %}
+                                                {% if printer_is_shared %}
                                                     <span class="badge bg-secondary text-white" style="font-size: 0.7rem;" 
-                                                          title="Esta PC imprime a través de otra PC que actúa como servidor (Puerto: {{ pc.printer_port }})">
-                                                        <i class="bi bi-share-fill"></i> Compartida
+                                                          title="Esta PC no imprime directo a la impresora: usa otra PC como host (Puerto: {{ pc.printer_port }})">
+                                                        <i class="bi bi-share-fill"></i> Compartida desde otra PC
                                                     </span>
-                                                {% elif "." in (pc.printer_port or "") or "WSD" in (pc.printer_port or "") %}
+                                                {% elif printer_is_direct_network %}
                                                     <span class="badge bg-info text-dark" style="font-size: 0.7rem;"
-                                                          title="Este equipo tiene conectividad directa por IP con la impresora">
-                                                        <i class="bi bi-diagram-3"></i> Red
+                                                          title="Esta PC se conecta directo a la impresora por IP o por descubrimiento de red">
+                                                        <i class="bi bi-diagram-3"></i> Impresora por IP
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-light text-dark border" style="font-size: 0.7rem;"
+                                                          title="La impresora parece estar conectada físicamente a esta PC">
+                                                        <i class="bi bi-usb-symbol"></i> Conectada a esta PC
                                                     </span>
                                                 {% endif %}
                                                 
@@ -256,28 +259,30 @@
                                                             style="font-size: 0.65rem; border-radius: 4px;"
                                                             onclick="showDetectedPrinters('{{ pc.pc_name }}')"
                                                             title="¡Atención! Hemos detectado {{ pc.detected_printers_count }} impresoras en este equipo que no están en el inventario oficial. Haz clic para gestionarlas.">
-                                                        <i class="bi bi-plus-circle-dotted"></i> INVENTARIAR ({{ pc.detected_printers_count }})
+                                                        <i class="bi bi-plus-circle-dotted"></i> Revisar {{ pc.detected_printers_count }} impresoras
                                                     </button>
-                                                {% elif pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
+                                                {% elif (not pc.assigned_network_printer) and pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
                                                     <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" 
                                                             onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')"
-                                                            title="Clic para registrar esta impresora local oficialmente en el catálogo">
+                                                            title="Clic para registrar esta impresora en el catálogo oficial de infraestructura">
                                                         <i class="bi bi-plus-circle-fill"></i>
                                                     </button>
-                                                    <span class="text-muted opacity-75" style="font-size: 0.65rem; font-style: italic;" title="Esta impresora existe físicamente pero aún no ha sido cargada al sistema">No stockeada</span>
+                                                    <span class="text-muted opacity-75" style="font-size: 0.65rem; font-style: italic;" title="La PC la detectó, pero todavía no fue cargada al catálogo oficial">Pendiente de registrar</span>
                                                 {% endif %}
                                             </div>
                                         {% endif %}
 
                                         {# Mostrar Modelo o Pendiente (Solo si no hay nada promocionado aún o para la primaria) #}
                                         {% if not pc.assigned_network_printer %}
-                                            {% if pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) and ("\\\\" in (pc.printer_port or "") or "IP_" in (pc.printer_port or "") or "." in (pc.printer_port or "")) %}
-                                                <div class="mt-1" title="Se detectó una impresora de red o compartida, pero falta validarla o registrarla oficialmente. La PC debe volver a reportar para confirmar el cambio.">
+                                            {% if pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) and (printer_is_shared or printer_is_direct_network) %}
+                                                <div class="mt-1" title="Se detectó una impresora de red o compartida, pero todavía no quedó consolidada en el catálogo oficial.">
                                                     <span class="badge bg-warning text-dark" style="font-size: 0.7rem; border: 1px solid #cc9a06;">
-                                                        <i class="bi bi-clock-history"></i> SINCRONIZACIÓN PENDIENTE
+                                                        <i class="bi bi-clock-history"></i> Falta confirmar en inventario
                                                     </span>
                                                 </div>
-                                                <div class="text-muted" style="font-size: 0.75rem;" title="Este fue el último modelo reportado por el equipo">(Última: {{ pc.printer_model }})</div>
+                                                <div class="text-muted" style="font-size: 0.75rem;" title="Último dato recibido desde esta PC">
+                                                    Detectada: {{ pc.printer_model }}
+                                                </div>
                                             {% elif pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
                                                 <div class="fw-bold" style="font-size: 0.85rem;">{{ pc.printer_model }}</div>
                                             {% endif %}
@@ -287,14 +292,14 @@
 
                             {% if pc.assigned_network_printer and (pc.assigned_network_printer not in (pc.printer_model or '') and pc.assigned_network_printer not in (pc.printer_sn or '')) %}
                             <div class="mt-1" style="font-size: 0.75rem;">
-                                <span class="text-muted"><i class="bi bi-check-circle-fill text-success"></i> Inventario: {{ pc.assigned_network_printer }}</span>
+                                <span class="text-muted"><i class="bi bi-check-circle-fill text-success"></i> Registrada oficialmente como: {{ pc.assigned_network_printer }}</span>
                             </div>
                             {% endif %}
 
                             {% if pc.printer_port and pc.printer_port.startswith('\\\\') %}
                                 {% set sharing_host = pc.printer_port.split('\\')[2] %}
                                 <div class="mt-1" style="font-size: 0.7rem;">
-                                    <i class="bi bi-share text-muted"></i> Compartida por: 
+                                    <i class="bi bi-share text-muted"></i> Host que comparte la impresora: 
                                     <a href="{{ url_for('dashboard.pc_detail', pc_name=sharing_host | upper) }}" class="fw-bold text-decoration-none">
                                         {{ sharing_host | upper }}
                                     </a>
@@ -304,7 +309,7 @@
                                         {% set host_port = pc_ports[sharing_host | upper] %}
                                         {% if 'USB' not in host_port and 'LPT' not in host_port and 'COM' not in host_port and 'Local' not in host_port %}
                                             <span class="text-danger fw-bold ms-1" style="font-size: 0.65rem;" title="El PC dueño ya no reporta tener esta impresora conectada físicamente">
-                                                <i class="bi bi-exclamation-triangle-fill"></i> Host Offline
+                                                <i class="bi bi-exclamation-triangle-fill"></i> El host ya no la reporta
                                             </span>
                                         {% endif %}
                                     {% endif %}
@@ -365,10 +370,10 @@
                                         {% if pc.pc_name.upper() != 'PC GENERICA' and pc.pc_name.upper() != 'PC-GENERICA' %}
                                         <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}"
                                               method="POST"
-                                              onsubmit="event.stopPropagation(); return confirm('¿Seguro pasar este equipo al cementerio?');">
+                                              onsubmit="event.stopPropagation(); return confirm('¿Pasar este equipo al cementerio? Si el script de inventario vuelve a ejecutarse en esa PC, se reactivará sola.');">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="dropdown-item text-danger">
-                                                <i class="bi bi-trash"></i> Dar de baja
+                                                <i class="bi bi-trash"></i> Pasar a cementerio
                                             </button>
                                         </form>
                                         {% endif %}

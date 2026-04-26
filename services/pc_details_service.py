@@ -1,5 +1,53 @@
 from database.db_core import get_db_connection
 from utils.auth import list_technician_users
+import re
+
+
+def _infer_disk_kind(model, speed_text):
+    model_text = (model or "").strip()
+    speed_value = (speed_text or "").strip()
+    combined = f"{model_text} {speed_value}".upper()
+
+    rpm_match = re.search(r"(\d+)\s*RPM", combined)
+    if rpm_match:
+        rpm = int(rpm_match.group(1))
+        if rpm > 0:
+            return f"HDD {rpm} RPM"
+
+    if any(token in combined for token in ("SSD", "NVME", "M.2", "SOLID")):
+        return "SSD"
+
+    if re.search(r"\b(SN[VMP]?\w*|SU\d+|EVO|KINGSTON|ADATA)\b", combined) and "HITACHI" not in combined:
+        return "SSD"
+
+    if any(token in combined for token in ("HITACHI", "WD ", "WESTERN DIGITAL", "SEAGATE", "TOSHIBA", "HUA7")):
+        return "HDD"
+
+    if "FIXED HARD DISK" in combined or "HDD" in combined:
+        return "HDD"
+
+    return "Tipo no detectado"
+
+
+def _build_disk_summary_lines(disk_models, disk_speeds):
+    models = [part.strip() for part in (disk_models or "").split("|") if part.strip()]
+    speed_parts = [part.strip() for part in (disk_speeds or "").split("|") if part.strip()]
+    speed_map = {}
+
+    for part in speed_parts:
+        if ":" in part:
+            model_name, kind = part.split(":", 1)
+            speed_map[model_name.strip().upper()] = kind.strip()
+
+    lines = []
+    for model_entry in models:
+        model_name = model_entry.split(" (")[0].strip()
+        kind = speed_map.get(model_name.upper(), "")
+        if not kind or kind.upper() in ("RPM", "0 RPM", "N/A"):
+            kind = _infer_disk_kind(model_entry, kind)
+        lines.append(f"{model_entry} - {kind}")
+
+    return lines
 
 def get_pc_detail_context(pc_name):
     """Obtiene todo el contexto necesario para renderizar pc_detail.html."""
@@ -82,6 +130,15 @@ def get_pc_detail_context(pc_name):
         
         available_network_printers = conn.execute("SELECT id, ip_address, brand_model FROM network_printers ORDER BY ip_address").fetchall()
 
+        disk_summary_lines = _build_disk_summary_lines(pc.get("disk_models"), pc.get("disk_speeds_rpm"))
+        preferred_printer_serial = pc.get("printer_sn")
+        preferred_printer_serial_source = "pc"
+        if (not preferred_printer_serial or preferred_printer_serial == "N/A") and assigned_network_printers:
+            first_assigned = assigned_network_printers[0]
+            if first_assigned.get("serial_number") and first_assigned["serial_number"] != "N/A":
+                preferred_printer_serial = first_assigned["serial_number"]
+                preferred_printer_serial_source = "assigned_network_printer"
+
         return {
             "pc": pc, "tareas": tareas, "technicians": technicians, "ad_users_list": ad_users_list,
             "audit_logs": audit_logs, "all_pcs": all_pcs, "pc_ups_list": pc_ups_list,
@@ -89,5 +146,8 @@ def get_pc_detail_context(pc_name):
             "available_components": available_components, "baterias_disponibles": baterias_disponibles,
             "sharing_pc": sharing_pc_data, "clients_using_this_printer": clients_using_this_printer,
             "assigned_network_printers": assigned_network_printers,
-            "available_network_printers": available_network_printers
+            "available_network_printers": available_network_printers,
+            "disk_summary_lines": disk_summary_lines,
+            "preferred_printer_serial": preferred_printer_serial,
+            "preferred_printer_serial_source": preferred_printer_serial_source,
         }

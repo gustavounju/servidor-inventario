@@ -42,7 +42,7 @@
 
     {% include '_module_switcher.html' %}
 
-    <div class="container-fluid" style="margin-top: 110px;">
+    <div class="container-fluid" style="margin-top: 82px;">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
@@ -78,275 +78,99 @@
         </div>
         {% endif %}
 
-        <section class="dashboard-hero p-4 p-xl-4 mb-4">
-            <div class="dashboard-hero__content row g-4 align-items-start">
-                <div class="col-xl-8">
-                    <div class="dashboard-hero__eyebrow">Centro de Decisión</div>
-                    <h1 class="dashboard-hero__title">Primero prioriza, después filtra y por último actúa sobre la tabla.</h1>
-                    <p class="dashboard-hero__lead">
-                        Hoy tenés <strong>{{ fleet_attention_count }}</strong> equipos que requieren atención
-                        y <strong>{{ kpi_criticas }}</strong> con prioridad alta. El recorrido sugerido es simple:
-                        detectar urgencias, elegir el filtro correcto y resolver desde la vista central del inventario.
-                    </p>
-
-                    <div class="dashboard-hero__meta">
-                        <span class="dashboard-hero__meta-item">
-                            <i class="bi bi-pc-display"></i> {{ kpi_total_activas }} equipos activos
-                        </span>
-                        <span class="dashboard-hero__meta-item">
-                            <i class="bi bi-exclamation-diamond"></i> {{ fleet_attention_pct }}% de la flota requiere revisión
-                        </span>
-                        <span class="dashboard-hero__meta-item">
-                            <i class="bi bi-shield-check"></i> Backup: {{ last_backup_info }}
-                        </span>
-                        <span class="dashboard-hero__meta-item">
-                            <i class="bi bi-person-workspace"></i> {{ active_mobile_techs | length }} técnicos móviles activos
-                        </span>
+        <section class="ops-dashboard mb-4">
+            <div class="ops-dashboard__grid">
+                <div class="ops-priority-board">
+                    <div class="ops-panel-title">
+                        <span>Prioridad del día</span>
                     </div>
-
-                    <div class="decision-grid">
-                        <a href="/?filter_tasks=true&tipo_actividad=incidente" class="decision-card decision-card--danger">
-                            <div class="decision-card__label">
-                                <span>Incidentes</span>
-                                <span>Atender ya</span>
-                            </div>
-                            <div class="decision-card__value">{{ kpi_incidentes }}</div>
-                            <div class="decision-card__hint">Fallas activas que bloquean la operación. Prioridad máxima de resolución.</div>
+                    <div class="ops-priority-list">
+                        <a href="/?filter_tasks=true&tipo_actividad=incidente" class="ops-priority-row ops-priority-row--danger">
+                            <span class="ops-priority-row__mark"></span>
+                            <span class="ops-priority-row__copy">
+                                <strong>Incidentes</strong>
+                                <small>Casos que frenan operación</small>
+                            </span>
+                            <span class="ops-priority-row__value">{{ kpi_incidentes }}</span>
                         </a>
-
-                        <a href="/?alerta=critica&estado=True" class="decision-card decision-card--warning">
-                            <div class="decision-card__label">
-                                <span>Críticas</span>
-                                <span>Riesgo alto</span>
-                            </div>
-                            <div class="decision-card__value">{{ kpi_criticas }}</div>
-                            <div class="decision-card__hint">Equipos con 2 o más alertas técnicas. Alta probabilidad de convertirse en incidente.</div>
+                        <a href="/?alerta=critica&estado=True" class="ops-priority-row ops-priority-row--warning">
+                            <span class="ops-priority-row__mark"></span>
+                            <span class="ops-priority-row__copy">
+                                <strong>Equipos críticos</strong>
+                                <small>Dos o más alertas técnicas</small>
+                            </span>
+                            <span class="ops-priority-row__value">{{ kpi_criticas }}</span>
                         </a>
-
-                        <a href="/?filter_tasks=true&tipo_actividad=riesgo" class="decision-card decision-card--info">
-                            <div class="decision-card__label">
-                                <span>Riesgos</span>
-                                <span>Preventivo</span>
-                            </div>
-                            <div class="decision-card__value">{{ kpi_riesgos }}</div>
-                            <div class="decision-card__hint">Alertas tempranas y mantenimientos preventivos para evitar caídas de servicio.</div>
+                        <a href="/?filter_tasks=true&tipo_actividad=riesgo" class="ops-priority-row ops-priority-row--info">
+                            <span class="ops-priority-row__mark"></span>
+                            <span class="ops-priority-row__copy">
+                                <strong>Riesgos preventivos</strong>
+                                <small>Señales tempranas de mantenimiento</small>
+                            </span>
+                            <span class="ops-priority-row__value">{{ kpi_riesgos }}</span>
                         </a>
+                        <button type="button" class="ops-priority-row ops-priority-row--neutral border-0 text-start" onclick="showPendingTasksModal()">
+                            <span class="ops-priority-row__mark"></span>
+                            <span class="ops-priority-row__copy">
+                                <strong>Tareas pendientes</strong>
+                                <small>Trabajo abierto para seguimiento</small>
+                            </span>
+                            <span class="ops-priority-row__value">{{ kpi_total_pendientes }}</span>
+                        </button>
+                    </div>
+                </div>
 
-                        <a href="/?filter_tasks=true&tipo_actividad=tarea" class="decision-card decision-card--neutral">
-                            <div class="decision-card__label">
-                                <span>Tareas</span>
-                                <span>En flujo</span>
-                            </div>
-                            <div class="decision-card__value">{{ kpi_tareas }}</div>
-                            <div class="decision-card__hint">Pedidos de soporte y configuraciones de rutina sin impacto crítico inmediato.</div>
+                <div class="ops-fleet-panel">
+                    <div class="ops-panel-title">
+                        <span>Estado del parque informático</span>
+                    </div>
+                    <div class="ops-fleet-stack">
+                        <a href="/?alerta=ninguna&estado=True" class="ops-fleet-line ops-fleet-line--healthy {% if alerta == 'ninguna' %}active{% endif %}">
+                            <span>Saludables</span>
+                            <strong>{{ kpi_saludables }}</strong>
+                        </a>
+                        <a href="/?alerta=media&estado=True" class="ops-fleet-line ops-fleet-line--warning {% if alerta == 'media' %}active{% endif %}">
+                            <span>Con alerta</span>
+                            <strong>{{ kpi_alerta_media }}</strong>
+                        </a>
+                        <a href="/?alerta=critica&estado=True" class="ops-fleet-line ops-fleet-line--danger {% if alerta == 'critica' %}active{% endif %}">
+                            <span>Críticas</span>
+                            <strong>{{ kpi_criticas }}</strong>
+                        </a>
+                        <a href="/?alerta=sin_impresora_inventario&estado=True" class="ops-fleet-line ops-fleet-line--info {% if alerta == 'sin_impresora_inventario' %}active{% endif %}">
+                            <span>Sin impresora</span>
+                            <strong>{{ kpi_sin_impresora_inventario }}</strong>
                         </a>
                     </div>
                 </div>
 
-                <div class="col-xl-4">
-                    <aside class="hero-radar">
-                        <div class="hero-radar__eyebrow">Orden del turno</div>
-                        <h2 class="hero-radar__title">Una lectura más directa del día</h2>
-                        <p class="hero-radar__lead">El flujo diario queda ordenado en tres pasos: urgencias, seguimiento y trabajo rutinario. Sin repetir accesos ni duplicar decisiones.</p>
-
-                        <div class="hero-radar__list">
-                            <div class="hero-radar__item hero-radar__item--danger">
-                                <span class="hero-radar__metric">{{ kpi_incidentes }}</span>
-                                <span class="hero-radar__copy">
-                                    <strong>Incidentes</strong>
-                                    <small>Casos que hoy frenan la operación.</small>
-                                </span>
-                            </div>
-
-                            <div class="hero-radar__item hero-radar__item--warning">
-                                <span class="hero-radar__metric">{{ kpi_criticas }}</span>
-                                <span class="hero-radar__copy">
-                                    <strong>Críticas</strong>
-                                    <small>Equipos con riesgo alto antes de caer.</small>
-                                </span>
-                            </div>
-
-                            <div class="hero-radar__item hero-radar__item--info">
-                                <span class="hero-radar__metric">{{ kpi_riesgos }}</span>
-                                <span class="hero-radar__copy">
-                                    <strong>Riesgos</strong>
-                                    <small>Mantenimiento preventivo y alertas tempranas.</small>
-                                </span>
-                            </div>
-
-                            <div class="hero-radar__item hero-radar__item--neutral">
-                                <span class="hero-radar__metric">{{ kpi_tareas_pendientes_total }}</span>
-                                <span class="hero-radar__copy">
-                                    <strong>Tareas</strong>
-                                    <small>Flujo general para soporte y seguimiento.</small>
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="hero-radar__footer">
-                            <i class="bi bi-arrow-up-right-circle"></i>
-                            Los accesos principales quedan concentrados en las tarjetas superiores y en los filtros de flota.
-                        </div>
-                    </aside>
+                <div class="ops-turn-panel">
+                    <div class="ops-panel-title">
+                        <span></span>
+                    </div>
+                    <div class="ops-turn-list">
+                        {% if unassigned_tasks %}
+                        <button type="button" class="ops-turn-row" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal">
+                            <i class="bi bi-inbox"></i>
+                            <span>Tareas sin equipo</span>
+                            <strong>{{ unassigned_count }}</strong>
+                        </button>
+                        {% endif %}
+                        <button type="button" class="ops-turn-row" data-bs-toggle="modal" data-bs-target="#mobileTechsModal">
+                            <i class="bi bi-phone"></i>
+                            <span>Técnicos móviles</span>
+                            <strong>{{ active_mobile_techs | length }}</strong>
+                        </button>
+                        {% for pc in auxiliary_pcs %}
+                        <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="ops-turn-row">
+                            <i class="bi {% if 'GENERICA' in pc.pc_name.upper() %}bi-inbox{% else %}bi-diagram-3{% endif %}"></i>
+                            <span>{{ pc.pc_name }}</span>
+                            <strong>{{ pc.tareas_pendientes or 0 }}</strong>
+                        </a>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
-        </section>
-
-        <!-- BARRA DE ESTADO EJECUTIVO (v3) -->
-        <div class="section-kicker">Vista de Flota</div>
-        <div class="fleet-filter-grid mb-3">
-            <a href="/?alerta=ninguna&estado=True"
-               class="fleet-filter fleet-filter--healthy {% if alerta == 'ninguna' %}active-fleet-filter{% endif %}"
-               title="Ver solo las PCs sin ninguna alerta activa">
-                <span class="fleet-filter__top">
-                    <span>
-                        <span class="fleet-filter__eyebrow">Operación estable</span>
-                        <span class="fleet-filter__value">{{ kpi_saludables }}</span>
-                    </span>
-                    <span class="fleet-filter__title">Saludables</span>
-                </span>
-                <span class="fleet-filter__hint">Equipos sin alertas activas y listos para trabajar sin intervención inmediata.</span>
-            </a>
-
-            <a href="/?alerta=media&estado=True"
-               class="fleet-filter fleet-filter--warning {% if alerta == 'media' %}active-fleet-filter{% endif %}"
-               title="Ver PCs con exactamente 1 alerta activa (RAM baja, disco, etc.)">
-                <span class="fleet-filter__top">
-                    <span>
-                        <span class="fleet-filter__eyebrow">Seguimiento</span>
-                        <span class="fleet-filter__value">{{ kpi_alerta_media }}</span>
-                    </span>
-                    <span class="fleet-filter__title">Con Alerta</span>
-                </span>
-                <span class="fleet-filter__hint">Equipos con una señal técnica activa. Conviene revisarlos antes de que escalen.</span>
-            </a>
-
-            <a href="/?alerta=critica&estado=True"
-               class="fleet-filter fleet-filter--danger {% if alerta == 'critica' %}active-fleet-filter{% endif %}"
-               title="Ver PCs con 2 o más alertas activas simultáneas. Requieren atención urgente.">
-                <span class="fleet-filter__top">
-                    <span>
-                        <span class="fleet-filter__eyebrow">Riesgo alto</span>
-                        <span class="fleet-filter__value">{{ kpi_criticas }}</span>
-                    </span>
-                    <span class="fleet-filter__title">Críticas</span>
-                </span>
-                <span class="fleet-filter__hint">Equipos con múltiples alertas concurrentes y alta probabilidad de incidente.</span>
-            </a>
-
-            <a href="/?alerta=sin_impresora_inventario&estado=True"
-               class="fleet-filter fleet-filter--info {% if alerta == 'sin_impresora_inventario' %}active-fleet-filter{% endif %}"
-               title="Ver PCs que no tienen ninguna impresora registrada en el inventario">
-                <span class="fleet-filter__top">
-                    <span>
-                        <span class="fleet-filter__eyebrow">Brecha de inventario</span>
-                        <span class="fleet-filter__value">{{ kpi_sin_impresora_inventario }}</span>
-                    </span>
-                    <span class="fleet-filter__title">Sin Impresora</span>
-                </span>
-                <span class="fleet-filter__hint">Equipos activos sin una impresora cargada oficialmente en el inventario.</span>
-            </a>
-
-            <a href="/?estado=True"
-               class="fleet-filter fleet-filter--neutral"
-               title="Ver todas las PCs activas">
-                <span class="fleet-filter__top">
-                    <span>
-                        <span class="fleet-filter__eyebrow">Cobertura total</span>
-                        <span class="fleet-filter__value">{{ kpi_total_activas }}</span>
-                    </span>
-                    <span class="fleet-filter__title">Activas</span>
-                </span>
-                <span class="fleet-filter__hint">Vista completa del parque activo para revisar distribución y carga general.</span>
-            </a>
-        </div>
-
-        <!-- Tarjetas especiales y Tableros (Huérfanas, Técnicos, PC Genérica, Infraestructura) -->
-        <div class="section-kicker">Accesos Operativos</div>
-        <section class="ops-shortcuts-shell mb-4">
-        <div class="ops-shortcuts-head">
-          <div>
-            <h2 class="ops-shortcuts-title">Atajos útiles, sin ruido visual</h2>
-            <p class="ops-shortcuts-lead">Dejamos arriba solo accesos de gestión puntual y el resto del trabajo vive en la tabla y los filtros.</p>
-          </div>
-          <div class="ops-shortcuts-badge">
-            <i class="bi bi-layout-text-window-reverse"></i>
-            Vista compacta
-          </div>
-        </div>
-        <div class="shortcut-grid shortcut-grid--compact mb-0">
-          {% if unassigned_tasks %}
-          <button type="button" class="shortcut-card shortcut-card--danger btn text-start border-0" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal">
-            <span class="shortcut-card__top">
-              <span>
-                <span class="shortcut-card__eyebrow"><i class="bi bi-exclamation-triangle me-1"></i>Huérfanas</span>
-                <span class="shortcut-card__title">Tareas sin equipo</span>
-              </span>
-              <span class="shortcut-card__badge">{{ unassigned_count }}</span>
-            </span>
-            <span class="shortcut-card__hint">Pendientes que necesitan clasificación antes de entrar al flujo normal.</span>
-          </button>
-          {% endif %}
-
-          <button type="button" class="shortcut-card shortcut-card--info btn text-start border-0" data-bs-toggle="modal" data-bs-target="#mobileTechsModal"
-                  title="Ver los técnicos que están operando actualmente desde dispositivos móviles en tiempo real">
-            <span class="shortcut-card__top">
-              <span>
-                <span class="shortcut-card__eyebrow"><i class="bi bi-phone me-1"></i>Actividad móvil</span>
-                <span class="shortcut-card__title">Técnicos móviles</span>
-              </span>
-              <span class="shortcut-card__badge"><i class="bi bi-broadcast status-dot-blink me-1"></i>{{ active_mobile_techs | length }}</span>
-            </span>
-            <span class="shortcut-card__hint">Seguimiento rápido del equipo conectado desde celular.</span>
-          </button>
-
-          {% for pc in auxiliary_pcs %}
-          <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="text-decoration-none">
-            <div class="shortcut-card shortcut-card--dark shortcut-card--utility"
-                 {% if 'GENERICA' in pc.pc_name.upper() %}
-                    title="Tareas y mantenimientos que no están asociados a un equipo físico específico (Tareas huérfanas)"
-                 {% elif 'INFRAESTRUCTURA' in pc.pc_name.upper() %}
-                    title="Acceso al catálogo oficial de Impresoras y Recursos de Red de la institución"
-                 {% endif %}>
-              <span class="shortcut-card__top">
-                <span>
-                  <span class="shortcut-card__eyebrow">{% if 'GENERICA' in pc.pc_name.upper() %}Tareas sin equipo{% else %}Recursos red{% endif %}</span>
-                  <span class="shortcut-card__title">{{ pc.pc_name }}</span>
-                </span>
-                <span class="shortcut-card__badge">
-                  {% if pc.tareas_pendientes > 0 %}
-                    <i class="bi bi-exclamation-triangle me-1"></i>{{ pc.tareas_pendientes }}
-                  {% else %}
-                    <i class="bi bi-check-lg"></i>
-                  {% endif %}
-                </span>
-              </span>
-              <span class="shortcut-card__hint">
-                {% if 'GENERICA' in pc.pc_name.upper() %}
-                Casos generales que todavía no están vinculados a un activo físico.
-                {% else %}
-                Nodo especial para impresoras y recursos compartidos de red.
-                {% endif %}
-              </span>
-            </div>
-          </a>
-          {% endfor %}
-
-          {% if current_user and current_user.get('is_superuser') %}
-          <form method="POST" action="{{ url_for('dashboard.refresh_fueros') }}" title="Recalcula el Fuero/Sector de cada PC en base a su nombre de equipo">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="shortcut-card shortcut-card--admin shortcut-card--utility btn text-start border-0 h-100">
-              <span class="shortcut-card__top">
-                <span>
-                  <span class="shortcut-card__eyebrow"><i class="bi bi-arrow-repeat me-1"></i>Admin</span>
-                  <span class="shortcut-card__title">Recalcular Fueros</span>
-                </span>
-              </span>
-              <span class="shortcut-card__hint">Reconstruye sector y topografía de cada equipo a partir de su nombre registrado.</span>
-            </button>
-          </form>
-          {% endif %}
-        </div>
         </section>
 
         {% include '_dashboard_table_region.html' %}
