@@ -101,6 +101,72 @@ def _build_disk_summary_lines(disk_models, disk_speeds):
     return lines
 
 
+def _split_fuero_path(fuero):
+    text = re.sub(r"\s+", " ", (fuero or "").strip())
+    if not text or text.lower() == "desconocido":
+        return ["Sin fuero asignado"]
+
+    if "-" in text:
+        parts = [part.strip() for part in text.split("-") if part.strip()]
+        if parts:
+            return parts
+
+    marker_pattern = re.compile(
+        r"\b(sala|secretar(?:i|í)a|vocal(?:i|í)a)\s+([A-Za-z0-9IVXLCDM]+)\b",
+        re.IGNORECASE,
+    )
+    matches = list(marker_pattern.finditer(text))
+    if not matches:
+        return [text]
+
+    root = text[:matches[0].start()].strip(" -")
+    parts = [root] if root else []
+    for match in matches:
+        label = match.group(1).lower()
+        number = match.group(2).strip()
+        if label.startswith("sala"):
+            parts.append(f"Sala {number}")
+        elif label.startswith("secretar"):
+            parts.append(f"Secretaria {number}")
+        else:
+            parts.append(f"Vocalia {number}")
+
+    return parts or [text]
+
+
+def _node_to_view(name, node):
+    children = [
+        _node_to_view(child_name, child_node)
+        for child_name, child_node in sorted(node["children"].items(), key=lambda item: item[0].lower())
+    ]
+    pcs = sorted(node["pcs"], key=lambda pc: (pc.get("pc_name") or "").lower())
+    return {
+        "name": name,
+        "count": node["count"],
+        "children": children,
+        "pcs": pcs,
+    }
+
+
+def _build_fuero_tree(pcs):
+    roots = {}
+    for pc in pcs:
+        path = _split_fuero_path(pc.get("fuero"))
+        current_level = roots
+        current_node = None
+        for part in path:
+            current_node = current_level.setdefault(part, {"count": 0, "children": {}, "pcs": []})
+            current_node["count"] += 1
+            current_level = current_node["children"]
+        if current_node is not None:
+            current_node["pcs"].append(pc)
+
+    return [
+        _node_to_view(name, node)
+        for name, node in sorted(roots.items(), key=lambda item: item[0].lower())
+    ]
+
+
 def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_by, order, page, per_page, tipo_actividad=""):
     """Carga el contexto del dashboard para mantener la ruta Flask más delgada."""
     pcs_data = []
@@ -114,6 +180,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
     technicians_list = []
     pc_ports = {}
     unassigned_count = 0
+    fuero_tree = []
 
     kpi_total_activas = 0
     kpi_total_graveyard = 0
@@ -350,12 +417,16 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                         pc.get("disk_speeds_rpm"),
                     )
 
+            if estado != "False":
+                fuero_tree = _build_fuero_tree(pcs_data)
+
             auxiliary_pcs = [dict(row) for row in conn.execute(
                 """SELECT p.pc_name, p.last_report,
                     (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%')) AS tareas_pendientes
                 FROM pcs p
                 WHERE p.is_active = 'True'
-                AND (UPPER(p.pc_name) = 'PC GENERICA' OR UPPER(p.pc_name) = 'INFRAESTRUCTURA')"""
+                AND (UPPER(p.pc_name) = 'PC GENERICA' OR UPPER(p.pc_name) = 'INFRAESTRUCTURA')
+                ORDER BY CASE WHEN UPPER(p.pc_name) = 'INFRAESTRUCTURA' THEN 0 ELSE 1 END"""
             ).fetchall()]
 
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
@@ -422,7 +493,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 ORDER BY CASE WHEN UPPER(pc_name) LIKE 'PC%%GENERICA%%' THEN 0 WHEN UPPER(pc_name) LIKE 'INFRAESTRUCTURA%%' THEN 1 ELSE 2 END, pc_name ASC"""
             ).fetchall()]
 
-            backup_dir = "/opt/inventario/backups"
+            backup_dir = os.environ.get("BACKUP_DIR", "/opt/inventario/backups")
             if os.path.exists(backup_dir):
                 try:
                     backups = [f for f in os.listdir(backup_dir) if f.endswith('.sql.gz')]
@@ -432,6 +503,8 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                         last_backup_info = dt.fromtimestamp(mtime).strftime("%d/%m/%y %H:%M")
                 except Exception:
                     pass
+            else:
+                last_backup_info = "No configurado"
 
             ad_users_query = """
                 SELECT username, real_name, phone, fuero
@@ -468,6 +541,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
 
     return {
         "pcs": pcs_data,
+        "fuero_tree": fuero_tree,
         "auxiliary_pcs": auxiliary_pcs,
         "pc_ports": pc_ports,
         "unassigned_tasks": unassigned_tasks,

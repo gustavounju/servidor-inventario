@@ -78,93 +78,20 @@
         </div>
         {% endif %}
 
-        <section class="ops-dashboard mb-4">
+        <section class="ops-dashboard ops-dashboard--minimal mb-4">
             <div class="ops-dashboard__grid">
-                <div class="ops-priority-board">
-                    <div class="ops-panel-title">
-                        <span>Prioridad del día</span>
-                    </div>
-                    <div class="ops-priority-list">
-                        <a href="/?filter_tasks=true&tipo_actividad=incidente" class="ops-priority-row ops-priority-row--danger">
-                            <span class="ops-priority-row__mark"></span>
-                            <span class="ops-priority-row__copy">
-                                <strong>Incidentes</strong>
-                                <small>Casos que frenan operación</small>
-                            </span>
-                            <span class="ops-priority-row__value">{{ kpi_incidentes }}</span>
-                        </a>
-                        <a href="/?alerta=critica&estado=True" class="ops-priority-row ops-priority-row--warning">
-                            <span class="ops-priority-row__mark"></span>
-                            <span class="ops-priority-row__copy">
-                                <strong>Equipos críticos</strong>
-                                <small>Dos o más alertas técnicas</small>
-                            </span>
-                            <span class="ops-priority-row__value">{{ kpi_criticas }}</span>
-                        </a>
-                        <a href="/?filter_tasks=true&tipo_actividad=riesgo" class="ops-priority-row ops-priority-row--info">
-                            <span class="ops-priority-row__mark"></span>
-                            <span class="ops-priority-row__copy">
-                                <strong>Riesgos preventivos</strong>
-                                <small>Señales tempranas de mantenimiento</small>
-                            </span>
-                            <span class="ops-priority-row__value">{{ kpi_riesgos }}</span>
-                        </a>
-                        <button type="button" class="ops-priority-row ops-priority-row--neutral border-0 text-start" onclick="showPendingTasksModal()">
-                            <span class="ops-priority-row__mark"></span>
-                            <span class="ops-priority-row__copy">
-                                <strong>Tareas pendientes</strong>
-                                <small>Trabajo abierto para seguimiento</small>
-                            </span>
-                            <span class="ops-priority-row__value">{{ kpi_total_pendientes }}</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="ops-fleet-panel">
-                    <div class="ops-panel-title">
-                        <span>Estado del parque informático</span>
-                    </div>
-                    <div class="ops-fleet-stack">
-                        <a href="/?alerta=ninguna&estado=True" class="ops-fleet-line ops-fleet-line--healthy {% if alerta == 'ninguna' %}active{% endif %}">
-                            <span>Saludables</span>
-                            <strong>{{ kpi_saludables }}</strong>
-                        </a>
-                        <a href="/?alerta=media&estado=True" class="ops-fleet-line ops-fleet-line--warning {% if alerta == 'media' %}active{% endif %}">
-                            <span>Con alerta</span>
-                            <strong>{{ kpi_alerta_media }}</strong>
-                        </a>
-                        <a href="/?alerta=critica&estado=True" class="ops-fleet-line ops-fleet-line--danger {% if alerta == 'critica' %}active{% endif %}">
-                            <span>Críticas</span>
-                            <strong>{{ kpi_criticas }}</strong>
-                        </a>
-                        <a href="/?alerta=sin_impresora_inventario&estado=True" class="ops-fleet-line ops-fleet-line--info {% if alerta == 'sin_impresora_inventario' %}active{% endif %}">
-                            <span>Sin impresora</span>
-                            <strong>{{ kpi_sin_impresora_inventario }}</strong>
-                        </a>
-                    </div>
-                </div>
-
                 <div class="ops-turn-panel">
-                    <div class="ops-panel-title">
-                        <span></span>
-                    </div>
-                    <div class="ops-turn-list">
-                        {% if unassigned_tasks %}
-                        <button type="button" class="ops-turn-row" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal">
-                            <i class="bi bi-inbox"></i>
-                            <span>Tareas sin equipo</span>
-                            <strong>{{ unassigned_count }}</strong>
-                        </button>
-                        {% endif %}
+                    <div class="ops-turn-list ops-turn-list--quick">
                         <button type="button" class="ops-turn-row" data-bs-toggle="modal" data-bs-target="#mobileTechsModal">
                             <i class="bi bi-phone"></i>
-                            <span>Técnicos móviles</span>
+                            <span>Técnicos</span>
                             <strong>{{ active_mobile_techs | length }}</strong>
                         </button>
                         {% for pc in auxiliary_pcs %}
+                        {% set aux_name = pc.pc_name.upper() %}
                         <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="ops-turn-row">
-                            <i class="bi {% if 'GENERICA' in pc.pc_name.upper() %}bi-inbox{% else %}bi-diagram-3{% endif %}"></i>
-                            <span>{{ pc.pc_name }}</span>
+                            <i class="bi {% if 'GENERICA' in aux_name %}bi-inbox{% else %}bi-diagram-3{% endif %}"></i>
+                            <span>{% if aux_name == 'INFRAESTRUCTURA' %}Infraestructura{% elif 'GENERICA' in aux_name %}PC genérica{% else %}{{ pc.pc_name }}{% endif %}</span>
                             <strong>{{ pc.tareas_pendientes or 0 }}</strong>
                         </a>
                         {% endfor %}

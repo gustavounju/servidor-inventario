@@ -3,18 +3,21 @@
 {% set is_compact_shell = is_dashboard_home or request.blueprint == 'infrastructure' %}
 {% if is_dashboard_home %}
 {% set fleet_attention_count = kpi_alerta_media + kpi_criticas %}
-{% set fleet_attention_pct = ((fleet_attention_count * 100 / kpi_total_activas) if kpi_total_activas else 0) | round(0, 'floor') | int %}
 {% endif %}
 <header class="app-shell-header {% if is_compact_shell %}app-shell-header--dashboard{% endif %}">
     {% if is_compact_shell %}
     <div class="system-work-header">
         <div class="system-work-header__summary">
             {% if is_dashboard_home %}
-            <span><i class="bi bi-pc-display"></i> {{ kpi_total_activas }} activas</span>
-            <span><i class="bi bi-exclamation-diamond"></i> {{ fleet_attention_pct }}% con revisión</span>
+            <a href="{{ url_for('dashboard.dashboard') }}" class="system-summary-link" title="Inicio: mostrar toda la tabla de PCs activas">
+                <strong><span class="system-summary-link__action">INICIO</span> {{ kpi_total_activas }} PC´S activas</strong>
+            </a>
+            <span title="{{ fleet_attention_count }} equipos tienen alerta media o crítica. Conviene revisar primero los críticos y después los que tienen alerta."><i class="bi bi-exclamation-diamond"></i> {{ fleet_attention_count }} a revisar</span>
             <span><i class="bi bi-shield-check"></i> Backup: {{ last_backup_info }}</span>
             {% else %}
-            <span><i class="bi bi-pc-display"></i> {{ kpi_total_activas | default(0) }} activas</span>
+            <a href="{{ url_for('dashboard.dashboard') }}" class="system-summary-link" title="Inicio: mostrar toda la tabla de PCs activas">
+                <strong><span class="system-summary-link__action">INICIO</span> {{ kpi_total_activas | default(0) }} PC´S activas</strong>
+            </a>
             <span><i class="bi bi-archive"></i> {{ kpi_total_graveyard | default(0) }} bajas</span>
             <span><i class="bi bi-printer"></i> {{ kpi_total_impresoras_oficial | default(0) }} impresoras</span>
             {% endif %}
@@ -152,11 +155,6 @@
     <div class="header-kpi-bar {% if is_compact_shell %}header-kpi-bar--dashboard{% endif %}" style="height: auto; padding: 4px 10px;">
         <div class="kpi-scroll-container d-flex flex-wrap justify-content-center align-items-center" style="gap: 12px; overflow: visible; white-space: normal; width: 100%;">
             {% if request.blueprint != 'infrastructure' %}
-            <!-- PCs Activas -->
-            <a href="{{ url_for('dashboard.dashboard') }}" class="kpi-mini-chip {% if not request.args and request.path == '/' %}active{% endif %}" title="PCs Activas">
-                <i class="bi bi-pc-display"></i> <span>Activas:</span> <strong>{{ kpi_total_activas }}</strong>
-            </a>
-
             <!-- Cementerio -->
             <a href="{{ url_for('dashboard.view_cementerio') }}" class="kpi-mini-chip {% if request.path == '/cementerio' %}active{% endif %}" title="Bajas / Cementerio">
                 <i class="bi bi-archive"></i> <span>Bajas:</span> <strong>{{ kpi_total_graveyard }}</strong>
@@ -247,6 +245,23 @@
             <div class="kpi-mini-chip" title="Versión">
                 <i class="bi bi-cpu"></i> <span>{{ app_version }}</span>
             </div>
+
+            {% if is_dashboard_home %}
+            <div class="kpi-sep"></div>
+
+            <a href="/?alerta=ninguna&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--healthy {% if request.args.get('alerta') == 'ninguna' %}active{% endif %}" title="Equipos sin alertas técnicas registradas. No requieren acción inmediata.">
+                <i class="bi bi-check-circle"></i> <span>Saludables</span> <strong>{{ kpi_saludables }}</strong>
+            </a>
+            <a href="/?alerta=media&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--warning {% if request.args.get('alerta') == 'media' %}active{% endif %}" title="Equipos con una señal para revisar, como RAM baja, impresora o algún dato técnico pendiente. Conviene planificarlos.">
+                <i class="bi bi-exclamation-triangle"></i> <span>Con alerta</span> <strong>{{ kpi_alerta_media }}</strong>
+            </a>
+            <a href="/?alerta=critica&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--danger {% if request.args.get('alerta') == 'critica' %}active{% endif %}" title="Equipos con dos o más alertas técnicas. Son los primeros que conviene resolver.">
+                <i class="bi bi-exclamation-octagon"></i> <span>Críticas</span> <strong>{{ kpi_criticas }}</strong>
+            </a>
+            <a href="/?alerta=sin_impresora_inventario&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--info {% if request.args.get('alerta') == 'sin_impresora_inventario' %}active{% endif %}" title="Equipos activos sin impresora detectada ni impresora de red asignada. Revisar si corresponde cargar o vincular una impresora.">
+                <i class="bi bi-printer"></i> <span>Sin imp.</span> <strong>{{ kpi_sin_impresora_inventario }}</strong>
+            </a>
+            {% endif %}
         </div>
     </div>
 </header>

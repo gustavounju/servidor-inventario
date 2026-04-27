@@ -22,8 +22,8 @@ function onFilterClick(type) {
         sin_impresora_inventario: 'sin_impresora_inventario',
         solo_red: 'red',
     };
-    // Si estamos en cualquier otra página (ej. /infra/ o /reportes/), redirigir al Dashboard (/)
-    if (window.location.pathname !== '/' && window.location.pathname !== '/cementerio') {
+    // Technical filters always run against the active-PC dashboard, not subpages like Cementerio.
+    if (window.location.pathname !== '/') {
         url = new URL(window.location.protocol + "//" + window.location.host + "/");
     } else {
         url = new URL(window.location.href);
@@ -56,13 +56,8 @@ function onFilterClick(type) {
         url.searchParams.set('filter_tasks', 'true');
     }
 
-    // Always ensure active PCs (except for Graveyard which is a link)
-    if (window.location.href.includes('estado=False') && !url.searchParams.has('estado')) {
-        url.searchParams.set('estado', 'False');
-    } else if (!url.searchParams.has('estado')) {
-        // Only force True if we aren't deliberately going to Graveyard
-        url.searchParams.set('estado', 'True');
-    }
+    // Always ensure filters show active PCs. Graveyard is only reached by its explicit link.
+    url.searchParams.set('estado', 'True');
 
     window.location.href = url.toString();
 }

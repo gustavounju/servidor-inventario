@@ -1,23 +1,6 @@
 <div id="dashboardTableRegion">
         <section class="inventory-table-shell">
-            <div class="inventory-table-shell__head">
-                <div>
-                    <div class="inventory-table-shell__eyebrow">Mapa de Equipos</div>
-                    <h3 class="inventory-table-shell__title">Vista central del inventario activo</h3>
-                </div>
-                <div class="inventory-table-shell__meta">
-                    <span class="inventory-table-pill">
-                        <i class="bi bi-pc-display"></i> {{ pcs|length }} visibles
-                    </span>
-                    <span class="inventory-table-pill">
-                        <i class="bi bi-layers"></i> Página {{ page }} / {{ total_pages if total_pages else 1 }}
-                    </span>
-                    <span class="inventory-table-pill">
-                        <i class="bi bi-filter-circle"></i> {{ 'Filtrado' if q or estado or alerta or os_param or filter_tasks else 'Vista general' }}
-                    </span>
-                </div>
-            </div>
-
+        {% if estado == 'False' %}
         <div class="table-responsive inventory-table-wrap" id="inventoryTableContainer">
             <table id="inventoryTable" class="table table-striped table-hover table-sm mb-0 inventory-table table-gold">
                 <thead>
@@ -409,6 +392,100 @@
                 </tbody>
             </table>
         </div>
+        {% else %}
+        <div class="fuero-tree" id="inventoryTableContainer">
+            {% if fuero_tree %}
+                {% macro render_fuero_node(node, level=0) %}
+                <details class="fuero-tree-node fuero-tree-node--level-{{ level }}" {% if level > 0 %}open{% endif %}>
+                    <summary class="fuero-tree-node__summary">
+                        <span class="fuero-tree-node__folder"><i class="bi bi-folder2-open"></i></span>
+                        <span class="fuero-tree-node__name">{{ node.name }}</span>
+                        <span class="fuero-tree-node__count">{{ node.count }} PC{% if node.count != 1 %}s{% endif %}</span>
+                    </summary>
+                    <div class="fuero-tree-node__body">
+                        {% for child in node.children %}
+                            {{ render_fuero_node(child, level + 1) }}
+                        {% endfor %}
+                        {% for pc in node.pcs %}
+                            {% set alerta_count = (pc.alerta_ram_baja|int) + (pc.alerta_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
+                            {% set alert_reasons = [] %}
+                            {% if pc.alerta_ram_baja %}{% set _ = alert_reasons.append('RAM baja') %}{% endif %}
+                            {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
+                            {% if pc.alerta_sin_impresora and not printer_missing %}{% set _ = alert_reasons.append('Sin impresora') %}{% endif %}
+                            {% if pc.alerta_impresora_red %}{% set _ = alert_reasons.append('Impresora de red') %}{% endif %}
+                            {% if pc.alerta_disco %}{% set _ = alert_reasons.append('Disco') %}{% endif %}
+                            {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('Uptime') %}{% endif %}
+                            {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Nombre duplicado') %}{% endif %}
+                            {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('Windows 7') %}{% endif %}
+                            <div class="fuero-tree-pc" title="{{ pc.fuero or 'Sin fuero asignado' }}" onclick="if(!event.target.closest('a') && !event.target.closest('button') && !event.target.closest('.dropdown-menu')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
+                                <div class="fuero-tree-pc__main">
+                                    <i class="bi bi-pc-display-horizontal"></i>
+                                    <div class="fuero-tree-pc__identity">
+                                        <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="fuero-tree-pc__name" onclick="event.stopPropagation();">{{ pc.pc_name }}</a>
+                                        <span>{{ pc.ad_real_name or pc.last_user or 'Sin usuario' }}</span>
+                                    </div>
+                                </div>
+                                <div class="fuero-tree-pc__meta">
+                                    <span title="IP actual"><i class="bi bi-hdd-network"></i> {{ pc.ip_address or '-' }}</span>
+                                    <span title="Sistema operativo"><i class="bi bi-windows"></i> {{ pc.os_name or '-' }}</span>
+                                    <span title="Impresión"><i class="bi bi-printer"></i> {% if pc.assigned_network_printer %}Catálogo{% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}{{ pc.printer_model }}{% else %}Sin impresora{% endif %}</span>
+                                    {% if pc.tareas_pendientes %}
+                                    <span class="fuero-tree-chip fuero-tree-chip--task" title="Tareas pendientes">{{ pc.tareas_pendientes }} tareas</span>
+                                    {% endif %}
+                                    {% if alerta_count == 0 and not (pc.os_name and 'Windows 7' in pc.os_name) %}
+                                    <span class="fuero-tree-chip fuero-tree-chip--ok">Estable</span>
+                                    {% else %}
+                                    <span class="fuero-tree-chip {% if alerta_count >= 2 %}fuero-tree-chip--danger{% else %}fuero-tree-chip--warning{% endif %}" title="{{ alert_reasons|join(', ') }}">{{ alert_reasons|join(', ') }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="fuero-tree-pc__actions" onclick="event.stopPropagation();">
+                                    <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}"
+                                       class="fuero-tree-action"
+                                       title="Ver detalle"
+                                       aria-label="Ver detalle de {{ pc.pc_name }}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="fuero-tree-action"
+                                            onclick="showSecurity('{{ pc.pc_name }}')"
+                                            title="Seguridad"
+                                            aria-label="Seguridad de {{ pc.pc_name }}">
+                                        <i class="bi bi-shield-shaded"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="fuero-tree-action"
+                                            onclick="showHealth('{{ pc.pc_name }}')"
+                                            title="Diagnóstico"
+                                            aria-label="Diagnóstico de {{ pc.pc_name }}">
+                                        <i class="bi bi-activity"></i>
+                                    </button>
+                                    <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}"
+                                          method="POST"
+                                          class="d-inline"
+                                          onsubmit="return confirm('¿Pasar este equipo al cementerio? Si el script de inventario vuelve a ejecutarse en esa PC, se reactivará sola.');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit"
+                                                class="fuero-tree-action fuero-tree-action--danger"
+                                                title="Pasar a cementerio"
+                                                aria-label="Pasar {{ pc.pc_name }} a cementerio">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </details>
+                {% endmacro %}
+
+                {% for root in fuero_tree %}
+                    {{ render_fuero_node(root) }}
+                {% endfor %}
+            {% else %}
+                <div class="fuero-tree-empty">Sin PCs activas para mostrar con los filtros actuales.</div>
+            {% endif %}
+        </div>
+        {% endif %}
 
         <!-- Paginación -->
         {% if total_pages > 1 %}
