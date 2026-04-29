@@ -106,6 +106,22 @@ def _split_fuero_path(fuero):
     if not text or text.lower() == "desconocido":
         return ["Sin fuero asignado"]
 
+    compact_code = text.upper().replace(" ", "")
+    jcc_match = re.match(r"^JCC(\d+)SEC(\d{1,2})(?:\d{4,})?$", compact_code)
+    if jcc_match:
+        return [
+            f"Juzgado Civil y Comercial N°{int(jcc_match.group(1))}",
+            f"Secretaria {int(jcc_match.group(2))}",
+        ]
+
+    ccyc_match = re.match(r"^CCYCS([IVXLCDM]+)(\d{1,2})(?:\d{4,})?$", compact_code)
+    if ccyc_match:
+        return [
+            "Cámara Civil y Comercial",
+            f"Sala {ccyc_match.group(1)}",
+            f"Vocalia {int(ccyc_match.group(2))}",
+        ]
+
     if "-" in text:
         parts = [part.strip() for part in text.split("-") if part.strip()]
         if parts:

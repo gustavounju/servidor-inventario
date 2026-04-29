@@ -39,6 +39,18 @@ class DashboardContractTests(unittest.TestCase):
             ["Juzgado civil y Comercial", "Sala IV", "Secretaria 15"],
         )
 
+    def test_split_fuero_path_parses_compact_jcc_code(self):
+        self.assertEqual(
+            _split_fuero_path("JCC8SEC1500003"),
+            ["Juzgado Civil y Comercial N°8", "Secretaria 15"],
+        )
+
+    def test_split_fuero_path_parses_compact_ccyc_code(self):
+        self.assertEqual(
+            _split_fuero_path("CCYCSIV1100011"),
+            ["Cámara Civil y Comercial", "Sala IV", "Vocalia 11"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
