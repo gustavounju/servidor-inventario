@@ -51,6 +51,18 @@ class DashboardContractTests(unittest.TestCase):
             ["Cámara Civil y Comercial", "Sala IV", "Vocalia 11"],
         )
 
+    def test_build_fuero_tree_uses_pc_name_when_fuero_is_generic(self):
+        tree = _build_fuero_tree([
+            {"pc_name": "JCC9SEC1700004", "fuero": "Juzgado Civil y Comercial"},
+            {"pc_name": "CCYCSIV1100011", "fuero": "Cámara Civil y Comercial Sala IV"},
+        ])
+
+        self.assertEqual(tree[0]["name"], "Cámara Civil y Comercial")
+        self.assertEqual(tree[0]["children"][0]["name"], "Sala IV")
+        self.assertEqual(tree[0]["children"][0]["children"][0]["name"], "Vocalia 11")
+        self.assertEqual(tree[1]["name"], "Juzgado Civil y Comercial N°9")
+        self.assertEqual(tree[1]["children"][0]["name"], "Secretaria 17")
+
 
 if __name__ == "__main__":
     unittest.main()

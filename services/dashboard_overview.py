@@ -167,7 +167,19 @@ def _node_to_view(name, node):
 def _build_fuero_tree(pcs):
     roots = {}
     for pc in pcs:
-        path = _split_fuero_path(pc.get("fuero"))
+        fuero_text = pc.get("fuero")
+        compact_path = _split_fuero_path(pc.get("pc_name"))
+        if (
+            compact_path != [pc.get("pc_name")]
+            and compact_path != ["Sin fuero asignado"]
+            and (
+                not fuero_text
+                or fuero_text in ("Desconocido", "Juzgado Civil y Comercial", "Cámara Civil y Comercial", "Cámara Civil y Comercial Sala IV")
+            )
+        ):
+            path = compact_path
+        else:
+            path = _split_fuero_path(fuero_text)
         current_level = roots
         current_node = None
         for part in path:
