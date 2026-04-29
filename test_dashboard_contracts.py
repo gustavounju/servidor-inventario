@@ -28,9 +28,9 @@ class DashboardContractTests(unittest.TestCase):
 
         self.assertEqual(tree[0]["name"], "Tribunal de Familia")
         self.assertEqual(tree[0]["count"], 2)
-        self.assertEqual(tree[0]["children"][0]["name"], "sala 4")
+        self.assertEqual(tree[0]["children"][0]["name"], "Sala 4")
         vocalias = tree[0]["children"][0]["children"]
-        self.assertEqual([node["name"] for node in vocalias], ["Vocalia 07", "Vocalia 08"])
+        self.assertEqual([node["name"] for node in vocalias], ["Vocalia 7", "Vocalia 8"])
         self.assertEqual(vocalias[0]["pcs"][0]["pc_name"], "PC-01")
 
     def test_split_fuero_path_infers_unseparated_civil_secretaria(self):
@@ -62,6 +62,15 @@ class DashboardContractTests(unittest.TestCase):
         self.assertEqual(tree[0]["children"][0]["children"][0]["name"], "Vocalia 11")
         self.assertEqual(tree[1]["name"], "Juzgado Civil y Comercial N°9")
         self.assertEqual(tree[1]["children"][0]["name"], "Secretaria 17")
+    def test_build_fuero_tree_unifies_same_jcc_with_multiple_secretarias(self):
+        tree = _build_fuero_tree([
+            {"pc_name": "JCC9SEC1700004", "fuero": "Juzgado Civil y Comercial"},
+            {"pc_name": "JCC9SEC1800004", "fuero": "Juzgado civil y Comercial NÂ°9 Secretaria 18"},
+        ])
+
+        self.assertEqual(len(tree), 1)
+        self.assertEqual(tree[0]["name"], "Juzgado Civil y Comercial N°9")
+        self.assertEqual([child["name"] for child in tree[0]["children"]], ["Secretaria 17", "Secretaria 18"])
 
 
 if __name__ == "__main__":

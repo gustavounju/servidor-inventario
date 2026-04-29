@@ -123,7 +123,7 @@ def _split_fuero_path(fuero):
         ]
 
     if "-" in text:
-        parts = [part.strip() for part in text.split("-") if part.strip()]
+        parts = [_normalize_fuero_part(part.strip()) for part in text.split("-") if part.strip()]
         if parts:
             return parts
 
@@ -136,6 +136,7 @@ def _split_fuero_path(fuero):
         return [text]
 
     root = text[:matches[0].start()].strip(" -")
+    root = _normalize_fuero_part(root)
     parts = [root] if root else []
     for match in matches:
         label = match.group(1).lower()
@@ -148,6 +149,35 @@ def _split_fuero_path(fuero):
             parts.append(f"Vocalia {number}")
 
     return parts or [text]
+
+
+def _normalize_fuero_part(part):
+    text = re.sub(r"\s+", " ", (part or "").strip())
+    if not text:
+        return text
+
+    lowered = text.lower()
+
+    jcc_match = re.match(r"^juzgado civil y comercial n(?:Â?[°º]|o)\s*(\d+)$", text, re.IGNORECASE)
+    if jcc_match:
+        return f"Juzgado Civil y Comercial N°{int(jcc_match.group(1))}"
+
+    if re.match(r"^c[áa]mara civil y comercial$", lowered, re.IGNORECASE):
+        return "Cámara Civil y Comercial"
+
+    sala_match = re.match(r"^sala\s+([a-z0-9ivxlcdm]+)$", text, re.IGNORECASE)
+    if sala_match:
+        return f"Sala {sala_match.group(1).upper()}"
+
+    sec_match = re.match(r"^secretar(?:i|í)a\s+(\d+)$", text, re.IGNORECASE)
+    if sec_match:
+        return f"Secretaria {int(sec_match.group(1))}"
+
+    voc_match = re.match(r"^vocal(?:i|í)a\s+(\d+)$", text, re.IGNORECASE)
+    if voc_match:
+        return f"Vocalia {int(voc_match.group(1))}"
+
+    return text
 
 
 def _node_to_view(name, node):
