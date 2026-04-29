@@ -247,7 +247,7 @@
             </div>
 
             {% if is_dashboard_home %}
-            <div class="kpi-sep"></div>
+            <div class="fleet-mini-row">
 
             <a href="/?alerta=ninguna&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--healthy {% if request.args.get('alerta') == 'ninguna' %}active{% endif %}" title="Equipos sin alertas técnicas registradas. No requieren acción inmediata.">
                 <i class="bi bi-check-circle"></i> <span>Saludables</span> <strong>{{ kpi_saludables }}</strong>
@@ -261,6 +261,7 @@
             <a href="/?alerta=sin_impresora_inventario&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--info {% if request.args.get('alerta') == 'sin_impresora_inventario' %}active{% endif %}" title="Equipos activos sin impresora detectada ni impresora de red asignada. Revisar si corresponde cargar o vincular una impresora.">
                 <i class="bi bi-printer"></i> <span>Sin imp.</span> <strong>{{ kpi_sin_impresora_inventario }}</strong>
             </a>
+            </div>
             {% endif %}
         </div>
     </div>

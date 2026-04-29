@@ -3147,6 +3147,16 @@ textarea.form-control {
     color: #1d4ed8;
 }
 
+.fleet-mini-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-basis: 100%;
+    width: 100%;
+    margin-top: 4px;
+}
+
 .highlight-orange strong { color: #ea580c !important; }
 .kpi-sep { width: 1px; height: 12px; background: #dbe3ee; margin: 0 4px; }
 .sigj-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
