@@ -122,6 +122,14 @@ def _split_fuero_path(fuero):
             f"Vocalia {int(ccyc_match.group(2))}",
         ]
 
+    tts_match = re.match(r"^TTS([IVXLCDM]+)VOC(\d{1,2})(?:\d{4,})?$", compact_code)
+    if tts_match:
+        return [
+            "Tribunal de Trabajo",
+            f"Sala {tts_match.group(1)}",
+            f"Vocalia {int(tts_match.group(2))}",
+        ]
+
     if "-" in text:
         parts = [_normalize_fuero_part(part.strip()) for part in text.split("-") if part.strip()]
         if parts:
@@ -204,6 +212,7 @@ def _build_fuero_tree(pcs):
             and compact_path != ["Sin fuero asignado"]
             and (
                 not fuero_text
+                or fuero_text == "Tribunal de Trabajo Sala IV"
                 or fuero_text in ("Desconocido", "Juzgado Civil y Comercial", "Cámara Civil y Comercial", "Cámara Civil y Comercial Sala IV")
             )
         ):

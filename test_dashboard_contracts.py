@@ -71,6 +71,16 @@ class DashboardContractTests(unittest.TestCase):
         self.assertEqual(len(tree), 1)
         self.assertEqual(tree[0]["name"], "Juzgado Civil y Comercial N°9")
         self.assertEqual([child["name"] for child in tree[0]["children"]], ["Secretaria 17", "Secretaria 18"])
+    def test_build_fuero_tree_splits_tts_vocalias(self):
+        tree = _build_fuero_tree([
+            {"pc_name": "TTSIVVOC100002", "fuero": "Tribunal de Trabajo Sala IV"},
+            {"pc_name": "TTSIVVOC110003", "fuero": "Tribunal de Trabajo Sala IV"},
+        ])
+
+        self.assertEqual(len(tree), 1)
+        self.assertEqual(tree[0]["name"], "Tribunal de Trabajo")
+        self.assertEqual(tree[0]["children"][0]["name"], "Sala IV")
+        self.assertEqual([child["name"] for child in tree[0]["children"][0]["children"]], ["Vocalia 10", "Vocalia 11"])
 
 
 if __name__ == "__main__":
