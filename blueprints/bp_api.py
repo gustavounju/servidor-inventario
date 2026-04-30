@@ -196,9 +196,6 @@ def process_inventory_data(data):
         # Solo alertar si es red DIRECTA (IP/WSD). Las compartidas se manejan como local/link
         alerta_impresora_red = 1 if (not sin_modelo and not es_virtual and es_red_directa) else 0
 
-        if alerta_impresora_red == 1:
-            alerta_sin_impresora = 1
-
     salud = data.get("Salud", {})
     alerta_disco = 0
     discos_smart = salud.get("Discos_SMART", [])
@@ -454,7 +451,7 @@ def api_security(pc_name):
 
 @bp_api.route("/api/health/<string:pc_name>")
 def api_health(pc_name):
-    """Devuelve los datos de salud (SMART, Uptime, Eventos) desde el JSON completo."""
+    """Devuelve el diagnóstico unificado del equipo desde el JSON completo."""
     try:
         with get_db_connection() as conn:
             row = conn.execute("SELECT full_json_data FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
@@ -464,9 +461,13 @@ def api_health(pc_name):
             data = json.loads(row["full_json_data"])
             health = data.get("Salud", {})
             sistema = data.get("Sistema", {})
+            conns = data.get("Conexiones", [])
+            sec_extra = data.get("Seguridad_Extra", {"Antivirus": "Descargando...", "Startup": []})
             return jsonify({
                 "status": "success", 
                 "data": health,
+                "conexiones": conns,
+                "seguridad_extra": sec_extra,
                 "extra": {
                     "office": sistema.get("Office", "N/A"),
                     "os": sistema.get("OsName", "N/A")
@@ -580,13 +581,6 @@ def api_detected_printers():
                 primary_serial = (row_dict.get("primary_printer_sn") or "").strip().upper()
                 primary_port = _normalize_printer_endpoint(row_dict.get("primary_printer_port"))
                 primary_key = _build_printer_match_key(row_dict.get("primary_printer_model"), row_dict.get("primary_printer_port"))
-
-                if detect_serial and detect_serial != "N/A" and detect_serial == primary_serial:
-                    continue
-                if detect_key and detect_key == primary_key:
-                    continue
-                if detect_port and primary_port and detect_port == primary_port and _normalize_printer_model(row_dict.get("printer_model")) == _normalize_printer_model(row_dict.get("primary_printer_model")):
-                    continue
 
                 assigned = assigned_by_pc.get(pc_name, {"serials": set(), "ports": set(), "keys": set()})
                 if detect_serial and detect_serial != "N/A" and detect_serial in assigned["serials"]:

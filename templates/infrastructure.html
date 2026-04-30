@@ -13,12 +13,11 @@
     <script defer src="/static/js/security.js"></script>
     <script defer src="/static/js/gold.js?v={{ app_version }}"></script>
 </head>
-</head>
 <body class="has-fixed-header">
     {% include '_module_switcher.html' %}
     {% include '_shared_modals.html' %}
 
-    <div class="container-fluid px-3" style="margin-top: 82px;">
+    <div class="container-fluid px-3 infra-page" style="margin-top: 82px;">
         <!-- Mensajes Flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -34,6 +33,10 @@
         {% endwith %}
 
         <style>
+            .infra-page {
+                color: var(--text-color);
+                font-family: inherit;
+            }
             .custom-tabs {
                 border-bottom: 1px solid var(--border-color);
             }
@@ -59,14 +62,26 @@
                 border-bottom: 3px solid var(--accent-color);
                 background: transparent;
             }
-            /* Quitar bordes redondeados y sombras de las tarjetas dentro de los tabs */
-            .tab-content .card {
-                border-radius: 0 !important;
-                border: none;
-                box-shadow: none !important;
+            .infra-page .tab-content .card {
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 8px !important;
+                box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05) !important;
             }
-            .tab-content .card-header.gradient-header {
-                border-radius: 0 !important;
+            .infra-page .tab-content .card-header.gradient-header {
+                background: transparent;
+                border-bottom: 1px solid var(--card-border);
+                border-radius: 8px 8px 0 0 !important;
+                color: var(--text-color);
+            }
+            .infra-page .card-header .btn-light {
+                background: var(--primary-gradient);
+                border: 0;
+                color: #fff !important;
+            }
+            .infra-page .table-light th {
+                background: #f8fafc;
+                color: #334155;
             }
         </style>
 

@@ -660,12 +660,12 @@
     </div>
 </div>
 
-<!-- Modal Salud -->
+<!-- Modal Diagnóstico -->
 <div class="modal fade" id="healthModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Salud del Equipo: <span id="healthPcName">...</span></h5>
+                <h5 class="modal-title">Diagnóstico del Equipo: <span id="healthPcName">...</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body overflow-auto" style="max-height: 80vh;">
@@ -704,6 +704,39 @@
 
                     <h6 class="fw-bold border-bottom pb-1 mb-2">Eventos Críticos Recientes (System Logs)</h6>
                     <ul id="healthEventsList" class="list-group list-group-flush small"></ul>
+
+                    <h6 class="fw-bold border-bottom pb-1 mt-4 mb-3">Seguridad y Red</h6>
+                    <div class="card border-0 bg-light shadow-sm mb-3">
+                        <div class="card-body">
+                            <h6 class="mb-2 fw-bold"><i class="bi bi-shield-lock-fill text-primary me-1"></i> Software de Protección</h6>
+                            <span id="healthSecurityAntivirus" class="badge fs-6 bg-secondary">Cargando...</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-lg-5">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-lightning-auto text-warning me-1"></i> Programas de Inicio</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
+                                    <thead class="bg-light">
+                                        <tr><th>Nombre</th><th>Comando</th></tr>
+                                    </thead>
+                                    <tbody id="healthSecurityStartupBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-7">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-globe text-info me-1"></i> Conexiones Externas Activas</h6>
+                            <div class="table-responsive" style="max-height: 360px;">
+                                <table class="table table-sm table-striped mb-0" style="font-size: 0.8rem;">
+                                    <thead class="bg-light sticky-top">
+                                        <tr><th>Proceso</th><th>PID</th><th>Remoto</th><th>Estado</th></tr>
+                                    </thead>
+                                    <tbody id="healthSecurityTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -895,6 +928,39 @@
                         eventList.innerHTML = `<li class="list-group-item bg-transparent text-muted text-center py-2">Sin errores críticos detectados</li>`;
                     }
 
+                    // Seguridad
+                    const avBadge = document.getElementById('healthSecurityAntivirus');
+                    const avName = (data.seguridad_extra && data.seguridad_extra.Antivirus) || 'Desconocido';
+                    avBadge.innerText = avName;
+                    avBadge.className = 'badge fs-6 ' + (avName === 'No Detectado' ? 'bg-danger' : 'bg-success');
+
+                    const startupTbody = document.getElementById('healthSecurityStartupBody');
+                    startupTbody.innerHTML = '';
+                    const startups = (data.seguridad_extra && data.seguridad_extra.Startup) || [];
+                    if (startups.length > 0) {
+                        startups.forEach(st => {
+                            startupTbody.innerHTML += `<tr><td class="fw-bold">${st.Name}</td><td class="text-muted"><small>${st.Command}</small></td></tr>`;
+                        });
+                    } else {
+                        startupTbody.innerHTML = `<tr><td colspan="2" class="text-center py-3 text-muted">No se detectaron programas extra de inicio.</td></tr>`;
+                    }
+
+                    const tbody = document.getElementById('healthSecurityTableBody');
+                    tbody.innerHTML = '';
+                    const conns = data.conexiones || [];
+                    if (conns.length > 0) {
+                        conns.forEach(conn => {
+                            tbody.innerHTML += `<tr>
+                                <td class="text-primary fw-bold">${conn.Process || '?'}</td>
+                                <td>${conn.PID || '-'}</td>
+                                <td><code>${conn.Remote}</code></td>
+                                <td><span class="badge ${conn.State === 'ESTABLISHED' ? 'bg-success' : 'bg-warning'}">${conn.State}</span></td>
+                            </tr>`;
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay conexiones externas activas.</td></tr>`;
+                    }
+
                 } else {
                     document.getElementById('healthError').innerText = data.message || "Error al cargar diagnóstico.";
                     document.getElementById('healthError').classList.remove('d-none');
@@ -908,6 +974,9 @@
     }
 
     function showSecurity(pcName) {
+        showHealth(pcName);
+        return;
+
         document.getElementById('securityPcName').innerText = pcName;
         document.getElementById('securityLoading').classList.remove('d-none');
         document.getElementById('securityContent').classList.add('d-none');

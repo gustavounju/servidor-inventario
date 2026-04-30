@@ -1626,6 +1626,20 @@ body {
     white-space: nowrap;
 }
 
+.fuero-tree-pc__meta > .fuero-tree-pc__meta-printer {
+    max-width: min(100%, 420px);
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.fuero-tree-pc__meta > .fuero-tree-pc__meta-printer--pending {
+    background: #fff7ed;
+    border-color: #fdba74;
+    color: #9a3412;
+}
+
 .fuero-tree-chip--ok {
     background: #f0fdf4 !important;
     border-color: #bbf7d0 !important;

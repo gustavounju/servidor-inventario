@@ -35,16 +35,18 @@
                 <tbody>
                     {% for pc in pcs %}
                     {% if not (pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') or pc.pc_name.upper().startswith('INFRAESTRUCTURA')) %}
-                    {% set alerta_count = (pc.alerta_ram_baja|int) + (pc.alerta_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
+                    {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
+                    {% set printer_alert_sin_impresora = pc.alerta_sin_impresora and printer_missing %}
+                    {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
                     {% set row_class = [] %}
                     {% set alert_reasons = [] %}
                     
-                    {% if pc.alerta_ram_baja %}{% set _ = alert_reasons.append('Memoria RAM insuficiente (< 8GB)') %}{% endif %}
-                    {% if pc.alerta_sin_impresora %}{% set _ = alert_reasons.append('Sin impresora instalada') %}{% endif %}
-                    {% if pc.alerta_disco %}{% set _ = alert_reasons.append('Alerta de Disco (Falla o poco espacio)') %}{% endif %}
-                    {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('Uptime crítico: equipo encendido hace más de 15 días') %}{% endif %}
-                    {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Conflicto: nombre de PC duplicado en la red') %}{% endif %}
-                    {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('SO Obsoleto: requiere actualizar Windows 7') %}{% endif %}
+                    {% if pc.alerta_ram_baja %}{% set _ = alert_reasons.append('Tiene menos de 8 GB de RAM. Puede estar lenta para uso diario.') %}{% endif %}
+                    {% if printer_alert_sin_impresora %}{% set _ = alert_reasons.append('No se detectó una impresora instalada o asignada a esta PC.') %}{% endif %}
+                    {% if pc.alerta_disco %}{% set _ = alert_reasons.append('Revisar disco: puede tener poco espacio libre o un estado SMART no saludable.') %}{% endif %}
+                    {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('La PC lleva más de 15 días encendida sin reiniciar. Conviene reiniciarla.') %}{% endif %}
+                    {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Hay otra PC reportando el mismo nombre en la red.') %}{% endif %}
+                    {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('Usa Windows 7. Es un sistema viejo y conviene planificar actualización.') %}{% endif %}
                     
                     {% set tooltip_text = "Estado: Saludable" if not alert_reasons else "Alertas detectadas:\n• " + alert_reasons|join('\n• ') %}
 
@@ -186,7 +188,7 @@
                                     </span>
                                     {% endif %}
                                 </div>
-                            {% if not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in pc.printer_model | upper %}
+                            {% if printer_missing %}
                                 <div class="inventory-cell-note">Sin impresora</div>
                             {% else %}
                                 <div class="small mt-1" style="font-size: 0.75rem;">
@@ -237,12 +239,12 @@
                                                     </span>
                                                 {% endif %}
                                                 
-                                                {% if pc.detected_printers_count > 1 %}
+                                                {% if pc.detected_printers_count > 0 %}
                                                     <button type="button" class="btn btn-xs btn-warning fw-bold py-0 px-2" 
                                                             style="font-size: 0.65rem; border-radius: 4px;"
                                                             onclick="showDetectedPrinters('{{ pc.pc_name }}')"
                                                             title="¡Atención! Hemos detectado {{ pc.detected_printers_count }} impresoras en este equipo que no están en el inventario oficial. Haz clic para gestionarlas.">
-                                                        <i class="bi bi-plus-circle-dotted"></i> Revisar {{ pc.detected_printers_count }} impresoras
+                                                        <i class="bi bi-plus-circle-dotted"></i> Revisar {{ pc.detected_printers_count }} impresora{% if pc.detected_printers_count != 1 %}s{% endif %}
                                                     </button>
                                                 {% elif (not pc.assigned_network_printer) and pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
                                                     <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" 
@@ -305,22 +307,19 @@
                                 <div class="inventory-alert-stack">
                                 <!-- Alertas -->
                                 {% if pc.alerta_ram_baja %}
-                                <div class="inventory-alert-chip inventory-alert-chip--warning" title="RAM Baja (< 8GB)">💾 RAM</div>
+                                <div class="inventory-alert-chip inventory-alert-chip--warning" title="Tiene menos de 8 GB de RAM. Puede estar lenta para uso diario.">💾 RAM baja</div>
                                 {% endif %}
-                                {% if pc.alerta_sin_impresora %}
-                                <div class="inventory-alert-chip inventory-alert-chip--info" title="Sin Impresora">🖨️ Sin imp.</div>
-                                {% endif %}
-                                {% if pc.alerta_impresora_red %}
-                                <div class="inventory-alert-chip inventory-alert-chip--info" title="Impresora en Red">🌐 Red</div>
+                                {% if printer_alert_sin_impresora %}
+                                <div class="inventory-alert-chip inventory-alert-chip--info" title="No se detectó una impresora instalada o asignada a esta PC.">🖨️ Sin impresora</div>
                                 {% endif %}
                                 {% if pc.alerta_disco %}
-                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Falla de Disco / Espacio Bajo">💿 Disco</div>
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Revisar disco: puede tener poco espacio libre o un estado SMART no saludable.">💿 Revisar disco</div>
                                 {% endif %}
                                 {% if pc.alerta_uptime %}
-                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Uptime Alto (>15 días)">⏳ Uptime</div>
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="La PC lleva más de 15 días encendida sin reiniciar. Conviene reiniciarla.">⏳ Reiniciar PC</div>
                                 {% endif %}
                                 {% if pc.alerta_nombre_duplicado %}
-                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Nombre Duplicado">⚠️ Duplicado</div>
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Hay otra PC reportando el mismo nombre en la red.">⚠️ Nombre duplicado</div>
                                 {% endif %}
                             </div>
 
@@ -343,11 +342,6 @@
                                         <button type="button"
                                                 class="dropdown-item"
                                                 onclick="event.stopPropagation(); showSecurity('{{ pc.pc_name }}')">
-                                            <i class="bi bi-shield-shaded"></i> Seguridad
-                                        </button>
-                                        <button type="button"
-                                                class="dropdown-item"
-                                                onclick="event.stopPropagation(); showHealth('{{ pc.pc_name }}')">
                                             <i class="bi bi-activity"></i> Diagnóstico
                                         </button>
                                         {% if pc.pc_name.upper() != 'PC GENERICA' and pc.pc_name.upper() != 'PC-GENERICA' %}
@@ -407,16 +401,16 @@
                             {{ render_fuero_node(child, level + 1) }}
                         {% endfor %}
                         {% for pc in node.pcs %}
-                            {% set alerta_count = (pc.alerta_ram_baja|int) + (pc.alerta_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
-                            {% set alert_reasons = [] %}
-                            {% if pc.alerta_ram_baja %}{% set _ = alert_reasons.append('RAM baja') %}{% endif %}
                             {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
-                            {% if pc.alerta_sin_impresora and not printer_missing %}{% set _ = alert_reasons.append('Sin impresora') %}{% endif %}
-                            {% if pc.alerta_impresora_red %}{% set _ = alert_reasons.append('Impresora de red') %}{% endif %}
-                            {% if pc.alerta_disco %}{% set _ = alert_reasons.append('Disco') %}{% endif %}
-                            {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('Uptime') %}{% endif %}
+                            {% set printer_alert_sin_impresora = pc.alerta_sin_impresora and printer_missing %}
+                            {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
+                            {% set alert_reasons = [] %}
+                            {% if pc.alerta_ram_baja %}{% set _ = alert_reasons.append('RAM baja: menos de 8 GB') %}{% endif %}
+                            {% if printer_alert_sin_impresora %}{% set _ = alert_reasons.append('No se detectó impresora') %}{% endif %}
+                            {% if pc.alerta_disco %}{% set _ = alert_reasons.append('Revisar disco') %}{% endif %}
+                            {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('Reiniciar PC') %}{% endif %}
                             {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Nombre duplicado') %}{% endif %}
-                            {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('Windows 7') %}{% endif %}
+                            {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('Actualizar Windows 7') %}{% endif %}
                             <div class="fuero-tree-pc" title="{{ pc.fuero or 'Sin fuero asignado' }}" onclick="if(!event.target.closest('a') && !event.target.closest('button') && !event.target.closest('.dropdown-menu')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
                                 <div class="fuero-tree-pc__main">
                                     <i class="bi bi-pc-display-horizontal"></i>
@@ -428,7 +422,38 @@
                                 <div class="fuero-tree-pc__meta">
                                     <span title="IP actual"><i class="bi bi-hdd-network"></i> {{ pc.ip_address or '-' }}</span>
                                     <span title="Sistema operativo"><i class="bi bi-windows"></i> {{ pc.os_name or '-' }}</span>
-                                    <span title="Impresión"><i class="bi bi-printer"></i> {% if pc.assigned_network_printer %}Catálogo{% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}{{ pc.printer_model }}{% else %}Sin impresora{% endif %}</span>
+                                    {% if pc.office_version and pc.office_version != 'No detectado' and pc.office_version != 'N/A' %}
+                                    <span title="Microsoft Office"><i class="bi bi-microsoft"></i> {{ pc.office_version }}</span>
+                                    {% endif %}
+                                    {% if pc.monitors and pc.monitors != 'N/A' %}
+                                    <span title="Monitor detectado"><i class="bi bi-display"></i> {{ pc.monitors }}</span>
+                                    {% endif %}
+                                    <span class="fuero-tree-pc__meta-printer {% if not pc.assigned_network_printer and pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}fuero-tree-pc__meta-printer--pending{% endif %}" title="{% if pc.assigned_network_printer %}Impresora registrada en catálogo{% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}Impresora detectada, pendiente de sumar al catálogo{% else %}Impresión{% endif %}"><i class="bi bi-printer"></i> {% if pc.assigned_network_printer %}{{ pc.assigned_network_printer }} (catálogo){% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}{{ pc.printer_model }}{% else %}Sin impresora{% endif %}</span>
+                                    {% if pc.assigned_network_printer %}
+                                    {% elif pc.printer_port and pc.printer_port.startswith('\\\\') %}
+                                    <span title="{{ pc.printer_port }}"><i class="bi bi-share"></i> Compartida por otra PC</span>
+                                    {% elif pc.printer_port and ('.' in pc.printer_port or 'WSD' in pc.printer_port or 'IP_' in pc.printer_port) %}
+                                    <span class="{% if not pc.assigned_network_printer %}fuero-tree-pc__meta-printer--pending{% endif %}" title="{% if not pc.assigned_network_printer %}Impresora por red detectada, pendiente de sumar al catálogo{% else %}{{ pc.printer_port }}{% endif %}"><i class="bi bi-diagram-3"></i> Por red/IP</span>
+                                    {% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}
+                                    <span title="{{ pc.printer_port or '' }}"><i class="bi bi-usb-symbol"></i> Local/USB</span>
+                                    {% endif %}
+                                    {% if pc.detected_printers_count > 0 %}
+                                    <button type="button"
+                                            class="btn btn-sm btn-warning fw-bold py-0 px-2"
+                                            style="font-size: 0.68rem;"
+                                            onclick="event.stopPropagation(); showDetectedPrinters('{{ pc.pc_name }}')"
+                                            title="Hay impresoras detectadas que todavía no están en el catálogo.">
+                                        <i class="bi bi-plus-circle-dotted"></i> Sumar {{ pc.detected_printers_count }} impresora{% if pc.detected_printers_count != 1 %}s{% endif %}
+                                    </button>
+                                    {% elif not pc.assigned_network_printer and pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}
+                                    <button type="button"
+                                            class="btn btn-sm btn-warning fw-bold py-0 px-2"
+                                            style="font-size: 0.68rem;"
+                                            onclick="event.stopPropagation(); promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')"
+                                            title="Sumar esta impresora detectada al catálogo oficial.">
+                                        <i class="bi bi-plus-circle-fill"></i>
+                                    </button>
+                                    {% endif %}
                                     {% if pc.tareas_pendientes %}
                                     <span class="fuero-tree-chip fuero-tree-chip--task" title="Tareas pendientes">{{ pc.tareas_pendientes }} tareas</span>
                                     {% endif %}
@@ -448,13 +473,6 @@
                                     <button type="button"
                                             class="fuero-tree-action"
                                             onclick="showSecurity('{{ pc.pc_name }}')"
-                                            title="Seguridad"
-                                            aria-label="Seguridad de {{ pc.pc_name }}">
-                                        <i class="bi bi-shield-shaded"></i>
-                                    </button>
-                                    <button type="button"
-                                            class="fuero-tree-action"
-                                            onclick="showHealth('{{ pc.pc_name }}')"
                                             title="Diagnóstico"
                                             aria-label="Diagnóstico de {{ pc.pc_name }}">
                                         <i class="bi bi-activity"></i>

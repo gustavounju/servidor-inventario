@@ -450,19 +450,6 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                     if detect_port and detect_port in catalog_ports:
                         continue
 
-                    pc_info = next((pc for pc in pcs_data if pc["pc_name"] == pc_name), None)
-                    if pc_info:
-                        primary_serial = (pc_info.get("printer_sn") or "").strip().upper()
-                        primary_port = _normalize_printer_endpoint(pc_info.get("printer_port"))
-                        primary_key = _build_printer_match_key(pc_info.get("printer_model"), pc_info.get("printer_port"))
-
-                        if detect_serial and detect_serial != "N/A" and detect_serial == primary_serial:
-                            continue
-                        if detect_key and detect_key == primary_key:
-                            continue
-                        if detect_port and primary_port and detect_port == primary_port and _normalize_printer_model(row.get("printer_model")) == _normalize_printer_model(pc_info.get("printer_model")):
-                            continue
-
                     assigned = assigned_by_pc.get(pc_name, {"serials": set(), "ports": set(), "keys": set()})
                     if detect_serial and detect_serial != "N/A" and detect_serial in assigned["serials"]:
                         continue

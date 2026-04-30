@@ -64,6 +64,100 @@
     .section-heading i {
       color: var(--accent-color);
     }
+
+    .pc-detail-shell {
+      display: grid;
+      gap: 14px;
+    }
+
+    .pc-detail-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .pc-detail-chip {
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      color: #475569;
+      display: inline-flex;
+      font-size: 0.72rem;
+      font-weight: 800;
+      gap: 5px;
+      min-height: 24px;
+      padding: 3px 8px;
+    }
+
+    .pc-detail-chip--ok {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #15803d;
+    }
+
+    .pc-detail-chip--pending {
+      background: #fff7ed;
+      border-color: #fdba74;
+      color: #9a3412;
+    }
+
+    .pc-detail-chip--danger {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #b91c1c;
+    }
+
+    .pc-detail-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .pc-detail-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+      padding: 14px;
+    }
+
+    .pc-detail-card__title {
+      color: #64748b;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .pc-detail-card__value {
+      color: #0f172a;
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .pc-detail-card__meta {
+      color: #64748b;
+      font-size: 0.78rem;
+      margin-top: 6px;
+    }
+
+    .pc-detail-printer {
+      border-left: 4px solid #22c55e;
+      grid-column: 1 / -1;
+    }
+
+    .pc-detail-printer--pending {
+      border-left-color: #f97316;
+    }
+
+    .pc-detail-printer--missing {
+      border-left-color: #94a3b8;
+    }
+
   </style>
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <script defer src="/static/js/security.js"></script>
@@ -76,7 +170,7 @@
   {% include '_shared_modals.html' %}
 
   <!-- Contenedor Principal con margen para el header fijo -->
-  <div class="container-fluid px-3 pt-2 pb-0" style="margin-top: 110px;">
+  <div class="container-fluid px-3 pt-2 pb-0" style="margin-top: 82px;">
     
     <!-- MINI HERO HEADER -->
     <div class="hero-header mb-3">
@@ -154,168 +248,122 @@
 
     {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
     <!-- BLOQUE 1: Datos principales de la PC -->
-    <div class="card shadow-sm mb-4">
-      <div class="gold-card-header"><i class="bi bi-pc-display"></i> Información del Equipo</div>
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0 detail-table">
-          <tbody>
-            <tr>
-              <th style="width:22%">Usuario</th>
-              <td>
-                {% if pc.ad_real_name %}
-                <strong>{{ pc.ad_real_name }}</strong> <span class="text-muted">({{ pc.last_user }})</span>
-                {% else %}
-                {{ pc.last_user }}
-                {% endif %}
-              </td>
-            </tr>
-            <tr>
-              <th>Fuero</th>
-              <td><span class="badge text-white"
-                  style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }};">{{
-                  pc.fuero or '-' }}</span></td>
-            </tr>
-            <tr>
-              <th>Placa Madre</th>
-              <td>{{ pc.motherboard_model }}</td>
-            </tr>
-            <tr>
-              <th>Sistema Operativo</th>
-              <td class="fw-bold text-primary">{{ pc.os_name or 'N/A' }}</td>
-            </tr>
-            <tr>
-              <th>Microsoft Office</th>
-              <td class="fw-medium text-success">{{ pc.office_version or 'N/A' }}</td>
-            </tr>
-            <tr>
-              <th>CPU</th>
-              <td>{{ pc.processor }}</td>
-            </tr>
-            <tr>
-              <th>RAM</th>
-              <td>{{ pc.ram_gb }} GB ({{ pc.ram_detalles }})</td>
-            </tr>
-            <tr>
-              <th>Discos</th>
-              <td>
+    <div class="card shadow-sm mb-4" id="pcResumen">
+      <div class="gold-card-header"><i class="bi bi-pc-display"></i> Resumen del Equipo</div>
+      <div class="card-body">
+        {% set printer_missing = not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in pc.printer_model | upper %}
+        {% set printer_cataloged = assigned_network_printers|length > 0 %}
+        {% set printer_pending = (not printer_cataloged) and (not printer_missing) %}
+        {% set printer_is_shared = pc.printer_port and pc.printer_port.startswith('\\\\') %}
+        {% set printer_is_network = pc.printer_port and ('.' in pc.printer_port or 'WSD' in pc.printer_port or 'IP_' in pc.printer_port) %}
+
+        <div class="pc-detail-shell">
+          <div class="pc-detail-summary">
+            <span class="pc-detail-chip"><i class="bi bi-windows"></i>{{ pc.os_name or 'Sistema no detectado' }}</span>
+            {% if pc.office_version and pc.office_version != 'N/A' %}
+            <span class="pc-detail-chip"><i class="bi bi-microsoft"></i>{{ pc.office_version }}</span>
+            {% endif %}
+            {% if pc.monitors and pc.monitors != 'N/A' %}
+            <span class="pc-detail-chip"><i class="bi bi-display"></i>{{ pc.monitors }}</span>
+            {% endif %}
+            <span class="pc-detail-chip"><i class="bi bi-hdd-network"></i>{{ pc.ip_address or '-' }}</span>
+            <span class="pc-detail-chip"><i class="bi bi-clock-history"></i>{{ pc.last_report | datetime_es }}</span>
+          </div>
+
+          <div class="pc-detail-grid">
+            <div class="pc-detail-card">
+              <div class="pc-detail-card__title">Usuario y fuero</div>
+              <div class="pc-detail-card__value">{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '-' }}</div>
+              <div class="pc-detail-card__meta">{{ pc.last_user or '-' }} · {{ pc.fuero or '-' }}</div>
+            </div>
+
+            <div class="pc-detail-card">
+              <div class="pc-detail-card__title">Hardware base</div>
+              <div class="pc-detail-card__value">{{ pc.processor or '-' }}</div>
+              <div class="pc-detail-card__meta">{{ pc.ram_gb }} GB RAM · {{ pc.motherboard_model or 'Sin placa detectada' }}</div>
+            </div>
+
+            <div class="pc-detail-card">
+              <div class="pc-detail-card__title">Discos</div>
+              <div class="pc-detail-card__value">
                 {% if disk_summary_lines %}
                   {% for disk_line in disk_summary_lines %}
                   <div>{{ disk_line }}</div>
                   {% endfor %}
                 {% else %}
-                  {{ pc.disk_models }}
+                  {{ pc.disk_models or '-' }}
                 {% endif %}
-              </td>
-            </tr>
-            <tr>
-              <th>Impresora</th>
-              <td>
-                {% if not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in pc.printer_model | upper
-                %}
-                Sin impresora
+              </div>
+            </div>
+
+            <div class="pc-detail-card pc-detail-printer {% if printer_pending %}pc-detail-printer--pending{% elif printer_missing %}pc-detail-printer--missing{% endif %}">
+              <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                <div>
+                  <div class="pc-detail-card__title">Impresión</div>
+                  <div class="pc-detail-card__value">
+                    {% if printer_missing %}
+                    Sin impresora detectada
+                    {% elif printer_cataloged %}
+                    {{ assigned_network_printers[0].brand_model }} <span class="pc-detail-chip pc-detail-chip--ok">Catálogo</span>
+                    {% else %}
+                    {{ pc.printer_model }}
+                    {% endif %}
+                  </div>
+                </div>
+                {% if printer_pending %}
+                <button type="button" class="btn btn-sm btn-warning fw-bold" title="Sumar esta impresora al catálogo oficial"
+                  onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')">
+                  <i class="bi bi-plus-circle-fill"></i>
+                </button>
+                {% endif %}
+              </div>
+
+              <div class="pc-detail-summary mt-2">
+                {% if printer_missing %}
+                <span class="pc-detail-chip">Sin impresora</span>
+                {% elif printer_cataloged %}
+                <span class="pc-detail-chip pc-detail-chip--ok"><i class="bi bi-check2-circle"></i>Registrada en catálogo</span>
                 {% else %}
-                {% if pc.alerta_impresora_red %}
-                <span class="badge bg-info text-dark mb-1">Impresora en Red <i class="bi bi-diagram-3"></i></span><br>
+                <span class="pc-detail-chip pc-detail-chip--pending"><i class="bi bi-exclamation-triangle"></i>Pendiente de catálogo</span>
                 {% endif %}
 
-                {% if sharing_pc %}
-                <div class="mt-1" style="font-size: 0.8rem;">
-                  <i class="bi bi-share-fill text-muted"></i> Compartida por:
-                  
-                  {# Chequeo de Host Offline en Detalle #}
-                  {% set host_port = sharing_pc.printer_port or "" %}
-                  {% set is_host_offline = 'USB' not in host_port and 'LPT' not in host_port and 'COM' not in host_port and 'Local' not in host_port %}
-                  
-                  {% if is_host_offline %}
-                    <span class="text-muted fw-bold">{{ sharing_pc.pc_name | upper }}</span>
-                    <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">OFFLINE</span>
-                  {% else %}
-                    <a href="{{ url_for('dashboard.pc_detail', pc_name=sharing_pc.pc_name | upper) }}" class="fw-bold text-decoration-none">
-                      {{ sharing_pc.pc_name | upper }}
-                    </a>
-                  {% endif %}
-
-                  {% if sharing_pc.printer_sn and sharing_pc.printer_sn != 'N/A' and (not pc.printer_sn or pc.printer_sn == 'N/A') %}
-                  <button class="btn btn-sm btn-link p-0 ms-2 text-primary" 
-                          title="Promocionar como Impresora de Red usando datos del host"
-                          onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ sharing_pc.printer_sn }}')">
-                      <i class="bi bi-plus-circle-fill"></i> Promocionar
-                  </button>
-                  {% endif %}
-                </div>
-                {% elif pc.printer_port and pc.printer_port.startswith('\\\\') %}
-                <div class="mt-1" style="font-size: 0.8rem;">
-                    <i class="bi bi-share-fill text-muted"></i> Compartida por:
-                    <span class="text-danger fw-bold">{{ pc.printer_port.split('\\')[2] if pc.printer_port and '\\' in pc.printer_port else 'Desconocido' }}</span> 
-                    <span class="text-muted">(PC no registrada en inventario)</span>
-                </div>
-                {% endif %}
-                
-                {# SI EL PC ACTUAL ES HOST DE OTROS #}
-                {% if clients_using_this_printer %}
-                <div class="mt-2 pt-2 border-top" style="font-size: 0.8rem;">
-                  <div class="text-muted uppercase tracking-wider mb-1" style="font-size: 0.65rem;">PCs que usan esta impresora:</div>
-                  <div class="d-flex flex-wrap gap-1">
-                    {% for client in clients_using_this_printer %}
-                    <a href="{{ url_for('dashboard.pc_detail', pc_name=client.pc_name | upper) }}" 
-                       class="badge bg-light text-secondary border text-decoration-none shadow-none">
-                       <i class="bi bi-pc-display pe-1"></i>{{ client.pc_name | upper }}
-                    </a>
-                    {% endfor %}
-                  </div>
-                </div>
+                {% if printer_is_shared %}
+                <span class="pc-detail-chip"><i class="bi bi-share"></i>Compartida por otra PC</span>
+                {% elif printer_is_network %}
+                <span class="pc-detail-chip {% if printer_pending %}pc-detail-chip--pending{% endif %}"><i class="bi bi-diagram-3"></i>Por red/IP</span>
+                {% elif not printer_missing %}
+                <span class="pc-detail-chip"><i class="bi bi-usb-symbol"></i>Local/USB</span>
                 {% endif %}
 
-                <div class="mt-3 row align-items-center">
-                  <div class="col-auto">
-                    <label class="d-block small text-muted uppercase tracking-wider mb-1">N° Serie / MAC</label>
-                    <span class="badge {{ 'bg-success' if (preferred_printer_serial and preferred_printer_serial != 'N/A') or (sharing_pc and sharing_pc.printer_sn and sharing_pc.printer_sn != 'N/A') else 'bg-danger' }} py-2 px-3 fw-bold shadow-sm" style="font-size: 1rem;">
-                      {% if preferred_printer_serial and preferred_printer_serial != 'N/A' %}
-                        {{ preferred_printer_serial }}
-                        {% if preferred_printer_serial_source == 'assigned_network_printer' %}
-                        <small class="fw-normal">(Catálogo)</small>
-                        {% endif %}
-                      {% elif sharing_pc and sharing_pc.printer_sn and sharing_pc.printer_sn != 'N/A' %}
-                        {{ sharing_pc.printer_sn }} <small class="fw-normal">(Heredado)</small>
-                      {% else %}
-                        N/A
-                      {% endif %}
-                    </span>
-                  </div>
-                  <div class="col">
-                    <div class="text-muted small uppercase tracking-wider mb-1">Modelo Detectado</div>
-                    <strong>{{ pc.printer_model }}</strong>
-                  </div>
-                </div>
-
+                {% if preferred_printer_serial and preferred_printer_serial != 'N/A' %}
+                <span class="pc-detail-chip"><i class="bi bi-upc-scan"></i>{{ preferred_printer_serial }}</span>
+                {% endif %}
                 {% if pc.printer_port and pc.printer_port != 'N/A' %}
-                <div class="small text-primary mt-2">
-                  <i class="bi bi-plug"></i> Canal/Puerto: <code>{{ pc.printer_port }}</code>
-                </div>
+                <span class="pc-detail-chip"><i class="bi bi-plug"></i>{{ pc.printer_port }}</span>
                 {% endif %}
+              </div>
 
-                {% endif %}
-              </td>
-            </tr>
-            <tr>
-              <th>Monitores</th>
-              <td>{{ pc.monitors }}</td>
-            </tr>
-            <tr>
-              <th>IP</th>
-              <td>{{ pc.ip_address }}</td>
-            </tr>
-            <tr>
-              <th>Último reporte</th>
-              <td>{{ pc.last_report | datetime_es }}</td>
-            </tr>
-          </tbody>
-        </table>
+              {% if detected_printers %}
+              <div class="pc-detail-card__meta">
+                Detectadas por el script:
+                {% for prn in detected_printers %}
+                <span class="pc-detail-chip {% if not printer_cataloged or prn.printer_model != assigned_network_printers[0].brand_model %}pc-detail-chip--pending{% endif %}">
+                  {{ prn.printer_model }}
+                </span>
+                {% endfor %}
+                <button type="button" class="btn btn-sm btn-outline-primary py-0 ms-1" onclick="showDetectedPrinters('{{ pc.pc_name }}')">
+                  Verificar
+                </button>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
       </div><!-- /.card-body -->
     </div><!-- /.card bloque 1 -->
 
     <!-- BLOQUE 2: Infraestructura de Red & Energia -->
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm mb-4" id="pcInfra">
       <div class="gold-card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-diagram-3"></i> Infraestructura de Red y Energía</span>
         <button type="button" class="btn btn-sm btn-outline-secondary"
@@ -426,7 +474,7 @@
 
     {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') %}
     <!-- BLOQUE 2.5: Componentes Asignados -->
-    <div class="card shadow-sm mb-4 border-info">
+    <div class="card shadow-sm mb-4 border-info" id="pcComponentes">
       <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-cpu"></i> Periféricos y Componentes Asignados</h5>
         <button class="btn btn-sm btn-light text-info fw-bold" data-bs-toggle="modal"
@@ -504,7 +552,7 @@
 
     {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
     <!-- BLOQUE 2.8: Impresoras de Red Asignadas -->
-    <div class="card shadow-sm mb-4 border-secondary">
+    <div class="card shadow-sm mb-4 border-secondary" id="pcImpresoras">
       <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-printer"></i> Impresoras de Red Asignadas</h5>
         <button class="btn btn-sm btn-light text-secondary fw-bold" data-bs-toggle="modal"
@@ -552,7 +600,7 @@
     {% endif %}
 
     <!-- BLOQUE 3: Tareas de la PC -->
-    <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="d-flex justify-content-between align-items-center mb-2" id="pcTareas">
       <h3 class="mt-2 mb-0">Tareas</h3>
       <!-- Botón duplicado para agregar tarea (abre el mismo modal) -->
       {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
@@ -632,7 +680,7 @@
     <!-- FIN BLOQUE 3 -->
 
     <!-- BLOQUE 4: Historial de Cambios -->
-    <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="d-flex justify-content-between align-items-center mb-2" id="pcHistorial">
       <h3 class="mt-4 mb-0">Historial de Cambios</h3>
       <button type="button" class="btn btn-sm btn-outline-dark mt-3" data-bs-toggle="modal"
         data-bs-target="#modalManualAudit">

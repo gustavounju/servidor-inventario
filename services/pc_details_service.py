@@ -127,6 +127,18 @@ def get_pc_detail_context(pc_name):
             SELECT np.id, np.ip_address, np.brand_model, np.serial_number FROM network_printers np
             JOIN pc_network_printers pnp ON np.id = pnp.printer_id WHERE pnp.pc_name = %s
         ''', (pc_name,)).fetchall()
+
+        detected_printers = conn.execute('''
+            SELECT id, printer_model, printer_port, printer_sn
+            FROM pc_detected_printers
+            WHERE pc_name = %s
+              AND is_ignored = 0
+              AND printer_model IS NOT NULL
+              AND printer_model != ''
+              AND printer_model != 'N/A'
+              AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%'
+            ORDER BY updated_at DESC
+        ''', (pc_name,)).fetchall()
         
         available_network_printers = conn.execute("SELECT id, ip_address, brand_model FROM network_printers ORDER BY ip_address").fetchall()
 
@@ -146,6 +158,7 @@ def get_pc_detail_context(pc_name):
             "available_components": available_components, "baterias_disponibles": baterias_disponibles,
             "sharing_pc": sharing_pc_data, "clients_using_this_printer": clients_using_this_printer,
             "assigned_network_printers": assigned_network_printers,
+            "detected_printers": detected_printers,
             "available_network_printers": available_network_printers,
             "disk_summary_lines": disk_summary_lines,
             "preferred_printer_serial": preferred_printer_serial,
