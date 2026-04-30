@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Fueros | Inventario GOLD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        body {
+            margin: 0;
+            background: #f8fafc;
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .fuero-shell {
+            min-height: 100vh;
+            padding: 24px;
+            background:
+                radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 28%),
+                linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        }
+
+        .fuero-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border: 1px solid #dbeafe;
+            border-radius: 22px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+            overflow: hidden;
+        }
+
+        .fuero-card__hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+            color: #fff;
+            padding: 22px 24px;
+        }
+
+        .fuero-card__hero h1 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .fuero-card__hero p {
+            margin: 6px 0 0;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.74);
+        }
+
+        .fuero-card__body {
+            padding: 22px;
+        }
+
+        .fuero-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+            gap: 20px;
+        }
+
+        .fuero-panel {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+        }
+
+        .fuero-panel h2 {
+            margin: 0 0 6px;
+            font-size: 0.95rem;
+            font-weight: 800;
+        }
+
+        .fuero-panel p {
+            margin: 0 0 16px;
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+
+        .fuero-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .fuero-input {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 11px 12px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .fuero-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .fuero-checks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .fuero-check {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            color: #334155;
+            font-weight: 600;
+        }
+
+        .fuero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .fuero-note {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 0.76rem;
+            border: 1px solid #dbeafe;
+        }
+
+        .fuero-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 64vh;
+            overflow: auto;
+            padding-right: 4px;
+        }
+
+        .fuero-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 14px 15px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
+
+        .fuero-item--inactive {
+            border-color: #fcd34d;
+            background: linear-gradient(180deg, #fffdf5 0%, #fffbeb 100%);
+        }
+
+        .fuero-item__top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .fuero-item__title {
+            margin: 0;
+            font-size: 0.93rem;
+            font-weight: 800;
+        }
+
+        .fuero-code {
+            display: inline-flex;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #dbeafe;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-weight: 700;
+        }
+
+        .fuero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .fuero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-weight: 700;
+            background: #f1f5f9;
+        }
+
+        .fuero-chip--ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .fuero-chip--warn {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .fuero-item__actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .fuero-inline-delete {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 900px) {
+            .fuero-shell {
+                padding: 14px;
+            }
+
+            .fuero-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .fuero-list {
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="fuero-shell">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-3">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} shadow-sm" style="border-radius: 14px;">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="fuero-card">
+            <div class="fuero-card__hero">
+                <h1>Catálogo de Fueros</h1>
+                <p>Gestiona prefijos, equivalencias y recalcula detección sin salir del dashboard.</p>
+            </div>
+
+            <div class="fuero-card__body">
+                <div class="fuero-grid">
+                    <section class="fuero-panel">
+                        <h2>Nuevo prefijo</h2>
+                        <p>Define cómo interpretar códigos como <strong>PERS</strong>, <strong>DEPMEDICO</strong> o nuevos nombres compactos.</p>
+
+                        <form method="post" action="{{ url_for('users.save_fuero_mapping') }}" id="fueroMappingForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="mapping_id" id="fueroMappingId">
+                            <input type="hidden" name="next_url" value="{{ url_for('users.fueros_admin') }}">
+
+                            <div class="mb-3">
+                                <label class="fuero-label" for="fueroPrefix">Prefijo / código</label>
+                                <input class="fuero-input" id="fueroPrefix" name="prefix_code" type="text" placeholder="Ej: PERS" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="fuero-label" for="fueroLabel">Significado</label>
+                                <input class="fuero-input" id="fueroLabel" name="fuero_label" type="text" placeholder="Ej: Personal" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="fuero-label" for="fueroNotes">Notas internas</label>
+                                <input class="fuero-input" id="fueroNotes" name="notes" type="text" placeholder="Opcional">
+                            </div>
+
+                            <div class="fuero-checks">
+                                <label class="fuero-check"><input type="checkbox" name="is_active" id="fueroIsActive" checked> Activo para detección</label>
+                                <label class="fuero-check"><input type="checkbox" name="apply_recalc"> Recalcular PCs al guardar</label>
+                            </div>
+
+                            <div class="fuero-actions">
+                                <button class="btn btn-primary" type="submit"><i class="bi bi-bookmark-check-fill me-1"></i> Guardar prefijo</button>
+                                <button class="btn btn-outline-secondary" type="button" onclick="resetFueroMappingForm()"><i class="bi bi-eraser me-1"></i> Limpiar</button>
+                            </div>
+
+                            <div class="fuero-note">
+                                El sistema compara el prefijo desde el inicio del nombre de la PC. Cuanto más específico sea el código, mejor clasifica.
+                            </div>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <h2>Recalcular detección</h2>
+                        <p>Aplica el catálogo actual sobre todas las PCs ya registradas.</p>
+                        <form method="post" action="{{ url_for('users.recalculate_fueros') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="next_url" value="{{ url_for('users.fueros_admin') }}">
+                            <button class="btn btn-outline-primary" type="submit"><i class="bi bi-arrow-repeat me-1"></i> Recalcular fueros en PCs</button>
+                        </form>
+                    </section>
+
+                    <section class="fuero-panel">
+                        <h2>Prefijos cargados</h2>
+                        <p>{{ fuero_mappings|length }} registros disponibles en el catálogo actual.</p>
+
+                        {% if fuero_mappings %}
+                        <div class="fuero-list">
+                            {% for mapping in fuero_mappings %}
+                            <article class="fuero-item {% if not mapping.is_active %}fuero-item--inactive{% endif %}">
+                                <div class="fuero-item__top">
+                                    <div>
+                                        <h3 class="fuero-item__title">{{ mapping.fuero_label }}</h3>
+                                        <span class="fuero-code">{{ mapping.prefix_code }}</span>
+                                    </div>
+                                    <span class="fuero-chip {% if mapping.is_active %}fuero-chip--ok{% else %}fuero-chip--warn{% endif %}">
+                                        <i class="bi {% if mapping.is_active %}bi-check-circle-fill{% else %}bi-pause-circle-fill{% endif %}"></i>
+                                        {{ 'Activo' if mapping.is_active else 'Inactivo' }}
+                                    </span>
+                                </div>
+
+                                {% if mapping.notes %}
+                                <div class="small text-muted mt-2">{{ mapping.notes }}</div>
+                                {% endif %}
+
+                                <div class="fuero-meta">
+                                    {% if mapping.updated_at %}
+                                    <span class="fuero-chip"><i class="bi bi-clock-history"></i>{{ mapping.updated_at }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="fuero-item__actions">
+                                    <button
+                                        class="btn btn-sm btn-outline-primary"
+                                        type="button"
+                                        data-id="{{ mapping.id }}"
+                                        data-prefix="{{ mapping.prefix_code }}"
+                                        data-label="{{ mapping.fuero_label }}"
+                                        data-notes="{{ mapping.notes or '' }}"
+                                        data-active="{{ 1 if mapping.is_active else 0 }}"
+                                        onclick="loadFueroMappingForEdit(this)">
+                                        <i class="bi bi-pencil-square me-1"></i> Editar
+                                    </button>
+
+                                    <form method="post" action="{{ url_for('users.delete_fuero_mapping', mapping_id=mapping.id) }}" class="fuero-inline-delete" onsubmit="return confirm('¿Eliminar el prefijo {{ mapping.prefix_code }}?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="next_url" value="{{ url_for('users.fueros_admin') }}">
+                                        <label class="fuero-check"><input type="checkbox" name="apply_recalc"> Recalcular PCs</label>
+                                        <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash3-fill me-1"></i> Eliminar</button>
+                                    </form>
+                                </div>
+                            </article>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-light border" style="border-radius: 14px;">
+                            No hay prefijos cargados todavía.
+                        </div>
+                        {% endif %}
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function resetFueroMappingForm() {
+            document.getElementById('fueroMappingForm').reset();
+            document.getElementById('fueroMappingId').value = '';
+            document.getElementById('fueroIsActive').checked = true;
+        }
+
+        function loadFueroMappingForEdit(button) {
+            document.getElementById('fueroMappingId').value = button.dataset.id || '';
+            document.getElementById('fueroPrefix').value = button.dataset.prefix || '';
+            document.getElementById('fueroLabel').value = button.dataset.label || '';
+            document.getElementById('fueroNotes').value = button.dataset.notes || '';
+            document.getElementById('fueroIsActive').checked = button.dataset.active === '1';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

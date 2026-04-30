@@ -52,10 +52,37 @@ def _users_page_context():
     }
 
 
+def _fuero_admin_context():
+    with get_db_connection() as conn:
+        fuero_mappings = conn.execute(
+            """
+            SELECT id, prefix_code, fuero_label, notes, is_active, updated_at
+            FROM fuero_mappings
+            ORDER BY is_active DESC, fuero_label ASC, prefix_code ASC
+            """
+        ).fetchall()
+    return {
+        "fuero_mappings": [dict(row) for row in fuero_mappings],
+    }
+
+
+def _safe_next_url(default_endpoint="users.users_admin"):
+    next_url = (request.form.get("next_url") or request.args.get("next_url") or "").strip()
+    if next_url.startswith("/"):
+        return next_url
+    return url_for(default_endpoint)
+
+
 @bp_users.route("/admin/users")
 @superuser_required
 def users_admin():
     return render_template("admin_users.html", **_users_page_context())
+
+
+@bp_users.route("/admin/fueros")
+@superuser_required
+def fueros_admin():
+    return render_template("fuero_admin_modal.html", **_fuero_admin_context())
 
 
 @bp_users.route("/admin/users/debug")
@@ -198,11 +225,12 @@ def _normalize_fuero_mapping_payload(form):
 @bp_users.route("/admin/fueros/save", methods=["POST"])
 @superuser_required
 def save_fuero_mapping():
+    redirect_target = _safe_next_url()
     try:
         payload = _normalize_fuero_mapping_payload(request.form)
     except Exception as exc:
         flash(str(exc), "error")
-        return redirect(url_for("users.users_admin"))
+        return redirect(redirect_target)
 
     try:
         with get_db_connection() as conn:
@@ -279,12 +307,13 @@ def save_fuero_mapping():
     except Exception as exc:
         flash(f"No se pudo guardar el prefijo: {exc}", "error")
 
-    return redirect(url_for("users.users_admin"))
+    return redirect(redirect_target)
 
 
 @bp_users.route("/admin/fueros/<int:mapping_id>/delete", methods=["POST"])
 @superuser_required
 def delete_fuero_mapping(mapping_id):
+    redirect_target = _safe_next_url()
     apply_recalc = request.form.get("apply_recalc") == "on"
     try:
         with get_db_connection() as conn:
@@ -298,7 +327,7 @@ def delete_fuero_mapping(mapping_id):
             ).fetchone()
             if not previous:
                 flash("Prefijo no encontrado.", "error")
-                return redirect(url_for("users.users_admin"))
+                return redirect(redirect_target)
 
             conn.execute("DELETE FROM fuero_mappings WHERE id = %s", (mapping_id,))
             invalidate_fuero_mapping_cache()
@@ -323,12 +352,13 @@ def delete_fuero_mapping(mapping_id):
         flash("Prefijo eliminado del catalogo.", "success")
     except Exception as exc:
         flash(f"No se pudo eliminar el prefijo: {exc}", "error")
-    return redirect(url_for("users.users_admin"))
+    return redirect(redirect_target)
 
 
 @bp_users.route("/admin/fueros/recalculate", methods=["POST"])
 @superuser_required
 def recalculate_fueros():
+    redirect_target = _safe_next_url()
     try:
         with get_db_connection() as conn:
             invalidate_fuero_mapping_cache()
@@ -349,7 +379,7 @@ def recalculate_fueros():
         )
     except Exception as exc:
         flash(f"No se pudieron recalcular los fueros: {exc}", "error")
-    return redirect(url_for("users.users_admin"))
+    return redirect(redirect_target)
 
 
 @bp_users.route("/admin/users/<username>/approve", methods=["POST"])

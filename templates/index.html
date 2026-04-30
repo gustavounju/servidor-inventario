@@ -87,6 +87,11 @@
                             <span>Técnicos</span>
                             <strong>{{ active_mobile_techs | length }}</strong>
                         </button>
+                        <button type="button" class="ops-turn-row" data-bs-toggle="modal" data-bs-target="#fueroAdminModal">
+                            <i class="bi bi-journal-bookmark-fill"></i>
+                            <span>Fueros</span>
+                            <strong>{{ fueros|length }}</strong>
+                        </button>
                         {% for pc in auxiliary_pcs %}
                         {% set aux_name = pc.pc_name.upper() %}
                         <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="ops-turn-row">
