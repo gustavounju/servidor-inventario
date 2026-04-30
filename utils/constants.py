@@ -1,4 +1,5 @@
 import os
+import time
 
 APP_VERSION = "v3.0.0-dashboard-ux"
 DB_FILE = "inventario.db"
@@ -7,7 +8,7 @@ UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {'pdf'}
 
 # --- DICCIONARIO DE FUEROS (CONFIGURABLE) ---
-FUERO_MAPPING = {
+DEFAULT_FUERO_MAPPING = {
     "TTSIVVOC": "Tribunal de Trabajo Sala IV",
     "OGL": "Oficina de Gestion Laboral",
     "SISTEMAS": "Dpto. Informatica San Pedro",
@@ -56,6 +57,7 @@ FUERO_MAPPING = {
     "MPA": "Ministerio Publico Acusacion",
     "SIGJ": "Sistemas SIGJ"
 }
+FUERO_MAPPING = DEFAULT_FUERO_MAPPING
 
 FUERO_COLORS = {
     "Tribunal de Trabajo Sala IV": "#0d6efd",    # Blue
@@ -96,15 +98,79 @@ FUERO_COLORS = {
     "Sistemas SIGJ": "#000000"                   # Black
 }
 
+_FUERO_MAPPING_CACHE = {
+    "value": None,
+    "loaded_at": 0.0,
+}
+_FUERO_MAPPING_TTL_SECONDS = 60
+
+
+def invalidate_fuero_mapping_cache():
+    _FUERO_MAPPING_CACHE["value"] = None
+    _FUERO_MAPPING_CACHE["loaded_at"] = 0.0
+
+
+def _load_fuero_mapping_from_db():
+    try:
+        from database.db_core import get_db_connection
+
+        with get_db_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT prefix_code, fuero_label
+                FROM fuero_mappings
+                WHERE is_active = 1
+                ORDER BY LENGTH(prefix_code) DESC, prefix_code ASC
+                """
+            ).fetchall()
+        mapping = {}
+        for row in rows:
+            prefix = str(row.get("prefix_code") or "").strip().upper()
+            label = str(row.get("fuero_label") or "").strip()
+            if prefix and label:
+                mapping[prefix] = label
+        return mapping
+    except Exception:
+        return {}
+
+
+def get_fuero_mapping(force_refresh=False):
+    now = time.time()
+    cached = _FUERO_MAPPING_CACHE["value"]
+    if (
+        not force_refresh
+        and cached is not None
+        and (now - _FUERO_MAPPING_CACHE["loaded_at"]) < _FUERO_MAPPING_TTL_SECONDS
+    ):
+        return cached
+
+    mapping = _load_fuero_mapping_from_db() or DEFAULT_FUERO_MAPPING.copy()
+    _FUERO_MAPPING_CACHE["value"] = mapping
+    _FUERO_MAPPING_CACHE["loaded_at"] = now
+    return mapping
+
+
+def list_fuero_mapping_rows(force_refresh=False):
+    mapping = get_fuero_mapping(force_refresh=force_refresh)
+    return [
+        {"prefix": prefix, "label": label}
+        for prefix, label in sorted(
+            mapping.items(),
+            key=lambda item: (item[1].lower(), item[0].lower()),
+        )
+    ]
+
+
 def detect_fuero(pc_name):
     """Detecta el fuero basado en el prefijo del nombre de la PC."""
     if not pc_name:
         return "Desconocido"
-    
+
     pc_upper = pc_name.upper()
-    for prefix in sorted(FUERO_MAPPING.keys(), key=len, reverse=True):
+    mapping = get_fuero_mapping()
+    for prefix in sorted(mapping.keys(), key=len, reverse=True):
         if pc_upper.startswith(prefix):
-            return FUERO_MAPPING[prefix]
+            return mapping[prefix]
     return "Desconocido"
 
 def clean_hex_string(s):

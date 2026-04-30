@@ -14,7 +14,7 @@ from database.db_core import init_db, get_db_connection
 from database.migrations import run_all_migrations
 
 # Utils e IA
-from utils.constants import UPLOAD_FOLDER, LOG_FOLDER, APP_VERSION
+from utils.constants import UPLOAD_FOLDER, LOG_FOLDER, APP_VERSION, list_fuero_mapping_rows
 APP_VERSION = "3.0.1"
 from services.ai_assistant import train_ai_model
 
@@ -95,7 +95,10 @@ def inject_global_vars():
                 extra_data['kpi_usuarios_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM app_users WHERE is_active = 0").fetchone()["c"]
 
                 fueros_rows = conn.execute("SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido' ORDER BY fuero").fetchall()
-                extra_data['fueros'] = {row['fuero']: row['fuero'] for row in fueros_rows}
+                known_fueros = {row['fuero']: row['fuero'] for row in fueros_rows}
+                for item in list_fuero_mapping_rows():
+                    known_fueros.setdefault(item['label'], item['label'])
+                extra_data['fueros'] = dict(sorted(known_fueros.items(), key=lambda item: item[0].lower()))
 
                 # Extra Data for Shared Modals
                 # 1. Obtener usuarios del sistema actuales

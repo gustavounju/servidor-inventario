@@ -1,4 +1,5 @@
 from database.db_core import get_db_connection
+from utils.constants import DEFAULT_FUERO_MAPPING
 import os
 
 def _get_db_name():
@@ -556,6 +557,49 @@ def migrate_db_v29():
     print("Migración V29 verificada.")
 
 
+def migrate_db_v30():
+    """MigraciÃ³n V30: catÃ¡logo administrable de prefijos de fuero."""
+    print("Verificando migraciÃ³n de DB v30...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "fuero_mappings"):
+            print("Aplicando migraciÃ³n V30: creando tabla fuero_mappings...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS fuero_mappings (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    prefix_code VARCHAR(100) NOT NULL UNIQUE,
+                    fuero_label VARCHAR(255) NOT NULL,
+                    notes TEXT,
+                    is_active TINYINT(1) DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+
+        if not _index_exists(conn, "fuero_mappings", "idx_fuero_mappings_active_prefix"):
+            print("Aplicando migraciÃ³n V30: creando Ã­ndice idx_fuero_mappings_active_prefix...")
+            conn.execute(
+                "CREATE INDEX idx_fuero_mappings_active_prefix ON fuero_mappings (is_active, prefix_code)"
+            )
+
+        existing = conn.execute("SELECT COUNT(*) AS cnt FROM fuero_mappings").fetchone()
+        if not existing or not existing["cnt"]:
+            print("Aplicando migraciÃ³n V30: sembrando catÃ¡logo inicial de fueros...")
+            for prefix, label in DEFAULT_FUERO_MAPPING.items():
+                conn.execute(
+                    """
+                    INSERT INTO fuero_mappings (prefix_code, fuero_label, is_active)
+                    VALUES (%s, %s, 1)
+                    ON DUPLICATE KEY UPDATE
+                        fuero_label = VALUES(fuero_label),
+                        is_active = VALUES(is_active)
+                    """,
+                    (prefix, label),
+                )
+    print("MigraciÃ³n V30 verificada.")
+
+
 def run_all_migrations():
     """Ejecuta todas las migraciones en orden."""
     migrate_db_v2()
@@ -586,3 +630,4 @@ def run_all_migrations():
     migrate_db_v27()
     migrate_db_v28()
     migrate_db_v29()
+    migrate_db_v30()

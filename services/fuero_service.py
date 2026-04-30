@@ -1,4 +1,5 @@
 from database.db_core import get_db_connection
+from utils.constants import detect_fuero
 
 def get_fuero_summary_data():
     """Obtiene estadísticas generales por fuero."""
@@ -131,3 +132,22 @@ def get_fuero_detail_data(fuero_name):
             printers.append(p_dict)
 
         return pcs, users, printers
+
+
+def recalculate_all_pc_fueros(conn):
+    """Recalcula el fuero detectado para todas las PCs segun el nombre del equipo."""
+    pcs = conn.execute("SELECT pc_name, fuero FROM pcs").fetchall()
+    updated = 0
+    changed = 0
+    for pc in pcs:
+        name = pc["pc_name"]
+        previous_fuero = pc.get("fuero")
+        new_fuero = detect_fuero(name)
+        conn.execute(
+            "UPDATE pcs SET fuero = %s WHERE pc_name = %s",
+            (new_fuero, name),
+        )
+        updated += 1
+        if (previous_fuero or "") != new_fuero:
+            changed += 1
+    return {"updated": updated, "changed": changed}

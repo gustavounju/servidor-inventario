@@ -3,18 +3,17 @@ import os
 from datetime import datetime as dt
 from database.db_core import get_db_connection
 import socket
-from utils.constants import FUERO_MAPPING, detect_fuero
+from utils.constants import FUERO_COLORS, list_fuero_mapping_rows
 import datetime
 from datetime import datetime as dt
 from io import BytesIO
 from openpyxl import Workbook
-from utils.constants import FUERO_MAPPING, FUERO_COLORS
 from utils.auth import current_username, list_technician_users
 from services.audit import log_audit_event
 from services.dashboard_overview import load_dashboard_overview
 from services.pc_actions import decommission_pc_service, reactivate_pc_service, update_pc_infrastructure_service, delete_permanent_pc_service
 from services.pc_details_service import get_pc_detail_context
-from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data
+from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data, recalculate_all_pc_fueros
 
 bp_dashboard = Blueprint('dashboard', __name__)
 
@@ -362,18 +361,8 @@ def refresh_fueros():
     """Recalcula el fuero para todas las PCs basÃ¡ndose en el nombre."""
     try:
         with get_db_connection() as conn:
-            pcs = conn.execute("SELECT pc_name FROM pcs").fetchall()
-            count = 0
-            for pc in pcs:
-                name = pc["pc_name"]
-                nuevo_fuero = detect_fuero(name)
-                conn.execute(
-                    "UPDATE pcs SET fuero = %s WHERE pc_name = %s",
-                    (nuevo_fuero, name)
-                )
-                count += 1
-            conn.commit()
-        print(f"Fueros actualizados para {count} PCs.")
+            result = recalculate_all_pc_fueros(conn)
+        print(f"Fueros actualizados para {result['updated']} PCs.")
     except Exception as exc:
         print(f"Error refreshing fueros: {exc}")
 
@@ -457,6 +446,7 @@ def view_fueros():
     fuero_param = request.args.get("fuero", "").strip()
     fueros_list, fuero_stats = get_fuero_summary_data()
     pcs, users, printers = get_fuero_detail_data(fuero_param)
+    fuero_reference = list_fuero_mapping_rows()
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('json'):
         from flask import jsonify
@@ -475,6 +465,7 @@ def view_fueros():
         pcs=pcs,
         users=users,
         printers=printers,
-        fuero_colors=FUERO_COLORS
+        fuero_colors=FUERO_COLORS,
+        fuero_reference=fuero_reference,
     )
 

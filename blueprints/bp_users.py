@@ -2,12 +2,14 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from database.db_core import get_db_connection
 from services.admin_audit import log_admin_event
+from services.fuero_service import recalculate_all_pc_fueros
 from services.user_admin import (
     hydrate_existing_user_defaults,
     list_pending_users,
     normalize_managed_user_form,
     validate_managed_user_payload,
 )
+from utils.constants import invalidate_fuero_mapping_cache
 from utils.auth import (
     _fetch_auth_user,
     current_username,
@@ -26,6 +28,13 @@ def _users_page_context():
     app_users_list = list_app_users()
     pending_users_list = [u for u in app_users_list if not u.get("is_active")]
     with get_db_connection() as conn:
+        fuero_mappings = conn.execute(
+            """
+            SELECT id, prefix_code, fuero_label, notes, is_active, updated_at
+            FROM fuero_mappings
+            ORDER BY is_active DESC, fuero_label ASC, prefix_code ASC
+            """
+        ).fetchall()
         admin_audit_logs = conn.execute(
             """
             SELECT action_type, actor_username, target_username, ip_address, details, created_at
@@ -38,6 +47,7 @@ def _users_page_context():
     return {
         "app_users_list": app_users_list,
         "pending_users_list": pending_users_list,
+        "fuero_mappings": [dict(row) for row in fuero_mappings],
         "admin_audit_logs": [dict(row) for row in admin_audit_logs],
     }
 
@@ -159,6 +169,186 @@ def create_app_user():
     except Exception as exc:
         flash(f"Error al procesar usuario: {exc}", "error")
 
+    return redirect(url_for("users.users_admin"))
+
+
+def _normalize_fuero_mapping_payload(form):
+    mapping_id = (form.get("mapping_id") or "").strip()
+    prefix_code = (form.get("prefix_code") or "").strip().upper()
+    fuero_label = (form.get("fuero_label") or "").strip()
+    notes = (form.get("notes") or "").strip()
+    is_active = form.get("is_active") == "on"
+    apply_recalc = form.get("apply_recalc") == "on"
+
+    if not prefix_code:
+        raise ValueError("El prefijo del fuero es obligatorio.")
+    if not fuero_label:
+        raise ValueError("La descripcion del fuero es obligatoria.")
+
+    return {
+        "mapping_id": int(mapping_id) if mapping_id.isdigit() else None,
+        "prefix_code": prefix_code,
+        "fuero_label": fuero_label,
+        "notes": notes,
+        "is_active": is_active,
+        "apply_recalc": apply_recalc,
+    }
+
+
+@bp_users.route("/admin/fueros/save", methods=["POST"])
+@superuser_required
+def save_fuero_mapping():
+    try:
+        payload = _normalize_fuero_mapping_payload(request.form)
+    except Exception as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("users.users_admin"))
+
+    try:
+        with get_db_connection() as conn:
+            previous = None
+            if payload["mapping_id"]:
+                previous = conn.execute(
+                    """
+                    SELECT id, prefix_code, fuero_label, notes, is_active
+                    FROM fuero_mappings
+                    WHERE id = %s
+                    """,
+                    (payload["mapping_id"],),
+                ).fetchone()
+
+            if payload["mapping_id"]:
+                conn.execute(
+                    """
+                    UPDATE fuero_mappings
+                    SET prefix_code = %s, fuero_label = %s, notes = %s, is_active = %s
+                    WHERE id = %s
+                    """,
+                    (
+                        payload["prefix_code"],
+                        payload["fuero_label"],
+                        payload["notes"] or None,
+                        1 if payload["is_active"] else 0,
+                        payload["mapping_id"],
+                    ),
+                )
+                action_type = "UPDATE_FUERO_MAPPING"
+            else:
+                conn.execute(
+                    """
+                    INSERT INTO fuero_mappings (prefix_code, fuero_label, notes, is_active)
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (
+                        payload["prefix_code"],
+                        payload["fuero_label"],
+                        payload["notes"] or None,
+                        1 if payload["is_active"] else 0,
+                    ),
+                )
+                payload["mapping_id"] = conn.cursor.lastrowid
+                action_type = "CREATE_FUERO_MAPPING"
+
+            invalidate_fuero_mapping_cache()
+
+            recalc_result = None
+            if payload["apply_recalc"]:
+                recalc_result = recalculate_all_pc_fueros(conn)
+
+            log_admin_event(
+                conn,
+                action_type=action_type,
+                actor_username=current_username(),
+                target_username=payload["prefix_code"],
+                ip_address=request.remote_addr,
+                details={
+                    "id": payload["mapping_id"],
+                    "before": dict(previous) if previous else None,
+                    "after": {
+                        "prefix_code": payload["prefix_code"],
+                        "fuero_label": payload["fuero_label"],
+                        "notes": payload["notes"],
+                        "is_active": payload["is_active"],
+                    },
+                    "recalculate": recalc_result,
+                },
+            )
+            conn.commit()
+        invalidate_fuero_mapping_cache()
+        flash("Catalogo de fueros actualizado correctamente.", "success")
+    except Exception as exc:
+        flash(f"No se pudo guardar el prefijo: {exc}", "error")
+
+    return redirect(url_for("users.users_admin"))
+
+
+@bp_users.route("/admin/fueros/<int:mapping_id>/delete", methods=["POST"])
+@superuser_required
+def delete_fuero_mapping(mapping_id):
+    apply_recalc = request.form.get("apply_recalc") == "on"
+    try:
+        with get_db_connection() as conn:
+            previous = conn.execute(
+                """
+                SELECT id, prefix_code, fuero_label, notes, is_active
+                FROM fuero_mappings
+                WHERE id = %s
+                """,
+                (mapping_id,),
+            ).fetchone()
+            if not previous:
+                flash("Prefijo no encontrado.", "error")
+                return redirect(url_for("users.users_admin"))
+
+            conn.execute("DELETE FROM fuero_mappings WHERE id = %s", (mapping_id,))
+            invalidate_fuero_mapping_cache()
+
+            recalc_result = None
+            if apply_recalc:
+                recalc_result = recalculate_all_pc_fueros(conn)
+
+            log_admin_event(
+                conn,
+                action_type="DELETE_FUERO_MAPPING",
+                actor_username=current_username(),
+                target_username=previous["prefix_code"],
+                ip_address=request.remote_addr,
+                details={
+                    "deleted": dict(previous),
+                    "recalculate": recalc_result,
+                },
+            )
+            conn.commit()
+        invalidate_fuero_mapping_cache()
+        flash("Prefijo eliminado del catalogo.", "success")
+    except Exception as exc:
+        flash(f"No se pudo eliminar el prefijo: {exc}", "error")
+    return redirect(url_for("users.users_admin"))
+
+
+@bp_users.route("/admin/fueros/recalculate", methods=["POST"])
+@superuser_required
+def recalculate_fueros():
+    try:
+        with get_db_connection() as conn:
+            invalidate_fuero_mapping_cache()
+            result = recalculate_all_pc_fueros(conn)
+            log_admin_event(
+                conn,
+                action_type="RECALCULATE_FUEROS",
+                actor_username=current_username(),
+                target_username="pcs",
+                ip_address=request.remote_addr,
+                details=result,
+            )
+            conn.commit()
+        invalidate_fuero_mapping_cache()
+        flash(
+            f"Fueros recalculados. PCs revisadas: {result['updated']}. Cambios detectados: {result['changed']}.",
+            "success",
+        )
+    except Exception as exc:
+        flash(f"No se pudieron recalcular los fueros: {exc}", "error")
     return redirect(url_for("users.users_admin"))
 
 

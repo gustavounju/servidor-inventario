@@ -2,6 +2,7 @@ import pymysql
 import pymysql.cursors
 import os
 from dotenv import load_dotenv
+from utils.constants import DEFAULT_FUERO_MAPPING
 
 load_dotenv()
 
@@ -224,6 +225,26 @@ def init_db():
                 fuero TEXT
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS fuero_mappings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                prefix_code VARCHAR(100) NOT NULL UNIQUE,
+                fuero_label VARCHAR(255) NOT NULL,
+                notes TEXT,
+                is_active TINYINT(1) DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+        for prefix, label in DEFAULT_FUERO_MAPPING.items():
+            conn.execute(
+                """
+                INSERT IGNORE INTO fuero_mappings (prefix_code, fuero_label, is_active)
+                VALUES (%s, %s, 1)
+                """,
+                (prefix, label),
+            )
 
 
         conn.execute("""
