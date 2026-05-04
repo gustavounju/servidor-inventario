@@ -2927,7 +2927,7 @@ textarea.form-control {
 
 /* ===== NEW APP SHELL REFINEMENT ===== */
 .app-shell-header {
-    position: fixed;
+    position: sticky;
     top: 0; left: 0; right: 0;
     z-index: 1050;
     background: #ffffff;
