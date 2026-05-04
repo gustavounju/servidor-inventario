@@ -397,7 +397,7 @@
                     <summary class="fuero-tree-node__summary">
                         <span class="fuero-tree-node__folder"><i class="bi bi-folder2-open"></i></span>
                         <span class="fuero-tree-node__name">{{ node.name }}</span>
-                        {% if level <= 1 and node.uncataloged_printers %}
+                        {% if level == 0 and node.uncataloged_printers %}
                         <span class="fuero-tree-node__pending-printers" title="{{ node.uncataloged_printers }} impresora{% if node.uncataloged_printers != 1 %}s{% endif %} detectada{% if node.uncataloged_printers != 1 %}s{% endif %} sin catalogar">
                             <i class="bi bi-printer"></i> {{ node.uncataloged_printers }} sin catalogar
                         </span>
