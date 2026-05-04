@@ -291,7 +291,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             elif alerta == "ninguna":
                 filter_sql += " AND p.alerta_ram_baja = 0 AND p.alerta_sin_impresora = 0 AND p.alerta_disco = 0 AND p.alerta_uptime = 0 AND p.alerta_nombre_duplicado = 0"
             elif alerta == "sin_impresora_inventario":
-                filter_sql += " AND (p.printer_model IS NULL OR p.printer_model = '' OR p.printer_model = 'N/A' OR UPPER(p.printer_model) LIKE '%%SIN IMPRESORA%%') AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers)"
+                filter_sql += " AND (p.printer_model IS NULL OR p.printer_model = '' OR p.printer_model = 'N/A' OR UPPER(p.printer_model) IN ('NONE', '-') OR UPPER(p.printer_model) LIKE '%%SIN IMPRESORA%%') AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers)"
 
             if os_param == "win7":
                 filter_sql += " AND p.os_name LIKE %s"
@@ -564,7 +564,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 WHERE is_active = 'True'
                 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
                 AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
-                AND (printer_model IS NULL OR printer_model = '' OR printer_model = 'N/A' OR UPPER(printer_model) LIKE '%%SIN IMPRESORA%%')
+                AND (printer_model IS NULL OR printer_model = '' OR printer_model = 'N/A' OR UPPER(printer_model) IN ('NONE', '-') OR UPPER(printer_model) LIKE '%%SIN IMPRESORA%%')
                 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
             """).fetchone()["c"]
 

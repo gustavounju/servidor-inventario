@@ -393,7 +393,7 @@
         <div class="fuero-tree" id="inventoryTableContainer">
             {% if fuero_tree %}
                 {% macro render_fuero_node(node, level=0) %}
-                <details class="fuero-tree-node fuero-tree-node--level-{{ level }}" {% if level > 0 or node.name == 'Sin fuero asignado' %}open{% endif %}>
+                <details class="fuero-tree-node fuero-tree-node--level-{{ level }}" {% if level > 0 or node.name == 'Sin fuero asignado' or q or (alerta and alerta != 'ninguna') %}open{% endif %}>
                     <summary class="fuero-tree-node__summary">
                         <span class="fuero-tree-node__folder"><i class="bi bi-folder2-open"></i></span>
                         <span class="fuero-tree-node__name">{{ node.name }}</span>
