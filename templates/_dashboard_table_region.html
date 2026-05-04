@@ -39,7 +39,7 @@
                 </thead>
                 <tbody>
                     {% for pc in pcs %}
-                    {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
+                    {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or (pc.printer_model | upper) == 'NONE' or pc.printer_model == '-' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
                     {% set printer_alert_sin_impresora = pc.alerta_sin_impresora and printer_missing %}
                     {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
                     {% set row_class = [] %}
@@ -409,7 +409,7 @@
                             {{ render_fuero_node(child, level + 1) }}
                         {% endfor %}
                         {% for pc in node.pcs %}
-                            {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
+                            {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or (pc.printer_model | upper) == 'NONE' or pc.printer_model == '-' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
                             {% set printer_alert_sin_impresora = pc.alerta_sin_impresora and printer_missing %}
                             {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
                             {% set alert_reasons = [] %}
