@@ -51,7 +51,10 @@
                         <i class="bi bi-file-earmark-bar-graph"></i>
                     </button>
                     {% endif %}
-                    <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Topografía (Fueros)">
+                    <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#fueroAdminModal" title="Fueros">
+                        <i class="bi bi-journal-bookmark-fill"></i>
+                    </button>
+                    <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Topografía">
                         <i class="bi bi-diagram-3"></i>
                     </button>
                     <a href="{{ url_for('dashboard.global_activity') }}" class="system-icon-btn" title="Actividad">
@@ -125,7 +128,11 @@
                 </button>
                 {% endif %}
                 
-                <button class="action-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Topografía (Fueros)">
+                <button class="action-btn" data-bs-toggle="modal" data-bs-target="#fueroAdminModal" title="Fueros">
+                    <i class="bi bi-journal-bookmark-fill"></i>
+                </button>
+                
+                <button class="action-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Topografía">
                     <i class="bi bi-diagram-3"></i>
                 </button>
                 
@@ -261,6 +268,17 @@
             <a href="/?alerta=sin_impresora_inventario&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--info {% if request.args.get('alerta') == 'sin_impresora_inventario' %}active{% endif %}" title="Equipos activos sin impresora detectada ni impresora de red asignada. Revisar si corresponde cargar o vincular una impresora.">
                 <i class="bi bi-printer"></i> <span>Sin imp.</span> <strong>{{ kpi_sin_impresora_inventario }}</strong>
             </a>
+            {% for pc in auxiliary_pcs %}
+            {% set aux_name = pc.pc_name.upper() %}
+            <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--neutral" title="{{ pc.pc_name }}">
+                <i class="bi {% if 'GENERICA' in aux_name %}bi-inbox{% else %}bi-diagram-3{% endif %}"></i>
+                <span>{% if aux_name.startswith('INFRAESTRUCTURA') %}Infraestructura{% elif 'GENERICA' in aux_name %}PC genérica{% else %}{{ pc.pc_name }}{% endif %}</span>
+                <strong>{{ pc.tareas_pendientes or 0 }}</strong>
+            </a>
+            {% endfor %}
+            <button type="button" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--neutral" data-bs-toggle="modal" data-bs-target="#mobileTechsModal" title="Técnicos móviles activos">
+                <i class="bi bi-phone"></i> <span>Técnicos</span> <strong>{{ active_mobile_techs | length }}</strong>
+            </button>
             </div>
             {% endif %}
         </div>

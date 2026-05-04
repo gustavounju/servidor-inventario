@@ -51,7 +51,7 @@ class DashboardContractTests(unittest.TestCase):
             ["Cámara Civil y Comercial", "Sala IV", "Vocalia 11"],
         )
 
-    def test_build_fuero_tree_uses_pc_name_when_fuero_is_generic(self):
+    def test_build_fuero_tree_uses_fuero_not_pc_name(self):
         tree = _build_fuero_tree([
             {"pc_name": "JCC9SEC1700004", "fuero": "Juzgado Civil y Comercial"},
             {"pc_name": "CCYCSIV1100011", "fuero": "Cámara Civil y Comercial Sala IV"},
@@ -59,18 +59,19 @@ class DashboardContractTests(unittest.TestCase):
 
         self.assertEqual(tree[0]["name"], "Cámara Civil y Comercial")
         self.assertEqual(tree[0]["children"][0]["name"], "Sala IV")
-        self.assertEqual(tree[0]["children"][0]["children"][0]["name"], "Vocalia 11")
-        self.assertEqual(tree[1]["name"], "Juzgado Civil y Comercial N°9")
-        self.assertEqual(tree[1]["children"][0]["name"], "Secretaria 17")
+        self.assertEqual(tree[1]["name"], "Juzgado Civil y Comercial")
+
     def test_build_fuero_tree_unifies_same_jcc_with_multiple_secretarias(self):
         tree = _build_fuero_tree([
             {"pc_name": "JCC9SEC1700004", "fuero": "Juzgado Civil y Comercial"},
             {"pc_name": "JCC9SEC1800004", "fuero": "Juzgado civil y Comercial NÂ°9 Secretaria 18"},
         ])
 
-        self.assertEqual(len(tree), 1)
-        self.assertEqual(tree[0]["name"], "Juzgado Civil y Comercial N°9")
-        self.assertEqual([child["name"] for child in tree[0]["children"]], ["Secretaria 17", "Secretaria 18"])
+        self.assertEqual(len(tree), 2)
+        self.assertEqual(tree[0]["name"], "Juzgado Civil y Comercial")
+        self.assertEqual(tree[1]["name"], "Juzgado Civil y Comercial N°9")
+        self.assertEqual([child["name"] for child in tree[1]["children"]], ["Secretaria 18"])
+
     def test_build_fuero_tree_splits_tts_vocalias(self):
         tree = _build_fuero_tree([
             {"pc_name": "TTSIVVOC100002", "fuero": "Tribunal de Trabajo Sala IV"},
@@ -80,7 +81,7 @@ class DashboardContractTests(unittest.TestCase):
         self.assertEqual(len(tree), 1)
         self.assertEqual(tree[0]["name"], "Tribunal de Trabajo")
         self.assertEqual(tree[0]["children"][0]["name"], "Sala IV")
-        self.assertEqual([child["name"] for child in tree[0]["children"][0]["children"]], ["Vocalia 10", "Vocalia 11"])
+        self.assertEqual(tree[0]["children"][0]["count"], 2)
 
 
 if __name__ == "__main__":

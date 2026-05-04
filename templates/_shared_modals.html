@@ -1843,6 +1843,11 @@
                         detectedBody.innerHTML = '';
                         if (data.detected_printers.length > 0) {
                             data.detected_printers.forEach(p => {
+                                const ignoreButton = p.detect_id
+                                    ? `<button class="btn btn-sm btn-outline-danger" onclick="ignoreDetectedPrinter(${p.detect_id})" title="Ocultar de esta lista">
+                                            <i class="bi bi-eye-slash"></i>
+                                       </button>`
+                                    : '';
                                 detectedBody.innerHTML += `
                                     <tr>
                                         <td>
@@ -1857,9 +1862,7 @@
                                                 <button class="btn btn-sm btn-outline-primary" onclick="promoteToNetworkPrinter('${(p.printer_port || '').replace(/\\/g, '\\\\')}','${p.printer_model}','${p.pc_name}','${p.printer_sn || ''}')" title="Agregar al catálogo">
                                                     <i class="bi bi-plus-circle"></i> Promocionar
                                                 </button>
-                                                <button class="btn btn-sm btn-outline-danger" onclick="ignoreDetectedPrinter(${p.detect_id})" title="Ocultar de esta lista">
-                                                    <i class="bi bi-eye-slash"></i>
-                                                </button>
+                                                ${ignoreButton}
                                             </div>
                                         </td>
                                     </tr>

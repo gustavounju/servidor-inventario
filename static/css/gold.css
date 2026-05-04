@@ -1532,6 +1532,24 @@ body {
     padding: 2px 7px;
 }
 
+.fuero-tree-node__pending-printers {
+    align-items: center;
+    background: #eef6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    color: #1d4ed8;
+    display: inline-flex;
+    font-size: 0.66rem;
+    font-weight: 850;
+    gap: 4px;
+    margin-left: auto;
+    padding: 2px 7px;
+}
+
+.fuero-tree-node__pending-printers + .fuero-tree-node__count {
+    margin-left: 6px;
+}
+
 .fuero-tree-node__body {
     margin-left: 12px;
 }
@@ -1635,9 +1653,123 @@ body {
 }
 
 .fuero-tree-pc__meta > .fuero-tree-pc__meta-printer--pending {
-    background: #fff7ed;
-    border-color: #fdba74;
-    color: #9a3412;
+    background: #eef6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.fuero-tree-pc__meta > .fuero-tree-printer-group {
+    align-items: stretch;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    color: #475569;
+    display: inline-flex;
+    font-size: 0.66rem;
+    font-weight: 800;
+    max-width: min(100%, 520px);
+    min-height: 24px;
+    overflow: hidden;
+    padding: 0;
+    white-space: nowrap;
+}
+
+.fuero-tree-printer-group--pending {
+    background: #eef6ff !important;
+    border-color: #bfdbfe !important;
+    color: #1d4ed8 !important;
+}
+
+.fuero-tree-printer-group__model,
+.fuero-tree-printer-group__type,
+.fuero-tree-printer-group__action {
+    align-items: center;
+    display: inline-flex;
+    gap: 4px;
+    min-width: 0;
+    padding: 3px 7px;
+}
+
+.fuero-tree-printer-group__model {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fuero-tree-printer-group__type {
+    background: rgba(255, 255, 255, 0.62);
+    border-left: 1px solid rgba(96, 165, 250, 0.38);
+    flex: 0 0 auto;
+}
+
+.fuero-tree-printer-group__action {
+    background: #2563eb;
+    border: 0;
+    border-left: 1px solid rgba(30, 64, 175, 0.18);
+    color: #ffffff;
+    flex: 0 0 auto;
+    font: inherit;
+    justify-content: center;
+    min-width: 24px;
+}
+
+.fuero-tree-printer-group__action:hover {
+    background: #1d4ed8;
+}
+
+.fuero-tree-fuero-form {
+    align-items: center;
+    display: inline-flex;
+    gap: 0;
+    min-height: 24px;
+}
+
+.fuero-tree-fuero-form input {
+    border: 1px solid #cbd5e1;
+    border-radius: 5px 0 0 5px;
+    color: #334155;
+    font-size: 0.66rem;
+    font-weight: 700;
+    min-height: 24px;
+    padding: 2px 7px;
+    width: 150px;
+}
+
+.fuero-tree-fuero-form button {
+    align-items: center;
+    background: #2563eb;
+    border: 1px solid #2563eb;
+    border-radius: 0 5px 5px 0;
+    color: #fff;
+    display: inline-flex;
+    justify-content: center;
+    min-height: 24px;
+    width: 28px;
+}
+
+.fuero-tree-detected-printers {
+    align-items: center;
+    background: #eef6ff !important;
+    border-color: #bfdbfe !important;
+    color: #1d4ed8 !important;
+    display: inline-flex;
+    gap: 5px;
+    max-width: min(100%, 520px) !important;
+    white-space: normal !important;
+}
+
+.fuero-tree-detected-printers__sep {
+    color: #64748b;
+    font-weight: 900;
+}
+
+.fuero-tree-detected-printers small {
+    background: #ffffff;
+    border: 1px solid #bfdbfe;
+    border-radius: 4px;
+    color: #1e40af;
+    font-size: 0.6rem;
+    font-weight: 850;
+    padding: 1px 4px;
 }
 
 .fuero-tree-chip--ok {
@@ -2875,7 +3007,8 @@ textarea.form-control {
 }
 
 .system-work-header__summary > span,
-.system-work-header__summary > a {
+.system-work-header__summary > a,
+.system-work-header__summary > button {
     align-items: center;
     background: #ffffff;
     border: 1px solid #bfdbfe;
@@ -2890,6 +3023,10 @@ textarea.form-control {
     padding: 4px 8px;
     text-decoration: none;
     white-space: nowrap;
+}
+
+.system-work-header__summary > button {
+    cursor: pointer;
 }
 
 .system-work-header__summary i {
@@ -3159,6 +3296,11 @@ textarea.form-control {
 .fleet-mini-chip--info {
     border-color: #bfdbfe;
     color: #1d4ed8;
+}
+
+.fleet-mini-chip--neutral {
+    border-color: #cbd5e1;
+    color: #334155;
 }
 
 .fleet-mini-row {

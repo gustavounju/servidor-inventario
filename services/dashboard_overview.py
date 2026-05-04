@@ -197,6 +197,7 @@ def _node_to_view(name, node):
     return {
         "name": name,
         "count": node["count"],
+        "uncataloged_printers": node["uncataloged_printers"],
         "children": children,
         "pcs": pcs,
     }
@@ -205,25 +206,13 @@ def _node_to_view(name, node):
 def _build_fuero_tree(pcs):
     roots = {}
     for pc in pcs:
-        fuero_text = pc.get("fuero")
-        compact_path = _split_fuero_path(pc.get("pc_name"))
-        if (
-            compact_path != [pc.get("pc_name")]
-            and compact_path != ["Sin fuero asignado"]
-            and (
-                not fuero_text
-                or fuero_text == "Tribunal de Trabajo Sala IV"
-                or fuero_text in ("Desconocido", "Juzgado Civil y Comercial", "Cámara Civil y Comercial", "Cámara Civil y Comercial Sala IV")
-            )
-        ):
-            path = compact_path
-        else:
-            path = _split_fuero_path(fuero_text)
+        path = _split_fuero_path(pc.get("fuero"))
         current_level = roots
         current_node = None
         for part in path:
-            current_node = current_level.setdefault(part, {"count": 0, "children": {}, "pcs": []})
+            current_node = current_level.setdefault(part, {"count": 0, "uncataloged_printers": 0, "children": {}, "pcs": []})
             current_node["count"] += 1
+            current_node["uncataloged_printers"] += int(pc.get("detected_printers_count") or 0)
             current_level = current_node["children"]
         if current_node is not None:
             current_node["pcs"].append(pc)
@@ -232,6 +221,11 @@ def _build_fuero_tree(pcs):
         _node_to_view(name, node)
         for name, node in sorted(roots.items(), key=lambda item: item[0].lower())
     ]
+
+
+def _is_auxiliary_pc(pc):
+    name = (pc.get("pc_name") or "").upper()
+    return "GENERICA" in name or name.startswith("INFRAESTRUCTURA")
 
 
 def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_by, order, page, per_page, tipo_actividad=""):
@@ -327,8 +321,6 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                     LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = au.username
                 )
                 WHERE 1=1
-                AND UPPER(p.pc_name) NOT LIKE 'PC%%GENERICA%%'
-                AND UPPER(p.pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
             """ + filter_sql
             total_rows = conn.execute(count_sql, filter_params).fetchone()["c"]
 
@@ -365,8 +357,6 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                     LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = au.username
                 )
                 WHERE 1=1
-                AND UPPER(p.pc_name) NOT LIKE 'PC%%GENERICA%%'
-                AND UPPER(p.pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
             """ + filter_sql
 
             sort_col_sql = sanitize_sort_column(sort_by)
@@ -465,22 +455,58 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                     detected_by_pc.setdefault(pc_name, []).append(row)
 
                 for pc in pcs_data:
-                    pc["detected_printers_count"] = len(detected_by_pc.get(pc["pc_name"], []))
+                    pc_name = pc["pc_name"]
+                    main_model = (pc.get("printer_model") or "").strip()
+                    main_serial = (pc.get("printer_sn") or "").strip().upper()
+                    main_port = _normalize_printer_endpoint(pc.get("printer_port"))
+                    main_key = _build_printer_match_key(pc.get("printer_model"), pc.get("printer_port"))
+                    has_main_printer = main_model and main_model != "N/A" and "SIN IMPRESORA" not in main_model.upper()
+                    assigned = assigned_by_pc.get(pc_name, {"serials": set(), "ports": set(), "keys": set()})
+                    main_is_cataloged = (
+                        (main_serial and main_serial != "N/A" and main_serial in catalog_serials)
+                        or (main_port and main_port in catalog_ports)
+                        or (main_serial and main_serial != "N/A" and main_serial in assigned["serials"])
+                        or (main_port and main_port in assigned["ports"])
+                        or (main_key and main_key in assigned["keys"])
+                    )
+                    main_dedupe_key = (pc_name, main_serial or "", main_key or "", main_port or "")
+                    if has_main_printer and not main_is_cataloged and main_dedupe_key not in seen_detected:
+                        detected_by_pc.setdefault(pc_name, []).append(pc)
+                        seen_detected.add(main_dedupe_key)
+
+                    detected_items = detected_by_pc.get(pc_name, [])
+                    pc["detected_printers_count"] = len(detected_items)
+                    pc["detected_printers_preview"] = [
+                        {
+                            "model": item.get("printer_model"),
+                            "port": item.get("printer_port"),
+                            "sn": item.get("printer_sn"),
+                            "connection": (
+                                "Compartida"
+                                if (item.get("printer_port") or "").startswith("\\\\")
+                                else "Red/IP"
+                                if ("." in (item.get("printer_port") or "") or "WSD" in (item.get("printer_port") or "") or "IP_" in (item.get("printer_port") or ""))
+                                else "Local/USB"
+                            ),
+                        }
+                        for item in detected_items
+                        if (pc_name, (item.get("printer_sn") or "").strip().upper() or "", _build_printer_match_key(item.get("printer_model"), item.get("printer_port")) or "", _normalize_printer_endpoint(item.get("printer_port")) or "") != main_dedupe_key
+                    ]
                     pc["disk_summary_lines"] = _build_disk_summary_lines(
                         pc.get("disk_models"),
                         pc.get("disk_speeds_rpm"),
                     )
 
             if estado != "False":
-                fuero_tree = _build_fuero_tree(pcs_data)
+                fuero_tree = _build_fuero_tree([pc for pc in pcs_data if not _is_auxiliary_pc(pc)])
 
             auxiliary_pcs = [dict(row) for row in conn.execute(
                 """SELECT p.pc_name, p.last_report,
-                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%')) AS tareas_pendientes
+                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%')) AS tareas_pendientes
                 FROM pcs p
                 WHERE p.is_active = 'True'
-                AND (UPPER(p.pc_name) = 'PC GENERICA' OR UPPER(p.pc_name) = 'INFRAESTRUCTURA')
-                ORDER BY CASE WHEN UPPER(p.pc_name) = 'INFRAESTRUCTURA' THEN 0 ELSE 1 END"""
+                AND (UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%')
+                ORDER BY CASE WHEN UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%' THEN 0 ELSE 1 END, p.pc_name ASC"""
             ).fetchall()]
 
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]

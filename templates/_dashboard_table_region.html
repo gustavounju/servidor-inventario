@@ -1,4 +1,9 @@
 <div id="dashboardTableRegion">
+        <datalist id="fueroOptions">
+            {% for name in fueros.values()|unique|sort %}
+            <option value="{{ name }}">
+            {% endfor %}
+        </datalist>
         <section class="inventory-table-shell">
         {% if estado == 'False' %}
         <div class="table-responsive inventory-table-wrap" id="inventoryTableContainer">
@@ -34,7 +39,6 @@
                 </thead>
                 <tbody>
                     {% for pc in pcs %}
-                    {% if not (pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') or pc.pc_name.upper().startswith('INFRAESTRUCTURA')) %}
                     {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
                     {% set printer_alert_sin_impresora = pc.alerta_sin_impresora and printer_missing %}
                     {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
@@ -377,7 +381,6 @@
                             </div>
                         </td>
                     </tr>
-                    {% endif %}
                     {% else %}
                     <tr>
                         <td colspan="6" style="text-align: center;">Sin datos.</td>
@@ -390,10 +393,15 @@
         <div class="fuero-tree" id="inventoryTableContainer">
             {% if fuero_tree %}
                 {% macro render_fuero_node(node, level=0) %}
-                <details class="fuero-tree-node fuero-tree-node--level-{{ level }}" {% if level > 0 %}open{% endif %}>
+                <details class="fuero-tree-node fuero-tree-node--level-{{ level }}" {% if level > 0 or node.name == 'Sin fuero asignado' %}open{% endif %}>
                     <summary class="fuero-tree-node__summary">
                         <span class="fuero-tree-node__folder"><i class="bi bi-folder2-open"></i></span>
                         <span class="fuero-tree-node__name">{{ node.name }}</span>
+                        {% if level <= 1 and node.uncataloged_printers %}
+                        <span class="fuero-tree-node__pending-printers" title="{{ node.uncataloged_printers }} impresora{% if node.uncataloged_printers != 1 %}s{% endif %} detectada{% if node.uncataloged_printers != 1 %}s{% endif %} sin catalogar">
+                            <i class="bi bi-printer"></i> {{ node.uncataloged_printers }} sin catalogar
+                        </span>
+                        {% endif %}
                         <span class="fuero-tree-node__count">{{ node.count }} PC{% if node.count != 1 %}s{% endif %}</span>
                     </summary>
                     <div class="fuero-tree-node__body">
@@ -428,31 +436,57 @@
                                     {% if pc.monitors and pc.monitors != 'N/A' %}
                                     <span title="Monitor detectado"><i class="bi bi-display"></i> {{ pc.monitors }}</span>
                                     {% endif %}
-                                    <span class="fuero-tree-pc__meta-printer {% if not pc.assigned_network_printer and pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}fuero-tree-pc__meta-printer--pending{% endif %}" title="{% if pc.assigned_network_printer %}Impresora registrada en catálogo{% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}Impresora detectada, pendiente de sumar al catálogo{% else %}Impresión{% endif %}"><i class="bi bi-printer"></i> {% if pc.assigned_network_printer %}{{ pc.assigned_network_printer }} (catálogo){% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}{{ pc.printer_model }}{% else %}Sin impresora{% endif %}</span>
-                                    {% if pc.assigned_network_printer %}
-                                    {% elif pc.printer_port and pc.printer_port.startswith('\\\\') %}
-                                    <span title="{{ pc.printer_port }}"><i class="bi bi-share"></i> Compartida por otra PC</span>
-                                    {% elif pc.printer_port and ('.' in pc.printer_port or 'WSD' in pc.printer_port or 'IP_' in pc.printer_port) %}
-                                    <span class="{% if not pc.assigned_network_printer %}fuero-tree-pc__meta-printer--pending{% endif %}" title="{% if not pc.assigned_network_printer %}Impresora por red detectada, pendiente de sumar al catálogo{% else %}{{ pc.printer_port }}{% endif %}"><i class="bi bi-diagram-3"></i> Por red/IP</span>
-                                    {% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}
-                                    <span title="{{ pc.printer_port or '' }}"><i class="bi bi-usb-symbol"></i> Local/USB</span>
+                                    <span class="fuero-tree-printer-group {% if not pc.assigned_network_printer and pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}fuero-tree-printer-group--pending{% endif %}">
+                                        <span class="fuero-tree-printer-group__model" title="{% if pc.assigned_network_printer %}Impresora registrada en catálogo{% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}Impresora detectada, pendiente de sumar al catálogo{% else %}Impresión{% endif %}">
+                                            <i class="bi bi-printer"></i>
+                                            {% if pc.assigned_network_printer %}{{ pc.assigned_network_printer }} (catálogo){% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}{{ pc.printer_model }}{% else %}Sin impresora{% endif %}
+                                        </span>
+                                        {% if pc.assigned_network_printer %}
+                                        {% elif pc.printer_port and pc.printer_port.startswith('\\\\') %}
+                                        <span class="fuero-tree-printer-group__type" title="{{ pc.printer_port }}"><i class="bi bi-share"></i> Compartida</span>
+                                        {% elif pc.printer_port and ('.' in pc.printer_port or 'WSD' in pc.printer_port or 'IP_' in pc.printer_port) %}
+                                        <span class="fuero-tree-printer-group__type" title="Impresora por red detectada, pendiente de sumar al catálogo"><i class="bi bi-diagram-3"></i> Red/IP</span>
+                                        {% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}
+                                        <span class="fuero-tree-printer-group__type" title="{{ pc.printer_port or '' }}"><i class="bi bi-usb-symbol"></i> Local/USB</span>
+                                        {% endif %}
+                                        {% if pc.detected_printers_count > 0 %}
+                                        <button type="button"
+                                                class="fuero-tree-printer-group__action"
+                                                onclick="event.stopPropagation(); showDetectedPrinters('{{ pc.pc_name }}')"
+                                                title="Hay impresoras detectadas que todavía no están en el catálogo.">
+                                            <i class="bi bi-plus-circle-dotted"></i>
+                                            <span>Sumar {{ pc.detected_printers_count }}</span>
+                                        </button>
+                                        {% elif not pc.assigned_network_printer and pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}
+                                        <button type="button"
+                                                class="fuero-tree-printer-group__action"
+                                                onclick="event.stopPropagation(); promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')"
+                                                title="Sumar esta impresora detectada al catálogo oficial.">
+                                            <i class="bi bi-plus-circle-fill"></i>
+                                        </button>
+                                        {% endif %}
+                                    </span>
+                                    {% if pc.detected_printers_preview %}
+                                    <span class="fuero-tree-detected-printers" title="Impresoras detectadas sin catalogar">
+                                        <i class="bi bi-printer"></i>
+                                        {% for printer in pc.detected_printers_preview %}
+                                            {% if not loop.first %}<span class="fuero-tree-detected-printers__sep">+</span>{% endif %}
+                                            <span>{{ printer.model }}</span>
+                                            <small>{{ printer.connection }}</small>
+                                        {% endfor %}
+                                    </span>
                                     {% endif %}
-                                    {% if pc.detected_printers_count > 0 %}
-                                    <button type="button"
-                                            class="btn btn-sm btn-warning fw-bold py-0 px-2"
-                                            style="font-size: 0.68rem;"
-                                            onclick="event.stopPropagation(); showDetectedPrinters('{{ pc.pc_name }}')"
-                                            title="Hay impresoras detectadas que todavía no están en el catálogo.">
-                                        <i class="bi bi-plus-circle-dotted"></i> Sumar {{ pc.detected_printers_count }} impresora{% if pc.detected_printers_count != 1 %}s{% endif %}
-                                    </button>
-                                    {% elif not pc.assigned_network_printer and pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}
-                                    <button type="button"
-                                            class="btn btn-sm btn-warning fw-bold py-0 px-2"
-                                            style="font-size: 0.68rem;"
-                                            onclick="event.stopPropagation(); promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')"
-                                            title="Sumar esta impresora detectada al catálogo oficial.">
-                                        <i class="bi bi-plus-circle-fill"></i>
-                                    </button>
+                                    {% if not pc.fuero or pc.fuero == 'Desconocido' %}
+                                    <form action="{{ url_for('dashboard.update_pc_fuero', pc_name=pc.pc_name) }}"
+                                          method="POST"
+                                          class="fuero-tree-fuero-form"
+                                          onclick="event.stopPropagation();">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input name="fuero" list="fueroOptions" placeholder="Asignar fuero" required>
+                                        <button type="submit" title="Guardar fuero">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                    </form>
                                     {% endif %}
                                     {% if pc.tareas_pendientes %}
                                     <span class="fuero-tree-chip fuero-tree-chip--task" title="Tareas pendientes">{{ pc.tareas_pendientes }} tareas</span>

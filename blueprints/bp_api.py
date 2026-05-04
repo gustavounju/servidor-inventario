@@ -222,7 +222,8 @@ def process_inventory_data(data):
     except: pass
 
     full_json = json.dumps(data, ensure_ascii=False)
-    fuero_detectado = detect_fuero(pc_name)
+    fuero_reportado = str(data.get("Fuero") or data.get("fuero") or "").strip()
+    fuero_detectado = fuero_reportado or detect_fuero(pc_name)
 
     # Initial states for new calculations
     alerta_nombre_duplicado = 0
@@ -533,6 +534,26 @@ def api_detected_printers():
                 base_query += " ORDER BY dp.pc_name"
                 detected_rows = conn.execute(base_query).fetchall()
 
+            main_query = """
+                SELECT
+                    pcs.pc_name,
+                    pcs.printer_model,
+                    pcs.printer_sn,
+                    pcs.printer_port,
+                    pcs.last_report,
+                    pcs.fuero,
+                    NULL AS detect_id
+                FROM pcs
+                WHERE pcs.is_active = 'True'
+                  AND (pcs.printer_model IS NOT NULL AND pcs.printer_model != '' AND pcs.printer_model != 'N/A' AND UPPER(pcs.printer_model) NOT LIKE '%%SIN IMPRESORA%%')
+            """
+            if pc_filter:
+                main_query += " AND pcs.pc_name = %s ORDER BY pcs.pc_name"
+                main_rows = conn.execute(main_query, (pc_filter,)).fetchall()
+            else:
+                main_query += " ORDER BY pcs.pc_name"
+                main_rows = conn.execute(main_query).fetchall()
+
             assigned_rows = conn.execute("""
                 SELECT pnp.pc_name, np.serial_number, np.ip_address, np.brand_model
                 FROM pc_network_printers pnp
@@ -566,7 +587,7 @@ def api_detected_printers():
 
             filtered_detected = []
             seen_detected_keys = set()
-            for row in detected_rows:
+            for row in list(main_rows) + list(detected_rows):
                 row_dict = dict(row)
                 detect_serial = (row_dict.get("printer_sn") or "").strip().upper()
                 detect_port = _normalize_printer_endpoint(row_dict.get("printer_port"))
@@ -577,10 +598,6 @@ def api_detected_printers():
                     continue
                 if detect_port and detect_port in catalog_ports:
                     continue
-
-                primary_serial = (row_dict.get("primary_printer_sn") or "").strip().upper()
-                primary_port = _normalize_printer_endpoint(row_dict.get("primary_printer_port"))
-                primary_key = _build_printer_match_key(row_dict.get("primary_printer_model"), row_dict.get("primary_printer_port"))
 
                 assigned = assigned_by_pc.get(pc_name, {"serials": set(), "ports": set(), "keys": set()})
                 if detect_serial and detect_serial != "N/A" and detect_serial in assigned["serials"]:

@@ -368,6 +368,32 @@ def refresh_fueros():
 
     return redirect(url_for("dashboard.dashboard"))
 
+@bp_dashboard.route("/pc/<pc_name>/update_fuero", methods=["POST"])
+def update_pc_fuero(pc_name):
+    fuero = request.form.get("fuero", "").strip()
+    try:
+        with get_db_connection() as conn:
+            old_pc = conn.execute("SELECT fuero FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+            if not old_pc:
+                abort(404)
+            old_fuero = old_pc["fuero"] or ""
+            conn.execute("UPDATE pcs SET fuero = %s WHERE pc_name = %s", (fuero or None, pc_name))
+            if old_fuero != fuero:
+                log_audit_event(
+                    conn,
+                    pc_name=pc_name,
+                    field="fuero",
+                    old_value=old_fuero,
+                    new_value=fuero,
+                    action_type="EDICION_FUERO",
+                    request_ip=request.remote_addr,
+                )
+            conn.commit()
+        flash(f"Fuero actualizado para {pc_name}.", "success")
+    except Exception as exc:
+        flash(f"No se pudo actualizar el fuero de {pc_name}: {exc}", "error")
+    return redirect(request.referrer or url_for("dashboard.dashboard"))
+
 @bp_dashboard.route("/delete_permanent/<string:pc_name>", methods=["POST"])
 def delete_permanent_pc(pc_name):
     """Borrado definitivo de una PC y sus tareas asociadas."""
