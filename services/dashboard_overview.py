@@ -497,6 +497,27 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                         pc.get("disk_speeds_rpm"),
                     )
 
+                    # Calcular días sin último reporte del script
+                    lr = pc.get('last_report')
+                    lr_dt = None
+                    if lr:
+                        if isinstance(lr, str):
+                            for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d'):
+                                try:
+                                    lr_dt = dt.strptime(lr, fmt)
+                                    break
+                                except ValueError:
+                                    pass
+                        elif hasattr(lr, 'timetuple'):
+                            lr_dt = lr
+                    if lr_dt:
+                        days_diff = (dt.now() - lr_dt).days
+                        pc['dias_sin_reporte'] = days_diff
+                        pc['sin_reporte_30d'] = days_diff > 30
+                    else:
+                        pc['dias_sin_reporte'] = None
+                        pc['sin_reporte_30d'] = False
+
             if estado != "False":
                 fuero_tree = _build_fuero_tree([pc for pc in pcs_data if not _is_auxiliary_pc(pc)])
 

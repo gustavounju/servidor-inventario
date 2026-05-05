@@ -51,6 +51,7 @@
                     {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('La PC lleva más de 15 días encendida sin reiniciar. Conviene reiniciarla.') %}{% endif %}
                     {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Hay otra PC reportando el mismo nombre en la red.') %}{% endif %}
                     {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('Usa Windows 7. Es un sistema viejo y conviene planificar actualización.') %}{% endif %}
+                    {% if pc.sin_reporte_30d %}{% set _ = alert_reasons.append('Sin actividad hace más de 30 días: puede estar apagada o dada de baja.') %}{% endif %}
                     
                     {% set tooltip_text = "Estado: Saludable" if not alert_reasons else "Alertas detectadas:\n• " + alert_reasons|join('\n• ') %}
 
@@ -62,6 +63,7 @@
                     {% elif alerta_count == 1 or (pc.os_name and 'Windows 7' in pc.os_name) %}
                     {% set _ = row_class.append('tr-riesgo-medio') %}
                     {% endif %}
+                    {% if pc.sin_reporte_30d %}{% set _ = row_class.append('tr-sin-actividad') %}{% endif %}
                     <tr class="{{ ' '.join(row_class) }}" 
                         title="{{ tooltip_text }}"
                         data-alerta-ram="{{ pc.alerta_ram_baja | default(0) }}"
@@ -88,6 +90,16 @@
                                         <span class="inventory-mini-badge inventory-mini-badge--task">{{ pc.tareas_pendientes }}</span>
                                         {% endif %}
                                     </div>
+                                    {% if pc.last_report %}
+                                    <div style="font-size:0.68rem;margin-top:3px;{% if pc.sin_reporte_30d %}color:#dc2626;font-weight:700;{% elif pc.dias_sin_reporte is not none and pc.dias_sin_reporte > 7 %}color:#d97706;{% else %}color:#9ca3af;{% endif %}">
+                                        <i class="bi bi-clock-history"></i>
+                                        {% if pc.sin_reporte_30d %}
+                                        <span title="Último reporte: {{ pc.last_report }}">⚠ {{ pc.dias_sin_reporte }}d sin actividad</span>
+                                        {% elif pc.dias_sin_reporte is not none %}
+                                        <span title="Último reporte: {{ pc.last_report }}">{{ pc.dias_sin_reporte }}d atrás</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 <div class="d-flex flex-column align-items-end ms-1" style="min-width: 42px;">
                                     {% if pc.os_name and 'Windows' in pc.os_name %}
@@ -325,6 +337,9 @@
                                 {% if pc.alerta_nombre_duplicado %}
                                 <div class="inventory-alert-chip inventory-alert-chip--danger" title="Hay otra PC reportando el mismo nombre en la red.">⚠️ Nombre duplicado</div>
                                 {% endif %}
+                                {% if pc.sin_reporte_30d %}
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Esta PC lleva más de 30 días sin enviar datos al servidor. Puede estar apagada, desconectada o dada de baja.">📡 Sin actividad +30d</div>
+                                {% endif %}
                             </div>
 
                                 <div class="dropdown" onclick="event.stopPropagation();">
@@ -419,7 +434,8 @@
                             {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('Reiniciar PC') %}{% endif %}
                             {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Nombre duplicado') %}{% endif %}
                             {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('Actualizar Windows 7') %}{% endif %}
-                            <div class="fuero-tree-pc" title="{{ pc.fuero or 'Sin fuero asignado' }}" onclick="if(!event.target.closest('a') && !event.target.closest('button') && !event.target.closest('.dropdown-menu')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
+                            {% if pc.sin_reporte_30d %}{% set _ = alert_reasons.append('Sin actividad +30d') %}{% endif %}
+                            <div class="fuero-tree-pc {% if pc.sin_reporte_30d %}fuero-tree-pc--inactive{% endif %}" title="{{ pc.fuero or 'Sin fuero asignado' }}" onclick="if(!event.target.closest('a') && !event.target.closest('button') && !event.target.closest('.dropdown-menu')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
                                 <div class="fuero-tree-pc__main">
                                     <i class="bi bi-pc-display-horizontal"></i>
                                     <div class="fuero-tree-pc__identity">
@@ -430,6 +446,14 @@
                                 <div class="fuero-tree-pc__meta">
                                     <span title="IP actual"><i class="bi bi-hdd-network"></i> {{ pc.ip_address or '-' }}</span>
                                     <span title="Sistema operativo"><i class="bi bi-windows"></i> {{ pc.os_name or '-' }}</span>
+                                    {% if pc.last_report %}
+                                    <span title="Último reporte del script de inventario" {% if pc.sin_reporte_30d %}style="color:#dc2626;font-weight:700;"{% elif pc.dias_sin_reporte is not none and pc.dias_sin_reporte > 7 %}style="color:#d97706;"{% endif %}>
+                                        <i class="bi bi-clock-history"></i>
+                                        {% if pc.sin_reporte_30d %}⚠ {{ pc.dias_sin_reporte }}d sin actividad
+                                        {% elif pc.dias_sin_reporte is not none %}{{ pc.dias_sin_reporte }}d atrás
+                                        {% endif %}
+                                    </span>
+                                    {% endif %}
                                     {% if pc.office_version and pc.office_version != 'No detectado' and pc.office_version != 'N/A' %}
                                     <span title="Microsoft Office"><i class="bi bi-microsoft"></i> {{ pc.office_version }}</span>
                                     {% endif %}
