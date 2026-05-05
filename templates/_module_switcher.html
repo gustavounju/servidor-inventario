@@ -270,11 +270,11 @@
             </a>
             {% for pc in auxiliary_pcs %}
             {% set aux_name = pc.pc_name.upper() %}
-            <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--neutral" title="{{ pc.pc_name }}">
+            <button type="button" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--neutral" data-bs-toggle="modal" data-bs-target="#auxModal_{{ pc.pc_name | replace(' ', '_') | replace('-', '_') }}" title="{{ pc.pc_name }}">
                 <i class="bi {% if 'GENERICA' in aux_name %}bi-inbox{% else %}bi-diagram-3{% endif %}"></i>
                 <span>{% if aux_name.startswith('INFRAESTRUCTURA') %}Infraestructura{% elif 'GENERICA' in aux_name %}PC genérica{% else %}{{ pc.pc_name }}{% endif %}</span>
                 <strong>{{ pc.tareas_pendientes or 0 }}</strong>
-            </a>
+            </button>
             {% endfor %}
             <button type="button" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--neutral" data-bs-toggle="modal" data-bs-target="#mobileTechsModal" title="Técnicos móviles activos">
                 <i class="bi bi-phone"></i> <span>Técnicos</span> <strong>{{ active_mobile_techs | length }}</strong>

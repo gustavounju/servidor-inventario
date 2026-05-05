@@ -2166,7 +2166,7 @@
         grid.innerHTML = '';
         
         tasks.forEach((t, index) => {
-            const pcName = t.pc_name || 'PC Genérica';
+            const pcName = t.pc_name || 'PC Gen├®rica';
             const isGeneric = pcName.toUpperCase().includes('GENERICA');
             
             const card = document.createElement('div');
@@ -2205,7 +2205,7 @@
                         <i class="bi bi-trash3"></i>
                     </button>
                     ${isGeneric ? `
-                        <button class="btn-pt-action border-secondary bg-white text-secondary" style="flex:0 0 38px;" onclick="openAssignModal(${t.id})" title="Asignar a PC">
+                        <button class="btn-pt-action border-secondary bg-white text-secondary" style="flex:0 0 38px;" onclick="openMigrateModal(${t.id})" title="Asignar a PC">
                             <i class="bi bi-arrow-right-short" style="font-size: 1.4rem; line-height: 0;"></i>
                         </button>
                     ` : ''}
@@ -2267,3 +2267,270 @@
         form.submit();
     }
     </script>
+
+{% if auxiliary_pcs %}
+{% for pc in auxiliary_pcs %}
+<div class="modal fade" id="auxModal_{{ pc.pc_name | replace(' ', '_') | replace('-', '_') }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 900px;">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 0;">
+                <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2);">
+                            <i class="bi {% if 'GENERICA' in pc.pc_name.upper() %}bi-inbox{% else %}bi-diagram-3{% endif %}" style="color: #fff; font-size: 1.2rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0 fw-bold text-white" style="font-size: 1.1rem; letter-spacing: -0.02em;">Panel de Tareas: {{ pc.pc_name }}</h5>
+                            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 3px;">
+                                Gestión de tareas y reportes asignados a esta unidad.
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                </div>
+            </div>
+
+            <div class="modal-body" style="padding: 30px; background: #f8fafc;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0" style="color: #0f172a;"><i class="bi bi-list-task me-2 text-primary"></i> Tareas Pendientes</h6>
+                </div>
+
+                <div class="table-responsive" style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                    <table class="table table-hover mb-0" style="font-size: 0.85rem;">
+                        <thead style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+                            <tr>
+                                <th style="color: #475569; font-weight: 600; padding: 12px 16px;">Fecha</th>
+                                <th style="color: #475569; font-weight: 600; padding: 12px 16px;">Descripción</th>
+                                <th style="color: #475569; font-weight: 600; padding: 12px 16px;">Solicitante</th>
+                                <th style="color: #475569; font-weight: 600; padding: 12px 16px;">Técnico</th>
+                                <th style="color: #475569; font-weight: 600; padding: 12px 16px; text-align: right;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if pc.tareas %}
+                                {% for t in pc.tareas %}
+                                <tr>
+                                    <td style="padding: 12px 16px; vertical-align: middle;">
+                                        <span class="text-muted" style="font-size: 0.8rem;">{{ t.created_at | datetime_es }}</span>
+                                    </td>
+                                    <td style="padding: 12px 16px; vertical-align: middle; max-width: 300px;">
+                                        <div class="text-truncate fw-medium" style="color: #1e293b;" title="{{ t.descripcion }}">{{ t.descripcion }}</div>
+                                    </td>
+                                    <td style="padding: 12px 16px; vertical-align: middle;">{{ t.solicitante or '-' }}</td>
+                                    <td style="padding: 12px 16px; vertical-align: middle;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge" style="background: #e0e7ff; color: #4338ca; border-radius: 6px; padding: 5px 8px;">{{ t.assigned_to or '-' }}</span>
+                                            {% if t.estado != 'Hecha' %}
+                                            <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1" 
+                                              style="font-size: 0.75rem; border-radius: 4px;" 
+                                              onclick="openReassignModal('{{ t.id }}', '{{ t.assigned_to or '' }}')" 
+                                              title="Cambiar Técnico">
+                                              <i class="bi bi-pencil"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td style="padding: 12px 16px; vertical-align: middle; text-align: right;">
+                                        <div class="d-flex justify-content-end gap-1">
+                                            {% if t.estado == 'Hecha' %}
+                                            <span class="badge" style="background: #10b981; color: white; border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: center; height: 31px;" title="Completada">
+                                                <i class="bi bi-check2-all me-1"></i> Lista
+                                            </span>
+                                            {% else %}
+                                            <button type="button" class="btn btn-sm" style="background: #10b981; color: white; border: none; border-radius: 6px;" title="Marcar Hecha" onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}')">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                            {% endif %}
+                                            {% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}
+                                            <button type="button" class="btn btn-sm" style="background: #f59e0b; color: white; border: none; border-radius: 6px;" title="Asignar / Migrar" onclick="openMigrateModal('{{ t.id }}')">
+                                                <i class="bi bi-arrow-right"></i>
+                                            </button>
+                                            {% endif %}
+                                            <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline" onsubmit="return confirm('¿Borrar esta tarea?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm" style="background: #ef4444; color: white; border: none; border-radius: 6px;" title="Borrar">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        <i class="bi bi-inbox fs-4 d-block mb-2 text-secondary opacity-50"></i>
+                                        No hay tareas pendientes en esta unidad.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3 text-end">
+                    <div style="background: #eff6ff; color: #1e40af; padding: 10px; border-radius: 10px; font-size: 0.72rem; border: 1px solid #dbeafe; display: inline-block; text-align: left;">
+                        <i class="bi bi-info-circle-fill me-1"></i> El registro histórico de actividades ha sido movido al <strong>Panel de Reportes y Actividades Globales</strong>.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Modal Finalizar Tarea (con Técnico) -->
+<div class="modal fade" id="modalFinalizarTarea" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formFinalizar" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Finalizar Tarea</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>¿Quién realizó esta tarea?</p>
+          <div class="mb-3">
+            <input type="hidden" name="technician_name_hidden" id="techHiddenInput">
+            <select name="technician_name" id="techSelectComplete" class="form-select" required>
+              <option value="">Seleccione Técnico...</option>
+              {% for tech in technicians %}
+              <option value="{{ tech.name }}">{{ tech.name }}</option>
+              {% endfor %}
+            </select>
+            {% if not technicians %}
+            <div class="form-text text-danger" id="techListWarning">
+              ⚠️ No hay usuarios con rol técnico listos. Crea un usuario del sistema con rol `tecnico` o permiso mobile.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Marcar como Hecha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Migrar (Solo para PC Generica) -->
+<div class="modal fade" id="modalMigrar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="{{ url_for('tasks.migrate_generic_tasks') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="migration_task_id" id="migration_task_id">
+        <div class="modal-header">
+          <h5 class="modal-title">Asignar tarea a PC Real</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Selecciona la PC real a la cual mover esta tarea.</p>
+          <div class="mb-3">
+            <label for="target_pc" class="form-label">PC Destino</label>
+            <select name="target_pc" id="target_pc" class="form-control" required>
+              <option value="">-- Seleccionar --</option>
+              {% for p in all_pcs %}
+              {% if p.pc_name.upper() != 'PC GENERICA' and p.pc_name.upper() != 'PC-GENERICA' %}
+              <option value="{{ p.pc_name }}">{{ p.pc_name }} | {{ p.fuero or '-' }} | {{ p.last_user or '?' }}</option>
+              {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Reasignar Técnico -->
+<div class="modal fade" id="modalReasignar" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content border-0 shadow">
+      <form action="{{ url_for('tasks.reassign_task') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="task_id" id="reassign_task_id">
+        <input type="hidden" name="pc_name" value="{{ pc.pc_name if pc else '' }}">
+        <div class="modal-header bg-primary text-white border-0">
+          <h5 class="modal-title fs-6 fw-bold">Reasignar Técnico</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="mb-0">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-2">Técnico Responsable</label>
+            <select name="technician" id="reassign_tech_select" class="form-select" required>
+              <option value="">-- Seleccionar --</option>
+              {% for tech in technicians %}
+              <option value="{{ tech.name }}">{{ tech.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer border-0 p-3 pt-0">
+          <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm px-3">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openMigrateModal(taskId) {
+    document.getElementById('migration_task_id').value = taskId;
+    var modal = new bootstrap.Modal(document.getElementById('modalMigrar'));
+    modal.show();
+  }
+
+  function openCompleteTaskModal(taskId, assignedTo) {
+    var form = document.getElementById('formFinalizar');
+    form.action = "/tasks/" + taskId + "/done";
+
+    var techSelect = document.getElementById('techSelectComplete');
+    var techHidden = document.getElementById('techHiddenInput');
+
+    techSelect.disabled = false;
+    techSelect.value = "";
+    techHidden.value = "";
+
+    if (assignedTo && assignedTo !== 'None') {
+      techSelect.value = assignedTo;
+      techSelect.disabled = true;
+      techHidden.value = assignedTo;
+    }
+
+    var modal = new bootstrap.Modal(document.getElementById('modalFinalizarTarea'));
+    modal.show();
+  }
+
+  function openReassignModal(taskId, currentTech) {
+    document.getElementById('reassign_task_id').value = taskId;
+    document.getElementById('reassign_tech_select').value = currentTech;
+    var modal = new bootstrap.Modal(document.getElementById('modalReasignar'));
+    modal.show();
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var formFinalizar = document.getElementById('formFinalizar');
+    if(formFinalizar) {
+      formFinalizar.addEventListener('submit', function () {
+        document.getElementById('techSelectComplete').disabled = false;
+      });
+    }
+
+    if (window.location.hash) {
+      var targetModal = document.querySelector(window.location.hash);
+      if (targetModal && targetModal.classList.contains('modal')) {
+        var modalInstance = new bootstrap.Modal(targetModal);
+        modalInstance.show();
+      }
+    }
+  });
+</script>

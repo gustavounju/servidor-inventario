@@ -114,7 +114,8 @@ def migrate_generic_tasks():
         conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                      (target_pc, "MIGRACION", "PC Generica", audit_msg, current_username(), "MIGRACION_TAREAS", request.remote_addr))
         conn.commit()
-    return redirect(url_for("dashboard.pc_detail", pc_name="PC Generica"))
+    # Redirigir a la PC destino donde se asigno la tarea
+    return redirect(url_for("dashboard.pc_detail", pc_name=target_pc))
 
 @bp_tasks.route("/pc/<pc_name>/tasks", methods=["POST"])
 def add_task(pc_name):
@@ -225,6 +226,11 @@ def mark_task_done(task_id):
                          (pc_name, f"Tarea #{task_id} Completada", "Pendiente", f"Por {technician}", current_username(), "GESTION_TAREAS", request.remote_addr))
             conn.commit()
         else: pc_name = ""
+    ref = request.referrer
+    if ref and request.host in ref and '/pc/' not in ref:
+        if '#' in ref: ref = ref.split('#')[0]
+        modal_hash = f"#auxModal_{pc_name.replace(' ', '_').replace('-', '_')}" if pc_name else ""
+        return redirect(f"{ref}{modal_hash}")
     if not pc_name: return redirect(url_for("dashboard.dashboard"))
     return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
 
@@ -240,6 +246,11 @@ def delete_task(task_id):
                          (pc_name, "Tarea Eliminada", f"#{task_id}", f"Desc: {descripcion[:50]}", current_username(), "GESTION_TAREAS", request.remote_addr))
             conn.commit()
         else: pc_name = ""
+    ref = request.referrer
+    if ref and request.host in ref and '/pc/' not in ref:
+        if '#' in ref: ref = ref.split('#')[0]
+        modal_hash = f"#auxModal_{pc_name.replace(' ', '_').replace('-', '_')}" if pc_name else ""
+        return redirect(f"{ref}{modal_hash}")
     if not pc_name: return redirect(url_for("dashboard.dashboard"))
     return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
 
@@ -353,11 +364,21 @@ def reassign_task():
     if task_id and technician:
         with get_db_connection() as conn:
             conn.execute("UPDATE tasks SET assigned_to = %s, estado = 'Asignada' WHERE id = %s", (technician, task_id))
+            
+            if not pc_name:
+                row = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
+                if row:
+                    pc_name = row["pc_name"]
+                    
             conn.commit()
     
     if pc_name:
+        ref = request.referrer
+        if ref and request.host in ref and '/pc/' not in ref:
+            if '#' in ref: ref = ref.split('#')[0]
+            modal_hash = f"#auxModal_{pc_name.replace(' ', '_').replace('-', '_')}"
+            return redirect(f"{ref}{modal_hash}")
         return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
-    return redirect(url_for("dashboard.dashboard"))
     return redirect(url_for("dashboard.dashboard"))
 
 @bp_tasks.route("/api/audit/<pc_name>/add", methods=["POST"])

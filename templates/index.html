@@ -42,7 +42,7 @@
 
     {% include '_module_switcher.html' %}
 
-    <div class="container-fluid" style="margin-top: 82px;">
+    <div class="container-fluid">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}

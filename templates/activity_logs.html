@@ -229,9 +229,13 @@
                                 <span class="action-badge {{ act_class }}">{{ log.action_type.replace('_', ' ') if log.action_type else 'UPDATE' }}</span>
                             </td>
                             <td>
+                                {% if log.pc_name %}
                                 <a href="{{ url_for('dashboard.pc_detail', pc_name=log.pc_name) }}" class="pc-link">
                                     <i class="bi bi-pc-display me-1 opacity-50"></i>{{ log.pc_name }}
                                 </a>
+                                {% else %}
+                                <span class="pc-link"><i class="bi bi-gear me-1 opacity-50"></i>SISTEMA</span>
+                                {% endif %}
                                 <div class="text-muted" style="font-size: 0.72rem;">{{ log.field }}</div>
                             </td>
                             <td>
