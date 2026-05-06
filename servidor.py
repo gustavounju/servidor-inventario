@@ -30,6 +30,7 @@ from blueprints.bp_tecnicos import bp_tecnicos
 from blueprints.bp_auth import bp_auth
 from blueprints.bp_vault import bp_vault
 from blueprints.bp_users import bp_users
+from blueprints.bp_maps import bp_maps
 from utils.auth import allowed_module_links, auth_guard, auth_mode_label, available_roles, csrf_guard, current_user, ensure_default_admin, generate_csrf_token, has_permission, is_authenticated, role_label
 from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
 
@@ -58,6 +59,7 @@ app.register_blueprint(bp_infrastructure)
 app.register_blueprint(bp_auth)
 app.register_blueprint(bp_vault)
 app.register_blueprint(bp_users)
+app.register_blueprint(bp_maps)
 
 # Filtros para Jinja (si queda alguno que estuviéramos usando, aunque los que se usaban ya están resueltos o no declarados como filters globales en servidor.py original excepto quizas datetime_es, pero lo importabamos donde hiciera falta).
 from services.reporting import format_datetime_es

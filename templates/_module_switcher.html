@@ -57,6 +57,9 @@
                     <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Topografía">
                         <i class="bi bi-diagram-3"></i>
                     </button>
+                    <a href="{{ url_for('maps.index') }}" class="system-icon-btn" title="Planos Topológicos">
+                        <i class="bi bi-map-fill"></i>
+                    </a>
                     <a href="{{ url_for('dashboard.global_activity') }}" class="system-icon-btn" title="Actividad">
                         <i class="bi bi-clock-history"></i>
                     </a>
@@ -136,6 +139,10 @@
                     <i class="bi bi-diagram-3"></i>
                 </button>
                 
+                <a href="{{ url_for('maps.index') }}" class="action-btn" title="Planos Topológicos">
+                    <i class="bi bi-map-fill"></i>
+                </a>
+
                 <a href="{{ url_for('dashboard.global_activity') }}" class="action-btn" title="Actividad">
                     <i class="bi bi-clock-history"></i>
                 </a>

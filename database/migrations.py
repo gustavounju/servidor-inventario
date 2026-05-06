@@ -631,3 +631,58 @@ def run_all_migrations():
     migrate_db_v28()
     migrate_db_v29()
     migrate_db_v30()
+    migrate_db_v31()
+
+def migrate_db_v31():
+    """Migración V31: Infraestructura de Planos y Coordenadas."""
+    print("Verificando migración de DB v31...")
+    with get_db_connection() as conn:
+        # 1. Crear tabla de planos
+        if not _table_exists(conn, "infrastructure_maps"):
+            print("Aplicando migración V31: creando tabla infrastructure_maps...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS infrastructure_maps (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    image_url TEXT NOT NULL,
+                    building VARCHAR(100),
+                    floor VARCHAR(100),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+
+        # 2. Añadir campos a PCs
+        new_pc_cols = {
+            "x_pos": "FLOAT DEFAULT 0",
+            "y_pos": "FLOAT DEFAULT 0",
+            "map_id": "INT"
+        }
+        for col, dtype in new_pc_cols.items():
+            if not _column_exists(conn, "pcs", col):
+                print(f"Agregando '{col}' a pcs...")
+                conn.execute(f"ALTER TABLE pcs ADD COLUMN {col} {dtype}")
+        
+        # Foreign Key para map_id en pcs (si no existe)
+        try:
+            conn.execute("ALTER TABLE pcs ADD CONSTRAINT fk_pcs_map FOREIGN KEY (map_id) REFERENCES infrastructure_maps(id) ON DELETE SET NULL")
+        except Exception: pass
+
+        # 3. Añadir campos a Impresoras de Red
+        new_prn_cols = {
+            "x_pos": "FLOAT DEFAULT 0",
+            "y_pos": "FLOAT DEFAULT 0",
+            "map_id": "INT"
+        }
+        for col, dtype in new_prn_cols.items():
+            if not _column_exists(conn, "network_printers", col):
+                print(f"Agregando '{col}' a network_printers...")
+                conn.execute(f"ALTER TABLE network_printers ADD COLUMN {col} {dtype}")
+
+        # Foreign Key para map_id en printers
+        try:
+            conn.execute("ALTER TABLE network_printers ADD CONSTRAINT fk_prn_map FOREIGN KEY (map_id) REFERENCES infrastructure_maps(id) ON DELETE SET NULL")
+        except Exception: pass
+
+    print("Migración V31 verificada.")

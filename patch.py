@@ -1,36 +1,25 @@
-with open('templates/fueros.html', 'r', encoding='utf-8') as f:
-    content = f.read()
+﻿content = open('services/dashboard_overview.py', 'r', encoding='utf-8').read()
 
-header_old = '<h6 class="fw-bold mb-0 text-dark"><i class="bi bi-printer-fill text-secondary me-2"></i>Impresoras ({{ printers|length }})</h6>'
-header_new = '''{% set own_printers = printers | selectattr('physical_fuero', 'equalto', fuero_param) | list if fuero_param else printers %}
-                <h6 class="fw-bold mb-0 text-dark">
-                    <i class="bi bi-printer-fill text-secondary me-2"></i>
-                    {% if fuero_param %}
-                        Impresoras propias ({{ own_printers|length }}) <span class="text-muted small fw-normal ms-1">/ Ext. ({{ printers|length - own_printers|length }})</span>
-                    {% else %}
-                        Impresoras huérfanas ({{ printers|length }})
-                    {% endif %}
-                </h6>'''
+# Replace for filter_sql (p. prefix)
+content = content.replace(
+    "AND p.alerta_sin_impresora = 0",
+    "AND IF(p.alerta_sin_impresora = 1 AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) = 0"
+)
+content = content.replace(
+    "(p.alerta_ram_baja + p.alerta_sin_impresora + p.alerta_disco + p.alerta_uptime + p.alerta_nombre_duplicado)",
+    "(p.alerta_ram_baja + IF(p.alerta_sin_impresora = 1 AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + p.alerta_disco + p.alerta_uptime + p.alerta_nombre_duplicado)"
+)
 
-content = content.replace(header_old, header_new)
+# Replace for KPIs (no prefix)
+content = content.replace(
+    "AND alerta_sin_impresora = 0",
+    "AND IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) = 0"
+)
+content = content.replace(
+    "(alerta_ram_baja + alerta_sin_impresora + alerta_disco + alerta_uptime + alerta_nombre_duplicado)",
+    "(alerta_ram_baja + IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + alerta_disco + alerta_uptime + alerta_nombre_duplicado)"
+)
 
-td_old = '''<td class="small">
-                                    {{ prnt.brand_model or 'No especificado' }}
-                                </td>'''
-
-td_new = '''<td class="small">
-                                    {{ prnt.brand_model or 'No especificado' }}
-                                    {% if fuero_param and prnt.physical_fuero and prnt.physical_fuero != fuero_param %}
-                                    <div class="mt-1">
-                                        <span class="badge bg-warning text-dark border border-warning" style="font-size: 0.70rem;">
-                                            <i class="bi bi-geo-alt-fill me-1"></i> Físicamente en: {{ prnt.physical_fuero }}
-                                        </span>
-                                    </div>
-                                    {% endif %}
-                                </td>'''
-
-content = content.replace(td_old, td_new)
-
-with open('templates/fueros.html', 'w', encoding='utf-8') as f:
+with open('services/dashboard_overview.py', 'w', encoding='utf-8') as f:
     f.write(content)
-print("Done")
+print("Replaced!")
