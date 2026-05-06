@@ -217,9 +217,13 @@
     });
 
     function savePosition(type, id, x, y) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         fetch('/planos/api/update_position', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
             body: JSON.stringify({ type, id, x, y, map_id: mapId })
         })
         .then(res => res.json())
@@ -229,6 +233,7 @@
     }
 
     function addAssetToMap(type, id, label) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         // Crear el elemento visualmente primero
         const div = document.createElement('div');
         div.className = `map-asset ${type}-node`;
@@ -260,9 +265,13 @@
         event.stopPropagation();
         if (!confirm('¿Quitar este equipo del plano?')) return;
         
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         fetch('/planos/api/remove_from_map', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
             body: JSON.stringify({ type, id })
         })
         .then(res => res.json())
