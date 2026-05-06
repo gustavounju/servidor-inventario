@@ -8,13 +8,18 @@ from utils.constants import UPLOAD_FOLDER
 bp_maps = Blueprint('maps', __name__, url_prefix='/planos')
 
 @bp_maps.route('/')
+@auth_guard
 def index():
     """Listado de planos disponibles."""
-    with get_db_connection() as conn:
-        maps = conn.execute("SELECT * FROM infrastructure_maps ORDER BY building, floor").fetchall()
-    return render_template('maps_list.html', maps=maps)
+    try:
+        with get_db_connection() as conn:
+            maps = conn.execute("SELECT * FROM infrastructure_maps ORDER BY building, floor").fetchall()
+        return render_template('maps_list.html', maps=maps)
+    except Exception as e:
+        return f"Error en Planos: {str(e)}", 500
 
 @bp_maps.route('/add', methods=['POST'])
+@auth_guard
 def add_map():
     """Sube un nuevo plano."""
     name = request.form.get('name')
@@ -47,6 +52,7 @@ def add_map():
     return redirect(url_for('maps.index'))
 
 @bp_maps.route('/view/<int:map_id>')
+@auth_guard
 def view_map(map_id):
     """Visualización y editor de equipos sobre el plano."""
     with get_db_connection() as conn:
@@ -118,3 +124,9 @@ def remove_from_map():
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_maps.route('/uploads/<path:filename>')
+def serve_upload(filename):
+    """Sirve los archivos subidos (planos)."""
+    from flask import send_from_directory
+    return send_from_directory(UPLOAD_FOLDER, filename)
