@@ -4,7 +4,8 @@ import time
 APP_VERSION = "v3.0.0-dashboard-ux"
 DB_FILE = "inventario.db"
 LOG_FOLDER = "logs"
-UPLOAD_FOLDER = "uploads"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 ALLOWED_EXTENSIONS = {'pdf'}
 
 # --- DICCIONARIO DE FUEROS (CONFIGURABLE) ---

@@ -212,6 +212,11 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'), 
                                'icon-192.png', mimetype='image/png')
 
+@app.route('/uploads/<path:filename>')
+def serve_upload(filename):
+    """Sirve archivos subidos (planos, etc)."""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 # Configuracin y Migraciones iniciales
 with app.app_context():
     init_db()

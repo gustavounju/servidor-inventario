@@ -142,8 +142,4 @@ def delete_map(map_id):
         flash(f"Error al eliminar plano: {str(e)}", "error")
     return redirect(url_for('maps.index'))
 
-@bp_maps.route('/uploads/<path:filename>')
-def serve_upload(filename):
-    """Sirve los archivos subidos (planos)."""
-    from flask import send_from_directory
-    return send_from_directory(UPLOAD_FOLDER, filename)
+
