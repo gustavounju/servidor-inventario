@@ -16,7 +16,7 @@
     document.getElementById('topoModal').addEventListener('show.bs.modal', function () {
         const iframe = document.getElementById('topoIframe');
         if (!iframe.src || iframe.src === window.location.href) {
-            iframe.src = "{{ url_for('dashboard.view_fueros', embed=1) }}";
+            iframe.src = "{{ url_for('infrastructure.topology_view') }}";
         }
     });
 </script>

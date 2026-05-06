@@ -15,6 +15,82 @@ from utils.constants import FUERO_COLORS, FUERO_MAPPING, clean_hex_string
 
 bp_infrastructure = Blueprint('infrastructure', __name__, url_prefix='/infra')
 
+@bp_infrastructure.route('/topology')
+def topology_view():
+    """Renders the topology graph view."""
+    return render_template('topology.html')
+
+@bp_infrastructure.route('/api/topology_data')
+def topology_data():
+    """Returns nodes and edges for the graph visualization."""
+    nodes = []
+    edges = []
+    seen_nodes = set()
+
+    def add_node(id, label, type, color, icon=None, **kwargs):
+        if id not in seen_nodes:
+            node = {
+                "id": id,
+                "label": label,
+                "type": type,
+                "color": {
+                    "background": color,
+                    "border": "rgba(255,255,255,0.2)",
+                    "highlight": {"background": color, "border": "#fff"}
+                }
+            }
+            node.update(kwargs)
+            nodes.append(node)
+            seen_nodes.add(id)
+
+    with get_db_connection() as conn:
+        # 1. Fetch PCs
+        pcs = conn.execute("SELECT pc_name, last_user, ip_address, fuero, os_name, switch_name, printer_model FROM pcs WHERE is_active = 'True'").fetchall()
+        for pc in pcs:
+            pc_name = pc['pc_name']
+            # Color based on OS or Fuero? Let's use a standard color for PCs
+            add_node(pc_name, pc_name, "pc", "#f8fafc", ip=pc['ip_address'], os=pc['os_name'], fuero=pc['fuero'])
+
+            # 2. Add Users and Link to PC
+            if pc['last_user']:
+                username = pc['last_user'].split('\\')[-1] if '\\' in pc['last_user'] else pc['last_user']
+                add_node(username, username, "user", "#38bdf8")
+                edges.append({"from": username, "to": pc_name, "label": "usa", "arrows": "to"})
+
+            # 3. Add Switches and Link to PC
+            if pc['switch_name']:
+                switch_id = f"SW_{pc['switch_name']}"
+                add_node(switch_id, pc['switch_name'], "switch", "#818cf8")
+                edges.append({"from": pc_name, "to": switch_id, "label": "conectado"})
+
+            # 4. Add Local Printer (if any)
+            if pc['printer_model'] and pc['printer_model'].upper() not in ('N/A', 'SIN IMPRESORA', 'NONE', '-'):
+                printer_id = f"PRN_LOCAL_{pc_name}"
+                add_node(printer_id, pc['printer_model'], "printer", "#10b981")
+                edges.append({"from": pc_name, "to": printer_id, "label": "local"})
+
+        # 5. Network Printers
+        net_printers = conn.execute("SELECT id, ip_address, brand_model FROM network_printers").fetchall()
+        for np in net_printers:
+            np_id = f"NP_{np['id']}"
+            add_node(np_id, f"{np['brand_model']}\n({np['ip_address']})", "printer", "#10b981", ip=np['ip_address'])
+
+            # Links from PC to Network Printer
+            links = conn.execute("SELECT pc_name FROM pc_network_printers WHERE printer_id = %s", (np['id'],)).fetchall()
+            for link in links:
+                if link['pc_name'] in seen_nodes:
+                    edges.append({"from": link['pc_name'], "to": np_id, "label": "red"})
+
+        # 6. UPS/Batteries
+        ups_list = conn.execute("SELECT code, assigned_pc FROM ups_inventory WHERE assigned_pc IS NOT NULL").fetchall()
+        for ups in ups_list:
+            ups_id = f"UPS_{ups['code']}"
+            add_node(ups_id, f"UPS {ups['code']}", "ups", "#f59e0b")
+            if ups['assigned_pc'] in seen_nodes:
+                edges.append({"from": ups['assigned_pc'], "to": ups_id, "label": "protección"})
+
+    return {"nodes": nodes, "edges": edges}
+
 @bp_infrastructure.app_context_processor
 def inject_infra_kpis():
     from utils.auth import allowed_module_links, auth_mode_label, available_roles, current_user, has_permission, is_authenticated, role_label, generate_csrf_token
