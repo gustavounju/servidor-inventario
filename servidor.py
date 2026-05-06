@@ -70,7 +70,17 @@ def inject_global_vars():
     from utils.auth import list_app_users, list_technician_users
     
     # KPIs Globales para el Header Premium (Command Center)
-    kpis = {}
+    kpis = {
+        'kpi_total_activas': 0,
+        'kpi_total_graveyard': 0,
+        'kpi_win7': 0,
+        'kpi_alerta_ram': 0,
+        'kpi_total_impresoras_oficial': 0,
+        'kpi_tareas_hoy': 0,
+        'kpi_total_pendientes': 0,
+        'kpi_alerta_media': 0,
+        'kpi_criticas': 0
+    }
     extra_data = {
         'ad_users_list': [],
         'fueros': {},
