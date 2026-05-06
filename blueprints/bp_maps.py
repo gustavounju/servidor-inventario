@@ -74,7 +74,7 @@ def view_map(map_id):
             printers_on_map = conn.execute("SELECT id, brand_model, x_pos, y_pos, fuero, ip_address FROM network_printers WHERE map_id = %s", (map_id,)).fetchall()
             
             # Usuarios asignados a este mapa
-            users_on_map = conn.execute("SELECT username, display_name, x_pos, y_pos FROM ad_users WHERE map_id = %s", (map_id,)).fetchall()
+            users_on_map = conn.execute("SELECT username, real_name, x_pos, y_pos FROM ad_users WHERE map_id = %s", (map_id,)).fetchall()
 
             # Lista de activos disponibles para agregar al mapa
             available_pcs = conn.execute("""
@@ -87,7 +87,7 @@ def view_map(map_id):
             
             available_printers = conn.execute("SELECT id, brand_model, ip_address FROM network_printers WHERE (map_id IS NULL OR map_id != %s) ORDER BY brand_model", (map_id,)).fetchall()
             
-            available_users = conn.execute("SELECT username, display_name FROM ad_users WHERE (map_id IS NULL OR map_id != %s) ORDER BY display_name", (map_id,)).fetchall()
+            available_users = conn.execute("SELECT username, real_name FROM ad_users WHERE (map_id IS NULL OR map_id != %s) ORDER BY real_name", (map_id,)).fetchall()
 
         return render_template(
             'map_editor.html', 

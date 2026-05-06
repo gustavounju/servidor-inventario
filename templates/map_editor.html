@@ -57,8 +57,8 @@
                         <div class="tab-pane fade" id="tab-users">
                             {% for user in available_users %}
                             <div class="asset-item d-flex justify-content-between align-items-center p-2 mb-1 bg-secondary rounded border-start border-4 border-success"
-                                 onclick="addAssetToMap('user', '{{ user.username }}', '{{ user.display_name }}')">
-                                <span class="small truncate">{{ user.display_name }}</span>
+                                 onclick="addAssetToMap('user', '{{ user.username }}', '{{ user.real_name }}')">
+                                <span class="small truncate">{{ user.real_name }}</span>
                                 <i class="fas fa-plus small text-success cursor-pointer"></i>
                             </div>
                             {% endfor %}
@@ -106,11 +106,11 @@
                 <div class="map-asset user-node" id="user-{{ user.username }}" 
                      style="left: {{ user.x_pos }}%; top: {{ user.y_pos }}%;"
                      data-type="user" data-id="{{ user.username }}"
-                     title="{{ user.display_name }}">
+                     title="{{ user.real_name }}">
                     <div class="asset-icon bg-success text-white">
                         <i class="fas fa-user"></i>
                     </div>
-                    <span class="asset-label">{{ user.display_name }}</span>
+                    <span class="asset-label">{{ user.real_name }}</span>
                     <button class="btn-remove" onclick="removeAsset('user', '{{ user.username }}', event)">&times;</button>
                 </div>
                 {% endfor %}
