@@ -181,6 +181,9 @@ def inject_global_vars():
         'available_roles': available_roles(),
         'client_script_base_url': get_public_app_base_url(),
         'client_script_fallback_url': get_public_script_fallback_url(),
+        'total_pages': 1,
+        'page': 1,
+        'per_page': 25,
         **kpis,
         **extra_data
     }
