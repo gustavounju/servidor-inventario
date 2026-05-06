@@ -632,6 +632,8 @@ def run_all_migrations():
     migrate_db_v29()
     migrate_db_v30()
     migrate_db_v31()
+    with get_db_connection() as conn:
+        migration_v32(conn)
 
 def migrate_db_v31():
     """Migración V31: Infraestructura de Planos y Coordenadas."""
@@ -686,3 +688,23 @@ def migrate_db_v31():
         except Exception: pass
 
     print("Migración V31 verificada.")
+
+def migration_v32(conn):
+    """Agrega campos de posición a usuarios (ad_users) para mapas topológicos."""
+    print("Verificando Migración V32 (Posiciones de Usuarios)...")
+    new_user_cols = {
+        "x_pos": "FLOAT DEFAULT 0",
+        "y_pos": "FLOAT DEFAULT 0",
+        "map_id": "INT"
+    }
+    for col, dtype in new_user_cols.items():
+        if not _column_exists(conn, "ad_users", col):
+            print(f"Agregando '{col}' a ad_users...")
+            conn.execute(f"ALTER TABLE ad_users ADD COLUMN {col} {dtype}")
+    
+    # Foreign Key
+    try:
+        conn.execute("ALTER TABLE ad_users ADD CONSTRAINT fk_user_map FOREIGN KEY (map_id) REFERENCES infrastructure_maps(id) ON DELETE SET NULL")
+    except Exception: pass
+    
+    print("Migración V32 verificada.")

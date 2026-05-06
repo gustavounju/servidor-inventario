@@ -58,23 +58,42 @@ def view_map(map_id):
             flash("Plano no encontrado.", "error")
             return redirect(url_for('maps.index'))
 
-        # Obtener PCs asignadas a este mapa + PCs sin mapa para el selector de "añadir"
-        pcs_on_map = conn.execute("SELECT pc_name, x_pos, y_pos, fuero, last_user FROM pcs WHERE map_id = %s AND is_active = 'True'", (map_id,)).fetchall()
+        # Obtener PCs asignadas a este mapa (excluyendo auxiliares)
+        pcs_on_map = conn.execute("""
+            SELECT pc_name, x_pos, y_pos, fuero, last_user 
+            FROM pcs 
+            WHERE map_id = %s AND is_active = 'True' 
+            AND pc_name NOT LIKE '%%GENERICA%%' AND pc_name NOT LIKE '%%INFRAESTRUCTURA%%'
+        """, (map_id,)).fetchall()
         
         # Impresoras de red asignadas a este mapa
         printers_on_map = conn.execute("SELECT id, brand_model, x_pos, y_pos, fuero, ip_address FROM network_printers WHERE map_id = %s", (map_id,)).fetchall()
         
+        # Usuarios asignados a este mapa
+        users_on_map = conn.execute("SELECT username, display_name, x_pos, y_pos FROM ad_users WHERE map_id = %s", (map_id,)).fetchall()
+
         # Lista de activos disponibles para agregar al mapa
-        available_pcs = conn.execute("SELECT pc_name, fuero FROM pcs WHERE (map_id IS NULL OR map_id != %s) AND is_active = 'True' ORDER BY pc_name", (map_id,)).fetchall()
+        available_pcs = conn.execute("""
+            SELECT pc_name, fuero 
+            FROM pcs 
+            WHERE (map_id IS NULL OR map_id != %s) AND is_active = 'True' 
+            AND pc_name NOT LIKE '%%GENERICA%%' AND pc_name NOT LIKE '%%INFRAESTRUCTURA%%'
+            ORDER BY pc_name
+        """, (map_id,)).fetchall()
+        
         available_printers = conn.execute("SELECT id, brand_model, ip_address FROM network_printers WHERE (map_id IS NULL OR map_id != %s) ORDER BY brand_model", (map_id,)).fetchall()
+        
+        available_users = conn.execute("SELECT username, display_name FROM ad_users WHERE (map_id IS NULL OR map_id != %s) ORDER BY display_name", (map_id,)).fetchall()
 
     return render_template(
         'map_editor.html', 
         map=map_data, 
         pcs=pcs_on_map, 
         printers=printers_on_map,
+        users=users_on_map,
         available_pcs=available_pcs,
-        available_printers=available_printers
+        available_printers=available_printers,
+        available_users=available_users
     )
 
 @bp_maps.route('/api/update_position', methods=['POST'])
@@ -99,6 +118,11 @@ def update_position():
                     "UPDATE network_printers SET x_pos = %s, y_pos = %s, map_id = %s WHERE id = %s",
                     (x, y, map_id, asset_id)
                 )
+            elif asset_type == 'user':
+                conn.execute(
+                    "UPDATE ad_users SET x_pos = %s, y_pos = %s, map_id = %s WHERE username = %s",
+                    (x, y, map_id, asset_id)
+                )
             conn.commit()
         return jsonify({"status": "success"})
     except Exception as e:
@@ -117,6 +141,8 @@ def remove_from_map():
                 conn.execute("UPDATE pcs SET map_id = NULL, x_pos = 0, y_pos = 0 WHERE pc_name = %s", (asset_id,))
             elif asset_type == 'printer':
                 conn.execute("UPDATE network_printers SET map_id = NULL, x_pos = 0, y_pos = 0 WHERE id = %s", (asset_id,))
+            elif asset_type == 'user':
+                conn.execute("UPDATE ad_users SET map_id = NULL, x_pos = 0, y_pos = 0 WHERE username = %s", (asset_id,))
             conn.commit()
         return jsonify({"status": "success"})
     except Exception as e:

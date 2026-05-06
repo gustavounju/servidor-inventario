@@ -30,6 +30,9 @@
                         <li class="nav-item">
                             <button class="nav-link btn-sm py-1" data-bs-toggle="pill" data-bs-target="#tab-printers">Impresoras</button>
                         </li>
+                        <li class="nav-item">
+                            <button class="nav-link btn-sm py-1" data-bs-toggle="pill" data-bs-target="#tab-users">Usuarios</button>
+                        </li>
                     </ul>
 
                     <div class="tab-content">
@@ -48,6 +51,15 @@
                                  onclick="addAssetToMap('printer', '{{ prn.id }}', '{{ prn.brand_model }}')">
                                 <span class="small truncate">{{ prn.brand_model }} ({{ prn.ip_address }})</span>
                                 <i class="fas fa-plus small text-warning cursor-pointer"></i>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="tab-pane fade" id="tab-users">
+                            {% for user in available_users %}
+                            <div class="asset-item d-flex justify-content-between align-items-center p-2 mb-1 bg-secondary rounded border-start border-4 border-success"
+                                 onclick="addAssetToMap('user', '{{ user.username }}', '{{ user.display_name }}')">
+                                <span class="small truncate">{{ user.display_name }}</span>
+                                <i class="fas fa-plus small text-success cursor-pointer"></i>
                             </div>
                             {% endfor %}
                         </div>
@@ -87,6 +99,19 @@
                     </div>
                     <span class="asset-label">{{ prn.brand_model }}</span>
                     <button class="btn-remove" onclick="removeAsset('printer', '{{ prn.id }}', event)">&times;</button>
+                </div>
+                {% endfor %}
+
+                {% for user in users %}
+                <div class="map-asset user-node" id="user-{{ user.username }}" 
+                     style="left: {{ user.x_pos }}%; top: {{ user.y_pos }}%;"
+                     data-type="user" data-id="{{ user.username }}"
+                     title="{{ user.display_name }}">
+                    <div class="asset-icon bg-success text-white">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="asset-label">{{ user.display_name }}</span>
+                    <button class="btn-remove" onclick="removeAsset('user', '{{ user.username }}', event)">&times;</button>
                 </div>
                 {% endfor %}
 
@@ -246,8 +271,8 @@
         div.dataset.type = type;
         div.dataset.id = id;
         
-        const iconClass = type === 'pc' ? 'fa-desktop' : 'fa-print';
-        const bgColor = type === 'pc' ? 'bg-info' : 'bg-warning text-dark';
+        const iconClass = type === 'pc' ? 'fa-desktop' : (type === 'printer' ? 'fa-print' : 'fa-user');
+        const bgColor = type === 'pc' ? 'bg-info' : (type === 'printer' ? 'bg-warning text-dark' : 'bg-success text-white');
         
         div.innerHTML = `
             <div class="asset-icon ${bgColor}">
