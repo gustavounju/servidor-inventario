@@ -93,7 +93,11 @@
         </div>
         {% endif %}
 
+        {% block content %}{% endblock %}
+
+        {% block dashboard_content %}
         {% include '_dashboard_table_region.html' %}
+        {% endblock %}
 
         <div id="server-data-container" data-server-url="{{ server_url }}" style="display: none;"></div>
 
