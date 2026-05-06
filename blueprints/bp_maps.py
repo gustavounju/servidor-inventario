@@ -122,6 +122,26 @@ def remove_from_map():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@bp_maps.route('/delete/<int:map_id>', methods=['POST'])
+def delete_map(map_id):
+    """Elimina un plano y desvincula los activos."""
+    try:
+        with get_db_connection() as conn:
+            conn.execute("UPDATE pcs SET map_id = NULL, x_pos = 0, y_pos = 0 WHERE map_id = %s", (map_id,))
+            conn.execute("UPDATE network_printers SET map_id = NULL, x_pos = 0, y_pos = 0 WHERE map_id = %s", (map_id,))
+            map_data = conn.execute("SELECT image_url FROM infrastructure_maps WHERE id = %s", (map_id,)).fetchone()
+            if map_data:
+                filename = map_data['image_url'].split('/')[-1]
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            conn.execute("DELETE FROM infrastructure_maps WHERE id = %s", (map_id,))
+            conn.commit()
+        flash("Plano eliminado exitosamente.", "success")
+    except Exception as e:
+        flash(f"Error al eliminar plano: {str(e)}", "error")
+    return redirect(url_for('maps.index'))
+
 @bp_maps.route('/uploads/<path:filename>')
 def serve_upload(filename):
     """Sirve los archivos subidos (planos)."""

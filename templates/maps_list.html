@@ -17,6 +17,14 @@
             <div class="col-md-4 mb-4">
                 <div class="card bg-dark text-white h-100 border-secondary">
                     <img src="{{ map.image_url }}" class="card-img-top" alt="{{ map.name }}" style="height: 200px; object-fit: cover; opacity: 0.7;">
+                    <div class="position-absolute top-0 end-0 p-2">
+                        <form action="{{ url_for('maps.delete_map', map_id=map.id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este plano? Se desvincularán todos los activos posicionados.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm shadow-sm" title="Eliminar Plano">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
                     <div class="card-body">
                         <h5 class="card-title text-gold">{{ map.name }}</h5>
                         <p class="card-text">
