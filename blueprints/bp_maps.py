@@ -52,49 +52,56 @@ def add_map():
 @bp_maps.route('/view/<int:map_id>')
 def view_map(map_id):
     """Visualización y editor de equipos sobre el plano."""
-    with get_db_connection() as conn:
-        map_data = conn.execute("SELECT * FROM infrastructure_maps WHERE id = %s", (map_id,)).fetchone()
-        if not map_data:
-            flash("Plano no encontrado.", "error")
-            return redirect(url_for('maps.index'))
+    try:
+        with get_db_connection() as conn:
+            map_data = conn.execute("SELECT * FROM infrastructure_maps WHERE id = %s", (map_id,)).fetchone()
+            if not map_data:
+                flash("Plano no encontrado.", "error")
+                return redirect(url_for('maps.index'))
 
-        # Obtener PCs asignadas a este mapa (excluyendo auxiliares)
-        pcs_on_map = conn.execute("""
-            SELECT pc_name, x_pos, y_pos, fuero, last_user 
-            FROM pcs 
-            WHERE map_id = %s AND is_active = 'True' 
-            AND pc_name NOT LIKE '%%GENERICA%%' AND pc_name NOT LIKE '%%INFRAESTRUCTURA%%'
-        """, (map_id,)).fetchall()
-        
-        # Impresoras de red asignadas a este mapa
-        printers_on_map = conn.execute("SELECT id, brand_model, x_pos, y_pos, fuero, ip_address FROM network_printers WHERE map_id = %s", (map_id,)).fetchall()
-        
-        # Usuarios asignados a este mapa
-        users_on_map = conn.execute("SELECT username, display_name, x_pos, y_pos FROM ad_users WHERE map_id = %s", (map_id,)).fetchall()
+            pattern_gen = "%GENERICA%"
+            pattern_infra = "%INFRAESTRUCTURA%"
 
-        # Lista de activos disponibles para agregar al mapa
-        available_pcs = conn.execute("""
-            SELECT pc_name, fuero 
-            FROM pcs 
-            WHERE (map_id IS NULL OR map_id != %s) AND is_active = 'True' 
-            AND pc_name NOT LIKE '%%GENERICA%%' AND pc_name NOT LIKE '%%INFRAESTRUCTURA%%'
-            ORDER BY pc_name
-        """, (map_id,)).fetchall()
-        
-        available_printers = conn.execute("SELECT id, brand_model, ip_address FROM network_printers WHERE (map_id IS NULL OR map_id != %s) ORDER BY brand_model", (map_id,)).fetchall()
-        
-        available_users = conn.execute("SELECT username, display_name FROM ad_users WHERE (map_id IS NULL OR map_id != %s) ORDER BY display_name", (map_id,)).fetchall()
+            # Obtener PCs asignadas a este mapa (excluyendo auxiliares)
+            pcs_on_map = conn.execute("""
+                SELECT pc_name, x_pos, y_pos, fuero, last_user 
+                FROM pcs 
+                WHERE map_id = %s AND is_active = 'True' 
+                AND pc_name NOT LIKE %s AND pc_name NOT LIKE %s
+            """, (map_id, pattern_gen, pattern_infra)).fetchall()
+            
+            # Impresoras de red asignadas a este mapa
+            printers_on_map = conn.execute("SELECT id, brand_model, x_pos, y_pos, fuero, ip_address FROM network_printers WHERE map_id = %s", (map_id,)).fetchall()
+            
+            # Usuarios asignados a este mapa
+            users_on_map = conn.execute("SELECT username, display_name, x_pos, y_pos FROM ad_users WHERE map_id = %s", (map_id,)).fetchall()
 
-    return render_template(
-        'map_editor.html', 
-        map=map_data, 
-        pcs=pcs_on_map, 
-        printers=printers_on_map,
-        users=users_on_map,
-        available_pcs=available_pcs,
-        available_printers=available_printers,
-        available_users=available_users
-    )
+            # Lista de activos disponibles para agregar al mapa
+            available_pcs = conn.execute("""
+                SELECT pc_name, fuero 
+                FROM pcs 
+                WHERE (map_id IS NULL OR map_id != %s) AND is_active = 'True' 
+                AND pc_name NOT LIKE %s AND pc_name NOT LIKE %s
+                ORDER BY pc_name
+            """, (map_id, pattern_gen, pattern_infra)).fetchall()
+            
+            available_printers = conn.execute("SELECT id, brand_model, ip_address FROM network_printers WHERE (map_id IS NULL OR map_id != %s) ORDER BY brand_model", (map_id,)).fetchall()
+            
+            available_users = conn.execute("SELECT username, display_name FROM ad_users WHERE (map_id IS NULL OR map_id != %s) ORDER BY display_name", (map_id,)).fetchall()
+
+        return render_template(
+            'map_editor.html', 
+            map=map_data, 
+            pcs=pcs_on_map, 
+            printers=printers_on_map,
+            users=users_on_map,
+            available_pcs=available_pcs,
+            available_printers=available_printers,
+            available_users=available_users
+        )
+    except Exception as e:
+        # Si esto falla, es casi seguro que falta una columna en ad_users o similar
+        return f"<h1>Error de Base de Datos</h1><p>Detalle: {str(e)}</p><p>Asegúrese de haber reiniciado el servicio para aplicar las migraciones.</p>", 500
 
 @bp_maps.route('/api/update_position', methods=['POST'])
 def update_position():
