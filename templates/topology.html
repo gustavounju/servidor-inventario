@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Topología de Red | Inventario GOLD</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0f172a; /* Slate 900 */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #f8fafc;
+        }
+
+        #network-container {
+            width: 100%;
+            height: 100%;
+            background-color: #0f172a;
+        }
+
+        /* Controles Flotantes */
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .control-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 16px;
+            pointer-events: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 250px;
+        }
+
+        h3 {
+            margin: 0 0 12px 0;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.5s ease;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .search-box {
+            margin-top: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #38bdf8;
+        }
+
+        .btn-reset {
+            background: #334155;
+            color: #fff;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        .btn-reset:hover {
+            background: #475569;
+        }
+
+        /* Tooltip Personalizado */
+        .vis-tooltip {
+            background: rgba(15, 23, 42, 0.95) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #f8fafc !important;
+            padding: 12px !important;
+            border-radius: 12px !important;
+            font-size: 0.85rem !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; color: #94a3b8; font-size: 0.9rem;">Calculando Topología Dinámica...</p>
+    </div>
+
+    <div class="controls">
+        <div class="control-panel">
+            <h3><i class="bi bi-diagram-3"></i> Topología</h3>
+            <div class="legend-item">
+                <div class="dot" style="background: #f8fafc;"></div>
+                <span>Equipos (PC/Servidor)</span>
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background: #38bdf8;"></div>
+                <span>Usuarios</span>
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background: #10b981;"></div>
+                <span>Impresoras</span>
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background: #f59e0b;"></div>
+                <span>Periféricos (UPS/Otros)</span>
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background: #818cf8;"></div>
+                <span>Red (Switch/Pachera)</span>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="node-search" placeholder="Buscar PC, Usuario o IP...">
+            </div>
+            
+            <button class="btn-reset" onclick="resetView()">
+                <i class="bi bi-arrows-fullscreen"></i> Reajustar Vista
+            </button>
+        </div>
+        
+        <div class="control-panel" id="detail-panel" style="display: none;">
+            <h3 id="detail-title">Detalles</h3>
+            <div id="detail-content" style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.4;"></div>
+        </div>
+    </div>
+
+    <div id="network-container"></div>
+
+    <script type="text/javascript">
+        let network = null;
+        let nodes = null;
+        let edges = null;
+        let originalNodes = null;
+        let originalEdges = null;
+
+        async function init() {
+            try {
+                const response = await fetch('{{ url_for("infrastructure.topology_data") }}');
+                const data = await response.json();
+
+                // Guardar copia de respaldo para restaurar colores
+                originalNodes = JSON.parse(JSON.stringify(data.nodes));
+                originalEdges = JSON.parse(JSON.stringify(data.edges));
+
+                nodes = new vis.DataSet(data.nodes);
+                edges = new vis.DataSet(data.edges);
+
+                const container = document.getElementById('network-container');
+                const graphData = { nodes, edges };
+                
+                const options = {
+                    nodes: {
+                        shape: 'dot',
+                        size: 20,
+                        font: {
+                            color: '#cbd5e1',
+                            size: 14,
+                            face: 'Inter'
+                        },
+                        borderWidth: 2,
+                        shadow: true
+                    },
+                    edges: {
+                        width: 1.5,
+                        color: { color: 'rgba(148, 163, 184, 0.3)', highlight: '#38bdf8' },
+                        smooth: {
+                            type: 'continuous',
+                            forceDirection: 'none'
+                        }
+                    },
+                    physics: {
+                        forceAtlas2Based: {
+                            gravitationalConstant: -100,
+                            centralGravity: 0.01,
+                            springLength: 150,
+                            springConstant: 0.08
+                        },
+                        maxVelocity: 50,
+                        solver: 'forceAtlas2Based',
+                        timestep: 0.35,
+                        stabilization: { iterations: 150 }
+                    },
+                    interaction: {
+                        hover: true,
+                        tooltipDelay: 200,
+                        navigationButtons: true,
+                        keyboard: true
+                    }
+                };
+
+                network = new vis.Network(container, graphData, options);
+
+                network.on("click", function (params) {
+                    if (params.nodes.length > 0) {
+                        const nodeId = params.nodes[0];
+                        highlightNode(nodeId);
+                        const node = nodes.get(nodeId);
+                        showDetail(node);
+                    } else {
+                        clearHighlight();
+                        document.getElementById('detail-panel').style.display = 'none';
+                    }
+                });
+
+                // Hide loading
+                document.getElementById('loading').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                }, 500);
+
+            } catch (error) {
+                console.error("Error loading topology:", error);
+                document.getElementById('loading').innerHTML = `<p style="color: #ef4444;">Error al cargar datos: ${error.message}</p>`;
+            }
+        }
+
+        function highlightNode(nodeId) {
+            const allNodes = nodes.get();
+            const allEdges = edges.get();
+            
+            // 1. Obtener vecinos y aristas conectadas
+            const connectedNodes = network.getConnectedNodes(nodeId);
+            const connectedEdges = network.getConnectedEdges(nodeId);
+            
+            // 2. Atenuar todo lo que no sea el nodo o sus vecinos
+            const updatedNodes = allNodes.map(node => {
+                const isTarget = node.id === nodeId;
+                const isNeighbor = connectedNodes.includes(node.id);
+                
+                const original = originalNodes.find(n => n.id === node.id);
+                const baseColor = original.color.background;
+                
+                if (isTarget || isNeighbor) {
+                    return { 
+                        id: node.id, 
+                        color: { 
+                            background: baseColor, 
+                            border: isTarget ? '#fff' : 'rgba(255,255,255,0.4)',
+                            opacity: 1 
+                        },
+                        font: { color: '#f8fafc' }
+                    };
+                } else {
+                    return { 
+                        id: node.id, 
+                        color: { 
+                            background: 'rgba(51, 65, 85, 0.2)', // Slate 700 muy transparente
+                            border: 'rgba(255,255,255,0.05)',
+                            opacity: 0.1 
+                        },
+                        font: { color: 'rgba(148, 163, 184, 0.1)' }
+                    };
+                }
+            });
+
+            const updatedEdges = allEdges.map(edge => {
+                const isConnected = connectedEdges.includes(edge.id);
+                if (isConnected) {
+                    return { id: edge.id, color: { color: '#38bdf8', opacity: 1 }, width: 2.5 };
+                } else {
+                    return { id: edge.id, color: { color: 'rgba(148, 163, 184, 0.05)', opacity: 0.05 }, width: 1 };
+                }
+            });
+
+            nodes.update(updatedNodes);
+            edges.update(updatedEdges);
+        }
+
+        function clearHighlight() {
+            if (!originalNodes) return;
+            nodes.update(originalNodes.map(n => ({
+                id: n.id,
+                color: n.color,
+                font: { color: '#cbd5e1' }
+            })));
+            edges.update(originalEdges.map(e => ({
+                id: e.id,
+                color: { color: 'rgba(148, 163, 184, 0.3)' },
+                width: 1.5
+            })));
+        }
+
+        function showDetail(node) {
+            const panel = document.getElementById('detail-panel');
+            const title = document.getElementById('detail-title');
+            const content = document.getElementById('detail-content');
+            
+            panel.style.display = 'block';
+            title.innerHTML = `<i class="bi bi-info-circle"></i> ${node.label}`;
+            
+            let html = '';
+            if (node.type === 'pc') {
+                html = `
+                    <div><strong>IP:</strong> ${node.ip || 'N/A'}</div>
+                    <div><strong>OS:</strong> ${node.os || 'N/A'}</div>
+                    <div><strong>Fuero:</strong> ${node.fuero || 'N/A'}</div>
+                    <div style="margin-top:10px">
+                        <a href="/pc/${node.id}" target="_top" style="color: #38bdf8; text-decoration: none;">
+                            <i class="bi bi-box-arrow-up-right"></i> Ver Expediente Completo
+                        </a>
+                    </div>
+                `;
+            } else if (node.type === 'user') {
+                html = `<div><strong>Username:</strong> ${node.id}</div>`;
+            } else if (node.type === 'printer') {
+                html = `<div><strong>Modelo:</strong> ${node.label}</div>`;
+            }
+            
+            content.innerHTML = html || 'No hay detalles adicionales.';
+        }
+
+        function resetView() {
+            clearHighlight();
+            document.getElementById('node-search').value = '';
+            network.fit({
+                animation: {
+                    duration: 1000,
+                    easingFunction: 'easeInOutQuad'
+                }
+            });
+        }
+
+        // Buscador
+        document.getElementById('node-search').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            if (!term) {
+                clearHighlight();
+                return;
+            }
+            
+            const foundNode = nodes.get().find(n => 
+                n.label.toLowerCase().includes(term) || 
+                (n.ip && n.ip.toLowerCase().includes(term))
+            );
+            
+            if (foundNode) {
+                highlightNode(foundNode.id);
+                network.focus(foundNode.id, {
+                    scale: 1.2,
+                    animation: true
+                });
+                showDetail(foundNode);
+            }
+        });
+
+        window.onload = init;
+    </script>
+</body>
+</html>
