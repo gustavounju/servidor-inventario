@@ -20,7 +20,7 @@
                     <div class="position-absolute top-0 end-0 p-2">
                         <form action="{{ url_for('maps.delete_map', map_id=map.id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este plano? Se desvincularán todos los activos posicionados.');">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-danger btn-sm shadow-sm" title="Eliminar Plano">
+                            <button type="submit" class="btn btn-danger shadow-sm" title="Eliminar Plano">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </form>
