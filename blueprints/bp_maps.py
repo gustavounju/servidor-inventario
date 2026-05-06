@@ -8,7 +8,6 @@ from utils.constants import UPLOAD_FOLDER
 bp_maps = Blueprint('maps', __name__, url_prefix='/planos')
 
 @bp_maps.route('/')
-@auth_guard
 def index():
     """Listado de planos disponibles."""
     try:
@@ -19,7 +18,6 @@ def index():
         return f"Error en Planos: {str(e)}", 500
 
 @bp_maps.route('/add', methods=['POST'])
-@auth_guard
 def add_map():
     """Sube un nuevo plano."""
     name = request.form.get('name')
@@ -52,7 +50,6 @@ def add_map():
     return redirect(url_for('maps.index'))
 
 @bp_maps.route('/view/<int:map_id>')
-@auth_guard
 def view_map(map_id):
     """Visualización y editor de equipos sobre el plano."""
     with get_db_connection() as conn:
