@@ -665,3 +665,68 @@ def report_tasks_completed_pdf():
     
     nombre_pc_sufijo = f"_{pc_name}" if pc_name else ""
     return send_file(output, mimetype="application/pdf", as_attachment=True, download_name=f"Reporte_Tareas{nombre_pc_sufijo}_{fecha_filtro_str}.pdf")
+
+@bp_tasks.route("/visor")
+def visor():
+    \"\"\"Vista de 'visor' para mostrar trabajos del día y anteriores.\"\"\"
+    try:
+        with get_db_connection() as conn:
+            # Técnicos para filtros si fuera necesario
+            technicians = conn.execute(\"SELECT * FROM technicians ORDER BY name ASC\").fetchall()
+            
+            # Obtener fecha actual
+            hoy = dt.now().strftime(\"%Y-%m-%d\")
+            
+            # Tareas de hoy (cualquier estado)
+            tareas_hoy = conn.execute(\"\"\"
+                SELECT t.*, p.last_user 
+                FROM tasks t 
+                LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
+                ORDER BY t.created_at DESC
+            \"\"\").fetchall()
+            
+            # Tareas de días anteriores (últimos 7 días)
+            tareas_anteriores = conn.execute(\"\"\"
+                SELECT t.*, p.last_user 
+                FROM tasks t 
+                LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                WHERE DATE(t.created_at) < CURDATE() 
+                AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                ORDER BY t.created_at DESC
+                LIMIT 50
+            \"\"\").fetchall()
+
+            return render_template(\"visor_tareas.html\", 
+                                   tareas_hoy=tareas_hoy, 
+                                   tareas_anteriores=tareas_anteriores,
+                                   technicians=technicians,
+                                   hoy=hoy)
+    except Exception as e:
+        print(f\"Error en visor: {e}\")
+        return f\"Error cargando el visor: {e}\", 500
+
+@bp_tasks.route(\"/api/visor/data\")
+def api_visor_data():
+    \"\"\"API para actualización en tiempo real del visor.\"\"\"
+    try:
+        with get_db_connection() as conn:
+            tareas_hoy = conn.execute(\"\"\"
+                SELECT t.*, p.last_user 
+                FROM tasks t 
+                LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
+                ORDER BY t.created_at DESC
+            \"\"\").fetchall()
+            
+            # Formatear fechas para JSON
+            result = []
+            for t in tareas_hoy:
+                d = dict(t)
+                if d['created_at']: d['created_at_fmt'] = d['created_at'].strftime(\"%H:%M\")
+                if d['completed_at']: d['completed_at_fmt'] = d['completed_at'].strftime(\"%H:%M\")
+                result.append(d)
+            
+            return jsonify({\"status\": \"success\", \"tasks\": result})
+    except Exception as e:
+        return jsonify({\"status\": \"error\", \"message\": str(e)}), 500
