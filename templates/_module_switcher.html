@@ -28,6 +28,13 @@
                     <i class="bi bi-person-circle"></i>
                     <span>{{ current_user.display_name or current_user.username }}</span>
                 </div>
+                <div class="system-icon-group">
+                    {% for module in module_access_links %}
+                    {% if (module.label != 'Reportes' and module.label != 'Reports') %}
+                    <a href="{{ module.url }}" class="system-icon-btn {% if module.active %}active{% endif %}" title="{{ module.label }}" aria-label="{{ module.label }}">
+                        <i class="bi {{ module.icon }}"></i>
+                    </a>
+                    {% endif %}
                     {% endfor %}
                     <a href="{{ url_for('tasks.visor') }}" class="system-icon-btn {% if request.endpoint == 'tasks.visor' %}active{% endif %}" title="Visor de Trabajos" aria-label="Visor de Trabajos">
                         <i class="bi bi-tv"></i>
@@ -94,6 +101,14 @@
         </div>
 
         <!-- Parte Central: Módulos -->
+        <div class="header-nav-section">
+            <div class="glass-nav-tabs">
+                {% for module in module_access_links %}
+                {% if (module.label != 'Reportes' and module.label != 'Reports') %}
+                <a href="{{ module.url }}" class="nav-tab-item nav-tab-item--icon {% if module.active %}active{% endif %}" title="{{ module.label }}" aria-label="{{ module.label }}">
+                    <i class="bi {{ module.icon }}"></i>
+                </a>
+                {% endif %}
                 {% endfor %}
                 <a href="{{ url_for('tasks.visor') }}" class="nav-tab-item nav-tab-item--icon {% if request.endpoint == 'tasks.visor' %}active{% endif %}" title="Visor de Trabajos" aria-label="Visor de Trabajos">
                     <i class="bi bi-tv"></i>
