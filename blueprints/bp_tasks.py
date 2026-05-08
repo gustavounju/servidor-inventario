@@ -711,7 +711,8 @@ def api_visor_data():
     """API para actualización en tiempo real del visor."""
     try:
         with get_db_connection() as conn:
-            tareas_hoy = conn.execute("""
+            # Tareas de hoy
+            tareas_hoy_rows = conn.execute("""
                 SELECT t.*, p.last_user 
                 FROM tasks t 
                 LEFT JOIN pcs p ON t.pc_name = p.pc_name 
@@ -719,14 +720,30 @@ def api_visor_data():
                 ORDER BY t.created_at DESC
             """).fetchall()
             
-            # Formatear fechas para JSON
-            result = []
-            for t in tareas_hoy:
-                d = dict(t)
-                if d['created_at']: d['created_at_fmt'] = d['created_at'].strftime("%H:%M")
-                if d['completed_at']: d['completed_at_fmt'] = d['completed_at'].strftime("%H:%M")
-                result.append(d)
+            # Tareas anteriores (pendientes o recientes)
+            tareas_anteriores_rows = conn.execute("""
+                SELECT t.*, p.last_user 
+                FROM tasks t 
+                LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                WHERE DATE(t.created_at) < CURDATE() 
+                AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                ORDER BY t.created_at DESC
+                LIMIT 50
+            """).fetchall()
+
+            def format_tasks(rows):
+                res = []
+                for t in rows:
+                    d = dict(t)
+                    if d['created_at']: d['created_at_fmt'] = d['created_at'].strftime("%H:%M")
+                    if d['completed_at']: d['completed_at_fmt'] = d['completed_at'].strftime("%H:%M")
+                    res.append(d)
+                return res
             
-            return jsonify({"status": "success", "tasks": result})
+            return jsonify({
+                "status": "success", 
+                "tasks_hoy": format_tasks(tareas_hoy_rows),
+                "tasks_anteriores": format_tasks(tareas_anteriores_rows)
+            })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

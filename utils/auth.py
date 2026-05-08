@@ -95,7 +95,9 @@ PUBLIC_ENDPOINTS = {
     "setup.download_certificate",
     "auth.change_password",
     "sw.js",
-    "manifest.json"
+    "manifest.json",
+    "tasks.visor",
+    "tasks.api_visor_data"
 }
 
 
