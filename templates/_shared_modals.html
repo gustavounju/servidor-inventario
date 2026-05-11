@@ -2702,6 +2702,18 @@
 
   document.addEventListener('DOMContentLoaded', function() {
     var formFinalizar = document.getElementById('formFinalizar');
+    var pcLabel = document.querySelector('label[for="completeTaskPcSelect"]');
+    var pcHelp = document.querySelector('#completeTaskPcGroup .form-text');
+    var pcDefaultOption = document.querySelector('#completeTaskPcSelect option[value="PC Generica"]');
+    if (pcLabel) {
+      pcLabel.textContent = '¿A qué PC corresponde?';
+    }
+    if (pcDefaultOption) {
+      pcDefaultOption.textContent = 'No sé todavía / dejar en PC Genérica';
+    }
+    if (pcHelp) {
+      pcHelp.textContent = 'Si identificas el equipo, la tarea se guarda allí. Si no, queda cerrada en PC Genérica.';
+    }
     if(formFinalizar) {
       formFinalizar.addEventListener('submit', function () {
         document.getElementById('techSelectComplete').disabled = false;
