@@ -2337,7 +2337,7 @@
                 </div>
                 
                 <div class="pt-actions">
-                    <button class="btn-pt-action btn-pt-confirm" onclick="quickTaskDone(${t.id})">
+                    <button class="btn-pt-action btn-pt-confirm" onclick='quickTaskDone(${t.id}, ${JSON.stringify(pcName)}, ${JSON.stringify(t.assigned_to || "")})'>
                         <i class="bi bi-check-lg"></i> Confirmar
                     </button>
                     <button class="btn-pt-action btn-pt-delete" onclick="quickDeleteTask(${t.id})" title="Eliminar">
@@ -2525,6 +2525,7 @@
     <div class="modal-content">
       <form id="formFinalizar" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="pc_name" id="completeTaskPcHidden" value="">
         <div class="modal-header">
           <h5 class="modal-title">Finalizar Tarea</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -2544,6 +2545,16 @@
               ⚠️ No hay usuarios con rol técnico listos. Crea un usuario del sistema con rol `tecnico` o permiso mobile.
             </div>
             {% endif %}
+          </div>
+          <div class="mb-3 d-none" id="completeTaskPcGroup">
+            <label for="completeTaskPcSelect" class="form-label">Â¿A quÃ© PC corresponde?</label>
+            <select id="completeTaskPcSelect" class="form-select">
+              <option value="PC Generica">No sÃ© todavÃ­a / dejar en PC GenÃ©rica</option>
+              {% for p in all_pcs %}
+              <option value="{{ p.pc_name }}">{{ p.pc_name }} | {{ p.fuero or '-' }} | {{ p.last_user or '?' }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Si identificas el equipo, la tarea se guarda allÃ­. Si no, queda cerrada en PC GenÃ©rica.</div>
           </div>
         </div>
         <div class="modal-footer">
@@ -2628,16 +2639,30 @@
     modal.show();
   }
 
-  function openCompleteTaskModal(taskId, assignedTo) {
+  function openCompleteTaskModal(taskId, assignedTo, pcName) {
     var form = document.getElementById('formFinalizar');
     form.action = "/tasks/" + taskId + "/done";
 
     var techSelect = document.getElementById('techSelectComplete');
     var techHidden = document.getElementById('techHiddenInput');
+    var pcHidden = document.getElementById('completeTaskPcHidden');
+    var pcGroup = document.getElementById('completeTaskPcGroup');
+    var pcSelect = document.getElementById('completeTaskPcSelect');
+    var resolvedPcName = pcName || 'PC Generica';
+    var isGeneric = resolvedPcName.toUpperCase().includes('GENERICA');
 
     techSelect.disabled = false;
     techSelect.value = "";
     techHidden.value = "";
+    if (pcHidden) {
+      pcHidden.value = resolvedPcName;
+    }
+    if (pcGroup) {
+      pcGroup.classList.toggle('d-none', !isGeneric);
+    }
+    if (pcSelect) {
+      pcSelect.value = isGeneric ? 'PC Generica' : resolvedPcName;
+    }
 
     if (assignedTo && assignedTo !== 'None') {
       techSelect.value = assignedTo;
@@ -2661,6 +2686,12 @@
     if(formFinalizar) {
       formFinalizar.addEventListener('submit', function () {
         document.getElementById('techSelectComplete').disabled = false;
+        var pcGroup = document.getElementById('completeTaskPcGroup');
+        var pcHidden = document.getElementById('completeTaskPcHidden');
+        var pcSelect = document.getElementById('completeTaskPcSelect');
+        if (pcGroup && !pcGroup.classList.contains('d-none') && pcHidden && pcSelect) {
+          pcHidden.value = pcSelect.value || 'PC Generica';
+        }
       });
     }
 
@@ -2672,4 +2703,8 @@
       }
     }
   });
+
+  function quickTaskDone(taskId, pcName, assignedTo) {
+    openCompleteTaskModal(taskId, assignedTo || '', pcName || 'PC Generica');
+  }
 </script>

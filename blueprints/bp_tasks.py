@@ -259,16 +259,19 @@ def mark_task_done(task_id):
     if not technician:
         technician = request.form.get("technician_name_hidden")
     technician = (technician or "").strip()
+    selected_pc_name = (request.form.get("pc_name") or "").strip()
     if not _is_assignable_technician(technician):
         return redirect(request.referrer or url_for("dashboard.dashboard"))
     with get_db_connection() as conn:
         row = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
         if row:
-            conn.execute(
-                "UPDATE tasks SET estado = 'Hecha', completed_by = %s, completed_at = %s, assigned_to = COALESCE(assigned_to, %s) WHERE id = %s",
-                (technician, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), technician, task_id)
-            )
             pc_name = row["pc_name"]
+            if selected_pc_name:
+                pc_name = selected_pc_name
+            conn.execute(
+                "UPDATE tasks SET estado = 'Hecha', completed_by = %s, completed_at = %s, assigned_to = COALESCE(assigned_to, %s), pc_name = %s WHERE id = %s",
+                (technician, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), technician, pc_name, task_id)
+            )
             conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                          (pc_name, f"Tarea #{task_id} Completada", "Pendiente", f"Por {technician}", current_username(), "GESTION_TAREAS", request.remote_addr))
             conn.commit()
