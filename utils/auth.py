@@ -559,14 +559,20 @@ def list_technician_users():
     for row in list_app_users():
         if not row.get("is_active"):
             continue
+        
+        # Omitir específicamente el usuario genérico 'administrador'
+        if row.get("username") == "administrador":
+            continue
+
         role = (row.get("role") or "").strip().lower()
         if role in {"consulta", "operador"}:
             continue
 
         explicit_mobile_identity = bool((row.get("technician_name") or "").strip())
-        if row.get("is_superuser") and not explicit_mobile_identity and role not in {"tecnico", "infraestructura"}:
-            continue
-        if not (row.get("can_access_mobile") or explicit_mobile_identity or role in {"tecnico", "infraestructura"}):
+        
+        # Permitir administradores y otros roles con acceso móvil
+        # Eliminamos la restricción que obligaba a tener technician_name para superusuarios
+        if not (row.get("can_access_mobile") or explicit_mobile_identity or role in {"tecnico", "infraestructura", "administrador"}):
             continue
 
         display = (row.get("technician_name") or row.get("display_name") or row.get("username") or "").strip()
