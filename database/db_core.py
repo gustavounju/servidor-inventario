@@ -67,6 +67,7 @@ def get_db_connection():
     password = os.environ.get("DB_PASS", "")
     dbname = os.environ.get("DB_NAME", "inventario_dev")
     port = int(os.environ.get("DB_PORT", "3306"))
+    session_time_zone = os.environ.get("DB_TIME_ZONE", "-03:00")
 
     conn = pymysql.connect(
         host=host,
@@ -78,6 +79,7 @@ def get_db_connection():
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=True,
         connect_timeout=10,
+        init_command=f"SET time_zone = '{session_time_zone}'",
     )
     return DBConnectionWrapper(conn)
 

@@ -14,6 +14,17 @@ from services.push_notifications import notify_all_technicians
 from utils.auth import superuser_required, current_username, list_technician_users
 
 bp_tasks = Blueprint('tasks', __name__)
+LOCAL_UTC_OFFSET_HOURS = -3
+
+
+def _coerce_task_datetime_for_display(dt_value, now=None):
+    if not dt_value:
+        return dt_value
+    now = now or dt.now()
+    # Corrige registros heredados guardados en UTC para el visor local (-03:00).
+    if dt_value > now + datetime.timedelta(hours=2):
+        return dt_value + datetime.timedelta(hours=LOCAL_UTC_OFFSET_HOURS)
+    return dt_value
 
 def _is_assignable_technician(name):
     target = (name or "").strip().lower()
@@ -38,8 +49,10 @@ def _format_duration(start, end):
 
 def _decorate_visor_task(row):
     task = dict(row)
-    created_at = task.get("created_at")
-    completed_at = task.get("completed_at")
+    created_at = _coerce_task_datetime_for_display(task.get("created_at"))
+    completed_at = _coerce_task_datetime_for_display(task.get("completed_at"))
+    task["created_at"] = created_at
+    task["completed_at"] = completed_at
     task["created_at_fmt"] = created_at.strftime("%H:%M") if created_at else ""
     task["completed_at_fmt"] = completed_at.strftime("%H:%M") if completed_at else ""
     task["resolution_time"] = _format_duration(created_at, completed_at if task.get("estado") == "Hecha" else None)

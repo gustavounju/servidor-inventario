@@ -852,6 +852,16 @@ def auth_guard():
     # -------------------------------------------------------------
 
     permission_name = required_permission_for_endpoint()
+    operator_mobile_bridge_endpoints = {
+        "mobile.voice_upload",
+        "mobile.api_mobile_parse_voice",
+    }
+    if (
+        refreshed_user.get("role") == "operador"
+        and request.endpoint in operator_mobile_bridge_endpoints
+    ):
+        permission_name = "operadores"
+
     if permission_name and not has_permission(permission_name, refreshed_user):
         return forbidden_response(permission_name)
 
