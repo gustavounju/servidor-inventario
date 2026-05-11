@@ -2645,15 +2645,25 @@
 
     var techSelect = document.getElementById('techSelectComplete');
     var techHidden = document.getElementById('techHiddenInput');
+    var question = form ? form.querySelector('.modal-body > p') : null;
+    var techGroup = techSelect ? techSelect.closest('.mb-3') : null;
     var pcHidden = document.getElementById('completeTaskPcHidden');
     var pcGroup = document.getElementById('completeTaskPcGroup');
     var pcSelect = document.getElementById('completeTaskPcSelect');
     var resolvedPcName = pcName || 'PC Generica';
     var isGeneric = resolvedPcName.toUpperCase().includes('GENERICA');
+    var hasAssignedTech = !!(assignedTo && assignedTo !== 'None');
 
     techSelect.disabled = false;
     techSelect.value = "";
     techHidden.value = "";
+    techSelect.required = !hasAssignedTech;
+    if (techGroup) {
+      techGroup.classList.toggle('d-none', hasAssignedTech);
+    }
+    if (question) {
+      question.textContent = isGeneric ? 'Esta tarea, ¿a qué PC corresponde?' : '¿Quién realizó esta tarea?';
+    }
     if (pcHidden) {
       pcHidden.value = resolvedPcName;
     }
@@ -2664,7 +2674,7 @@
       pcSelect.value = isGeneric ? 'PC Generica' : resolvedPcName;
     }
 
-    if (assignedTo && assignedTo !== 'None') {
+    if (hasAssignedTech) {
       techSelect.value = assignedTo;
       techSelect.disabled = true;
       techHidden.value = assignedTo;
