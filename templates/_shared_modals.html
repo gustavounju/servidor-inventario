@@ -2300,13 +2300,22 @@
             });
     }
 
+    function isGenericPcName(pcName) {
+        const normalized = String(pcName || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^A-Za-z]/g, '')
+            .toUpperCase();
+        return normalized.includes('PCGENERICA');
+    }
+
     function renderTasks(tasks) {
         const grid = document.getElementById('pendingTasksGrid');
         grid.innerHTML = '';
         
         tasks.forEach((t, index) => {
             const pcName = t.pc_name || 'PC Gen├®rica';
-            const isGeneric = pcName.toUpperCase().includes('GENERICA');
+            const isGeneric = isGenericPcName(pcName);
             
             const card = document.createElement('div');
             card.className = 'pt-card';
@@ -2651,7 +2660,7 @@
     var pcGroup = document.getElementById('completeTaskPcGroup');
     var pcSelect = document.getElementById('completeTaskPcSelect');
     var resolvedPcName = pcName || 'PC Generica';
-    var isGeneric = resolvedPcName.toUpperCase().includes('GENERICA');
+    var isGeneric = isGenericPcName(resolvedPcName);
     var hasAssignedTech = !!(assignedTo && assignedTo !== 'None');
 
     techSelect.disabled = false;
