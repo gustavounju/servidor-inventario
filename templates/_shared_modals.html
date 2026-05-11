@@ -269,7 +269,7 @@
                             <form action="{{ url_for('users.create_app_user') }}" method="POST" id="appUserForm">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="is_edit_mode" id="isEditMode" value="0">
-                                <input type="hidden" name="next_url" value="{{ request.full_path }}{% if not '#' in request.full_path %}#usersModal{% endif %}">
+                                <input type="hidden" name="next_url" data-users-next-url value="{{ request.path }}?manage_users=1">
 
                                 <div class="um-form-grid">
                                     <div class="um-field">
@@ -429,7 +429,7 @@
                                 {% if app_user.username != current_user.username %}
                                 <form action="{{ url_for('users.remove_app_user', user_id=app_user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar a {{ app_user.username }}? Esta acción no se puede deshacer.')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="next_url" value="{{ request.full_path }}{% if not '#' in request.full_path %}#usersModal{% endif %}">
+                                    <input type="hidden" name="next_url" data-users-next-url value="{{ request.path }}?manage_users=1">
                                     <button type="submit" class="um-action-btn um-action-delete"><i class="bi bi-trash3-fill"></i></button>
                                 </form>
                                 {% endif %}
@@ -1331,7 +1331,8 @@
             'csrf_token': "{{ csrf_token() }}",
             'username': username,
             'is_edit_mode': '1',
-            'is_active': 'on'
+            'is_active': 'on',
+            'next_url': buildUsersModalReturnUrl()
         };
 
         if (role === 'superuser') {
@@ -1532,8 +1533,18 @@
         document.getElementById('appPassword').focus();
     }
 
+    function buildUsersModalReturnUrl() {
+        const url = new URL(window.location.href);
+        url.searchParams.set('manage_users', '1');
+        return `${url.pathname}${url.search}`;
+    }
+
     // Mantener modal abierto tras redirect de acciones (POST)
     document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('input[data-users-next-url]').forEach((input) => {
+            input.value = buildUsersModalReturnUrl();
+        });
+
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('manage_users') === '1') {
             const usersModal = new bootstrap.Modal(document.getElementById('usersModal'));
@@ -2025,7 +2036,7 @@
             <div class="modal-content shadow-lg border-warning">
                 <form action="{{ url_for('users.reset_app_user_password') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="next_url" value="{{ request.full_path }}{% if not '#' in request.full_path %}#usersModal{% endif %}">
+                    <input type="hidden" name="next_url" data-users-next-url value="{{ request.path }}?manage_users=1">
                     <input type="hidden" name="username" id="resetPassUsername">
                     <div class="modal-header bg-warning py-2">
                         <h6 class="modal-title fw-bold"><i class="bi bi-key-fill me-2"></i>Nueva Clave</h6>
