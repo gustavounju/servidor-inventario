@@ -28,6 +28,11 @@ def _users_page_context():
     app_users_list = list_app_users()
     pending_users_list = [u for u in app_users_list if not u.get("is_active")]
     with get_db_connection() as conn:
+        ad_usernames = {
+            str(row["username"]).strip().lower()
+            for row in conn.execute("SELECT username FROM ad_users").fetchall()
+            if row.get("username")
+        }
         fuero_mappings = conn.execute(
             """
             SELECT id, prefix_code, fuero_label, notes, is_active, updated_at
@@ -47,9 +52,19 @@ def _users_page_context():
     return {
         "app_users_list": app_users_list,
         "pending_users_list": pending_users_list,
+        "ad_usernames": ad_usernames,
         "fuero_mappings": [dict(row) for row in fuero_mappings],
         "admin_audit_logs": [dict(row) for row in admin_audit_logs],
     }
+
+
+def _is_ad_username(username):
+    username = (username or "").strip().lower()
+    if not username:
+        return False
+    with get_db_connection() as conn:
+        row = conn.execute("SELECT 1 FROM ad_users WHERE LOWER(username) = %s LIMIT 1", (username,)).fetchone()
+    return bool(row)
 
 
 def _fuero_admin_context():
@@ -149,18 +164,22 @@ def create_app_user():
         validate_managed_user_payload(payload)
     except Exception as exc:
         flash(str(exc), "error")
-        return redirect(url_for("users.users_admin"))
+        return redirect(_safe_next_url())
 
     hydrate_existing_user_defaults(payload)
     existing_user = payload["existing_user"]
+    is_ad_user = _is_ad_username(payload["username"])
 
     if not payload["is_edit_mode"] and existing_user:
         flash(f"Error: El usuario '{payload['username']}' ya existe. Si desea modificarlo, use la edición directa.", "error")
-        return redirect(url_for("users.users_admin"))
+        return redirect(_safe_next_url())
 
-    if not payload["is_edit_mode"] and not payload["password"]:
-        flash("Error: La contraseña es obligatoria para nuevos usuarios.", "error")
-        return redirect(url_for("users.users_admin"))
+    if is_ad_user and payload["password"]:
+        payload["password"] = ""
+
+    if not payload["is_edit_mode"] and not payload["password"] and not is_ad_user:
+        flash("Error: La contraseña es obligatoria para nuevos usuarios locales.", "error")
+        return redirect(_safe_next_url())
 
     try:
         upsert_app_user(
@@ -196,7 +215,7 @@ def create_app_user():
     except Exception as exc:
         flash(f"Error al procesar usuario: {exc}", "error")
 
-    return redirect(url_for("users.users_admin"))
+    return redirect(_safe_next_url())
 
 
 def _normalize_fuero_mapping_payload(form):
@@ -391,7 +410,7 @@ def approve_app_user(username):
 
     if not existing_user:
         flash("Usuario no encontrado.", "error")
-        return redirect(url_for("users.users_admin"))
+        return redirect(_safe_next_url())
 
     try:
         upsert_app_user(
@@ -420,7 +439,7 @@ def approve_app_user(username):
     except Exception as exc:
         flash(f"No se pudo aprobar el usuario: {exc}", "error")
 
-    return redirect(url_for("users.users_admin"))
+    return redirect(_safe_next_url())
 
 
 @bp_users.route("/admin/users/reset_password", methods=["POST"])
@@ -430,6 +449,8 @@ def reset_app_user_password():
     new_password = request.form.get("password", "")
     if not username or not new_password:
         flash("Usuario y nueva clave son obligatorios.", "error")
+    elif _is_ad_username(username):
+        flash(f"La clave de '{username}' se gestiona por Active Directory y no puede cambiarse desde Inventario.", "error")
     else:
         try:
             update_app_user_password(username, new_password)
@@ -446,7 +467,7 @@ def reset_app_user_password():
             flash(f"Clave de '{username}' actualizada correctamente.", "success")
         except Exception as exc:
             flash(f"Error al restablecer clave: {exc}", "error")
-    return redirect(url_for("users.users_admin"))
+    return redirect(_safe_next_url())
 
 
 @bp_users.route("/admin/users/<int:user_id>/delete", methods=["POST"])
@@ -468,4 +489,4 @@ def remove_app_user(user_id):
         flash("Usuario del sistema eliminado.", "success")
     except Exception as exc:
         flash(f"No se pudo eliminar el usuario: {exc}", "error")
-    return redirect(url_for("users.users_admin"))
+    return redirect(_safe_next_url())

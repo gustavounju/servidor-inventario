@@ -1,10 +1,10 @@
-from flask import Blueprint, jsonify, request, render_template
+from flask import Blueprint, abort, jsonify, request, render_template
 import datetime
 import os
 from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.push_notifications import notify_all_technicians
-from utils.auth import current_technician_identity, list_technician_users
+from utils.auth import current_technician_identity, current_user, list_technician_users
 # from voice_processor import process_voice_command # Ensure it handles import cleanly if missing
 
 bp_mobile = Blueprint('mobile', __name__)
@@ -16,6 +16,8 @@ def mobile_view():
 
 @bp_mobile.route("/mobile/scanner")
 def mobile_scanner_view():
+    if current_user().get("role") == "operador":
+        abort(403)
     return render_template("mobile_scanner.html")
 
 def _json_serializable(data):
@@ -148,7 +150,7 @@ def api_mobile_create_task():
             notify_all_technicians(
                 title="Nueva Tarea",
                 body=f"{solicitante}: {descripcion}",
-                url="/mobile"
+                url="/tecnicos"
             )
         except Exception as e:
             print(f"Error sending push: {e}")
@@ -192,6 +194,13 @@ def api_mobile_update_task():
                  sql += " WHERE id=%s"
                  params.append(task_id)
                  conn.execute(sql, params)
+            elif action == "assign_pc":
+                 if not pc_name:
+                     return jsonify({"status": "error", "message": "Seleccioná una PC válida."}), 400
+                 exists = conn.execute("SELECT 1 FROM pcs WHERE pc_name=%s", (pc_name,)).fetchone()
+                 if not exists:
+                     return jsonify({"status": "error", "message": "La PC seleccionada no existe."}), 404
+                 conn.execute("UPDATE tasks SET pc_name=%s WHERE id=%s AND assigned_to=%s", (pc_name, task_id, technician))
             conn.commit()
         return jsonify({"status": "success"})
     except Exception as e:

@@ -71,6 +71,11 @@ class SimpleNaiveBayes:
 
 # Datos semilla para que el modelo no empiece vacío (Cold Start)
 SEED_DATA = [
+    # Audiencias
+    ("camara gesell audiencia videograbada", "Audiencias"),
+    ("camara geselle a las diez", "Audiencias"),
+    ("grabar audiencia en sala gesell", "Audiencias"),
+
     # Impresoras
     ("impresora no imprime", "Impresoras"),
     ("papel atascado bandeja", "Impresoras"),
@@ -88,12 +93,24 @@ SEED_DATA = [
     
     # Hardware
     ("monitor no enciende pantalla negra", "Hardware"),
+    ("llevar la nueva pc", "Hardware"),
+    ("entregar computadora nueva", "Hardware"),
+    ("cambiar pc del despacho", "Hardware"),
+    ("reemplazar equipo por pc nueva", "Hardware"),
+    ("camara no funciona webcam apagada", "Hardware"),
+    ("problema con la camara en videollamada", "Hardware"),
+    ("microfono no toma audio", "Hardware"),
+    ("auriculares no se escuchan", "Hardware"),
+    ("scanner no escanea", "Hardware"),
     ("teclado no funciona teclas", "Hardware"),
     ("mouse raton no se mueve", "Hardware"),
     ("cpu hace ruido cooler", "Hardware"),
     ("pc no arranca se apaga", "Hardware"),
     
     # Software
+    ("reinstalar la pc", "Software"),
+    ("reinstalar windows en la pc", "Software"),
+    ("formatear pc e instalar sistema", "Software"),
     ("instalar office word excel", "Software"),
     ("virus antivirus alerta", "Software"),
     ("programa se cierra error", "Software"),

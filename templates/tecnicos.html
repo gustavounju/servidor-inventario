@@ -6,29 +6,29 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>GOLD · Técnicos</title>
+  <title>Técnicos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <style>
     :root {
-      --bg: #0f1117;
-      --bg2: #181d27;
-      --bg3: #1f2637;
-      --card: #1e2535;
-      --card-hover: #252e42;
-      --border: rgba(255,255,255,0.07);
-      --accent: #4f8ef7;
-      --accent2: #6c63ff;
-      --green: #22c55e;
-      --yellow: #f59e0b;
-      --red: #ef4444;
-      --text: #f1f5f9;
-      --text-muted: #7c8aa0;
-      --input-bg: #252e42;
-      --radius: 16px;
-      --radius-sm: 10px;
-      --shadow: 0 8px 32px rgba(0,0,0,0.35);
+      --bg: #eef3f2;
+      --bg2: #123c3b;
+      --bg3: #dbe8e5;
+      --card: #ffffff;
+      --card-hover: #f4faf8;
+      --border: rgba(18, 60, 59, 0.12);
+      --accent: #2f7d6d;
+      --accent2: #e05d44;
+      --green: #168a5b;
+      --yellow: #c98915;
+      --red: #c24135;
+      --text: #18302f;
+      --text-muted: #667875;
+      --input-bg: #f7fbfa;
+      --radius: 8px;
+      --radius-sm: 8px;
+      --shadow: 0 10px 28px rgba(18, 60, 59, 0.14);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -48,29 +48,31 @@
       justify-content: space-between;
       padding: 14px 20px;
       background: var(--bg2);
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(255,255,255,0.12);
       flex-shrink: 0;
       gap: 12px;
+      color: #fff;
+      box-shadow: 0 10px 28px rgba(18, 60, 59, 0.2);
     }
     .top-bar-brand { display: flex; align-items: center; gap: 10px; }
-    .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse-dot 2s infinite; }
-    @keyframes pulse-dot { 0%,100% { opacity:1;transform:scale(1); } 50% { opacity:.6;transform:scale(1.3); } }
+    .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: #f6c453; box-shadow: 0 0 0 4px rgba(246, 196, 83, 0.16); }
     .brand-name { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; }
-    .brand-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 400; }
+    .brand-sub { font-size: 0.72rem; color: rgba(255,255,255,0.72); font-weight: 400; }
     .tech-badge {
       display: flex; align-items: center; gap: 6px;
-      background: var(--bg3); border: 1px solid var(--border);
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);
       border-radius: 20px; padding: 5px 12px; font-size: 0.8rem;
-      color: var(--text); white-space: nowrap; cursor: pointer;
+      color: #fff; white-space: nowrap; cursor: pointer;
     }
-    .tech-badge i { color: var(--accent); font-size: 0.9rem; }
+    .tech-badge i { color: #dff7ef; font-size: 0.9rem; }
 
     /* ── Tab Nav ── */
     .tab-nav {
       display: flex;
-      background: var(--bg2);
+      background: #ffffff;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      box-shadow: 0 6px 18px rgba(18, 60, 59, 0.08);
     }
     .tab-btn {
       flex: 1; padding: 11px 4px; border: none; background: none;
@@ -117,12 +119,25 @@
       display: flex; align-items: center; gap: 3px; background: var(--bg3);
       border-radius: 6px; padding: 2px 7px; font-size: 0.7rem; color: var(--text-muted);
     }
+    .meta-chip-requester {
+      background: rgba(224,93,68,0.14);
+      border: 1px solid rgba(224,93,68,0.28);
+      color: #a83f2c;
+      font-weight: 800;
+    }
+    .meta-chip-requester i { color: var(--accent2); }
+    .meta-chip-button {
+      border: 0;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .meta-chip-button:active { transform: scale(.98); }
     .status-pill {
       font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
       text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
     }
     .pill-pending { background: rgba(245,158,11,0.15); color: var(--yellow); }
-    .pill-mine { background: rgba(79,142,247,0.15); color: var(--accent); }
+    .pill-mine { background: rgba(47,125,109,0.14); color: var(--accent); }
     .pill-done { background: rgba(34,197,94,0.15); color: var(--green); }
 
     .card-actions { display: flex; gap: 8px; margin-top: 10px; }
@@ -131,8 +146,8 @@
       font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all .2s;
       display: flex; align-items: center; justify-content: center; gap: 5px;
     }
-    .btn-claim { background: rgba(79,142,247,0.15); color: var(--accent); border: 1px solid rgba(79,142,247,0.25); }
-    .btn-claim:active { background: rgba(79,142,247,0.3); }
+    .btn-claim { background: rgba(47,125,109,0.14); color: var(--accent); border: 1px solid rgba(47,125,109,0.24); }
+    .btn-claim:active { background: rgba(47,125,109,0.24); }
     .btn-done { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
     .btn-done:active { background: rgba(34,197,94,0.3); }
 
@@ -145,13 +160,13 @@
     .fab-area {
       position: fixed; bottom: 0; left: 0; right: 0;
       padding: 16px 20px 28px;
-      background: linear-gradient(to top, var(--bg) 65%, transparent);
+      background: linear-gradient(to top, var(--bg) 65%, rgba(238,243,242,0));
       display: flex; align-items: flex-end; justify-content: center; gap: 14px;
       pointer-events: none;
     }
     .fab-secondary {
       width: 48px; height: 48px; border-radius: 50%; border: none;
-      background: var(--bg3); color: var(--text-muted);
+      background: #ffffff; color: var(--text-muted);
       font-size: 1.15rem; cursor: pointer; pointer-events: all;
       display: flex; align-items: center; justify-content: center;
       box-shadow: var(--shadow); transition: all .2s;
@@ -159,10 +174,10 @@
     .fab-secondary:active { transform: scale(.9); }
     .fab-main {
       width: 64px; height: 64px; border-radius: 50%; border: none;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      background: linear-gradient(135deg, var(--accent), #34a58d);
       color: #fff; font-size: 1.6rem; cursor: pointer; pointer-events: all;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 6px 28px rgba(79,142,247,0.5); transition: all .2s;
+      box-shadow: 0 6px 28px rgba(47,125,109,0.34); transition: all .2s;
     }
     .fab-main:active { transform: scale(.9); }
     .fab-main.recording {
@@ -177,13 +192,13 @@
 
     /* ── Voice Modal ── */
     .voice-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      position: fixed; inset: 0; background: rgba(18, 48, 47, 0.55);
       backdrop-filter: blur(6px); display: none; z-index: 200;
       flex-direction: column; align-items: center; justify-content: flex-end;
     }
     .voice-overlay.open { display: flex; }
     .voice-sheet {
-      background: var(--bg2); border-radius: 24px 24px 0 0;
+      background: #ffffff; border-radius: 20px 20px 0 0;
       width: 100%; max-width: 560px; padding: 24px 20px 36px;
       border-top: 1px solid var(--border); animation: sheet-in .3s ease;
     }
@@ -222,9 +237,31 @@
       font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: all .2s;
     }
     .btn-vcancel { background: var(--bg3); color: var(--text-muted); }
-    .btn-vsave { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+    .btn-vsave { background: var(--accent); color: #fff; }
     .btn-vsave-done { background: linear-gradient(135deg, var(--green), #16a34a); color: #fff; flex: 1.2; }
     .btn-vact:active { transform: scale(.95); }
+    .pc-picker-list {
+      max-height: 310px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      margin-bottom: 12px;
+    }
+    .pc-picker-option {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      text-align: left;
+      font-family: inherit;
+      padding: 10px 12px;
+    }
+    .pc-picker-option:last-child { border-bottom: 0; }
+    .pc-picker-option:active { background: var(--card-hover); }
+    .pc-picker-name { display: block; font-size: 0.86rem; font-weight: 800; }
+    .pc-picker-meta { display: block; margin-top: 2px; font-size: 0.72rem; color: var(--text-muted); line-height: 1.35; }
 
     /* PC selector */
     .pc-dropdown {
@@ -232,11 +269,11 @@
       border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.88rem;
       color: var(--text); font-family: inherit; outline: none; margin-bottom: 10px;
     }
-    .pc-dropdown option { background: var(--bg2); }
+    .pc-dropdown option { background: #ffffff; }
 
     /* ── Manual Task Modal ── */
     .manual-sheet {
-      background: var(--bg2); border-radius: 24px 24px 0 0;
+      background: #ffffff; border-radius: 20px 20px 0 0;
       width: 100%; max-width: 560px; padding: 24px 20px 36px;
       border-top: 1px solid var(--border); animation: sheet-in .3s ease;
     }
@@ -268,14 +305,14 @@
     }
     .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
     .ops-overview {
-      background: linear-gradient(160deg, rgba(79,142,247,0.16), rgba(15,17,23,0.92));
-      border: 1px solid rgba(79,142,247,0.2);
-      border-radius: 18px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 14px;
       margin-bottom: 14px;
       box-shadow: var(--shadow);
     }
-    .ops-title { font-size: 0.72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #cddaf6; margin-bottom: 6px; }
+    .ops-title { font-size: 0.72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
     .ops-headline { font-size: 1rem; font-weight: 700; line-height: 1.35; margin-bottom: 12px; }
     .ops-grid {
       display: grid;
@@ -284,9 +321,9 @@
       margin-bottom: 10px;
     }
     .ops-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       padding: 10px 10px 11px;
     }
     .ops-kpi { font-size: 1.1rem; font-weight: 800; margin-bottom: 3px; }
@@ -295,18 +332,18 @@
       display: flex;
       gap: 10px;
       align-items: flex-start;
-      background: rgba(15,17,23,0.62);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 14px;
+      background: #f7fbfa;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       padding: 10px 12px;
       font-size: 0.8rem;
       line-height: 1.45;
       color: var(--text);
     }
     .ops-focus i { color: #f8c14f; margin-top: 2px; }
-    .meta-chip-priority-high { color: #fca5a5; background: rgba(239,68,68,0.14); }
-    .meta-chip-priority-medium { color: #fcd34d; background: rgba(245,158,11,0.14); }
-    .meta-chip-priority-low { color: #93c5fd; background: rgba(79,142,247,0.14); }
+    .meta-chip-priority-high { color: var(--red); background: rgba(194,65,53,0.12); }
+    .meta-chip-priority-medium { color: var(--yellow); background: rgba(201,137,21,0.14); }
+    .meta-chip-priority-low { color: var(--accent); background: rgba(47,125,109,0.12); }
 
     /* Spinner */
     .spin { animation: spin .8s linear infinite; }
@@ -341,11 +378,13 @@
     <div class="top-bar-brand">
       <div class="brand-dot"></div>
       <div>
-        <div class="brand-name">GOLD · Técnicos</div>
-        <div class="brand-sub" id="topSubtitle">Cargando...</div>
+        <div class="brand-name">Técnicos</div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
+      <button type="button" class="tech-badge" id="enableAlertsBtn" onclick="enableAlerts()" title="Activar avisos" style="border:none;">
+        <i class="bi bi-bell-fill"></i>
+      </button>
       <div class="tech-badge" onclick="selectTechnician()">
         <i class="bi bi-person-circle"></i>
         <span id="techBadgeLabel">{{ mobile_identity or 'Seleccionar' }}</span>
@@ -365,10 +404,12 @@
       <i class="bi bi-inbox"></i> Libres
       <span class="tab-badge" id="badge-libres" style="display:none">0</span>
     </button>
-    <button class="tab-btn" id="tab-avisos" onclick="switchTab('avisos')">
-      <i class="bi bi-bell"></i> Avisos
-      <span class="tab-badge" id="badge-avisos" style="display:none">0</span>
-    </button>
+    {% if current_user.role == 'administrador' %}
+      <button class="tab-btn" id="tab-avisos" onclick="switchTab('avisos')">
+        <i class="bi bi-bell"></i> Avisos
+        <span class="tab-badge" id="badge-avisos" style="display:none">0</span>
+      </button>
+    {% endif %}
   </div>
 
   <!-- Content -->
@@ -377,12 +418,12 @@
     <!-- Panel: Mis Tareas -->
     <div class="panel active" id="panel-mias">
       <div class="ops-overview" id="opsOverview">
-        <div class="ops-title">Centro de Guardia</div>
-        <div class="ops-headline" id="opsHeadline">Cargando foco operativo...</div>
+        <div class="ops-title">Resumen de tareas</div>
+        <div class="ops-headline" id="opsHeadline">Cargando tareas asignadas...</div>
         <div class="ops-grid">
           <div class="ops-card">
             <div class="ops-kpi" id="opsMineCount">0</div>
-            <div class="ops-label">Mías</div>
+            <div class="ops-label">Tomadas</div>
           </div>
           <div class="ops-card">
             <div class="ops-kpi" id="opsFreeCount">0</div>
@@ -395,7 +436,7 @@
         </div>
         <div class="ops-focus">
           <i class="bi bi-lightning-charge-fill"></i>
-          <div id="opsFocusText">Estamos preparando el resumen de prioridad.</div>
+          <div id="opsFocusText">Preparando prioridades de trabajo.</div>
         </div>
       </div>
       <div id="list-mias"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
@@ -407,10 +448,12 @@
       <div id="list-libres"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
     </div>
 
-    <!-- Panel: Avisos -->
-    <div class="panel" id="panel-avisos">
-      <div id="list-avisos"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
-    </div>
+    {% if current_user.role == 'administrador' %}
+      <!-- Panel: Avisos -->
+      <div class="panel" id="panel-avisos">
+        <div id="list-avisos"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
+      </div>
+    {% endif %}
 
   </div>
 
@@ -419,9 +462,11 @@
     <button class="fab-secondary" onclick="openManualModal()" title="Tarea manual">
       <i class="bi bi-pencil-square"></i>
     </button>
-    <button class="fab-secondary" onclick="window.location.href='/tecnicos/scanner'" title="Escanear Código de Barras">
-      <i class="bi bi-upc-scan"></i>
-    </button>
+    {% if current_user.role != 'operador' %}
+      <button class="fab-secondary" onclick="window.location.href='/tecnicos/scanner'" title="Escanear Código de Barras">
+        <i class="bi bi-upc-scan"></i>
+      </button>
+    {% endif %}
     <button class="fab-main" id="fabVoice" onclick="toggleVoice()" title="Dictar tarea por voz">
       <i class="bi bi-mic-fill" id="fabIcon"></i>
     </button>
@@ -556,20 +601,41 @@
   </div>
 </div>
 
+<!-- ── Asignar PC a tarea tomada ── -->
+<div class="voice-overlay" id="pcPickerOverlay">
+  <div class="manual-sheet">
+    <div class="sheet-handle"></div>
+    <p style="font-size:.94rem;font-weight:700;margin-bottom:6px;"><i class="bi bi-pc-display" style="color:var(--accent)"></i> Asignar PC</p>
+    <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:14px;">Si conocés el equipo, seleccionalo. Si no, dejá la tarea como PC genérica para que se asigne desde el dashboard.</p>
+    <div class="input-group-gold">
+      <div class="input-label-gold">Buscar por PC, fuero o usuario</div>
+      <input class="gold-input" id="pcPickerSearch" type="text" placeholder="Ej: mesa de entradas, Andrea, PC-...">
+    </div>
+    <div class="pc-picker-list" id="pcPickerList"></div>
+    <div class="voice-actions">
+      <button class="btn-vact btn-vcancel" onclick="closePcPicker()">Dejar genérica</button>
+    </div>
+  </div>
+</div>
+
 
 <script>
 /* =========================================================
-   GOLD · Técnicos — Script Principal
+   Técnicos — Script Principal
    ========================================================= */
 
 const API   = '/api/mobile';
 const CSRF  = '{{ csrf_token() }}';
+const isAdmin = {{ (current_user.role == 'administrador')|tojson }};
 let techId  = '{{ mobile_identity }}';
 let allData = {};
 let recog   = null;
 let isListening = false;
 let waveTimer   = null;
 let knownNotifIds = new Set();
+let pcPickerTaskId = null;
+const VAPID_PUBLIC_KEY = "BOu99N41agBTHQmpQHo8yrbTdQ7Kb392R1NgXiy8DeK5f7WVvHB-OXmqm-ptw2CpoIqM0cZZOUtYRYGaBdAUufE";
+let pushSubscribed = false;
 
 // Helper para POST con CSRF
 function postJSON(url, body) {
@@ -616,12 +682,43 @@ function playBeep(type = 'new') {
   } catch(e) {}
 }
 
+function playTaskAlarm() {
+  try {
+    if (navigator.vibrate) navigator.vibrate([350, 120, 350, 120, 500]);
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const start = ctx.currentTime;
+    const pattern = [0, .32, .64, 1.05, 1.37, 1.69];
+    pattern.forEach((offset, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = idx % 2 ? 'square' : 'sawtooth';
+      osc.frequency.setValueAtTime(idx % 2 ? 1320 : 980, start + offset);
+      gain.gain.setValueAtTime(0.0001, start + offset);
+      gain.gain.exponentialRampToValueAtTime(0.9, start + offset + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.22);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start + offset);
+      osc.stop(start + offset + 0.24);
+    });
+    setTimeout(() => ctx.close?.(), 2400);
+  } catch(e) {
+    playBeep('new');
+  }
+}
+
 // ── Tabs ──────────────────────────────────────────
 function switchTab(name) {
+  if (!isAdmin && name === 'avisos') return;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  document.getElementById('panel-' + name).classList.add('active');
+  const tab = document.getElementById('tab-' + name);
+  const panel = document.getElementById('panel-' + name);
+  if (!tab || !panel) return;
+  tab.classList.add('active');
+  panel.classList.add('active');
   if (name === 'avisos') loadNotifications();
 }
 
@@ -651,8 +748,6 @@ async function refreshData(silent=false) {
     allData = data;
     fillPcSelects(data.pcs || []);
     renderAll();
-    const subtitle = techId ? `Técnico: ${techId}` : 'Sin técnico seleccionado';
-    document.getElementById('topSubtitle').textContent = subtitle;
   } catch(e) { console.error(e); }
   if (!silent) document.getElementById('refreshIcon').classList.remove('spin');
 }
@@ -679,6 +774,11 @@ function taskAgeHours(task) {
   const created = new Date(task.created_at.replace(' ', 'T'));
   if (Number.isNaN(created.getTime())) return 0;
   return Math.max(0, (Date.now() - created.getTime()) / 3600000);
+}
+
+function isGenericPcName(name) {
+  const normalized = String(name || '').toLowerCase().replace(/[\s_-]+/g, '');
+  return normalized === 'pcgenerica' || normalized === 'pcgeneric';
 }
 
 function classifyTaskPriority(task, mode) {
@@ -776,10 +876,15 @@ function renderDoneToday(tasks) {
 function taskCard(t, mode) {
   const color = mode === 'free' ? 'var(--yellow)' : mode === 'mine' ? 'var(--accent)' : 'var(--green)';
   const pill  = mode === 'free' ? '<span class="status-pill pill-pending">Libre</span>'
-              : mode === 'mine' ? '<span class="status-pill pill-mine">Asignada</span>'
+              : mode === 'mine' ? '<span class="status-pill pill-mine">Tomada</span>'
               : '';
   const priority = classifyTaskPriority(t, mode);
   const pcData = t.pc_name ? `'${t.pc_name}'` : 'null';
+  const pcChip = t.pc_name
+    ? (isGenericPcName(t.pc_name) && mode === 'mine'
+        ? `<button type="button" class="meta-chip meta-chip-button" onclick="openPcPicker(${t.id})"><i class="bi bi-pc-display"></i>${escHtml(t.pc_name)}</button>`
+        : '<span class="meta-chip"><i class="bi bi-pc-display"></i>'+escHtml(t.pc_name)+'</span>')
+    : '<span class="meta-chip"><i class="bi bi-inbox"></i>Sin PC</span>';
   const actions = mode === 'free'
     ? `<button class="btn-act btn-claim" onclick="claimTask(${t.id})"><i class="bi bi-hand-index-thumb"></i> Tomar</button>`
     : mode === 'mine'
@@ -797,8 +902,8 @@ function taskCard(t, mode) {
       </div>
       <div class="task-meta">
         <span class="meta-chip ${priority.css}"><i class="bi bi-flag"></i>${priority.label}</span>
-        ${t.pc_name ? '<span class="meta-chip"><i class="bi bi-pc-display"></i>'+escHtml(t.pc_name)+'</span>' : '<span class="meta-chip"><i class="bi bi-inbox"></i>Sin PC</span>'}
-        ${t.solicitante ? '<span class="meta-chip"><i class="bi bi-person"></i>'+escHtml(t.solicitante)+'</span>' : ''}
+        ${pcChip}
+        ${t.solicitante ? '<span class="meta-chip meta-chip-requester"><i class="bi bi-person-fill"></i>Solicita: '+escHtml(t.solicitante)+'</span>' : ''}
         ${t.pc_fuero ? '<span class="meta-chip"><i class="bi bi-geo-alt"></i>'+escHtml(t.pc_fuero)+'</span>' : ''}
         <span class="meta-chip"><i class="bi bi-clock"></i>${fmtRelative(t.created_at)}</span>
       </div>
@@ -866,11 +971,66 @@ async function confirmComplete() {
   } catch(e) { console.error(e); }
 }
 
+function openPcPicker(taskId) {
+  pcPickerTaskId = taskId;
+  const input = document.getElementById('pcPickerSearch');
+  input.value = '';
+  document.getElementById('pcPickerOverlay').classList.add('open');
+  renderPcPickerList();
+  setTimeout(() => input.focus(), 80);
+}
+
+function closePcPicker() {
+  document.getElementById('pcPickerOverlay').classList.remove('open');
+  pcPickerTaskId = null;
+}
+
+function renderPcPickerList() {
+  const box = document.getElementById('pcPickerList');
+  const q = document.getElementById('pcPickerSearch').value.trim().toLowerCase();
+  const pcs = (allData.pcs || [])
+    .filter(pc => !isGenericPcName(pc.name))
+    .filter(pc => {
+      if (!q) return true;
+      return [pc.name, pc.area, pc.user].filter(Boolean).join(' ').toLowerCase().includes(q);
+    })
+    .slice(0, 80);
+
+  if (!pcs.length) {
+    box.innerHTML = `<div class="empty-state" style="padding:24px 12px;"><i class="bi bi-search"></i><p>Sin PCs para ese filtro</p></div>`;
+    return;
+  }
+
+  box.innerHTML = pcs.map(pc => `
+    <button type="button" class="pc-picker-option" onclick="assignTaskPc('${escAttr(pc.name)}')">
+      <span class="pc-picker-name">${escHtml(pc.name)}</span>
+      <span class="pc-picker-meta">${escHtml(pc.area || 'Sin fuero')} · ${escHtml(pc.user || 'Sin usuario')}</span>
+    </button>
+  `).join('');
+}
+
+async function assignTaskPc(pcName) {
+  if (!pcPickerTaskId || !pcName) return;
+  try {
+    const res = await postJSON(API + '/update_task', { id: pcPickerTaskId, action:'assign_pc', pc_name: pcName });
+    const data = await res.json();
+    if (data.status === 'success') {
+      playBeep('done');
+      closePcPicker();
+      await refreshData(true);
+    } else {
+      alert(data.message || 'No se pudo asignar la PC.');
+    }
+  } catch(e) {
+    alert('Error de conexión al asignar la PC.');
+  }
+}
+
 function flashCard(id, color) {
   const el = document.getElementById('tc-' + id);
   if (!el) return;
   el.style.transition = 'background .3s';
-  el.style.background = color.replace(')', ',.22)').replace('var(', 'rgba(').replace('--accent','79,142,247').replace('--green','34,197,94');
+  el.style.background = color.replace(')', ',.22)').replace('var(', 'rgba(').replace('--accent','47,125,109').replace('--green','22,138,91');
   setTimeout(() => { el.style.background=''; }, 600);
 }
 
@@ -887,12 +1047,59 @@ async function submitTask(desc, solic, pcName, isDone, tipo, prio) {
     });
     const data = await res.json();
     if (data.status === 'success') {
-      playBeep('new');
+      playTaskAlarm();
       await refreshData(true);
       return true;
     }
   } catch(e) { console.error(e); }
   return false;
+}
+
+async function subscribeToPush(requestPermission = false) {
+  try {
+    if (!('serviceWorker' in navigator) || !('Notification' in window) || !window.firebase) return;
+    const supported = await firebase.messaging.isSupported().catch(() => false);
+    if (!supported) return;
+    let permission = Notification.permission;
+    if (permission !== 'granted' && requestPermission) {
+      permission = await Notification.requestPermission();
+    }
+    if (permission !== 'granted') return;
+    const swReg = await navigator.serviceWorker.register('/sw.js');
+    const messaging = firebase.messaging();
+    const token = await messaging.getToken({
+      vapidKey: VAPID_PUBLIC_KEY,
+      serviceWorkerRegistration: swReg
+    });
+    if (!token) return;
+    await postJSON(API + '/subscribe_push', { token });
+    pushSubscribed = true;
+    updateAlertsButton();
+    messaging.onMessage((payload) => {
+      playTaskAlarm();
+      const title = payload.notification?.title || 'Nueva tarea disponible';
+      const body = payload.notification?.body || 'Hay una tarea para revisar.';
+      if (document.visibilityState === 'visible' && Notification.permission === 'granted') {
+        new Notification(title, { body, icon: '/static/icon-192.png', silent: false, requireInteraction: true });
+      }
+      refreshData(true);
+    });
+  } catch(e) {
+    console.warn('[FCM] No se pudo activar push en Técnicos:', e);
+  }
+}
+
+async function enableAlerts() {
+  playTaskAlarm();
+  await subscribeToPush(true);
+  updateAlertsButton();
+}
+
+function updateAlertsButton() {
+  const btn = document.getElementById('enableAlertsBtn');
+  if (!btn) return;
+  const granted = 'Notification' in window && Notification.permission === 'granted';
+  btn.style.display = granted && pushSubscribed ? 'none' : '';
 }
 
 // ── Manual Modal ──────────────────────────────────
@@ -1002,10 +1209,12 @@ function animateWave(active) {
 
 // ── Notifications ─────────────────────────────────
 async function loadNotifications() {
+  if (!isAdmin) return;
   try {
     const res = await fetch(API + '/notifications');
     const rows = await res.json();
     const el = document.getElementById('list-avisos');
+    if (!el) return;
     if (!rows.length) {
       el.innerHTML = `<div class="empty-state"><i class="bi bi-bell-slash"></i><p>Sin avisos recientes</p></div>`;
       return;
@@ -1020,7 +1229,7 @@ async function loadNotifications() {
     // Badge
     const newOnes = rows.filter(n => !knownNotifIds.has(n.id));
     if (newOnes.length && knownNotifIds.size > 0) {
-      playBeep('new');
+      playTaskAlarm();
       const badge = document.getElementById('badge-avisos');
       badge.textContent = newOnes.length; badge.style.display='';
     }
@@ -1032,6 +1241,10 @@ async function loadNotifications() {
 function escHtml(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escAttr(s) {
+  return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, ' ');
 }
 
 function fmtTime(s) {
@@ -1062,7 +1275,7 @@ async function poll() {
     const data = await res.json();
     if (data.error) return;
     const newCount = (data.active_tasks||[]).length;
-    if (prevTaskCount > 0 && newCount > prevTaskCount) playBeep('new');
+    if (prevTaskCount > 0 && newCount > prevTaskCount) playTaskAlarm();
     prevTaskCount = newCount;
     allData = data;
     fillPcSelects(data.pcs || []);
@@ -1072,10 +1285,27 @@ async function poll() {
 
 // ── Init ──────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('pcPickerSearch')?.addEventListener('input', renderPcPickerList);
   await refreshData();
+  subscribeToPush();
+  updateAlertsButton();
   prevTaskCount = (allData.active_tasks||[]).length;
-  setInterval(poll, 30000);
+  setInterval(poll, 10000);
 });
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+<script>
+  if (window.firebase && !firebase.apps.length) {
+    firebase.initializeApp({
+      apiKey: "AIzaSyC6PcD59xCNoqodWc3j3Xx-RkYaWRbUwHg",
+      authDomain: "inventario-gold.firebaseapp.com",
+      projectId: "inventario-gold",
+      storageBucket: "inventario-gold.firebasestorage.app",
+      messagingSenderId: "155956386088",
+      appId: "1:155956386088:web:0aac3dcc29079442ff981d"
+    });
+  }
 </script>
 </body>
 </html>

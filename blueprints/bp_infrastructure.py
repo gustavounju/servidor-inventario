@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database.db_core import get_db_connection
 from datetime import datetime as dt
-import requests
 from utils.auth import current_username
 import asyncio
 try:
@@ -293,17 +292,8 @@ def assign_ups_to_pc(ups_id):
 
 @bp_infrastructure.route('/status_check')
 def status_check():
-    """Verifica el estado del sistema SIGJ"""
-    url = "https://sigj.justiciajujuy.gov.ar/mentradas/sesiones/login"
-    try:
-        # Usamos un timeout corto para no bloquear demasiado si el sitio está caído
-        response = requests.get(url, timeout=5, verify=False)
-        if response.status_code == 200:
-            return {"status": "online", "code": response.status_code}
-        else:
-            return {"status": "offline", "code": response.status_code}
-    except Exception as e:
-        return {"status": "offline", "error": str(e)}
+    """Chequeo SIGJ deshabilitado para no generar tráfico contra el sitio."""
+    return {"status": "disabled", "message": "SIGJ status check disabled"}
 
 @bp_infrastructure.route('/ups/<int:id>/delete', methods=['POST'])
 def delete_ups(id):

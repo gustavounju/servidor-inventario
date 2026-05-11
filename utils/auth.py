@@ -16,6 +16,7 @@ PERMISSION_COLUMN_MAP = {
     "mobile": "can_access_mobile",
     "infrastructure": "can_access_infrastructure",
     "reports": "can_access_reports",
+    "operadores": "can_access_operadores",
 }
 
 ROLE_PRESETS = {
@@ -26,10 +27,11 @@ ROLE_PRESETS = {
         "reports": True,
     },
     "operador": {
-        "dashboard": True,
-        "mobile": True,
+        "dashboard": False,
+        "mobile": False,
         "infrastructure": False,
-        "reports": True,
+        "reports": False,
+        "operadores": True,
     },
     "tecnico": {
         "dashboard": False,
@@ -79,6 +81,13 @@ MODULE_DEFINITIONS = [
         "endpoint": "tecnicos.tecnicos_view",
         "icon": "bi-phone-fill",
         "active_prefixes": ["tecnicos.", "mobile."],
+    },
+    {
+        "key": "operadores",
+        "label": "Operadores",
+        "endpoint": "operadores.operadores_view",
+        "icon": "bi-headset",
+        "active_prefixes": ["operadores."],
     },
 ]
 
@@ -183,6 +192,9 @@ def has_permission(permission_name, user=None):
         return False
     if user.get("is_superuser"):
         return True
+    role_defaults = ROLE_PRESETS.get((user.get("role") or "").strip().lower(), {})
+    if role_defaults.get(permission_name):
+        return True
     permissions = user.get("permissions") or {}
     return bool(permissions.get(permission_name))
 
@@ -227,6 +239,10 @@ def allowed_module_links(user=None):
         # Ocultar el link de Técnicos en escritorio si el usuario tiene acceso al dashboard
         if module["key"] == "mobile" and has_permission("dashboard", user) and not is_mobile_client:
             continue
+        # Ocultar links irrelevantes para operadores en su vista simplificada
+        if user.get("role") == "operador" and module["key"] in ["infrastructure"]:
+            continue
+            
         links.append({
             "key": module["key"],
             "label": module["label"],
@@ -279,7 +295,7 @@ def _fetch_auth_user(username):
             """
             SELECT id, username, display_name, role, technician_name, password_hash,
                    is_superuser, is_active, must_change_password, phone,
-                   can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports
+                   can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores
             FROM app_users
             WHERE username = %s
             LIMIT 1
@@ -397,7 +413,7 @@ def _ensure_ad_shadow_user(ad_user):
             """
             SELECT id, username, display_name, role, technician_name, password_hash,
                    is_superuser, is_active, must_change_password, phone,
-                   can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports
+                   can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores
             FROM app_users WHERE username = %s LIMIT 1
             """,
             (username,),
@@ -439,9 +455,9 @@ def _ensure_ad_shadow_user(ad_user):
             INSERT INTO app_users (
                 username, display_name, role, technician_name, password_hash,
                 is_superuser, is_active, must_change_password, phone,
-                can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports
+                can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores
             )
-            VALUES (%s, %s, %s, NULL, %s, %s, %s, 0, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, NULL, %s, %s, %s, 0, %s, %s, %s, %s, %s, %s)
             """,
             (
                 username,
@@ -455,6 +471,7 @@ def _ensure_ad_shadow_user(ad_user):
                 1 if default_permissions["mobile"] else 0,
                 1 if default_permissions["infrastructure"] else 0,
                 1 if default_permissions["reports"] else 0,
+                1 if default_permissions.get("operadores") else 0,
             ),
         )
         conn.commit()
@@ -472,6 +489,7 @@ def _ensure_ad_shadow_user(ad_user):
                 "can_access_mobile": default_permissions["mobile"],
                 "can_access_infrastructure": default_permissions["infrastructure"],
                 "can_access_reports": default_permissions["reports"],
+                "can_access_operadores": default_permissions.get("operadores", False),
                 "phone": ad_user.get("phone") or "",
             },
             "ad",
@@ -523,11 +541,13 @@ def list_app_users():
     with get_db_connection() as conn:
         rows = conn.execute(
             """
-            SELECT id, username, display_name, role, technician_name, is_superuser, is_active,
-                   must_change_password, phone, can_access_dashboard, can_access_mobile,
-                   can_access_infrastructure, can_access_reports, created_at, updated_at
-            FROM app_users
-            ORDER BY is_superuser DESC, username ASC
+            SELECT au.id, au.username, au.display_name, au.role, au.technician_name, au.is_superuser, au.is_active,
+                   au.must_change_password, au.phone, au.can_access_dashboard, au.can_access_mobile,
+                   au.can_access_infrastructure, au.can_access_reports, au.can_access_operadores, au.created_at, au.updated_at,
+                   CASE WHEN ad.username IS NULL THEN 0 ELSE 1 END AS is_ad_user
+            FROM app_users au
+            LEFT JOIN ad_users ad ON LOWER(ad.username) = LOWER(au.username)
+            ORDER BY au.is_superuser DESC, au.username ASC
             """
         ).fetchall()
     return [dict(row) for row in rows]
@@ -540,7 +560,7 @@ def list_technician_users():
         if not row.get("is_active"):
             continue
         role = (row.get("role") or "").strip().lower()
-        if role == "consulta":
+        if role in {"consulta", "operador"}:
             continue
 
         explicit_mobile_identity = bool((row.get("technician_name") or "").strip())
@@ -601,9 +621,9 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Fal
             INSERT INTO app_users (
                 username, display_name, role, technician_name, password_hash,
                 is_superuser, is_active, must_change_password, phone,
-                can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports
+                can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE
                 display_name = VALUES(display_name),
                 role = VALUES(role),
@@ -616,6 +636,7 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Fal
                 can_access_mobile = VALUES(can_access_mobile),
                 can_access_infrastructure = VALUES(can_access_infrastructure),
                 can_access_reports = VALUES(can_access_reports),
+                can_access_operadores = VALUES(can_access_operadores),
                 phone = VALUES(phone),
                 updated_at = CURRENT_TIMESTAMP
             """,
@@ -633,6 +654,7 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Fal
                 1 if effective_permissions["mobile"] else 0,
                 1 if effective_permissions["infrastructure"] else 0,
                 1 if effective_permissions["reports"] else 0,
+                1 if effective_permissions.get("operadores") else 0,
             ),
         )
         conn.commit()
@@ -705,6 +727,8 @@ def required_permission_for_endpoint(endpoint=None):
     endpoint = endpoint or request.endpoint or ""
     if endpoint.startswith("mobile.") or endpoint.startswith("tecnicos."):
         return "mobile"
+    if endpoint.startswith("operadores."):
+        return "operadores"
 
     mobile_allowed_stock_endpoints = {
         "stock.get_component", 
@@ -742,8 +766,13 @@ def default_landing_url(user=None):
     ua = (request.user_agent.string or "").lower()
     is_mobile_client = any(token in ua for token in ["android", "iphone", "ipad", "mobile"])
 
+    # Redirección específica para Operadores Telefónicos
+    if user.get("role") == "operador":
+        return url_for("operadores.operadores_view")
+
     if is_mobile_client and has_permission("mobile", user):
         return url_for("tecnicos.tecnicos_view")
+
     if has_permission("dashboard", user):
         return url_for("dashboard.dashboard")
     if has_permission("infrastructure", user):
@@ -812,9 +841,11 @@ def auth_guard():
     
     if is_mobile_client:
         permission_name = required_permission_for_endpoint()
-        # Si estamos en móvil, solo permitimos endpoints de la categoría 'mobile'
+        # Si estamos en móvil, permitimos las experiencias diseñadas para celular.
         # o endpoints públicos (que ya pasaron el primer filtro de should_enforce_auth).
-        if permission_name != "mobile":
+        if permission_name not in {"mobile", "operadores"}:
+            if refreshed_user.get("role") == "operador":
+                return redirect(url_for("operadores.operadores_view"))
             # Si tiene permiso de móvil, lo mandamos allá. Si no, login/logout manejarán el resto.
             if refreshed_user.get("can_access_mobile") or refreshed_user.get("is_superuser"):
                 return redirect(url_for("tecnicos.tecnicos_view"))

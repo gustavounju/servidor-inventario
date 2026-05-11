@@ -24,6 +24,7 @@ def normalize_managed_user_form(form):
             "mobile": form.get("perm_mobile") == "on",
             "infrastructure": form.get("perm_infrastructure") == "on",
             "reports": form.get("perm_reports") == "on",
+            "operadores": form.get("perm_operadores") == "on",
         },
     }
 

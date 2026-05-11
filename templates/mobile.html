@@ -370,10 +370,6 @@
             🛠️ <span id="headerName" style="margin-left:5px;">GOLD Mobile</span>
         </div>
         <div class="header-actions" style="display:flex; gap:8px; align-items:center;">
-            <div title="Estado SIGJ" style="display:flex; align-items:center; background:rgba(0,0,0,0.15); padding:4px 8px; border-radius:10px; font-size:0.7rem; gap:5px;">
-                 <span id="sigj-mobile-status-dot" class="status-dot-blink bg-warning" style="width:7px; height:7px; border-radius:50%; display:inline-block;"></span>
-                 <span id="sigj-mobile-status-text" class="fw-bold">...</span>
-            </div>
             <button id="btnSound" onclick="toggleSound()" class="header-btn" style="background:transparent; border:none; color:#fff; font-size:1.2rem; padding:4px;">
                 <i id="iconSound" class="bi bi-volume-up-fill"></i>
             </button>
@@ -437,20 +433,22 @@
             </div>
         </div>
 
-        <!-- Tab: Notificaciones -->
-        <div id="tabNotifs" style="display:none;">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="section-title">Historial de Alertas</div>
-                <button class="btn btn-sm btn-outline-secondary" onclick="loadNotifications()" style="border-radius:8px;">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
-            </div>
-            <div id="notifsList">
-                <div class="empty-state"><i class="bi bi-chat-left-dots"></i>
-                    <p>Cargando historial...</p>
+        {% if current_user.role != 'operador' %}
+            <!-- Tab: Notificaciones -->
+            <div id="tabNotifs" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="section-title">Historial de Alertas</div>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadNotifications()" style="border-radius:8px;">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                <div id="notifsList">
+                    <div class="empty-state"><i class="bi bi-chat-left-dots"></i>
+                        <p>Cargando historial...</p>
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
     </div>
 
     <!-- FAB Add Button -->
@@ -469,10 +467,12 @@
             <span>Libres <span id="navPoolCount" class="badge rounded-pill bg-danger ms-1"
                     style="display:none;"></span></span>
         </a>
-        <a href="#" class="nav-item" onclick="switchTab('notifs')">
-            <i class="bi bi-chat-text"></i>
-            <span>Avisos <span id="navNotifCount" class="badge rounded-pill bg-danger ms-1" style="display:none;"></span></span>
-        </a>
+        {% if current_user.role != 'operador' %}
+            <a href="#" class="nav-item" onclick="switchTab('notifs')">
+                <i class="bi bi-chat-text"></i>
+                <span>Avisos <span id="navNotifCount" class="badge rounded-pill bg-danger ms-1" style="display:none;"></span></span>
+            </a>
+        {% endif %}
     </div>
 
     <!-- Toast: nueva notificación -->
@@ -562,6 +562,7 @@
     <script>
         // --- DATA & STATE ---
         let currentUser = {{ (mobile_identity or current_user.technician_name or current_user.display_name or current_user.username or '')|tojson }};
+        const isOperator = {{ (current_user.role == 'operador')|tojson }};
         const preferredTechnician = currentUser;
         let currentTab = 'myTasks';
 
@@ -802,7 +803,7 @@
                 }
 
                 // Background notification check (Avisos en tiempo real)
-                try {
+                if (!isOperator) try {
                     const nRes = await fetch('/api/mobile/notifications?t=' + Date.now());
                     const nData = await nRes.json();
                     if (Array.isArray(nData) && nData.length > 0) {
@@ -1014,10 +1015,12 @@
         }
 
         function switchTab(tab) {
+            if (isOperator && tab === 'notifs') return;
             currentTab = tab;
             document.getElementById('tabMyTasks').style.display = tab === 'myTasks' ? 'block' : 'none';
             document.getElementById('tabPool').style.display = tab === 'pool' ? 'block' : 'none';
-            document.getElementById('tabNotifs').style.display = tab === 'notifs' ? 'block' : 'none';
+            const tabNotifs = document.getElementById('tabNotifs');
+            if (tabNotifs) tabNotifs.style.display = tab === 'notifs' ? 'block' : 'none';
 
             const items = document.querySelectorAll('.nav-item');
             if (items.length >= 3) {
@@ -1040,6 +1043,7 @@
         }
 
         function openAvisosFromToast() {
+            if (isOperator) return;
             document.getElementById('notifToast').style.display = 'none';
             switchTab('notifs');
         }
@@ -1064,7 +1068,9 @@
         }
 
         async function loadNotifications() {
+            if (isOperator) return;
             const container = document.getElementById('notifsList');
+            if (!container) return;
             try {
                 const res = await fetch('/api/mobile/notifications?t=' + Date.now());
                 const data = await res.json();
@@ -1399,41 +1405,6 @@
         function capitalize(s) {
             return s && s[0].toUpperCase() + s.slice(1);
         }
-
-        // --- SIGJ STATUS FETCH ---
-        document.addEventListener('DOMContentLoaded', function () {
-            const statusDot = document.getElementById('sigj-mobile-status-dot');
-            const statusText = document.getElementById('sigj-mobile-status-text');
-
-            if (statusDot && statusText) {
-                fetch('/infra/status_check')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (statusDot) statusDot.classList.remove('status-dot-blink', 'bg-warning');
-                        if (data.status === 'online') {
-                            if (statusDot) statusDot.classList.add('bg-success');
-                            if (statusText) {
-                                statusText.innerText = 'ON';
-                                statusText.style.color = '#afffaf';
-                            }
-                        } else {
-                            if (statusDot) statusDot.classList.add('bg-danger');
-                            if (statusText) {
-                                statusText.innerText = 'OFF';
-                                statusText.style.color = '#ff9999';
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching SIGJ status:', error);
-                        if (statusDot) {
-                           statusDot.classList.remove('status-dot-blink', 'bg-warning');
-                           statusDot.classList.add('bg-secondary');
-                        }
-                        if (statusText) statusText.innerText = 'ERR';
-                    });
-            }
-        });
 
         // --- FIREBASE PUSH SUBSCRIPTION ---
         async function subscribeToPush() {

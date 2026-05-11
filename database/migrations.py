@@ -632,8 +632,18 @@ def run_all_migrations():
     migrate_db_v29()
     migrate_db_v30()
     migrate_db_v31()
+    migrate_db_v33()
     with get_db_connection() as conn:
         migration_v32(conn)
+
+def migrate_db_v33():
+    """Migración V33: Permiso de acceso para Operadores Telefónicos."""
+    print("Verificando migración de DB v33...")
+    with get_db_connection() as conn:
+        if not _column_exists(conn, "app_users", "can_access_operadores"):
+            print("Aplicando migración V33: Agregando 'can_access_operadores' a app_users...")
+            conn.execute("ALTER TABLE app_users ADD COLUMN can_access_operadores TINYINT(1) DEFAULT 0")
+    print("Migración V33 verificada.")
 
 def migrate_db_v31():
     """Migración V31: Infraestructura de Planos y Coordenadas."""

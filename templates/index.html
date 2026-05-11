@@ -365,32 +365,6 @@
         {% endfor %}
     </datalist>
 
-    <!-- Fetch SIGJ Status -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const headerDot = document.getElementById('sigjHeaderDot');
-            const headerText = document.getElementById('sigjHeaderText');
-
-            fetch('/infra/status_check')
-                .then(response => response.json())
-                .then(data => {
-                    const isOnline = data.status === 'online';
-                    
-                    if (headerDot && headerText) {
-                        headerDot.className = 'sigj-dot ' + (isOnline ? 'sigj-online' : 'sigj-offline');
-                        headerText.innerText = isOnline ? 'Online' : 'Offline';
-                        headerText.style.color = isOnline ? '#10b981' : '#ef4444';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching SIGJ status:', error);
-                    if (headerDot && headerText) {
-                        headerDot.className = 'sigj-dot';
-                        headerText.innerText = 'Error';
-                    }
-                });
-        });
-    </script>
 </body>
 
 </html>

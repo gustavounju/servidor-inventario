@@ -134,6 +134,7 @@
                                         <label class="um-label">Categoría Técnica</label>
                                         <select name="categoria" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
                                             <option value="">-- Detección Automática --</option>
+                                            <option value="Audiencias">🎥 Audiencias</option>
                                             <option value="Impresoras">🖨️ Impresoras</option>
                                             <option value="Red/Conectividad">🌐 Red / Conectividad</option>
                                             <option value="Hardware">🔌 Hardware</option>
@@ -257,6 +258,9 @@
                                 <span id="umFormResetBtn" class="um-reset-btn d-none" onclick="event.stopPropagation(); resetUserForm()">
                                     <i class="bi bi-x-circle me-1"></i>Cancelar edición
                                 </span>
+                                <span class="um-reset-btn" onclick="event.stopPropagation(); prepareLocalTechnicianUser()">
+                                    <i class="bi bi-person-gear me-1"></i>Técnico local
+                                </span>
                                 <i class="bi bi-chevron-down um-chevron" id="umChevron"></i>
                             </div>
                         </div>
@@ -265,6 +269,7 @@
                             <form action="{{ url_for('users.create_app_user') }}" method="POST" id="appUserForm">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="is_edit_mode" id="isEditMode" value="0">
+                                <input type="hidden" name="next_url" value="{{ request.full_path }}{% if not '#' in request.full_path %}#usersModal{% endif %}">
 
                                 <div class="um-form-grid">
                                     <div class="um-field">
@@ -310,6 +315,7 @@
                                         <label class="um-perm-chip"><input type="checkbox" name="perm_mobile" id="permMobile" checked><span><i class="bi bi-phone"></i> Móvil</span></label>
                                         <label class="um-perm-chip"><input type="checkbox" name="perm_infrastructure" id="permInfrastructure"><span><i class="bi bi-hdd-network"></i> Infra</span></label>
                                         <label class="um-perm-chip"><input type="checkbox" name="perm_reports" id="permReports"><span><i class="bi bi-file-bar-graph"></i> Reportes</span></label>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_operadores" id="permOperadores"><span><i class="bi bi-headset"></i> Operadores</span></label>
                                     </div>
                                     <div class="um-flags-row">
                                         <label class="um-flag-chip"><input type="checkbox" name="is_superuser" id="newIsSuperuser" onchange="applyRolePreset()"><span><i class="bi bi-lightning-fill text-warning"></i> Superusuario</span></label>
@@ -362,6 +368,15 @@
                                     {% endif %}
                                 </div>
                             </div>
+                            <div style="margin-top: -6px; margin-bottom: 8px;">
+                                {% if is_ad %}
+                                    <span class="um-access-dot" title="Cuenta de Active Directory"><i class="bi bi-windows"></i></span>
+                                    <span style="font-size: 0.72rem; color: var(--text-muted);">AD · clave externa</span>
+                                {% else %}
+                                    <span class="um-access-dot" title="Cuenta local"><i class="bi bi-person-lock"></i></span>
+                                    <span style="font-size: 0.72rem; color: var(--text-muted);">Local · clave editable</span>
+                                {% endif %}
+                            </div>
 
                             <!-- Rol + Accesos -->
                             <div class="um-user-card-mid">
@@ -395,6 +410,7 @@
                                     {% if app_user.can_access_mobile %}<span class="um-access-dot" title="Móvil"><i class="bi bi-phone-fill"></i></span>{% endif %}
                                     {% if app_user.can_access_infrastructure %}<span class="um-access-dot" title="Infraestructura"><i class="bi bi-hdd-network-fill"></i></span>{% endif %}
                                     {% if app_user.can_access_reports %}<span class="um-access-dot" title="Reportes"><i class="bi bi-file-earmark-bar-graph-fill"></i></span>{% endif %}
+                                    {% if app_user.can_access_operadores %}<span class="um-access-dot" title="Operadores"><i class="bi bi-headset"></i></span>{% endif %}
                                 </div>
                             </div>
 
@@ -413,6 +429,7 @@
                                 {% if app_user.username != current_user.username %}
                                 <form action="{{ url_for('users.remove_app_user', user_id=app_user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar a {{ app_user.username }}? Esta acción no se puede deshacer.')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="next_url" value="{{ request.full_path }}{% if not '#' in request.full_path %}#usersModal{% endif %}">
                                     <button type="submit" class="um-action-btn um-action-delete"><i class="bi bi-trash3-fill"></i></button>
                                 </form>
                                 {% endif %}
@@ -1251,12 +1268,31 @@
         document.getElementById('newIsActive').checked = true;
         document.getElementById('newMustChangePassword').checked = false;
         document.getElementById('appUsername').readOnly = false;
+        const passwordEl = document.getElementById('appPassword');
+        passwordEl.disabled = false;
+        passwordEl.required = false;
+        passwordEl.placeholder = 'Clave del usuario';
+        document.getElementById('toggleAppPassword').disabled = false;
         document.getElementById('btnSubmitAppUser').innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar';
         document.getElementById('umFormTitle').innerText = 'Nuevo Usuario';
         document.getElementById('umFormIcon').className = 'um-form-icon';
         document.getElementById('umFormIcon').innerHTML = '<i class="bi bi-person-plus-fill"></i>';
         document.getElementById('umFormResetBtn').classList.add('d-none');
         applyRolePreset();
+    }
+
+    function prepareLocalTechnicianUser() {
+        resetUserForm();
+        document.getElementById('appRole').value = 'tecnico';
+        document.getElementById('newIsActive').checked = true;
+        const passwordEl = document.getElementById('appPassword');
+        passwordEl.disabled = false;
+        passwordEl.required = true;
+        passwordEl.placeholder = 'Clave local obligatoria';
+        document.getElementById('appTechName').placeholder = 'Nombre que verá la app móvil';
+        applyRolePreset();
+        if (!umFormOpen) { toggleUserForm(); }
+        document.getElementById('appUsername').focus();
     }
 
 </script>
@@ -1312,6 +1348,7 @@
         if (preset.mobile) fields['perm_mobile'] = 'on';
         if (preset.infrastructure) fields['perm_infrastructure'] = 'on';
         if (preset.reports) fields['perm_reports'] = 'on';
+        if (preset.operadores) fields['perm_operadores'] = 'on';
 
         for (const [key, value] of Object.entries(fields)) {
             const input = document.createElement('input');
@@ -1358,11 +1395,11 @@
     }
 
     const rolePresets = {
-        administrador: { dashboard: true, mobile: true, infrastructure: true, reports: true },
-        operador: { dashboard: true, mobile: true, infrastructure: false, reports: true },
-        tecnico: { dashboard: false, mobile: true, infrastructure: false, reports: false },
-        infraestructura: { dashboard: true, mobile: true, infrastructure: true, reports: true },
-        consulta: { dashboard: false, mobile: false, infrastructure: false, reports: true }
+        administrador: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false },
+        operador: { dashboard: false, mobile: false, infrastructure: false, reports: false, operadores: true },
+        tecnico: { dashboard: false, mobile: true, infrastructure: false, reports: false, operadores: false },
+        infraestructura: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false },
+        consulta: { dashboard: false, mobile: false, infrastructure: false, reports: true, operadores: false }
     };
 
     function setAccessChecks(values) {
@@ -1371,6 +1408,8 @@
         document.getElementById('permMobile').checked = !!values.mobile;
         document.getElementById('permInfrastructure').checked = !!values.infrastructure;
         document.getElementById('permReports').checked = !!values.reports;
+        const operadoresEl = document.getElementById('permOperadores');
+        if (operadoresEl) operadoresEl.checked = !!values.operadores;
     }
 
     function applyRolePreset() {
@@ -1387,7 +1426,7 @@
         }
 
         if (superuserEl.checked) {
-            setAccessChecks({ dashboard: true, mobile: true, infrastructure: true, reports: true });
+            setAccessChecks({ dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: true });
             return;
         }
         setAccessChecks(rolePresets[role] || rolePresets.tecnico);
@@ -1410,18 +1449,21 @@
             dashboard: !!user.can_access_dashboard,
             mobile: !!user.can_access_mobile,
             infrastructure: !!user.can_access_infrastructure,
-            reports: !!user.can_access_reports
+            reports: !!user.can_access_reports,
+            operadores: !!user.can_access_operadores
         });
         const passwordEl = document.getElementById('appPassword');
         const isAD = adUsernamesSet.has((user.username || '').toLowerCase());
 
         if (isAD) {
             passwordEl.disabled = true;
+            passwordEl.required = false;
             passwordEl.placeholder = 'Clave gestionada por Active Directory';
             passwordEl.value = '';
             document.getElementById('toggleAppPassword').disabled = true;
         } else {
             passwordEl.disabled = false;
+            passwordEl.required = false;
             passwordEl.placeholder = 'Dejar vacío para no cambiar';
             document.getElementById('toggleAppPassword').disabled = false;
         }
@@ -1467,8 +1509,12 @@
         document.getElementById('appDisplayName').value = realname || '';
         document.getElementById('appPhone').value = '';
         document.getElementById('appPassword').value = '';
-        document.getElementById('appPassword').placeholder = 'Contraseña obligatoria';
-        document.getElementById('appPassword').required = true;
+        const passwordEl = document.getElementById('appPassword');
+        const isAD = adUsernamesSet.has((username || '').toLowerCase());
+        passwordEl.disabled = isAD;
+        passwordEl.required = !isAD;
+        passwordEl.placeholder = isAD ? 'Clave gestionada por Active Directory' : 'Contraseña obligatoria';
+        document.getElementById('toggleAppPassword').disabled = isAD;
         
         // Scrollear al formulario para que el usuario sepa que ocurrió algo
         document.querySelector('#usersModal .modal-body').scrollTo({ top: 0, behavior: 'smooth' });
@@ -1979,6 +2025,7 @@
             <div class="modal-content shadow-lg border-warning">
                 <form action="{{ url_for('users.reset_app_user_password') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next_url" value="{{ request.full_path }}{% if not '#' in request.full_path %}#usersModal{% endif %}">
                     <input type="hidden" name="username" id="resetPassUsername">
                     <div class="modal-header bg-warning py-2">
                         <h6 class="modal-title fw-bold"><i class="bi bi-key-fill me-2"></i>Nueva Clave</h6>
@@ -2139,6 +2186,7 @@
     .pt-card[data-cat="Red/Conectividad"]::before { background: #8b5cf6; }
     .pt-card[data-cat="Hardware"]::before { background: #f43f5e; }
     .pt-card[data-cat="Software"]::before { background: #10b981; }
+    .pt-card[data-cat="Audiencias"]::before { background: #f59e0b; }
 
     .pt-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .pt-pc-info { min-width: 0; }
@@ -2351,56 +2399,56 @@
 {% if auxiliary_pcs %}
 {% for pc in auxiliary_pcs %}
 <div class="modal fade" id="auxModal_{{ pc.pc_name | replace(' ', '_') | replace('-', '_') }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 900px;">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1120px;">
         <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 0;">
-                <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; gap: 18px;">
+                    <div style="display: flex; align-items: center; gap: 16px; min-width: 0;">
                         <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2);">
                             <i class="bi {% if 'GENERICA' in pc.pc_name.upper() %}bi-inbox{% else %}bi-diagram-3{% endif %}" style="color: #fff; font-size: 1.2rem;"></i>
                         </div>
-                        <div>
-                            <h5 class="modal-title mb-0 fw-bold text-white" style="font-size: 1.1rem; letter-spacing: -0.02em;">Panel de Tareas: {{ pc.pc_name }}</h5>
+                        <div style="min-width: 0;">
+                            <h5 class="modal-title mb-0 fw-bold text-white" style="font-size: 1.1rem; letter-spacing: -0.02em; line-height: 1.25; overflow-wrap: anywhere;">Panel de Tareas: {{ pc.pc_name }}</h5>
                             <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 3px;">
                                 Gestión de tareas y reportes asignados a esta unidad.
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                    <button type="button" class="btn-close btn-close-white flex-shrink-0" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
                 </div>
             </div>
 
-            <div class="modal-body" style="padding: 30px; background: #f8fafc;">
+            <div class="modal-body" style="padding: 24px 28px; background: #f8fafc;">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold mb-0" style="color: #0f172a;"><i class="bi bi-list-task me-2 text-primary"></i> Tareas Pendientes</h6>
                 </div>
 
                 <div class="table-responsive" style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
-                    <table class="table table-hover mb-0" style="font-size: 0.85rem;">
+                    <table class="table table-hover mb-0" style="font-size: 0.85rem; table-layout: fixed; min-width: 860px;">
                         <thead style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
                             <tr>
-                                <th style="color: #475569; font-weight: 600; padding: 12px 16px;">Fecha</th>
-                                <th style="color: #475569; font-weight: 600; padding: 12px 16px;">Descripción</th>
-                                <th style="color: #475569; font-weight: 600; padding: 12px 16px;">Solicitante</th>
-                                <th style="color: #475569; font-weight: 600; padding: 12px 16px;">Técnico</th>
-                                <th style="color: #475569; font-weight: 600; padding: 12px 16px; text-align: right;">Acciones</th>
+                                <th style="width: 105px; color: #475569; font-weight: 600; padding: 12px 14px;">Fecha</th>
+                                <th style="width: 32%; color: #475569; font-weight: 600; padding: 12px 14px;">Descripción</th>
+                                <th style="width: 24%; color: #475569; font-weight: 600; padding: 12px 14px;">Solicitante</th>
+                                <th style="width: 190px; color: #475569; font-weight: 600; padding: 12px 14px;">Técnico</th>
+                                <th style="width: 132px; color: #475569; font-weight: 600; padding: 12px 14px; text-align: right;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% if pc.tareas %}
                                 {% for t in pc.tareas %}
                                 <tr>
-                                    <td style="padding: 12px 16px; vertical-align: middle;">
+                                    <td style="padding: 12px 14px; vertical-align: middle;">
                                         <span class="text-muted" style="font-size: 0.8rem;">{{ t.created_at | datetime_es }}</span>
                                     </td>
-                                    <td style="padding: 12px 16px; vertical-align: middle; max-width: 300px;">
-                                        <div class="text-truncate fw-medium" style="color: #1e293b;" title="{{ t.descripcion }}">{{ t.descripcion }}</div>
+                                    <td style="padding: 12px 14px; vertical-align: middle;">
+                                        <div class="fw-medium" style="color: #1e293b; line-height: 1.35; overflow-wrap: anywhere;" title="{{ t.descripcion }}">{{ t.descripcion }}</div>
                                     </td>
-                                    <td style="padding: 12px 16px; vertical-align: middle;">{{ t.solicitante or '-' }}</td>
-                                    <td style="padding: 12px 16px; vertical-align: middle;">
+                                    <td style="padding: 12px 14px; vertical-align: middle; line-height: 1.35; overflow-wrap: anywhere;">{{ t.solicitante or '-' }}</td>
+                                    <td style="padding: 12px 14px; vertical-align: middle;">
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge" style="background: #e0e7ff; color: #4338ca; border-radius: 6px; padding: 5px 8px;">{{ t.assigned_to or '-' }}</span>
+                                            <span class="badge" style="background: #e0e7ff; color: #4338ca; border-radius: 6px; padding: 5px 8px; white-space: normal; text-align: left;">{{ t.assigned_to or '-' }}</span>
                                             {% if t.estado != 'Hecha' %}
                                             <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1" 
                                               style="font-size: 0.75rem; border-radius: 4px;" 
@@ -2411,7 +2459,7 @@
                                             {% endif %}
                                         </div>
                                     </td>
-                                    <td style="padding: 12px 16px; vertical-align: middle; text-align: right;">
+                                    <td style="padding: 12px 14px; vertical-align: middle; text-align: right;">
                                         <div class="d-flex justify-content-end gap-1">
                                             {% if t.estado == 'Hecha' %}
                                             <span class="badge" style="background: #10b981; color: white; border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: center; height: 31px;" title="Completada">

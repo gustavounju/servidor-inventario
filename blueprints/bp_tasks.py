@@ -11,9 +11,40 @@ from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.reporting import PDFReport, format_datetime_es, format_date_es
 from services.push_notifications import notify_all_technicians
-from utils.auth import superuser_required, current_username
+from utils.auth import superuser_required, current_username, list_technician_users
 
 bp_tasks = Blueprint('tasks', __name__)
+
+def _is_assignable_technician(name):
+    target = (name or "").strip().lower()
+    if not target:
+        return False
+    return any((tech.get("name") or "").strip().lower() == target for tech in list_technician_users())
+
+def _format_duration(start, end):
+    if not start:
+        return ""
+    end = end or dt.now()
+    total_minutes = max(0, int((end - start).total_seconds() // 60))
+    if total_minutes < 1:
+        return "<1m"
+    days, rem = divmod(total_minutes, 1440)
+    hours, minutes = divmod(rem, 60)
+    if days:
+        return f"{days}d {hours}h"
+    if hours:
+        return f"{hours}h {minutes}m"
+    return f"{minutes}m"
+
+def _decorate_visor_task(row):
+    task = dict(row)
+    created_at = task.get("created_at")
+    completed_at = task.get("completed_at")
+    task["created_at_fmt"] = created_at.strftime("%H:%M") if created_at else ""
+    task["completed_at_fmt"] = completed_at.strftime("%H:%M") if completed_at else ""
+    task["resolution_time"] = _format_duration(created_at, completed_at if task.get("estado") == "Hecha" else None)
+    task["resolution_label"] = "Resolución" if task.get("estado") == "Hecha" else "Abierta"
+    return task
 
 @bp_tasks.app_context_processor
 def inject_tasks_kpis():
@@ -182,7 +213,7 @@ def add_task(pc_name):
         notify_all_technicians(
             title="🚨 Nueva Tarea (PC)",
             body=cuerpo,
-            url="/mobile"
+            url="/tecnicos"
         )
     except Exception as e:
         print(f"Error notifying: {e}")
@@ -214,6 +245,9 @@ def mark_task_done(task_id):
     technician = request.form.get("technician_name")
     if not technician:
         technician = request.form.get("technician_name_hidden")
+    technician = (technician or "").strip()
+    if not _is_assignable_technician(technician):
+        return redirect(request.referrer or url_for("dashboard.dashboard"))
     with get_db_connection() as conn:
         row = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
         if row:
@@ -316,7 +350,7 @@ def create_loose_task():
         notify_all_technicians(
             title="🚨 Nueva Tarea Suelta",
             body=cuerpo,
-            url="/mobile"
+            url="/tecnicos"
         )
     except Exception as e:
         print(f"Error notifying: {e}")
@@ -328,6 +362,8 @@ def assign_task():
     task_id = request.form.get("task_id")
     pc_name = request.form.get("pc_name", "").strip()
     technician = request.form.get("technician", "").strip()
+    if technician and not _is_assignable_technician(technician):
+        technician = ""
 
     if task_id and pc_name:
         with get_db_connection() as conn:
@@ -358,10 +394,10 @@ def assign_task():
 @bp_tasks.route("/tasks/reassign", methods=["POST"])
 def reassign_task():
     task_id = request.form.get("task_id")
-    technician = request.form.get("technician")
+    technician = (request.form.get("technician") or "").strip()
     pc_name = request.form.get("pc_name")
     
-    if task_id and technician:
+    if task_id and technician and _is_assignable_technician(technician):
         with get_db_connection() as conn:
             conn.execute("UPDATE tasks SET assigned_to = %s, estado = 'Asignada' WHERE id = %s", (technician, task_id))
             
@@ -698,8 +734,8 @@ def visor():
             """).fetchall()
 
             return render_template("visor_tareas.html", 
-                                   tareas_hoy=tareas_hoy, 
-                                   tareas_anteriores=tareas_anteriores,
+                                   tareas_hoy=[_decorate_visor_task(t) for t in tareas_hoy], 
+                                   tareas_anteriores=[_decorate_visor_task(t) for t in tareas_anteriores],
                                    technicians=technicians,
                                    hoy=hoy)
     except Exception as e:
@@ -732,13 +768,7 @@ def api_visor_data():
             """).fetchall()
 
             def format_tasks(rows):
-                res = []
-                for t in rows:
-                    d = dict(t)
-                    if d['created_at']: d['created_at_fmt'] = d['created_at'].strftime("%H:%M")
-                    if d['completed_at']: d['completed_at_fmt'] = d['completed_at'].strftime("%H:%M")
-                    res.append(d)
-                return res
+                return [_decorate_visor_task(t) for t in rows]
             
             return jsonify({
                 "status": "success", 

@@ -25,7 +25,7 @@ messaging.onBackgroundMessage((payload) => {
         body: payload.notification?.body || 'Hay una actualización.',
         icon: '/static/icon-192.png',
         badge: '/static/icon-192.png',
-        vibrate: [200, 100, 200],
+        vibrate: [350, 120, 350, 120, 500],
         requireInteraction: true,
         renotify: true,
         tag: 'inventario-gold-alert',
@@ -47,7 +47,7 @@ self.addEventListener('notificationclick', (event) => {
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
             for (const client of clientList) {
-                if (client.url.includes('/mobile') && 'focus' in client) {
+                if ((client.url.includes('/mobile') || client.url.includes('/tecnicos')) && 'focus' in client) {
                     return client.focus();
                 }
             }

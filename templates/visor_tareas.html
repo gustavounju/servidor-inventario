@@ -190,6 +190,20 @@
             gap: 0.4rem;
         }
 
+        .duration-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.22rem 0.55rem;
+            border-radius: 20px;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            color: #bae6fd;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
         .btn-auth {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--visor-border);
@@ -287,6 +301,7 @@
                             <th style="width: 150px;" class="hide-mobile">Solicitante</th>
                             <th>Descripción del Trabajo</th>
                             <th style="width: 180px;">Técnico</th>
+                            <th style="width: 130px;">Resolución</th>
                             <th style="width: 130px;">Estado</th>
                         </tr>
                     </thead>
@@ -295,7 +310,7 @@
                             {% for task in tareas_hoy %}
                             <tr>
                                 <td class="time-cell">
-                                    {{ task.created_at.strftime('%H:%M') if task.created_at else '--:--' }}
+                                    {{ task.created_at_fmt or '--:--' }}
                                 </td>
                                 <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
                                 <td class="hide-mobile">
@@ -316,6 +331,12 @@
                                     {% endif %}
                                 </td>
                                 <td>
+                                    <span class="duration-pill" title="{{ task.resolution_label }}">
+                                        <i class="bi bi-stopwatch"></i>
+                                        {{ task.resolution_time or '-' }}
+                                    </span>
+                                </td>
+                                <td>
                                     <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
                                     <span class="fw-bold small">{{ task.estado }}</span>
                                 </td>
@@ -323,7 +344,7 @@
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">No hay trabajos registrados hoy.</td>
+                                <td colspan="7" class="text-center py-5 text-muted">No hay trabajos registrados hoy.</td>
                             </tr>
                         {% endif %}
                     </tbody>
@@ -384,7 +405,7 @@
         function renderHoy(tasks) {
             const tbody = document.getElementById('tableHoy');
             if (!tasks || tasks.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No hay trabajos registrados hoy.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No hay trabajos registrados hoy.</td></tr>';
                 return;
             }
 
@@ -406,6 +427,12 @@
                                 <span>${task.completed_by || task.assigned_to}</span>
                             </div>
                         ` : '<span class="text-muted small">Sin asignar</span>'}
+                    </td>
+                    <td>
+                        <span class="duration-pill" title="${task.resolution_label || ''}">
+                            <i class="bi bi-stopwatch"></i>
+                            ${task.resolution_time || '-'}
+                        </span>
                     </td>
                     <td>
                         <span class="status-dot status-dot-${task.estado.toLowerCase()}"></span>

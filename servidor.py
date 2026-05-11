@@ -27,6 +27,7 @@ from blueprints.bp_infrastructure import bp_infrastructure
 from blueprints.bp_tasks import bp_tasks
 from blueprints.bp_mobile import bp_mobile
 from blueprints.bp_tecnicos import bp_tecnicos
+from blueprints.bp_operadores import bp_operadores
 from blueprints.bp_auth import bp_auth
 from blueprints.bp_vault import bp_vault
 from blueprints.bp_users import bp_users
@@ -55,6 +56,7 @@ app.register_blueprint(bp_setup)
 app.register_blueprint(bp_tasks)
 app.register_blueprint(bp_mobile)
 app.register_blueprint(bp_tecnicos)
+app.register_blueprint(bp_operadores)
 app.register_blueprint(bp_infrastructure)
 app.register_blueprint(bp_auth)
 app.register_blueprint(bp_vault)
