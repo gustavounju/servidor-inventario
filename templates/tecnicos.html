@@ -51,6 +51,24 @@
       --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     }
 
+    :root[data-theme="pride"] {
+      --bg: #fdfafc;
+      --bg2: linear-gradient(90deg, #ff0018, #ffa52c, #ffff41, #008018, #0000f9, #86007d);
+      --bg3: #f3e8f0;
+      --card: #ffffff;
+      --card-hover: #faf5f8;
+      --border: rgba(134, 0, 125, 0.15);
+      --accent: #86007d;
+      --accent2: #ff0018;
+      --green: #008018;
+      --yellow: #ffa52c;
+      --red: #ff0018;
+      --text: #2d1b2e;
+      --text-muted: #8a6c8c;
+      --input-bg: #ffffff;
+      --shadow: 0 8px 24px rgba(255, 0, 120, 0.15);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; }
 
@@ -670,8 +688,9 @@ function toggleTheme() {
   const root = document.documentElement;
   const current = root.getAttribute('data-theme') || 'default';
   
-  // Alternar directo entre default y oscuro
-  const next = current === 'default' ? 'dark' : 'default';
+  let next = 'default';
+  if (current === 'default') next = 'dark';
+  else if (current === 'dark') next = 'pride';
 
   if (next === 'default') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', next);
