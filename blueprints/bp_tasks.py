@@ -74,12 +74,12 @@ def inject_tasks_kpis():
                 kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
                 kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
                 net_pr = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
-                loc_pr = conn.execute("""
+                loc_pr = conn.execute(\"\"\"
                     SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' 
                     AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
                     AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%') AND alerta_impresora_red = 0
                     AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
-                """).fetchone()["c"]
+                \"\"\").fetchone()["c"]
                 kpis['kpi_total_impresoras'] = net_pr + loc_pr
                 kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
                 # Mejoramos la consistencia del conteo de pendientes
@@ -106,10 +106,10 @@ def inject_tasks_kpis():
 
 @bp_tasks.route("/api/pending_tasks")
 def api_pending_tasks():
-    """API para obtener todas las tareas pendientes para el modal global."""
+    \"\"\"API para obtener todas las tareas pendientes para el modal global.\"\"\"
     try:
         with get_db_connection() as conn:
-            tasks = conn.execute("""
+            tasks = conn.execute(\"\"\"
                 SELECT t.id, t.pc_name, t.descripcion, t.solicitante, t.categoria, 
                        t.estado, t.assigned_to, t.created_at, t.fuero,
                        p.last_user, u.phone
@@ -118,7 +118,7 @@ def api_pending_tasks():
                 LEFT JOIN ad_users u ON t.solicitante = u.real_name OR t.solicitante = u.username
                 WHERE t.estado != 'Hecha'
                 ORDER BY t.created_at DESC
-            """).fetchall()
+            \"\"\").fetchall()
             
             # Formatear fechas para JSON
             result = []
@@ -185,8 +185,8 @@ def add_task(pc_name):
 
     with get_db_connection() as conn:
         cursor = conn.execute(
-            """INSERT INTO tasks (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto, assigned_to, estado) 
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
+            \"\"\"INSERT INTO tasks (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto, assigned_to, estado) 
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)\"\"\", 
             (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto, assigned_to, estado)
         )
         task_id = cursor.lastrowid
@@ -204,7 +204,7 @@ def add_task(pc_name):
             # Try to match solicitante against real_name or username
             user_row = conn.execute("SELECT phone FROM ad_users WHERE real_name = %s OR username = %s LIMIT 1", (solicitante, solicitante)).fetchone()
             if user_row and user_row["phone"]:
-                phone_info = f"📞 *Teléfono:* {user_row['phone']}\n"
+                phone_info = f"📞 *Teléfono:* {user_row['phone']}\\n"
 
         
         # Try to set locale for Spanish dates, fallback if not available
@@ -216,12 +216,12 @@ def add_task(pc_name):
             
         fecha_str = _dt.now().strftime("%A %d de %B de %Y").capitalize()
         
-        cuerpo = f"📅 *Fecha:* {fecha_str}\n"
-        cuerpo += f"🖥️ *PC/Equipo:* {pc_name}\n"
-        cuerpo += f"👤 *Solicitante:* {solicitante}\n"
+        cuerpo = f"📅 *Fecha:* {fecha_str}\\n"
+        cuerpo += f"🖥️ *PC/Equipo:* {pc_name}\\n"
+        cuerpo += f"👤 *Solicitante:* {solicitante}\\n"
         cuerpo += phone_info
-        cuerpo += f"🏷️ *Categoría:* {categoria}\n"
-        cuerpo += f"📝 *Descripción:* {descripcion}\n"
+        cuerpo += f"🏷️ *Categoría:* {categoria}\\n"
+        cuerpo += f"📝 *Descripción:* {descripcion}\\n"
 
         notify_all_technicians(
             title="🚨 Nueva Tarea (PC)",
@@ -328,8 +328,8 @@ def create_loose_task():
 
     with get_db_connection() as conn:
         cursor = conn.execute(
-            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name, tipo_actividad, prioridad, impacto_valor, resumen_impacto) 
-               VALUES (%s, %s, %s, NOW(), %s, %s, %s, 'PC Generica', %s, %s, %s, %s)""",
+            \"\"\"INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name, tipo_actividad, prioridad, impacto_valor, resumen_impacto) 
+               VALUES (%s, %s, %s, NOW(), %s, %s, %s, 'PC Generica', %s, %s, %s, %s)\"\"\",
             (descripcion, solicitante, estado, categoria, assigned_to, fuero, tipo_actividad, prioridad, impacto_valor, resumen_impacto)
         )
         conn.commit()
@@ -343,7 +343,7 @@ def create_loose_task():
         with get_db_connection() as conn:
             user_row = conn.execute("SELECT phone FROM ad_users WHERE real_name = %s OR username = %s LIMIT 1", (solicitante, solicitante)).fetchone()
             if user_row and user_row["phone"]:
-                phone_info = f"📞 *Teléfono:* {user_row['phone']}\n"
+                phone_info = f"📞 *Teléfono:* {user_row['phone']}\\n"
 
         
         try:
@@ -354,14 +354,14 @@ def create_loose_task():
             
         fecha_str = _dt.now().strftime("%A %d de %B de %Y").capitalize()
         
-        cuerpo = f"📅 *Fecha:* {fecha_str}\n"
-        cuerpo += f"⚖️ *Fuero/Área:* {fuero if fuero else 'No especificado'}\n"
-        cuerpo += f"👤 *Solicitante:* {solicitante}\n"
+        cuerpo = f"📅 *Fecha:* {fecha_str}\\n"
+        cuerpo += f"⚖️ *Fuero/Área:* {fuero if fuero else 'No especificado'}\\n"
+        cuerpo += f"👤 *Solicitante:* {solicitante}\\n"
         cuerpo += phone_info
-        cuerpo += f"🏷️ *Categoría:* {categoria}\n"
+        cuerpo += f"🏷️ *Categoría:* {categoria}\\n"
         if assigned_to:
-            cuerpo += f"👨‍🔧 *Asignada a:* {assigned_to}\n"
-        cuerpo += f"📝 *Descripción:* {descripcion}\n"
+            cuerpo += f"👨‍🔧 *Asignada a:* {assigned_to}\\n"
+        cuerpo += f"📝 *Descripción:* {descripcion}\\n"
 
         notify_all_technicians(
             title="🚨 Nueva Tarea Suelta",
@@ -450,7 +450,7 @@ def add_manual_audit(pc_name):
 
 @bp_tasks.route("/api/report/preview", methods=["GET"])
 def report_preview():
-    """API para vista previa de tareas antes de descargar el reporte."""
+    \"\"\"API para vista previa de tareas antes de descargar el reporte.\"\"\"
     fecha_filtro = request.args.get("fecha", dt.now().strftime("%Y-%m-%d")).strip()
     pc_name = request.args.get("pc", "").strip()
 
@@ -615,7 +615,7 @@ def report_tasks_completed_pdf():
             # Prepare data
             if 'completed_by' in t.keys(): # Hechas
                 raw_user = t["last_user"] or "N/A"
-                user_display = raw_user.split("\\")[-1] if "\\" in raw_user else raw_user
+                user_display = raw_user.split("\\\\")[-1] if "\\\\" in raw_user else raw_user
                 cols = [
                     str(t["pc_name"]),
                     str(user_display),
@@ -668,7 +668,7 @@ def report_tasks_completed_pdf():
             # Draw each cell
             for i, lines in enumerate(split_cols):
                 pdf.set_xy(x_row + sum(widths[:i]), y_row + 1)
-                cell_text = "\n".join(lines)
+                cell_text = "\\n".join(lines)
                 pdf.multi_cell(widths[i], row_height, cell_text, 0, 'L' if i != len(widths)-1 else 'C')
             
             # Bottom line (Border)
@@ -720,76 +720,120 @@ def report_tasks_completed_pdf():
 
 @bp_tasks.route("/visor")
 def visor():
-    """Vista de 'visor' para mostrar trabajos del día y anteriores."""
+    \"\"\"Vista de 'visor' para mostrar trabajos con filtros.\"\"\"
     try:
+        fecha_filtro = request.args.get("fecha", dt.now().strftime("%Y-%m-%d"))
+        pc_filtro = request.args.get("pc", "").strip()
+        tech_filtro = request.args.get("technician", "").strip()
+        is_filtered = any([request.args.get("fecha"), pc_filtro, tech_filtro])
+
         with get_db_connection() as conn:
-            # Técnicos para filtros si fuera necesario
             technicians = conn.execute("SELECT * FROM technicians ORDER BY name ASC").fetchall()
             
-            # Obtener fecha actual
-            hoy = dt.now().strftime("%Y-%m-%d")
-            
-            # Tareas de hoy (cualquier estado)
-            tareas_hoy = conn.execute("""
-                SELECT t.*, p.last_user 
-                FROM tasks t 
-                LEFT JOIN pcs p ON t.pc_name = p.pc_name 
-                WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
-                ORDER BY t.created_at DESC
-            """).fetchall()
-            
-            # Tareas de días anteriores (últimos 7 días)
-            tareas_anteriores = conn.execute("""
-                SELECT t.*, p.last_user 
-                FROM tasks t 
-                LEFT JOIN pcs p ON t.pc_name = p.pc_name 
-                WHERE DATE(t.created_at) < CURDATE() 
-                AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-                ORDER BY t.created_at DESC
-                LIMIT 50
-            """).fetchall()
-
-            return render_template("visor_tareas.html", 
-                                   tareas_hoy=[_decorate_visor_task(t) for t in tareas_hoy], 
-                                   tareas_anteriores=[_decorate_visor_task(t) for t in tareas_anteriores],
-                                   technicians=technicians,
-                                   hoy=hoy)
+            if is_filtered:
+                base_sql = "SELECT t.*, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE 1=1"
+                params = []
+                if request.args.get("fecha"):
+                    base_sql += " AND (DATE(t.created_at) = %s OR (t.estado = 'Hecha' AND DATE(t.completed_at) = %s))"
+                    params.extend([fecha_filtro, fecha_filtro])
+                if pc_filtro:
+                    base_sql += " AND t.pc_name LIKE %s"
+                    params.append(f"%{pc_filtro}%")
+                if tech_filtro:
+                    base_sql += " AND (t.assigned_to = %s OR t.completed_by = %s)"
+                    params.extend([tech_filtro, tech_filtro])
+                
+                base_sql += " ORDER BY t.created_at DESC LIMIT 200"
+                tareas = conn.execute(base_sql, params).fetchall()
+                
+                return render_template("visor_tareas.html", 
+                                       tareas_hoy=[_decorate_visor_task(t) for t in tareas], 
+                                       tareas_anteriores=[],
+                                       technicians=technicians,
+                                       hoy=fecha_filtro,
+                                       pc_filtro=pc_filtro,
+                                       tech_filtro=tech_filtro,
+                                       is_filtered=True)
+            else:
+                tareas_hoy = conn.execute(\"\"\"
+                    SELECT t.*, p.last_user FROM tasks t 
+                    LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                    WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
+                    ORDER BY t.created_at DESC
+                \"\"\").fetchall()
+                tareas_anteriores = conn.execute(\"\"\"
+                    SELECT t.*, p.last_user FROM tasks t 
+                    LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                    WHERE DATE(t.created_at) < CURDATE() AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                    ORDER BY t.created_at DESC LIMIT 50
+                \"\"\").fetchall()
+                return render_template("visor_tareas.html", 
+                                       tareas_hoy=[_decorate_visor_task(t) for t in tareas_hoy], 
+                                       tareas_anteriores=[_decorate_visor_task(t) for t in tareas_anteriores],
+                                       technicians=technicians,
+                                       hoy=fecha_filtro,
+                                       is_filtered=False)
     except Exception as e:
-        print(f"Error en visor: {e}")
+        import traceback
+        traceback.print_exc()
         return f"Error cargando el visor: {e}", 500
 
 @bp_tasks.route("/api/visor/data")
 def api_visor_data():
-    """API para actualización en tiempo real del visor."""
+    \"\"\"API para actualización en tiempo real del visor con soporte de filtros.\"\"\"
     try:
-        with get_db_connection() as conn:
-            # Tareas de hoy
-            tareas_hoy_rows = conn.execute("""
-                SELECT t.*, p.last_user 
-                FROM tasks t 
-                LEFT JOIN pcs p ON t.pc_name = p.pc_name 
-                WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
-                ORDER BY t.created_at DESC
-            """).fetchall()
-            
-            # Tareas anteriores (pendientes o recientes)
-            tareas_anteriores_rows = conn.execute("""
-                SELECT t.*, p.last_user 
-                FROM tasks t 
-                LEFT JOIN pcs p ON t.pc_name = p.pc_name 
-                WHERE DATE(t.created_at) < CURDATE() 
-                AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-                ORDER BY t.created_at DESC
-                LIMIT 50
-            """).fetchall()
+        fecha_filtro = request.args.get("fecha")
+        pc_filtro = request.args.get("pc", "").strip()
+        tech_filtro = request.args.get("technician", "").strip()
+        is_filtered = any([fecha_filtro, pc_filtro, tech_filtro])
 
-            def format_tasks(rows):
-                return [_decorate_visor_task(t) for t in rows]
-            
-            return jsonify({
-                "status": "success", 
-                "tasks_hoy": format_tasks(tareas_hoy_rows),
-                "tasks_anteriores": format_tasks(tareas_anteriores_rows)
-            })
+        with get_db_connection() as conn:
+            if is_filtered:
+                base_sql = "SELECT t.*, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE 1=1"
+                params = []
+                if fecha_filtro:
+                    base_sql += " AND (DATE(t.created_at) = %s OR (t.estado = 'Hecha' AND DATE(t.completed_at) = %s))"
+                    params.extend([fecha_filtro, fecha_filtro])
+                if pc_filtro:
+                    base_sql += " AND t.pc_name LIKE %s"
+                    params.append(f"%{pc_filtro}%")
+                if tech_filtro:
+                    base_sql += " AND (t.assigned_to = %s OR t.completed_by = %s)"
+                    params.extend([tech_filtro, tech_filtro])
+                
+                base_sql += " ORDER BY t.created_at DESC LIMIT 200"
+                rows = conn.execute(base_sql, params).fetchall()
+                
+                return jsonify({
+                    "status": "success", 
+                    "tasks_hoy": [_decorate_visor_task(t) for t in rows],
+                    "tasks_anteriores": []
+                })
+            else:
+                # Tareas de hoy
+                tareas_hoy_rows = conn.execute(\"\"\"
+                    SELECT t.*, p.last_user 
+                    FROM tasks t 
+                    LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                    WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
+                    ORDER BY t.created_at DESC
+                \"\"\").fetchall()
+                
+                # Tareas anteriores (pendientes o recientes)
+                tareas_anteriores_rows = conn.execute(\"\"\"
+                    SELECT t.*, p.last_user 
+                    FROM tasks t 
+                    LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                    WHERE DATE(t.created_at) < CURDATE() 
+                    AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                    ORDER BY t.created_at DESC
+                    LIMIT 50
+                \"\"\").fetchall()
+
+                return jsonify({
+                    "status": "success", 
+                    "tasks_hoy": [_decorate_visor_task(t) for t in tareas_hoy_rows],
+                    "tasks_anteriores": [_decorate_visor_task(t) for t in tareas_anteriores_rows]
+                })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

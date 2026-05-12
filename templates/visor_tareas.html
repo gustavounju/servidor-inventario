@@ -263,6 +263,35 @@
         </nav>
 
         <main class="visor-content">
+            <div class="table-container mb-4 p-3" style="background: rgba(30, 41, 59, 0.5);">
+                <form id="filterForm" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="small text-muted fw-bold text-uppercase mb-1">Fecha</label>
+                        <input type="date" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterFecha" value="{{ hoy }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-muted fw-bold text-uppercase mb-1">PC / Equipo</label>
+                        <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterPc" placeholder="Buscar PC..." value="{{ pc_filtro or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-muted fw-bold text-uppercase mb-1">Técnico</label>
+                        <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterTech">
+                            <option value="">Todos los técnicos</option>
+                            {% for tech in technicians %}
+                            <option value="{{ tech.name }}" {% if tech_filtro == tech.name %}selected{% endif %}>{{ tech.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-primary w-100 fw-bold" onclick="applyFilters()">
+                            <i class="bi bi-search me-1"></i> Filtrar
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetFilters()" title="Limpiar">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
             <div class="kpi-grid">
                 <div class="kpi-card">
                     <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-list-task"></i></div>
@@ -319,7 +348,14 @@
                                         <span>{{ task.solicitante or 'N/A' }}</span>
                                     </div>
                                 </td>
-                                <td class="desc-cell">{{ task.descripcion }}</td>
+                                <td class="desc-cell">
+                                    <div>{{ task.descripcion }}</div>
+                                    {% if task.solucion %}
+                                    <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #cbd5e1;">
+                                        <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
+                                    </div>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if task.assigned_to or task.completed_by %}
                                     <div class="tech-pill">
@@ -387,10 +423,16 @@
 
         async function refreshData() {
             const spinner = document.getElementById('refreshSpinner');
-            spinner.style.display = 'inline-block';
+            if (spinner) spinner.style.display = 'inline-block';
             
+            const fecha = document.getElementById('filterFecha').value;
+            const pc = document.getElementById('filterPc').value;
+            const tech = document.getElementById('filterTech').value;
+            
+            const params = new URLSearchParams({ fecha, pc, technician: tech });
+
             try {
-                const response = await fetch('/api/visor/data');
+                const response = await fetch('/api/visor/data?' + params.toString());
                 const data = await response.json();
                 
                 if (data.status === 'success') {
@@ -399,7 +441,19 @@
                     updateStats(data.tasks_hoy);
                 }
             } catch (e) { console.error(e); }
-            finally { setTimeout(() => spinner.style.display = 'none', 800); }
+            finally { if (spinner) setTimeout(() => spinner.style.display = 'none', 800); }
+        }
+
+        function applyFilters() {
+            const fecha = document.getElementById('filterFecha').value;
+            const pc = document.getElementById('filterPc').value;
+            const tech = document.getElementById('filterTech').value;
+            const params = new URLSearchParams({ fecha, pc, technician: tech });
+            window.location.search = params.toString();
+        }
+
+        function resetFilters() {
+            window.location.href = window.location.pathname;
         }
 
         function renderHoy(tasks) {
@@ -419,7 +473,14 @@
                             <span>${task.solicitante || 'N/A'}</span>
                         </div>
                     </td>
-                    <td class="desc-cell">${task.descripcion}</td>
+                    <td class="desc-cell">
+                        <div>${task.descripcion}</div>
+                        ${task.solucion ? `
+                            <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #cbd5e1;">
+                                <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
+                            </div>
+                        ` : ''}
+                    </td>
                     <td>
                         ${(task.assigned_to || task.completed_by) ? `
                             <div class="tech-pill">
