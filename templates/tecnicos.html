@@ -506,7 +506,7 @@
       </div>
       <div class="voice-field">
         <div class="vf-label">Solicitante</div>
-        <input class="vf-input" id="vfSolic" type="text" placeholder="Quién solicita">
+        <input class="vf-input" id="vfSolic" type="text" placeholder="Quién solicita" list="requestersList">
       </div>
       <div class="voice-field">
         <div class="vf-label">PC / Equipo (opcional)</div>
@@ -539,7 +539,7 @@
     </div>
     <div class="input-group-gold">
       <div class="input-label-gold">Solicitante</div>
-      <input class="gold-input" id="mSolic" type="text" placeholder="Nombre de quién pidió">
+      <input class="gold-input" id="mSolic" type="text" placeholder="Nombre de quién pidió" list="requestersList">
     </div>
     <div class="input-group-gold">
       <div class="input-label-gold">PC / Equipo (opcional)</div>
@@ -618,6 +618,7 @@
   </div>
 </div>
 
+<datalist id="requestersList"></datalist>
 
 <script>
 /* =========================================================
@@ -747,6 +748,7 @@ async function refreshData(silent=false) {
     if (data.error) return;
     allData = data;
     fillPcSelects(data.pcs || []);
+    fillRequestersList(data.requesters || []);
     renderAll();
   } catch(e) { console.error(e); }
   if (!silent) document.getElementById('refreshIcon').classList.remove('spin');
@@ -766,6 +768,17 @@ function fillPcSelects(pcs) {
       sel.appendChild(opt);
     });
     if (cur) sel.value = cur;
+  });
+}
+
+function fillRequestersList(requesters) {
+  const dl = document.getElementById('requestersList');
+  if (!dl) return;
+  dl.innerHTML = '';
+  requesters.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.real_name;
+    dl.appendChild(opt);
   });
 }
 
