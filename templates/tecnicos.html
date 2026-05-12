@@ -31,6 +31,24 @@
       --shadow: 0 10px 28px rgba(18, 60, 59, 0.14);
     }
 
+    :root[data-theme="classic"] {
+      --bg: #f0f2f5;
+      --bg2: #212529;
+      --bg3: #e9ecef;
+      --card: #ffffff;
+      --card-hover: #f8f9fa;
+      --border: rgba(0,0,0,0.1);
+      --accent: #0d6efd;
+      --accent2: #dc3545;
+      --green: #198754;
+      --yellow: #ffc107;
+      --red: #dc3545;
+      --text: #212529;
+      --text-muted: #6c757d;
+      --input-bg: #ffffff;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; }
 
@@ -368,6 +386,10 @@
     .toggle-switch input:checked + .toggle-track { background: var(--green); }
     .toggle-switch input:checked + .toggle-track::after { left: 19px; background: #fff; }
   </style>
+  <script>
+    const savedTheme = localStorage.getItem('techTheme');
+    if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
 </head>
 <body>
 
@@ -382,6 +404,9 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
+      <button type="button" class="tech-badge" onclick="toggleTheme()" title="Cambiar tema" style="border:none;background:rgba(255,255,255,0.15)">
+        <i class="bi bi-palette-fill"></i>
+      </button>
       <button type="button" class="tech-badge" id="enableAlertsBtn" onclick="enableAlerts()" title="Activar avisos" style="border:none;">
         <i class="bi bi-bell-fill"></i>
       </button>
@@ -637,6 +662,16 @@ let knownNotifIds = new Set();
 let pcPickerTaskId = null;
 const VAPID_PUBLIC_KEY = "BOu99N41agBTHQmpQHo8yrbTdQ7Kb392R1NgXiy8DeK5f7WVvHB-OXmqm-ptw2CpoIqM0cZZOUtYRYGaBdAUufE";
 let pushSubscribed = false;
+
+// Cambiar Tema
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme');
+  const next = current === 'classic' ? 'default' : 'classic';
+  if (next === 'default') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', next);
+  localStorage.setItem('techTheme', next);
+}
 
 // Helper para POST con CSRF
 function postJSON(url, body) {
