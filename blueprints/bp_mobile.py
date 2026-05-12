@@ -168,6 +168,9 @@ def api_mobile_update_task():
         technician = current_technician_identity()
         pc_name = data.get("pc_name")
 
+        descripcion = data.get("descripcion")
+        solucion = data.get("solucion")
+
         if not task_id or not action or not technician: return jsonify({"status": "error", "message": "Datos incompletos"}), 400
 
         with get_db_connection() as conn:
@@ -191,9 +194,18 @@ def api_mobile_update_task():
                  if pc_name:
                      sql += ", pc_name=%s"
                      params.append(pc_name)
+                 if descripcion:
+                     sql += ", descripcion=%s"
+                     params.append(descripcion)
+                 if solucion:
+                     sql += ", solucion=%s"
+                     params.append(solucion)
                  sql += " WHERE id=%s"
                  params.append(task_id)
                  conn.execute(sql, params)
+            elif action == "edit":
+                 sql = "UPDATE tasks SET descripcion=%s, solucion=%s WHERE id=%s"
+                 conn.execute(sql, (descripcion, solucion, task_id))
             elif action == "assign_pc":
                  if not pc_name:
                      return jsonify({"status": "error", "message": "Seleccioná una PC válida."}), 400

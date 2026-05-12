@@ -325,6 +325,12 @@
       color: var(--text); font-size: 0.9rem; font-family: inherit; font-weight: 500;
     }
     .gold-input::placeholder { color: var(--text-muted); font-weight: 400; }
+    .btn-act-mini {
+      background: transparent; border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text-muted); padding: 2px 6px;
+      font-size: 0.75rem; cursor: pointer; transition: all .2s;
+    }
+    .btn-act-mini:hover { background: var(--bg3); color: var(--text); border-color: var(--text-muted); }
 
     /* ── Notifications ── */
     .notif-card {
@@ -579,12 +585,12 @@
     <div class="sheet-handle"></div>
     <p style="font-size:.94rem;font-weight:700;margin-bottom:14px;">Nueva Tarea</p>
     <div class="input-group-gold">
-      <div class="input-label-gold">Descripción *</div>
-      <textarea class="gold-input" id="mDesc" rows="3" placeholder="¿Qué hay que resolver?"></textarea>
-    </div>
-    <div class="input-group-gold">
       <div class="input-label-gold">Solicitante</div>
       <input class="gold-input" id="mSolic" type="text" placeholder="Nombre de quién pidió" list="requestersList">
+    </div>
+    <div class="input-group-gold">
+      <div class="input-label-gold">Descripción *</div>
+      <textarea class="gold-input" id="mDesc" rows="3" placeholder="¿Qué hay que resolver?"></textarea>
     </div>
     <div class="input-group-gold">
       <div class="input-label-gold">PC / Equipo (opcional)</div>
@@ -627,21 +633,32 @@
   <source src="data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBAAAA..." type="audio/wav">
 </audio>
 
-<!-- ── Completar Tarea sin PC ── -->
+<!-- ── Completar / Editar Tarea ── -->
 <div class="voice-overlay" id="completeOverlay">
   <div class="manual-sheet">
     <div class="sheet-handle"></div>
-    <p style="font-size:.94rem;font-weight:700;margin-bottom:6px;"><i class="bi bi-check2-circle" style="color:var(--green)"></i> Completar Tarea</p>
-    <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:14px;">Esta tarea no tiene PC asignada. Seleccioná el equipo donde se hizo el trabajo.</p>
-    <div class="input-group-gold">
+    <p style="font-size:.94rem;font-weight:700;margin-bottom:6px;" id="modalCompleteTitle"><i class="bi bi-check2-circle" style="color:var(--green)"></i> Completar Tarea</p>
+    
+    <div class="input-group-gold" id="pcCompleteGroup">
       <div class="input-label-gold">PC / Equipo</div>
       <select class="pc-dropdown" id="completePcSelect" style="background:transparent;border:none;padding:0;">
         <option value="PC Generica">PC Gen&eacute;rica (sin equipo espec&iacute;fico)</option>
       </select>
     </div>
+
+    <div class="input-group-gold">
+      <div class="input-label-gold">Descripción</div>
+      <textarea class="gold-input" id="completeDesc" rows="2" placeholder="Descripción de la tarea"></textarea>
+    </div>
+
+    <div class="input-group-gold">
+      <div class="input-label-gold">Resolución / Solución</div>
+      <textarea class="gold-input" id="completeSolucion" rows="3" placeholder="¿Cómo se solucionó?"></textarea>
+    </div>
+
     <div class="voice-actions">
       <button class="btn-vact btn-vcancel" onclick="closeCompleteModal()">Cancelar</button>
-      <button class="btn-vact btn-vsave-done" onclick="confirmComplete()"><i class="bi bi-check-lg"></i> Marcar como Hecha</button>
+      <button class="btn-vact btn-vsave-done" id="btnConfirmComplete" onclick="confirmComplete()"><i class="bi bi-check-lg"></i> Marcar como Hecha</button>
     </div>
   </div>
 </div>
@@ -935,13 +952,19 @@ function renderDoneToday(tasks) {
   if (!tasks.length) { el.innerHTML=''; return; }
   el.innerHTML = `<div class="section-title"><i class="bi bi-check2-circle"></i> Mi Historial Reciente (${tasks.length})</div>` +
     tasks.map(t => `
-    <div class="task-card" style="opacity:.65;">
+    <div class="task-card" style="opacity:.9;">
       <div class="task-card-accent" style="background:var(--green)"></div>
-      <div class="task-desc" style="padding-left:10px;">${escHtml(t.descripcion)}</div>
-      <div class="task-meta" style="padding-left:10px;">
-        ${t.pc_name ? '<span class="meta-chip"><i class="bi bi-pc-display"></i>'+escHtml(t.pc_name)+'</span>' : ''}
-        <span class="meta-chip"><i class="bi bi-clock-history"></i>${fmtTime(t.completed_at)}</span>
-        <span class="status-pill pill-done">Hecha</span>
+      <div style="padding-left:10px; width:100%;">
+        <div class="task-card-header">
+           <div class="task-desc">${escHtml(t.descripcion)}</div>
+           <button class="btn-act-mini" onclick="editTask(${t.id})" title="Editar"><i class="bi bi-pencil"></i></button>
+        </div>
+        ${t.solucion ? '<div class="task-solucion" style="font-size:0.8rem; color:var(--text); margin-top:4px; padding:6px; background:rgba(0,0,0,0.03); border-radius:4px; border-left:3px solid var(--green);"><strong>Solución:</strong> '+escHtml(t.solucion)+'</div>' : ''}
+        <div class="task-meta">
+          ${t.pc_name ? '<span class="meta-chip"><i class="bi bi-pc-display"></i>'+escHtml(t.pc_name)+'</span>' : ''}
+          <span class="meta-chip"><i class="bi bi-clock-history"></i>${fmtTime(t.completed_at)}</span>
+          <span class="status-pill pill-done">Hecha</span>
+        </div>
       </div>
     </div>`).join('');
 }
@@ -961,7 +984,8 @@ function taskCard(t, mode) {
   const actions = mode === 'free'
     ? `<button class="btn-act btn-claim" onclick="claimTask(${t.id})"><i class="bi bi-hand-index-thumb"></i> Tomar</button>`
     : mode === 'mine'
-    ? `<button class="btn-act btn-done" onclick="completeTask(${t.id}, ${pcData})"><i class="bi bi-check-lg"></i> Completar</button>`
+    ? `<button class="btn-act btn-claim" style="background:var(--bg3); color:var(--text);" onclick="editTask(${t.id})"><i class="bi bi-pencil"></i> Editar</button>
+       <button class="btn-act btn-done" onclick="openCompleteModal(${t.id})"><i class="bi bi-check-lg"></i> Completar</button>`
     : '';
 
   const emoji = t.tipo_actividad === 'incidente' ? '🔥 ' : t.tipo_actividad === 'riesgo' ? '⚠️ ' : '';
@@ -1006,25 +1030,43 @@ async function claimTask(id) {
   }
 }
 
-async function completeTask(id, existingPc) {
-  if (!existingPc) {
-    // Sin PC: mostrar selector antes de completar
-    openCompleteModal(id);
-    return;
-  }
-  try {
-    await postJSON(API + '/update_task', { id, action:'complete', pc_name: existingPc });
-    playBeep('done');
-    flashCard(id, 'var(--green)');
-    setTimeout(() => refreshData(true), 500);
-  } catch(e) { console.error(e); }
-}
+
 
 function openCompleteModal(taskId) {
+  const task = (allData.active_tasks || []).concat(allData.my_history || []).find(t => t.id == taskId);
+  if (!task) return;
+
   const modal = document.getElementById('completeOverlay');
-  document.getElementById('completePcSelect').value = 'PC Generica';
   modal.dataset.taskId = taskId;
+  modal.dataset.mode = task.estado === 'Hecha' ? 'edit' : 'complete';
+
+  document.getElementById('completePcSelect').value = task.pc_name || 'PC Generica';
+  document.getElementById('completeDesc').value = task.descripcion || '';
+  document.getElementById('completeSolucion').value = task.solucion || '';
+
+  const titleEl = document.getElementById('modalCompleteTitle');
+  const btnEl = document.getElementById('btnConfirmComplete');
+  const pcGroup = document.getElementById('pcCompleteGroup');
+
+  if (task.estado === 'Hecha') {
+    titleEl.innerHTML = '<i class="bi bi-pencil" style="color:var(--accent)"></i> Editar Tarea';
+    btnEl.innerHTML = '<i class="bi bi-save"></i> Guardar Cambios';
+    btnEl.className = 'btn-vact btn-vsave';
+    btnEl.onclick = confirmEdit;
+    pcGroup.style.display = 'none';
+  } else {
+    titleEl.innerHTML = '<i class="bi bi-check2-circle" style="color:var(--green)"></i> Completar Tarea';
+    btnEl.innerHTML = '<i class="bi bi-check-lg"></i> Marcar como Hecha';
+    btnEl.className = 'btn-vact btn-vsave-done';
+    btnEl.onclick = confirmComplete;
+    pcGroup.style.display = task.pc_name ? 'none' : 'block';
+  }
+
   modal.classList.add('open');
+}
+
+function editTask(taskId) {
+  openCompleteModal(taskId);
 }
 
 function closeCompleteModal() {
@@ -1035,11 +1077,44 @@ async function confirmComplete() {
   const modal = document.getElementById('completeOverlay');
   const id = modal.dataset.taskId;
   const pc = document.getElementById('completePcSelect').value || 'PC Generica';
+  const desc = document.getElementById('completeDesc').value.trim();
+  const sol = document.getElementById('completeSolucion').value.trim();
+
+  if (!desc) { alert("La descripción no puede estar vacía."); return; }
+
   closeCompleteModal();
   try {
-    await postJSON(API + '/update_task', { id, action:'complete', pc_name: pc });
+    await postJSON(API + '/update_task', { 
+        id, 
+        action:'complete', 
+        pc_name: pc,
+        descripcion: desc,
+        solucion: sol
+    });
     playBeep('done');
     flashCard(id, 'var(--green)');
+    setTimeout(() => refreshData(true), 500);
+  } catch(e) { console.error(e); }
+}
+
+async function confirmEdit() {
+  const modal = document.getElementById('completeOverlay');
+  const id = modal.dataset.taskId;
+  const desc = document.getElementById('completeDesc').value.trim();
+  const sol = document.getElementById('completeSolucion').value.trim();
+
+  if (!desc) { alert("La descripción no puede estar vacía."); return; }
+
+  closeCompleteModal();
+  try {
+    await postJSON(API + '/update_task', { 
+        id, 
+        action:'edit', 
+        descripcion: desc,
+        solucion: sol
+    });
+    playBeep('done');
+    flashCard(id, 'var(--accent)');
     setTimeout(() => refreshData(true), 500);
   } catch(e) { console.error(e); }
 }
