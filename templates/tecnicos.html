@@ -49,6 +49,24 @@
       --shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
+    :root[data-theme="dark"] {
+      --bg: #121212;
+      --bg2: #1e1e1e;
+      --bg3: #2d2d2d;
+      --card: #1e1e1e;
+      --card-hover: #262626;
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #5db09b;
+      --accent2: #e05d44;
+      --green: #379e73;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --text: #e0e0e0;
+      --text-muted: #9ca3af;
+      --input-bg: #2d2d2d;
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; }
 
@@ -666,10 +684,15 @@ let pushSubscribed = false;
 // Cambiar Tema
 function toggleTheme() {
   const root = document.documentElement;
-  const current = root.getAttribute('data-theme');
-  const next = current === 'classic' ? 'default' : 'classic';
+  const current = root.getAttribute('data-theme') || 'default';
+  
+  let next = 'default';
+  if (current === 'default') next = 'classic';
+  else if (current === 'classic') next = 'dark';
+
   if (next === 'default') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', next);
+  
   localStorage.setItem('techTheme', next);
 }
 
