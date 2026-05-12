@@ -105,7 +105,7 @@
     /* ── Tab Nav ── */
     .tab-nav {
       display: flex;
-      background: #ffffff;
+      background: var(--card);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       box-shadow: 0 6px 18px rgba(18, 60, 59, 0.08);
@@ -202,7 +202,7 @@
     }
     .fab-secondary {
       width: 48px; height: 48px; border-radius: 50%; border: none;
-      background: #ffffff; color: var(--text-muted);
+      background: var(--card); color: var(--text-muted);
       font-size: 1.15rem; cursor: pointer; pointer-events: all;
       display: flex; align-items: center; justify-content: center;
       box-shadow: var(--shadow); transition: all .2s;
@@ -234,7 +234,7 @@
     }
     .voice-overlay.open { display: flex; }
     .voice-sheet {
-      background: #ffffff; border-radius: 20px 20px 0 0;
+      background: var(--card); border-radius: 20px 20px 0 0;
       width: 100%; max-width: 560px; padding: 24px 20px 36px;
       border-top: 1px solid var(--border); animation: sheet-in .3s ease;
     }
@@ -281,14 +281,14 @@
       overflow-y: auto;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      background: #fff;
+      background: var(--card);
       margin-bottom: 12px;
     }
     .pc-picker-option {
       width: 100%;
       border: 0;
       border-bottom: 1px solid var(--border);
-      background: #fff;
+      background: var(--card);
       color: var(--text);
       text-align: left;
       font-family: inherit;
@@ -305,11 +305,11 @@
       border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.88rem;
       color: var(--text); font-family: inherit; outline: none; margin-bottom: 10px;
     }
-    .pc-dropdown option { background: #ffffff; }
+    .pc-dropdown option { background: var(--card); }
 
     /* ── Manual Task Modal ── */
     .manual-sheet {
-      background: #ffffff; border-radius: 20px 20px 0 0;
+      background: var(--card); border-radius: 20px 20px 0 0;
       width: 100%; max-width: 560px; padding: 24px 20px 36px;
       border-top: 1px solid var(--border); animation: sheet-in .3s ease;
     }
@@ -341,7 +341,7 @@
     }
     .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
     .ops-overview {
-      background: #ffffff;
+      background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 14px;
