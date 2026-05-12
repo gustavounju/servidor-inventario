@@ -28,6 +28,42 @@
       --shadow: 0 10px 28px rgba(18, 60, 59, 0.14);
     }
 
+    :root[data-theme="dark"] {
+      --bg: #0b1121;
+      --bg2: #151e32;
+      --bg3: #1f2940;
+      --card: #151e32;
+      --card-hover: #1f2940;
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #3b82f6;
+      --accent2: #ef4444;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --input-bg: #0f172a;
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    :root[data-theme="pride"] {
+      --bg: #fdfafc;
+      --bg2: linear-gradient(90deg, #ff0018, #ffa52c, #ffff41, #008018, #0000f9, #86007d);
+      --bg3: #f3e8f0;
+      --card: #ffffff;
+      --card-hover: #faf5f8;
+      --border: rgba(134, 0, 125, 0.15);
+      --accent: #86007d;
+      --accent2: #ff0018;
+      --green: #008018;
+      --yellow: #ffa52c;
+      --red: #ff0018;
+      --text: #2d1b2e;
+      --text-muted: #8a6c8c;
+      --input-bg: #ffffff;
+      --shadow: 0 8px 24px rgba(255, 0, 120, 0.15);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; }
 
@@ -227,6 +263,9 @@
         <i class="bi bi-headset"></i>
         <span>{{ user.display_name }}</span>
       </div>
+      <button type="button" class="logout-btn" onclick="toggleTheme()" title="Cambiar tema" style="color: #fff; margin-right: 4px;">
+        <i class="bi bi-palette"></i>
+      </button>
       <a href="{{ url_for('auth.logout') }}" class="logout-btn" title="Salir" aria-label="Salir">
         <i class="bi bi-box-arrow-right"></i>
       </a>
@@ -362,6 +401,26 @@
   let mediaRecorder = null;
   let audioChunks = [];
   let visualizerInterval = null;
+
+  // Initialize Theme
+  const savedTheme = localStorage.getItem('techTheme');
+  if (savedTheme && savedTheme !== 'default') {
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }
+
+  function toggleTheme() {
+    const root = document.documentElement;
+    const current = root.getAttribute('data-theme') || 'default';
+    
+    let next = 'default';
+    if (current === 'default') next = 'dark';
+    else if (current === 'dark') next = 'pride';
+
+    if (next === 'default') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', next);
+    
+    localStorage.setItem('techTheme', next);
+  }
 
   async function loadData() {
     try {
