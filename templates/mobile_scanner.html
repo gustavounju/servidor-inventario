@@ -50,11 +50,18 @@
             <input type="file" id="qr-input-file" accept="image/*" capture="environment" style="display:none"
                 onchange="scanFromFile(this)">
 
-            <button class="btn btn-warning text-dark mt-2" onclick="openExternalScanner()">
-                <i class="bi bi-phone-vibrate"></i> Usar App Externa (Recomendada)
+            <button class="btn btn-outline-warning text-dark mt-3 btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#externalScannerHint">
+                <i class="bi bi-phone-vibrate"></i> Usar App Externa (Opcional)
             </button>
-
-        </div>
+            
+            <div class="collapse mt-2" id="externalScannerHint">
+                <div class="card card-body p-2 bg-light small text-muted">
+                    <strong>Aviso:</strong> Si usas esta opción y tenés el sistema instalado como aplicación, al regresar puede que te pida <strong>usuario y contraseña</strong> porque Android abre el navegador web por defecto. Es preferible usar la cámara integrada arriba.
+                    <button class="btn btn-warning text-dark mt-2 btn-sm" onclick="openExternalScanner()">
+                        Continuar a App Externa
+                    </button>
+                </div>
+            </div>
 
         <div class="mt-3">
             <label class="form-label fw-bold">O ingresar manualmente:</label>
