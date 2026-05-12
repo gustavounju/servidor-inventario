@@ -31,23 +31,7 @@
       --shadow: 0 10px 28px rgba(18, 60, 59, 0.14);
     }
 
-    :root[data-theme="classic"] {
-      --bg: #f0f2f5;
-      --bg2: #212529;
-      --bg3: #e9ecef;
-      --card: #ffffff;
-      --card-hover: #f8f9fa;
-      --border: rgba(0,0,0,0.1);
-      --accent: #0d6efd;
-      --accent2: #dc3545;
-      --green: #198754;
-      --yellow: #ffc107;
-      --red: #dc3545;
-      --text: #212529;
-      --text-muted: #6c757d;
-      --input-bg: #ffffff;
-      --shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
+
 
     :root[data-theme="dark"] {
       --bg: #0b1121;
@@ -686,9 +670,8 @@ function toggleTheme() {
   const root = document.documentElement;
   const current = root.getAttribute('data-theme') || 'default';
   
-  let next = 'default';
-  if (current === 'default') next = 'classic';
-  else if (current === 'classic') next = 'dark';
+  // Alternar directo entre default y oscuro
+  const next = current === 'default' ? 'dark' : 'default';
 
   if (next === 'default') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', next);
