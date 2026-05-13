@@ -2251,6 +2251,52 @@
         padding: 3px 8px; border-radius: 100px; display: inline-flex; align-items: center; gap: 4px;
     }
 
+    .pt-match-box {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+    }
+
+    .pt-match-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #1d4ed8;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+    }
+
+    .pt-match-list {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .pt-match-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+        font-size: 0.73rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .pt-match-chip.pt-match-chip-current {
+        border-color: #10b981;
+        color: #047857;
+        background: #ecfdf5;
+    }
+
     @keyframes fadeInSlide {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
@@ -2309,6 +2355,59 @@
         return normalized.includes('PCGENERICA');
     }
 
+    function renderTaskMatchBox(task) {
+        if (!task.has_user_match || !Array.isArray(task.matched_pcs) || task.matched_pcs.length === 0) {
+            return '';
+        }
+
+        const title = task.matched_pc_count === 1
+            ? 'Coincidencia por usuario AD'
+            : `Coincidencias por usuario AD (${task.matched_pc_count})`;
+
+        const chips = task.matched_pcs.map(pc => {
+            const currentClass = pc.is_current_pc ? ' pt-match-chip-current' : '';
+            const label = pc.fuero ? `${pc.pc_name} · ${pc.fuero}` : pc.pc_name;
+            const suffix = pc.is_current_pc ? ' (actual)' : '';
+            return `<a class="pt-match-chip${currentClass}" href="/pc/${encodeURIComponent(pc.pc_name)}" title="Abrir ${pc.pc_name}">${label}${suffix}</a>`;
+        }).join('');
+
+        return `
+            <div class="pt-match-box">
+                <div class="pt-match-title"><i class="bi bi-link-45deg"></i>${title}</div>
+                <div class="pt-match-list">${chips}</div>
+            </div>
+        `;
+    }
+
+    function assignSuggestedTask(taskId, pcName) {
+        if (!pcName) return;
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/tasks/assign';
+
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrf_token';
+        csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+
+        const task = document.createElement('input');
+        task.type = 'hidden';
+        task.name = 'task_id';
+        task.value = taskId;
+        form.appendChild(task);
+
+        const pc = document.createElement('input');
+        pc.type = 'hidden';
+        pc.name = 'pc_name';
+        pc.value = pcName;
+        form.appendChild(pc);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
     function renderTasks(tasks) {
         const grid = document.getElementById('pendingTasksGrid');
         grid.innerHTML = '';
@@ -2344,6 +2443,8 @@
                     </div>
                     ${t.phone ? `<a href="tel:${t.phone}" class="btn btn-xs btn-outline-secondary p-1" style="border-radius: 6px;" title="Llamar: ${t.phone}"><i class="bi bi-telephone-fill"></i></a>` : ''}
                 </div>
+
+                ${renderTaskMatchBox(t)}
                 
                 <div class="pt-actions">
                     <button class="btn-pt-action btn-pt-confirm" onclick='quickTaskDone(${t.id}, ${JSON.stringify(pcName)}, ${JSON.stringify(t.assigned_to || "")})'>
@@ -2355,6 +2456,11 @@
                     ${isGeneric ? `
                         <button class="btn-pt-action border-secondary bg-white text-secondary" style="flex:0 0 38px;" onclick="openMigrateModal(${t.id})" title="Asignar a PC">
                             <i class="bi bi-arrow-right-short" style="font-size: 1.4rem; line-height: 0;"></i>
+                        </button>
+                    ` : ''}
+                    ${isGeneric && t.suggested_pc_name ? `
+                        <button class="btn-pt-action" style="border-color:#bfdbfe; background:#dbeafe; color:#1d4ed8;" onclick='assignSuggestedTask(${t.id}, ${JSON.stringify(t.suggested_pc_name)})' title="Vincular a ${t.suggested_pc_name}">
+                            <i class="bi bi-magic"></i> Vincular sugerida
                         </button>
                     ` : ''}
                 </div>

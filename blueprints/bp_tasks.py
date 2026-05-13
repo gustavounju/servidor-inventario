@@ -17,6 +17,96 @@ bp_tasks = Blueprint('tasks', __name__)
 LOCAL_UTC_OFFSET_HOURS = -3
 
 
+def _normalize_directory_username(value):
+    cleaned = (value or "").strip().lower()
+    if "\\" in cleaned:
+        cleaned = cleaned.split("\\")[-1]
+    if "@" in cleaned:
+        cleaned = cleaned.split("@")[0]
+    return cleaned
+
+
+def _is_generic_pc_name(pc_name):
+    normalized = "".join(ch for ch in (pc_name or "").upper() if ch.isalpha())
+    return "PCGENERICA" in normalized
+
+
+def _build_task_user_match_index(conn):
+    ad_rows = conn.execute(
+        "SELECT username, real_name FROM ad_users"
+    ).fetchall()
+    real_name_to_username = {}
+    known_usernames = set()
+    for row in ad_rows:
+        username = _normalize_directory_username(row.get("username"))
+        real_name = (row.get("real_name") or "").strip().lower()
+        if username:
+            known_usernames.add(username)
+        if username and real_name and real_name not in real_name_to_username:
+            real_name_to_username[real_name] = username
+
+    pc_rows = conn.execute(
+        """
+        SELECT pc_name, last_user, fuero
+        FROM pcs
+        WHERE is_active = 'True'
+        ORDER BY pc_name
+        """
+    ).fetchall()
+    pcs_by_username = {}
+    for row in pc_rows:
+        pc_name = row.get("pc_name") or ""
+        if not pc_name or _is_generic_pc_name(pc_name) or pc_name.upper().startswith("INFRAESTRUCTURA"):
+            continue
+        username = _normalize_directory_username(row.get("last_user"))
+        if not username:
+            continue
+        pcs_by_username.setdefault(username, []).append(
+            {
+                "pc_name": pc_name,
+                "last_user": row.get("last_user") or "",
+                "fuero": row.get("fuero") or "",
+            }
+        )
+
+    return real_name_to_username, known_usernames, pcs_by_username
+
+
+def _attach_task_user_matches(task_rows, conn):
+    real_name_to_username, known_usernames, pcs_by_username = _build_task_user_match_index(conn)
+    enriched = []
+    for row in task_rows:
+        task = dict(row)
+        solicitante = (task.get("solicitante") or "").strip()
+        solicitante_key = solicitante.lower()
+        matched_username = ""
+        direct_username = _normalize_directory_username(solicitante)
+        if direct_username and direct_username in known_usernames:
+            matched_username = direct_username
+        elif solicitante_key in real_name_to_username:
+            matched_username = real_name_to_username[solicitante_key]
+
+        matched_pcs = []
+        current_pc = task.get("pc_name") or ""
+        current_pc_upper = current_pc.upper()
+        if matched_username:
+            for candidate in pcs_by_username.get(matched_username, []):
+                matched_pcs.append(
+                    {
+                        **candidate,
+                        "is_current_pc": candidate["pc_name"].upper() == current_pc_upper,
+                    }
+                )
+
+        task["matched_username"] = matched_username
+        task["matched_pcs"] = matched_pcs
+        task["matched_pc_count"] = len(matched_pcs)
+        task["has_user_match"] = bool(matched_pcs)
+        task["suggested_pc_name"] = matched_pcs[0]["pc_name"] if len(matched_pcs) == 1 else ""
+        enriched.append(task)
+    return enriched
+
+
 def _coerce_task_datetime_for_display(dt_value, now=None):
     if not dt_value:
         return dt_value
@@ -122,8 +212,7 @@ def api_pending_tasks():
             
             # Formatear fechas para JSON
             result = []
-            for t in tasks:
-                d = dict(t)
+            for d in _attach_task_user_matches(tasks, conn):
                 if d['created_at']:
                     # Formato legible: "11 Abr, 14:30"
                     d['created_at_fmt'] = d['created_at'].strftime("%d %b, %H:%M")
