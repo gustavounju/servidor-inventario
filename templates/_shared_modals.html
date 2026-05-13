@@ -44,8 +44,8 @@
 <!-- Modal Crear Tarea Suelta -->
 <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 950px;">
-        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
-            <form action="{{ url_for('tasks.create_loose_task') }}" method="POST">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25); max-height: calc(100vh - 2rem);">
+            <form action="{{ url_for('tasks.create_loose_task') }}" method="POST" style="display: flex; flex-direction: column; min-height: 0; height: 100%;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <!-- Header moderno con gradiente -->
@@ -66,7 +66,7 @@
                     </div>
                 </div>
 
-                <div class="modal-body" style="padding: 30px; background: #f8fafc;">
+                <div class="modal-body" style="padding: 30px; background: #f8fafc; overflow-y: auto; flex: 1 1 auto; min-height: 0;">
                     <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
                         <div class="row g-4">
                             <!-- Columna Izquierda: Información Principal -->
@@ -178,7 +178,7 @@
                     </div>
                 </div>
 
-                <div class="modal-footer" style="padding: 16px 30px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px;">
+                <div class="modal-footer" style="padding: 16px 30px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; flex: 0 0 auto;">
                     <button type="button" class="btn btn-link text-decoration-none text-muted fw-bold" data-bs-dismiss="modal" style="font-size: 0.85rem;">Cancelar</button>
                     <button type="submit" class="btn" style="background: linear-gradient(135deg, #1e293b, #334155); color: #fff; border: none; padding: 10px 32px; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s;">
                         <i class="bi bi-send-fill me-2"></i> Crear Tarea
