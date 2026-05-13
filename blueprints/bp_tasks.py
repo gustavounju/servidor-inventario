@@ -490,13 +490,26 @@ def assign_task():
 
     if task_id and pc_name:
         with get_db_connection() as conn:
+            # Debugging logs (se pueden ver en los logs del servidor)
+            print(f"[DEBUG] Asignando tarea {task_id} a PC {pc_name}")
+            
             t = conn.execute("SELECT 1 FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
             if t:
-                # Obtenemos la tarea para ver de donde venía
-                old_task = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
-                old_pc = old_task['pc_name'] if old_task else 'PC Generica'
+                # Obtenemos la tarea para ver su estado actual y de donde venía
+                row = conn.execute("SELECT pc_name, estado FROM tasks WHERE id = %s", (task_id,)).fetchone()
+                if not row:
+                    print(f"[DEBUG] No se encontró la tarea {task_id}")
+                    return redirect(url_for("dashboard.dashboard"))
                 
-                estado = "Asignada" if technician else "Pendiente"
+                old_pc = row['pc_name'] or 'PC Generica'
+                current_estado = row['estado']
+                
+                # Si la tarea ya estaba 'Hecha', la dejamos como 'Hecha' al moverla de PC
+                if current_estado == 'Hecha':
+                    estado = 'Hecha'
+                else:
+                    estado = "Asignada" if technician else "Pendiente"
+                
                 assigned_to = technician if technician else None
 
                 conn.execute(
@@ -512,6 +525,9 @@ def assign_task():
                     conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                                  (old_pc, f"Tarea #{task_id} Transferida", pc_name, f"Transferida a {pc_name}", current_username(), "GESTION_TAREAS", request.remote_addr))
                 conn.commit()
+                print(f"[DEBUG] Tarea {task_id} actualizada correctamente a {pc_name}")
+            else:
+                print(f"[DEBUG] No se encontró la PC {pc_name} en la base de datos")
     return redirect(url_for("dashboard.dashboard"))
 
 @bp_tasks.route("/tasks/reassign", methods=["POST"])
