@@ -598,7 +598,7 @@
         <option value="">— Sin PC asignada —</option>
       </select>
     </div>
-    <div style="display:flex; gap:8px; margin-bottom:14px;">
+    <div style="display:none; gap:8px; margin-bottom:14px;">
       <div class="input-group-gold" style="flex:1;">
         <div class="input-label-gold">Tipo</div>
         <select class="pc-dropdown" id="mTipo" style="background:transparent;border:none;padding:0;">
@@ -1265,9 +1265,7 @@ async function submitManualTask() {
   const solic = document.getElementById('mSolic').value.trim();
   const pc = document.getElementById('mPc').value;
   const done = document.getElementById('mDone').checked;
-  const tipo = document.getElementById('mTipo').value;
-  const prio = document.getElementById('mPrioridad').value;
-  const ok = await submitTask(desc, solic, pc, done, tipo, prio);
+  const ok = await submitTask(desc, solic, pc, done);
   if (ok) closeManualModal();
 }
 
