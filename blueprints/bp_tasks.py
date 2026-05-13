@@ -829,7 +829,7 @@ def visor():
         is_filtered = any([request.args.get("fecha"), pc_filtro, tech_filtro])
 
         with get_db_connection() as conn:
-            technicians = conn.execute("SELECT * FROM technicians ORDER BY name ASC").fetchall()
+            technicians = list_technician_users()
             
             if is_filtered:
                 base_sql = "SELECT t.*, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE 1=1"
