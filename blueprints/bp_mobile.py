@@ -130,7 +130,7 @@ def api_mobile_create_task():
 
         # MySQL exige NULL (no string vacío) para no violar la FK de pc_name
         if not pc_name:
-            pc_name = None
+            pc_name = "PC Generica"
 
         tipo_actividad = data.get("tipo_actividad", "tarea").lower()
         prioridad = data.get("prioridad", 2)

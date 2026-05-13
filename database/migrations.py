@@ -633,6 +633,7 @@ def run_all_migrations():
     migrate_db_v30()
     migrate_db_v31()
     migrate_db_v33()
+    migrate_db_v34()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -644,6 +645,31 @@ def migrate_db_v33():
             print("Aplicando migración V33: Agregando 'can_access_operadores' a app_users...")
             conn.execute("ALTER TABLE app_users ADD COLUMN can_access_operadores TINYINT(1) DEFAULT 0")
     print("Migración V33 verificada.")
+
+def migrate_db_v34():
+    """MigraciÃ³n V34: normalizar tareas sin PC hacia 'PC Generica'."""
+    print("Verificando migraciÃ³n de DB v34...")
+    with get_db_connection() as conn:
+        generic_pc = conn.execute(
+            "SELECT 1 FROM pcs WHERE pc_name = 'PC Generica' LIMIT 1"
+        ).fetchone()
+        if not generic_pc:
+            print("Aplicando migraciÃ³n V34: creando 'PC Generica' faltante...")
+            conn.execute(
+                """
+                INSERT INTO pcs (pc_name, os_name, is_active)
+                VALUES ('PC Generica', 'Virtual/Pendiente', 'True')
+                """
+            )
+
+        updated = conn.execute(
+            """
+            UPDATE tasks
+            SET pc_name = 'PC Generica'
+            WHERE pc_name IS NULL OR TRIM(pc_name) = ''
+            """
+        )
+        print(f"MigraciÃ³n V34 verificada. Tareas normalizadas: {updated.rowcount}")
 
 def migrate_db_v31():
     """Migración V31: Infraestructura de Planos y Coordenadas."""
