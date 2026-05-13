@@ -1,4 +1,4 @@
-﻿from flask import Blueprint, request, jsonify, redirect, url_for, render_template, send_file
+from flask import Blueprint, request, jsonify, redirect, url_for, render_template, send_file
 import datetime
 from datetime import datetime as dt
 from io import BytesIO
@@ -82,6 +82,12 @@ def _attach_task_user_match(task, match_index):
         matched_username = direct_username
     elif solicitante_key in real_name_to_username:
         matched_username = real_name_to_username[solicitante_key]
+    elif len(solicitante_key) >= 4:
+        # Intento de coincidencia parcial (fuzzy match)
+        for rn_key, uname in real_name_to_username.items():
+            if solicitante_key in rn_key or rn_key in solicitante_key:
+                matched_username = uname
+                break
 
     matched_pcs = []
     current_pc = task.get("pc_name") or ""

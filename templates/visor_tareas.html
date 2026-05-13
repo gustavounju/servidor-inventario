@@ -251,11 +251,36 @@
             font-size: 0.72rem;
             font-weight: 700;
             text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .ad-match-chip:hover {
+            border-color: var(--visor-accent);
+            background: rgba(56, 189, 248, 0.15);
+            color: #fff;
         }
 
         .ad-match-chip.ad-match-chip-current {
             border-color: rgba(34, 197, 94, 0.35);
             color: #86efac;
+        }
+
+        .ad-match-assign-btn {
+            background: var(--visor-accent);
+            color: #0f172a;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .ad-match-assign-btn:hover {
+            transform: scale(1.2);
         }
 
         .ad-match-note {
@@ -420,9 +445,16 @@
                                         <div class="ad-match-title"><i class="bi bi-diagram-3"></i>{% if task.matched_pc_count == 1 %}Coincidencia AD detectada{% else %}Coincidencias AD ({{ task.matched_pc_count }}){% endif %}</div>
                                         <div class="ad-match-list">
                                             {% for pc_match in task.matched_pcs %}
-                                            <a class="ad-match-chip{% if pc_match.is_current_pc %} ad-match-chip-current{% endif %}" href="/pc/{{ pc_match.pc_name | urlencode }}">
-                                                {{ pc_match.pc_name }}{% if pc_match.fuero %} · {{ pc_match.fuero }}{% endif %}{% if pc_match.is_current_pc %} <span>actual</span>{% endif %}
-                                            </a>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <a class="ad-match-chip{% if pc_match.is_current_pc %} ad-match-chip-current{% endif %}" href="/pc/{{ pc_match.pc_name | urlencode }}">
+                                                    {{ pc_match.pc_name }}{% if pc_match.fuero %} · {{ pc_match.fuero }}{% endif %}{% if pc_match.is_current_pc %} <span>actual</span>{% endif %}
+                                                </a>
+                                                {% if not pc_match.is_current_pc %}
+                                                <span class="ad-match-assign-btn" onclick="quickAssign({{ task.id }}, '{{ pc_match.pc_name }}')" title="Asignar tarea a esta PC">
+                                                    <i class="bi bi-plus"></i>
+                                                </span>
+                                                {% endif %}
+                                            </div>
                                             {% endfor %}
                                         </div>
                                     </div>
@@ -517,6 +549,17 @@
         setInterval(updateClock, 1000);
         updateClock();
 
+        async function quickAssign(taskId, pcName) {
+            if (!confirm(`¿Deseas asignar esta tarea a la PC ${pcName}?`)) return;
+            const fd = new FormData();
+            fd.append('task_id', taskId);
+            fd.append('pc_name', pcName);
+            try {
+                const r = await fetch('/tasks/assign', { method: 'POST', body: fd });
+                if (r.ok) refreshData();
+            } catch (e) { console.error(e); }
+        }
+
         async function refreshData() {
             const spinner = document.getElementById('refreshSpinner');
             if (spinner) spinner.style.display = 'inline-block';
@@ -570,7 +613,15 @@
                     const currentClass = pc.is_current_pc ? ' ad-match-chip-current' : '';
                     const label = pc.fuero ? `${pc.pc_name} · ${pc.fuero}` : pc.pc_name;
                     const currentLabel = pc.is_current_pc ? '<span>actual</span>' : '';
-                    return `<a class="ad-match-chip${currentClass}" href="/pc/${encodeURIComponent(pc.pc_name)}">${escapeHtml(label)}${currentLabel}</a>`;
+                    const assignBtn = !pc.is_current_pc 
+                        ? `<span class="ad-match-assign-btn" onclick="quickAssign(${task.id}, '${pc.pc_name}')" title="Asignar tarea a esta PC"><i class="bi bi-plus"></i></span>`
+                        : '';
+                    return `
+                        <div class="d-flex align-items-center gap-1">
+                            <a class="ad-match-chip${currentClass}" href="/pc/${encodeURIComponent(pc.pc_name)}">${escapeHtml(label)}${currentLabel}</a>
+                            ${assignBtn}
+                        </div>
+                    `;
                 }).join('');
                 return `
                     <div class="ad-match-box">
