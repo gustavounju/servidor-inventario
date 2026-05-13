@@ -72,38 +72,42 @@ def _build_task_user_match_index(conn):
     return real_name_to_username, known_usernames, pcs_by_username
 
 
+def _attach_task_user_match(task, match_index):
+    real_name_to_username, known_usernames, pcs_by_username = match_index
+    solicitante = (task.get("solicitante") or "").strip()
+    solicitante_key = solicitante.lower()
+    matched_username = ""
+    direct_username = _normalize_directory_username(solicitante)
+    if direct_username and direct_username in known_usernames:
+        matched_username = direct_username
+    elif solicitante_key in real_name_to_username:
+        matched_username = real_name_to_username[solicitante_key]
+
+    matched_pcs = []
+    current_pc = task.get("pc_name") or ""
+    current_pc_upper = current_pc.upper()
+    if matched_username:
+        for candidate in pcs_by_username.get(matched_username, []):
+            matched_pcs.append(
+                {
+                    **candidate,
+                    "is_current_pc": candidate["pc_name"].upper() == current_pc_upper,
+                }
+            )
+
+    task["matched_username"] = matched_username
+    task["matched_pcs"] = matched_pcs
+    task["matched_pc_count"] = len(matched_pcs)
+    task["has_user_match"] = bool(matched_pcs)
+    task["suggested_pc_name"] = matched_pcs[0]["pc_name"] if len(matched_pcs) == 1 else ""
+    return task
+
+
 def _attach_task_user_matches(task_rows, conn):
-    real_name_to_username, known_usernames, pcs_by_username = _build_task_user_match_index(conn)
+    match_index = _build_task_user_match_index(conn)
     enriched = []
     for row in task_rows:
-        task = dict(row)
-        solicitante = (task.get("solicitante") or "").strip()
-        solicitante_key = solicitante.lower()
-        matched_username = ""
-        direct_username = _normalize_directory_username(solicitante)
-        if direct_username and direct_username in known_usernames:
-            matched_username = direct_username
-        elif solicitante_key in real_name_to_username:
-            matched_username = real_name_to_username[solicitante_key]
-
-        matched_pcs = []
-        current_pc = task.get("pc_name") or ""
-        current_pc_upper = current_pc.upper()
-        if matched_username:
-            for candidate in pcs_by_username.get(matched_username, []):
-                matched_pcs.append(
-                    {
-                        **candidate,
-                        "is_current_pc": candidate["pc_name"].upper() == current_pc_upper,
-                    }
-                )
-
-        task["matched_username"] = matched_username
-        task["matched_pcs"] = matched_pcs
-        task["matched_pc_count"] = len(matched_pcs)
-        task["has_user_match"] = bool(matched_pcs)
-        task["suggested_pc_name"] = matched_pcs[0]["pc_name"] if len(matched_pcs) == 1 else ""
-        enriched.append(task)
+        enriched.append(_attach_task_user_match(dict(row), match_index))
     return enriched
 
 
@@ -147,6 +151,14 @@ def _decorate_visor_task(row):
     task["completed_at_fmt"] = completed_at.strftime("%H:%M") if completed_at else ""
     task["resolution_time"] = _format_duration(created_at, completed_at if task.get("estado") == "Hecha" else None)
     task["resolution_label"] = "Resolución" if task.get("estado") == "Hecha" else "Abierta"
+    if "has_user_match" not in task:
+        task["has_user_match"] = False
+    if "matched_pcs" not in task:
+        task["matched_pcs"] = []
+    if "matched_pc_count" not in task:
+        task["matched_pc_count"] = 0
+    if "matched_username" not in task:
+        task["matched_username"] = ""
     return task
 
 @bp_tasks.app_context_processor
@@ -833,7 +845,7 @@ def visor():
                     params.extend([tech_filtro, tech_filtro])
                 
                 base_sql += " ORDER BY t.created_at DESC LIMIT 200"
-                tareas = conn.execute(base_sql, params).fetchall()
+                tareas = _attach_task_user_matches(conn.execute(base_sql, params).fetchall(), conn)
                 
                 return render_template("visor_tareas.html", 
                                        tareas_hoy=[_decorate_visor_task(t) for t in tareas], 
@@ -844,18 +856,18 @@ def visor():
                                        tech_filtro=tech_filtro,
                                        is_filtered=True)
             else:
-                tareas_hoy = conn.execute("""
+                tareas_hoy = _attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
                     ORDER BY t.created_at DESC
-                """).fetchall()
-                tareas_anteriores = conn.execute("""
+                """).fetchall(), conn)
+                tareas_anteriores = _attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE DATE(t.created_at) < CURDATE() AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     ORDER BY t.created_at DESC LIMIT 50
-                """).fetchall()
+                """).fetchall(), conn)
                 return render_template("visor_tareas.html", 
                                        tareas_hoy=[_decorate_visor_task(t) for t in tareas_hoy], 
                                        tareas_anteriores=[_decorate_visor_task(t) for t in tareas_anteriores],
@@ -891,7 +903,7 @@ def api_visor_data():
                     params.extend([tech_filtro, tech_filtro])
                 
                 base_sql += " ORDER BY t.created_at DESC LIMIT 200"
-                rows = conn.execute(base_sql, params).fetchall()
+                rows = _attach_task_user_matches(conn.execute(base_sql, params).fetchall(), conn)
                 
                 return jsonify({
                     "status": "success", 
@@ -900,16 +912,16 @@ def api_visor_data():
                 })
             else:
                 # Tareas de hoy
-                tareas_hoy_rows = conn.execute("""
+                tareas_hoy_rows = _attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user 
                     FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
                     ORDER BY t.created_at DESC
-                """).fetchall()
+                """).fetchall(), conn)
                 
                 # Tareas anteriores (pendientes o recientes)
-                tareas_anteriores_rows = conn.execute("""
+                tareas_anteriores_rows = _attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user 
                     FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
@@ -917,7 +929,7 @@ def api_visor_data():
                     AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     ORDER BY t.created_at DESC
                     LIMIT 50
-                """).fetchall()
+                """).fetchall(), conn)
 
                 return jsonify({
                     "status": "success", 
