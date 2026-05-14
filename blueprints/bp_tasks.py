@@ -284,21 +284,32 @@ def add_task(pc_name):
     if not descripcion: return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
     if not categoria: categoria = predict_category(descripcion)
 
+    is_done = request.form.get("is_done") == "on"
+    solucion = request.form.get("solucion", "").strip()
+
     estado = "Pendiente"
     assigned_to = None
-    if technician:
+    completed_by = None
+    completed_at = None
+
+    if is_done:
+        estado = "Hecha"
+        completed_by = current_username()
+        completed_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        assigned_to = current_username()
+    elif technician:
         assigned_to = technician
         estado = "Asignada"
 
     with get_db_connection() as conn:
         cursor = conn.execute(
-            """INSERT INTO tasks (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto, assigned_to, estado) 
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
-            (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto, assigned_to, estado)
+            """INSERT INTO tasks (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto, assigned_to, estado, completed_by, completed_at, solucion) 
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
+            (pc_name, descripcion, solicitante, categoria, tipo_actividad, prioridad, impacto_valor, resumen_impacto, assigned_to, estado, completed_by, completed_at, solucion)
         )
         task_id = cursor.lastrowid
         conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                     (pc_name, f"Tarea {tipo_actividad.upper()} Creada", "", f"#{task_id}: {descripcion[:30]}...", current_username(), "GESTION_TAREAS", request.remote_addr))
+                     (pc_name, f"Tarea {tipo_actividad.upper()} Creada", "", f"#{task_id}: {descripcion[:30]}..." + (" (Resuelta)" if is_done else ""), current_username(), "GESTION_TAREAS", request.remote_addr))
         conn.commit()
 
     # Notify technicians
@@ -427,17 +438,28 @@ def create_loose_task():
     if not descripcion or not solicitante: return "Faltan datos", 400
     if not categoria: categoria = predict_category(descripcion)
     
+    is_done = request.form.get("is_done") == "on"
+    solucion = request.form.get("solucion", "").strip()
+
     estado = "Pendiente"
     assigned_to = None
-    if technician:
+    completed_by = None
+    completed_at = None
+
+    if is_done:
+        estado = "Hecha"
+        completed_by = current_username()
+        completed_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        assigned_to = current_username()
+    elif technician:
         assigned_to = technician
         estado = "Asignada"
 
     with get_db_connection() as conn:
         cursor = conn.execute(
-            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name, tipo_actividad, prioridad, impacto_valor, resumen_impacto) 
-               VALUES (%s, %s, %s, NOW(), %s, %s, %s, 'PC Generica', %s, %s, %s, %s)""",
-            (descripcion, solicitante, estado, categoria, assigned_to, fuero, tipo_actividad, prioridad, impacto_valor, resumen_impacto)
+            """INSERT INTO tasks (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name, tipo_actividad, prioridad, impacto_valor, resumen_impacto, completed_by, completed_at, solucion) 
+               VALUES (%s, %s, %s, NOW(), %s, %s, %s, 'PC Generica', %s, %s, %s, %s, %s, %s, %s)""",
+            (descripcion, solicitante, estado, categoria, assigned_to, fuero, tipo_actividad, prioridad, impacto_valor, resumen_impacto, completed_by, completed_at, solucion)
         )
         conn.commit()
 

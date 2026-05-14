@@ -1439,6 +1439,15 @@
               <textarea name="resumen_impacto" id="resumen_impacto" class="form-control" rows="2" placeholder="Por qué es crítico..."></textarea>
             </div>
 
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="is_done" name="is_done">
+              <label class="form-check-label" for="is_done">Ya está resuelta</label>
+            </div>
+
+            <div class="form-group mb-3" id="solucion_container" style="display: none;">
+              <label for="solucion" class="form-label fw-bold">Solución</label>
+              <textarea name="solucion" id="solucion" class="form-control" rows="3" placeholder="¿Cómo se resolvió?"></textarea>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -1712,6 +1721,13 @@
           var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
               return new bootstrap.Tooltip(tooltipTriggerEl)
           })
+          document.getElementById('is_done')?.addEventListener('change', function() {
+              const container = document.getElementById('solucion_container');
+              if (container) {
+                  container.style.display = this.checked ? 'block' : 'none';
+                  if (this.checked) document.getElementById('solucion').focus();
+              }
+          });
       });
   </script>
   <script>

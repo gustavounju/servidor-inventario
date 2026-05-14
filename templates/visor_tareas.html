@@ -510,6 +510,11 @@
                             <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name }}</span></td>
                             <td class="desc-cell text-muted">
                                 <div>{{ task.descripcion }}</div>
+                                {% if task.solucion %}
+                                <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #94a3b8;">
+                                    <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
+                                </div>
+                                {% endif %}
                                 {% if task.has_user_match %}
                                 <div class="ad-match-box">
                                     <div class="ad-match-title"><i class="bi bi-diagram-3"></i>{% if task.matched_pc_count == 1 %}Coincidencia AD detectada{% else %}Coincidencias AD ({{ task.matched_pc_count }}){% endif %}</div>
@@ -705,6 +710,11 @@
                     <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name || 'PC'}</span></td>
                     <td class="desc-cell text-muted">
                         <div>${task.descripcion}</div>
+                        ${task.solucion ? `
+                            <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #94a3b8;">
+                                <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
+                            </div>
+                        ` : ''}
                         ${renderAdMatch(task)}
                     </td>
                     <td style="width: 130px;">

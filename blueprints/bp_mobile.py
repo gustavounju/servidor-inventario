@@ -135,12 +135,13 @@ def api_mobile_create_task():
         tipo_actividad = data.get("tipo_actividad", "tarea").lower()
         prioridad = data.get("prioridad", 2)
         impacto_valor = data.get("impacto_valor", 2)
+        solucion = data.get("solucion", "").strip()
 
         with get_db_connection() as conn:
              cursor = conn.execute(
-                """INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, tipo_actividad, prioridad, impacto_valor) 
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, tipo_actividad, prioridad, impacto_valor)
+                """INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, tipo_actividad, prioridad, impacto_valor, solucion) 
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, tipo_actividad, prioridad, impacto_valor, solucion)
             )
              new_id = cursor.lastrowid
              conn.commit()
