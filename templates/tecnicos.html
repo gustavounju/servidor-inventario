@@ -1096,17 +1096,26 @@ async function confirmComplete() {
 
   closeCompleteModal();
   try {
-    await postJSON(API + '/update_task', { 
+    const res = await postJSON(API + '/update_task', {
         id, 
         action:'complete', 
         pc_name: pc,
         descripcion: desc,
         solucion: sol
     });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || data.status !== 'success') {
+      alert("No se pudo completar la tarea: " + ((data && data.message) || res.status));
+      modal.classList.add('open');
+      return;
+    }
     playBeep('done');
     flashCard(id, 'var(--green)');
-    setTimeout(() => refreshData(true), 500);
-  } catch(e) { console.error(e); }
+    await refreshData(true);
+  } catch(e) {
+    alert("Error de conexion al completar la tarea.");
+    modal.classList.add('open');
+  }
 }
 
 async function confirmEdit() {

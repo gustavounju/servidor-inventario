@@ -190,20 +190,19 @@ def api_mobile_update_task():
                             return jsonify({"status": "success"})  # Ya la había tomado él mismo
                     return jsonify({"status": "error", "message": "No se pudo tomar la tarea (ya no existe o no está libre)."}), 404
             elif action == "complete":
-                 sql = "UPDATE tasks SET estado='Hecha', completed_by=%s, completed_at=NOW()"
-                 params = [technician]
+                 sql = "UPDATE tasks SET estado='Hecha', completed_by=%s, completed_at=NOW(), assigned_to=COALESCE(NULLIF(assigned_to, ''), %s), solucion=%s"
+                 params = [technician, technician, (solucion or "").strip()]
                  if pc_name:
                      sql += ", pc_name=%s"
                      params.append(pc_name)
                  if descripcion:
                      sql += ", descripcion=%s"
                      params.append(descripcion)
-                 if solucion:
-                     sql += ", solucion=%s"
-                     params.append(solucion)
                  sql += " WHERE id=%s"
                  params.append(task_id)
-                 conn.execute(sql, params)
+                 cursor = conn.execute(sql, params)
+                 if cursor.rowcount == 0:
+                     return jsonify({"status": "error", "message": "No se encontro la tarea para completar."}), 404
             elif action == "edit":
                  sql = "UPDATE tasks SET descripcion=%s, solucion=%s WHERE id=%s"
                  conn.execute(sql, (descripcion, solucion, task_id))
