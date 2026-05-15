@@ -354,6 +354,14 @@
         <input class="field-input requester-input" type="text" id="vSolic" placeholder="Buscar persona o fuero..." autocomplete="off">
       </div>
       <div class="requester-results" id="vSolicResults"></div>
+      <label style="display:flex; align-items:center; gap:10px; font-weight:700; margin: 4px 0 12px;">
+        <input type="checkbox" id="vDone">
+        Tarea ya resuelta
+      </label>
+      <div class="input-field" id="vSolContainer" style="display:none;">
+        <div class="field-label">Soluci&oacute;n</div>
+        <textarea class="field-textarea" id="vSolucion" rows="3" placeholder="&iquest;C&oacute;mo se resolvi&oacute;?"></textarea>
+      </div>
       <div class="btn-group">
         <button class="btn btn-cancel" onclick="backToVoice()">Reintentar Voz</button>
         <button class="btn btn-save" onclick="saveTask('v')">Guardar Tarea</button>
@@ -479,6 +487,9 @@
     document.getElementById('voiceTranscript').innerText = 'Toca "Grabar pedido" para abrir la grabadora del celular.';
     document.getElementById('btnStopVoice').innerText = 'Grabar pedido';
     document.getElementById('btnStopVoice').disabled = false;
+    document.getElementById('vDone').checked = false;
+    document.getElementById('vSolucion').value = '';
+    document.getElementById('vSolContainer').style.display = 'none';
   }
 
   function startVoiceCapture() {
@@ -536,6 +547,10 @@
     document.getElementById('voiceStep2').style.display = 'block';
     document.getElementById('vDesc').value = res.descripcion || '';
     document.getElementById('vSolic').value = res.solicitante || '';
+    const voiceDone = res.is_done === true || res.is_done === 1 || res.is_done === 'true';
+    document.getElementById('vDone').checked = voiceDone;
+    document.getElementById('vSolucion').value = res.solucion || '';
+    document.getElementById('vSolContainer').style.display = voiceDone ? 'block' : 'none';
     renderRequesterSuggestions('vSolic');
   }
 
@@ -681,6 +696,10 @@
     const solic = document.getElementById(prefix + 'Solic').value.trim();
     const separatorIndex = solic.lastIndexOf(' - ');
     const fuero = separatorIndex > 0 ? solic.slice(separatorIndex + 3).trim() : '';
+    const doneInput = document.getElementById(prefix + 'Done');
+    const solucionInput = document.getElementById(prefix + 'Solucion');
+    const isDone = doneInput ? doneInput.checked : false;
+    const solucion = solucionInput ? solucionInput.value.trim() : '';
 
     if (!desc || !solic) {
       alert("Por favor completa descripción y solicitante.");
@@ -697,7 +716,9 @@
         body: JSON.stringify({
           descripcion: desc,
           solicitante: solic,
-          fuero: fuero
+          fuero: fuero,
+          is_done: isDone,
+          solucion: solucion
         })
       });
 
@@ -717,6 +738,10 @@
 
   // Initial load
   document.getElementById('operatorVoiceFile').addEventListener('change', e => processVoiceFile(e.target.files[0]));
+  document.getElementById('vDone').addEventListener('change', function() {
+    document.getElementById('vSolContainer').style.display = this.checked ? 'block' : 'none';
+    if (this.checked) document.getElementById('vSolucion').focus();
+  });
   ['mSolic', 'vSolic'].forEach(id => {
     const input = document.getElementById(id);
     if (!input) return;

@@ -1269,6 +1269,8 @@ function openManualModal() {
   document.getElementById('mSolic').value = '';
   document.getElementById('mPc').value = '';
   document.getElementById('mDone').checked = false;
+  document.getElementById('mSolucion').value = '';
+  document.getElementById('mSolContainer').style.display = 'none';
   document.getElementById('manualOverlay').classList.add('open');
   document.getElementById('mDesc').focus();
 }
@@ -1300,6 +1302,9 @@ voiceInput.onchange = async (e) => {
   document.getElementById('voiceTranscript').textContent = 'Procesando grabación...';
   document.getElementById('btnVoiceStop').disabled = true;
   document.getElementById('voiceResult').classList.remove('show');
+  document.getElementById('vfDone').checked = false;
+  document.getElementById('vfSolucion').value = '';
+  document.getElementById('vfSolContainer').style.display = 'none';
 
   animateWave(true);
 
@@ -1318,6 +1323,10 @@ voiceInput.onchange = async (e) => {
       const result = data.result;
       document.getElementById('vfDesc').value = result.descripcion || '';
       document.getElementById('vfSolic').value = result.solicitante || '';
+      const voiceDone = result.is_done === true || result.is_done === 1 || result.is_done === 'true';
+      document.getElementById('vfDone').checked = voiceDone;
+      document.getElementById('vfSolucion').value = result.solucion || '';
+      document.getElementById('vfSolContainer').style.display = voiceDone ? 'block' : 'none';
       document.getElementById('voiceStatus').textContent = '¡Listo! Confirmá los datos:';
       document.getElementById('voiceResult').classList.add('show');
       document.getElementById('btnVoiceStop').disabled = false;
