@@ -46,7 +46,7 @@
       --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     }
 
-    :root[data-theme="pride"] {
+    :root[data-theme="femenino"] {
       --bg: #fdfafc;
       --bg2: linear-gradient(90deg, #ff0018, #ffa52c, #ffff41, #008018, #0000f9, #86007d);
       --bg3: #f3e8f0;
@@ -62,6 +62,35 @@
       --text-muted: #8a6c8c;
       --input-bg: #ffffff;
       --shadow: 0 8px 24px rgba(255, 0, 120, 0.15);
+    }
+
+    :root[data-theme="retro"] {
+      --bg: #000000;
+      --bg2: #000000;
+      --bg3: #111111;
+      --card: #000000;
+      --card-hover: #111111;
+      --border: #2121ff;
+      --accent: #ffff00;
+      --accent2: #ff0000;
+      --green: #00ff00;
+      --yellow: #ffff00;
+      --red: #ff0000;
+      --text: #ffffff;
+      --text-muted: #aaaaaa;
+      --input-bg: #000000;
+      --shadow: 4px 4px 0px rgba(33, 33, 255, 0.5);
+    }
+
+    [data-theme="retro"] * {
+      font-family: 'Courier New', Courier, monospace !important;
+      border-radius: 0 !important;
+      letter-spacing: 0.05em;
+    }
+
+    [data-theme="retro"] .top-bar-brand {
+      border: 2px solid #ffff00;
+      padding: 4px 8px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -414,7 +443,8 @@
     
     let next = 'default';
     if (current === 'default') next = 'dark';
-    else if (current === 'dark') next = 'pride';
+    else if (current === 'dark') next = 'femenino';
+    else if (current === 'femenino') next = 'retro';
 
     if (next === 'default') root.removeAttribute('data-theme');
     else root.setAttribute('data-theme', next);
