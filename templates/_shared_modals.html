@@ -45,7 +45,7 @@
 <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 950px;">
         <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25); max-height: calc(100vh - 2rem);">
-            <form action="{{ url_for('tasks.create_loose_task') }}" method="POST" style="display: flex; flex-direction: column; min-height: 0; height: 100%;">
+            <form id="formCrearTarea" action="{{ url_for('tasks.create_loose_task') }}" method="POST" style="display: flex; flex-direction: column; min-height: 0; height: 100%;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <!-- Header moderno con gradiente -->
@@ -2867,6 +2867,17 @@
       if (container) {
           container.style.display = this.checked ? 'block' : 'none';
           if (this.checked) document.getElementById('solucion_shared').focus();
+      }
+    });
+
+    document.getElementById('formCrearTarea')?.addEventListener('submit', function(e) {
+      var isDone = document.getElementById('is_done_shared').checked;
+      var solucion = document.getElementById('solucion_shared').value.trim();
+      if (isDone && !solucion) {
+        e.preventDefault();
+        alert("Por favor, ingrese el detalle de la solución.");
+        document.getElementById('solucion_shared').focus();
+        return false;
       }
     });
   });

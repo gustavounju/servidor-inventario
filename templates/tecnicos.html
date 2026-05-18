@@ -1123,6 +1123,11 @@ async function confirmComplete() {
   const sol = document.getElementById('completeSolucion').value.trim();
 
   if (!desc) { alert("La descripción no puede estar vacía."); return; }
+  if (!sol) {
+    alert("Por favor, ingrese el detalle de la solución.");
+    document.getElementById('completeSolucion').focus();
+    return;
+  }
 
   closeCompleteModal();
   try {
@@ -1320,6 +1325,13 @@ async function submitManualTask() {
   const pc = document.getElementById('mPc').value;
   const done = document.getElementById('mDone').checked;
   const sol = document.getElementById('mSolucion').value.trim();
+
+  if (done && !sol) {
+    alert("Por favor, indique la solución antes de guardar la tarea realizada.");
+    document.getElementById('mSolucion').focus();
+    return;
+  }
+
   const ok = await submitTask(desc, solic, pc, done, 'tarea', 2, sol);
   if (ok) closeManualModal();
 }
@@ -1389,6 +1401,12 @@ async function confirmVoiceResult(isDone) {
   const done = isDone || document.getElementById('vfDone').checked;
   
   const sol = document.getElementById('vfSolucion').value.trim();
+  if (done && !sol) {
+    alert("Por favor, indique la solución antes de guardar la tarea realizada.");
+    document.getElementById('vfSolucion').focus();
+    return;
+  }
+
   const ok = await submitTask(desc, solic, pc, done, 'tarea', 2, sol);
   if (ok) cancelVoice();
 }

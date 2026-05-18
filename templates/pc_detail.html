@@ -1728,6 +1728,16 @@
                   if (this.checked) document.getElementById('solucion').focus();
               }
           });
+          document.getElementById('form-nueva-tarea')?.addEventListener('submit', function(e) {
+              const isDone = document.getElementById('is_done').checked;
+              const solucion = document.getElementById('solucion').value.trim();
+              if (isDone && !solucion) {
+                  e.preventDefault();
+                  alert("Por favor, ingrese el detalle de la solución.");
+                  document.getElementById('solucion').focus();
+                  return false;
+              }
+          });
       });
   </script>
   <script>
