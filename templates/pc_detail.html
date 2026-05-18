@@ -438,7 +438,7 @@
             <td>
               {% if t.estado != 'Hecha' %}
               <button type="button" class="btn btn-sm btn-success mb-1"
-                onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}')">
+                onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}', '{{ pc.pc_name }}')">
                 <i class="bi bi-check-lg"></i> Hecha
               </button>
               {% endif %}
@@ -760,7 +760,7 @@
             <td>
               {% if t.estado != 'Hecha' %}
               <button type="button" class="btn btn-sm btn-success mb-1"
-                onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}')">
+                onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}', '{{ pc.pc_name }}')">
                 <i class="bi bi-check-lg"></i> Hecha
               </button>
               {% endif %}

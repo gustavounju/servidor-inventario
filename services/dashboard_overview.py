@@ -324,9 +324,16 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             """ + filter_sql
             total_rows = conn.execute(count_sql, filter_params).fetchone()["c"]
 
-            unassigned_tasks = conn.execute(
+            unassigned_tasks_raw = conn.execute(
                 "SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC"
             ).fetchall()
+            
+            try:
+                from blueprints.bp_tasks import _attach_task_user_matches
+                unassigned_tasks = _attach_task_user_matches(unassigned_tasks_raw, conn)
+            except Exception as e:
+                print("Error attaching user matches in dashboard:", e)
+                unassigned_tasks = [dict(row) for row in unassigned_tasks_raw]
             unassigned_count = len(unassigned_tasks)
             technicians_list = list_technician_users()
 

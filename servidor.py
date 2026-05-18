@@ -37,6 +37,7 @@ from utils.runtime_urls import get_public_app_base_url, get_public_script_fallba
 
 # Inicializar Flask
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_dev_secret_key_12345')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SESSION_COOKIE_HTTPONLY'] = True

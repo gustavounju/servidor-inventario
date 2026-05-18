@@ -2447,20 +2447,20 @@
                 ${renderTaskMatchBox(t)}
                 
                 <div class="pt-actions">
-                    <button class="btn-pt-action btn-pt-confirm" onclick='quickTaskDone(${t.id}, ${JSON.stringify(pcName)}, ${JSON.stringify(t.assigned_to || "")})'>
+                    <button class="btn-pt-action btn-pt-confirm" onclick='quickTaskDone(${t.id}, ${JSON.stringify(t.suggested_pc_name || pcName)}, ${JSON.stringify(t.assigned_to || "")})'>
                         <i class="bi bi-check-lg"></i> Confirmar
                     </button>
                     <button class="btn-pt-action btn-pt-delete" onclick="quickDeleteTask(${t.id})" title="Eliminar">
                         <i class="bi bi-trash3"></i>
                     </button>
-                    ${isGeneric ? `
+                    ${isGeneric && !t.suggested_pc_name ? `
                         <button class="btn-pt-action border-secondary bg-white text-secondary" style="flex:0 0 38px;" onclick="openMigrateModal(${t.id})" title="Asignar a PC">
                             <i class="bi bi-arrow-right-short" style="font-size: 1.4rem; line-height: 0;"></i>
                         </button>
                     ` : ''}
                     ${isGeneric && t.suggested_pc_name ? `
-                        <button class="btn-pt-action" style="border-color:#bfdbfe; background:#dbeafe; color:#1d4ed8;" onclick='assignSuggestedTask(${t.id}, ${JSON.stringify(t.suggested_pc_name)})' title="Vincular a ${t.suggested_pc_name}">
-                            <i class="bi bi-magic"></i> Vincular sugerida
+                        <button class="btn-pt-action" style="border-color:#bfdbfe; background:#dbeafe; color:#1d4ed8; pointer-events: none;" title="El sistema ya sabe a qué PC corresponde">
+                            <i class="bi bi-magic"></i> Vinculación sugerida
                         </button>
                     ` : ''}
                 </div>
@@ -2592,7 +2592,7 @@
                                                 <i class="bi bi-check2-all me-1"></i> Lista
                                             </span>
                                             {% else %}
-                                            <button type="button" class="btn btn-sm" style="background: #10b981; color: white; border: none; border-radius: 6px;" title="Marcar Hecha" onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}')">
+                                            <button type="button" class="btn btn-sm" style="background: #10b981; color: white; border: none; border-radius: 6px;" title="Marcar Hecha" onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}', '{{ pc.pc_name }}')">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
                                             {% endif %}

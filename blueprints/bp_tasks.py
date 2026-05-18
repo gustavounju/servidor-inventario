@@ -78,7 +78,7 @@ def _attach_task_user_match(task, match_index):
     solicitante_key = solicitante.lower()
     matched_username = ""
     direct_username = _normalize_directory_username(solicitante)
-    if direct_username and direct_username in known_usernames:
+    if direct_username and (direct_username in known_usernames or direct_username in pcs_by_username):
         matched_username = direct_username
     elif solicitante_key in real_name_to_username:
         matched_username = real_name_to_username[solicitante_key]

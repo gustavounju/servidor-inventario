@@ -205,90 +205,7 @@
             white-space: nowrap;
         }
 
-        .ad-match-box {
-            margin-top: 0.45rem;
-            padding: 0.5rem 0.65rem;
-            border-radius: 10px;
-            background: rgba(56, 189, 248, 0.08);
-            border: 1px solid rgba(56, 189, 248, 0.18);
-        }
-
-        .ad-match-box.ad-match-box-empty {
-            background: rgba(148, 163, 184, 0.08);
-            border-color: rgba(148, 163, 184, 0.16);
-        }
-
-        .ad-match-title {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.68rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: #7dd3fc;
-        }
-
-        .ad-match-box-empty .ad-match-title {
-            color: #94a3b8;
-        }
-
-        .ad-match-list {
-            margin-top: 0.35rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
-        }
-
-        .ad-match-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.18rem 0.5rem;
-            border-radius: 999px;
-            background: rgba(15, 23, 42, 0.45);
-            border: 1px solid rgba(125, 211, 252, 0.2);
-            color: #e0f2fe;
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        .ad-match-chip:hover {
-            border-color: var(--visor-accent);
-            background: rgba(56, 189, 248, 0.15);
-            color: #fff;
-        }
-
-        .ad-match-chip.ad-match-chip-current {
-            border-color: rgba(34, 197, 94, 0.35);
-            color: #86efac;
-        }
-
-        .ad-match-assign-btn {
-            background: var(--visor-accent);
-            color: #0f172a;
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .ad-match-assign-btn:hover {
-            transform: scale(1.2);
-        }
-
-        .ad-match-note {
-            margin-top: 0.3rem;
-            font-size: 0.74rem;
-            color: #cbd5e1;
-        }
+        
 
         .btn-auth {
             background: rgba(255, 255, 255, 0.05);
@@ -441,30 +358,7 @@
                                         <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
                                     </div>
                                     {% endif %}
-                                    {% if task.has_user_match %}
-                                    <div class="ad-match-box">
-                                        <div class="ad-match-title"><i class="bi bi-diagram-3"></i>{% if task.matched_pc_count == 1 %}Coincidencia AD detectada{% else %}Coincidencias AD ({{ task.matched_pc_count }}){% endif %}</div>
-                                        <div class="ad-match-list">
-                                            {% for pc_match in task.matched_pcs %}
-                                            <div class="d-flex align-items-center gap-1">
-                                                <a class="ad-match-chip{% if pc_match.is_current_pc %} ad-match-chip-current{% endif %}" href="/pc/{{ pc_match.pc_name | urlencode }}">
-                                                    {{ pc_match.pc_name }}{% if pc_match.fuero %} · {{ pc_match.fuero }}{% endif %}{% if pc_match.is_current_pc %} <span>actual</span>{% endif %}
-                                                </a>
-                                                {% if not pc_match.is_current_pc %}
-                                                <span class="ad-match-assign-btn" onclick="quickAssign({{ task.id }}, '{{ pc_match.pc_name }}')" title="Asignar tarea a esta PC">
-                                                    <i class="bi bi-plus"></i>
-                                                </span>
-                                                {% endif %}
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                    {% else %}
-                                    <div class="ad-match-box ad-match-box-empty">
-                                        <div class="ad-match-title"><i class="bi bi-person-x"></i>Sin coincidencia AD</div>
-                                        <div class="ad-match-note">No se encontró una PC activa vinculada al solicitante.</div>
-                                    </div>
-                                    {% endif %}
+
                                 </td>
                                 <td>
                                     {% if task.assigned_to or task.completed_by %}
@@ -510,23 +404,6 @@
                             <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name }}</span></td>
                             <td class="desc-cell text-muted">
                                 <div>{{ task.descripcion }}</div>
-                                {% if task.has_user_match %}
-                                <div class="ad-match-box">
-                                    <div class="ad-match-title"><i class="bi bi-diagram-3"></i>{% if task.matched_pc_count == 1 %}Coincidencia AD detectada{% else %}Coincidencias AD ({{ task.matched_pc_count }}){% endif %}</div>
-                                    <div class="ad-match-list">
-                                        {% for pc_match in task.matched_pcs %}
-                                        <a class="ad-match-chip{% if pc_match.is_current_pc %} ad-match-chip-current{% endif %}" href="/pc/{{ pc_match.pc_name | urlencode }}">
-                                            {{ pc_match.pc_name }}{% if pc_match.fuero %} · {{ pc_match.fuero }}{% endif %}{% if pc_match.is_current_pc %} <span>actual</span>{% endif %}
-                                        </a>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% else %}
-                                <div class="ad-match-box ad-match-box-empty">
-                                    <div class="ad-match-title"><i class="bi bi-person-x"></i>Sin coincidencia AD</div>
-                                    <div class="ad-match-note">No se encontró una PC activa vinculada al solicitante.</div>
-                                </div>
-                                {% endif %}
                             </td>
                             <td style="width: 130px;">
                                 <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
@@ -612,40 +489,7 @@
                 .replace(/'/g, '&#39;');
         }
 
-        function renderAdMatch(task) {
-            if (task.has_user_match && Array.isArray(task.matched_pcs) && task.matched_pcs.length) {
-                const title = task.matched_pc_count === 1
-                    ? 'Coincidencia AD detectada'
-                    : `Coincidencias AD (${task.matched_pc_count})`;
-                const chips = task.matched_pcs.map(pc => {
-                    const currentClass = pc.is_current_pc ? ' ad-match-chip-current' : '';
-                    const label = pc.fuero ? `${pc.pc_name} · ${pc.fuero}` : pc.pc_name;
-                    const currentLabel = pc.is_current_pc ? '<span>actual</span>' : '';
-                    const assignBtn = !pc.is_current_pc 
-                        ? `<span class="ad-match-assign-btn" onclick="quickAssign(${task.id}, '${pc.pc_name}')" title="Asignar tarea a esta PC"><i class="bi bi-plus"></i></span>`
-                        : '';
-                    return `
-                        <div class="d-flex align-items-center gap-1">
-                            <a class="ad-match-chip${currentClass}" href="/pc/${encodeURIComponent(pc.pc_name)}">${escapeHtml(label)}${currentLabel}</a>
-                            ${assignBtn}
-                        </div>
-                    `;
-                }).join('');
-                return `
-                    <div class="ad-match-box">
-                        <div class="ad-match-title"><i class="bi bi-diagram-3"></i>${title}</div>
-                        <div class="ad-match-list">${chips}</div>
-                    </div>
-                `;
-            }
-
-            return `
-                <div class="ad-match-box ad-match-box-empty">
-                    <div class="ad-match-title"><i class="bi bi-person-x"></i>Sin coincidencia AD</div>
-                    <div class="ad-match-note">No se encontró una PC activa vinculada al solicitante.</div>
-                </div>
-            `;
-        }
+        
 
         function renderHoy(tasks) {
             const tbody = document.getElementById('tableHoy');
@@ -671,7 +515,7 @@
                                 <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
                             </div>
                         ` : ''}
-                        ${renderAdMatch(task)}
+                        
                     </td>
                     <td>
                         ${(task.assigned_to || task.completed_by) ? `
@@ -705,7 +549,7 @@
                     <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name || 'PC'}</span></td>
                     <td class="desc-cell text-muted">
                         <div>${task.descripcion}</div>
-                        ${renderAdMatch(task)}
+                        
                     </td>
                     <td style="width: 130px;">
                         <span class="status-dot status-dot-${task.estado.toLowerCase()}"></span>
