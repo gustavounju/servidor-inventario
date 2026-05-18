@@ -172,11 +172,26 @@
                                             <i class="bi bi-info-circle-fill me-1"></i> El impacto y la prioridad definen el orden en el "Centro de Decisión".
                                         </div>
                                     </div>
+                                    <div class="col-12 mt-2">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="is_done_shared" name="is_done">
+                                            <label class="form-check-label um-label mb-0" for="is_done_shared" style="cursor:pointer; font-weight: 700; color: #1e40af;">Esta tarea ya está resuelta</label>
+                                        </div>
+                                        <div id="solucion_container_shared" style="display: none; background: #fff; border: 1px solid #dbeafe; border-radius: 12px; padding: 12px; margin-top: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                                            <label class="um-label" style="color: #1e40af;"><i class="bi bi-check2-all me-1"></i> Detalle de la Solución</label>
+                                            <textarea name="solucion" id="solucion_shared" class="form-control" rows="3" 
+                                                      style="border-radius: 8px; border-color: #dbeafe; font-size: 0.85rem; padding: 10px;"
+                                                      placeholder="Explica brevemente cómo se solucionó el pedido..."></textarea>
+                                        </div>
+                                    </div>
+
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+
+
 
                 <div class="modal-footer" style="padding: 16px 30px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; flex: 0 0 auto;">
                     <button type="button" class="btn btn-link text-decoration-none text-muted fw-bold" data-bs-dismiss="modal" style="font-size: 0.85rem;">Cancelar</button>
@@ -2447,20 +2462,20 @@
                 ${renderTaskMatchBox(t)}
                 
                 <div class="pt-actions">
-                    <button class="btn-pt-action btn-pt-confirm" onclick='quickTaskDone(${t.id}, ${JSON.stringify(t.suggested_pc_name || pcName)}, ${JSON.stringify(t.assigned_to || "")})'>
+                    <button class="btn-pt-action btn-pt-confirm" onclick='quickTaskDone(${t.id}, ${JSON.stringify(pcName)}, ${JSON.stringify(t.assigned_to || "")})'>
                         <i class="bi bi-check-lg"></i> Confirmar
                     </button>
                     <button class="btn-pt-action btn-pt-delete" onclick="quickDeleteTask(${t.id})" title="Eliminar">
                         <i class="bi bi-trash3"></i>
                     </button>
-                    ${isGeneric && !t.suggested_pc_name ? `
+                    ${isGeneric ? `
                         <button class="btn-pt-action border-secondary bg-white text-secondary" style="flex:0 0 38px;" onclick="openMigrateModal(${t.id})" title="Asignar a PC">
                             <i class="bi bi-arrow-right-short" style="font-size: 1.4rem; line-height: 0;"></i>
                         </button>
                     ` : ''}
                     ${isGeneric && t.suggested_pc_name ? `
-                        <button class="btn-pt-action" style="border-color:#bfdbfe; background:#dbeafe; color:#1d4ed8; pointer-events: none;" title="El sistema ya sabe a qué PC corresponde">
-                            <i class="bi bi-magic"></i> Vinculación sugerida
+                        <button class="btn-pt-action" style="border-color:#bfdbfe; background:#dbeafe; color:#1d4ed8;" onclick='assignSuggestedTask(${t.id}, ${JSON.stringify(t.suggested_pc_name)})' title="Vincular a ${t.suggested_pc_name}">
+                            <i class="bi bi-magic"></i> Vincular sugerida
                         </button>
                     ` : ''}
                 </div>
@@ -2592,7 +2607,7 @@
                                                 <i class="bi bi-check2-all me-1"></i> Lista
                                             </span>
                                             {% else %}
-                                            <button type="button" class="btn btn-sm" style="background: #10b981; color: white; border: none; border-radius: 6px;" title="Marcar Hecha" onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}', '{{ pc.pc_name }}')">
+                                            <button type="button" class="btn btn-sm" style="background: #10b981; color: white; border: none; border-radius: 6px;" title="Marcar Hecha" onclick="openCompleteTaskModal({{ t.id|tojson }}, {{ (t.assigned_to or '')|tojson }}, {{ pc.pc_name|tojson }})">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
                                             {% endif %}
@@ -2670,6 +2685,10 @@
               {% endfor %}
             </select>
             <div class="form-text">Si identificas el equipo, la tarea se guarda allÃ­. Si no, queda cerrada en PC GenÃ©rica.</div>
+          </div>
+          <div class="mb-3">
+            <label for="completeTaskSolution" class="form-label">Soluci&oacute;n</label>
+            <textarea name="solucion" id="completeTaskSolution" class="form-control" rows="3" placeholder="Explica brevemente c&oacute;mo se resolvi&oacute; la tarea..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
@@ -2788,6 +2807,10 @@
     if (pcSelect) {
       pcSelect.value = isGeneric ? 'PC Generica' : resolvedPcName;
     }
+    var solutionInput = document.getElementById('completeTaskSolution');
+    if (solutionInput) {
+      solutionInput.value = '';
+    }
 
     if (hasAssignedTech) {
       techSelect.value = assignedTo;
@@ -2839,6 +2862,13 @@
         modalInstance.show();
       }
     }
+    document.getElementById('is_done_shared')?.addEventListener('change', function() {
+      const container = document.getElementById('solucion_container_shared');
+      if (container) {
+          container.style.display = this.checked ? 'block' : 'none';
+          if (this.checked) document.getElementById('solucion_shared').focus();
+      }
+    });
   });
 
   function quickTaskDone(taskId, pcName, assignedTo) {

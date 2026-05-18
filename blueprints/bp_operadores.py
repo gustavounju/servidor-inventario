@@ -73,6 +73,8 @@ def api_operadores_create_task():
         descripcion = (data.get("descripcion") or "").strip()
         solicitante = (data.get("solicitante") or "").strip()
         fuero = (data.get("fuero") or "").strip()
+        is_done = bool(data.get("is_done"))
+        solucion = (data.get("solucion") or "").strip()
 
         if not descripcion or not solicitante:
             return jsonify({"status": "error", "message": "Faltan descripción y solicitante"}), 400
@@ -80,16 +82,19 @@ def api_operadores_create_task():
         categoria = predict_category(descripcion)
         user = current_user()
         operator_name = user.get("display_name") or user.get("username") or "Operador"
+        estado = "Hecha" if is_done else "Pendiente"
+        completed_by = operator_name if is_done else None
+        completed_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") if is_done else None
 
         with get_db_connection() as conn:
             cursor = conn.execute(
                 """
                 INSERT INTO tasks
-                    (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name, tipo_actividad, prioridad, impacto_valor)
+                    (descripcion, solicitante, estado, created_at, categoria, assigned_to, fuero, pc_name, tipo_actividad, prioridad, impacto_valor, completed_by, completed_at, solucion)
                 VALUES
-                    (%s, %s, 'Pendiente', NOW(), %s, NULL, %s, 'PC Generica', 'tarea', 1, 1)
+                    (%s, %s, %s, NOW(), %s, NULL, %s, 'PC Generica', 'tarea', 1, 1, %s, %s, %s)
                 """,
-                (descripcion, solicitante, categoria, fuero),
+                (descripcion, solicitante, estado, categoria, fuero, completed_by, completed_at, solucion),
             )
             task_id = cursor.lastrowid
             conn.commit()

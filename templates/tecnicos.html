@@ -599,6 +599,12 @@
         <span class="toggle-track"></span>
         Marcar como ya resuelta
       </label>
+      <div class="voice-field" id="vfSolContainer" style="display:none; margin-top:10px;">
+        <div class="vf-label">Solución</div>
+        <textarea class="vf-input" id="vfSolucion" rows="2" placeholder="¿Cómo se resolvió?"></textarea>
+      </div>
+
+
     </div>
 
     <div class="voice-actions" id="voiceActions">
@@ -651,6 +657,12 @@
       <span class="toggle-track"></span>
       Ya está resuelta
     </label>
+    <div class="input-group-gold" id="mSolContainer" style="display:none; margin-top:10px;">
+      <div class="input-label-gold">Solución</div>
+      <textarea class="gold-input" id="mSolucion" rows="3" placeholder="¿Cómo se resolvió?"></textarea>
+    </div>
+
+
     <div class="voice-actions">
       <button class="btn-vact btn-vcancel" onclick="closeManualModal()">Cancelar</button>
       <button class="btn-vact btn-vsave" onclick="submitManualTask()"><i class="bi bi-plus-lg"></i> Guardar</button>
@@ -1114,17 +1126,26 @@ async function confirmComplete() {
 
   closeCompleteModal();
   try {
-    await postJSON(API + '/update_task', { 
+    const res = await postJSON(API + '/update_task', {
         id, 
         action:'complete', 
         pc_name: pc,
         descripcion: desc,
         solucion: sol
     });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || data.status !== 'success') {
+      alert("No se pudo completar la tarea: " + ((data && data.message) || res.status));
+      modal.classList.add('open');
+      return;
+    }
     playBeep('done');
     flashCard(id, 'var(--green)');
-    setTimeout(() => refreshData(true), 500);
-  } catch(e) { console.error(e); }
+    await refreshData(true);
+  } catch(e) {
+    alert("Error de conexion al completar la tarea.");
+    modal.classList.add('open');
+  }
 }
 
 async function confirmEdit() {
@@ -1212,7 +1233,7 @@ function flashCard(id, color) {
   setTimeout(() => { el.style.background=''; }, 600);
 }
 
-async function submitTask(desc, solic, pcName, isDone, tipo, prio) {
+async function submitTask(desc, solic, pcName, isDone, tipo, prio, solucion) {
   if (!desc || !techId) { alert('Completá la descripción y asegurate de tener un técnico activo.'); return false; }
   try {
     const res = await postJSON(API + '/create_task', {
@@ -1221,7 +1242,8 @@ async function submitTask(desc, solic, pcName, isDone, tipo, prio) {
       pc_name: pcName||null, 
       is_done: isDone,
       tipo_actividad: tipo || 'tarea',
-      prioridad: prio || 2
+      prioridad: prio || 2,
+      solucion: solucion || ''
     });
     const data = await res.json();
     if (data.status === 'success') {
@@ -1286,6 +1308,8 @@ function openManualModal() {
   document.getElementById('mSolic').value = '';
   document.getElementById('mPc').value = '';
   document.getElementById('mDone').checked = false;
+  document.getElementById('mSolucion').value = '';
+  document.getElementById('mSolContainer').style.display = 'none';
   document.getElementById('manualOverlay').classList.add('open');
   document.getElementById('mDesc').focus();
 }
@@ -1295,7 +1319,8 @@ async function submitManualTask() {
   const solic = document.getElementById('mSolic').value.trim();
   const pc = document.getElementById('mPc').value;
   const done = document.getElementById('mDone').checked;
-  const ok = await submitTask(desc, solic, pc, done);
+  const sol = document.getElementById('mSolucion').value.trim();
+  const ok = await submitTask(desc, solic, pc, done, 'tarea', 2, sol);
   if (ok) closeManualModal();
 }
 
@@ -1316,6 +1341,9 @@ voiceInput.onchange = async (e) => {
   document.getElementById('voiceTranscript').textContent = 'Procesando grabación...';
   document.getElementById('btnVoiceStop').disabled = true;
   document.getElementById('voiceResult').classList.remove('show');
+  document.getElementById('vfDone').checked = false;
+  document.getElementById('vfSolucion').value = '';
+  document.getElementById('vfSolContainer').style.display = 'none';
 
   animateWave(true);
 
@@ -1334,6 +1362,10 @@ voiceInput.onchange = async (e) => {
       const result = data.result;
       document.getElementById('vfDesc').value = result.descripcion || '';
       document.getElementById('vfSolic').value = result.solicitante || '';
+      const voiceDone = result.is_done === true || result.is_done === 1 || result.is_done === 'true';
+      document.getElementById('vfDone').checked = voiceDone;
+      document.getElementById('vfSolucion').value = result.solucion || '';
+      document.getElementById('vfSolContainer').style.display = voiceDone ? 'block' : 'none';
       document.getElementById('voiceStatus').textContent = '¡Listo! Confirmá los datos:';
       document.getElementById('voiceResult').classList.add('show');
       document.getElementById('btnVoiceStop').disabled = false;
@@ -1356,7 +1388,8 @@ async function confirmVoiceResult(isDone) {
   const pc = document.getElementById('vfPc').value;
   const done = isDone || document.getElementById('vfDone').checked;
   
-  const ok = await submitTask(desc, solic, pc, done);
+  const sol = document.getElementById('vfSolucion').value.trim();
+  const ok = await submitTask(desc, solic, pc, done, 'tarea', 2, sol);
   if (ok) cancelVoice();
 }
 
@@ -1465,6 +1498,14 @@ window.addEventListener('DOMContentLoaded', async () => {
   await refreshData();
   subscribeToPush();
   updateAlertsButton();
+  document.getElementById('mDone').addEventListener('change', function() {
+    document.getElementById('mSolContainer').style.display = this.checked ? 'block' : 'none';
+    if(this.checked) document.getElementById('mSolucion').focus();
+  });
+  document.getElementById('vfDone').addEventListener('change', function() {
+    document.getElementById('vfSolContainer').style.display = this.checked ? 'block' : 'none';
+    if(this.checked) document.getElementById('vfSolucion').focus();
+  });
   prevTaskCount = (allData.active_tasks||[]).length;
   setInterval(poll, 10000);
 });

@@ -9,10 +9,11 @@ load_dotenv()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "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")
 client = Groq(api_key=GROQ_API_KEY)
 
+
 def process_voice_command(text_command=None, audio_path=None):
     """
-    Toma un comando (texto o audio) y usa Groq (Whisper + Llama3) 
-    para extraer 'descripcion' (tarea) y 'solicitante' (quien lo pidio).
+    Toma un comando (texto o audio) y usa Groq (Whisper + Llama3)
+    para extraer descripcion, solicitante, estado de cierre y solucion.
     Devuelve un diccionario.
     """
     try:
@@ -21,56 +22,65 @@ def process_voice_command(text_command=None, audio_path=None):
         if audio_path:
             print(f"Groq Processing Audio: {audio_path}")
             with open(audio_path, "rb") as file:
-                # Transcripcion usando Whisper de Groq (Extra rápido)
                 transcription = client.audio.transcriptions.create(
-                  file=(os.path.basename(audio_path), file.read()),
-                  model="whisper-large-v3", # Modelo de vanguardia para español
-                  prompt="El audio trata sobre soporte técnico, impresoras, computadoras y redes en español.",
-                  response_format="json",
-                  language="es",
-                  temperature=0.0
+                    file=(os.path.basename(audio_path), file.read()),
+                    model="whisper-large-v3",
+                    prompt="El audio trata sobre soporte tecnico, impresoras, computadoras y redes en espanol.",
+                    response_format="json",
+                    language="es",
+                    temperature=0.0,
                 )
                 current_text = transcription.text
-            
-            print(f"Texto extraído por Whisper-Groq: {current_text}")
+
+            print(f"Texto extraido por Whisper-Groq: {current_text}")
 
         if not current_text or current_text.strip() == "":
             raise Exception("No se obtuvo texto del comando de audio.")
 
-        # Extraer entidades con Llama-3.3 70B (Velocidad instantánea y altísima precisión)
         prompt = f"""
-Actúas como un asistente de inventario y tareas técnicas corporativas.
-Se te dará un texto dictado por un técnico. 
-Extrae o deduce estrictamente 2 campos:
-1) "descripcion": El problema o acción a realizar. 
-2) "solicitante": La persona, área o juez que pide el trabajo. Si no se menciona, déjalo vacío "".
+Actuas como un asistente de inventario y tareas tecnicas corporativas.
+Se te dara un texto dictado por un tecnico.
+Extrae o deduce estrictamente estos campos:
+1) "descripcion": El problema o accion a realizar.
+2) "solicitante": La persona, area o juez que pide el trabajo. Si no se menciona, dejalo vacio "".
+3) "is_done": true si el texto indica que la tarea ya fue hecha, resuelta, finalizada, reparada o solucionada; si no, false.
+4) "solucion": como se resolvio, solo si se menciona o puede deducirse claramente. Si no, dejalo vacio "".
 
-Ejemplo 1: "La jueza martinez tiene problema con la impresora en la vocalía 2"
-Respuesta: {{"descripcion": "problema con la impresora en la vocalía 2", "solicitante": "jueza martinez"}}
+Ejemplo 1: "La jueza martinez tiene problema con la impresora en la vocalia 2"
+Respuesta: {{"descripcion": "problema con la impresora en la vocalia 2", "solicitante": "jueza martinez", "is_done": false, "solucion": ""}}
 
-Responde EXCLUSIVAMENTE con un JSON puro con esas dos claves.
+Ejemplo 2: "Ya arregle la impresora de mesa de entradas, era el cable USB flojo, lo pidio Laura"
+Respuesta: {{"descripcion": "impresora de mesa de entradas", "solicitante": "Laura", "is_done": true, "solucion": "Se ajusto el cable USB flojo"}}
+
+Responde EXCLUSIVAMENTE con un JSON puro con esas cuatro claves.
 
 Texto a analizar: "{current_text}"
 """
-        
+
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "user", "content": prompt}
             ],
             model="llama-3.3-70b-versatile",
             temperature=0.0,
-            # Aseguramos que devuelva JSON
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
         )
-        
+
         raw_text = chat_completion.choices[0].message.content.strip()
         print(f"Groq Llama-3 Response: {raw_text}")
-        
-        return json.loads(raw_text)
+
+        result = json.loads(raw_text)
+        result.setdefault("descripcion", "")
+        result.setdefault("solicitante", "")
+        result.setdefault("is_done", False)
+        result.setdefault("solucion", "")
+        if isinstance(result["is_done"], str):
+            result["is_done"] = result["is_done"].strip().lower() in ("true", "1", "si", "yes")
+        return result
 
     except Exception as e:
-        # LOGEAR ERROR A ARCHIVO PARA DEPURAR
         import datetime
+
         os.makedirs("logs", exist_ok=True)
         with open("logs/voice_debug.log", "a", encoding="utf-8") as logf:
             logf.write(f"[{datetime.datetime.now()}] FATAL GROQ AI: {str(e)}\n")
@@ -78,5 +88,7 @@ Texto a analizar: "{current_text}"
         print(f"Error AI MultiModal Groq: {e}")
         return {
             "descripcion": text_command or "Error al procesar audio. Intenta de nuevo.",
-            "solicitante": ""
+            "solicitante": "",
+            "is_done": False,
+            "solucion": "",
         }

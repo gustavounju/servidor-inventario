@@ -634,6 +634,7 @@ def run_all_migrations():
     migrate_db_v31()
     migrate_db_v33()
     migrate_db_v34()
+    migrate_db_v35()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -744,3 +745,12 @@ def migration_v32(conn):
     except Exception: pass
     
     print("Migración V32 verificada.")
+
+def migrate_db_v35():
+    """Migración V35: Asegurar columna 'solucion' en tasks."""
+    print("Verificando migración de DB v35...")
+    with get_db_connection() as conn:
+        if not _column_exists(conn, "tasks", "solucion"):
+            print("Aplicando migración V35: Agregando 'solucion' a tasks...")
+            conn.execute("ALTER TABLE tasks ADD COLUMN solucion TEXT")
+    print("Migración v35 verificada.")
