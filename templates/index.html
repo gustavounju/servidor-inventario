@@ -76,6 +76,23 @@
         {% set fleet_attention_pct = ((fleet_attention_count * 100 / kpi_total_activas) if kpi_total_activas else 0) | round(0, 'floor') | int %}
 
 
+        <!-- Banner de PCs Duplicadas -->
+        {% if duplicates_count and duplicates_count > 0 %}
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-3 shadow-sm mb-3" style="border-radius: 12px; border-left: 5px solid #ef4444; animation: pulse-subtle 2s infinite;">
+            <div style="font-size: 1.8rem;">⚠️</div>
+            <div class="flex-grow-1">
+                <strong class="text-danger" style="font-size: 1.1rem;">¡ATENCIÓN CRÍTICA! Se han detectado {{ duplicates_count }} nombre(s) de PC duplicado(s) en la red:</strong>
+                <div class="mt-1">
+                {% for d_name in duplicate_pc_names %}
+                <span class="badge bg-danger ms-1" style="font-size: 0.9rem;">{{ d_name }}</span>
+                {% endfor %}
+                </div>
+                <div class="small mt-1 fw-bold text-danger">¡Esto corrompe el inventario! Identifique las máquinas reales que están colisionando y cambie el nombre en el dominio urgentemente.</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
         <!-- Banner de Usuarios Pendientes de Aprobación -->
         {% if pending_users_list %}
         <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center gap-3 shadow-sm mb-3" style="border-radius: 12px; border-left: 5px solid #f59e0b;">

@@ -90,6 +90,19 @@ def dashboard():
     
     try: per_page = int(request.args.get("per_page", 25))
     except ValueError: per_page = 25
+    
+    try:
+        with get_db_connection() as conn:
+            dup_row = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE alerta_nombre_duplicado = 1 AND is_active = 'True'").fetchone()
+            duplicates_count = dup_row['c'] if dup_row else 0
+            
+            dup_names_rows = conn.execute("SELECT pc_name FROM pcs WHERE alerta_nombre_duplicado = 1 AND is_active = 'True'").fetchall()
+            duplicate_pc_names = [r['pc_name'] for r in dup_names_rows]
+    except Exception as e:
+        print("Error checking duplicates:", e)
+        duplicates_count = 0
+        duplicate_pc_names = []
+
     template_context = load_dashboard_overview(
         q=q,
         estado=estado,
@@ -102,6 +115,9 @@ def dashboard():
         per_page=per_page,
         tipo_actividad=tipo_actividad,
     )
+    
+    template_context['duplicates_count'] = duplicates_count
+    template_context['duplicate_pc_names'] = duplicate_pc_names
     template_context.update(
         server_url=request.host_url,
         fuero_colors=FUERO_COLORS,
