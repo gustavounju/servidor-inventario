@@ -440,6 +440,19 @@
     }
     .toggle-switch input:checked + .toggle-track { background: var(--green); }
     .toggle-switch input:checked + .toggle-track::after { left: 19px; background: #fff; }
+
+    /* Fiestas Patrias (Default Theme) */
+    :root:not([data-theme]) .brand-dot { 
+        width: 14px; 
+        height: 14px; 
+        background: radial-gradient(circle, #74ACDF 33%, #ffffff 33%, #ffffff 66%, #74ACDF 66%); 
+        box-shadow: 0 0 6px rgba(116, 172, 223, 0.5); 
+    }
+    :root:not([data-theme]) .brand-name::after {
+        content: ' 🇦🇷';
+        font-size: 0.85em;
+        margin-left: 4px;
+    }
   </style>
   <script>
     const savedTheme = localStorage.getItem('techTheme');

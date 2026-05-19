@@ -274,6 +274,19 @@
       .brand-sub { display: none; }
       .user-badge span { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     }
+
+    /* Fiestas Patrias (Default Theme) */
+    :root:not([data-theme]) .brand-dot { 
+        width: 14px; 
+        height: 14px; 
+        background: radial-gradient(circle, #74ACDF 33%, #ffffff 33%, #ffffff 66%, #74ACDF 66%); 
+        box-shadow: 0 0 6px rgba(116, 172, 223, 0.5); 
+    }
+    :root:not([data-theme]) .brand-name::after {
+        content: ' 🇦🇷';
+        font-size: 0.85em;
+        margin-left: 4px;
+    }
   </style>
 </head>
 <body>

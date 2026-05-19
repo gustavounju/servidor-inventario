@@ -334,10 +334,16 @@
 
     <div class="visor-shell">
         <nav class="visor-nav">
-            <a href="/" class="visor-logo">
-                <i class="bi bi-display"></i>
-                <span>VISOR DE TRABAJOS</span>
-            </a>
+            <div class="d-flex align-items-center gap-4">
+                <a href="/" class="visor-logo">
+                    <i class="bi bi-display"></i>
+                    <span>VISOR DE TRABAJOS</span>
+                </a>
+                <div class="hide-mobile" style="background: rgba(116, 172, 223, 0.15); border: 1px solid rgba(116, 172, 223, 0.3); color: #7dd3fc; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; display:flex; align-items:center; gap: 8px; cursor: default;" title="Conmemoración de la Revolución de Mayo">
+                    <div style="width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle, #74acdf 33%, #ffffff 33%, #ffffff 66%, #74acdf 66%); box-shadow: 0 0 6px rgba(116, 172, 223, 0.5);"></div>
+                    ¡Semana de Mayo! 🇦🇷
+                </div>
+            </div>
             <div class="d-flex align-items-center gap-3">
                 <div id="visorClock" class="fw-bold text-accent hide-mobile" style="font-family: monospace; font-size: 1.1rem; color: var(--visor-accent);">00:00:00</div>
                 {% if not is_authenticated %}
