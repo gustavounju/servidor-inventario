@@ -882,27 +882,17 @@
                 return;
             }
 
-            const btnBasic = document.querySelector('#compressControls button:nth-of-type(1)');
-            const btnMax = document.querySelector('#compressControls button:nth-of-type(2)');
-            const oldBasicHtml = btnBasic.innerHTML;
+            const btnMax = document.querySelector('#compressControls button');
             const oldMaxHtml = btnMax.innerHTML;
 
-            btnBasic.disabled = true;
             btnMax.disabled = true;
-
-            if (type === 'basic') {
-                btnBasic.innerHTML = '<i class="bi bi-hourglass-split"></i>...';
-            } else {
-                btnMax.innerHTML = '<i class="bi bi-hourglass-split"></i>...';
-            }
+            btnMax.innerHTML = '<i class="bi bi-hourglass-split"></i>...';
 
             try {
                 // Primero obtenemos el PDF modificado (con las páginas que se mantuvieron y su orden actual)
                 const intermediateBytes = await getModifiedPdfBytes();
                 if (!intermediateBytes) {
-                    btnBasic.disabled = false;
                     btnMax.disabled = false;
-                    btnBasic.innerHTML = oldBasicHtml;
                     btnMax.innerHTML = oldMaxHtml;
                     return;
                 }
@@ -930,9 +920,7 @@
                 console.error(err);
                 alert("Error al comprimir el PDF: " + err.message);
             } finally {
-                btnBasic.disabled = false;
                 btnMax.disabled = false;
-                btnBasic.innerHTML = oldBasicHtml;
                 btnMax.innerHTML = oldMaxHtml;
             }
         }
