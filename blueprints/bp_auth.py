@@ -34,6 +34,8 @@ def login():
                 is_pending = True
             else:
                 session.clear()
+                if request.form.get("remember"):
+                    session.permanent = True
                 session[AUTH_SESSION_KEY] = user
                 generate_csrf_token()
                 return redirect(next_url or default_landing_url(user))
