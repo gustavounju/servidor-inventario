@@ -153,8 +153,8 @@ def _decorate_visor_task(row):
     completed_at = _coerce_task_datetime_for_display(task.get("completed_at"))
     task["created_at"] = created_at
     task["completed_at"] = completed_at
-    task["created_at_fmt"] = created_at.strftime("%H:%M") if created_at else ""
-    task["completed_at_fmt"] = completed_at.strftime("%H:%M") if completed_at else ""
+    task["created_at_fmt"] = created_at.strftime("%d/%m %H:%M") if created_at else ""
+    task["completed_at_fmt"] = completed_at.strftime("%d/%m %H:%M") if completed_at else ""
     task["resolution_time"] = _format_duration(created_at, completed_at if task.get("estado") == "Hecha" else None)
     task["resolution_label"] = "Resolución" if task.get("estado") == "Hecha" else "Abierta"
     if "has_user_match" not in task:

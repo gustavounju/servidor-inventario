@@ -417,7 +417,7 @@
                 <table class="visor-table">
                     <thead>
                         <tr>
-                            <th style="width: 80px;">Hora</th>
+                            <th style="width: 110px;">Fecha/Hora</th>
                             <th style="width: 180px;">Equipo / PC</th>
                             <th style="width: 150px;" class="hide-mobile">Solicitante</th>
                             <th>Descripción del Trabajo</th>
@@ -511,7 +511,7 @@
                 <table class="visor-table">
                     <thead>
                         <tr>
-                            <th style="width: 80px;">Hora</th>
+                            <th style="width: 110px;">Fecha/Hora</th>
                             <th style="width: 180px;">Equipo / PC</th>
                             <th style="width: 150px;" class="hide-mobile">Solicitante</th>
                             <th>Descripción del Trabajo</th>
@@ -522,7 +522,7 @@
                     <tbody>
                         {% for task in tareas_pendientes %}
                         <tr>
-                            <td class="time-cell">{{ task.created_at.strftime('%d/%m %H:%M') if task.created_at else '--/--' }}</td>
+                            <td class="time-cell">{{ task.created_at_fmt or '--:--' }}</td>
                             <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
                             <td class="hide-mobile">
                                 <div class="d-flex align-items-center gap-2">
@@ -587,7 +587,7 @@
                     <tbody>
                         {% for task in tareas_anteriores %}
                         <tr>
-                            <td style="width: 80px;" class="text-muted small">{{ task.created_at.strftime('%d/%m') }}</td>
+                            <td style="width: 110px;" class="text-muted small">{{ task.created_at_fmt or '--:--' }}</td>
                             <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name }}</span></td>
                             <td class="desc-cell text-muted">
                                 <div>{{ task.descripcion }}</div>
@@ -788,7 +788,7 @@
             
             tbody.innerHTML = tasks.map(task => `
                 <tr>
-                    <td style="width: 80px;" class="text-muted small">${task.created_at ? new Date(task.created_at).toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit'}) : '--/--'}</td>
+                    <td style="width: 110px;" class="text-muted small">${task.created_at_fmt || '--:--'}</td>
                     <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name || 'PC'}</span></td>
                     <td class="desc-cell text-muted">
                         <div>${task.descripcion}</div>
