@@ -1,7 +1,7 @@
 import os
 import json
 import time
-from flask import Blueprint, render_template, request, session, redirect, url_for, send_from_directory, flash
+from flask import Blueprint, jsonify, render_template, request, session, redirect, url_for, send_from_directory, flash
 from utils.auth import current_user, is_authenticated
 
 bp_vault = Blueprint("vault", __name__)
@@ -178,3 +178,93 @@ def expand_storage():
     
     flash(f"Espacio compartido ampliado a {config['limit_mb']} MB.", "success")
     return redirect(url_for("vault.vault_index"))
+
+
+@bp_vault.route("/recursos_internos/pdf_tools/<path:filename>")
+def pdf_tools(filename):
+    flash("La edición PDF unificada ahora se realiza desde el Editor PDF Local del login.", "info")
+    return redirect(url_for("auth.pdf_local_tool"))
+
+
+@bp_vault.route("/recursos_internos/pdf_rotate/<path:filename>", methods=["POST"])
+def pdf_rotate(filename):
+    """Rota páginas de un PDF y sobrescribe el archivo original."""
+    user = current_user()
+    if not is_authenticated() or not is_vault_authorized(user.get('username')):
+        return jsonify({"status": "error", "message": "Sin permisos"}), 403
+    
+    path = get_vault_path()
+    file_path = os.path.join(path, filename)
+    if not os.path.exists(file_path):
+        return jsonify({"status": "error", "message": "Archivo no encontrado"}), 404
+    
+    try:
+        data = request.json or {}
+        angle = int(data.get("angle", 90))
+        page_selection = data.get("pages", "all")  # "all" o lista de ints "1,2,3"
+
+        if angle not in [90, 180, 270]:
+            return jsonify({"status": "error", "message": "Ángulo inválido. Usar 90, 180 o 270."}), 400
+
+        from pypdf import PdfReader, PdfWriter
+        reader = PdfReader(file_path)
+        writer = PdfWriter()
+        total_pages = len(reader.pages)
+
+        # Determinar qué páginas rotar
+        if page_selection == "all":
+            pages_to_rotate = list(range(total_pages))
+        else:
+            pages_to_rotate = []
+            for part in str(page_selection).split(","):
+                part = part.strip()
+                if "-" in part:
+                    a, b = part.split("-", 1)
+                    pages_to_rotate.extend(range(int(a) - 1, int(b)))
+                elif part.isdigit():
+                    pages_to_rotate.append(int(part) - 1)
+            pages_to_rotate = [p for p in pages_to_rotate if 0 <= p < total_pages]
+
+        for i, page in enumerate(reader.pages):
+            if i in pages_to_rotate:
+                page.rotate(angle)
+            writer.add_page(page)
+
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf", dir=path) as tmp:
+            tmp_path = tmp.name
+            writer.write(tmp)
+
+        os.replace(tmp_path, file_path)
+
+        return jsonify({"status": "success", "message": f"PDF rotado correctamente ({angle}°). Páginas: {len(pages_to_rotate)}/{total_pages}."})
+    except Exception as e:
+        print(f"Error rotando PDF: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_vault.route("/recursos_internos/pdf_ocr/<path:filename>", methods=["POST"])
+def pdf_ocr(filename):
+    """Extrae el texto de un PDF usando OCR local."""
+    user = current_user()
+    if not is_authenticated() or not is_vault_authorized(user.get('username')):
+        return jsonify({"status": "error", "message": "Sin permisos"}), 403
+
+    path = get_vault_path()
+    file_path = os.path.join(path, filename)
+    if not os.path.exists(file_path):
+        return jsonify({"status": "error", "message": "Archivo no encontrado"}), 404
+
+    try:
+        from services.pdf_ocr import LocalOCRConfigurationError, extract_pdf_text_local
+
+        print(f"[OCR] Procesando '{filename}' con OCR local...")
+        extracted_text = extract_pdf_text_local(file_path)
+        print(f"[OCR] Texto extraído: {len(extracted_text)} caracteres.")
+        return jsonify({"status": "success", "text": extracted_text})
+    except LocalOCRConfigurationError as e:
+        print(f"[OCR] Configuración incompleta: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception as e:
+        print(f"[OCR] Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500

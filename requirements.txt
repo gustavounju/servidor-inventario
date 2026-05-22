@@ -13,3 +13,7 @@ firebase-admin
 waitress
 gunicorn
 ldap3
+pypdf
+pytesseract
+pdf2image
+Pillow

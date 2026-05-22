@@ -5,10 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso | Taller Movil SP</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
     <style>
         :root {
             --bg-1: #082f49;
@@ -27,7 +24,7 @@
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: var(--text);
             background:
                 radial-gradient(circle at top left, rgba(45, 212, 191, 0.22), transparent 34%),
@@ -435,7 +432,7 @@
             <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="copyScript(this)" data-url-https="{{ client_script_base_url }}/script" data-url-http="{{ client_script_fallback_url }}/script" title="Copiar Script de Inventario">
                 <i class="bi bi-lightning-charge"></i> Copiar Script
             </button>
-            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="openPdfTools()" title="Herramientas PDF Locales">
+            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local">
                 <i class="bi bi-file-earmark-pdf"></i> Editor PDF
             </button>
         </div>
@@ -493,11 +490,11 @@
             </div>
             
             <div class="divider"></div>
-            <button type="button" class="script-btn" onclick="openPdfTools()" title="Herramientas PDF Locales" style="border-color: #f59e0b; color: #f59e0b;">
-                <i class="bi bi-file-earmark-pdf"></i> <span>Herramientas PDF (Locales)</span>
+            <button type="button" class="script-btn" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local" style="border-color: #f59e0b; color: #f59e0b;">
+                <i class="bi bi-file-earmark-pdf"></i> <span>Editor PDF Local</span>
             </button>
             <div class="hint" style="font-size: 0.75rem; text-align: center;">
-                Abre, reordena, elimina y divide páginas de PDFs sin subirlos a internet. Ideal para ajustar archivos al límite de 5MB.
+                Abre, reordena, gira, rasteriza y aplica OCR dentro de la intranet, sin servicios externos.
             </div>
         </div>
     </div>
@@ -526,6 +523,7 @@
                 <button onclick="document.getElementById('pdfInput').click()" class="pdf-btn-primary" style="padding: 10px 20px; border-radius: 8px; font-weight: bold;"><i class="bi bi-folder2-open"></i> Abrir PDF</button>
                 
                 <button id="btnSave" onclick="savePdf()" style="display:none; background: #10b981; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;"><i class="bi bi-save"></i> Guardar Cambios</button>
+                <button id="btnOCR" onclick="runLocalPdfOCR()" style="display:none; background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;"><i class="bi bi-text-paragraph"></i> OCR</button>
                 <div id="splitControls" style="display:none; align-items: center; gap: 8px; background: white; padding: 4px 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
                     <input type="number" id="maxMbInput" value="5" min="1" max="50" style="width: 60px; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; text-align: center; font-weight: bold;" title="Tamaño máximo por parte (MB)">
                     <span style="font-size: 0.85rem; font-weight: bold; color: var(--muted);">MB max</span>
@@ -545,13 +543,23 @@
                     <p style="font-size: 0.9rem; opacity: 0.8; max-width: 450px; margin: 8px auto;">Todo el procesamiento se realiza en tu navegador. El archivo no se sube a ningún servidor, manteniendo tus documentos seguros y privados, además de no consumir datos.</p>
                 </div>
             </div>
+            <div id="ocrPanel" style="display:none; margin-top: 18px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
+                    <strong style="color: var(--text);">Texto extraído</strong>
+                    <span id="ocrStatus" style="font-size: 0.9rem; color: var(--muted);"></span>
+                    <button type="button" onclick="copyLocalOcrText()" style="margin-left:auto; background:#0f766e; color:white; border:none; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer;">
+                        <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                </div>
+                <textarea id="ocrText" readonly style="width:100%; min-height:220px; border:1px solid #cbd5e1; border-radius:10px; padding:12px; resize:vertical; font-family:Consolas, 'Courier New', monospace; font-size:0.9rem; color:#0f172a; background:white;"></textarea>
+            </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="{{ url_for('static', filename='vendor/pdfjs/pdf.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/pdf-lib/pdf-lib.min.js') }}"></script>
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ url_for('static', filename='vendor/pdfjs/pdf.worker.min.js') }}";
 
         let originalPdfBytes = null;
         let originalFileName = "";
@@ -617,9 +625,13 @@
             document.getElementById('pdfModal').style.display = 'none';
             document.getElementById('pdfInput').value = '';
             document.getElementById('btnSave').style.display = 'none';
+            document.getElementById('btnOCR').style.display = 'none';
             document.getElementById('splitControls').style.display = 'none';
             document.getElementById('compressControls').style.display = 'none';
             document.getElementById('pdfInfo').innerText = '';
+            document.getElementById('ocrPanel').style.display = 'none';
+            document.getElementById('ocrText').value = '';
+            document.getElementById('ocrStatus').innerText = '';
         }
 
         async function loadPdf(event) {
@@ -642,6 +654,7 @@
                     const pdf = await loadingTask.promise;
                     
                     document.getElementById('btnSave').style.display = 'inline-block';
+                    document.getElementById('btnOCR').style.display = 'inline-block';
                     document.getElementById('splitControls').style.display = 'flex';
                     document.getElementById('compressControls').style.display = 'flex';
                     
@@ -676,6 +689,7 @@
             const pageDiv = document.createElement('div');
             pageDiv.className = 'pdf-page-item';
             pageDiv.dataset.originalIndex = originalIndex;
+            pageDiv.dataset.rotation = '0';
             
             // Drag and drop support
             pageDiv.draggable = true;
@@ -709,6 +723,16 @@
                 e.stopPropagation();
                 movePage(pageDiv, -1);
             };
+
+            const btnRotateLeft = document.createElement('button');
+            btnRotateLeft.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+            btnRotateLeft.style.background = '#fde68a';
+            btnRotateLeft.style.color = '#92400e';
+            btnRotateLeft.title = "Girar página a la izquierda";
+            btnRotateLeft.onclick = (e) => {
+                e.stopPropagation();
+                rotatePage(pageDiv, -90);
+            };
             
             const btnRight = document.createElement('button');
             btnRight.innerHTML = '<i class="bi bi-arrow-right"></i>';
@@ -733,9 +757,21 @@
                     updatePageNumbers();
                 }, 200);
             };
+
+            const btnRotateRight = document.createElement('button');
+            btnRotateRight.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+            btnRotateRight.style.background = '#bfdbfe';
+            btnRotateRight.style.color = '#1d4ed8';
+            btnRotateRight.title = "Girar página a la derecha";
+            btnRotateRight.onclick = (e) => {
+                e.stopPropagation();
+                rotatePage(pageDiv, 90);
+            };
             
             controls.appendChild(btnLeft);
+            controls.appendChild(btnRotateLeft);
             controls.appendChild(btnDelete);
+            controls.appendChild(btnRotateRight);
             controls.appendChild(btnRight);
             
             pageDiv.appendChild(pageLabel);
@@ -761,6 +797,16 @@
             updatePageNumbers();
         }
 
+        function rotatePage(pageDiv, delta) {
+            const currentRotation = parseInt(pageDiv.dataset.rotation || '0', 10);
+            const nextRotation = ((currentRotation + delta) % 360 + 360) % 360;
+            pageDiv.dataset.rotation = String(nextRotation);
+            const img = pageDiv.querySelector('img');
+            img.style.transform = `rotate(${nextRotation}deg)`;
+            img.style.transformOrigin = 'center center';
+            img.style.transition = 'transform 0.2s ease';
+        }
+
         function updatePageNumbers() {
             const container = document.getElementById('pdfPagesContainer');
             const children = Array.from(container.children);
@@ -772,9 +818,12 @@
         async function getModifiedPdfBytes() {
             const container = document.getElementById('pdfPagesContainer');
             const children = Array.from(container.children);
-            const indicesToKeep = children.map(child => parseInt(child.dataset.originalIndex));
+            const pageInstructions = children.map(child => ({
+                originalIndex: parseInt(child.dataset.originalIndex),
+                rotation: parseInt(child.dataset.rotation || '0', 10)
+            }));
             
-            if (indicesToKeep.length === 0) {
+            if (pageInstructions.length === 0) {
                 alert("No hay páginas para guardar.");
                 return null;
             }
@@ -782,8 +831,13 @@
             const pdfDoc = await PDFLib.PDFDocument.create();
             const srcDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
             
-            const copiedPages = await pdfDoc.copyPages(srcDoc, indicesToKeep);
-            copiedPages.forEach((page) => {
+            const copiedPages = await pdfDoc.copyPages(srcDoc, pageInstructions.map(item => item.originalIndex));
+            copiedPages.forEach((page, index) => {
+                const rotation = pageInstructions[index].rotation;
+                if (rotation) {
+                    const currentAngle = page.getRotation ? page.getRotation().angle : 0;
+                    page.setRotation(PDFLib.degrees((currentAngle + rotation) % 360));
+                }
                 pdfDoc.addPage(page);
             });
             
@@ -961,6 +1015,78 @@
             }
             
             return await pdfDoc.save({ useObjectStreams: true });
+        }
+
+        async function runLocalPdfOCR() {
+            const btn = document.getElementById('btnOCR');
+            const originalHtml = btn.innerHTML;
+            const panel = document.getElementById('ocrPanel');
+            const textArea = document.getElementById('ocrText');
+            const status = document.getElementById('ocrStatus');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> OCR...';
+            panel.style.display = 'block';
+            textArea.value = '';
+            status.innerText = 'Procesando con OCR local del servidor...';
+
+            try {
+                const pdfBytes = await getModifiedPdfBytes();
+                if (!pdfBytes) {
+                    status.innerText = 'No hay páginas para procesar.';
+                    return;
+                }
+
+                const formData = new FormData();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                formData.append('file', blob, originalFileName || 'documento.pdf');
+
+                const resp = await fetch("{{ url_for('auth.local_pdf_ocr') }}", {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+
+                if (data.status === 'success') {
+                    textArea.value = data.text || '';
+                    status.innerText = `${(data.text || '').length.toLocaleString('es-AR')} caracteres extraídos`;
+                } else {
+                    status.innerText = `Error: ${data.message || 'No se pudo procesar el PDF.'}`;
+                }
+            } catch (err) {
+                console.error(err);
+                status.innerText = `Error: ${err.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        function copyLocalOcrText() {
+            const text = document.getElementById('ocrText').value || '';
+            if (!text) {
+                alert('No hay texto OCR para copiar.');
+                return;
+            }
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text);
+                return;
+            }
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+                alert("No se pudo copiar automáticamente.");
+            }
+            textArea.remove();
         }
 
         function downloadBlob(bytes, filename) {

@@ -12,7 +12,7 @@ Esta version queda preparada para tu flujo real:
 
 ```bash
 sudo apt update
-sudo apt install -y python3 python3-venv python3-pip nginx mysql-client
+sudo apt install -y python3 python3-venv python3-pip nginx mysql-client poppler-utils tesseract-ocr tesseract-ocr-spa
 ```
 
 ## 2. Usuario y directorio
@@ -89,6 +89,12 @@ AD_BASE_DN=
 AD_USE_SSL=false
 AD_CONNECT_TIMEOUT=5
 AD_SUPERUSERS=
+
+# OCR local para PDFs
+PDF_OCR_LANG=spa+eng
+PDF_OCR_DPI=300
+PDF_OCR_MIN_CHARS=20
+TESSERACT_CMD=/usr/bin/tesseract
 ```
 
 Notas:
@@ -99,6 +105,20 @@ Notas:
 - Mas adelante puedes usar `AUTH_MODE=hybrid` o `AUTH_MODE=ad` para Active Directory.
 - `DB_HOST` puede ser otra IP completamente distinta al servidor web.
 - `INVENTARIO_PUBLIC_BASE_URL` define a donde enviaran datos las PCs cliente.
+- `PDF_OCR_LANG=spa+eng` permite OCR en espanol e ingles dentro de la intranet.
+- `TESSERACT_CMD=/usr/bin/tesseract` es la ruta habitual en Ubuntu.
+
+## 5.1 Verificacion de OCR local
+
+Comprueba por PuTTY que Tesseract quede disponible:
+
+```bash
+which tesseract
+tesseract --version
+pdftoppm -v
+```
+
+Si `which tesseract` devuelve `/usr/bin/tesseract`, el servidor ya queda listo para el OCR local del Vault.
 
 ## 6. Probar localmente Gunicorn
 

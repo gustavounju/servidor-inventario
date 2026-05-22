@@ -1,4 +1,7 @@
-from flask import Blueprint, redirect, render_template, request, session, url_for
+import os
+import tempfile
+
+from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 
 from utils.auth import AUTH_SESSION_KEY, auth_mode_label, clear_auth_session, default_landing_url, generate_csrf_token, is_authenticated, validate_login
 
@@ -38,6 +41,42 @@ def login():
             error = "Usuario o clave incorrectos."
 
     return render_template("login.html", error=error, is_pending=is_pending, next_url=next_url, auth_mode_label=auth_mode_label())
+
+
+@bp_auth.route("/pdf-local", methods=["GET"])
+def pdf_local_tool():
+    return render_template("pdf_local_tool_page.html")
+
+
+@bp_auth.route("/api/local/pdf-ocr", methods=["POST"])
+def local_pdf_ocr():
+    uploaded = request.files.get("file")
+    if not uploaded or not uploaded.filename:
+        return jsonify({"status": "error", "message": "No se recibió ningún PDF."}), 400
+
+    if not uploaded.filename.lower().endswith(".pdf"):
+        return jsonify({"status": "error", "message": "El archivo debe ser PDF."}), 400
+
+    temp_path = None
+    try:
+        from services.pdf_ocr import LocalOCRConfigurationError, extract_pdf_text_local
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            temp_path = tmp.name
+            uploaded.save(temp_path)
+
+        extracted_text = extract_pdf_text_local(temp_path)
+        return jsonify({"status": "success", "text": extracted_text})
+    except LocalOCRConfigurationError as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 500
+    except Exception as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 500
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
 
 
 @bp_auth.route("/logout", methods=["GET", "POST"])
