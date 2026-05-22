@@ -417,7 +417,7 @@
                 <table class="visor-table">
                     <thead>
                         <tr>
-                            <th style="width: 110px;">Fecha/Hora</th>
+                            <th style="width: 80px;">Hora</th>
                             <th style="width: 180px;">Equipo / PC</th>
                             <th style="width: 150px;" class="hide-mobile">Solicitante</th>
                             <th>Descripción del Trabajo</th>
@@ -431,7 +431,7 @@
                             {% for task in tareas_hoy %}
                             <tr>
                                 <td class="time-cell">
-                                    {{ task.created_at_fmt or '--:--' }}
+                                    {{ task.created_at_time or '--:--' }}
                                 </td>
                                 <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
                                 <td class="hide-mobile">
@@ -743,7 +743,7 @@
 
             tbody.innerHTML = tasks.map(task => `
                 <tr>
-                    <td class="time-cell">${task.created_at_fmt || '--:--'}</td>
+                    <td class="time-cell">${task.created_at_time || '--:--'}</td>
                     <td><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></td>
                     <td class="hide-mobile">
                         <div class="d-flex align-items-center gap-2">
