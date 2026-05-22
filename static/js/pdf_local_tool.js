@@ -165,7 +165,18 @@
             movePage(pageDiv, 1);
         });
 
-        controls.append(left, rotateLeft, del, rotateRight, right);
+        const ocrBtn = document.createElement("button");
+        ocrBtn.innerHTML = '<i class="bi bi-text-paragraph"></i>';
+        ocrBtn.title = "Extraer texto de esta página (OCR)";
+        ocrBtn.style.background = '#2563eb';
+        ocrBtn.style.color = '#fff';
+        ocrBtn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const rot = parseInt(pageDiv.dataset.rotation || "0", 10);
+            runLocalPdfOCR(originalIndex, rot);
+        });
+
+        controls.append(left, rotateLeft, del, ocrBtn, rotateRight, right);
         pageDiv.append(label, img, controls);
         byId("pdfPagesContainer").appendChild(pageDiv);
         updatePageNumbers();
@@ -315,7 +326,12 @@
         }
     }
 
-    async function runLocalPdfOCR() {
+    async function runLocalPdfOCR(singlePageIndex, pageRotation) {
+        if (singlePageIndex instanceof Event) {
+            singlePageIndex = null;
+            pageRotation = 0;
+        }
+
         const btn = byId("btnOCR");
         const originalHtml = btn.innerHTML;
         const panel = byId("ocrPanel");
@@ -326,10 +342,25 @@
         btn.innerHTML = '<i class="bi bi-hourglass-split"></i> OCR...';
         panel.style.display = "block";
         textArea.value = "";
-        status.innerText = "Procesando con OCR local del servidor...";
+        status.innerText = singlePageIndex !== null ? "Procesando página seleccionada..." : "Procesando con OCR local del servidor...";
 
         try {
-            const pdfBytes = await getModifiedPdfBytes();
+            let pdfBytes;
+            if (singlePageIndex !== null) {
+                const pdfDoc = await PDFLib.PDFDocument.create();
+                const srcDoc = await PDFLib.PDFDocument.load(state.originalPdfBytes);
+                const copiedPages = await pdfDoc.copyPages(srcDoc, [singlePageIndex]);
+                const page = copiedPages[0];
+                if (pageRotation) {
+                    const currentAngle = page.getRotation ? page.getRotation().angle : 0;
+                    page.setRotation(PDFLib.degrees((currentAngle + pageRotation) % 360));
+                }
+                pdfDoc.addPage(page);
+                pdfBytes = await pdfDoc.save();
+            } else {
+                pdfBytes = await getModifiedPdfBytes();
+            }
+
             if (!pdfBytes) {
                 status.innerText = "No hay páginas para procesar.";
                 return;
