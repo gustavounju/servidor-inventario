@@ -503,6 +503,81 @@
                 </table>
             </div>
 
+            {% if tareas_pendientes %}
+            <div class="section-header">
+                <h2>Actividades Pendientes</h2>
+            </div>
+            <div class="table-container mb-4" id="tablePendientes">
+                <table class="visor-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Hora</th>
+                            <th style="width: 180px;">Equipo / PC</th>
+                            <th style="width: 150px;" class="hide-mobile">Solicitante</th>
+                            <th>Descripción del Trabajo</th>
+                            <th style="width: 180px;">Técnico</th>
+                            <th style="width: 130px;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tareas_pendientes %}
+                        <tr>
+                            <td class="time-cell">{{ task.created_at.strftime('%d/%m %H:%M') if task.created_at else '--/--' }}</td>
+                            <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
+                            <td class="hide-mobile">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-person text-muted"></i>
+                                    <span>{{ task.solicitante or 'N/A' }}</span>
+                                </div>
+                            </td>
+                            <td class="desc-cell">
+                                <div>{{ task.descripcion }}</div>
+                                {% if task.has_user_match %}
+                                <div class="ad-match-box">
+                                    <div class="ad-match-title"><i class="bi bi-diagram-3"></i>{% if task.matched_pc_count == 1 %}Coincidencia AD detectada{% else %}Coincidencias AD ({{ task.matched_pc_count }}){% endif %}</div>
+                                    <div class="ad-match-list">
+                                        {% for pc_match in task.matched_pcs %}
+                                        <div class="d-flex align-items-center gap-1">
+                                            <a class="ad-match-chip{% if pc_match.is_current_pc %} ad-match-chip-current{% endif %}" href="/pc/{{ pc_match.pc_name | urlencode }}">
+                                                {{ pc_match.pc_name }}{% if pc_match.fuero %} · {{ pc_match.fuero }}{% endif %}{% if pc_match.is_current_pc %} <span>actual</span>{% endif %}
+                                            </a>
+                                            {% if not pc_match.is_current_pc %}
+                                            <span class="ad-match-assign-btn" onclick="quickAssign({{ task.id }}, '{{ pc_match.pc_name }}')" title="Asignar tarea a esta PC">
+                                                <i class="bi bi-plus"></i>
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="ad-match-box ad-match-box-empty">
+                                    <div class="ad-match-title"><i class="bi bi-person-x"></i>Sin coincidencia AD</div>
+                                    <div class="ad-match-note">No se encontró una PC activa vinculada al solicitante.</div>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.assigned_to %}
+                                <div class="tech-pill">
+                                    <i class="bi bi-tools"></i>
+                                    <span>{{ task.assigned_to }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted small">Sin asignar</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
+                                <span class="fw-bold small">{{ task.estado }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
             {% if tareas_anteriores %}
             <div class="section-header">
                 <h2>Historial Reciente</h2>
@@ -595,8 +670,9 @@
                 
                 if (data.status === 'success') {
                     renderHoy(data.tasks_hoy);
+                    if (data.tasks_pendientes) renderPendientes(data.tasks_pendientes);
                     renderAnteriores(data.tasks_anteriores);
-                    updateStats(data.tasks_hoy);
+                    updateStats(data);
                 }
             } catch (e) { console.error(e); }
             finally { if (spinner) setTimeout(() => spinner.style.display = 'none', 800); }
@@ -731,11 +807,63 @@
             `).join('');
         }
 
-        function updateStats(tasks) {
-            document.getElementById('statTotalHoy').textContent = tasks.length;
-            const pendientes = tasks.filter(t => t.estado !== 'Hecha').length;
-            const hechas = tasks.filter(t => t.estado === 'Hecha').length;
-            document.getElementById('statPendientes').textContent = pendientes;
+        function renderPendientes(tasks) {
+            const container = document.getElementById('tablePendientes');
+            if (!container) return; // Si la tabla no estaba, no hacemos nada o la podríamos inyectar dinámicamente. 
+            // Para simplificar, asumimos que siempre recarga con JS la data.
+            const tbody = container.querySelector('tbody');
+            if (!tbody || !tasks) return;
+            
+            if (tasks.length === 0) {
+                container.style.display = 'none';
+                return;
+            } else {
+                container.style.display = 'block';
+            }
+            
+            tbody.innerHTML = tasks.map(task => `
+                <tr>
+                    <td class="time-cell">${task.created_at_fmt || '--:--'}</td>
+                    <td><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></td>
+                    <td class="hide-mobile">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person text-muted"></i>
+                            <span>${task.solicitante || 'N/A'}</span>
+                        </div>
+                    </td>
+                    <td class="desc-cell">
+                        <div>${task.descripcion}</div>
+                        ${renderAdMatch(task)}
+                    </td>
+                    <td>
+                        ${task.assigned_to ? `
+                            <div class="tech-pill">
+                                <i class="bi bi-tools"></i>
+                                <span>${task.assigned_to}</span>
+                            </div>
+                        ` : '<span class="text-muted small">Sin asignar</span>'}
+                    </td>
+                    <td>
+                        <span class="status-dot status-dot-${task.estado.toLowerCase()}"></span>
+                        <span class="fw-bold small">${task.estado}</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats(data) {
+            const tasks_hoy = data.tasks_hoy || [];
+            const tasks_pendientes = data.tasks_pendientes || [];
+            document.getElementById('statTotalHoy').textContent = tasks_hoy.length;
+            
+            // Si tenemos data.tasks_pendientes usamos su longitud, sino contamos las de hoy
+            let pendientes_count = tasks_pendientes.length > 0 
+                ? tasks_pendientes.length 
+                : tasks_hoy.filter(t => t.estado !== 'Hecha').length;
+                
+            const hechas = tasks_hoy.filter(t => t.estado === 'Hecha').length;
+            
+            document.getElementById('statPendientes').textContent = pendientes_count;
             document.getElementById('statHechasHoy').textContent = hechas;
         }
 

@@ -895,6 +895,7 @@ def visor():
                 return render_template("visor_tareas.html", 
                                        tareas_hoy=[_decorate_visor_task(t) for t in tareas], 
                                        tareas_anteriores=[],
+                                       tareas_pendientes=[],
                                        technicians=technicians,
                                        hoy=fecha_filtro,
                                        pc_filtro=pc_filtro,
@@ -913,9 +914,16 @@ def visor():
                     WHERE DATE(t.created_at) < CURDATE() AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     ORDER BY t.created_at DESC LIMIT 50
                 """).fetchall(), conn)
+                tareas_pendientes = _attach_task_user_matches(conn.execute("""
+                    SELECT t.*, p.last_user FROM tasks t 
+                    LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                    WHERE t.estado != 'Hecha'
+                    ORDER BY t.created_at DESC
+                """).fetchall(), conn)
                 return render_template("visor_tareas.html", 
                                        tareas_hoy=[_decorate_visor_task(t) for t in tareas_hoy], 
                                        tareas_anteriores=[_decorate_visor_task(t) for t in tareas_anteriores],
+                                       tareas_pendientes=[_decorate_visor_task(t) for t in tareas_pendientes],
                                        technicians=technicians,
                                        hoy=fecha_filtro,
                                        is_filtered=False)
@@ -953,7 +961,8 @@ def api_visor_data():
                 return jsonify({
                     "status": "success", 
                     "tasks_hoy": [_decorate_visor_task(t) for t in rows],
-                    "tasks_anteriores": []
+                    "tasks_anteriores": [],
+                    "tasks_pendientes": []
                 })
             else:
                 # Tareas de hoy
@@ -976,10 +985,20 @@ def api_visor_data():
                     LIMIT 50
                 """).fetchall(), conn)
 
+                # Tareas pendientes
+                tareas_pendientes_rows = _attach_task_user_matches(conn.execute("""
+                    SELECT t.*, p.last_user 
+                    FROM tasks t 
+                    LEFT JOIN pcs p ON t.pc_name = p.pc_name 
+                    WHERE t.estado != 'Hecha'
+                    ORDER BY t.created_at DESC
+                """).fetchall(), conn)
+
                 return jsonify({
                     "status": "success", 
                     "tasks_hoy": [_decorate_visor_task(t) for t in tareas_hoy_rows],
-                    "tasks_anteriores": [_decorate_visor_task(t) for t in tareas_anteriores_rows]
+                    "tasks_anteriores": [_decorate_visor_task(t) for t in tareas_anteriores_rows],
+                    "tasks_pendientes": [_decorate_visor_task(t) for t in tareas_pendientes_rows]
                 })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
