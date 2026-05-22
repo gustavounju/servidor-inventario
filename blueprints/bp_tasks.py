@@ -868,10 +868,11 @@ def report_tasks_completed_pdf():
 def visor():
     """Vista de 'visor' para mostrar trabajos con filtros."""
     try:
-        fecha_filtro = request.args.get("fecha", dt.now().strftime("%Y-%m-%d"))
+        hoy_str = dt.now().strftime("%Y-%m-%d")
+        fecha_filtro = request.args.get("fecha", hoy_str)
         pc_filtro = request.args.get("pc", "").strip()
         tech_filtro = request.args.get("technician", "").strip()
-        is_filtered = any([request.args.get("fecha"), pc_filtro, tech_filtro])
+        is_filtered = bool(pc_filtro or tech_filtro or (request.args.get("fecha") and request.args.get("fecha") != hoy_str))
 
         with get_db_connection() as conn:
             technicians = list_technician_users()
@@ -936,10 +937,11 @@ def visor():
 def api_visor_data():
     """API para actualización en tiempo real del visor con soporte de filtros."""
     try:
+        hoy_str = dt.now().strftime("%Y-%m-%d")
         fecha_filtro = request.args.get("fecha")
         pc_filtro = request.args.get("pc", "").strip()
         tech_filtro = request.args.get("technician", "").strip()
-        is_filtered = any([fecha_filtro, pc_filtro, tech_filtro])
+        is_filtered = bool(pc_filtro or tech_filtro or (fecha_filtro and fecha_filtro != hoy_str))
 
         with get_db_connection() as conn:
             if is_filtered:
