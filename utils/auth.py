@@ -97,6 +97,7 @@ PUBLIC_ENDPOINTS = {
     "auth.logout",
     "auth.pdf_local_tool",
     "auth.local_pdf_ocr",
+    "auth.local_pdf_ocr_status",
     "api.receive_inventory",
     "api.health",
     "setup.get_script",

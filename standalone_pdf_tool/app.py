@@ -1,13 +1,16 @@
 import os
+import sys
 import tempfile
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
-from pdf_ocr_service import LocalOCRConfigurationError, extract_pdf_text_local
-
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from pdf_ocr_service import LocalOCRConfigurationError, extract_pdf_text_local
+from services.pdf_ocr_queue import OcrFileTooLargeError, OcrQueueFullError, pdf_ocr_queue
 
 app = Flask(
     __name__,
@@ -46,8 +49,13 @@ def local_pdf_ocr():
             temp_path = tmp.name
             uploaded.save(temp_path)
 
-        extracted_text = extract_pdf_text_local(temp_path)
-        return jsonify({"status": "success", "text": extracted_text})
+        job = pdf_ocr_queue.enqueue(temp_path, uploaded.filename, extract_pdf_text_local)
+        temp_path = None
+        return jsonify(job), 202
+    except OcrQueueFullError as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 429
+    except OcrFileTooLargeError as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 413
     except LocalOCRConfigurationError as exc:
         return jsonify({"status": "error", "message": str(exc)}), 500
     except Exception as exc:
@@ -58,6 +66,14 @@ def local_pdf_ocr():
                 os.remove(temp_path)
             except OSError:
                 pass
+
+
+@app.get("/api/local/pdf-ocr/<job_id>")
+def local_pdf_ocr_status(job_id):
+    job = pdf_ocr_queue.get_status(job_id)
+    if not job:
+        return jsonify({"status": "error", "message": "Trabajo OCR no encontrado o expirado."}), 404
+    return jsonify(job)
 
 
 if __name__ == "__main__":

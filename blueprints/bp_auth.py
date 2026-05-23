@@ -4,6 +4,7 @@ import tempfile
 from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 
 from utils.auth import AUTH_SESSION_KEY, auth_mode_label, clear_auth_session, default_landing_url, generate_csrf_token, is_authenticated, validate_login
+from services.pdf_ocr_queue import OcrFileTooLargeError, OcrQueueFullError, pdf_ocr_queue
 
 
 bp_auth = Blueprint("auth", __name__)
@@ -67,8 +68,13 @@ def local_pdf_ocr():
             temp_path = tmp.name
             uploaded.save(temp_path)
 
-        extracted_text = extract_pdf_text_local(temp_path)
-        return jsonify({"status": "success", "text": extracted_text})
+        job = pdf_ocr_queue.enqueue(temp_path, uploaded.filename, extract_pdf_text_local)
+        temp_path = None
+        return jsonify(job), 202
+    except OcrQueueFullError as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 429
+    except OcrFileTooLargeError as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 413
     except LocalOCRConfigurationError as exc:
         return jsonify({"status": "error", "message": str(exc)}), 500
     except Exception as exc:
@@ -79,6 +85,14 @@ def local_pdf_ocr():
                 os.remove(temp_path)
             except OSError:
                 pass
+
+
+@bp_auth.route("/api/local/pdf-ocr/<job_id>", methods=["GET"])
+def local_pdf_ocr_status(job_id):
+    job = pdf_ocr_queue.get_status(job_id)
+    if not job:
+        return jsonify({"status": "error", "message": "Trabajo OCR no encontrado o expirado."}), 404
+    return jsonify(job)
 
 
 @bp_auth.route("/logout", methods=["GET", "POST"])
