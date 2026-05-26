@@ -392,7 +392,7 @@
                         <p>Total Hoy</p>
                     </div>
                 </div>
-                <div class="kpi-card">
+                <div class="kpi-card" style="cursor: pointer; transition: all 0.2s;" onclick="scrollToPendientes()" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--visor-pending)'" onmouseout="this.style.transform='none'; this.style.borderColor='var(--visor-border)'" title="Ver tareas pendientes">
                     <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-clock-history"></i></div>
                     <div class="kpi-info">
                         <h3 id="statPendientes">--</h3>
@@ -629,6 +629,29 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function scrollToPendientes() {
+            const container = document.getElementById('tablePendientes');
+            if (container) {
+                // Scroll hacia el header que está justo antes del contenedor
+                const header = container.previousElementSibling;
+                if (header && header.classList.contains('section-header')) {
+                    header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                
+                // Efecto visual para destacar la tabla
+                const originalBoxShadow = container.style.boxShadow;
+                container.style.transition = 'box-shadow 0.4s ease';
+                container.style.boxShadow = '0 0 0 2px var(--visor-pending), 0 0 20px rgba(245, 158, 11, 0.4)';
+                setTimeout(() => {
+                    container.style.boxShadow = originalBoxShadow || '0 10px 15px -3px rgba(0, 0, 0, 0.3)';
+                }, 2000);
+            } else {
+                alert('¡Excelente! No hay tareas pendientes en este momento.');
+            }
+        }
+
         function updateClock() {
             const now = new Date();
             document.getElementById('visorClock').textContent = now.toLocaleTimeString('es-AR', { hour12: false });
