@@ -604,8 +604,21 @@
             let bestBytes = await tryBasicCompression(intermediateBytes);
             let bestLabel = "Optimización estructural";
 
-            const profiles = getCompressionProfiles(intermediateBytes.length, pageCount);
-            for (const profile of profiles) {
+            const levelSelect = byId("compressLevelSelect");
+            const selectedLevel = levelSelect ? levelSelect.value : "leve";
+
+            let profilesToTry = [];
+            if (selectedLevel === "leve") {
+                profilesToTry = [{ quality: 0.75, scale: 1.0, label: "Leve" }];
+            } else if (selectedLevel === "medio") {
+                profilesToTry = [{ quality: 0.60, scale: 0.9, label: "Moderado" }];
+            } else if (selectedLevel === "agresivo") {
+                profilesToTry = [{ quality: 0.40, scale: 0.7, label: "Agresivo" }];
+            } else {
+                profilesToTry = getCompressionProfiles(intermediateBytes.length, pageCount);
+            }
+
+            for (const profile of profilesToTry) {
                 if (runId !== state.compressRunId) {
                     throw new CancellationError("Compresión cancelada.");
                 }
@@ -615,7 +628,9 @@
                     bestBytes = candidateBytes;
                     bestLabel = profile.label;
                 }
-                if (candidateBytes.length <= intermediateBytes.length * 0.65) {
+                
+                // Si estamos en automático, cortamos rápido si logramos un -35%
+                if (selectedLevel === "auto" && candidateBytes.length <= intermediateBytes.length * 0.65) {
                     break;
                 }
             }

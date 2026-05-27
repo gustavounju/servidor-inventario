@@ -43,8 +43,14 @@
                 </div>
                 <div id="compressControls" class="pdf-tool-input-group" style="display:none;">
                     <span><strong>Comprimir:</strong></span>
-                    <button id="btnCompress" type="button" class="pdf-tool-btn pdf-tool-btn--raster" title="Convierte páginas a imagen. Solo descarga si el resultado es más liviano.">
-                        <i class="bi bi-file-image"></i> Probar
+                    <select id="compressLevelSelect" class="pdf-tool-select" title="Nivel de compresión" style="margin: 0 8px; padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.9rem;">
+                        <option value="auto">Automático</option>
+                        <option value="leve" selected>Leve (Tranqui)</option>
+                        <option value="medio">Moderado</option>
+                        <option value="agresivo">Agresivo (Baja Calidad)</option>
+                    </select>
+                    <button id="btnCompress" type="button" class="pdf-tool-btn pdf-tool-btn--raster" title="Convierte páginas a imagen para reducir tamaño.">
+                        <i class="bi bi-file-image"></i> Aplicar
                     </button>
                 </div>
                 <span id="pdfInfo" class="pdf-tool-info"></span>
