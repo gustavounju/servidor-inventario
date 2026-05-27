@@ -609,11 +609,11 @@
 
             let profilesToTry = [];
             if (selectedLevel === "leve") {
-                profilesToTry = [{ quality: 0.75, scale: 1.0, label: "Leve" }];
+                profilesToTry = [{ quality: 0.85, scale: 2.5, label: "Leve" }];
             } else if (selectedLevel === "medio") {
-                profilesToTry = [{ quality: 0.60, scale: 0.9, label: "Moderado" }];
+                profilesToTry = [{ quality: 0.75, scale: 1.5, label: "Moderado" }];
             } else if (selectedLevel === "agresivo") {
-                profilesToTry = [{ quality: 0.40, scale: 0.7, label: "Agresivo" }];
+                profilesToTry = [{ quality: 0.60, scale: 1.0, label: "Agresivo" }];
             } else {
                 profilesToTry = getCompressionProfiles(intermediateBytes.length, pageCount);
             }
