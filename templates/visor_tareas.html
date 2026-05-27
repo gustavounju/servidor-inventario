@@ -715,6 +715,17 @@
                     </td>
                     <td class="desc-cell">
                         <div>${task.descripcion}</div>
+                        ${task.acciones && task.acciones.length > 0 ? `
+                        <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
+                            ${task.acciones.map(accion => `
+                            <div class="small" style="color: #64748b; margin-bottom: 2px;">
+                                <i class="bi bi-chat-text me-1"></i>
+                                <strong style="color: #334155;">${accion.technician_name}:</strong> ${accion.action_text}
+                            </div>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+
                         ${task.solucion ? `
                             <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #cbd5e1;">
                                 <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
@@ -754,6 +765,17 @@
                     <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name || 'PC'}</span></td>
                     <td class="desc-cell text-muted">
                         <div>${task.descripcion}</div>
+                        ${task.acciones && task.acciones.length > 0 ? `
+                        <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
+                            ${task.acciones.map(accion => `
+                            <div class="small" style="color: #64748b; margin-bottom: 2px;">
+                                <i class="bi bi-chat-text me-1"></i>
+                                <strong style="color: #334155;">${accion.technician_name}:</strong> ${accion.action_text}
+                            </div>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+
                         ${task.solucion ? `
                             <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #94a3b8;">
                                 <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
@@ -795,6 +817,17 @@
                     </td>
                     <td class="desc-cell">
                         <div>${task.descripcion}</div>
+                        ${task.acciones && task.acciones.length > 0 ? `
+                        <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
+                            ${task.acciones.map(accion => `
+                            <div class="small" style="color: #64748b; margin-bottom: 2px;">
+                                <i class="bi bi-chat-text me-1"></i>
+                                <strong style="color: #334155;">${accion.technician_name}:</strong> ${accion.action_text}
+                            </div>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+
                         ${renderAdMatch(task)}
                     </td>
                     <td>

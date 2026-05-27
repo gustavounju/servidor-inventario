@@ -976,7 +976,7 @@ def api_visor_data():
                     params.extend([tech_filtro, tech_filtro])
                 
                 base_sql += " ORDER BY t.created_at DESC LIMIT 200"
-                rows = _attach_task_user_matches(conn.execute(base_sql, params).fetchall(), conn)
+                rows = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute(base_sql, params).fetchall(), conn), conn)
                 
                 return jsonify({
                     "status": "success", 
