@@ -1,0 +1,129 @@
+# Contexto del Sistema de Inventario - Centro Judicial San Pedro, Jujuy
+
+## 📋 Resumen del Proyecto
+Sistema de inventario para el Departamento de Informática del Centro Judicial (San Pedro, Jujuy). Desarrollado en Python/Flask con HTML frontend.
+
+## 🚀 Stack Técnico
+- **Backend**: Python 3.13, Flask, MySQL
+- **Frontend**: HTML, CSS (gold.css), JavaScript
+- **Base de datos**: MySQL local (dev) / MySQL remoto (prod)
+- **Autenticación**: Sistema propio con roles, futura integración con Active Directory
+
+## 🏗️ Infraestructura de Base de Datos
+### Desarrollo (Casa/Oficina)
+- **Host**: 127.0.0.1
+- **Usuario**: root
+- **Contraseña**: tdg729tdg
+- **Base de datos**: inventario_dev
+- **Puerto**: 3306
+
+### Producción (Centro Judicial)
+- **Host**: 10.15.0.62
+- **Usuario/Contraseña**: Por configurar
+- **Puerto**: 3306
+
+## 📁 Estructura del Proyecto
+```
+ServidorInventario/
+├── servidor.py              # Aplicación principal Flask
+├── blueprints/              # Módulos de la aplicación
+│   ├── bp_dashboard.py      # Dashboard principal
+│   ├── bp_api.py           # API endpoints
+│   ├── bp_stock.py         # Gestión de stock
+│   ├── bp_setup.py         # Configuración
+│   ├── bp_infrastructure.py # Infraestructura
+│   ├── bp_tasks.py         # Gestión de tareas
+│   ├── bp_mobile.py        # Soporte móvil
+│   └── bp_auth.py          # Autenticación
+├── database/               # Modelos de base de datos
+│   ├── db_core.py         # Conexión y configuración
+│   └── migrations.py      # Migraciones de base de datos
+├── utils/                  # Utilidades
+│   ├── auth.py            # Autenticación y roles
+│   ├── constants.py       # Constantes globales
+│   └── runtime_urls.py    # URLs dinámicas
+├── templates/              # Plantillas HTML
+├── static/                 # Assets estáticos
+├── services/              # Servicios (AI, reporting)
+└── logs/                  # Logs del sistema
+```
+
+## 👥 Sistema de Autenticación y Roles
+### Roles Disponibles
+- **Administrador**: Acceso completo a todos los módulos
+- **Sistemas**: Dashboard, Infra, Reportes, Mobile
+- **Técnico**: Dashboard, Reportes, Mobile
+- **Usuario**: Solo lectura básica
+
+### Usuario por Defecto
+- **Usuario**: administrador
+- **Contraseña**: tdg729tdg
+- **Rol**: Administrador (acceso completo)
+
+## 📊 Módulos Disponibles
+1. **Dashboard** (`/`): Vista principal con estadísticas
+2. **Infraestructura** (`/infra/`): Gestión de equipos y red
+3. **Reportes** (`/reportes/`): Generación de informes
+4. **Mobile** (`/mobile/`): Soporte para dispositivos móviles
+5. **Stock** (`/stock/`): Gestión de inventario
+6. **Tareas** (`/tasks/`): Gestión de tareas técnicas
+7. **Setup** (`/setup/`): Configuración del sistema
+
+## 🔄 Flujo de Despliegue (Workflow)
+1. **Desarrollo local** en Windows (casa/oficina)
+2. **Pruebas** con MySQL local
+3. **Subida** de cambios a GitLab
+4. **Despliegue** en servidor Ubuntu con MySQL remoto (10.15.0.62)
+5. **Configuración** de variables de entorno para producción
+
+## ⚙️ Variables de Entorno (.env)
+```env
+GEMINI_API_KEY=AIzaSyAvmllmCU2XGZAKB7n8A62LcpeqCiEEpDI
+DB_HOST=127.0.0.1
+DB_USER=root
+DB_PASS=tdg729tdg
+DB_NAME=inventario_dev
+DB_PORT=3306
+
+# Green-API WhatsApp
+GREEN_API_ID_INSTANCE=7107547800
+GREEN_API_TOKEN_INSTANCE=5d291257bd7045a6b85b3c7b19d60cf3b59e0f9845124c8e83
+GREEN_API_PHONE=120363407471144144@g.us
+```
+
+## 🚀 Comandos de Ejecución
+### Desarrollo (Windows)
+```bash
+python servidor.py
+```
+
+### Producción (Ubuntu/Linux)
+```bash
+# Con SSL si existen certificados
+python servidor.py
+
+# Sin SSL
+python servidor.py (modo HTTP en puerto 8080 para móviles)
+```
+
+## 📞 URLs de Acceso
+- **Local**: http://127.0.0.1:5000
+- **Red local**: http://192.168.1.8:5000
+- **Login**: http://127.0.0.1:5000/login
+
+## 🛠️ Problemas Conocidos
+1. **Menú duplicado**: El menú superior se repite en la parte inferior de la misma interfaz
+2. **Advertencia SSL**: Warning de certificado no verificado para sigj.justiciajujuy.gov.ar
+3. **Favicon.ico**: No existe, genera error 404
+
+## 🔮 Próximas Mejoras
+1. Integración con Active Directory
+2. Mejora de interfaz móvil
+3. Optimización de consultas a base de datos
+4. Implementación de WebSockets para notificaciones en tiempo real
+5. Sistema de backup automático
+
+---
+
+**Última actualización**: 18 de Marzo 2026  
+**Versión del sistema**: Según APP_VERSION en utils/constants.py

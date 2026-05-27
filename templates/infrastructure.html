@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Infraestructura — Inventario GOLD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/gold.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="/static/js/security.js"></script>
+    <script defer src="/static/js/gold.js?v={{ app_version }}"></script>
+</head>
+<body class="has-fixed-header">
+    {% include '_module_switcher.html' %}
+    {% include '_shared_modals.html' %}
+
+    <div class="container-fluid px-3 infra-page" style="margin-top: 82px;">
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-4">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm" style="border-radius: 12px;" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <style>
+            .infra-page {
+                color: var(--text-color);
+                font-family: inherit;
+            }
+            .custom-tabs {
+                border-bottom: 1px solid var(--border-color);
+            }
+            .custom-tabs .nav-item {
+                margin-bottom: -1px;
+            }
+            .custom-tabs .nav-link {
+                color: var(--text-muted);
+                background: transparent;
+                border: none;
+                border-bottom: 3px solid transparent;
+                border-radius: 0;
+                font-weight: 600;
+                padding: 12px 20px;
+                transition: all 0.2s;
+            }
+            .custom-tabs .nav-link:hover {
+                color: var(--text-color);
+                background: color-mix(in srgb, var(--accent-color) 4%, transparent);
+            }
+            .custom-tabs .nav-link.active {
+                color: var(--accent-color) !important;
+                border-bottom: 3px solid var(--accent-color);
+                background: transparent;
+            }
+            .infra-page .tab-content .card {
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 8px !important;
+                box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05) !important;
+            }
+            .infra-page .tab-content .card-header.gradient-header {
+                background: transparent;
+                border-bottom: 1px solid var(--card-border);
+                border-radius: 8px 8px 0 0 !important;
+                color: var(--text-color);
+            }
+            .infra-page .card-header .btn-light {
+                background: var(--primary-gradient);
+                border: 0;
+                color: #fff !important;
+            }
+            .infra-page .table-light th {
+                background: #f8fafc;
+                color: #334155;
+            }
+        </style>
+
+        <!-- Tabs Nav -->
+        <ul class="nav custom-tabs mb-4 px-2" id="infraTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="ups-tab" data-bs-toggle="tab" data-bs-target="#ups" type="button" role="tab" aria-selected="true"><i class="bi bi-plug-fill me-2"></i> Equipos UPS y Asignaciones</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="components-tab" data-bs-toggle="tab" data-bs-target="#components" type="button" role="tab" aria-selected="false"><i class="bi bi-cpu me-2"></i> Periféricos y Hardware</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="printers-tab" data-bs-toggle="tab" data-bs-target="#printers" type="button" role="tab" aria-selected="false"><i class="bi bi-printer me-2"></i> Catálogo de Impresoras</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="infraTabsContent">
+            <!-- TAB: UPS -->
+            <div class="tab-pane fade show active" id="ups" role="tabpanel" aria-labelledby="ups-tab">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header gradient-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-plug-fill me-2"></i> Equipos UPS y Asignaciones</h5>
+                        <button class="btn btn-sm btn-light text-dark fw-bold" data-bs-toggle="modal"
+                            data-bs-target="#modalAddUPS">
+                            <i class="bi bi-plus-circle"></i> Nueva UPS
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Código/Serial UPS</th>
+                                        <th>Modelo</th>
+                                        <th>Asignada a PC</th>
+                                        <th>Batería Instalada</th>
+                                        <th>Proveedor/Factura</th>
+                                        <th>Registro</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ups in ups_list %}
+                                    <tr>
+                                        <td class="fw-bold">{{ ups.code }}</td>
+                                        <td>{{ ups.model }}</td>
+                                        <td>
+                                            {% if ups.assigned_pc %}
+                                            <a href="{{ url_for('dashboard.pc_detail', pc_name=ups.assigned_pc) }}"
+                                                class="text-decoration-none fw-bold text-primary">
+                                                {{ ups.assigned_pc }}
+                                            </a>
+                                            {% if ups.fuero %}
+                                            <div class="small">
+                                                <span class="badge text-white"
+                                                    style="background-color: {{ fuero_colors.get(ups.fuero, '#6c757d') }};">
+                                                    {{ ups.fuero }}
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                            {% else %}
+                                            <span class="badge bg-secondary">Sin asignar</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if ups.battery_code %}
+                                            <span class="badge bg-success"><i class="bi bi-battery-charging"></i> {{
+                                                ups.battery_code }}</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">Sin Batería</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if ups.supplier or ups.invoice_number %}
+                                            <div class="small fw-bold">{{ ups.supplier or 'Sin proveedor' }}</div>
+                                            <div class="small text-muted">{{ ups.invoice_number or '-' }}</div>
+                                            {% else %}
+                                            <span class="text-muted small">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="small text-muted">{{ ups.created_at.strftime('%Y-%m-%d') if
+                                            ups.created_at else '' }}</td>
+                                        <td class="text-end">
+                                            <!-- Boton para cambiar bateria -->
+                                            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                                                data-bs-target="#modalAssignBattery{{ ups.id }}"
+                                                title="Asignar/Cambiar Batería">
+                                                <i class="bi bi-battery-half"></i>
+                                            </button>
+
+                                            <!-- Boton para asignar a PC -->
+                                            <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                                                data-bs-target="#modalAssignPC{{ ups.id }}" title="Vincular a PC">
+                                                <i class="bi bi-pc-display"></i>
+                                            </button>
+
+                                            <!-- Eliminar UPS -->
+                                            {% if ups.assigned_pc %}
+                                            <button class="btn btn-sm btn-outline-danger ms-1" title="Eliminar UPS"
+                                                onclick="alert('No se puede eliminar: Esta UPS está asignada a la PC {{ ups.assigned_pc }}. Desvincúlela primero.');">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                            {% else %}
+                                            <form action="{{ url_for('infrastructure.delete_ups', id=ups.id) }}"
+                                                method="POST" class="d-inline"
+                                                onsubmit="return confirm('¿Eliminar esta UPS del sistema? Si tiene una batería asignada, se devolverá al Stock.')">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger ms-1">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+
+                                    <!-- Modal Asignar Bateria a esta UPS -->
+                                    <div class="modal fade" id="modalAssignBattery{{ ups.id }}" tabindex="-1"
+                                        aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form
+                                                    action="{{ url_for('infrastructure.assign_battery_to_ups', ups_id=ups.id) }}"
+                                                    method="POST">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <div class="modal-header bg-success text-white">
+                                                        <h5 class="modal-title">Asignar Batería a {{ ups.code }}</h5>
+                                                        <button type="button" class="btn-close btn-close-white"
+                                                            data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Seleccione qué batería del Stock se instalará en esta UPS. Si
+                                                            actualmente tiene una, se marcará como devuelta al Stock.
+                                                        </p>
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold">Batería
+                                                                Disponible:</label>
+                                                            <select class="form-select" name="battery_id">
+                                                                <option value="">-- Quitar batería / Ninguna --</option>
+                                                                {% for bat in baterias_disponibles %}
+                                                                <option value="{{ bat.id }}">{{ bat.code }} ({{
+                                                                    bat.brand_model }})</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-success">Guardar</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal Asignar UPS a PC -->
+                                    <div class="modal fade" id="modalAssignPC{{ ups.id }}" tabindex="-1"
+                                        aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form
+                                                    action="{{ url_for('infrastructure.assign_ups_to_pc', ups_id=ups.id) }}"
+                                                    method="POST">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <div class="modal-header bg-info text-white">
+                                                        <h5 class="modal-title">Vincular UPS {{ ups.code }} a PC</h5>
+                                                        <button type="button" class="btn-close btn-close-white"
+                                                            data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Vincule esta UPS a un equipo de la red.</p>
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold">Equipo de destino:</label>
+                                                            <input class="form-control" list="datalistPCs"
+                                                                name="pc_name" placeholder="Buscar PC..."
+                                                                autocomplete="off">
+                                                            <datalist id="datalistPCs">
+                                                                {% for pc in pcs_disponibles %}
+                                                                <option value="{{ pc.pc_name }}">{{ pc.fuero }} | {{
+                                                                    pc.last_user or 'Sin Usuario' }} {% if
+                                                                    pc.ad_real_name
+                                                                    %}- {{ pc.ad_real_name }}{% endif %}</option>
+                                                                {% endfor %}
+                                                            </datalist>
+                                                        </div>
+                                                        <div class="form-text text-muted">Deje en blanco para
+                                                            desvincular
+                                                            del equipo actual.</div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit"
+                                                            class="btn btn-info text-white">Vincular</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">No hay UPS registradas.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- Cierra tab UPS -->
+
+            <!-- TAB: COMPONENTES Y PERIFÉRICOS -->
+            <div class="tab-pane fade" id="components" role="tabpanel" aria-labelledby="components-tab">
+                <div class="card shadow-sm">
+                        <div class="card-header gradient-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-cpu me-2"></i> Periféricos y Hardware (Monitores, DVRs,
+                                Teclados, etc.)</h5>
+                            <button class="btn btn-sm btn-light text-dark fw-bold" data-bs-toggle="modal"
+                                data-bs-target="#modalAddComponent">
+                                <i class="bi bi-plus-circle"></i> Ingresar Al Stock
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-striped mb-0 align-middle">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Marca/Modelo</th>
+                                            <th>N° Serie</th>
+                                            <th>Proveedor/Factura</th>
+                                            <th>Estado/Asignación</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for comp in components %}
+                                        <tr>
+                                            <td><span class="badge bg-secondary">{{ comp.component_type }}</span></td>
+                                            <td>{{ comp.brand_model }}</td>
+                                            <td class="fw-bold">{{ comp.serial_number }}</td>
+                                            <td>
+                                                {% if comp.supplier or comp.invoice_number %}
+                                                <div class="small fw-bold">{{ comp.supplier or 'Sin proveedor' }}
+                                                </div>
+                                                <div class="small text-muted">{{ comp.invoice_number or '-' }}</div>
+                                                {% else %}
+                                                <span class="text-muted small">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if comp.status == 'Stock' %}
+                                                <span class="badge bg-success">En Stock</span>
+                                                {% else %}
+                                                <span class="badge bg-warning text-dark">En Uso</span>
+                                                {% if comp.assigned_pc %}
+                                                <a href="{{ url_for('dashboard.pc_detail', pc_name=comp.assigned_pc) }}"
+                                                    class="ms-1" style="text-decoration: none;">
+                                                    <strong>{{ comp.assigned_pc }}</strong>
+                                                </a>
+                                                {% elif comp.assigned_to_component_id %}
+                                                <span class="ms-1 text-muted">A {{ comp.parent_type }} ({{
+                                                    comp.parent_serial }})</span>
+                                                {% elif comp.ups_code %}
+                                                <span class="ms-1 fw-bold text-secondary">UPS: {{ comp.ups_code
+                                                    }}</span>
+                                                {% if comp.ups_assigned_pc %}
+                                                <a href="{{ url_for('dashboard.pc_detail', pc_name=comp.ups_assigned_pc) }}"
+                                                    class="ms-1 fw-bold text-primary" style="text-decoration: none;">
+                                                    {{ comp.ups_assigned_pc }}
+                                                </a>
+                                                {% endif %}
+                                                {% endif %}
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                {% if comp.status != 'Stock' %}
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                    title="Eliminar del sistema"
+                                                    onclick="alert('No se puede eliminar: Este componente se encuentra asignado{% if comp.assigned_pc %} a la PC {{ comp.assigned_pc }}{% elif comp.ups_code %} a la UPS {{ comp.ups_code }}{% elif comp.assigned_to_component_id %} a otro componente{% endif %}. Desvincúlelo devolviéndolo al Stock primero.');">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                                {% else %}
+                                                <form action="{{ url_for('infrastructure.delete_component', id=comp.id) }}"
+                                                    method="POST" class="d-inline"
+                                                    onsubmit="return confirm('¿Seguro de dar de baja este componente?');">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        title="Eliminar del sistema">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">No hay periféricos
+                                                registrados.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            </div> <!-- Cierra tab Componentes -->
+
+            <!-- TAB: IMPRESORAS DE RED -->
+            <div class="tab-pane fade" id="printers" role="tabpanel" aria-labelledby="printers-tab">
+                <div class="card shadow-sm">
+                        <div class="card-header gradient-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-printer me-2"></i> Catálogo de Impresoras</h5>
+                            <button class="btn btn-sm btn-light text-dark fw-bold"
+                                onclick="promoteToNetworkPrinter('', '', '')">
+                                <i class="bi bi-plus-circle"></i> Ingresar Impresora
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-striped mb-0 align-middle">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Dirección IP</th>
+                                            <th>Marca/Modelo</th>
+                                            <th>N° Serie / MAC</th>
+                                            <th>Fuero</th>
+                                            <th>Asignaciones</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for printer in network_printers %}
+                                        <tr>
+                                            <td class="fw-bold text-primary">{{ printer.ip_address }}</td>
+                                            <td>{{ printer.brand_model }}</td>
+                                            <td class="text-muted">{{ printer.serial_number }}</td>
+                                            <td>
+                                                {% if printer.fuero %}
+                                                <span class="badge" style="background-color: {{ fuero_colors.get(printer.fuero, '#6c757d') }}; color: #fff;">{{ printer.fuero }}</span>
+                                                {% else %}
+                                                <span class="text-muted small">Sin Fuero</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if printer.assigned_pcs %}
+                                                {% for pc_val in printer.assigned_pcs %}
+                                                <div class="badge bg-info text-dark me-1 mb-1 d-inline-flex flex-column align-items-start p-2" style="font-weight: 500; border-radius: 8px;">
+                                                    <div class="d-flex align-items-center w-100 justify-content-between">
+                                                        <a href="{{ url_for('dashboard.pc_detail', pc_name=pc_val.pc_name) }}"
+                                                            class="text-dark text-decoration-none fw-bold">
+                                                            <i class="bi bi-pc-display me-1"></i>{{ pc_val.pc_name }}
+                                                        </a>
+                                                        <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=printer.id) }}" method="POST" class="d-inline ms-2">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                            <input type="hidden" name="pc_name" value="{{ pc_val.pc_name }}">
+                                                            <button type="submit" class="btn btn-link p-0 text-danger" style="line-height: 1;"
+                                                                title="Desvincular {{ pc_val.pc_name }}"
+                                                                onclick="return confirm('¿Desvincular esta impresora del equipo {{ pc_val.pc_name }}?');">
+                                                                <i class="bi bi-x-circle-fill" style="font-size: 0.9rem;"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                    <div class="small text-muted mt-1" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-person-fill me-1"></i>{{ pc_val.last_user or 'Sin usuario' }}
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                                {% else %}
+                                                <span class="badge bg-secondary">Standalone</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                                                    data-bs-target="#modalAssignPrinter{{ printer.id }}"
+                                                    title="Vincular a PC">
+                                                    <i class="bi bi-pc-display"></i>
+                                                </button>
+                                                <form action="{{ url_for('infrastructure.delete_network_printer', id=printer.id) }}"
+                                                    method="POST" class="d-inline ms-1"
+                                                    onsubmit="return confirm('¿Seguro de eliminar esta impresora de red?');">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        title="Eliminar del sistema">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Modal Asignar Impresora a PC -->
+                                        <div class="modal fade" id="modalAssignPrinter{{ printer.id }}" tabindex="-1"
+                                            aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form
+                                                        action="{{ url_for('infrastructure.assign_network_printer', printer_id=printer.id) }}"
+                                                        method="POST">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <div class="modal-header bg-info text-white">
+                                                            <h5 class="modal-title">Vincular Impresora {{
+                                                                printer.ip_address }} a PC</h5>
+                                                            <button type="button" class="btn-close btn-close-white"
+                                                                data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p>Vincule esta impresora a un equipo de la red.</p>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Equipo de
+                                                                    destino:</label>
+                                                                <input class="form-control" list="datalistPCs"
+                                                                    name="pc_name" placeholder="Buscar PC..."
+                                                                    autocomplete="off" required>
+                                                                <datalist id="datalistPCs">
+                                                                    {% for pc in pcs_disponibles %}
+                                                                    <option value="{{ pc.pc_name }}">{{ pc.fuero }} | {{
+                                                                        pc.last_user or 'Sin Usuario' }}</option>
+                                                                    {% endfor %}
+                                                                </datalist>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary"
+                                                                data-bs-dismiss="modal">Cancelar</button>
+                                                            <button type="submit"
+                                                                class="btn btn-info text-white">Vincular</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">No hay impresoras de red
+                                                registradas individualmente.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            </div> <!-- Cierra tab Impresoras -->
+
+        </div> <!-- Cierra tab-content -->
+
+    </div> <!-- Cierra container-fluid -->
+
+    <!-- Modal Ingreso de Componente -->
+    <div class="modal fade" id="modalAddComponent" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('infrastructure.add_component') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title">Ingresar Componente al Stock</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tipo de Componente <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="component_type" required
+                                list="componentTypesList" autocomplete="off"
+                                placeholder="Ej: Monitor, DVR, Disco Duro...">
+                            <datalist id="componentTypesList">
+                                <option value="Monitor">
+                                <option value="DVR">
+                                <option value="Disco Interno">
+                                <option value="Batería UPS">
+                                <option value="Teclado">
+                                <option value="Mouse">
+                                <option value="Webcam">
+                                <option value="Placa de Video">
+                                <option value="Adaptador HDMI">
+                            </datalist>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">N° Serie / Identificador Único <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="serial_number" required
+                                placeholder="Ej: SN-AB1234...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Marca e Información Extra</label>
+                            <input type="text" class="form-control" name="brand_model"
+                                placeholder="Ej: Samsung 24 / Hikvision 8CH">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Proveedor / Negocio</label>
+                                <input type="text" class="form-control" name="supplier" placeholder="Ej: Compumundo">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Remito / N° Factura</label>
+                                <input type="text" class="form-control" name="invoice_number"
+                                    placeholder="Ej: A-0001-12345678">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-info text-white">Registrar Ingreso</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ingreso de UPS -->
+    <div class="modal fade" id="modalAddUPS" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('infrastructure.add_ups') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Registrar Nueva UPS</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Código / N° Inventario <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="code" required
+                                placeholder="Ej: UPS-LYO-001 / S/N 1234...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Modelo exacto</label>
+                            <input type="text" class="form-control" name="model" value="LYONN CTB-800V">
+                            <div class="form-text">Si son todas del mismo modelo, puede dejar el valor por defecto.
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Proveedor / Negocio</label>
+                                <input type="text" class="form-control" name="supplier" placeholder="Ej: Compumundo">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Remito / N° Factura</label>
+                                <input type="text" class="form-control" name="invoice_number"
+                                    placeholder="Ej: A-0001-12345678">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Registrar UPS</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Manejo de tabs via Hash URL (#printers, #ups, etc) para saltar desde otros módulos
+        document.addEventListener('DOMContentLoaded', function() {
+            var hash = window.location.hash;
+            if (hash) {
+                // El link apunta a #printers, el botón del tab tiene data-bs-target="#printers"
+                var tabEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+                if (tabEl) {
+                    var tab = new bootstrap.Tab(tabEl);
+                    tab.show();
+                    // Scroll suave hacia arriba para ver la cabecera
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+</body>
+
+</html>

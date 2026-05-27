@@ -1,0 +1,32 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.db
+.DS_Store
+# Certificados SSL
+cert.pem
+key.pem
+# Bases de datos y backups
+*.db
+*.db.old
+*.db.bak
+*.backup
+# Logs
+logs/
+# API Keys
+voice_processor.py
+# Tests temporales
+test_*.py
+!test_dashboard_contracts.py
+.env
+# Firebase credentials (NUNCA subir al repositorio)
+firebase-credentials.json
+*firebase-adminsdk*.json
+
+tmp/
+
+.venv/

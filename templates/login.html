@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso | Taller Movil SP</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
+    <style>
+        :root {
+            --bg-1: #082f49;
+            --bg-2: #0f766e;
+            --card: rgba(255, 255, 255, 0.95);
+            --border: rgba(255, 255, 255, 0.3);
+            --text: #0f172a;
+            --muted: #475569;
+            --accent: #0f766e;
+            --danger: #b91c1c;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(45, 212, 191, 0.22), transparent 34%),
+                radial-gradient(circle at right, rgba(125, 211, 252, 0.18), transparent 28%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .landing-container { display: none; }
+        .login-modal-wrapper { display: flex; width: 100%; justify-content: center; }
+        .close-login-modal { display: none; }
+        .taller-title-desktop { display: none !important; }
+        .taller-title-mobile { display: inline-block !important; }
+
+        @media (min-width: 769px) {
+            .taller-title-desktop { display: inline-block !important; }
+            .taller-title-mobile { display: none !important; }
+            .landing-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                color: white;
+                animation: fadeIn 0.8s ease-out;
+            }
+            .landing-container h1 { font-size: 4.5rem; margin: 0 0 16px; font-weight: 800; text-shadow: 0 4px 20px rgba(0,0,0,0.3); letter-spacing: -1px; }
+            .landing-container p { font-size: 1.25rem; max-width: 600px; margin: 0 0 40px; opacity: 0.9; line-height: 1.6; }
+            .btn-ingresar-desktop {
+                background: white;
+                color: var(--bg-1);
+                font-size: 1.15rem;
+                padding: 18px 48px;
+                border-radius: 99px;
+                font-weight: 700;
+                border: none;
+                cursor: pointer;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                transition: all 0.3s;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            .btn-ingresar-desktop:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(0,0,0,0.3); background: #f8fafc; }
+            
+            .login-modal-wrapper {
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(15, 23, 42, 0.85);
+                backdrop-filter: blur(10px);
+                z-index: 50;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                padding: 24px;
+            }
+            .login-modal-wrapper.show {
+                display: flex;
+                opacity: 1;
+            }
+            .close-login-modal {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: absolute;
+                top: 16px;
+                right: 16px;
+                background: rgba(255,255,255,0.15);
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 50%;
+                width: 36px; height: 36px;
+                color: white;
+                cursor: pointer;
+                z-index: 10;
+                font-size: 1.2rem;
+                transition: background 0.2s;
+            }
+            .close-login-modal:hover { background: rgba(255,255,255,0.3); }
+            .hide-on-desktop { display: none !important; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 12px 24px rgba(0,0,0,0.4)); }
+            100% { transform: scale(1); filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3)); }
+        }
+
+        .card {
+            width: min(420px, 100%);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+            overflow: hidden;
+        }
+
+        .hero {
+            padding: 28px 28px 16px;
+            background: linear-gradient(135deg, rgba(8, 47, 73, 0.98), rgba(15, 118, 110, 0.88));
+            color: #fff;
+        }
+
+        .hero h1 {
+            margin: 0 0 8px;
+            font-size: 1.6rem;
+        }
+
+        .hero p {
+            margin: 0;
+            opacity: 0.88;
+            line-height: 1.5;
+        }
+
+        form {
+            padding: 28px;
+            display: grid;
+            gap: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            font: inherit;
+        }
+
+        input:focus {
+            outline: 2px solid rgba(15, 118, 110, 0.18);
+            border-color: var(--accent);
+        }
+
+        button {
+            border: 0;
+            border-radius: 12px;
+            padding: 13px 16px;
+            font: inherit;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #0f766e, #0f4c75);
+            cursor: pointer;
+        }
+
+        .error {
+            margin: 0 28px;
+            margin-top: 22px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #fee2e2;
+            color: var(--danger);
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        .pending-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(8, 47, 73, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .pending-card {
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            border: 2px solid var(--warning);
+        }
+
+        .pending-icon {
+            font-size: 48px;
+            color: var(--warning);
+            margin-bottom: 20px;
+        }
+
+        .pending-title {
+            color: var(--text);
+            margin-bottom: 12px;
+            font-size: 1.5rem;
+        }
+
+        .pending-text {
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .pending-btn {
+            background: var(--bg-1);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .access-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .access-preview span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .script-section {
+            padding: 0 28px 28px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 8px 0;
+        }
+
+        .script-btn {
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font: inherit;
+            font-weight: 700;
+            color: var(--accent);
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .script-btn:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .script-btn.text-success {
+            color: #10b981 !important;
+            border-color: #10b981 !important;
+            background: #f0fdf4;
+        }
+
+        /* PDF Tools Styles */
+        .pdf-page-item {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: transform 0.2s, border-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+            cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22black%22%20stroke%3D%22white%22%20stroke-width%3D%221.5%22%3E%3Cpath%20d%3D%22M20%209.5C20%208.12%2018.88%207%2017.5%207C17.3%207%2017.11%207.03%2016.92%207.07V5.5C16.92%204.12%2015.8%203%2014.42%203C13.88%203%2013.38%203.17%2012.98%203.47C12.72%202.61%2011.93%202%2011%202C9.62%202%208.5%203.12%208.5%204.5V10.15C8.17%209.85%207.74%209.68%207.27%209.63L6.15%209.52C4.98%209.4%203.93%2010.14%203.65%2011.28L3.08%2013.56C2.79%2014.7%203.09%2015.89%203.86%2016.74L8%2021.3C8.61%2021.97%209.47%2022.4%2010.4%2022.4H15.5C17.98%2022.4%2020%2020.38%2020%2017.9V9.5Z%22%2F%3E%3C%2Fsvg%3E") 12 12, grab;
+            user-select: none;
+            border: 2px solid transparent;
+        }
+        .pdf-page-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .pdf-page-item:active {
+            cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22black%22%20stroke%3D%22white%22%20stroke-width%3D%221.5%22%3E%3Cpath%20d%3D%22M19%2010C19%208.34%2017.66%207%2016%207C15.82%207%2015.65%207.02%2015.48%207.05C15.22%206.44%2014.63%206%2013.9%206C13.68%206%2013.48%206.04%2013.3%206.1C13.01%205.43%2012.35%205%2011.6%205C11.19%205%2010.82%205.12%2010.5%205.32C10.22%204.55%209.49%204%208.6%204C7.72%204%206.99%204.55%206.7%205.32V11L4.31%209.81C3.88%209.6%203.38%209.67%203.04%2010.01C2.7%2010.35%202.65%2010.87%202.9%2011.27L6.89%2017.63C7.59%2018.75%208.82%2019.5%2010.16%2019.5H15.5C17.43%2019.5%2019%2017.93%2019%2016V10Z%22%2F%3E%3C%2Fsvg%3E") 12 12, grabbing;
+        }
+        .pdf-page-item * {
+            pointer-events: none;
+        }
+        .pdf-page-item .pdf-controls,
+        .pdf-page-item .pdf-controls button,
+        .pdf-page-item .pdf-controls button i {
+            pointer-events: auto;
+        }
+        .pdf-page-item img {
+            max-width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .pdf-page-item.dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+            border: 2px dashed var(--accent);
+        }
+        .pdf-page-item.drag-over {
+            border: 2px solid var(--accent);
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(15, 118, 110, 0.15);
+        }
+        .pdf-controls {
+            display: flex;
+            gap: 4px;
+            width: 100%;
+            justify-content: center;
+            margin-top: 4px;
+        }
+        .pdf-controls button {
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            flex: 0 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+        }
+        .pdf-btn-primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .pdf-btn-danger {
+            background: var(--danger);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .pdf-btn-warning {
+            background: var(--warning);
+            color: black;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    {% if is_pending %}
+    <div class="pending-overlay">
+        <div class="pending-card">
+            <div class="pending-icon">⚠️</div>
+            <h2 class="pending-title">Verificación de Cuenta</h2>
+            <p class="pending-text">Tu usuario se ha autenticado con éxito, pero aún está <strong>pendiente de aprobación</strong> por un administrador del sistema.</p>
+            <p class="pending-text">Por favor, contacta con tu supervisor para que active tu cuenta y te asigne el rol correspondiente (Técnico o Administrador).</p>
+            <a href="{{ url_for('auth.login') }}" class="pending-btn">Entendido</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="landing-container">
+        <div style="margin-bottom: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; animation: pulse 2s infinite;">
+            <svg viewBox="0 0 100 100" width="70" height="70" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));">
+                <!-- Escarapela Argentina -->
+                <circle cx="50" cy="50" r="45" fill="#74ACDF"/>
+                <circle cx="50" cy="50" r="30" fill="#FFFFFF"/>
+                <circle cx="50" cy="50" r="15" fill="#74ACDF"/>
+            </svg>
+            <span style="font-size: 0.95rem; font-weight: 700; color: #fcd34d; letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">¡Semana de Mayo!</span>
+        </div>
+        <h1 style="font-size: 3.5rem; margin-bottom: 8px;">Departamento de Informática</h1>
+        <p style="font-size: 1.4rem; font-weight: 500; opacity: 1; margin-bottom: 40px;">Centro Judicial de San Pedro de Jujuy</p>
+        
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
+            <button class="btn-ingresar-desktop" onclick="document.getElementById('loginWrapper').classList.add('show')">
+                <i class="bi bi-box-arrow-in-right"></i> Ingresar
+            </button>
+            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="copyScript(this)" data-command="{{ secure_launcher_command }}" title="Copiar Script de Inventario">
+                <i class="bi bi-lightning-charge"></i> Copiar Script
+            </button>
+            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local">
+                <i class="bi bi-file-earmark-pdf"></i> Editor PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="login-modal-wrapper" id="loginWrapper">
+        <div class="card" style="position: relative;">
+            <button class="close-login-modal" onclick="document.getElementById('loginWrapper').classList.remove('show')" title="Cerrar"><i class="bi bi-x"></i></button>
+            <div class="hero">
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+                <span class="taller-title-desktop">Taller SP 🇦🇷</span>
+                <span class="taller-title-mobile">Taller Movil SP 🇦🇷</span>
+            </h1>
+            <p style="color: #fcd34d; font-weight: bold; margin-bottom: 8px; font-size: 0.95rem;">¡Feliz Semana de Mayo!</p>
+            <p>Acceso administrativo para dashboard, infraestructura, stock y panel movil.</p>
+            <p style="margin-top:8px;font-size:0.85rem;opacity:0.85;">Modo de autenticacion: {{ auth_mode_label }}</p>
+            <div class="access-preview">
+                <span>Dashboard</span>
+                <span>Infra</span>
+                <span>Reportes</span>
+                <span>Mobile</span>
+            </div>
+        </div>
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+        <form method="post" action="{{ url_for('auth.login') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <div>
+                <label for="username">Usuario</label>
+                <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+            </div>
+            <div>
+                <label for="password">Clave</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: -4px; margin-bottom: 4px;">
+                <input type="checkbox" id="remember" name="remember" style="width: auto; cursor: pointer;">
+                <label for="remember" style="margin: 0; font-weight: 500; font-size: 0.88rem; cursor: pointer; color: var(--muted);">Mantener mi sesión iniciada</label>
+            </div>
+            <button type="submit">Ingresar</button>
+            <div class="hint">Después de iniciar sesión verás solo los módulos habilitados para tu usuario.</div>
+        </form>
+
+        <div class="script-section hide-on-desktop">
+            <div class="divider"></div>
+            <div class="hint" style="text-align: center; font-weight: 700; color: var(--accent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                Ejecución Manual
+            </div>
+            <button type="button" class="script-btn" 
+                    data-command="{{ secure_launcher_command }}"
+                    onclick="copyScript(this)" title="Copiar Script de Inventario">
+                <i class="bi bi-lightning-charge"></i> <span>Copiar Script de Inventario</span>
+            </button>
+            <div class="hint" style="font-size: 0.75rem; text-align: center;">
+                Copiá y pegá el comando en <strong>PowerShell</strong> para informar los datos de este equipo.
+            </div>
+            
+            <div class="divider"></div>
+            <button type="button" class="script-btn" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local" style="border-color: #f59e0b; color: #f59e0b;">
+                <i class="bi bi-file-earmark-pdf"></i> <span>Editor PDF Local</span>
+            </button>
+            <div class="hint" style="font-size: 0.75rem; text-align: center;">
+                Abre, reordena, gira, rasteriza y aplica OCR dentro de la intranet, sin servicios externos.
+            </div>
+        </div>
+    </div>
+    </div> <!-- /login-modal-wrapper -->
+
+    <script>
+        {% if error %}
+        window.addEventListener('DOMContentLoaded', () => {
+            if(window.innerWidth > 768) {
+                document.getElementById('loginWrapper').classList.add('show');
+            }
+        });
+        {% endif %}
+    </script>
+
+    <!-- PDF Tools Modal -->
+    <div id="pdfModal" class="pending-overlay" style="display: none; padding: 20px;">
+        <div class="pending-card" style="max-width: 1000px; width: 100%; height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 24px; text-align: left; border-color: var(--accent);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0; font-size: 1.5rem; color: var(--text);"><i class="bi bi-file-earmark-pdf" style="color: var(--danger);"></i> Editor PDF Local</h2>
+                <button onclick="closePdfTools()" class="pdf-btn-danger" style="padding: 8px 16px; border-radius: 8px;"><i class="bi bi-x-lg"></i> Cerrar</button>
+            </div>
+            
+            <div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <input type="file" id="pdfInput" accept="application/pdf" style="display: none;" onchange="loadPdf(event)">
+                <button onclick="document.getElementById('pdfInput').click()" class="pdf-btn-primary" style="padding: 10px 20px; border-radius: 8px; font-weight: bold;"><i class="bi bi-folder2-open"></i> Abrir PDF</button>
+                
+                <button id="btnSave" onclick="savePdf()" style="display:none; background: #10b981; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;"><i class="bi bi-save"></i> Guardar Cambios</button>
+                <button id="btnOCR" onclick="runLocalPdfOCR()" style="display:none; background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;"><i class="bi bi-text-paragraph"></i> OCR</button>
+                <div id="splitControls" style="display:none; align-items: center; gap: 8px; background: white; padding: 4px 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                    <input type="number" id="maxMbInput" value="5" min="1" max="50" style="width: 60px; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; text-align: center; font-weight: bold;" title="Tamaño máximo por parte (MB)">
+                    <span style="font-size: 0.85rem; font-weight: bold; color: var(--muted);">MB max</span>
+                    <button onclick="splitPdfBySize()" style="background: var(--warning); padding: 6px 14px; border-radius: 6px; font-weight: bold; color: #000; border: none; cursor: pointer;" title="Dividir en partes si supera el tamaño"><i class="bi bi-scissors"></i> Dividir</button>
+                </div>
+                <div id="compressControls" style="display:none; align-items: center; gap: 8px; background: white; padding: 4px 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                    <span style="font-size: 0.85rem; font-weight: bold; color: var(--muted);"><i class="bi bi-file-zip"></i> Comprimir:</span>
+                    <button onclick="compressPdf('max')" style="background: #a855f7; color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer;" title="Comprime imágenes (máxima compresión, texto no seleccionable)">Máxima</button>
+                </div>
+                <span id="pdfInfo" style="margin-left: auto; font-size: 0.95rem; font-weight: 600; color: var(--muted);"></span>
+            </div>
+
+            <div id="pdfPagesContainer" style="flex: 1; overflow-y: auto; background: #f1f5f9; border-radius: 12px; padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 24px; border: 1px solid #cbd5e1; align-content: start;">
+                <div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; margin-top: 60px;">
+                    <i class="bi bi-file-earmark-pdf" style="font-size: 5rem; opacity: 0.5;"></i>
+                    <p style="font-size: 1.1rem; margin-top: 16px; font-weight: bold; color: var(--text);">Selecciona un archivo PDF para comenzar a editarlo.</p>
+                    <p style="font-size: 0.9rem; opacity: 0.8; max-width: 450px; margin: 8px auto;">Todo el procesamiento se realiza en tu navegador. El archivo no se sube a ningún servidor, manteniendo tus documentos seguros y privados, además de no consumir datos.</p>
+                </div>
+            </div>
+            <div id="ocrPanel" style="display:none; margin-top: 18px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
+                    <strong style="color: var(--text);">Texto extraído</strong>
+                    <span id="ocrStatus" style="font-size: 0.9rem; color: var(--muted);"></span>
+                    <button type="button" onclick="copyLocalOcrText()" style="margin-left:auto; background:#0f766e; color:white; border:none; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer;">
+                        <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                </div>
+                <textarea id="ocrText" readonly style="width:100%; min-height:220px; border:1px solid #cbd5e1; border-radius:10px; padding:12px; resize:vertical; font-family:Consolas, 'Courier New', monospace; font-size:0.9rem; color:#0f172a; background:white;"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/pdfjs/pdf.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/pdf-lib/pdf-lib.min.js') }}"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ url_for('static', filename='vendor/pdfjs/pdf.worker.min.js') }}";
+
+        let originalPdfBytes = null;
+        let originalFileName = "";
+        let draggedItem = null;
+
+        function handleDragStart(e) {
+            draggedItem = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', '');
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            if (this !== draggedItem) {
+                this.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.stopPropagation();
+            if (draggedItem !== this) {
+                const container = document.getElementById('pdfPagesContainer');
+                const children = Array.from(container.children);
+                const draggedIndex = children.indexOf(draggedItem);
+                const targetIndex = children.indexOf(this);
+                
+                if (draggedIndex < targetIndex) {
+                    container.insertBefore(draggedItem, this.nextElementSibling);
+                } else {
+                    container.insertBefore(draggedItem, this);
+                }
+                updatePageNumbers();
+            }
+            return false;
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            const container = document.getElementById('pdfPagesContainer');
+            const children = Array.from(container.children);
+            children.forEach(child => {
+                child.classList.remove('drag-over');
+            });
+        }
+
+        function openPdfTools() {
+            document.getElementById('pdfModal').style.display = 'flex';
+        }
+
+        function closePdfTools() {
+            document.getElementById('pdfModal').style.display = 'none';
+            document.getElementById('pdfInput').value = '';
+            document.getElementById('btnSave').style.display = 'none';
+            document.getElementById('btnOCR').style.display = 'none';
+            document.getElementById('splitControls').style.display = 'none';
+            document.getElementById('compressControls').style.display = 'none';
+            document.getElementById('pdfInfo').innerText = '';
+            document.getElementById('ocrPanel').style.display = 'none';
+            document.getElementById('ocrText').value = '';
+            document.getElementById('ocrStatus').innerText = '';
+        }
+
+        async function loadPdf(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            originalFileName = file.name;
+            
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                originalPdfBytes = new Uint8Array(this.result);
+                
+                const sizeMb = (originalPdfBytes.length / (1024 * 1024)).toFixed(2);
+                document.getElementById('pdfInfo').innerText = `${file.name} (${sizeMb} MB)`;
+                
+                const container = document.getElementById('pdfPagesContainer');
+                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; margin-top: 40px; color: var(--accent);"><i class="bi bi-arrow-repeat" style="font-size: 2rem; display: inline-block; animation: spin 1s linear infinite;"></i><p style="margin-top: 10px; font-weight: bold;">Cargando páginas...</p></div>';
+                
+                try {
+                    const loadingTask = pdfjsLib.getDocument(originalPdfBytes);
+                    const pdf = await loadingTask.promise;
+                    
+                    document.getElementById('btnSave').style.display = 'inline-block';
+                    document.getElementById('btnOCR').style.display = 'inline-block';
+                    document.getElementById('splitControls').style.display = 'flex';
+                    document.getElementById('compressControls').style.display = 'flex';
+                    
+                    container.innerHTML = '';
+                    
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const viewport = page.getViewport({scale: 0.6});
+                        
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: viewport
+                        };
+                        await page.render(renderContext).promise;
+                        
+                        createPageElement(pageNum - 1, canvas.toDataURL(), container);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    container.innerHTML = `<div style="grid-column: 1/-1; color: var(--danger); text-align: center; font-weight: bold;">Error al cargar el PDF: ${err.message}</div>`;
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        function createPageElement(originalIndex, imgData, container) {
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'pdf-page-item';
+            pageDiv.dataset.originalIndex = originalIndex;
+            pageDiv.dataset.rotation = '0';
+            
+            // Drag and drop support
+            pageDiv.draggable = true;
+            pageDiv.addEventListener('dragstart', handleDragStart);
+            pageDiv.addEventListener('dragover', handleDragOver);
+            pageDiv.addEventListener('dragenter', handleDragEnter);
+            pageDiv.addEventListener('dragleave', handleDragLeave);
+            pageDiv.addEventListener('drop', handleDrop);
+            pageDiv.addEventListener('dragend', handleDragEnd);
+            
+            const pageLabel = document.createElement('div');
+            pageLabel.className = 'page-label';
+            pageLabel.style.fontWeight = '700';
+            pageLabel.style.marginBottom = '8px';
+            pageLabel.style.fontSize = '0.95rem';
+            pageLabel.style.color = 'var(--bg-1)';
+            
+            const img = document.createElement('img');
+            img.src = imgData;
+            img.setAttribute('draggable', 'false');
+            
+            const controls = document.createElement('div');
+            controls.className = 'pdf-controls';
+            
+            const btnLeft = document.createElement('button');
+            btnLeft.innerHTML = '<i class="bi bi-arrow-left"></i>';
+            btnLeft.style.background = '#e2e8f0';
+            btnLeft.style.color = '#0f172a';
+            btnLeft.title = "Mover página atrás";
+            btnLeft.onclick = (e) => {
+                e.stopPropagation();
+                movePage(pageDiv, -1);
+            };
+
+            const btnRotateLeft = document.createElement('button');
+            btnRotateLeft.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+            btnRotateLeft.style.background = '#fde68a';
+            btnRotateLeft.style.color = '#92400e';
+            btnRotateLeft.title = "Girar página a la izquierda";
+            btnRotateLeft.onclick = (e) => {
+                e.stopPropagation();
+                rotatePage(pageDiv, -90);
+            };
+            
+            const btnRight = document.createElement('button');
+            btnRight.innerHTML = '<i class="bi bi-arrow-right"></i>';
+            btnRight.style.background = '#e2e8f0';
+            btnRight.style.color = '#0f172a';
+            btnRight.title = "Mover página adelante";
+            btnRight.onclick = (e) => {
+                e.stopPropagation();
+                movePage(pageDiv, 1);
+            };
+            
+            const btnDelete = document.createElement('button');
+            btnDelete.innerHTML = '<i class="bi bi-trash"></i>';
+            btnDelete.className = 'pdf-btn-danger';
+            btnDelete.title = "Eliminar página";
+            btnDelete.onclick = (e) => {
+                e.stopPropagation();
+                pageDiv.style.transform = 'scale(0.8)';
+                pageDiv.style.opacity = '0';
+                setTimeout(() => {
+                    pageDiv.remove();
+                    updatePageNumbers();
+                }, 200);
+            };
+
+            const btnRotateRight = document.createElement('button');
+            btnRotateRight.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+            btnRotateRight.style.background = '#bfdbfe';
+            btnRotateRight.style.color = '#1d4ed8';
+            btnRotateRight.title = "Girar página a la derecha";
+            btnRotateRight.onclick = (e) => {
+                e.stopPropagation();
+                rotatePage(pageDiv, 90);
+            };
+
+            const btnOcrPage = document.createElement('button');
+            btnOcrPage.innerHTML = '<i class="bi bi-text-paragraph"></i>';
+            btnOcrPage.style.background = '#2563eb';
+            btnOcrPage.style.color = '#fff';
+            btnOcrPage.title = "Extraer texto de esta página (OCR)";
+            btnOcrPage.onclick = (e) => {
+                e.stopPropagation();
+                const rot = parseInt(pageDiv.dataset.rotation || "0", 10);
+                runLocalPdfOCR(originalIndex, rot);
+            };
+            
+            controls.appendChild(btnLeft);
+            controls.appendChild(btnRotateLeft);
+            controls.appendChild(btnDelete);
+            controls.appendChild(btnOcrPage);
+            controls.appendChild(btnRotateRight);
+            controls.appendChild(btnRight);
+            
+            pageDiv.appendChild(pageLabel);
+            pageDiv.appendChild(img);
+            pageDiv.appendChild(controls);
+            
+            container.appendChild(pageDiv);
+            updatePageNumbers();
+        }
+        
+        function movePage(pageDiv, direction) {
+            const container = document.getElementById('pdfPagesContainer');
+            const children = Array.from(container.children);
+            const index = children.indexOf(pageDiv);
+            
+            if (direction === -1 && index > 0) {
+                container.insertBefore(pageDiv, children[index - 1]);
+                pageDiv.animate([{transform: 'translateX(20px)'}, {transform: 'translateX(0)'}], {duration: 200});
+            } else if (direction === 1 && index < children.length - 1) {
+                container.insertBefore(pageDiv, children[index + 2]);
+                pageDiv.animate([{transform: 'translateX(-20px)'}, {transform: 'translateX(0)'}], {duration: 200});
+            }
+            updatePageNumbers();
+        }
+
+        function rotatePage(pageDiv, delta) {
+            const currentRotation = parseInt(pageDiv.dataset.rotation || '0', 10);
+            const nextRotation = ((currentRotation + delta) % 360 + 360) % 360;
+            pageDiv.dataset.rotation = String(nextRotation);
+            const img = pageDiv.querySelector('img');
+            img.style.transform = `rotate(${nextRotation}deg)`;
+            img.style.transformOrigin = 'center center';
+            img.style.transition = 'transform 0.2s ease';
+        }
+
+        function updatePageNumbers() {
+            const container = document.getElementById('pdfPagesContainer');
+            const children = Array.from(container.children);
+            children.forEach((child, index) => {
+                child.querySelector('.page-label').innerText = `Pág. ${index + 1}`;
+            });
+        }
+
+        async function getModifiedPdfBytes() {
+            const container = document.getElementById('pdfPagesContainer');
+            const children = Array.from(container.children);
+            const pageInstructions = children.map(child => ({
+                originalIndex: parseInt(child.dataset.originalIndex),
+                rotation: parseInt(child.dataset.rotation || '0', 10)
+            }));
+            
+            if (pageInstructions.length === 0) {
+                alert("No hay páginas para guardar.");
+                return null;
+            }
+
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            const srcDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
+            
+            const copiedPages = await pdfDoc.copyPages(srcDoc, pageInstructions.map(item => item.originalIndex));
+            copiedPages.forEach((page, index) => {
+                const rotation = pageInstructions[index].rotation;
+                if (rotation) {
+                    const currentAngle = page.getRotation ? page.getRotation().angle : 0;
+                    page.setRotation(PDFLib.degrees((currentAngle + rotation) % 360));
+                }
+                pdfDoc.addPage(page);
+            });
+            
+            return await pdfDoc.save();
+        }
+
+        async function savePdf() {
+            const btn = document.getElementById('btnSave');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
+            btn.disabled = true;
+            
+            try {
+                const pdfBytes = await getModifiedPdfBytes();
+                if (pdfBytes) {
+                    downloadBlob(pdfBytes, `modificado_${originalFileName}`);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error al guardar el PDF.");
+            }
+            
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+
+        async function splitPdfBySize() {
+            const container = document.getElementById('pdfPagesContainer');
+            const children = Array.from(container.children);
+            const indicesToKeep = children.map(child => parseInt(child.dataset.originalIndex));
+            
+            if (indicesToKeep.length === 0) {
+                alert("No hay páginas para procesar.");
+                return;
+            }
+
+            const maxSizeMb = parseFloat(document.getElementById('maxMbInput').value) || 5;
+            const currentSizeMb = originalPdfBytes.length / (1024 * 1024);
+
+            if (currentSizeMb <= maxSizeMb) {
+                alert(`El documento original pesa ${currentSizeMb.toFixed(2)} MB, que es menor o igual al límite de ${maxSizeMb} MB.\n\nNo es necesario dividirlo. Puedes guardarlo directamente con el botón "Guardar Cambios".`);
+                return;
+            }
+
+            if (indicesToKeep.length < 2) {
+                alert("El documento excede el tamaño pero solo tiene 1 página, no se puede dividir en partes más pequeñas.");
+                return;
+            }
+
+            const btn = document.querySelector('#splitControls button');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i>...';
+            btn.disabled = true;
+
+            try {
+                const partsCount = Math.ceil(currentSizeMb / maxSizeMb);
+                const pagesPerPart = Math.ceil(indicesToKeep.length / partsCount);
+
+                const srcDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
+
+                for (let i = 0; i < partsCount; i++) {
+                    const startIdx = i * pagesPerPart;
+                    const endIdx = Math.min(startIdx + pagesPerPart, indicesToKeep.length);
+                    
+                    if (startIdx >= indicesToKeep.length) break;
+
+                    const partIndices = indicesToKeep.slice(startIdx, endIdx);
+                    const partDoc = await PDFLib.PDFDocument.create();
+                    const partPages = await partDoc.copyPages(srcDoc, partIndices);
+                    partPages.forEach(p => partDoc.addPage(p));
+                    
+                    const partBytes = await partDoc.save();
+                    
+                    // Descargar con un pequeño retraso entre archivos para que el navegador no lo bloquee
+                    await new Promise(r => setTimeout(r, 600));
+                    downloadBlob(partBytes, `parte${i+1}_${originalFileName}`);
+                }
+                
+                alert(`¡Éxito! El documento ha sido dividido en ${partsCount} partes adaptadas al tamaño de ${maxSizeMb}MB.`);
+            } catch (err) {
+                console.error(err);
+                alert("Error al dividir el PDF.");
+            }
+            
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+
+        async function compressPdf(type) {
+            const container = document.getElementById('pdfPagesContainer');
+            const children = Array.from(container.children);
+            const indicesToKeep = children.map(child => parseInt(child.dataset.originalIndex));
+            
+            if (indicesToKeep.length === 0) {
+                alert("No hay páginas para comprimir.");
+                return;
+            }
+
+            const btnMax = document.querySelector('#compressControls button');
+            const oldMaxHtml = btnMax.innerHTML;
+
+            btnMax.disabled = true;
+            btnMax.innerHTML = '<i class="bi bi-hourglass-split"></i>...';
+
+            try {
+                // Primero obtenemos el PDF modificado (con las páginas que se mantuvieron y su orden actual)
+                const intermediateBytes = await getModifiedPdfBytes();
+                if (!intermediateBytes) {
+                    btnMax.disabled = false;
+                    btnMax.innerHTML = oldMaxHtml;
+                    return;
+                }
+
+                let finalBytes;
+                if (type === 'basic') {
+                    // Compresión básica: re-guardar optimizando estructura
+                    const pdfDoc = await PDFLib.PDFDocument.create();
+                    const srcDoc = await PDFLib.PDFDocument.load(intermediateBytes);
+                    const indices = Array.from({ length: srcDoc.getPageCount() }, (_, i) => i);
+                    const copiedPages = await pdfDoc.copyPages(srcDoc, indices);
+                    copiedPages.forEach(page => pdfDoc.addPage(page));
+                    finalBytes = await pdfDoc.save({ useObjectStreams: true });
+                } else {
+                    // Compresión máxima: Renderizar a imagen comprimida
+                    finalBytes = await compressExtremely(intermediateBytes, 0.6, 1.2);
+                }
+
+                const origSize = (intermediateBytes.length / (1024 * 1024)).toFixed(2);
+                const finalSize = (finalBytes.length / (1024 * 1024)).toFixed(2);
+                
+                alert(`¡PDF Comprimido con éxito!\nTamaño anterior: ${origSize} MB\nTamaño nuevo: ${finalSize} MB\n\nSe iniciará la descarga.`);
+                downloadBlob(finalBytes, `comprimido_${originalFileName}`);
+            } catch (err) {
+                console.error(err);
+                alert("Error al comprimir el PDF: " + err.message);
+            } finally {
+                btnMax.disabled = false;
+                btnMax.innerHTML = oldMaxHtml;
+            }
+        }
+
+        async function compressExtremely(bytes, quality, scale) {
+            const loadingTask = pdfjsLib.getDocument(bytes);
+            const pdf = await loadingTask.promise;
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: scale });
+                
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                await page.render(renderContext).promise;
+                
+                const imgDataUrl = canvas.toDataURL('image/jpeg', quality);
+                const imgBytes = await fetch(imgDataUrl).then(res => res.arrayBuffer());
+                
+                const embeddedImg = await pdfDoc.embedJpg(imgBytes);
+                const { width, height } = embeddedImg.scale(1.0);
+                
+                const newPage = pdfDoc.addPage([width, height]);
+                newPage.drawImage(embeddedImg, {
+                    x: 0,
+                    y: 0,
+                    width: width,
+                    height: height,
+                });
+            }
+            
+            return await pdfDoc.save({ useObjectStreams: true });
+        }
+
+        async function runLocalPdfOCR(singlePageIndex, pageRotation) {
+            if (singlePageIndex instanceof Event) {
+                singlePageIndex = null;
+                pageRotation = 0;
+            }
+
+            const btn = document.getElementById('btnOCR');
+            const originalHtml = btn.innerHTML;
+            const panel = document.getElementById('ocrPanel');
+            const textArea = document.getElementById('ocrText');
+            const status = document.getElementById('ocrStatus');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> OCR...';
+            panel.style.display = 'block';
+            textArea.value = '';
+            status.innerText = singlePageIndex !== null ? 'Procesando página seleccionada...' : 'Procesando con OCR local del servidor...';
+
+            try {
+                let pdfBytes;
+                if (singlePageIndex !== null) {
+                    const pdfDoc = await PDFLib.PDFDocument.create();
+                    const srcDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
+                    const copiedPages = await pdfDoc.copyPages(srcDoc, [singlePageIndex]);
+                    const page = copiedPages[0];
+                    if (pageRotation) {
+                        const currentAngle = page.getRotation ? page.getRotation().angle : 0;
+                        page.setRotation(PDFLib.degrees((currentAngle + pageRotation) % 360));
+                    }
+                    pdfDoc.addPage(page);
+                    pdfBytes = await pdfDoc.save();
+                } else {
+                    pdfBytes = await getModifiedPdfBytes();
+                }
+
+                if (!pdfBytes) {
+                    status.innerText = 'No hay páginas para procesar.';
+                    return;
+                }
+
+                const formData = new FormData();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                formData.append('file', blob, originalFileName || 'documento.pdf');
+
+                const resp = await fetch("{{ url_for('auth.local_pdf_ocr') }}", {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+
+                if (data.status === 'success') {
+                    textArea.value = data.text || '';
+                    status.innerText = `${(data.text || '').length.toLocaleString('es-AR')} caracteres extraídos`;
+                } else {
+                    status.innerText = `Error: ${data.message || 'No se pudo procesar el PDF.'}`;
+                }
+            } catch (err) {
+                console.error(err);
+                status.innerText = `Error: ${err.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        function copyLocalOcrText() {
+            const text = document.getElementById('ocrText').value || '';
+            if (!text) {
+                alert('No hay texto OCR para copiar.');
+                return;
+            }
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text);
+                return;
+            }
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+                alert("No se pudo copiar automáticamente.");
+            }
+            textArea.remove();
+        }
+
+        function downloadBlob(bytes, filename) {
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
+    <style>
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <script>
+        function copyScript(btn) {
+            const command = btn.getAttribute('data-command') + "\\r\\n\\r\\n\\r\\n";
+            
+            function showSuccess() {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check-all"></i> <span>¡Copiado!</span>';
+                btn.classList.add('text-success');
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.remove('text-success');
+                }, 2000);
+            }
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(command).then(showSuccess);
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = command;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showSuccess();
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                    alert("No se pudo copiar automáticamente.");
+                }
+                textArea.remove();
+            }
+        }
+    </script>
+</body>
+</html>

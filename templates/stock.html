@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock de Componentes — Inventario GOLD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/gold.css">
+    <style>
+
+
+        .status-stock {
+            background: rgba(34, 197, 94, 0.12);
+            color: #15803d;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .status-installed {
+            background: rgba(251, 191, 36, 0.12);
+            color: #b45309;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        .status-retired {
+            background: rgba(239, 68, 68, 0.12);
+            color: #b91c1c;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .stock-badge {
+            border-radius: 6px;
+            padding: 3px 9px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+    </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="/static/js/security.js"></script>
+</head>
+
+<body class="has-fixed-header">
+    {% include '_module_switcher.html' %}
+    {% include '_shared_modals.html' %}
+
+    <div class="container-fluid px-3" style="margin-top: 110px;">
+        <!-- Hero mini -->
+        <div class="hero-header mb-3">
+            <h1 class="hero-title">📦 Gestión de Stock</h1>
+            <p class="hero-subtitle">Componentes, periféricos y equipamiento en inventario</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-body py-3">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Estado</label>
+                        <select id="filterStatus" class="form-select" onchange="loadComponents()">
+                            <option value="">Todos</option>
+                            <option value="Stock" selected>En Stock</option>
+                            <option value="Installed">Instalados</option>
+                            <option value="Retirado">Retirados</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Buscar (Serial / Modelo)</label>
+                        <input type="text" id="stockSearchInput" class="form-control" placeholder="Buscar..."
+                            onkeyup="loadComponents()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 table-gold" id="stockTable">
+                        <thead>
+                            <tr>
+                                <th>Serial</th>
+                                <th>Tipo</th>
+                                <th>Marca / Modelo</th>
+                                <th>Estado</th>
+                                <th>Asignado a</th>
+                                <th>Fecha Alta</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Modal -->
+    <div class="modal fade" id="assignModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Asignar Componente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Asignando: <strong id="modalSerial"></strong> (<span id="modalType"></span>)</p>
+                    <div class="mb-3">
+                        <label class="form-label">Seleccione PC Destino:</label>
+                        <select id="modalPcSelect" class="form-select">
+                            <option value="">Cargando PCs...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmAssign()">Asignar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadComponents();
+            loadPcsForModal(); // Preload PCs
+            if (isCompactMode) {
+                applyCompactMode();
+            }
+            updateBtnInfo();
+        });
+
+        // Compact Mode Logic
+        // ... (lines 115-141 unchanged) ...
+        let storedCompact = localStorage.getItem('compactMode');
+        let isCompactMode = storedCompact === null ? true : storedCompact === 'true';
+
+        function toggleCompactMode() {
+            isCompactMode = !isCompactMode;
+            localStorage.setItem('compactMode', isCompactMode);
+            applyCompactMode();
+            updateBtnInfo();
+        }
+
+        function applyCompactMode() {
+            const table = document.querySelector('table');
+            if (isCompactMode) {
+                table.classList.add('table-sm');
+                table.style.fontSize = '0.85rem';
+            } else {
+                table.classList.remove('table-sm');
+                table.style.fontSize = '';
+            }
+        }
+
+        function updateBtnInfo() {
+            const btn = document.getElementById('toggleCompactBtn');
+            if (btn) {
+                btn.innerHTML = isCompactMode ? '<i class="bi bi-list-ul"></i> Expandir' : '<i class="bi bi-list-ul"></i> Compactar';
+            }
+        }
+
+        let allPcs = [];
+
+        function loadPcsForModal() {
+            fetch('/api/mobile/data')
+                .then(res => res.json())
+                .then(data => {
+                    allPcs = data.pcs || [];
+                    const sel = document.getElementById('modalPcSelect');
+                    sel.innerHTML = '<option value="">Seleccione PC...</option>';
+                    allPcs.forEach(pc => {
+                        const opt = document.createElement('option');
+                        opt.value = pc.name;
+                        opt.textContent = `${pc.name} | ${pc.user} (${pc.area})`;
+                        sel.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error("Error loading PCs:", err));
+        }
+
+        let currentSerialToAssign = null;
+        const assignModal = new bootstrap.Modal(document.getElementById('assignModal'));
+
+        function openAssignModal(serial, type) {
+            currentSerialToAssign = serial;
+            document.getElementById('modalSerial').textContent = serial;
+            document.getElementById('modalType').textContent = type;
+            assignModal.show();
+        }
+
+        function confirmAssign() {
+            const pc = document.getElementById('modalPcSelect').value;
+            if (!pc) {
+                alert("Seleccione una PC");
+                return;
+            }
+
+            fetch('/api/components/assign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    serial_number: currentSerialToAssign,
+                    pc_name: pc,
+                    technician: "WebUser" // Could prompt for user, or default
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        assignModal.hide();
+                        loadComponents(); // Refresh table
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(err => alert("Error de red: " + err));
+        }
+
+        function deleteComponent(serial) {
+            if (!confirm('¿Eliminar definitivamente este componente (' + serial + ')?')) return;
+
+            fetch('/api/components/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serial_number: serial })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        loadComponents();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(err => alert("Error de red: " + err));
+        }
+
+        function loadComponents() {
+            fetch('/api/components/list')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('stockTableBody');
+                    tbody.innerHTML = '';
+
+                    const statusFilter = document.getElementById('filterStatus').value;
+                    const searchFilter = document.getElementById('stockSearchInput').value.toLowerCase();
+
+                    const filtered = data.filter(item => {
+                        const matchesStatus = !statusFilter || item.status === statusFilter;
+                        const searchStr = (item.serial_number + ' ' + item.brand_model + ' ' + item.component_type).toLowerCase();
+                        const matchesSearch = !searchFilter || searchStr.includes(searchFilter);
+                        return matchesStatus && matchesSearch;
+                    });
+
+                    if (filtered.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">No se encontraron componentes</td></tr>';
+                        return;
+                    }
+
+                    filtered.forEach(item => {
+                        let badgeClass = 'bg-secondary';
+                        let statusHtml = '';
+                        let actionBtn = '';
+
+                        if (item.status === 'Stock') {
+                            statusHtml = `<span class="stock-badge status-stock">✓ En Stock</span>`;
+                            actionBtn = `<button class="btn btn-sm btn-primary" onclick="openAssignModal('${item.serial_number}', '${item.component_type}')"><i class="bi bi-link-45deg me-1"></i>Asignar</button>`;
+                        } else if (item.status === 'Installed') {
+                            statusHtml = `<span class="stock-badge status-installed">⚙ Instalado</span>`;
+                        } else if (item.status === 'Retirado') {
+                            statusHtml = `<span class="stock-badge status-retired">✕ Retirado</span>`;
+                        }
+
+                        let deleteBtn = `<button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteComponent('${item.serial_number}')" title="Eliminar definitivamente"><i class="bi bi-trash"></i></button>`;
+                        actionBtn = actionBtn === '' ? deleteBtn : actionBtn + ' ' + deleteBtn;
+
+                        let assignedLink = item.assigned_pc ? `<a href="/pc/${item.assigned_pc}">${item.assigned_pc}</a>` : '-';
+
+                        let subText = [];
+                        if (item.supplier) subText.push(`Prov: ${item.supplier}`);
+                        if (item.invoice_number) subText.push(`Remito: ${item.invoice_number}`);
+                        let extraHtml = subText.length > 0 ? `<div class="small text-muted" style="font-size: 0.75rem;">${subText.join(' | ')}</div>` : '';
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><span class="font-monospace" style="font-size:0.82rem;">${item.serial_number}</span></td>
+                            <td><span class="fw-600" style="font-size:0.85rem;">${item.component_type}</span></td>
+                            <td>
+                                <div style="font-size:0.85rem;">${item.brand_model || '-'}</div>
+                                ${extraHtml}
+                            </td>
+                            <td>${statusHtml}</td>
+                            <td>${assignedLink}</td>
+                            <td class="small text-muted">${item.created_at || '-'}</td>
+                            <td>${actionBtn}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => console.error("Error loading stock:", err));
+        }
+    </script>
+</body>
+
+</html>

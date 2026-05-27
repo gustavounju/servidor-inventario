@@ -1,0 +1,314 @@
+{% extends "index.html" %}
+
+{% block dashboard_content %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-white"><i class="fas fa-edit me-2"></i>Editor: {{ map.name }}</h3>
+        <div>
+            <span class="badge bg-info me-3"><i class="fas fa-mouse-pointer me-1"></i> Arrastra los iconos para ubicarlos</span>
+            <a href="{{ url_for('maps.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sidebar de Activos Disponibles -->
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-white h-100 shadow">
+                <div class="card-header border-secondary bg-black">
+                    <h6 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Añadir al Mapa</h6>
+                </div>
+                <div class="card-body p-2" style="max-height: 70vh; overflow-y: auto;">
+                    
+                    <ul class="nav nav-pills nav-justified mb-3" id="assetTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active btn-sm py-1" data-bs-toggle="pill" data-bs-target="#tab-pcs">PCs</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link btn-sm py-1" data-bs-toggle="pill" data-bs-target="#tab-printers">Impresoras</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link btn-sm py-1" data-bs-toggle="pill" data-bs-target="#tab-users">Usuarios</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="tab-pcs">
+                            {% for pc in available_pcs %}
+                            <div class="asset-item d-flex justify-content-between align-items-center p-2 mb-1 bg-secondary rounded border-start border-4 border-info" 
+                                 onclick="addAssetToMap('pc', '{{ pc.pc_name }}', '{{ pc.fuero }}')">
+                                <span class="small truncate">{{ pc.pc_name }}</span>
+                                <i class="fas fa-plus small text-info cursor-pointer"></i>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="tab-pane fade" id="tab-printers">
+                            {% for prn in available_printers %}
+                            <div class="asset-item d-flex justify-content-between align-items-center p-2 mb-1 bg-secondary rounded border-start border-4 border-warning"
+                                 onclick="addAssetToMap('printer', '{{ prn.id }}', '{{ prn.brand_model }}')">
+                                <span class="small truncate">{{ prn.brand_model }} ({{ prn.ip_address }})</span>
+                                <i class="fas fa-plus small text-warning cursor-pointer"></i>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="tab-pane fade" id="tab-users">
+                            {% for user in available_users %}
+                            <div class="asset-item d-flex justify-content-between align-items-center p-2 mb-1 bg-secondary rounded border-start border-4 border-success"
+                                 onclick="addAssetToMap('user', '{{ user.username }}', '{{ user.real_name }}')">
+                                <span class="small truncate">{{ user.real_name }}</span>
+                                <i class="fas fa-plus small text-success cursor-pointer"></i>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área del Mapa -->
+        <div class="col-md-9">
+            <div id="mapContainer" class="position-relative shadow-lg overflow-hidden border border-secondary rounded" 
+                 style="background-color: #1a1a1a; min-height: 75vh; cursor: crosshair;">
+                
+                <img src="{{ map.image_url }}" id="mapImage" class="img-fluid" style="width: 100%; display: block;">
+
+                <!-- Activos en el Mapa -->
+                {% for pc in pcs %}
+                <div class="map-asset pc-node" id="pc-{{ pc.pc_name }}" 
+                     style="left: {{ pc.x_pos }}%; top: {{ pc.y_pos }}%;"
+                     data-type="pc" data-id="{{ pc.pc_name }}"
+                     title="{{ pc.pc_name }} - {{ pc.last_user }}">
+                    <div class="asset-icon bg-info">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <span class="asset-label">{{ pc.pc_name }}</span>
+                    <button class="btn-remove" onclick="removeAsset('pc', '{{ pc.pc_name }}', event)">&times;</button>
+                </div>
+                {% endfor %}
+
+                {% for prn in printers %}
+                <div class="map-asset printer-node" id="printer-{{ prn.id }}" 
+                     style="left: {{ prn.x_pos }}%; top: {{ prn.y_pos }}%;"
+                     data-type="printer" data-id="{{ prn.id }}"
+                     title="{{ prn.brand_model }} ({{ prn.ip_address }})">
+                    <div class="asset-icon bg-warning text-dark">
+                        <i class="fas fa-print"></i>
+                    </div>
+                    <span class="asset-label">{{ prn.brand_model }}</span>
+                    <button class="btn-remove" onclick="removeAsset('printer', '{{ prn.id }}', event)">&times;</button>
+                </div>
+                {% endfor %}
+
+                {% for user in users %}
+                <div class="map-asset user-node" id="user-{{ user.username }}" 
+                     style="left: {{ user.x_pos }}%; top: {{ user.y_pos }}%;"
+                     data-type="user" data-id="{{ user.username }}"
+                     title="{{ user.real_name }}">
+                    <div class="asset-icon bg-success text-white">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="asset-label">{{ user.real_name }}</span>
+                    <button class="btn-remove" onclick="removeAsset('user', '{{ user.username }}', event)">&times;</button>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #mapContainer {
+        user-select: none;
+    }
+    .asset-item {
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+    }
+    .asset-item:hover {
+        background-color: #444 !important;
+        transform: scale(1.02);
+    }
+    .truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80%;
+    }
+    
+    .map-asset {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 10;
+        cursor: grab;
+        transform: translate(-50%, -50%); /* Centrar el icono sobre la coordenada */
+        transition: transform 0.1s;
+    }
+    .map-asset:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.2); z-index: 100; }
+    
+    .asset-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        border: 2px solid #fff;
+    }
+    
+    .asset-label {
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 1px 6px;
+        border-radius: 10px;
+        font-size: 10px;
+        margin-top: 4px;
+        white-space: nowrap;
+        pointer-events: none;
+    }
+    
+    .btn-remove {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        width: 22px;
+        height: 22px;
+        background: #ff4444;
+        color: white;
+        border: 2px solid white;
+        border-radius: 50%;
+        font-size: 14px;
+        font-weight: bold;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        z-index: 110;
+    }
+    .map-asset:hover .btn-remove { display: flex; }
+
+    .nav-pills .nav-link { color: #aaa; background: #333; margin: 0 2px; }
+    .nav-pills .nav-link.active { background: #ffd700; color: #000; font-weight: bold; }
+</style>
+
+<script>
+    const mapId = {{ map.id }};
+    const container = document.getElementById('mapContainer');
+    let draggedElement = null;
+
+    // Lógica de Drag & Drop
+    container.addEventListener('mousedown', (e) => {
+        const asset = e.target.closest('.map-asset');
+        if (asset && !e.target.classList.contains('btn-remove')) {
+            draggedElement = asset;
+            asset.style.zIndex = 1000;
+        }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!draggedElement) return;
+        
+        const rect = container.getBoundingClientRect();
+        let x = ((e.clientX - rect.left) / rect.width) * 100;
+        let y = ((e.clientY - rect.top) / rect.height) * 100;
+        
+        // Limitar a los bordes
+        x = Math.max(0, Math.min(100, x));
+        y = Math.max(0, Math.min(100, y));
+        
+        draggedElement.style.left = x + '%';
+        draggedElement.style.top = y + '%';
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!draggedElement) return;
+        
+        const x = parseFloat(draggedElement.style.left);
+        const y = parseFloat(draggedElement.style.top);
+        const type = draggedElement.dataset.type;
+        const id = draggedElement.dataset.id;
+        
+        // Guardar en la DB
+        savePosition(type, id, x, y);
+        
+        draggedElement.style.zIndex = 10;
+        draggedElement = null;
+    });
+
+    function savePosition(type, id, x, y) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch('/planos/api/update_position', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify({ type, id, x, y, map_id: mapId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') console.error("Error saving position:", data.message);
+        });
+    }
+
+    function addAssetToMap(type, id, label) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        // Crear el elemento visualmente primero
+        const div = document.createElement('div');
+        div.className = `map-asset ${type}-node`;
+        div.id = `${type}-${id}`;
+        div.style.left = '50%';
+        div.style.top = '50%';
+        div.dataset.type = type;
+        div.dataset.id = id;
+        
+        const iconClass = type === 'pc' ? 'fa-desktop' : (type === 'printer' ? 'fa-print' : 'fa-user');
+        const bgColor = type === 'pc' ? 'bg-info' : (type === 'printer' ? 'bg-warning text-dark' : 'bg-success text-white');
+        
+        div.innerHTML = `
+            <div class="asset-icon ${bgColor}">
+                <i class="fas ${iconClass}"></i>
+            </div>
+            <span class="asset-label">${label}</span>
+            <button class="btn-remove" onclick="removeAsset('${type}', '${id}', event)">&times;</button>
+        `;
+        
+        container.appendChild(div);
+        savePosition(type, id, 50, 50);
+        
+        // Recargar sidebar (opcional: podrías simplemente ocultar el item en JS)
+        setTimeout(() => location.reload(), 500);
+    }
+
+    function removeAsset(type, id, event) {
+        event.stopPropagation();
+        if (!confirm('¿Quitar este equipo del plano?')) return;
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch('/planos/api/remove_from_map', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify({ type, id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById(`${type}-${id}`).remove();
+                setTimeout(() => location.reload(), 500);
+            }
+        });
+    }
+</script>
+{% endblock %}

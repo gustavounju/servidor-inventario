@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios | Inventario GOLD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/gold.css">
+</head>
+<body class="has-fixed-header">
+    {% include '_module_switcher.html' %}
+
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div class="ops-hero__top">
+                <div>
+                    <div class="ops-hero__eyebrow">Gobierno de Accesos</div>
+                    <h1 class="ops-hero__title">Gestión de Usuarios</h1>
+                    <p class="ops-hero__lead">
+                        Administra altas, aprobaciones, permisos y reseteos desde una vista operativa separada del dashboard principal.
+                        La idea es resolver decisiones administrativas con el mismo criterio visual del sistema, sin mezclar inventario ni métricas de la flota.
+                    </p>
+                </div>
+                <div class="ops-hero__actions">
+                    <a class="btn btn-light" href="{{ url_for('dashboard.dashboard') }}"><i class="bi bi-grid-1x2-fill me-1"></i> Volver al Dashboard</a>
+                    <a class="btn btn-outline-light" href="#crear-usuario"><i class="bi bi-person-plus-fill me-1"></i> Crear Usuario</a>
+                </div>
+            </div>
+
+            <div class="ops-kpi-grid">
+                <div class="ops-kpi"><strong>{{ app_users_list|length }}</strong><span>Usuarios del sistema</span></div>
+                <div class="ops-kpi"><strong>{{ pending_users_list|length }}</strong><span>Pendientes de aprobación</span></div>
+                <div class="ops-kpi"><strong>{{ app_users_list | selectattr('is_superuser') | list | length }}</strong><span>Superusuarios</span></div>
+                <div class="ops-kpi"><strong>{{ admin_audit_logs|length }}</strong><span>Eventos recientes</span></div>
+            </div>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="ops-flash-wrap">
+            {% for category, message in messages %}
+            <div class="ops-flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="ops-grid mt-4">
+            <div class="ops-stack">
+                <section class="ops-surface ops-surface--soft" id="crear-usuario">
+                    <div class="ops-card-head">
+                        <div>
+                            <h2>Alta y Edición</h2>
+                            <p>Usa este formulario para crear técnicos locales con clave propia o corregir permisos y perfil de uno existente.</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary" type="button" onclick="prepareLocalTechnician()">
+                                <i class="bi bi-person-gear me-1"></i> Técnico local
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ops-card-body">
+                        <form method="post" action="{{ url_for('users.create_app_user') }}" id="opsUserForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="ops-field-grid">
+                                <div>
+                                    <label class="ops-label" for="username">Usuario</label>
+                                    <input class="ops-input" id="username" name="username" type="text" required>
+                                </div>
+                                <div>
+                                    <label class="ops-label" for="display_name">Nombre visible</label>
+                                    <input class="ops-input" id="display_name" name="display_name" type="text">
+                                </div>
+                                <div>
+                                    <label class="ops-label" for="password">Clave</label>
+                                    <input class="ops-input" id="password" name="password" type="password" placeholder="Obligatoria solo al crear">
+                                </div>
+                                <div>
+                                    <label class="ops-label" for="role">Rol</label>
+                                    <select class="ops-select" id="role" name="role" onchange="applyStandaloneRolePreset()">
+                                        {% for role in available_roles %}
+                                        <option value="{{ role }}">{{ role|capitalize }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="ops-label" for="technician_name">Identidad móvil / técnico</label>
+                                    <input class="ops-input" id="technician_name" name="technician_name" type="text">
+                                </div>
+                                <div>
+                                    <label class="ops-label" for="phone">Teléfono</label>
+                                    <input class="ops-input" id="phone" name="phone" type="text">
+                                </div>
+                            </div>
+
+                            <div class="ops-check-grid">
+                                <label class="ops-check"><input type="checkbox" name="is_active" id="is_active"> Activo</label>
+                                <label class="ops-check"><input type="checkbox" name="is_superuser"> Superusuario</label>
+                                <label class="ops-check"><input type="checkbox" name="must_change_password"> Forzar cambio de clave</label>
+                                <label class="ops-check"><input type="checkbox" name="is_edit_mode"> Modo edición</label>
+                            </div>
+
+                            <div class="ops-check-grid">
+                                <label class="ops-check"><input type="checkbox" name="perm_dashboard" id="perm_dashboard"> Dashboard</label>
+                                <label class="ops-check"><input type="checkbox" name="perm_mobile" id="perm_mobile"> Técnicos</label>
+                                <label class="ops-check"><input type="checkbox" name="perm_infrastructure" id="perm_infrastructure"> Infraestructura</label>
+                                <label class="ops-check"><input type="checkbox" name="perm_reports" id="perm_reports"> Reportes</label>
+                                <label class="ops-check"><input type="checkbox" name="perm_operadores" id="perm_operadores"> Operadores</label>
+                            </div>
+
+                            <div class="ops-note">Para editar un usuario existente, marca <strong>Modo edición</strong>, completa el username y solo cambia lo que quieras corregir.</div>
+
+                            <div class="mt-3">
+                                <button class="btn btn-primary" type="submit"><i class="bi bi-person-check-fill me-1"></i> Guardar Usuario</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="ops-surface">
+                    <div class="ops-card-head">
+                        <div>
+                            <h2>Pendientes de Aprobación</h2>
+                            <p>Los usuarios de AD que ingresan por primera vez caen acá hasta que un administrador los active y les asigne un rol.</p>
+                        </div>
+                    </div>
+                    <div class="ops-card-body">
+                        {% if pending_users_list %}
+                        <div class="ops-list">
+                            {% for user in pending_users_list %}
+                            <div class="ops-list-item ops-list-item--warning">
+                                <div class="ops-item-head">
+                                    <div>
+                                        <strong>{{ user.display_name or user.username }}</strong>
+                                        <div class="small text-muted">{{ user.username }}</div>
+                                    </div>
+                                    <span class="ops-chip ops-chip--warn"><i class="bi bi-hourglass-split"></i> Pendiente</span>
+                                </div>
+                                <form class="ops-inline-form" method="post" action="{{ url_for('users.approve_app_user', username=user.username) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <select class="ops-select" name="role">
+                                        {% for role in available_roles %}
+                                        <option value="{{ role }}" {% if user.role == role %}selected{% endif %}>{{ role|capitalize }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn btn-outline-primary" type="submit"><i class="bi bi-person-check-fill me-1"></i> Aprobar y activar</button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="ops-empty">No hay usuarios pendientes ahora.</div>
+                        {% endif %}
+                    </div>
+                </section>
+            </div>
+
+            <div class="ops-stack">
+                <section class="ops-surface">
+                    <div class="ops-card-head">
+                        <div>
+                            <h2>Usuarios del Sistema</h2>
+                            <p>Vista consolidada para activar, corregir permisos, resetear claves y detectar cuentas con exceso de privilegios.</p>
+                        </div>
+                    </div>
+                    <div class="ops-card-body">
+                        <div class="ops-list">
+                            {% for user in app_users_list %}
+                            <div class="ops-list-item">
+                                <div class="ops-item-head">
+                                    <div>
+                                        <strong>{{ user.display_name or user.username }}</strong>
+                                        <div class="small text-muted">{{ user.username }}</div>
+                                    </div>
+                                    <div class="ops-meta mt-0">
+                                        <span class="ops-chip {% if user.is_active %}ops-chip--ok{% else %}ops-chip--warn{% endif %}">{{ 'Activo' if user.is_active else 'Pendiente' }}</span>
+                                        <span class="ops-chip">{{ user.role or 'sin rol' }}</span>
+                                        {% if user.is_superuser %}<span class="ops-chip ops-chip--danger">Superusuario</span>{% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="ops-meta">
+                                    {% if user.technician_name %}<span class="ops-chip"><i class="bi bi-phone"></i>{{ user.technician_name }}</span>{% endif %}
+                                    {% if user.phone %}<span class="ops-chip"><i class="bi bi-telephone"></i>{{ user.phone }}</span>{% endif %}
+                                    <span class="ops-chip"><i class="bi {{ 'bi-windows' if user.is_ad_user else 'bi-person-lock' }}"></i>{{ 'AD' if user.is_ad_user else 'Local' }}</span>
+                                    {% if user.must_change_password %}<span class="ops-chip ops-chip--warn"><i class="bi bi-key"></i>Cambio de clave pendiente</span>{% endif %}
+                                </div>
+
+                                {% if not user.is_ad_user %}
+                                <form class="ops-inline-form" method="post" action="{{ url_for('users.reset_app_user_password') }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="username" value="{{ user.username }}">
+                                    <input class="ops-input" type="text" name="password" placeholder="Nueva clave temporal">
+                                    <button class="btn btn-outline-primary" type="submit"><i class="bi bi-key-fill me-1"></i> Resetear clave</button>
+                                </form>
+                                {% else %}
+                                <div class="ops-note">Clave gestionada por Active Directory.</div>
+                                {% endif %}
+
+                                <form class="ops-inline-form" method="post" action="{{ url_for('users.remove_app_user', user_id=user.id) }}" onsubmit="return confirm('¿Eliminar a {{ user.username }}?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="btn btn-danger" type="submit"><i class="bi bi-trash3-fill me-1"></i> Eliminar usuario</button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="ops-surface">
+                    <div class="ops-card-head">
+                        <div>
+                            <h3>Auditoría Administrativa</h3>
+                            <p>Últimos cambios sensibles sobre cuentas y permisos.</p>
+                        </div>
+                    </div>
+                    <div class="ops-card-body">
+                        {% if admin_audit_logs %}
+                        <div class="ops-list">
+                            {% for row in admin_audit_logs %}
+                            <div class="ops-list-item">
+                                <div class="ops-item-head">
+                                    <strong>{{ row.action_type }}</strong>
+                                    <span class="small text-muted">{{ row.created_at }}</span>
+                                </div>
+                                <div class="ops-meta">
+                                    <span class="ops-chip"><i class="bi bi-person-badge"></i>{{ row.actor_username or 'SISTEMA' }}</span>
+                                    <span class="ops-chip"><i class="bi bi-person"></i>{{ row.target_username or 'sin destino' }}</span>
+                                    {% if row.ip_address %}<span class="ops-chip"><i class="bi bi-globe"></i>{{ row.ip_address }}</span>{% endif %}
+                                </div>
+                                {% if row.details %}
+                                <pre class="ops-pre">{{ row.details }}</pre>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="ops-empty">Todavía no hay eventos en la auditoría administrativa.</div>
+                        {% endif %}
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const standaloneRolePresets = {
+            administrador: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false },
+            operador: { dashboard: false, mobile: false, infrastructure: false, reports: false, operadores: true },
+            tecnico: { dashboard: false, mobile: true, infrastructure: false, reports: false, operadores: false },
+            infraestructura: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false },
+            consulta: { dashboard: false, mobile: false, infrastructure: false, reports: true, operadores: false }
+        };
+
+        function setStandalonePermissions(values) {
+            ['dashboard', 'mobile', 'infrastructure', 'reports', 'operadores'].forEach(key => {
+                const el = document.getElementById('perm_' + key);
+                if (el) el.checked = !!values[key];
+            });
+        }
+
+        function applyStandaloneRolePreset() {
+            const role = document.getElementById('role').value || 'tecnico';
+            setStandalonePermissions(standaloneRolePresets[role] || standaloneRolePresets.tecnico);
+        }
+
+        function prepareLocalTechnician() {
+            const form = document.getElementById('opsUserForm');
+            if (!form) return;
+            form.reset();
+            document.getElementById('role').value = 'tecnico';
+            document.getElementById('is_active').checked = true;
+            document.getElementById('technician_name').placeholder = 'Nombre que verá la app móvil';
+            document.getElementById('password').placeholder = 'Clave local obligatoria';
+            applyStandaloneRolePreset();
+            document.getElementById('username').focus();
+        }
+
+        applyStandaloneRolePreset();
+    </script>
+</body>
+</html>

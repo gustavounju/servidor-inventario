@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes — Inventario GOLD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/gold.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="/static/js/security.js"></script>
+    <script defer src="/static/js/gold.js"></script>
+</head>
+
+<body class="has-fixed-header">
+    {% include '_module_switcher.html' %}
+    {% include '_shared_modals.html' %}
+
+    <div class="container-fluid px-3" style="margin-top: 110px;">
+
+        <div class="row g-3">
+            <!-- Panel izquierdo: selector y acciones -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm">
+                    <div class="gold-card-header"><i class="bi bi-funnel me-2"></i>Configurar Reporte</div>
+                    <div class="card-body">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-600">Fecha</label>
+                            <input type="date" id="fechaInput" class="form-control" value="{{ '' }}" max="{{ ''  }}"
+                                onchange="loadPreview()">
+                            <div class="form-text">Dejá vacío para usar hoy.</div>
+                        </div>
+
+                        {% if not pc_name %}
+                        <div class="mb-3">
+                            <label class="form-label fw-600">PC (opcional)</label>
+                            <input type="text" id="pcFilter" class="form-control" placeholder="Ej: DESKTOP-ABC123"
+                                onchange="loadPreview()">
+                        </div>
+                        {% endif %}
+
+                        <hr class="my-3">
+
+                        <!-- Stats rápidas -->
+                        <div class="row g-2 mb-3" id="statsRow">
+                            <div class="col-6">
+                                <div class="stat-card text-center">
+                                    <div class="count-badge" id="statHechas" style="color:#22c55e;">—</div>
+                                    <div class="section-label">Completadas</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-card text-center">
+                                    <div class="count-badge" id="statPend" style="color:#f59e0b;">—</div>
+                                    <div class="section-label">Pendientes</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de descarga -->
+                        <form id="formExcel" action="{{ url_for('tasks.report_tasks_completed', pc=pc_name) }}"
+                            method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="fecha" id="hiddenFechaExcel">
+                            <input type="hidden" name="pc_name" id="hiddenPcExcel" value="{{ pc_name or '' }}">
+                            <button type="button" class="btn btn-primary download-btn w-100 mb-2" id="btnExcel"
+                                onclick="submitExcel()">
+                                <i class="bi bi-file-earmark-excel me-2"></i>Descargar Excel
+                            </button>
+                        </form>
+
+                        <form id="formPDF" action="{{ url_for('tasks.report_tasks_completed_pdf') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="fecha" id="hiddenFechaPDF">
+                            <input type="hidden" name="pc_name" id="hiddenPcPDF" value="{{ pc_name or '' }}">
+                            <button type="button" class="btn btn-danger download-btn w-100" id="btnPDF"
+                                onclick="submitPDF()">
+                                <i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF
+                            </button>
+                        </form>
+
+                        <div class="text-center mt-3">
+                            <small class="text-muted">El Excel incluye tareas completadas.<br>El PDF incluye completadas
+                                + pendientes del día.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel derecho: vista previa -->
+            <div class="col-lg-8">
+                <div id="previewLoading" class="card shadow-sm" style="display:none;">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-arrow-repeat spin" style="font-size:2rem;color:var(--accent-color)"></i>
+                        <p class="mt-3 text-muted">Cargando...</p>
+                    </div>
+                </div>
+
+                <div id="previewContainer">
+                    <!-- Tareas Completadas -->
+                    <div class="card shadow-sm mb-3">
+                        <div class="gold-card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-check2-circle me-2"></i>Tareas Completadas</span>
+                            <span class="badge rounded-pill" style="background:rgba(255,255,255,0.2);font-size:0.75rem;"
+                                id="badgeHechas">—</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table mb-0 preview-table">
+                                    <thead>
+                                        <tr>
+                                            <th>PC</th>
+                                            <th>Descripción</th>
+                                            <th>Solicitante</th>
+                                            <th>Técnico</th>
+                                            <th>Hora Cierre</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyHechas">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">Seleccioná una fecha
+                                                para ver la vista previa</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tareas Pendientes -->
+                    <div class="card shadow-sm">
+                        <div class="card-header"
+                            style="background:rgba(220,53,69,0.08);border-bottom:1px solid rgba(220,53,69,0.15);">
+                            <span style="color:#dc3545;font-weight:700;font-size:0.88rem;"><i
+                                    class="bi bi-clock-history me-2"></i>Pendientes / Generadas ese día</span>
+                            <span class="badge rounded-pill ms-2"
+                                style="background:rgba(220,53,69,0.12);color:#dc3545;font-size:0.75rem;"
+                                id="badgePend">—</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table mb-0 preview-table">
+                                    <thead style="background:#dc3545 !important;">
+                                        <tr>
+                                            <th style="background:#dc3545 !important;">PC</th>
+                                            <th style="background:#dc3545 !important;">Descripción</th>
+                                            <th style="background:#dc3545 !important;">Solicitante</th>
+                                            <th style="background:#dc3545 !important;">Estado</th>
+                                            <th style="background:#dc3545 !important;">Asignado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyPend">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">—</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Set local today as default
+        // Set local today as default (robust way)
+        function getLocalToday() {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+        const today = getLocalToday();
+        document.getElementById('fechaInput').value = today;
+        document.getElementById('fechaInput').max = today;
+
+        // Load preview on startup
+        window.addEventListener('DOMContentLoaded', () => loadPreview());
+
+        function getFecha() {
+            return document.getElementById('fechaInput').value || today;
+        }
+
+        function getPc() {
+            {% if pc_name %}
+            return '{{ pc_name }}';
+            {% else %}
+            return (document.getElementById('pcFilter') || { value: '' }).value.trim();
+            {% endif %}
+        }
+
+        function fmtDatetime(s) {
+            if (!s) return '—';
+            try {
+                // Soportar tanto espacio como 'T' (ISO)
+                const sep = s.includes('T') ? 'T' : ' ';
+                const [date, time] = s.split(sep);
+                if (!time) return s;
+                return time.substring(0, 5);
+            } catch { return s; }
+        }
+
+        async function loadPreview() {
+            const fecha = getFecha();
+            const pc = getPc();
+            const url = `/api/report/preview?fecha=${fecha}${pc ? '&pc=' + encodeURIComponent(pc) : ''}`;
+
+            document.getElementById('previewLoading').style.display = '';
+            document.getElementById('previewContainer').style.display = 'none';
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+
+                // Update stats
+                document.getElementById('statHechas').textContent = data.hechas.length;
+                document.getElementById('statPend').textContent = data.pendientes.length;
+                document.getElementById('badgeHechas').textContent = data.hechas.length + ' tareas';
+                document.getElementById('badgePend').textContent = data.pendientes.length + ' tareas';
+
+                // Table: Completadas
+                const tbH = document.getElementById('tbodyHechas');
+                if (data.hechas.length === 0) {
+                    tbH.innerHTML = `<tr><td colspan="5"><div class="empty-preview"><i class="bi bi-emoji-smile"></i>No hay tareas completadas para esta fecha</div></td></tr>`;
+                } else {
+                    tbH.innerHTML = data.hechas.map(t => `
+                        <tr>
+                            <td><span class="badge bg-secondary">${escHtml(t.pc_name)}</span></td>
+                            <td>${escHtml(t.descripcion)}</td>
+                            <td><small>${escHtml(t.solicitante)}</small></td>
+                            <td><span class="fw-600" style="color:#22c55e;">${escHtml(t.completed_by)}</span></td>
+                            <td class="text-muted"><small>${fmtDatetime(t.completed_at)}</small></td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Table: Pendientes
+                const tbP = document.getElementById('tbodyPend');
+                if (data.pendientes.length === 0) {
+                    tbP.innerHTML = `<tr><td colspan="5"><div class="empty-preview"><i class="bi bi-check-all"></i>Sin tareas pendientes generadas ese día</div></td></tr>`;
+                } else {
+                    tbP.innerHTML = data.pendientes.map(t => `
+                        <tr>
+                            <td><span class="badge bg-secondary">${escHtml(t.pc_name)}</span></td>
+                            <td>${escHtml(t.descripcion)}</td>
+                            <td><small>${escHtml(t.solicitante)}</small></td>
+                            <td><span class="badge" style="background:rgba(220,53,69,0.12);color:#dc3545;">${escHtml(t.estado)}</span></td>
+                            <td><small class="text-muted">${escHtml(t.assigned_to)}</small></td>
+                        </tr>
+                    `).join('');
+                }
+
+            } catch (err) {
+                console.error('Preview error:', err);
+            } finally {
+                document.getElementById('previewLoading').style.display = 'none';
+                document.getElementById('previewContainer').style.display = '';
+            }
+        }
+
+        function escHtml(s) {
+            if (!s) return '—';
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function submitExcel() {
+            const fecha = getFecha();
+            const pc = getPc();
+            document.getElementById('hiddenFechaExcel').value = fecha;
+            document.getElementById('hiddenPcExcel').value = pc;
+            document.getElementById('formExcel').submit();
+        }
+
+        function submitPDF() {
+            const fecha = getFecha();
+            const pc = getPc();
+            document.getElementById('hiddenFechaPDF').value = fecha;
+            document.getElementById('hiddenPcPDF').value = pc;
+            document.getElementById('formPDF').submit();
+        }
+    </script>
+</body>
+
+</html>

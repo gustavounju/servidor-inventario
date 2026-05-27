@@ -1,0 +1,293 @@
+{% if is_authenticated and module_access_links %}
+{% set is_dashboard_home = request.endpoint == 'dashboard.dashboard' %}
+{% set is_compact_shell = is_dashboard_home or request.blueprint == 'infrastructure' or request.endpoint == 'dashboard.pc_detail' %}
+{% if is_dashboard_home %}
+{% set fleet_attention_count = kpi_alerta_media + kpi_criticas %}
+{% endif %}
+<header class="app-shell-header {% if is_compact_shell %}app-shell-header--dashboard{% endif %}">
+    {% if is_compact_shell %}
+    <div class="system-work-header">
+        <div class="system-work-header__summary">
+            {% if is_dashboard_home %}
+            <a href="{{ url_for('dashboard.dashboard') }}" class="system-summary-link" title="Inicio: mostrar toda la tabla de PCs activas">
+                <strong><span class="system-summary-link__action">INICIO</span> {{ kpi_total_activas }} PC´S activas</strong>
+            </a>
+            <span title="{{ fleet_attention_count }} equipos tienen alerta media o crítica. Conviene revisar primero los críticos y después los que tienen alerta."><i class="bi bi-exclamation-diamond"></i> {{ fleet_attention_count }} a revisar</span>
+            <span><i class="bi bi-shield-check"></i> Backup: {{ last_backup_info }}</span>
+            {% else %}
+            <a href="{{ url_for('dashboard.dashboard') }}" class="system-summary-link" title="Inicio: mostrar toda la tabla de PCs activas">
+                <strong><span class="system-summary-link__action">INICIO</span> {{ kpi_total_activas | default(0) }} PC´S activas</strong>
+            </a>
+            <span><i class="bi bi-archive"></i> {{ kpi_total_graveyard | default(0) }} bajas</span>
+            <span><i class="bi bi-printer"></i> {{ kpi_total_impresoras_oficial | default(0) }} impresoras</span>
+            {% endif %}
+        </div>
+        <div class="system-work-header__right">
+            <div class="system-work-header__tools">
+                <div class="system-user-mini" title="{{ current_user.display_name or current_user.username }} / {{ current_role_label }} / {{ auth_mode_label }}">
+                    <i class="bi bi-person-circle"></i>
+                    <span>{{ current_user.display_name or current_user.username }}</span>
+                </div>
+                <div class="system-icon-group">
+                    {% for module in module_access_links %}
+                    {% if (module.label != 'Reportes' and module.label != 'Reports') %}
+                    <a href="{{ module.url }}" class="system-icon-btn {% if module.active %}active{% endif %}" title="{{ module.label }}" aria-label="{{ module.label }}">
+                        <i class="bi {{ module.icon }}"></i>
+                    </a>
+                    {% endif %}
+                    {% endfor %}
+                    <a href="{{ url_for('tasks.visor') }}" class="system-icon-btn {% if request.endpoint == 'tasks.visor' %}active{% endif %}" title="Visor de Trabajos" aria-label="Visor de Trabajos">
+                        <i class="bi bi-tv"></i>
+                    </a>
+                </div>
+                <div class="system-icon-group">
+                    {% if current_user.is_superuser %}
+                    <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#usersModal" title="Usuarios">
+                        <i class="bi bi-people"></i>
+                        {% if kpi_usuarios_pendientes > 0 %}
+                        <span class="system-icon-badge">{{ kpi_usuarios_pendientes }}</span>
+                        {% endif %}
+                    </button>
+                    {% endif %}
+                    {% if has_access('reports') %}
+                    <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#reportsModal" title="Reportes">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                    </button>
+                    {% endif %}
+                    <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#fueroAdminModal" title="Fueros">
+                        <i class="bi bi-journal-bookmark-fill"></i>
+                    </button>
+                    <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Topografía">
+                        <i class="bi bi-diagram-3"></i>
+                    </button>
+                    <a href="{{ url_for('maps.index') }}" class="system-icon-btn" title="Planos Topológicos">
+                        <i class="bi bi-map-fill"></i>
+                    </a>
+                    <a href="{{ url_for('dashboard.global_activity') }}" class="system-icon-btn" title="Actividad">
+                        <i class="bi bi-clock-history"></i>
+                    </a>
+                    <button class="system-icon-btn system-icon-btn--primary" data-bs-toggle="modal" data-bs-target="#createTaskModal" title="Nueva Tarea">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    {% if current_user.username in ['gmurad', 'dquiros'] %}
+                    <a href="{{ url_for('vault.vault_index') }}" class="system-icon-btn" title="Recursos Internos">
+                        <i class="bi bi-shield-shaded"></i>
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="system-icon-btn" title="Salir">
+                        <i class="bi bi-door-open"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="system-work-header__brand">SISTEMA DE INVENTARIO</div>
+    </div>
+    {% endif %}
+
+    {% if not is_compact_shell %}
+    <div class="header-main-container">
+        <!-- Parte Izquierda: Branding & Usuario -->
+        <div class="header-user-section">
+            <div class="user-avatar-brief">
+                <div class="user-info-text">
+                    <div class="user-name">{{ current_user.display_name or current_user.username }}</div>
+                    <div class="user-role">
+                        <span class="badge-role">{{ current_role_label }}</span>
+                        <span class="sep">/</span>
+                        <span class="auth-mode">{{ auth_mode_label }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parte Central: Módulos -->
+        <div class="header-nav-section">
+            <div class="glass-nav-tabs">
+                {% for module in module_access_links %}
+                {% if (module.label != 'Reportes' and module.label != 'Reports') %}
+                <a href="{{ module.url }}" class="nav-tab-item nav-tab-item--icon {% if module.active %}active{% endif %}" title="{{ module.label }}" aria-label="{{ module.label }}">
+                    <i class="bi {{ module.icon }}"></i>
+                </a>
+                {% endif %}
+                {% endfor %}
+                <a href="{{ url_for('tasks.visor') }}" class="nav-tab-item nav-tab-item--icon {% if request.endpoint == 'tasks.visor' %}active{% endif %}" title="Visor de Trabajos" aria-label="Visor de Trabajos">
+                    <i class="bi bi-tv"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Parte Derecha: Acciones Rápidas -->
+        <div class="header-actions-section">
+            <div class="action-group">
+                {% if current_user.is_superuser %}
+                <button class="action-btn" data-bs-toggle="modal" data-bs-target="#usersModal" title="Usuarios">
+                    <i class="bi bi-people"></i>
+                    {% if kpi_usuarios_pendientes > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light" style="font-size: 0.6rem; padding: 3px 5px;">
+                        {{ kpi_usuarios_pendientes }}
+                    </span>
+                    {% endif %}
+                </button>
+
+                {% endif %}
+
+                {% if has_access('reports') %}
+                <button class="action-btn" data-bs-toggle="modal" data-bs-target="#reportsModal" title="Reportes">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                </button>
+                {% endif %}
+                
+                <button class="action-btn" data-bs-toggle="modal" data-bs-target="#fueroAdminModal" title="Fueros">
+                    <i class="bi bi-journal-bookmark-fill"></i>
+                </button>
+                
+                <button class="action-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Topografía">
+                    <i class="bi bi-diagram-3"></i>
+                </button>
+                
+                <a href="{{ url_for('maps.index') }}" class="action-btn" title="Planos Topológicos">
+                    <i class="bi bi-map-fill"></i>
+                </a>
+
+                <a href="{{ url_for('dashboard.global_activity') }}" class="action-btn" title="Actividad">
+                    <i class="bi bi-clock-history"></i>
+                </a>
+
+                <button class="action-btn btn-plus" data-bs-toggle="modal" data-bs-target="#createTaskModal" title="Nueva Tarea">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+
+                {% if current_user.username in ['gmurad', 'dquiros'] %}
+                <a href="{{ url_for('vault.vault_index') }}" class="action-btn" title="Recursos Internos" style="border-radius: 50%; background: rgba(99, 102, 241, 0.1);">
+                    <i class="bi bi-shield-shaded" style="color: #6366f1;"></i>
+                </a>
+                {% endif %}
+
+                <a href="{{ url_for('auth.logout') }}" class="action-btn" title="Salir">
+                    <i class="bi bi-door-open"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Barra de Estado e Indicadores (KPIs Integrados) -->
+    <div class="header-kpi-bar {% if is_compact_shell %}header-kpi-bar--dashboard{% endif %}" style="height: auto; padding: 4px 10px;">
+        <div class="kpi-scroll-container d-flex flex-wrap justify-content-center align-items-center" style="gap: 12px; overflow: visible; white-space: normal; width: 100%;">
+            {% if request.blueprint != 'infrastructure' and request.endpoint != 'dashboard.pc_detail' %}
+            <!-- Cementerio -->
+            <a href="{{ url_for('dashboard.view_cementerio') }}" class="kpi-mini-chip {% if request.path == '/cementerio' %}active{% endif %}" title="Bajas / Cementerio">
+                <i class="bi bi-archive"></i> <span>Bajas:</span> <strong>{{ kpi_total_graveyard }}</strong>
+            </a>
+
+            <!-- Windows 7 -->
+            <div class="kpi-mini-chip {% if request.args.get('os') == 'win7' %}active{% endif %}" onclick="onFilterClick('win7')" title="Windows 7">
+                <i class="bi bi-window"></i> <span>W7:</span> <strong>{{ kpi_win7 }}</strong>
+            </div>
+
+            <!-- Windows 10 -->
+            <div class="kpi-mini-chip {% if request.args.get('os') == 'win10' %}active{% endif %}" onclick="onFilterClick('win10')" title="Windows 10">
+                <i class="bi bi-window-sidebar"></i> <span>W10:</span> <strong>{{ kpi_win10 }}</strong>
+            </div>
+
+            <!-- Windows 11 -->
+            <div class="kpi-mini-chip {% if request.args.get('os') == 'win11' %}active{% endif %}" onclick="onFilterClick('win11')" title="Windows 11">
+                <i class="bi bi-window-stack"></i> <span>W11:</span> <strong>{{ kpi_win11 }}</strong>
+            </div>
+
+            <!-- RAM < 8GB -->
+            <div class="kpi-mini-chip {% if request.args.get('alerta') == 'ram' %}active{% endif %}" onclick="onFilterClick('ram')" title="Filtro de RAM < 8GB">
+                <i class="bi bi-memory"></i> <span>RAM < 8GB:</span> <strong>{{ kpi_alerta_ram }}</strong>
+            </div>
+
+            <!-- Impresoras -->
+            <div class="kpi-mini-chip" title="Ver detalle de impresoras" onclick="showDetectedPrinters()" style="cursor: pointer;">
+                <i class="bi bi-printer"></i> <span>Imp:</span> <strong>{{ kpi_total_impresoras_oficial }}</strong>
+            </div>
+
+            <!-- Tareas Hoy -->
+            <div class="kpi-mini-chip" title="Tareas Hoy">
+                <i class="bi bi-calendar-event"></i> <span>Hoy:</span> <strong>{{ kpi_tareas_hoy }}</strong>
+            </div>
+
+            <!-- Pendientes -->
+            <div class="kpi-mini-chip highlight-orange" title="Pendientes" onclick="showPendingTasksModal()" style="cursor: pointer;">
+                <i class="bi bi-bell"></i> <span>Pend:</span> <strong>{{ kpi_total_pendientes }}</strong>
+            </div>
+
+            <!-- Separador Fine -->
+            <div class="kpi-sep"></div>
+
+            <form action="{{ url_for('dashboard.dashboard') }}" method="GET" class="header-search-container" id="globalSearchForm">
+                <button type="submit" class="search-btn" title="Buscar en todo el sistema">
+                    <i class="bi bi-search search-icon-default"></i>
+                    <div class="spinner-border spinner-border-sm search-spinner d-none" role="status"></div>
+                </button>
+                <input type="text" name="q" id="searchInput" 
+                       placeholder="Buscar PC, Usuario, IP, Fuero, OS..." 
+                       autocomplete="off" 
+                       value="{{ request.args.get('q', '') }}">
+                
+                {% if request.endpoint == 'dashboard.dashboard' %}
+                    {% if request.args.get('estado') %}<input type="hidden" name="estado" value="{{ request.args.get('estado') }}">{% endif %}
+                    {% if request.args.get('alerta') %}<input type="hidden" name="alerta" value="{{ request.args.get('alerta') }}">{% endif %}
+                    {% if request.args.get('os') %}<input type="hidden" name="os" value="{{ request.args.get('os') }}">{% endif %}
+                    {% if request.args.get('filter_tasks') %}<input type="hidden" name="filter_tasks" value="{{ request.args.get('filter_tasks') }}">{% endif %}
+                    {% if request.args.get('per_page') %}<input type="hidden" name="per_page" value="{{ request.args.get('per_page') }}">{% endif %}
+                {% endif %}
+            </form>
+
+            <button class="kpi-mini-chip" onclick="exportToCSV()" title="Exportar CSV">
+                <i class="bi bi-download"></i>
+            </button>
+
+            <button class="kpi-mini-chip" id="toggleCompactBtn" onclick="toggleCompactMode()" title="Modo Compacto">
+                <i class="bi bi-list-ul"></i>
+            </button>
+
+            <div class="kpi-sep"></div>
+            {% endif %}
+
+            <!-- Script y Versión -->
+            <div class="kpi-mini-chip clickable" 
+                 data-command="{{ secure_launcher_command }}"
+                 onclick="copyScript(this)" title="Copiar Script">
+                <i class="bi bi-lightning-charge"></i> <span>Script</span>
+            </div>
+
+            <div class="kpi-mini-chip" title="Versión">
+                <i class="bi bi-cpu"></i> <span>{{ app_version }}</span>
+            </div>
+
+            {% if is_dashboard_home %}
+            <div class="fleet-mini-row">
+
+            <a href="/?alerta=ninguna&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--healthy {% if request.args.get('alerta') == 'ninguna' %}active{% endif %}" title="Equipos sin alertas técnicas registradas. No requieren acción inmediata.">
+                <i class="bi bi-check-circle"></i> <span>Saludables</span> <strong>{{ kpi_saludables }}</strong>
+            </a>
+            <a href="/?alerta=media&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--warning {% if request.args.get('alerta') == 'media' %}active{% endif %}" title="Equipos con una señal para revisar, como RAM baja, impresora o algún dato técnico pendiente. Conviene planificarlos.">
+                <i class="bi bi-exclamation-triangle"></i> <span>Con alerta</span> <strong>{{ kpi_alerta_media }}</strong>
+            </a>
+            <a href="/?alerta=critica&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--danger {% if request.args.get('alerta') == 'critica' %}active{% endif %}" title="Equipos con dos o más alertas técnicas. Son los primeros que conviene resolver.">
+                <i class="bi bi-exclamation-octagon"></i> <span>Críticas</span> <strong>{{ kpi_criticas }}</strong>
+            </a>
+            <a href="/?alerta=sin_impresora_inventario&estado=True" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--info {% if request.args.get('alerta') == 'sin_impresora_inventario' %}active{% endif %}" title="Equipos activos sin impresora detectada ni impresora de red asignada. Revisar si corresponde cargar o vincular una impresora.">
+                <i class="bi bi-printer"></i> <span>Sin imp.</span> <strong>{{ kpi_sin_impresora_inventario }}</strong>
+            </a>
+            {% for pc in auxiliary_pcs %}
+            {% set aux_name = pc.pc_name.upper() %}
+            <button type="button" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--neutral" data-bs-toggle="modal" data-bs-target="#auxModal_{{ pc.pc_name | replace(' ', '_') | replace('-', '_') }}" title="{{ pc.pc_name }}">
+                <i class="bi {% if 'GENERICA' in aux_name %}bi-inbox{% else %}bi-diagram-3{% endif %}"></i>
+                <span>{% if aux_name.startswith('INFRAESTRUCTURA') %}Infraestructura{% elif 'GENERICA' in aux_name %}PC genérica{% else %}{{ pc.pc_name }}{% endif %}</span>
+                <strong>{{ pc.tareas_pendientes or 0 }}</strong>
+            </button>
+            {% endfor %}
+            <button type="button" class="kpi-mini-chip fleet-mini-chip fleet-mini-chip--neutral" data-bs-toggle="modal" data-bs-target="#mobileTechsModal" title="Técnicos móviles activos">
+                <i class="bi bi-phone"></i> <span>Técnicos</span> <strong>{{ active_mobile_techs | length }}</strong>
+            </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</header>
+{% endif %}

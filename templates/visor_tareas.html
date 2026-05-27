@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Trabajos | Registro en Tiempo Real</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/gold.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        :root {
+            --visor-bg: #0f172a;
+            --visor-card: #1e293b;
+            --visor-accent: #38bdf8;
+            --visor-success: #22c55e;
+            --visor-pending: #f59e0b;
+            --visor-border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            background-color: var(--visor-bg);
+            color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .visor-shell {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .visor-nav {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--visor-border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .visor-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .visor-logo i {
+            font-size: 1.5rem;
+            color: var(--visor-accent);
+        }
+
+        .visor-logo span {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #fff;
+            letter-spacing: -0.02em;
+        }
+
+        .visor-content {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: var(--visor-card);
+            border: 1px solid var(--visor-border);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .kpi-info h3 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .kpi-info p {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .table-container {
+            background: var(--visor-card);
+            border: 1px solid var(--visor-border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .visor-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .visor-table th {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            border-bottom: 1px solid var(--visor-border);
+        }
+
+        .visor-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--visor-border);
+            vertical-align: middle;
+        }
+
+        .visor-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .visor-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-dot-pendiente { background: var(--visor-pending); box-shadow: 0 0 8px var(--visor-pending); animation: blink 2s infinite; }
+        .status-dot-hecha { background: var(--visor-success); box-shadow: 0 0 8px var(--visor-success); }
+        .status-dot-asignada { background: var(--visor-accent); box-shadow: 0 0 8px var(--visor-accent); }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .pc-badge {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--visor-accent);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+
+        .tech-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--visor-border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .duration-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.22rem 0.55rem;
+            border-radius: 20px;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            color: #bae6fd;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .ad-match-box {
+            margin-top: 0.45rem;
+            padding: 0.5rem 0.65rem;
+            border-radius: 10px;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.18);
+        }
+
+        .ad-match-box.ad-match-box-empty {
+            background: rgba(148, 163, 184, 0.08);
+            border-color: rgba(148, 163, 184, 0.16);
+        }
+
+        .ad-match-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #7dd3fc;
+        }
+
+        .ad-match-box-empty .ad-match-title {
+            color: #94a3b8;
+        }
+
+        .ad-match-list {
+            margin-top: 0.35rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .ad-match-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.18rem 0.5rem;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.45);
+            border: 1px solid rgba(125, 211, 252, 0.2);
+            color: #e0f2fe;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .ad-match-chip:hover {
+            border-color: var(--visor-accent);
+            background: rgba(56, 189, 248, 0.15);
+            color: #fff;
+        }
+
+        .ad-match-chip.ad-match-chip-current {
+            border-color: rgba(34, 197, 94, 0.35);
+            color: #86efac;
+        }
+
+        .ad-match-assign-btn {
+            background: var(--visor-accent);
+            color: #0f172a;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .ad-match-assign-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .ad-match-note {
+            margin-top: 0.3rem;
+            font-size: 0.74rem;
+            color: #cbd5e1;
+        }
+
+        .btn-auth {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--visor-border);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-auth:hover {
+            background: var(--visor-accent);
+            color: #0f172a;
+        }
+
+        .section-header {
+            margin: 2rem 0 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-header h2 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin: 0;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .time-cell { font-weight: 600; color: #fff; }
+        .desc-cell { color: #e2e8f0; font-weight: 500; }
+
+        @media (max-width: 992px) {
+            .hide-mobile { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="visor-shell">
+        <nav class="visor-nav">
+            <div class="d-flex align-items-center gap-4">
+                <a href="/" class="visor-logo">
+                    <i class="bi bi-display"></i>
+                    <span>VISOR DE TRABAJOS</span>
+                </a>
+                <div class="hide-mobile" style="background: rgba(116, 172, 223, 0.15); border: 1px solid rgba(116, 172, 223, 0.3); color: #7dd3fc; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; display:flex; align-items:center; gap: 8px; cursor: default;" title="Conmemoración de la Revolución de Mayo">
+                    <div style="width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle, #74acdf 33%, #ffffff 33%, #ffffff 66%, #74acdf 66%); box-shadow: 0 0 6px rgba(116, 172, 223, 0.5);"></div>
+                    ¡Semana de Mayo! 🇦🇷
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div id="visorClock" class="fw-bold text-accent hide-mobile" style="font-family: monospace; font-size: 1.1rem; color: var(--visor-accent);">00:00:00</div>
+                {% if not is_authenticated %}
+                <a href="{{ url_for('auth.login') }}" class="btn-auth">Ingresar</a>
+                {% else %}
+                <a href="{{ url_for('dashboard.dashboard') }}" class="btn-auth">Panel Control</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <main class="visor-content">
+            <div class="table-container mb-4 p-3" style="background: rgba(30, 41, 59, 0.5);">
+                <form id="filterForm" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="small text-muted fw-bold text-uppercase mb-1">Fecha</label>
+                        <input type="date" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterFecha" value="{{ hoy }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-muted fw-bold text-uppercase mb-1">PC / Equipo</label>
+                        <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterPc" placeholder="Buscar PC..." value="{{ pc_filtro or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-muted fw-bold text-uppercase mb-1">Técnico</label>
+                        <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterTech">
+                            <option value="">Todos los técnicos</option>
+                            {% for tech in technicians %}
+                            <option value="{{ tech.name }}" {% if tech_filtro == tech.name %}selected{% endif %}>{{ tech.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-primary w-100 fw-bold" onclick="applyFilters()">
+                            <i class="bi bi-search me-1"></i> Filtrar
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetFilters()" title="Limpiar">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-list-task"></i></div>
+                    <div class="kpi-info">
+                        <h3 id="statTotalHoy">{{ tareas_hoy | length }}</h3>
+                        <p>Total Hoy</p>
+                    </div>
+                </div>
+                <div class="kpi-card" style="cursor: pointer; transition: all 0.2s;" onclick="scrollToPendientes()" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--visor-pending)'" onmouseout="this.style.transform='none'; this.style.borderColor='var(--visor-border)'" title="Ver tareas pendientes">
+                    <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-clock-history"></i></div>
+                    <div class="kpi-info">
+                        <h3 id="statPendientes">--</h3>
+                        <p>Pendientes</p>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon bg-success bg-opacity-10 text-success"><i class="bi bi-check2-circle"></i></div>
+                    <div class="kpi-info">
+                        <h3 id="statHechasHoy">--</h3>
+                        <p>Hechas Hoy</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h2>Registro del Día</h2>
+                <div class="spinner-border spinner-border-sm text-accent" id="refreshSpinner" style="display: none;" role="status"></div>
+            </div>
+
+            <div class="table-container">
+                <table class="visor-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Hora</th>
+                            <th style="width: 180px;">Equipo / PC</th>
+                            <th style="width: 150px;" class="hide-mobile">Solicitante</th>
+                            <th>Descripción del Trabajo</th>
+                            <th style="width: 180px;">Técnico</th>
+                            <th style="width: 130px;">Resolución</th>
+                            <th style="width: 130px;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableHoy">
+                        {% if tareas_hoy %}
+                            {% for task in tareas_hoy %}
+                            <tr>
+                                <td class="time-cell">
+                                    {{ task.created_at_time or '--:--' }}
+                                </td>
+                                <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
+                                <td class="hide-mobile">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-person text-muted"></i>
+                                        <span>{{ task.solicitante or 'N/A' }}</span>
+                                    </div>
+                                </td>
+                                <td class="desc-cell">
+                                    <div>{{ task.descripcion }}</div>
+                                    {% if task.solucion %}
+                                    <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #cbd5e1;">
+                                        <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.assigned_to or task.completed_by %}
+                                    <div class="tech-pill">
+                                        <i class="bi bi-tools"></i>
+                                        <span>{{ task.completed_by or task.assigned_to }}</span>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted small">Sin asignar</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="duration-pill" title="{{ task.resolution_label }}">
+                                        <i class="bi bi-stopwatch"></i>
+                                        {{ task.resolution_time or '-' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
+                                    <span class="fw-bold small">{{ task.estado }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">No hay trabajos registrados hoy.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if tareas_pendientes %}
+            <div class="section-header">
+                <h2>Actividades Pendientes</h2>
+            </div>
+            <div class="table-container mb-4" id="tablePendientes">
+                <table class="visor-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 110px;">Fecha/Hora</th>
+                            <th style="width: 180px;">Equipo / PC</th>
+                            <th style="width: 150px;" class="hide-mobile">Solicitante</th>
+                            <th>Descripción del Trabajo</th>
+                            <th style="width: 180px;">Técnico</th>
+                            <th style="width: 130px;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tareas_pendientes %}
+                        <tr>
+                            <td class="time-cell">{{ task.created_at_fmt or '--:--' }}</td>
+                            <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
+                            <td class="hide-mobile">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-person text-muted"></i>
+                                    <span>{{ task.solicitante or 'N/A' }}</span>
+                                </div>
+                            </td>
+                            <td class="desc-cell">
+                                <div>{{ task.descripcion }}</div>
+
+                            </td>
+                            <td>
+                                {% if task.assigned_to %}
+                                <div class="tech-pill">
+                                    <i class="bi bi-tools"></i>
+                                    <span>{{ task.assigned_to }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted small">Sin asignar</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
+                                <span class="fw-bold small">{{ task.estado }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if tareas_anteriores %}
+            <div class="section-header">
+                <h2>Historial Reciente</h2>
+            </div>
+            <div class="table-container" style="opacity: 0.7;" id="tableAnteriores">
+                <table class="visor-table">
+                    <tbody>
+                        {% for task in tareas_anteriores %}
+                        <tr>
+                            <td style="width: 110px;" class="text-muted small">{{ task.created_at_fmt or '--:--' }}</td>
+                            <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name }}</span></td>
+                            <td class="desc-cell text-muted">
+                                <div>{{ task.descripcion }}</div>
+                                {% if task.solucion %}
+                                <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #94a3b8;">
+                                    <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
+                                </div>
+                                {% endif %}
+
+                            </td>
+                            <td style="width: 130px;">
+                                <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
+                                <span class="small">{{ task.estado }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function scrollToPendientes() {
+            const container = document.getElementById('tablePendientes');
+            if (container) {
+                // Scroll hacia el header que está justo antes del contenedor
+                const header = container.previousElementSibling;
+                if (header && header.classList.contains('section-header')) {
+                    header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                
+                // Efecto visual para destacar la tabla
+                const originalBoxShadow = container.style.boxShadow;
+                container.style.transition = 'box-shadow 0.4s ease';
+                container.style.boxShadow = '0 0 0 2px var(--visor-pending), 0 0 20px rgba(245, 158, 11, 0.4)';
+                setTimeout(() => {
+                    container.style.boxShadow = originalBoxShadow || '0 10px 15px -3px rgba(0, 0, 0, 0.3)';
+                }, 2000);
+            } else {
+                alert('¡Excelente! No hay tareas pendientes en este momento.');
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('visorClock').textContent = now.toLocaleTimeString('es-AR', { hour12: false });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        async function quickAssign(taskId, pcName) {
+            if (!confirm(`¿Deseas asignar esta tarea a la PC ${pcName}?`)) return;
+            const fd = new FormData();
+            fd.append('task_id', taskId);
+            fd.append('pc_name', pcName);
+            
+            // Agregar Token CSRF
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (csrfToken) {
+                fd.append('csrf_token', csrfToken);
+            }
+            
+            try {
+                const r = await fetch('/tasks/assign', { method: 'POST', body: fd });
+                if (r.ok) refreshData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function refreshData() {
+            const spinner = document.getElementById('refreshSpinner');
+            if (spinner) spinner.style.display = 'inline-block';
+            
+            const fecha = document.getElementById('filterFecha').value;
+            const pc = document.getElementById('filterPc').value;
+            const tech = document.getElementById('filterTech').value;
+            
+            const params = new URLSearchParams({ fecha, pc, technician: tech });
+
+            try {
+                const response = await fetch('/api/visor/data?' + params.toString());
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    renderHoy(data.tasks_hoy);
+                    if (data.tasks_pendientes) renderPendientes(data.tasks_pendientes);
+                    renderAnteriores(data.tasks_anteriores);
+                    updateStats(data);
+                }
+            } catch (e) { console.error(e); }
+            finally { if (spinner) setTimeout(() => spinner.style.display = 'none', 800); }
+        }
+
+        function applyFilters() {
+            const fecha = document.getElementById('filterFecha').value;
+            const pc = document.getElementById('filterPc').value;
+            const tech = document.getElementById('filterTech').value;
+            const params = new URLSearchParams({ fecha, pc, technician: tech });
+            window.location.search = params.toString();
+        }
+
+        function resetFilters() {
+            window.location.href = window.location.pathname;
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderAdMatch(task) {
+            return '';
+        }
+
+        function renderHoy(tasks) {
+            const tbody = document.getElementById('tableHoy');
+            if (!tasks || tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No hay trabajos registrados hoy.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = tasks.map(task => `
+                <tr>
+                    <td class="time-cell">${task.created_at_time || '--:--'}</td>
+                    <td><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></td>
+                    <td class="hide-mobile">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person text-muted"></i>
+                            <span>${task.solicitante || 'N/A'}</span>
+                        </div>
+                    </td>
+                    <td class="desc-cell">
+                        <div>${task.descripcion}</div>
+                        ${task.solucion ? `
+                            <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #cbd5e1;">
+                                <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
+                            </div>
+                        ` : ''}
+                        ${renderAdMatch(task)}
+                    </td>
+                    <td>
+                        ${(task.assigned_to || task.completed_by) ? `
+                            <div class="tech-pill">
+                                <i class="bi bi-tools"></i>
+                                <span>${task.completed_by || task.assigned_to}</span>
+                            </div>
+                        ` : '<span class="text-muted small">Sin asignar</span>'}
+                    </td>
+                    <td>
+                        <span class="duration-pill" title="${task.resolution_label || ''}">
+                            <i class="bi bi-stopwatch"></i>
+                            ${task.resolution_time || '-'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-dot status-dot-${task.estado.toLowerCase()}"></span>
+                        <span class="fw-bold small">${task.estado}</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderAnteriores(tasks) {
+            const tbody = document.querySelector('#tableAnteriores tbody');
+            if (!tbody || !tasks) return;
+            
+            tbody.innerHTML = tasks.map(task => `
+                <tr>
+                    <td style="width: 110px;" class="text-muted small">${task.created_at_fmt || '--:--'}</td>
+                    <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name || 'PC'}</span></td>
+                    <td class="desc-cell text-muted">
+                        <div>${task.descripcion}</div>
+                        ${task.solucion ? `
+                            <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #94a3b8;">
+                                <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
+                            </div>
+                        ` : ''}
+                        ${renderAdMatch(task)}
+                    </td>
+                    <td style="width: 130px;">
+                        <span class="status-dot status-dot-${task.estado.toLowerCase()}"></span>
+                        <span class="small">${task.estado}</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPendientes(tasks) {
+            const container = document.getElementById('tablePendientes');
+            if (!container) return; // Si la tabla no estaba, no hacemos nada o la podríamos inyectar dinámicamente. 
+            // Para simplificar, asumimos que siempre recarga con JS la data.
+            const tbody = container.querySelector('tbody');
+            if (!tbody || !tasks) return;
+            
+            if (tasks.length === 0) {
+                container.style.display = 'none';
+                return;
+            } else {
+                container.style.display = 'block';
+            }
+            
+            tbody.innerHTML = tasks.map(task => `
+                <tr>
+                    <td class="time-cell">${task.created_at_fmt || '--:--'}</td>
+                    <td><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></td>
+                    <td class="hide-mobile">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person text-muted"></i>
+                            <span>${task.solicitante || 'N/A'}</span>
+                        </div>
+                    </td>
+                    <td class="desc-cell">
+                        <div>${task.descripcion}</div>
+                        ${renderAdMatch(task)}
+                    </td>
+                    <td>
+                        ${task.assigned_to ? `
+                            <div class="tech-pill">
+                                <i class="bi bi-tools"></i>
+                                <span>${task.assigned_to}</span>
+                            </div>
+                        ` : '<span class="text-muted small">Sin asignar</span>'}
+                    </td>
+                    <td>
+                        <span class="status-dot status-dot-${task.estado.toLowerCase()}"></span>
+                        <span class="fw-bold small">${task.estado}</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats(data) {
+            const tasks_hoy = data.tasks_hoy || [];
+            const tasks_pendientes = data.tasks_pendientes || [];
+            document.getElementById('statTotalHoy').textContent = tasks_hoy.length;
+            
+            // Si tenemos data.tasks_pendientes usamos su longitud, sino contamos las de hoy
+            let pendientes_count = tasks_pendientes.length > 0 
+                ? tasks_pendientes.length 
+                : tasks_hoy.filter(t => t.estado !== 'Hecha').length;
+                
+            const hechas = tasks_hoy.filter(t => t.estado === 'Hecha').length;
+            
+            document.getElementById('statPendientes').textContent = pendientes_count;
+            document.getElementById('statHechasHoy').textContent = hechas;
+        }
+
+        // Carga inicial de stats si hay datos
+        window.addEventListener('load', () => {
+            const initialTasks = Array.from(document.querySelectorAll('#tableHoy tr')).length;
+            // Forzamos un refresh inicial para sincronizar stats
+            refreshData();
+        });
+
+        // Auto refresh cada 30 seg
+        setInterval(refreshData, 30000);
+    </script>
+</body>
+</html>

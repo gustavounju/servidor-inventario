@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gráficos e Indicadores</title>
+    <link rel="stylesheet" href="/static/css/gold.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="/static/js/security.js"></script>
+    <script defer src="/static/js/gold.js"></script>
+</head>
+</head>
+
+<body class="has-fixed-header">
+    {% include '_module_switcher.html' %}
+    {% include '_shared_modals.html' %}
+
+    <main class="container-fluid" style="margin-top: 110px;">
+        <h1 class="mb-4 text-center fw-bold"><i class="bi bi-graph-up text-primary me-2"></i>Análisis de Infraestructura</h1>
+
+        <!-- Gráficos Principales -->
+        <div class="row mb-5" id="chartsRow">
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Distribución SO</div>
+                    <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 300px;">
+                        <canvas id="osChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Tareas por Categoría
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 300px;">
+                        <canvas id="catChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0 font-weight-bold text-center">Alertas</div>
+                    <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 300px;">
+                        <canvas id="alertsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs Cards -->
+        <!-- Usamos un contenedor flex para distribución equitativa horizontal -->
+        <!-- KPIs eliminados de aquí (están en Dashboard principal) -->
+
+
+    </main>
+
+    <script>
+        // Charts Data
+        const kpiWin7 = {{ kpi_win7 }};
+        const kpiWin10 = {{ kpi_win10 }};
+        const kpiTotal = {{ kpi_total_activas }};
+        const kpiRam = {{ kpi_alerta_ram }};
+        const kpiSinImp = {{ kpi_sin_impresora }};
+        const kpiImpRed = {{ kpi_impresora_red }};
+
+        const catLabels = {{ cat_labels | tojson }};
+        const catValues = {{ cat_values | tojson }};
+
+        // OS Chart
+        new Chart(document.getElementById('osChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Win 7', 'Win 10/11', 'Otros'],
+                datasets: [{
+                    data: [kpiWin7, kpiWin10, Math.max(0, kpiTotal - (kpiWin7 + kpiWin10))],
+                    backgroundColor: ['#dc3545', '#0d6efd', '#6c757d']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Categories Chart
+        new Chart(document.getElementById('catChart'), {
+            type: 'bar',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    label: 'Tareas',
+                    data: catValues,
+                    backgroundColor: '#6366f1',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+
+        // Alerts Chart
+        new Chart(document.getElementById('alertsChart'), {
+            type: 'bar',
+            data: {
+                labels: ['RAM Baja', 'Sin Imp', 'Imp Red'],
+                datasets: [{
+                    label: 'Cantidad',
+                    data: [kpiRam, kpiSinImp, kpiImpRed],
+                    backgroundColor: ['#ffc107', '#0dcaf0', '#6610f2']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Herramientas PDF - {{ filename }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
+    <style>
+        :root {
+            --bg: #0a0f1e;
+            --card: #111827;
+            --card-border: rgba(255,255,255,0.07);
+            --accent: #7c3aed;
+            --accent-light: #a78bfa;
+            --accent-glow: rgba(124, 58, 237, 0.3);
+            --success: #10b981;
+            --danger: #ef4444;
+            --text: #f1f5f9;
+            --muted: #64748b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* ─── Background stars ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124,58,237,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(59,130,246,0.08) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .page-wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 32px 20px 60px;
+        }
+
+        /* ─── Back link ─── */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 28px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--text); }
+
+        /* ─── Header ─── */
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 18px;
+            margin-bottom: 36px;
+        }
+        .pdf-icon-big {
+            width: 56px; height: 56px;
+            background: linear-gradient(135deg, var(--accent), #3b82f6);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 0 24px var(--accent-glow);
+            flex-shrink: 0;
+        }
+        .page-header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0 0 4px;
+            word-break: break-all;
+        }
+        .page-header p {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin: 0;
+        }
+
+        /* ─── Tool Cards ─── */
+        .tool-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 28px 28px 24px;
+            margin-bottom: 24px;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .tool-card:hover {
+            border-color: rgba(124,58,237,0.3);
+            box-shadow: 0 4px 32px rgba(124,58,237,0.1);
+        }
+
+        .tool-card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+        .tool-icon {
+            width: 42px; height: 42px;
+            border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .tool-icon--rotate { background: rgba(251,191,36,0.12); color: #fbbf24; }
+        .tool-icon--ocr    { background: rgba(124,58,237,0.15); color: var(--accent-light); }
+
+        .tool-card-header h2 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin: 0 0 2px;
+        }
+        .tool-card-header p {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin: 0;
+        }
+
+        /* ─── Form controls ─── */
+        .form-label-sm {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .angle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .angle-btn {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .angle-btn i { font-size: 1.4rem; }
+        .angle-btn:hover {
+            background: rgba(251,191,36,0.1);
+            border-color: #fbbf24;
+            color: #fbbf24;
+        }
+        .angle-btn.selected {
+            background: rgba(251,191,36,0.15);
+            border-color: #fbbf24;
+            color: #fbbf24;
+            box-shadow: 0 0 12px rgba(251,191,36,0.2);
+        }
+
+        .pages-input {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: var(--text);
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .pages-input:focus {
+            outline: none;
+            border-color: var(--accent-light);
+            background: rgba(124,58,237,0.06);
+        }
+        .pages-input::placeholder { color: var(--muted); }
+
+        /* ─── Buttons ─── */
+        .btn-action {
+            border: none;
+            border-radius: 10px;
+            padding: 11px 24px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-rotate {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: #1a1a1a;
+        }
+        .btn-rotate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(251,191,36,0.35);
+        }
+        .btn-ocr {
+            background: linear-gradient(135deg, var(--accent), #5b21b6);
+            color: white;
+        }
+        .btn-ocr:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--accent-glow);
+        }
+        .btn-copy {
+            background: rgba(255,255,255,0.07);
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-copy:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        /* ─── Alert/Result banners ─── */
+        .result-banner {
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            margin-top: 16px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        .result-banner.show { display: flex; }
+        .result-banner--success {
+            background: rgba(16,185,129,0.1);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: #34d399;
+        }
+        .result-banner--error {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #fca5a5;
+        }
+
+        /* ─── OCR output ─── */
+        .ocr-output-wrapper {
+            margin-top: 20px;
+            display: none;
+        }
+        .ocr-output-wrapper.show { display: block; }
+        .ocr-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .ocr-toolbar span {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+        .ocr-textarea {
+            width: 100%;
+            min-height: 280px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 0.84rem;
+            font-family: Consolas, 'Courier New', monospace;
+            line-height: 1.65;
+            padding: 16px;
+            resize: vertical;
+        }
+        .ocr-textarea:focus { outline: none; border-color: var(--accent-light); }
+
+        /* ─── Spinner ─── */
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        .spinner.show { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── Page badge ─── */
+        .page-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+        .page-badge strong { color: var(--text); }
+    </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+    <a href="{{ url_for('vault.vault_index') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i> Volver a Recursos Internos
+    </a>
+
+    <!-- Header -->
+    <div class="page-header">
+        <div class="pdf-icon-big">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+        </div>
+        <div>
+            <h1>{{ filename }}</h1>
+            <p>
+                Herramientas de edición PDF
+                <span class="page-badge ms-2">
+                    <i class="bi bi-file-text"></i>
+                    <strong>{{ page_count }}</strong> página{{ 's' if page_count != 1 else '' }}
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- CARD 1: ROTACIÓN                                       -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="tool-card">
+        <div class="tool-card-header">
+            <div class="tool-icon tool-icon--rotate">
+                <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <div>
+                <h2>Rotar Páginas</h2>
+                <p>Aplica rotación a todas o a páginas específicas del PDF. El cambio sobrescribe el archivo.</p>
+            </div>
+        </div>
+
+        <!-- Selección de ángulo -->
+        <label class="form-label-sm">Ángulo de rotación</label>
+        <div class="angle-grid" id="angleGrid">
+            <button class="angle-btn selected" data-angle="90" onclick="selectAngle(this)">
+                <i class="bi bi-arrow-clockwise"></i>
+                90° derecha
+            </button>
+            <button class="angle-btn" data-angle="180" onclick="selectAngle(this)">
+                <i class="bi bi-arrow-repeat"></i>
+                180°
+            </button>
+            <button class="angle-btn" data-angle="270" onclick="selectAngle(this)">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                90° izquierda
+            </button>
+        </div>
+
+        <!-- Selección de páginas -->
+        <label class="form-label-sm" for="pagesInput">Páginas a rotar</label>
+        <input id="pagesInput" class="pages-input mb-3"
+               type="text"
+               placeholder="Ej: all, 1, 2-4, 1,3,5  (vacío = todas)"
+               value="all">
+        <p style="font-size:0.75rem; color: var(--muted); margin-top: -8px; margin-bottom: 20px;">
+            <i class="bi bi-info-circle me-1"></i>
+            Usá <code style="color:#a78bfa">all</code> para todas, números sueltos <code style="color:#a78bfa">2,4</code> o rangos <code style="color:#a78bfa">2-5</code>.
+        </p>
+
+        <button class="btn-action btn-rotate" id="btnRotate" onclick="rotatePDF()">
+            <i class="bi bi-arrow-clockwise"></i>
+            Aplicar rotación
+            <span class="spinner" id="spinnerRotate"></span>
+        </button>
+
+        <div class="result-banner" id="rotateResult"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- CARD 2: OCR LOCAL                                      -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="tool-card">
+        <div class="tool-card-header">
+            <div class="tool-icon tool-icon--ocr">
+                <i class="bi bi-cpu"></i>
+            </div>
+            <div>
+                <h2>OCR local con Tesseract</h2>
+                <p>Extrae el texto del PDF dentro del servidor. Funciona con PDFs escaneados o con imágenes.</p>
+            </div>
+        </div>
+
+        <p style="font-size: 0.83rem; color: var(--muted); margin-bottom: 20px; line-height: 1.6;">
+            <i class="bi bi-stars me-1" style="color: var(--accent-light);"></i>
+            El documento no sale a internet. El servidor intenta leer texto embebido del PDF y aplica Tesseract solo en las páginas que lo necesitan.
+        </p>
+
+        <button class="btn-action btn-ocr" id="btnOCR" onclick="runOCR()">
+            <i class="bi bi-magic"></i>
+            Extraer texto localmente
+            <span class="spinner" id="spinnerOCR"></span>
+        </button>
+
+        <div class="result-banner" id="ocrResult"></div>
+
+        <div class="ocr-output-wrapper" id="ocrOutputWrapper">
+            <div class="ocr-toolbar">
+                <span id="ocrCharCount"></span>
+                <button class="btn-action btn-copy" onclick="copyOCR()">
+                    <i class="bi bi-clipboard"></i> Copiar texto
+                </button>
+            </div>
+            <textarea class="ocr-textarea" id="ocrTextarea" readonly></textarea>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const FILENAME = {{ filename | tojson }};
+    let selectedAngle = 90;
+
+    function selectAngle(btn) {
+        document.querySelectorAll('.angle-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedAngle = parseInt(btn.dataset.angle);
+    }
+
+    function showBanner(id, type, msg) {
+        const el = document.getElementById(id);
+        el.className = `result-banner result-banner--${type} show`;
+        el.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${msg}`;
+    }
+    function hideBanner(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    async function rotatePDF() {
+        const btn = document.getElementById('btnRotate');
+        const spinner = document.getElementById('spinnerRotate');
+        const pages = document.getElementById('pagesInput').value.trim() || 'all';
+
+        btn.disabled = true;
+        spinner.classList.add('show');
+        hideBanner('rotateResult');
+
+        try {
+            const resp = await fetch(`/recursos_internos/pdf_rotate/${FILENAME}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ angle: selectedAngle, pages })
+            });
+            const data = await resp.json();
+            if (data.status === 'success') {
+                showBanner('rotateResult', 'success', data.message);
+            } else {
+                showBanner('rotateResult', 'error', 'Error: ' + data.message);
+            }
+        } catch (e) {
+            showBanner('rotateResult', 'error', 'Error de conexión: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            spinner.classList.remove('show');
+        }
+    }
+
+    async function runOCR() {
+        const btn = document.getElementById('btnOCR');
+        const spinner = document.getElementById('spinnerOCR');
+        const outputWrapper = document.getElementById('ocrOutputWrapper');
+        const textarea = document.getElementById('ocrTextarea');
+        const charCount = document.getElementById('ocrCharCount');
+
+        btn.disabled = true;
+        spinner.classList.add('show');
+        outputWrapper.classList.remove('show');
+        hideBanner('ocrResult');
+        showBanner('ocrResult', 'success', 'Procesando PDF con OCR local... esto puede tomar unos segundos.');
+
+        try {
+            const resp = await fetch(`/recursos_internos/pdf_ocr/${FILENAME}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await resp.json();
+
+            hideBanner('ocrResult');
+
+            if (data.status === 'success') {
+                textarea.value = data.text;
+                charCount.textContent = `${data.text.length.toLocaleString('es-AR')} caracteres extraídos`;
+                outputWrapper.classList.add('show');
+                showBanner('ocrResult', 'success', 'Texto extraído correctamente.');
+            } else {
+                showBanner('ocrResult', 'error', 'Error: ' + data.message);
+            }
+        } catch (e) {
+            hideBanner('ocrResult');
+            showBanner('ocrResult', 'error', 'Error de conexión: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            spinner.classList.remove('show');
+        }
+    }
+
+    function copyOCR() {
+        const text = document.getElementById('ocrTextarea').value;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = event.currentTarget;
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> ¡Copiado!';
+            btn.style.color = '#34d399';
+            setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
+        });
+    }
+</script>
+</body>
+</html>

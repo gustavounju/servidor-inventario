@@ -1,0 +1,2984 @@
+<!-- Modales Compartidos -->
+
+<!-- Modal de Topografía (Iframe) -->
+<div class="modal fade" id="topoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content" style="background: #0f172a; border: none;">
+            <div class="modal-body p-0" style="overflow: hidden;">
+                <iframe id="topoIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Cargar el iframe solo cuando se abre el modal para ahorrar recursos
+    document.getElementById('topoModal').addEventListener('show.bs.modal', function () {
+        const iframe = document.getElementById('topoIframe');
+        if (!iframe.src || iframe.src === window.location.href) {
+            iframe.src = "{{ url_for('infrastructure.topology_view') }}";
+        }
+    });
+</script>
+
+<div class="modal fade" id="fueroAdminModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1180px;">
+        <div class="modal-content" style="background: transparent; border: none; box-shadow: none;">
+            <div class="modal-body p-0" style="overflow: hidden; border-radius: 24px;">
+                <iframe id="fueroAdminIframe" src="" style="width: 100%; height: 86vh; border: none; background: #f8fafc;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('fueroAdminModal').addEventListener('show.bs.modal', function () {
+        const iframe = document.getElementById('fueroAdminIframe');
+        if (!iframe.src || iframe.src === window.location.href) {
+            iframe.src = "{{ url_for('users.fueros_admin') }}";
+        }
+    });
+</script>
+
+<!-- Modal Crear Tarea Suelta -->
+<!-- Modal Crear Tarea Suelta -->
+<div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 950px;">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25); max-height: calc(100vh - 2rem);">
+            <form id="formCrearTarea" action="{{ url_for('tasks.create_loose_task') }}" method="POST" style="display: flex; flex-direction: column; min-height: 0; height: 100%;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <!-- Header moderno con gradiente -->
+                <div style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 0;">
+                    <div style="padding: 24px 28px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.12); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.15);">
+                                <i class="bi bi-plus-circle-fill" style="color: #fff; font-size: 1.2rem;"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title mb-0 fw-bold text-white" id="createTaskModalLabel" style="font-size: 1.1rem; letter-spacing: -0.02em;">Nueva Tarea General</h5>
+                                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 3px;">
+                                    Carga pedidos rápidos del día y asigna técnicos a la bolsa global.
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                    </div>
+                </div>
+
+                <div class="modal-body" style="padding: 30px; background: #f8fafc; overflow-y: auto; flex: 1 1 auto; min-height: 0;">
+                    <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                        <div class="row g-4">
+                            <!-- Columna Izquierda: Información Principal -->
+                            <div class="col-lg-7">
+                                <div class="mb-4">
+                                    <label class="um-label">Descripción del Problema</label>
+                                    <textarea name="descripcion" class="form-control" rows="6" 
+                                              style="border-radius: 12px; border-color: #e2e8f0; font-size: 0.9rem; padding: 14px;"
+                                              placeholder="Ej: El usuario no puede imprimir en mesa de entradas. El equipo parece estar offline o el driver está corrupto." required></textarea>
+                                </div>
+                                <div class="mb-0">
+                                    <label class="um-label">Solicitante (Quién realiza el pedido)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-person"></i></span>
+                                        <input type="text" name="solicitante" class="form-control"
+                                            style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;"
+                                            placeholder="Ej: Juan Pérez / Contabilidad" 
+                                            list="usersDatalist" required autocomplete="off">
+                                    </div>
+                                    <datalist id="usersDatalist">
+                                        {% for user in ad_users_list %}
+                                        <option value="{{ user.real_name }}">{{ user.username }}</option>
+                                        {% endfor %}
+                                    </datalist>
+                                    <div style="font-size: 0.7rem; color: #94a3b8; mt-2 ms-1">Puedes escribir el nombre completo o el usuario de red.</div>
+                                </div>
+                            </div>
+
+                            <!-- Columna Derecha: Categorización y Asignación -->
+                            <div class="col-lg-5">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="um-label">Tipo de Actividad</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-briefcase"></i></span>
+                                            <select name="tipo_actividad" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
+                                                <option value="tarea">📝 Tarea (Mantenimiento / Pedido)</option>
+                                                <option value="incidente">🔥 Incidente (Falla / Interrupción)</option>
+                                                <option value="riesgo">⚠️ Riesgo (Alerta Preventiva)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-6">
+                                        <label class="um-label">Prioridad</label>
+                                        <select name="prioridad" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
+                                            <option value="1">1 - Baja</option>
+                                            <option value="2">2 - Media</option>
+                                            <option value="3">3 - Alta</option>
+                                            <option value="4">4 - Crítica</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <label class="um-label">Impacto (1-4)</label>
+                                        <select name="impacto_valor" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
+                                            <option value="1">1 - Mínimo</option>
+                                            <option value="2">2 - Parcial</option>
+                                            <option value="3">3 - Generalizado</option>
+                                            <option value="4">4 - Bloqueante</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="um-label">Categoría Técnica</label>
+                                        <select name="categoria" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
+                                            <option value="">-- Detección Automática --</option>
+                                            <option value="Audiencias">🎥 Audiencias</option>
+                                            <option value="Impresoras">🖨️ Impresoras</option>
+                                            <option value="Red/Conectividad">🌐 Red / Conectividad</option>
+                                            <option value="Hardware">🔌 Hardware</option>
+                                            <option value="Software">💿 Software</option>
+                                            <option value="Usuarios">👤 Usuarios / Cuentas</option>
+                                            <option value="General">📦 General</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="um-label">Fuero / Ubicación</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-geo-alt"></i></span>
+                                            <select name="fuero" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
+                                                <option value="">-- No Especificado --</option>
+                                                {% for name in fueros.values()|unique|sort %}
+                                                <option value="{{ name }}">{{ name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="um-label">Asignar a Técnico</label>
+                                        <select name="technician" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
+                                            <option value="">-- Sin Asignar (Bolsa Global) --</option>
+                                            {% for tech in technicians %}
+                                            <option value="{{ tech.name }}">{{ tech.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <div style="background: #eff6ff; color: #1e40af; padding: 10px; border-radius: 10px; font-size: 0.72rem; border: 1px solid #dbeafe;">
+                                            <i class="bi bi-info-circle-fill me-1"></i> El impacto y la prioridad definen el orden en el "Centro de Decisión".
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mt-2">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="is_done_shared" name="is_done">
+                                            <label class="form-check-label um-label mb-0" for="is_done_shared" style="cursor:pointer; font-weight: 700; color: #1e40af;">Esta tarea ya está resuelta</label>
+                                        </div>
+                                        <div id="solucion_container_shared" style="display: none; background: #fff; border: 1px solid #dbeafe; border-radius: 12px; padding: 12px; margin-top: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                                            <label class="um-label" style="color: #1e40af;"><i class="bi bi-check2-all me-1"></i> Detalle de la Solución</label>
+                                            <textarea name="solucion" id="solucion_shared" class="form-control" rows="3" 
+                                                      style="border-radius: 8px; border-color: #dbeafe; font-size: 0.85rem; padding: 10px;"
+                                                      placeholder="Explica brevemente cómo se solucionó el pedido..."></textarea>
+                                        </div>
+                                    </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                <div class="modal-footer" style="padding: 16px 30px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; flex: 0 0 auto;">
+                    <button type="button" class="btn btn-link text-decoration-none text-muted fw-bold" data-bs-dismiss="modal" style="font-size: 0.85rem;">Cancelar</button>
+                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #1e293b, #334155); color: #fff; border: none; padding: 10px 32px; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s;">
+                        <i class="bi bi-send-fill me-2"></i> Crear Tarea
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Gestión de Usuarios -->
+<div class="modal fade" id="usersModal" tabindex="-1" aria-labelledby="usersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+
+            <!-- Header moderno con gradiente y tabs -->
+            <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 0;">
+                <div style="padding: 20px 24px 0; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.12); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.15);">
+                            <i class="bi bi-people-fill" style="color: #fff; font-size: 1.1rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0 fw-bold text-white" id="usersModalLabel" style="font-size: 1.05rem; letter-spacing: -0.02em;">Gestión de Usuarios</h5>
+                            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 2px;">
+                                Modo: <strong style="color: rgba(255,255,255,0.8);">{{ auth_mode_label }}</strong>
+                                &nbsp;·&nbsp; Sesión: <strong style="color: rgba(255,255,255,0.8);">{{ current_user.display_name or current_user.username }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                </div>
+
+                <!-- Tabs de navegación -->
+                <div style="display: flex; gap: 4px; padding: 12px 24px 0; margin-top: 4px;">
+                    <button class="um-tab-btn active" onclick="switchUsersTab('tab-sistema', this)" id="btnTabSistema">
+                        <i class="bi bi-shield-lock"></i> Acceso al Sistema
+                    </button>
+                    <button class="um-tab-btn" onclick="switchUsersTab('tab-directorio', this)" id="btnTabDirectorio">
+                        <i class="bi bi-building"></i> Directorio Institucional
+                    </button>
+                </div>
+            </div>
+
+            <!-- Alertas flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div style="padding: 12px 20px 0;">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show py-2 small" role="alert" style="border-radius: 10px; margin-bottom: 8px;">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i> {{ message }}
+                    <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <div class="modal-body" style="padding: 20px; background: #f8fafc;">
+
+                <!-- ====== TAB: SISTEMA ====== -->
+                <div id="tab-sistema" class="um-tab-panel">
+
+                    <!-- Panel de edición/creación colapsable -->
+                    <div class="um-form-panel" id="umFormPanel">
+                        <div class="um-form-panel-header" onclick="toggleUserForm()">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="um-form-icon" id="umFormIcon">
+                                    <i class="bi bi-person-plus-fill"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold" id="umFormTitle" style="font-size: 0.9rem;">Nuevo Usuario</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">Haz clic para expandir el formulario</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span id="umFormResetBtn" class="um-reset-btn d-none" onclick="event.stopPropagation(); resetUserForm()">
+                                    <i class="bi bi-x-circle me-1"></i>Cancelar edición
+                                </span>
+                                <span class="um-reset-btn" onclick="event.stopPropagation(); prepareLocalTechnicianUser()">
+                                    <i class="bi bi-person-gear me-1"></i>Técnico local
+                                </span>
+                                <i class="bi bi-chevron-down um-chevron" id="umChevron"></i>
+                            </div>
+                        </div>
+
+                        <div id="umFormBody" class="um-form-body" style="display: none;">
+                            <form action="{{ url_for('users.create_app_user') }}" method="POST" id="appUserForm">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="is_edit_mode" id="isEditMode" value="0">
+                                <input type="hidden" name="next_url" data-users-next-url value="{{ request.path }}?manage_users=1">
+
+                                <div class="um-form-grid">
+                                    <div class="um-field">
+                                        <label class="um-label">Usuario</label>
+                                        <input type="text" name="username" id="appUsername" class="form-control" placeholder="ej: jperez" required onkeyup="checkDuplicateUser()">
+                                        <div id="userDuplicateWarning" class="text-danger small mt-1 d-none"><i class="bi bi-x-circle me-1"></i> Ya en uso.</div>
+                                    </div>
+                                    <div class="um-field">
+                                        <label class="um-label">Nombre Visible</label>
+                                        <input type="text" name="display_name" id="appDisplayName" class="form-control" placeholder="ej: Juan Pérez">
+                                    </div>
+                                    <div class="um-field">
+                                        <label class="um-label">Rol</label>
+                                        <select name="role" id="appRole" class="form-select" onchange="applyRolePreset()">
+                                            <option value="tecnico">🔧 Técnico</option>
+                                            <option value="operador">🖥️ Operador</option>
+                                            <option value="administrador">🛡️ Administrador</option>
+                                            <option value="infraestructura">🌐 Infraestructura</option>
+                                            <option value="consulta">📋 Consulta</option>
+                                        </select>
+                                    </div>
+                                    <div class="um-field">
+                                        <label class="um-label">Contraseña</label>
+                                        <div class="input-group">
+                                            <input type="password" name="password" id="appPassword" class="form-control" placeholder="Clave del usuario">
+                                            <button class="btn btn-outline-secondary" type="button" id="toggleAppPassword"><i class="bi bi-eye"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="um-field">
+                                        <label class="um-label">Nombre en Móvil</label>
+                                        <input type="text" name="technician_name" id="appTechName" class="form-control" placeholder="ej: Juan P.">
+                                    </div>
+                                    <div class="um-field">
+                                        <label class="um-label">Teléfono Interno</label>
+                                        <input type="text" name="phone" id="appPhone" class="form-control" placeholder="ej: 4444">
+                                    </div>
+                                </div>
+
+                                <div class="um-form-footer">
+                                    <div class="um-perms-row">
+                                        <span class="um-label" style="margin-right: 8px;">Permisos:</span>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_dashboard" id="permDashboard"><span><i class="bi bi-grid"></i> Dashboard</span></label>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_mobile" id="permMobile" checked><span><i class="bi bi-phone"></i> Móvil</span></label>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_infrastructure" id="permInfrastructure"><span><i class="bi bi-hdd-network"></i> Infra</span></label>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_reports" id="permReports"><span><i class="bi bi-file-bar-graph"></i> Reportes</span></label>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_operadores" id="permOperadores"><span><i class="bi bi-headset"></i> Operadores</span></label>
+                                    </div>
+                                    <div class="um-flags-row">
+                                        <label class="um-flag-chip"><input type="checkbox" name="is_superuser" id="newIsSuperuser" onchange="applyRolePreset()"><span><i class="bi bi-lightning-fill text-warning"></i> Superusuario</span></label>
+                                        <label class="um-flag-chip"><input type="checkbox" name="is_active" id="newIsActive" checked><span><i class="bi bi-check-circle-fill text-success"></i> Activo</span></label>
+                                        <label class="um-flag-chip"><input type="checkbox" name="must_change_password" id="newMustChangePassword"><span><i class="bi bi-key text-secondary"></i> Cambio forzado</span></label>
+                                        <button type="submit" class="btn btn-sm ms-auto" id="btnSubmitAppUser" style="background: linear-gradient(135deg, #334155, #1e293b); color: #fff; border: none; padding: 6px 20px; border-radius: 8px; font-weight: 700;">
+                                            <i class="bi bi-floppy me-1"></i> Guardar
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Buscador -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                        <div class="input-group input-group-sm" style="max-width: 340px;">
+                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0;"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="sysUserSearchInput" class="form-control" placeholder="Buscar usuario..." onkeyup="filterSysUsersList()" style="border-color: #e2e8f0; border-left: none;">
+                        </div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center; margin-left: 4px;">{{ app_users_list | length }} usuarios registrados</span>
+                    </div>
+
+                    <!-- Grid de tarjetas de usuarios -->
+                    <div class="um-users-grid">
+                        {% for app_user in app_users_list %}
+                        {% set is_ad = ad_usernames and app_user.username in ad_usernames %}
+                        {% set initials = (app_user.display_name or app_user.username)[:2] | upper %}
+                        <div class="um-user-card sys-user-item {{ 'um-user-pending' if not app_user.is_active else '' }}" data-username="{{ app_user.username }}" data-displayname="{{ app_user.display_name or '' }}">
+                            
+                            <!-- Avatar + Info -->
+                            <div class="um-user-card-top">
+                                <div class="um-avatar {{ 'um-avatar-super' if app_user.is_superuser else ('um-avatar-ad' if is_ad else 'um-avatar-local') }}">
+                                    {{ initials }}
+                                    {% if is_ad %}<span class="um-avatar-badge um-badge-ad"><i class="bi bi-windows"></i></span>
+                                    {% else %}<span class="um-avatar-badge um-badge-local"><i class="bi bi-person-lock"></i></span>{% endif %}
+                                </div>
+                                <div class="um-user-info">
+                                    <div class="um-user-name">{{ app_user.display_name or app_user.username }}</div>
+                                    <code class="um-user-code">{{ app_user.username }}</code>
+                                </div>
+                                <!-- Estado badge -->
+                                <div class="ms-auto">
+                                    {% if app_user.is_active %}
+                                        <span class="um-status-badge um-status-active"><i class="bi bi-check-circle-fill"></i> Activo</span>
+                                    {% elif is_ad %}
+                                        <span class="um-status-badge um-status-pending"><i class="bi bi-clock-history"></i> Pendiente</span>
+                                    {% else %}
+                                        <span class="um-status-badge um-status-inactive"><i class="bi bi-pause-circle"></i> Inactivo</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div style="margin-top: -6px; margin-bottom: 8px;">
+                                {% if is_ad %}
+                                    <span class="um-access-dot" title="Cuenta de Active Directory"><i class="bi bi-windows"></i></span>
+                                    <span style="font-size: 0.72rem; color: var(--text-muted);">AD · clave externa</span>
+                                {% else %}
+                                    <span class="um-access-dot" title="Cuenta local"><i class="bi bi-person-lock"></i></span>
+                                    <span style="font-size: 0.72rem; color: var(--text-muted);">Local · clave editable</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Rol + Accesos -->
+                            <div class="um-user-card-mid">
+                                <div class="um-role-section">
+                                    <div class="dropdown">
+                                        {% if app_user.is_superuser %}
+                                            <span class="um-role-chip um-role-super"><i class="bi bi-shield-fill-check me-1"></i>Superusuario</span>
+                                        {% else %}
+                                            <button class="um-role-chip um-role-{{ app_user.role or 'tecnico' }} dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">
+                                                {% if app_user.role == 'administrador' %}<i class="bi bi-shield-lock me-1"></i>
+                                                {% elif app_user.role == 'operador' %}<i class="bi bi-display me-1"></i>
+                                                {% elif app_user.role == 'infraestructura' %}<i class="bi bi-hdd-network me-1"></i>
+                                                {% elif app_user.role == 'consulta' %}<i class="bi bi-book me-1"></i>
+                                                {% else %}<i class="bi bi-phone me-1"></i>{% endif %}
+                                                {{ (app_user.role or 'tecnico') | capitalize }}
+                                            </button>
+                                            <ul class="dropdown-menu shadow-lg border-0" style="font-size: 0.8rem; border-radius: 10px; z-index: 1060; min-width: 200px;">
+                                                <li><h6 class="dropdown-header text-uppercase opacity-50" style="font-size: 0.6rem;">Cambiar rol — {{ app_user.username }}</h6></li>
+                                                <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'tecnico', false)"><i class="bi bi-phone me-2 text-primary"></i>Técnico (Solo Móvil)</button></li>
+                                                <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'operador', false)"><i class="bi bi-display me-2 text-success"></i>Operador (Dashboard)</button></li>
+                                                <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'administrador', false)"><i class="bi bi-shield-lock me-2 text-warning"></i>Administrador</button></li>
+                                                <li><button class="dropdown-item py-2" onclick="quickPromote('{{ app_user.username }}', 'infraestructura', false)"><i class="bi bi-hdd-network me-2 text-info"></i>Infraestructura</button></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><button class="dropdown-item py-2 text-danger fw-bold" onclick="quickPromote('{{ app_user.username }}', 'superuser', false)"><i class="bi bi-lightning-charge-fill me-2"></i>Hacer Superusuario</button></li>
+                                            </ul>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="um-access-pills">
+                                    {% if app_user.can_access_dashboard %}<span class="um-access-dot" title="Dashboard"><i class="bi bi-grid-fill"></i></span>{% endif %}
+                                    {% if app_user.can_access_mobile %}<span class="um-access-dot" title="Móvil"><i class="bi bi-phone-fill"></i></span>{% endif %}
+                                    {% if app_user.can_access_infrastructure %}<span class="um-access-dot" title="Infraestructura"><i class="bi bi-hdd-network-fill"></i></span>{% endif %}
+                                    {% if app_user.can_access_reports %}<span class="um-access-dot" title="Reportes"><i class="bi bi-file-earmark-bar-graph-fill"></i></span>{% endif %}
+                                    {% if app_user.can_access_operadores %}<span class="um-access-dot" title="Operadores"><i class="bi bi-headset"></i></span>{% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Acciones -->
+                            <div class="um-user-card-actions">
+                                <button class="um-action-btn um-action-edit" 
+                                        data-user='{{ app_user|tojson|safe }}'
+                                        onclick="editAppUser(JSON.parse(this.getAttribute('data-user')))">
+                                    <i class="bi bi-pencil-fill"></i> Editar
+                                </button>
+                                {% if not is_ad %}
+                                <button class="um-action-btn um-action-key" onclick="openResetPasswordModal('{{ app_user.username }}')">
+                                    <i class="bi bi-key-fill"></i> Clave
+                                </button>
+                                {% endif %}
+                                {% if app_user.username != current_user.username %}
+                                <form action="{{ url_for('users.remove_app_user', user_id=app_user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar a {{ app_user.username }}? Esta acción no se puede deshacer.')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="next_url" data-users-next-url value="{{ request.path }}?manage_users=1">
+                                    <button type="submit" class="um-action-btn um-action-delete"><i class="bi bi-trash3-fill"></i></button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- ====== TAB: DIRECTORIO ====== -->
+                <div id="tab-directorio" class="um-tab-panel" style="display: none;">
+                    <div class="um-form-panel" style="margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%); border-radius: 12px; color: #fff;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span style="font-size: 0.82rem;">El directorio contiene los teléfonos y fueros de los usuarios de AD. Haz clic en una fila para pre-cargar sus datos en el formulario de acceso.</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                        <div class="input-group input-group-sm" style="max-width: 340px;">
+                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0;"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="userSearchInput" class="form-control" placeholder="Buscar en directorio..." onkeyup="filterUsersList()" style="border-color: #e2e8f0; border-left: none;">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <table class="table table-sm table-hover align-middle mb-0" id="usersTableList" style="font-size: 0.85rem;">
+                            <thead style="background: #334155; color: #fff; position: sticky; top: 0; z-index: 2;">
+                                <tr>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Usuario AD</th>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Nombre Real</th>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Teléfono</th>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Fuero</th>
+                                    <th style="padding: 10px 14px; text-align: right; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Editar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in directorio_filtrado %}
+                                <tr class="user-item" style="cursor: pointer;" onclick="prefillAppUser('{{ user.username|e }}', '{{ user.real_name|e }}')" title="Clic para usar en formulario de acceso">
+                                    <td class="username-cell" style="padding: 9px 14px;"><code style="background: #f1f5f9; padding: 2px 7px; border-radius: 5px; color: #0369a1; font-size: 0.8rem;">{{ user.username }}</code></td>
+                                    <td class="realname-cell" style="padding: 9px 14px; font-weight: 600;">{{ user.real_name }}</td>
+                                    <td style="padding: 9px 14px; color: #64748b;">{{ user.phone or '—' }}</td>
+                                    <td style="padding: 9px 14px;">
+                                        {% if user.fuero %}
+                                        <span style="background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600;">{{ user.fuero }}</span>
+                                        {% else %}<span style="color: #cbd5e1;">—</span>{% endif %}
+                                    </td>
+                                    <td style="padding: 9px 14px; text-align: right;">
+                                        <button class="btn btn-xs btn-outline-primary py-0 px-2" 
+                                                data-username="{{ user.username|e }}"
+                                                data-realname="{{ user.real_name|e }}"
+                                                data-phone="{{ (user.phone or '')|e }}"
+                                                data-fuero="{{ (user.fuero or '')|e }}"
+                                                onclick="event.stopPropagation(); openUserPhoneEdit(this.dataset.username, this.dataset.realname, this.dataset.phone, this.dataset.fuero)">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Form de edición de teléfono inline -->
+                    <div id="userPhoneEditFormContainer" class="d-none" style="margin-top: 16px; background: #fff; border: 1.5px solid #0369a1; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(3,105,161,0.12);">
+                        <div style="background: linear-gradient(135deg, #0369a1, #0284c7); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <span class="fw-bold text-white" style="font-size: 0.88rem;"><i class="bi bi-pencil-square me-2"></i>Actualizar datos del usuario</span>
+                            <button type="button" class="btn-close btn-close-white btn-sm" onclick="closeUserPhoneEdit()"></button>
+                        </div>
+                        <div style="padding: 14px 16px;">
+                            <form action="{{ url_for('users.update_user_phone') }}" method="POST" class="row g-2 align-items-end">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="old_username" id="editOldUsername">
+                                <div class="col-sm-2">
+                                    <label class="um-label">Usuario</label>
+                                    <input type="text" name="username" id="editUsername" class="form-control form-control-sm" placeholder="Usuario AD" readonly style="background: #f8fafc;">
+                                </div>
+                                <div class="col-sm-3">
+                                    <label class="um-label">Nombre Completo</label>
+                                    <input type="text" name="realname" id="editRealname" class="form-control form-control-sm" placeholder="Nombre completo">
+                                </div>
+                                <div class="col-sm-2">
+                                    <label class="um-label">Teléfono IP</label>
+                                    <input type="text" name="phone" id="editPhone" class="form-control form-control-sm" placeholder="Ej: 4321">
+                                </div>
+                                <div class="col-sm-3">
+                                    <label class="um-label">Fuero / Área</label>
+                                    <select name="fuero" id="editFuero" class="form-select form-select-sm">
+                                        <option value="">-- Sin Fuero --</option>
+                                        {% for name in fueros.values()|unique|sort %}
+                                        <option value="{{ name }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-sm-2">
+                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                        <i class="bi bi-floppy me-1"></i> Guardar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /.modal-body -->
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div>
+
+<!-- Modal Reportes Rápidos -->
+<div class="modal fade" id="reportsModal" tabindex="-1" aria-labelledby="reportsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 900px;">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+            
+            <!-- Header moderno con gradiente (Esmeralda para Reportes) -->
+            <div style="background: linear-gradient(135deg, #064e3b 0%, #10b981 100%); padding: 0;">
+                <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2);">
+                            <i class="bi bi-file-earmark-bar-graph-fill" style="color: #fff; font-size: 1.2rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0 fw-bold text-white" id="reportsModalLabel" style="font-size: 1.1rem; letter-spacing: -0.02em;">Exportar Reportes</h5>
+                            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 3px;">
+                                Genera documentos Excel y PDF del estado del inventario y tareas.
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                </div>
+            </div>
+
+            <div class="modal-body" style="padding: 30px; background: #f8fafc;">
+                <div class="row g-4">
+                    <!-- Card: Reporte de Tareas -->
+                    <div class="col-md-6">
+                        <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; height: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                                <div style="width: 32px; height: 32px; background: #ecfdf5; color: #10b981; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                    <i class="bi bi-calendar-check"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0" style="color: #065f46; font-size: 0.95rem;">Registro de Actividad</h6>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="um-label">Fecha del Reporte</label>
+                                <input type="date" id="reportDate" class="form-control" style="border-radius: 10px; border-color: #e2e8f0; font-size: 0.85rem;" value="{{ now_date }}">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="um-label">PC Específica (Opcional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="background: #f8fafc; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-pc-display"></i></span>
+                                    <input type="text" id="reportPcName" class="form-control" style="border-color: #e2e8f0; font-size: 0.85rem;" placeholder="Nombre de la PC...">
+                                </div>
+                            </div>
+                            
+                            <div class="mt-auto d-grid gap-2">
+                                <button onclick="downloadReport('excel')" class="btn btn-success" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px; background: #10b981; border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                                    <i class="bi bi-file-earmark-excel me-2"></i>Descargar Excel
+                                </button>
+                                <button onclick="downloadReport('pdf')" class="btn btn-danger" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px; background: #ef4444; border: none; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                                    <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card: Inventario General -->
+                    <div class="col-md-6">
+                        <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; height: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                                <div style="width: 32px; height: 32px; background: #eff6ff; color: #3b82f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0" style="color: #1e40af; font-size: 0.95rem;">Estado de Inventario</h6>
+                            </div>
+                            
+                            <p class="text-muted" style="font-size: 0.8rem; line-height: 1.5;">
+                                Descarga un resumen detallado de todo el hardware activo, especificaciones técnicas y estados de salud detectados.
+                            </p>
+                            
+                            <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px dashed #cbd5e1; margin-bottom: 20px; font-size: 0.72rem; color: #64748b;">
+                                <i class="bi bi-info-circle me-1"></i> Este reporte incluye PCs activas, monitores e impresoras catalogadas.
+                            </div>
+                            
+                            <div class="mt-auto d-grid gap-2">
+                                <a href="{{ url_for('dashboard.export_inventory') }}" class="btn btn-outline-primary" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px;">
+                                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>Catálogo Completo (Excel)
+                                </a>
+                                <form action="{{ url_for('dashboard.export_inventory_pdf') }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-outline-danger w-100" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px;">
+                                        <i class="bi bi-file-earmark-pdf me-2"></i>Inventario Físico (PDF)
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="padding: 16px 30px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                <a href="{{ url_for('tasks.report_tasks_completed') }}" class="text-decoration-none fw-bold" style="font-size: 0.8rem; color: #065f46;">
+                    <i class="bi bi-arrow-right-circle me-1"></i>Ir al Panel de Reportes
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 10px; font-size: 0.85rem; font-weight: 700; padding: 8px 20px;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Asignar Tarea a PC -->
+<div class="modal fade" id="assignTaskModal" tabindex="-1" aria-labelledby="assignTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('tasks.assign_task') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="task_id" id="assignTaskId">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignTaskModalLabel">Asignar Tarea a PC</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Seleccione la PC responsable:</label>
+                        <select name="pc_name" class="form-select" required size="10">
+                            <option value="">Seleccione PC...</option>
+                            {% for pc in all_pcs %}
+                            <option value="{{ pc.pc_name }}">{{ pc.pc_name }} | {{ pc.fuero or '-' }} | {{ pc.last_user or '?' }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Puede escribir para buscar en la lista desplegada.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Asignar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Upload Manual -->
+<div class="modal fade" id="uploadManualModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('api.upload_manual_inventory') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Subir Inventario Offline</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Seleccione el archivo JSON generado en el escritorio de la PC sin conexión.</p>
+                    <input type="file" name="file" class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Subir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Diagnóstico -->
+<div class="modal fade" id="healthModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Diagnóstico del Equipo: <span id="healthPcName">...</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body overflow-auto" style="max-height: 80vh;">
+                <div id="healthLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2">Analizando diagnóstico...</p>
+                </div>
+                <div id="healthError" class="alert alert-danger d-none"></div>
+                
+                <div id="healthContent" class="d-none">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card p-3 text-center h-100 border-0 bg-light shadow-sm">
+                                <h2 id="healthUptime" class="mb-0">0</h2>
+                                <small class="text-muted d-block uppercase tracking-wider">Días Online</small>
+                                <span id="healthUptimeMsg" class="badge mt-2"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-3 text-center h-100 border-0 bg-light shadow-sm">
+                                <h6 class="mb-0 text-success fw-bold" id="healthOffice">...</h6>
+                                <small class="text-muted d-block uppercase tracking-wider">Microsoft Office</small>
+                                <i class="bi bi-microsoft mt-1 text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-3 h-100 border-0 bg-light shadow-sm">
+                                <h6 class="fw-bold mb-2">Almacenamiento (Discos)</h6>
+                                <div id="healthDiskSpaceContainer" class="row g-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold border-bottom pb-1 mb-3">Integridad Física (SMART)</h6>
+                    <ul id="healthSmartList" class="list-group list-group-flush mb-4 small"></ul>
+
+                    <h6 class="fw-bold border-bottom pb-1 mb-2">Eventos Críticos Recientes (System Logs)</h6>
+                    <ul id="healthEventsList" class="list-group list-group-flush small"></ul>
+
+                    <h6 class="fw-bold border-bottom pb-1 mt-4 mb-3">Seguridad y Red</h6>
+                    <div class="card border-0 bg-light shadow-sm mb-3">
+                        <div class="card-body">
+                            <h6 class="mb-2 fw-bold"><i class="bi bi-shield-lock-fill text-primary me-1"></i> Software de Protección</h6>
+                            <span id="healthSecurityAntivirus" class="badge fs-6 bg-secondary">Cargando...</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-lg-5">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-lightning-auto text-warning me-1"></i> Programas de Inicio</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
+                                    <thead class="bg-light">
+                                        <tr><th>Nombre</th><th>Comando</th></tr>
+                                    </thead>
+                                    <tbody id="healthSecurityStartupBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-7">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-globe text-info me-1"></i> Conexiones Externas Activas</h6>
+                            <div class="table-responsive" style="max-height: 360px;">
+                                <table class="table table-sm table-striped mb-0" style="font-size: 0.8rem;">
+                                    <thead class="bg-light sticky-top">
+                                        <tr><th>Proceso</th><th>PID</th><th>Remoto</th><th>Estado</th></tr>
+                                    </thead>
+                                    <tbody id="healthSecurityTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Seguridad -->
+<div class="modal fade" id="securityModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Auditoría de Seguridad: <span id="securityPcName">...</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background: #f8f9fa;">
+                <div id="securityLoading" class="text-center py-5">
+                    <div class="spinner-border text-warning"></div>
+                    <p class="mt-2">Extrayendo conexiones y procesos...</p>
+                </div>
+                <div id="securityError" class="alert alert-danger d-none"></div>
+
+                <div id="securityContent" class="d-none">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <div class="p-3 bg-primary bg-opacity-10 rounded-circle text-primary">
+                                        <i class="bi bi-shield-lock-fill fs-2"></i>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <h6 class="mb-1 fw-bold">Software de Protección</h6>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span id="securityAntivirus" class="badge fs-6 bg-secondary">Cargando...</span>
+                                        <small class="text-muted">Estado detectado al momento del reporte.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-5">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white border-0 py-3">
+                                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-lightning-auto text-warning me-1"></i> Programas de Inicio (Startup)</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
+                                            <thead class="bg-light">
+                                                <tr><th>Nombre</th><th>Comando</th></tr>
+                                            </thead>
+                                            <tbody id="securityStartupBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-7">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white border-0 py-3">
+                                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-globe text-info me-1"></i> Conexiones Externas Activas</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive" style="max-height: 500px;">
+                                        <table class="table table-sm table-striped mb-0" style="font-size: 0.8rem;">
+                                            <thead class="bg-light sticky-top">
+                                                <tr><th>Proceso</th><th>PID</th><th>Remoto</th><th>Estado</th></tr>
+                                            </thead>
+                                            <tbody id="securityTableBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function downloadReport(format) {
+        const date = document.getElementById('reportDate').value;
+        const pc = document.getElementById('reportPcName').value;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        
+        if (format === 'excel') {
+            form.action = "{{ url_for('tasks.report_tasks_completed') }}";
+        } else {
+            form.action = "{{ url_for('tasks.report_tasks_completed_pdf') }}";
+        }
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = "{{ csrf_token() }}";
+        form.appendChild(csrfInput);
+        
+        const dateInput = document.createElement('input');
+        dateInput.type = 'hidden';
+        dateInput.name = 'fecha';
+        dateInput.value = date;
+        form.appendChild(dateInput);
+        
+        const pcInput = document.createElement('input');
+        pcInput.type = 'hidden';
+        pcInput.name = 'pc_name';
+        pcInput.value = pc;
+        form.appendChild(pcInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+
+    // Diagnostics logic updated to use API and full rendering
+    function showHealth(pcName) {
+        document.getElementById('healthPcName').innerText = pcName;
+        document.getElementById('healthLoading').classList.remove('d-none');
+        document.getElementById('healthContent').classList.add('d-none');
+        document.getElementById('healthError').classList.add('d-none');
+        
+        const modal = new bootstrap.Modal(document.getElementById('healthModal'));
+        modal.show();
+        
+        fetch('/api/health/' + encodeURIComponent(pcName))
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('healthLoading').classList.add('d-none');
+                if (data.status === 'success') {
+                    document.getElementById('healthContent').classList.remove('d-none');
+                    const h = data.data || {};
+                    const extra = data.extra || {}; // Para Office y otros generales
+
+                    // Office
+                    document.getElementById('healthOffice').innerText = extra.office || 'N/A';
+
+                    // Uptime
+                    const days = h.Uptime_Dias || 0;
+                    const uptimeEl = document.getElementById('healthUptime');
+                    uptimeEl.innerText = days;
+                    uptimeEl.className = "mb-0 " + (days > 15 ? "text-danger" : "text-success");
+                    document.getElementById('healthUptimeMsg').innerText = days > 15 ? "Crítico > 15 días" : "Estado Saludable";
+                    document.getElementById('healthUptimeMsg').className = "badge mt-2 " + (days > 15 ? "text-bg-danger" : "text-bg-success");
+
+                    // Discos Espacio
+                    const spaceContainer = document.getElementById('healthDiskSpaceContainer');
+                    spaceContainer.innerHTML = '';
+                    (h.Discos_Espacio || []).forEach(d => {
+                        let color = d.FreeGB < 5 ? 'danger' : (d.FreeGB < 15 ? 'warning' : 'success');
+                        let card = `
+                            <div class="col-md-6 mb-2">
+                                <div class="small fw-bold d-flex justify-content-between">
+                                    <span>${d.Letter}</span>
+                                    <span class="text-${color}">${d.FreeGB} GB</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-${color}" style="width: ${100 - (d.PctFree || 0)}%"></div>
+                                </div>
+                            </div>`;
+                        spaceContainer.innerHTML += card;
+                    });
+
+                    // SMART
+                    const smartList = document.getElementById('healthSmartList');
+                    smartList.innerHTML = '';
+                    (h.Discos_SMART || []).forEach(d => {
+                        let statusColor = d.Status === 'OK' ? 'text-success' : 'text-danger';
+                        smartList.innerHTML += `<li class="list-group-item bg-transparent d-flex justify-content-between p-1">
+                            <span>${d.Model}</span>
+                            <span class="fw-bold ${statusColor}">${d.Status}</span>
+                        </li>`;
+                    });
+
+                    // Eventos
+                    const eventList = document.getElementById('healthEventsList');
+                    eventList.innerHTML = '';
+                    if (h.Eventos_Criticos && h.Eventos_Criticos.length > 0) {
+                        h.Eventos_Criticos.forEach(e => {
+                            eventList.innerHTML += `<li class="list-group-item list-group-item-danger border-0 p-1 mb-1 rounded small">
+                                <strong>${e.Source}</strong>: ${e.Msg}
+                            </li>`;
+                        });
+                    } else {
+                        eventList.innerHTML = `<li class="list-group-item bg-transparent text-muted text-center py-2">Sin errores críticos detectados</li>`;
+                    }
+
+                    // Seguridad
+                    const avBadge = document.getElementById('healthSecurityAntivirus');
+                    const avName = (data.seguridad_extra && data.seguridad_extra.Antivirus) || 'Desconocido';
+                    avBadge.innerText = avName;
+                    avBadge.className = 'badge fs-6 ' + (avName === 'No Detectado' ? 'bg-danger' : 'bg-success');
+
+                    const startupTbody = document.getElementById('healthSecurityStartupBody');
+                    startupTbody.innerHTML = '';
+                    const startups = (data.seguridad_extra && data.seguridad_extra.Startup) || [];
+                    if (startups.length > 0) {
+                        startups.forEach(st => {
+                            startupTbody.innerHTML += `<tr><td class="fw-bold">${st.Name}</td><td class="text-muted"><small>${st.Command}</small></td></tr>`;
+                        });
+                    } else {
+                        startupTbody.innerHTML = `<tr><td colspan="2" class="text-center py-3 text-muted">No se detectaron programas extra de inicio.</td></tr>`;
+                    }
+
+                    const tbody = document.getElementById('healthSecurityTableBody');
+                    tbody.innerHTML = '';
+                    const conns = data.conexiones || [];
+                    if (conns.length > 0) {
+                        conns.forEach(conn => {
+                            tbody.innerHTML += `<tr>
+                                <td class="text-primary fw-bold">${conn.Process || '?'}</td>
+                                <td>${conn.PID || '-'}</td>
+                                <td><code>${conn.Remote}</code></td>
+                                <td><span class="badge ${conn.State === 'ESTABLISHED' ? 'bg-success' : 'bg-warning'}">${conn.State}</span></td>
+                            </tr>`;
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay conexiones externas activas.</td></tr>`;
+                    }
+
+                } else {
+                    document.getElementById('healthError').innerText = data.message || "Error al cargar diagnóstico.";
+                    document.getElementById('healthError').classList.remove('d-none');
+                }
+            })
+            .catch(err => {
+                document.getElementById('healthLoading').classList.add('d-none');
+                document.getElementById('healthError').innerText = "Error de conexión: " + err;
+                document.getElementById('healthError').classList.remove('d-none');
+            });
+    }
+
+    function showSecurity(pcName) {
+        showHealth(pcName);
+        return;
+
+        document.getElementById('securityPcName').innerText = pcName;
+        document.getElementById('securityLoading').classList.remove('d-none');
+        document.getElementById('securityContent').classList.add('d-none');
+        document.getElementById('securityError').classList.add('d-none');
+        
+        const modal = new bootstrap.Modal(document.getElementById('securityModal'));
+        modal.show();
+        
+        fetch('/api/security/' + encodeURIComponent(pcName))
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('securityLoading').classList.add('d-none');
+                if (data.status === 'success') {
+                    document.getElementById('securityContent').classList.remove('d-none');
+
+                    // 1. Antivirus
+                    const avBadge = document.getElementById('securityAntivirus');
+                    const avName = (data.seguridad_extra && data.seguridad_extra.Antivirus) || 'Desconocido';
+                    avBadge.innerText = avName;
+                    avBadge.className = 'badge fs-6 ' + (avName === 'No Detectado' ? 'bg-danger' : 'bg-success');
+
+                    // 2. Startup
+                    const startupTbody = document.getElementById('securityStartupBody');
+                    startupTbody.innerHTML = '';
+                    const startups = (data.seguridad_extra && data.seguridad_extra.Startup) || [];
+                    if (startups.length > 0) {
+                        startups.forEach(st => {
+                            startupTbody.innerHTML += `<tr><td class="fw-bold">${st.Name}</td><td class="text-muted"><small>${st.Command}</small></td></tr>`;
+                        });
+                    } else {
+                        startupTbody.innerHTML = `<tr><td colspan="2" class="text-center py-3 text-muted">No se detectaron programas extra de inicio.</td></tr>`;
+                    }
+
+                    // 3. Conexiones
+                    const tbody = document.getElementById('securityTableBody');
+                    tbody.innerHTML = '';
+                    if (data.data && data.data.length > 0) {
+                        data.data.forEach(conn => {
+                            tbody.innerHTML += `<tr>
+                                <td class="text-primary fw-bold">${conn.Process || '?'}</td>
+                                <td>${conn.PID || '-'}</td>
+                                <td><code>${conn.Remote}</code></td>
+                                <td><span class="badge ${conn.State === 'ESTABLISHED' ? 'bg-success' : 'bg-warning'}">${conn.State}</span></td>
+                            </tr>`;
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay conexiones externas activas.</td></tr>`;
+                    }
+                } else {
+                    document.getElementById('securityError').innerText = data.message || "Error al cargar auditoría.";
+                    document.getElementById('securityError').classList.remove('d-none');
+                }
+            })
+            .catch(err => {
+                document.getElementById('securityLoading').classList.add('d-none');
+                document.getElementById('securityError').innerText = "Error de red: " + err;
+                document.getElementById('securityError').classList.remove('d-none');
+            });
+    }
+
+    // Set default date to today (robust local date)
+    document.addEventListener('DOMContentLoaded', function() {
+        const reportDate = document.getElementById('reportDate');
+        if (reportDate) {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const localToday = `${yyyy}-${mm}-${dd}`;
+            reportDate.value = localToday;
+        }
+    });
+</script>
+
+<!-- Estilos del nuevo modal de usuarios -->
+<style>
+/* ── Tabs ── */
+.um-tab-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 10px 10px 0 0; border: none;
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
+    font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+    border-bottom: 2px solid transparent;
+}
+.um-tab-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
+.um-tab-btn.active { background: rgba(255,255,255,0.18); color: #fff; border-bottom-color: #f59e0b; }
+
+/* ── Form Panel ── */
+.um-form-panel {
+    background: #fff; border-radius: 14px; border: 1.5px solid #e2e8f0;
+    margin-bottom: 20px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.um-form-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; cursor: pointer; transition: background 0.15s;
+    user-select: none;
+}
+.um-form-panel-header:hover { background: #f8fafc; }
+.um-form-icon {
+    width: 36px; height: 36px; background: linear-gradient(135deg, #334155, #1e293b);
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1rem; flex-shrink: 0;
+}
+.um-form-icon.editing { background: linear-gradient(135deg, #b45309, #f59e0b); }
+.um-chevron { color: #94a3b8; transition: transform 0.25s; font-size: 0.9rem; }
+.um-chevron.open { transform: rotate(180deg); }
+.um-reset-btn {
+    font-size: 0.75rem; color: #ef4444; cursor: pointer; padding: 3px 10px;
+    border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca;
+    transition: all 0.15s; font-weight: 600;
+}
+.um-reset-btn:hover { background: #fee2e2; }
+
+.um-form-body { padding: 16px 18px; border-top: 1px solid #f0f4f8; }
+.um-form-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin-bottom: 14px;
+}
+.um-field {}
+.um-label { font-size: 0.75rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.um-form-footer { background: #f8fafc; border-radius: 10px; padding: 12px 14px; border: 1px solid #e2e8f0; }
+.um-perms-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.um-flags-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+.um-perm-chip input, .um-flag-chip input { display: none; }
+.um-perm-chip span, .um-flag-chip span {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 11px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+    border: 1.5px solid #e2e8f0; background: #fff; color: #475569;
+    cursor: pointer; transition: all 0.18s; user-select: none;
+}
+.um-perm-chip span:hover, .um-flag-chip span:hover { border-color: #94a3b8; background: #f8fafc; }
+.um-perm-chip input:checked + span { background: #1e293b; color: #fff; border-color: #1e293b; }
+.um-flag-chip input:checked + span { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+
+/* ── Grid de usuarios ── */
+.um-users-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px;
+}
+.um-user-card {
+    background: #fff; border-radius: 14px; border: 1.5px solid #e2e8f0;
+    padding: 14px 16px; transition: all 0.2s; display: flex; flex-direction: column; gap: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.um-user-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.um-user-card.um-user-pending { border-color: #fde68a; background: #fffbeb; }
+
+.um-user-card-top { display: flex; align-items: center; gap: 10px; }
+.um-avatar {
+    width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center;
+    justify-content: center; font-size: 1rem; font-weight: 800; color: #fff;
+    position: relative; flex-shrink: 0; letter-spacing: -0.02em;
+}
+.um-avatar-local { background: linear-gradient(135deg, #334155, #475569); }
+.um-avatar-ad { background: linear-gradient(135deg, #0369a1, #0284c7); }
+.um-avatar-super { background: linear-gradient(135deg, #b91c1c, #dc2626); }
+.um-avatar-badge {
+    position: absolute; bottom: -4px; right: -4px;
+    width: 18px; height: 18px; border-radius: 6px; font-size: 0.55rem;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; border: 2px solid #fff;
+}
+.um-badge-ad { background: #0369a1; }
+.um-badge-local { background: #475569; }
+.um-user-info { min-width: 0; }
+.um-user-name { font-weight: 700; font-size: 0.88rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.um-user-code { font-size: 0.72rem; color: #64748b; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; }
+
+.um-status-badge {
+    font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+}
+.um-status-active { background: #dcfce7; color: #16a34a; }
+.um-status-pending { background: #fef9c3; color: #a16207; }
+.um-status-inactive { background: #f1f5f9; color: #64748b; }
+
+.um-user-card-mid { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.um-role-section {}
+.um-role-chip {
+    display: inline-flex; align-items: center; font-size: 0.76rem; font-weight: 700;
+    padding: 4px 10px; border-radius: 8px; border: 1.5px solid; cursor: pointer;
+    transition: all 0.15s; background: #fff; white-space: nowrap;
+}
+.um-role-chip.dropdown-toggle::after { margin-left: 4px; }
+.um-role-tecnico { border-color: #bfdbfe; color: #1d4ed8; }
+.um-role-tecnico:hover { background: #eff6ff; }
+.um-role-administrador { border-color: #fde68a; color: #b45309; }
+.um-role-administrador:hover { background: #fffbeb; }
+.um-role-operador { border-color: #bbf7d0; color: #15803d; }
+.um-role-operador:hover { background: #f0fdf4; }
+.um-role-infraestructura { border-color: #a5f3fc; color: #0e7490; }
+.um-role-infraestructura:hover { background: #ecfeff; }
+.um-role-consulta { border-color: #e9d5ff; color: #7e22ce; }
+.um-role-consulta:hover { background: #faf5ff; }
+.um-role-super { border-color: #fecaca; color: #b91c1c; cursor: default; }
+
+.um-access-pills { display: flex; gap: 4px; align-items: center; }
+.um-access-dot {
+    width: 26px; height: 26px; border-radius: 7px; background: #f1f5f9;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; color: #475569; transition: all 0.15s;
+}
+.um-access-dot:hover { background: #e2e8f0; }
+
+.um-user-card-actions { display: flex; gap: 6px; border-top: 1px solid #f0f4f8; padding-top: 10px; }
+.um-action-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px; border-radius: 8px; font-size: 0.76rem; font-weight: 700;
+    border: 1.5px solid #e2e8f0; background: #fff; color: #475569;
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.um-action-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+.um-action-edit:hover { border-color: #334155; color: #1e293b; }
+.um-action-key { border-color: #fde68a; color: #b45309; }
+.um-action-key:hover { background: #fffbeb; border-color: #f59e0b; }
+.um-action-delete { border-color: #fecaca; color: #dc2626; padding: 5px 10px; }
+.um-action-delete:hover { background: #fef2f2; border-color: #ef4444; }
+</style>
+
+<!-- Scripts para Modales (Se incluirán una sola vez) -->
+<script>
+    // ──────────────────────────────────────────
+    //  Nuevo modal de usuarios — UI Logic
+    // ──────────────────────────────────────────
+
+    function switchUsersTab(tabId, btn) {
+        document.querySelectorAll('.um-tab-panel').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.um-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).style.display = 'block';
+        btn.classList.add('active');
+    }
+
+    let umFormOpen = false;
+    function toggleUserForm() {
+        const body = document.getElementById('umFormBody');
+        const chevron = document.getElementById('umChevron');
+        umFormOpen = !umFormOpen;
+        body.style.display = umFormOpen ? 'block' : 'none';
+        chevron.classList.toggle('open', umFormOpen);
+    }
+
+    function resetUserForm() {
+        document.getElementById('appUsername').value = '';
+        document.getElementById('appDisplayName').value = '';
+        document.getElementById('appPassword').value = '';
+        document.getElementById('appTechName').value = '';
+        document.getElementById('appPhone').value = '';
+        document.getElementById('appRole').value = 'tecnico';
+        document.getElementById('isEditMode').value = '0';
+        document.getElementById('newIsSuperuser').checked = false;
+        document.getElementById('newIsActive').checked = true;
+        document.getElementById('newMustChangePassword').checked = false;
+        document.getElementById('appUsername').readOnly = false;
+        const passwordEl = document.getElementById('appPassword');
+        passwordEl.disabled = false;
+        passwordEl.required = false;
+        passwordEl.placeholder = 'Clave del usuario';
+        document.getElementById('toggleAppPassword').disabled = false;
+        document.getElementById('btnSubmitAppUser').innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar';
+        document.getElementById('umFormTitle').innerText = 'Nuevo Usuario';
+        document.getElementById('umFormIcon').className = 'um-form-icon';
+        document.getElementById('umFormIcon').innerHTML = '<i class="bi bi-person-plus-fill"></i>';
+        document.getElementById('umFormResetBtn').classList.add('d-none');
+        applyRolePreset();
+    }
+
+    function prepareLocalTechnicianUser() {
+        resetUserForm();
+        document.getElementById('appRole').value = 'tecnico';
+        document.getElementById('newIsActive').checked = true;
+        const passwordEl = document.getElementById('appPassword');
+        passwordEl.disabled = false;
+        passwordEl.required = true;
+        passwordEl.placeholder = 'Clave local obligatoria';
+        document.getElementById('appTechName').placeholder = 'Nombre que verá la app móvil';
+        applyRolePreset();
+        if (!umFormOpen) { toggleUserForm(); }
+        document.getElementById('appUsername').focus();
+    }
+
+</script>
+
+<script>
+
+    // Lista de usuarios detectados como AD para lógica de interfaz
+    const adUsernamesSet = new Set({{ (ad_usernames|list if ad_usernames else []) | tojson | safe }});
+
+    function filterSysUsersList() {
+
+        var input = document.getElementById("sysUserSearchInput").value.toLowerCase();
+        var trs = document.querySelectorAll("#usersModal table tbody tr.sys-user-item");
+        trs.forEach(function(tr) {
+            var username = tr.querySelector("code").textContent.toLowerCase();
+            var realname = tr.querySelector(".sys-user-display-name").textContent.toLowerCase();
+            if (username.indexOf(input) > -1 || realname.indexOf(input) > -1) {
+                tr.style.display = "";
+            } else {
+                tr.style.display = "none";
+            }
+        });
+    }
+
+    function quickPromote(username, role, currentIsSuper) {
+        let msg = `¿Promover a ${username} como ${role}?`;
+        if (role === 'superuser') msg = `¿Convertir a ${username} en SUPERUSUARIO (Control Total)?`;
+        
+        if (!confirm(msg)) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ url_for('users.create_app_user') }}";
+        
+        const fields = {
+            'csrf_token': "{{ csrf_token() }}",
+            'username': username,
+            'is_edit_mode': '1',
+            'is_active': 'on',
+            'next_url': buildUsersModalReturnUrl()
+        };
+
+        if (role === 'superuser') {
+            fields['is_superuser'] = 'on';
+            fields['role'] = 'administrador';
+        } else {
+            fields['role'] = role;
+            if (currentIsSuper) fields['is_superuser'] = 'on';
+        }
+
+        // Aplicar presets de permisos según el rol
+        const preset = rolePresets[role === 'superuser' ? 'administrador' : role] || rolePresets.tecnico;
+        if (preset.dashboard) fields['perm_dashboard'] = 'on';
+        if (preset.mobile) fields['perm_mobile'] = 'on';
+        if (preset.infrastructure) fields['perm_infrastructure'] = 'on';
+        if (preset.reports) fields['perm_reports'] = 'on';
+        if (preset.operadores) fields['perm_operadores'] = 'on';
+
+        for (const [key, value] of Object.entries(fields)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value;
+            form.appendChild(input);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
+    function filterUsersList() {
+        var input = document.getElementById("userSearchInput").value.toLowerCase();
+        var trs = document.querySelectorAll("#usersTableList tbody tr.user-item");
+        trs.forEach(function(tr) {
+            var username = tr.querySelector(".username-cell").textContent.toLowerCase();
+            var realname = tr.querySelector(".realname-cell").textContent.toLowerCase();
+            if (username.indexOf(input) > -1 || realname.indexOf(input) > -1) {
+                tr.style.display = "";
+            } else {
+                tr.style.display = "none";
+            }
+        });
+    }
+    
+    function openUserPhoneEdit(username, realname, currentPhone, currentFuero) {
+        var container = document.getElementById("userPhoneEditFormContainer");
+        if (!container) return;
+        container.classList.remove("d-none");
+        
+        document.getElementById("editOldUsername").value = username;
+        document.getElementById("editUsername").value = username;
+        document.getElementById("editRealname").value = realname;
+        document.getElementById("editPhone").value = currentPhone;
+        document.getElementById("editFuero").value = currentFuero;
+        document.getElementById("editPhone").focus();
+    }
+    
+    function closeUserPhoneEdit() {
+        var container = document.getElementById("userPhoneEditFormContainer");
+        if (container) container.classList.add("d-none");
+    }
+
+    const rolePresets = {
+        administrador: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false },
+        operador: { dashboard: false, mobile: false, infrastructure: false, reports: false, operadores: true },
+        tecnico: { dashboard: false, mobile: true, infrastructure: false, reports: false, operadores: false },
+        infraestructura: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false },
+        consulta: { dashboard: false, mobile: false, infrastructure: false, reports: true, operadores: false }
+    };
+
+    function setAccessChecks(values) {
+        if (!document.getElementById('permDashboard')) return;
+        document.getElementById('permDashboard').checked = !!values.dashboard;
+        document.getElementById('permMobile').checked = !!values.mobile;
+        document.getElementById('permInfrastructure').checked = !!values.infrastructure;
+        document.getElementById('permReports').checked = !!values.reports;
+        const operadoresEl = document.getElementById('permOperadores');
+        if (operadoresEl) operadoresEl.checked = !!values.operadores;
+    }
+
+    function applyRolePreset() {
+        const roleEl = document.getElementById('appRole');
+        const superuserEl = document.getElementById('newIsSuperuser');
+        const activeEl = document.getElementById('newIsActive');
+        if (!roleEl || !superuserEl) return;
+        
+        const role = roleEl.value;
+        
+        // Auto-activar si se elige un rol (asumimos que el admin está aprobando al usuario)
+        if (activeEl && !activeEl.checked) {
+            activeEl.checked = true;
+        }
+
+        if (superuserEl.checked) {
+            setAccessChecks({ dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: true });
+            return;
+        }
+        setAccessChecks(rolePresets[role] || rolePresets.tecnico);
+    }
+
+    function editAppUser(user) {
+        const usernameEl = document.getElementById('appUsername');
+        if (!usernameEl) return;
+        usernameEl.value = user.username || '';
+        document.getElementById('appDisplayName').value = user.display_name || '';
+        document.getElementById('appPhone').value = user.phone || '';
+        document.getElementById('appPassword').value = '';
+        document.getElementById('appRole').value = user.role || 'tecnico';
+        document.getElementById('newIsSuperuser').checked = !!user.is_superuser;
+        // Si el usuario está inactivo (especialmente si es un pendiente de AD), 
+        // lo marcamos como activo por defecto al abrir el panel para "Aprobarlo".
+        document.getElementById('newIsActive').checked = true; 
+        document.getElementById('newMustChangePassword').checked = !!user.must_change_password;
+        setAccessChecks({
+            dashboard: !!user.can_access_dashboard,
+            mobile: !!user.can_access_mobile,
+            infrastructure: !!user.can_access_infrastructure,
+            reports: !!user.can_access_reports,
+            operadores: !!user.can_access_operadores
+        });
+        const passwordEl = document.getElementById('appPassword');
+        const isAD = adUsernamesSet.has((user.username || '').toLowerCase());
+
+        if (isAD) {
+            passwordEl.disabled = true;
+            passwordEl.required = false;
+            passwordEl.placeholder = 'Clave gestionada por Active Directory';
+            passwordEl.value = '';
+            document.getElementById('toggleAppPassword').disabled = true;
+        } else {
+            passwordEl.disabled = false;
+            passwordEl.required = false;
+            passwordEl.placeholder = 'Dejar vacío para no cambiar';
+            document.getElementById('toggleAppPassword').disabled = false;
+        }
+
+        document.getElementById('isEditMode').value = '1';
+        document.getElementById('btnSubmitAppUser').innerHTML = '<i class="bi bi-floppy me-1"></i> Actualizar';
+        document.getElementById('appUsername').readOnly = true;
+
+        // Actualizar UI del panel: modo edición
+        document.getElementById('umFormTitle').innerText = 'Editando: ' + (user.display_name || user.username);
+        const icon = document.getElementById('umFormIcon');
+        icon.className = 'um-form-icon editing';
+        icon.innerHTML = '<i class="bi bi-pencil-fill"></i>';
+        document.getElementById('umFormResetBtn').classList.remove('d-none');
+
+        // Abrir el formulario si está cerrado
+        if (!umFormOpen) { toggleUserForm(); }
+
+        // Asegurar que estamos en el tab de sistema
+        const tabSistema = document.getElementById('tab-sistema');
+        if (tabSistema.style.display === 'none') {
+            switchUsersTab('tab-sistema', document.getElementById('btnTabSistema'));
+        }
+
+        document.querySelector('#usersModal .modal-body').scrollTop = 0;
+        usernameEl.focus();
+    }
+
+
+    function prefillAppUser(username, realname) {
+        const usernameEl = document.getElementById('appUsername');
+        if (!usernameEl) return;
+        
+        // Ir al tab de sistema y abrir formulario  
+        switchUsersTab('tab-sistema', document.getElementById('btnTabSistema'));
+        if (!umFormOpen) { toggleUserForm(); }
+
+        // Pre-rellenar campos de creación
+        document.getElementById('isEditMode').value = '0';
+        document.getElementById('btnSubmitAppUser').innerHTML = '<i class="bi bi-floppy me-1"></i> Guardar';
+        usernameEl.readOnly = false;
+        usernameEl.value = username || '';
+        document.getElementById('appDisplayName').value = realname || '';
+        document.getElementById('appPhone').value = '';
+        document.getElementById('appPassword').value = '';
+        const passwordEl = document.getElementById('appPassword');
+        const isAD = adUsernamesSet.has((username || '').toLowerCase());
+        passwordEl.disabled = isAD;
+        passwordEl.required = !isAD;
+        passwordEl.placeholder = isAD ? 'Clave gestionada por Active Directory' : 'Contraseña obligatoria';
+        document.getElementById('toggleAppPassword').disabled = isAD;
+        
+        // Scrollear al formulario para que el usuario sepa que ocurrió algo
+        document.querySelector('#usersModal .modal-body').scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Feedback visual rápido
+        const card = document.querySelector('.users-panel-card.border-warning');
+        card.style.transition = 'all 0.3s';
+        card.style.transform = 'scale(1.02)';
+        card.style.boxShadow = '0 0 15px rgba(255, 193, 7, 0.5)';
+        setTimeout(() => {
+            card.style.transform = 'scale(1)';
+            card.style.boxShadow = 'none';
+        }, 500);
+
+        document.getElementById('appPassword').focus();
+    }
+
+    function buildUsersModalReturnUrl() {
+        const url = new URL(window.location.href);
+        url.searchParams.set('manage_users', '1');
+        return `${url.pathname}${url.search}`;
+    }
+
+    // Mantener modal abierto tras redirect de acciones (POST)
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('input[data-users-next-url]').forEach((input) => {
+            input.value = buildUsersModalReturnUrl();
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('manage_users') === '1') {
+            const usersModal = new bootstrap.Modal(document.getElementById('usersModal'));
+            usersModal.show();
+            
+            // Opcional: limpiar la URL para no reabrir si se pulsa F5 luego
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+
+    function checkDuplicateUser() {
+        const input = document.getElementById('appUsername');
+        const warning = document.getElementById('userDuplicateWarning');
+        const isEdit = document.getElementById('isEditMode').value === '1';
+        if (!input || !warning || isEdit) return;
+
+        const value = input.value.trim().toLowerCase();
+        if (value.length === 0) {
+            warning.classList.add('d-none');
+            input.classList.remove('is-invalid');
+            return;
+        }
+
+        // Obtener nombres de la tabla de usuarios del sistema
+        const existingUsers = Array.from(document.querySelectorAll('.users-panel-card table tbody code'))
+                                    .map(el => el.textContent.trim().toLowerCase());
+        
+        if (existingUsers.includes(value)) {
+            warning.classList.remove('d-none');
+            input.classList.add('is-invalid');
+        } else {
+            warning.classList.add('d-none');
+            input.classList.remove('is-invalid');
+        }
+    }
+
+    // Toggle de visibilidad de contraseña
+    document.getElementById('toggleAppPassword').addEventListener('click', function (e) {
+        const passwordInput = document.getElementById('appPassword');
+        const icon = this.querySelector('i');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    });
+</script>
+    <!-- Modal Ingreso Impresora de Red -->
+    <div class="modal fade" id="modalAddNetworkPrinter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('infrastructure.add_network_printer') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="assigned_pc_name" id="printer_assigned_pc_name">
+                    <div class="modal-header bg-secondary text-white">
+                        <h5 class="modal-title"><i class="bi bi-printer-fill me-2"></i>Ingresar Impresora de Red</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Dirección IP <span class="text-danger">*</span></label>
+                            <div class="input-group shadow-sm">
+                                <input type="text" class="form-control" name="ip_address" id="printer_ip_address"
+                                    required placeholder="Ej: 10.8.X.X">
+                                <button class="btn btn-info text-white" type="button" id="btnAutocompletarSNMP"
+                                    title="Consultar impresora vía red para rellenar datos faltantes">
+                                    <i class="bi bi-magic"></i> Autocompletar
+                                </button>
+                            </div>
+                            <div class="form-text mt-1">Si la impresora está encendida, usa el botón "Autocompletar" para obtener marca y serie.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">N° Serie / MAC Address <span
+                                     class="text-danger" id="printer_sn_required_marker">*</span></label>
+                            <input type="text" class="form-control shadow-sm" name="serial_number" id="printer_serial_number"
+                                required placeholder="SN / MAC de la impresora">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Marca e Información Extra</label>
+                            <input type="text" class="form-control shadow-sm" name="brand_model" id="printer_brand_model"
+                                placeholder="Ej: HP LaserJet P1102w / Lexmark...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Fuero / Ubicación</label>
+                            <select name="fuero" id="printer_fuero" class="form-select shadow-sm">
+                                <option value="">-- Sin Fuero Oculto --</option>
+                                {% for name in fueros.values()|unique|sort %}
+                                <option value="{{ name }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="printer_assignment_info" class="alert alert-info py-2 px-3 mb-0 d-none" style="font-size: 0.85rem; border-radius: 10px;">
+                            <i class="bi bi-info-circle-fill me-2"></i> Esta impresora se asignará automáticamente a <strong id="printer_assigned_pc_label"></strong> al registrarla.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary text-white">Registrar Impresora</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para abrir el modal de impresora de red con datos pre-cargados
+        function promoteToNetworkPrinter(ip, brandModel, pcName, serialNumber) {
+            // BUG FIX: Ocultar el modal de verificación si está abierto para evitar conflictos de Bootstrap
+            const detailModalEl = document.getElementById('printersDetailModal');
+            if (detailModalEl) {
+                const detailModal = bootstrap.Modal.getInstance(detailModalEl);
+                if (detailModal) detailModal.hide();
+            }
+
+            const modalElement = document.getElementById('modalAddNetworkPrinter');
+            const modal = (modalElement._bs_modal) || new bootstrap.Modal(modalElement);
+            modalElement._bs_modal = modal;
+            
+            // Limpiar IP: Si viene algo como "10.15.3.76 (Red)", extraer solo el primer bloque
+            let cleanIp = (ip || '').trim().split(' ')[0];
+            
+            // Detección de impresora compartida (ej: \\10.15.3.76\Pantum)
+            const isShared = cleanIp.startsWith('\\\\');
+            if (isShared) {
+                // Quitar la obligatoriedad del serial en el modal para impresoras compartidas
+                document.getElementById('printer_serial_number').required = false;
+                document.getElementById('printer_sn_required_marker').classList.add('d-none');
+                
+                // Intentar buscar el serial del HOST automáticamente vía API
+                const hostPart = cleanIp.split('\\')[2];
+                if (hostPart && (!serialNumber || serialNumber === 'N/A')) {
+                    fetch('/api/pc_printer/' + encodeURIComponent(hostPart))
+                        .then(res => res.json())
+                        .then(apiData => {
+                            if (apiData.status === 'success' && apiData.printer_sn && apiData.printer_sn !== 'N/A') {
+                                document.getElementById('printer_serial_number').value = apiData.printer_sn;
+                            }
+                        })
+                        .catch(e => console.warn("No se pudo autodetectar serial del host:", e));
+                }
+            } else {
+                document.getElementById('printer_serial_number').required = true;
+                document.getElementById('printer_sn_required_marker').classList.remove('d-none');
+            }
+            
+            const isLocal = !isShared && !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(cleanIp);
+            if (isLocal) {
+                cleanIp = cleanIp.includes('USB') ? 'USB' : (cleanIp || 'Local');
+            }
+
+            document.getElementById('printer_ip_address').value = cleanIp;
+            document.getElementById('printer_brand_model').value = brandModel || '';
+            document.getElementById('printer_serial_number').value = serialNumber && serialNumber !== 'N/A' ? serialNumber : ''; 
+            
+            // Asignación automática
+            const pcNameInput = document.getElementById('printer_assigned_pc_name');
+            const infoDiv = document.getElementById('printer_assignment_info');
+            const pcLabel = document.getElementById('printer_assigned_pc_label');
+            
+            if (pcName) {
+                pcNameInput.value = pcName;
+                pcLabel.textContent = pcName;
+                infoDiv.classList.remove('d-none');
+            } else {
+                pcNameInput.value = '';
+                infoDiv.classList.add('d-none');
+            }
+
+            modal.show();
+            
+            // Si hay IP real (no compartida), disparar autocompletar SNMP
+            if (cleanIp && !isShared && !isLocal) {
+                setTimeout(() => {
+                    const btn = document.getElementById('btnAutocompletarSNMP');
+                    if (btn) btn.click();
+                }, 500);
+            }
+        }
+
+        // Lógica de autocompletado SNMP mejorada
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnSnmp = document.getElementById('btnAutocompletarSNMP');
+            if (btnSnmp) {
+                btnSnmp.addEventListener('click', function () {
+                    const ipControl = document.getElementById('printer_ip_address');
+                    if (!ipControl.value) {
+                        alert("Por favor ingrese la IP de la impresora primero.");
+                        return;
+                    }
+
+                    const originalText = btnSnmp.innerHTML;
+                    btnSnmp.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                    btnSnmp.disabled = true;
+
+                    fetch('/infra/api/snmp_printer?ip=' + encodeURIComponent(ipControl.value))
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                console.warn("SNMP Error:", data.error);
+                                // No alertar si fue timeout, simplemente no llenamos nada
+                            } else {
+                                if (data.brand_model && !document.getElementById('printer_brand_model').value) {
+                                    document.getElementById('printer_brand_model').value = data.brand_model;
+                                }
+                                if (data.serial_number) {
+                                    document.getElementById('printer_serial_number').value = data.serial_number;
+                                } else if (data.mac_address) {
+                                    document.getElementById('printer_serial_number').value = data.mac_address;
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Fetch error:", err);
+                        })
+                        .finally(() => {
+                            btnSnmp.innerHTML = originalText;
+                            btnSnmp.disabled = false;
+                        });
+                });
+            }
+        });
+    </script>
+
+    <!-- Estilos árbol de impresoras por fuero -->
+    <style>
+    .prn-fuero-group {
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .prn-fuero-group:last-child { border-bottom: none; }
+    .prn-fuero-summary {
+        display: flex;
+        align-items: center;
+        padding: 10px 16px;
+        cursor: pointer;
+        list-style: none;
+        background: #fff;
+        user-select: none;
+        transition: background 0.15s;
+    }
+    .prn-fuero-summary::-webkit-details-marker { display: none; }
+    .prn-fuero-summary:hover { background: #f8fafc; }
+    .prn-fuero-group[open] > .prn-fuero-summary { background: #f8fafc; }
+    .prn-chevron {
+        font-size: 0.65rem;
+        color: #94a3b8;
+        transition: transform 0.2s;
+        margin-right: 4px;
+    }
+    .prn-fuero-group[open] .prn-chevron { transform: rotate(90deg); }
+    .prn-fuero-count {
+        margin-left: auto;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 100px;
+    }
+    .prn-fuero-body {
+        padding-left: 24px;
+        background: #fcfcfd;
+        border-top: 1px solid #f1f5f9;
+    }
+    .prn-fuero-group {
+        border-bottom: 1px solid #f1f5f9;
+        border-left: 4px solid transparent;
+        transition: border-color 0.15s;
+    }
+    .prn-fuero-group:last-child { border-bottom: none; }
+    </style>
+
+    <!-- Modal Detalle de Impresoras (Verificación) -->
+    <div class="modal fade" id="printersDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header bg-dark text-white p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-20 p-2 rounded-circle">
+                            <i class="bi bi-printer-fill fs-3 text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0">Verificación de Impresoras</h5>
+                            <p class="mb-0 small text-muted">Asegúrese de que cada equipo físico esté registrado en Infraestructura.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 bg-light" style="max-height: 75vh;">
+                    <!-- Cargando -->
+                    <div id="printersLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Analizando inventario de red...</p>
+                    </div>
+
+                    <div id="printersContent" class="d-none">
+                        <!-- Seccion 1: Registradas -->
+                        <div class="p-4 border-bottom bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-shield-check me-2"></i>Catálogo Oficial (Suman al KPI)</h6>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle" style="font-size: 0.7rem;">Contabilizadas en 'Imp'</span>
+                            </div>
+                            <div id="netPrintersContainer"></div>
+
+                        </div>
+
+                        <!-- Seccion 2: Detectadas pero no registradas -->
+                        <div class="p-4">
+                            <h6 class="fw-bold mb-3 text-warning"><i class="bi bi-exclamation-triangle-fill me-2"></i>Detectadas en PCs (Locales/USB no registradas)</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle table-hover mb-0" style="font-size: 0.85rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>PC dueña</th>
+                                            <th>Impresora Detectada</th>
+                                            <th>Puerto / Canal</th>
+                                            <th>N° Serie</th>
+                                            <th class="text-end">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detectedPrintersTableBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-info mt-3 py-2 small" style="border-radius: 10px;">
+                                <i class="bi bi-info-circle-fill me-2"></i> Si falta una impresora que debería ser de red, use el botón <strong>Promocionar</strong> para ingresarla oficialmente.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-top-0">
+                    <button type="button" class="btn btn-secondary px-4 ripple" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showDetectedPrinters(pcName) {
+            const modalEl = document.getElementById('printersDetailModal');
+            if (!modalEl) return;
+            const modal = new bootstrap.Modal(modalEl);
+            document.getElementById('printersLoading').classList.remove('d-none');
+            document.getElementById('printersContent').classList.add('d-none');
+
+            // Actualizar título del modal según contexto
+            const titleEl = modalEl.querySelector('.modal-title');
+            if (titleEl) {
+                titleEl.innerHTML = pcName
+                    ? `<i class="bi bi-printer-fill me-2"></i>Impresoras de ${pcName}`
+                    : `<i class="bi bi-printer-fill me-2"></i>Verificación de Impresoras`;
+            }
+
+            modal.show();
+
+            const apiUrl = pcName
+                ? `/api/detected_printers?pc_name=${encodeURIComponent(pcName)}`
+                : '/api/detected_printers';
+
+            fetch(apiUrl)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('printersLoading').classList.add('d-none');
+                    if (data.status === 'success') {
+                        document.getElementById('printersContent').classList.remove('d-none');
+                        
+                        // Llenar Catálogo Oficial — árbol por Fuero
+                        const netContainer = document.getElementById('netPrintersContainer');
+                        netContainer.innerHTML = '';
+                        if (data.network_printers.length === 0) {
+                            netContainer.innerHTML = '<div class="text-center text-muted py-4 small">No hay impresoras registradas en el catálogo de infraestructura.</div>';
+                        } else {
+                            // Agrupar por fuero
+                            const byFuero = {};
+                            data.network_printers.forEach(p => {
+                                const fuero = ((p.fuero || '').trim()) || 'Sin fuero asignado';
+                                if (!byFuero[fuero]) byFuero[fuero] = [];
+                                byFuero[fuero].push(p);
+                            });
+                            // Fueros ordenados alfabéticamente; 'Sin fuero asignado' al final
+                            const fueroKeys = Object.keys(byFuero).sort((a, b) => {
+                                if (a === 'Sin fuero asignado') return 1;
+                                if (b === 'Sin fuero asignado') return -1;
+                                return a.localeCompare(b, 'es');
+                            });
+                            // Paleta de colores para identificar cada fuero
+                            const FUERO_PALETTE = [
+                                { bg: 'rgba(59,130,246,0.12)',  text: '#1d4ed8', border: '#3b82f6'  }, // azul
+                                { bg: 'rgba(16,185,129,0.12)',  text: '#047857', border: '#10b981'  }, // verde
+                                { bg: 'rgba(245,158,11,0.12)',  text: '#b45309', border: '#f59e0b'  }, // ambar
+                                { bg: 'rgba(239,68,68,0.12)',   text: '#b91c1c', border: '#ef4444'  }, // rojo
+                                { bg: 'rgba(139,92,246,0.12)',  text: '#6d28d9', border: '#8b5cf6'  }, // violeta
+                                { bg: 'rgba(236,72,153,0.12)',  text: '#9d174d', border: '#ec4899'  }, // rosa
+                                { bg: 'rgba(20,184,166,0.12)',  text: '#0f766e', border: '#14b8a6'  }, // teal
+                                { bg: 'rgba(249,115,22,0.12)',  text: '#c2410c', border: '#f97316'  }, // naranja
+                            ];
+                            fueroKeys.forEach((fuero, idx) => {
+                                const color = FUERO_PALETTE[idx % FUERO_PALETTE.length];
+                                const printers = byFuero[fuero];
+                                const rows = printers.map(p => `
+                                    <tr>
+                                        <td><strong>${p.brand_model || 'Genérico'}</strong></td>
+                                        <td><code style="color:${color.text}">${p.ip_address || 'N/A'}</code></td>
+                                        <td><span class="badge bg-light text-dark border">${p.serial_number || 'N/A'}</span></td>
+                                        <td><span class="badge bg-success bg-opacity-10 text-success border border-success-subtle"><i class="bi bi-check-circle-fill"></i> Oficial</span></td>
+                                    </tr>
+                                `).join('');
+                                netContainer.innerHTML += `
+                                    <details class="prn-fuero-group" open style="border-left-color:${color.border};">
+                                        <summary class="prn-fuero-summary" style="background:${color.bg};">
+                                            <i class="bi bi-chevron-right prn-chevron me-1" style="color:${color.border};"></i>
+                                            <i class="bi bi-folder2-open me-2" style="color:${color.border};"></i>
+                                            <span class="fw-semibold" style="font-size:0.88rem;color:#1e293b;">${fuero}</span>
+                                            <span class="prn-fuero-count" style="background:rgba(255,255,255,0.6);color:${color.text};border:1px solid ${color.border};">${printers.length} impresora${printers.length !== 1 ? 's' : ''}</span>
+                                        </summary>
+                                        <div class="prn-fuero-body">
+                                            <table class="table table-sm align-middle mb-0" style="font-size:0.83rem;">
+                                                <thead class="table-light">
+                                                    <tr><th>Marca/Modelo</th><th>IP / Dirección</th><th>N° Serie</th><th>Estado</th></tr>
+                                                </thead>
+                                                <tbody>${rows}</tbody>
+                                            </table>
+                                        </div>
+                                    </details>
+                                `;
+                            });
+                        }
+
+
+                        // Llenar Detectadas
+                        const detectedBody = document.getElementById('detectedPrintersTableBody');
+                        detectedBody.innerHTML = '';
+                        if (data.detected_printers.length > 0) {
+                            data.detected_printers.forEach(p => {
+                                const ignoreButton = p.detect_id
+                                    ? `<button class="btn btn-sm btn-outline-danger" onclick="ignoreDetectedPrinter(${p.detect_id})" title="Ocultar de esta lista">
+                                            <i class="bi bi-eye-slash"></i>
+                                       </button>`
+                                    : '';
+                                detectedBody.innerHTML += `
+                                    <tr>
+                                        <td>
+                                            <a href="/pc/${encodeURIComponent(p.pc_name)}" class="text-decoration-none fw-bold text-dark">${p.pc_name}</a><br>
+                                            <small class="text-muted"><i class="bi bi-geo-alt"></i> ${p.fuero || '-'}</small>
+                                        </td>
+                                        <td>${p.printer_model}</td>
+                                        <td><code>${p.printer_port || 'Local'}</code></td>
+                                        <td><span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle">${p.printer_sn || 'N/A'}</span></td>
+                                        <td class="text-end">
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="promoteToNetworkPrinter('${(p.printer_port || '').replace(/\\/g, '\\\\')}','${p.printer_model}','${p.pc_name}','${p.printer_sn || ''}')" title="Agregar al catálogo">
+                                                    <i class="bi bi-plus-circle"></i> Promocionar
+                                                </button>
+                                                ${ignoreButton}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+                        } else {
+                            detectedBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No se detectaron impresoras locales adicionales fuera del catálogo.</td></tr>';
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Error cargando impresoras:", err);
+                    document.getElementById('printersLoading').innerHTML = `<div class="alert alert-danger m-3">Error al cargar datos: ${err}</div>`;
+                });
+        }
+
+        function ignoreDetectedPrinter(detectId) {
+            if (!confirm('¿Seguro que desea ocultar esta impresora de la lista de pendientes? Podrá volver a ingresarla manualmente si lo necesita.')) return;
+            fetch('/api/ignore_detected_printer/' + detectId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value || '' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') { showDetectedPrinters(); }
+                else { alert("Error: " + data.message); }
+            });
+        }
+    </script>
+
+    <!-- Modal Restablecer Clave (Rápido) -->
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true" style="z-index: 1100;">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content shadow-lg border-warning">
+                <form action="{{ url_for('users.reset_app_user_password') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next_url" data-users-next-url value="{{ request.path }}?manage_users=1">
+                    <input type="hidden" name="username" id="resetPassUsername">
+                    <div class="modal-header bg-warning py-2">
+                        <h6 class="modal-title fw-bold"><i class="bi bi-key-fill me-2"></i>Nueva Clave</h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body py-3">
+                        <p class="small text-muted mb-2">Usuario: <strong id="resetPassUserLabel">...</strong></p>
+                        <div class="input-group">
+                            <input type="password" name="password" id="resetPassField" class="form-control" placeholder="Escriba la nueva clave" required>
+                            <button class="btn btn-outline-secondary" type="button" id="toggleResetPass">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-warning fw-bold">Actualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openResetPasswordModal(username) {
+            document.getElementById('resetPassUsername').value = username;
+            document.getElementById('resetPassUserLabel').innerText = username;
+            document.getElementById('resetPassField').value = '';
+            
+            // Usar la instancia si ya existe o crear una nueva
+            const modalEl = document.getElementById('resetPasswordModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+            
+            setTimeout(() => {
+                const input = document.getElementById('resetPassField');
+                if (input) input.focus();
+            }, 500);
+        }
+
+        document.getElementById('toggleResetPass')?.addEventListener('click', function() {
+            const input = document.getElementById('resetPassField');
+            const icon = this.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('bi-eye', 'bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('bi-eye-slash', 'bi-eye');
+            }
+        });
+    </script>
+
+    <!-- Modal Gestión de Tareas Pendientes -->
+    <div class="modal fade" id="pendingTasksModal" tabindex="-1" aria-labelledby="pendingTasksModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
+            <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+
+                <!-- Header moderno con gradiente (Ambar/Naranja para Pendientes) -->
+                <div style="background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%); padding: 0;">
+                    <div style="padding: 20px 24px 18px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2);">
+                                <i class="bi bi-bell-fill" style="color: #fff; font-size: 1.1rem;"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title mb-0 fw-bold text-white" id="pendingTasksModalLabel" style="font-size: 1.05rem; letter-spacing: -0.02em;">Tareas Pendientes</h5>
+                                <div style="font-size: 0.72rem; color: rgba(255,255,255,0.8); margin-top: 2px;">
+                                    Bolsa global de pedidos registrados &nbsp;·&nbsp; Total: <strong id="ptCount">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.8;"></button>
+                    </div>
+                </div>
+
+                <div class="modal-body" style="padding: 20px; background: #f8fafc; min-height: 400px;">
+                    
+                    <!-- Buscador y Filtros -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <div class="input-group input-group-sm" style="max-width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0;"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="ptSearchInput" class="form-control" placeholder="Buscar por PC, solicitante, descripción o fuero..." onkeyup="filterPendingTasks()" style="border-color: #e2e8f0; border-left: none; padding: 10px 12px;">
+                        </div>
+                        <div class="ms-auto d-flex align-items-center gap-2">
+                             <button class="btn btn-sm btn-white border" onclick="loadPendingTasks()" title="Refrescar listado" style="background: #fff; border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-arrow-clockwise"></i>
+                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Estado de Carga -->
+                    <div id="ptLoading" class="text-center py-5">
+                        <div class="spinner-border text-warning" style="width: 3rem; height: 3rem; border-width: .25em;"></div>
+                        <p class="mt-3 text-muted fw-bold">Recuperando bolsa de tareas...</p>
+                    </div>
+
+                    <!-- Lista Vacía -->
+                    <div id="ptEmpty" class="text-center py-5 d-none">
+                        <div style="font-size: 3rem; color: #e2e8f0; margin-bottom: 10px;"><i class="bi bi-check2-circle"></i></div>
+                        <h6 class="fw-bold text-dark">¡No hay tareas pendientes!</h6>
+                        <p class="text-muted small">Todo el equipo está al día. ¡Buen trabajo!</p>
+                    </div>
+
+                    <!-- Grid de Tarjetas (Similar a Users) -->
+                    <div class="pt-grid" id="pendingTasksGrid">
+                        <!-- Se llena vía JS -->
+                    </div>
+
+                </div><!-- /.modal-body -->
+                <div class="modal-footer bg-light" style="padding: 12px 24px; border-top: 1px solid #e2e8f0;">
+                    <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted" data-bs-dismiss="modal">Cerrar</button>
+                    <button class="btn btn-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#createTaskModal" style="border-radius: 8px; font-weight: 700;">
+                        <i class="bi bi-plus-lg me-1"></i> Nueva Tarea
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estilos específicos para el modal de tareas -->
+    <style>
+    .pt-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 14px;
+    }
+
+    .pt-card {
+        background: #fff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pt-card:hover {
+        border-color: #fbbf24;
+        box-shadow: 0 8px 24px rgba(180, 83, 9, 0.08);
+        transform: translateY(-3px);
+    }
+
+    /* Indicador lateral según categoría */
+    .pt-card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        background: #e2e8f0;
+    }
+    .pt-card[data-cat="Impresoras"]::before { background: #3b82f6; }
+    .pt-card[data-cat="Red/Conectividad"]::before { background: #8b5cf6; }
+    .pt-card[data-cat="Hardware"]::before { background: #f43f5e; }
+    .pt-card[data-cat="Software"]::before { background: #10b981; }
+    .pt-card[data-cat="Audiencias"]::before { background: #f59e0b; }
+
+    .pt-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .pt-pc-info { min-width: 0; }
+    .pt-pc-name { font-weight: 800; font-size: 0.95rem; color: #1e293b; display: flex; align-items: center; gap: 6px; }
+    .pt-pc-name a { color: inherit; text-decoration: none; }
+    .pt-pc-name a:hover { color: #f59e0b; }
+    .pt-date { font-size: 0.68rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; margin-top: 2px; }
+
+    .pt-cat-badge {
+        font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;
+        background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+        text-transform: uppercase; letter-spacing: 0.02em;
+    }
+
+    .pt-desc {
+        font-size: 0.85rem; color: #334155; line-height: 1.4;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        overflow: hidden; font-weight: 500;
+        min-height: 3.6em;
+    }
+
+    .pt-requester-box {
+        background: #f8fafc; border-radius: 10px; padding: 8px 10px;
+        display: flex; align-items: center; justify-content: space-between;
+        border: 1px solid #f1f5f9;
+        margin-top: auto;
+    }
+    .pt-req-info { display: flex; flex-direction: column; }
+    .pt-req-name { font-size: 0.78rem; font-weight: 700; color: #1e293b; }
+    .pt-req-sub { font-size: 0.7rem; color: #64748b; }
+    
+    .pt-actions {
+        display: flex; align-items: center; gap: 8px; margin-top: 4px; border-top: 1px solid #f1f5f9; padding-top: 12px;
+    }
+    
+    .btn-pt-action {
+        flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        padding: 7px; border-radius: 10px; font-size: 0.78rem; font-weight: 700;
+        border: 1.5px solid; transition: all 0.2s; cursor: pointer;
+        text-decoration: none;
+    }
+    
+    .btn-pt-confirm { border-color: #dcfce7; background: #f0fdf4; color: #16a34a; }
+    .btn-pt-confirm:hover { background: #16a34a; color: #fff; border-color: #16a34a; }
+    
+    .btn-pt-delete { border-color: #fee2e2; background: #fef2f2; color: #ef4444; flex: 0 0 38px; }
+    .btn-pt-delete:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+
+    .pt-assigned-chip {
+        font-size: 0.65rem; font-weight: 700; color: #b45309; background: #fef3c7;
+        padding: 3px 8px; border-radius: 100px; display: inline-flex; align-items: center; gap: 4px;
+    }
+
+    .pt-match-box {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+    }
+
+    .pt-match-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #1d4ed8;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+    }
+
+    .pt-match-list {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .pt-match-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+        font-size: 0.73rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .pt-match-chip.pt-match-chip-current {
+        border-color: #10b981;
+        color: #047857;
+        background: #ecfdf5;
+    }
+
+    @keyframes fadeInSlide {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .pt-card { animation: fadeInSlide 0.3s ease-out forwards; }
+    </style>
+
+    <script>
+    let allPendingTasksData = [];
+
+    function showPendingTasksModal() {
+        const modalEl = document.getElementById('pendingTasksModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+        loadPendingTasks();
+    }
+
+    function loadPendingTasks() {
+        const grid = document.getElementById('pendingTasksGrid');
+        const loading = document.getElementById('ptLoading');
+        const empty = document.getElementById('ptEmpty');
+        const countEl = document.getElementById('ptCount');
+
+        grid.innerHTML = '';
+        loading.classList.remove('d-none');
+        empty.classList.add('d-none');
+        
+        fetch('/api/pending_tasks')
+            .then(res => res.json())
+            .then(data => {
+                loading.classList.add('d-none');
+                if (data.status === 'success') {
+                    allPendingTasksData = data.tasks;
+                    countEl.innerText = allPendingTasksData.length;
+                    
+                    if (allPendingTasksData.length === 0) {
+                        empty.classList.remove('d-none');
+                        return;
+                    }
+                    
+                    renderTasks(allPendingTasksData);
+                }
+            })
+            .catch(err => {
+                loading.classList.add('d-none');
+                grid.innerHTML = `<div class="alert alert-danger w-100">Error: ${err}</div>`;
+            });
+    }
+
+    function isGenericPcName(pcName) {
+        const normalized = String(pcName || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^A-Za-z]/g, '')
+            .toUpperCase();
+        return normalized.includes('PCGENERICA');
+    }
+
+    function renderTaskMatchBox(task) {
+        if (!task.has_user_match || !Array.isArray(task.matched_pcs) || task.matched_pcs.length === 0) {
+            return '';
+        }
+
+        const title = task.matched_pc_count === 1
+            ? 'Coincidencia por usuario AD'
+            : `Coincidencias por usuario AD (${task.matched_pc_count})`;
+
+        const chips = task.matched_pcs.map(pc => {
+            const currentClass = pc.is_current_pc ? ' pt-match-chip-current' : '';
+            const label = pc.fuero ? `${pc.pc_name} · ${pc.fuero}` : pc.pc_name;
+            const suffix = pc.is_current_pc ? ' (actual)' : '';
+            return `<a class="pt-match-chip${currentClass}" href="/pc/${encodeURIComponent(pc.pc_name)}" title="Abrir ${pc.pc_name}">${label}${suffix}</a>`;
+        }).join('');
+
+        return `
+            <div class="pt-match-box">
+                <div class="pt-match-title"><i class="bi bi-link-45deg"></i>${title}</div>
+                <div class="pt-match-list">${chips}</div>
+            </div>
+        `;
+    }
+
+    function assignSuggestedTask(taskId, pcName) {
+        if (!pcName) return;
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/tasks/assign';
+
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrf_token';
+        csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+
+        const task = document.createElement('input');
+        task.type = 'hidden';
+        task.name = 'task_id';
+        task.value = taskId;
+        form.appendChild(task);
+
+        const pc = document.createElement('input');
+        pc.type = 'hidden';
+        pc.name = 'pc_name';
+        pc.value = pcName;
+        form.appendChild(pc);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function renderTasks(tasks) {
+        const grid = document.getElementById('pendingTasksGrid');
+        grid.innerHTML = '';
+        
+        tasks.forEach((t, index) => {
+            const pcName = t.pc_name || 'PC Generica';
+            const isGeneric = isGenericPcName(pcName);
+            
+            const card = document.createElement('div');
+            card.className = 'pt-card';
+            card.setAttribute('data-cat', t.categoria || 'General');
+            card.style.animationDelay = (index * 0.03) + 's';
+            
+            card.innerHTML = `
+                <div class="pt-header">
+                    <div class="pt-pc-info">
+                        <div class="pt-pc-name">
+                            <i class="bi bi-pc-display"></i>
+                            <a href="/pc/${encodeURIComponent(pcName)}">${pcName}</a>
+                            ${t.assigned_to ? `<span class="pt-assigned-chip" title="Asignada a ${t.assigned_to}"><i class="bi bi-person-fill"></i> ${t.assigned_to}</span>` : ''}
+                        </div>
+                        <div class="pt-date"><i class="bi bi-clock"></i> ${t.created_at_fmt || ''}</div>
+                    </div>
+                    <span class="pt-cat-badge">${t.categoria || 'General'}</span>
+                </div>
+                
+                <div class="pt-desc" title="${t.descripcion}">${t.descripcion}</div>
+                
+                <div class="pt-requester-box">
+                    <div class="pt-req-info">
+                        <span class="pt-req-name"><i class="bi bi-person me-1"></i>${t.solicitante || 'Sin nombre'}</span>
+                        <span class="pt-req-sub">${t.fuero || (isGeneric ? 'Solicitud abierta' : t.last_user || '')}</span>
+                    </div>
+                    ${t.phone ? `<a href="tel:${t.phone}" class="btn btn-xs btn-outline-secondary p-1" style="border-radius: 6px;" title="Llamar: ${t.phone}"><i class="bi bi-telephone-fill"></i></a>` : ''}
+                </div>
+
+                ${renderTaskMatchBox(t)}
+                
+                <div class="pt-actions">
+                    <button class="btn-pt-action btn-pt-confirm" onclick='quickTaskDone(${t.id}, ${JSON.stringify(pcName)}, ${JSON.stringify(t.assigned_to || "")})'>
+                        <i class="bi bi-check-lg"></i> Confirmar
+                    </button>
+                    <button class="btn-pt-action btn-pt-delete" onclick="quickDeleteTask(${t.id})" title="Eliminar">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                    ${isGeneric ? `
+                        <button class="btn-pt-action border-secondary bg-white text-secondary" style="flex:0 0 38px;" onclick="openMigrateModal(${t.id})" title="Asignar a PC">
+                            <i class="bi bi-arrow-right-short" style="font-size: 1.4rem; line-height: 0;"></i>
+                        </button>
+                    ` : ''}
+                    ${isGeneric && t.suggested_pc_name ? `
+                        <button class="btn-pt-action" style="border-color:#bfdbfe; background:#dbeafe; color:#1d4ed8;" onclick='assignSuggestedTask(${t.id}, ${JSON.stringify(t.suggested_pc_name)})' title="Vincular a ${t.suggested_pc_name}">
+                            <i class="bi bi-magic"></i> Vincular sugerida
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function filterPendingTasks() {
+        const query = document.getElementById('ptSearchInput').value.toLowerCase();
+        const filtered = allPendingTasksData.filter(t => {
+            return (t.pc_name || '').toLowerCase().includes(query) ||
+                   (t.descripcion || '').toLowerCase().includes(query) ||
+                   (t.solicitante || '').toLowerCase().includes(query) ||
+                   (t.fuero || '').toLowerCase().includes(query) ||
+                   (t.categoria || '').toLowerCase().includes(query);
+        });
+        renderTasks(filtered);
+    }
+
+    function quickTaskDone(taskId) {
+        if (!confirm('¿Marcar esta tarea como finalizada?')) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/tasks/${taskId}/done`;
+        
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrf_token';
+        csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+        
+        const tech = document.createElement('input');
+        tech.type = 'hidden';
+        tech.name = 'technician_name';
+        tech.value = '{{ current_user.display_name or current_user.username }}';
+        form.appendChild(tech);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function quickDeleteTask(taskId) {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta tarea permanentemente?')) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/tasks/${taskId}/delete`;
+        
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrf_token';
+        csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+    </script>
+
+{% if auxiliary_pcs %}
+{% for pc in auxiliary_pcs %}
+<div class="modal fade" id="auxModal_{{ pc.pc_name | replace(' ', '_') | replace('-', '_') }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1120px;">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 0;">
+                <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; gap: 18px;">
+                    <div style="display: flex; align-items: center; gap: 16px; min-width: 0;">
+                        <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2);">
+                            <i class="bi {% if 'GENERICA' in pc.pc_name.upper() %}bi-inbox{% else %}bi-diagram-3{% endif %}" style="color: #fff; font-size: 1.2rem;"></i>
+                        </div>
+                        <div style="min-width: 0;">
+                            <h5 class="modal-title mb-0 fw-bold text-white" style="font-size: 1.1rem; letter-spacing: -0.02em; line-height: 1.25; overflow-wrap: anywhere;">Panel de Tareas: {{ pc.pc_name }}</h5>
+                            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 3px;">
+                                Gestión de tareas y reportes asignados a esta unidad.
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white flex-shrink-0" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                </div>
+            </div>
+
+            <div class="modal-body" style="padding: 24px 28px; background: #f8fafc;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0" style="color: #0f172a;"><i class="bi bi-list-task me-2 text-primary"></i> Tareas Pendientes</h6>
+                </div>
+
+                <div class="table-responsive" style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                    <table class="table table-hover mb-0" style="font-size: 0.85rem; table-layout: fixed; min-width: 860px;">
+                        <thead style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+                            <tr>
+                                <th style="width: 105px; color: #475569; font-weight: 600; padding: 12px 14px;">Fecha</th>
+                                <th style="width: 32%; color: #475569; font-weight: 600; padding: 12px 14px;">Descripción</th>
+                                <th style="width: 24%; color: #475569; font-weight: 600; padding: 12px 14px;">Solicitante</th>
+                                <th style="width: 190px; color: #475569; font-weight: 600; padding: 12px 14px;">Técnico</th>
+                                <th style="width: 132px; color: #475569; font-weight: 600; padding: 12px 14px; text-align: right;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if pc.tareas %}
+                                {% for t in pc.tareas %}
+                                <tr>
+                                    <td style="padding: 12px 14px; vertical-align: middle;">
+                                        <span class="text-muted" style="font-size: 0.8rem;">{{ t.created_at | datetime_es }}</span>
+                                    </td>
+                                    <td style="padding: 12px 14px; vertical-align: middle;">
+                                        <div class="fw-medium" style="color: #1e293b; line-height: 1.35; overflow-wrap: anywhere;" title="{{ t.descripcion }}">{{ t.descripcion }}</div>
+                                    </td>
+                                    <td style="padding: 12px 14px; vertical-align: middle; line-height: 1.35; overflow-wrap: anywhere;">{{ t.solicitante or '-' }}</td>
+                                    <td style="padding: 12px 14px; vertical-align: middle;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge" style="background: #e0e7ff; color: #4338ca; border-radius: 6px; padding: 5px 8px; white-space: normal; text-align: left;">{{ t.assigned_to or '-' }}</span>
+                                            {% if t.estado != 'Hecha' %}
+                                            <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1" 
+                                              style="font-size: 0.75rem; border-radius: 4px;" 
+                                              onclick="openReassignModal('{{ t.id }}', '{{ t.assigned_to or '' }}')" 
+                                              title="Cambiar Técnico">
+                                              <i class="bi bi-pencil"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td style="padding: 12px 14px; vertical-align: middle; text-align: right;">
+                                        <div class="d-flex justify-content-end gap-1">
+                                            {% if t.estado == 'Hecha' %}
+                                            <span class="badge" style="background: #10b981; color: white; border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: center; height: 31px;" title="Completada">
+                                                <i class="bi bi-check2-all me-1"></i> Lista
+                                            </span>
+                                            {% else %}
+                                            <button type="button" class="btn btn-sm" style="background: #10b981; color: white; border: none; border-radius: 6px;" title="Marcar Hecha" onclick="openCompleteTaskModal({{ t.id|tojson }}, {{ (t.assigned_to or '')|tojson }}, {{ pc.pc_name|tojson }})">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                            {% endif %}
+                                            {% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}
+                                            <button type="button" class="btn btn-sm" style="background: #f59e0b; color: white; border: none; border-radius: 6px;" title="Asignar / Migrar" onclick="openMigrateModal('{{ t.id }}')">
+                                                <i class="bi bi-arrow-right"></i>
+                                            </button>
+                                            {% endif %}
+                                            <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline" onsubmit="return confirm('¿Borrar esta tarea?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm" style="background: #ef4444; color: white; border: none; border-radius: 6px;" title="Borrar">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        <i class="bi bi-inbox fs-4 d-block mb-2 text-secondary opacity-50"></i>
+                                        No hay tareas pendientes en esta unidad.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3 text-end">
+                    <div style="background: #eff6ff; color: #1e40af; padding: 10px; border-radius: 10px; font-size: 0.72rem; border: 1px solid #dbeafe; display: inline-block; text-align: left;">
+                        <i class="bi bi-info-circle-fill me-1"></i> El registro histórico de actividades ha sido movido al <strong>Panel de Reportes y Actividades Globales</strong>.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Modal Finalizar Tarea (con Técnico) -->
+<div class="modal fade" id="modalFinalizarTarea" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formFinalizar" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="pc_name" id="completeTaskPcHidden" value="">
+        <div class="modal-header">
+          <h5 class="modal-title">Finalizar Tarea</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>¿Quién realizó esta tarea?</p>
+          <div class="mb-3">
+            <input type="hidden" name="technician_name_hidden" id="techHiddenInput">
+            <select name="technician_name" id="techSelectComplete" class="form-select" required>
+              <option value="">Seleccione Técnico...</option>
+              {% for tech in technicians %}
+              <option value="{{ tech.name }}">{{ tech.name }}</option>
+              {% endfor %}
+            </select>
+            {% if not technicians %}
+            <div class="form-text text-danger" id="techListWarning">
+              ⚠️ No hay usuarios con rol técnico listos. Crea un usuario del sistema con rol `tecnico` o permiso mobile.
+            </div>
+            {% endif %}
+          </div>
+          <div class="mb-3 d-none" id="completeTaskPcGroup">
+            <label for="completeTaskPcSelect" class="form-label">Â¿A quÃ© PC corresponde?</label>
+            <select id="completeTaskPcSelect" class="form-select">
+              <option value="PC Generica">No sÃ© todavÃ­a / dejar en PC GenÃ©rica</option>
+              {% for p in all_pcs %}
+              <option value="{{ p.pc_name }}">{{ p.pc_name }} | {{ p.fuero or '-' }} | {{ p.last_user or '?' }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Si identificas el equipo, la tarea se guarda allÃ­. Si no, queda cerrada en PC GenÃ©rica.</div>
+          </div>
+          <div class="mb-3">
+            <label for="completeTaskSolution" class="form-label">Soluci&oacute;n</label>
+            <textarea name="solucion" id="completeTaskSolution" class="form-control" rows="3" placeholder="Explica brevemente c&oacute;mo se resolvi&oacute; la tarea..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Marcar como Hecha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Migrar (Solo para PC Generica) -->
+<div class="modal fade" id="modalMigrar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="{{ url_for('tasks.migrate_generic_tasks') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="migration_task_id" id="migration_task_id">
+        <div class="modal-header">
+          <h5 class="modal-title">Asignar tarea a PC Real</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Selecciona la PC real a la cual mover esta tarea.</p>
+          <div class="mb-3">
+            <label for="target_pc" class="form-label">PC Destino</label>
+            <select name="target_pc" id="target_pc" class="form-control" required>
+              <option value="">-- Seleccionar --</option>
+              {% for p in all_pcs %}
+              {% if p.pc_name.upper() != 'PC GENERICA' and p.pc_name.upper() != 'PC-GENERICA' %}
+              <option value="{{ p.pc_name }}">{{ p.pc_name }} | {{ p.fuero or '-' }} | {{ p.last_user or '?' }}</option>
+              {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Reasignar Técnico -->
+<div class="modal fade" id="modalReasignar" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content border-0 shadow">
+      <form action="{{ url_for('tasks.reassign_task') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="task_id" id="reassign_task_id">
+        <input type="hidden" name="pc_name" value="{{ pc.pc_name if pc else '' }}">
+        <div class="modal-header bg-primary text-white border-0">
+          <h5 class="modal-title fs-6 fw-bold">Reasignar Técnico</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="mb-0">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-2">Técnico Responsable</label>
+            <select name="technician" id="reassign_tech_select" class="form-select" required>
+              <option value="">-- Seleccionar --</option>
+              {% for tech in technicians %}
+              <option value="{{ tech.name }}">{{ tech.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer border-0 p-3 pt-0">
+          <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm px-3">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openMigrateModal(taskId) {
+    document.getElementById('migration_task_id').value = taskId;
+    var modal = new bootstrap.Modal(document.getElementById('modalMigrar'));
+    modal.show();
+  }
+
+  function openCompleteTaskModal(taskId, assignedTo, pcName) {
+    var form = document.getElementById('formFinalizar');
+    form.action = "/tasks/" + taskId + "/done";
+
+    var techSelect = document.getElementById('techSelectComplete');
+    var techHidden = document.getElementById('techHiddenInput');
+    var question = form ? form.querySelector('.modal-body > p') : null;
+    var techGroup = techSelect ? techSelect.closest('.mb-3') : null;
+    var pcHidden = document.getElementById('completeTaskPcHidden');
+    var pcGroup = document.getElementById('completeTaskPcGroup');
+    var pcSelect = document.getElementById('completeTaskPcSelect');
+    var resolvedPcName = pcName || 'PC Generica';
+    var isGeneric = isGenericPcName(resolvedPcName);
+    var hasAssignedTech = !!(assignedTo && assignedTo !== 'None');
+
+    techSelect.disabled = false;
+    techSelect.value = "";
+    techHidden.value = "";
+    techSelect.required = !hasAssignedTech;
+    if (techGroup) {
+      techGroup.classList.toggle('d-none', hasAssignedTech);
+    }
+    if (question) {
+      question.textContent = isGeneric ? 'Esta tarea, ¿a qué PC corresponde?' : '¿Quién realizó esta tarea?';
+    }
+    if (pcHidden) {
+      pcHidden.value = resolvedPcName;
+    }
+    if (pcGroup) {
+      pcGroup.classList.toggle('d-none', !isGeneric);
+    }
+    if (pcSelect) {
+      pcSelect.value = isGeneric ? 'PC Generica' : resolvedPcName;
+    }
+    var solutionInput = document.getElementById('completeTaskSolution');
+    if (solutionInput) {
+      solutionInput.value = '';
+    }
+
+    if (hasAssignedTech) {
+      techSelect.value = assignedTo;
+      techSelect.disabled = true;
+      techHidden.value = assignedTo;
+    }
+
+    var modal = new bootstrap.Modal(document.getElementById('modalFinalizarTarea'));
+    modal.show();
+  }
+
+  function openReassignModal(taskId, currentTech) {
+    document.getElementById('reassign_task_id').value = taskId;
+    document.getElementById('reassign_tech_select').value = currentTech;
+    var modal = new bootstrap.Modal(document.getElementById('modalReasignar'));
+    modal.show();
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var formFinalizar = document.getElementById('formFinalizar');
+    var pcLabel = document.querySelector('label[for="completeTaskPcSelect"]');
+    var pcHelp = document.querySelector('#completeTaskPcGroup .form-text');
+    var pcDefaultOption = document.querySelector('#completeTaskPcSelect option[value="PC Generica"]');
+    if (pcLabel) {
+      pcLabel.textContent = '¿A qué PC corresponde?';
+    }
+    if (pcDefaultOption) {
+      pcDefaultOption.textContent = 'No sé todavía / dejar en PC Genérica';
+    }
+    if (pcHelp) {
+      pcHelp.textContent = 'Si identificas el equipo, la tarea se guarda allí. Si no, queda cerrada en PC Genérica.';
+    }
+    if(formFinalizar) {
+      formFinalizar.addEventListener('submit', function () {
+        document.getElementById('techSelectComplete').disabled = false;
+        var pcGroup = document.getElementById('completeTaskPcGroup');
+        var pcHidden = document.getElementById('completeTaskPcHidden');
+        var pcSelect = document.getElementById('completeTaskPcSelect');
+        if (pcGroup && !pcGroup.classList.contains('d-none') && pcHidden && pcSelect) {
+          pcHidden.value = pcSelect.value || 'PC Generica';
+        }
+      });
+    }
+
+    if (window.location.hash) {
+      var targetModal = document.querySelector(window.location.hash);
+      if (targetModal && targetModal.classList.contains('modal')) {
+        var modalInstance = new bootstrap.Modal(targetModal);
+        modalInstance.show();
+      }
+    }
+    document.getElementById('is_done_shared')?.addEventListener('change', function() {
+      const container = document.getElementById('solucion_container_shared');
+      if (container) {
+          container.style.display = this.checked ? 'block' : 'none';
+          if (this.checked) document.getElementById('solucion_shared').focus();
+      }
+    });
+
+    document.getElementById('formCrearTarea')?.addEventListener('submit', function(e) {
+      var isDone = document.getElementById('is_done_shared').checked;
+      var solucion = document.getElementById('solucion_shared').value.trim();
+      if (isDone && !solucion) {
+        e.preventDefault();
+        alert("Por favor, ingrese el detalle de la solución.");
+        document.getElementById('solucion_shared').focus();
+        return false;
+      }
+    });
+  });
+
+  function quickTaskDone(taskId, pcName, assignedTo) {
+    openCompleteTaskModal(taskId, assignedTo || '', pcName || 'PC Generica');
+  }
+
+function openTaskActionsModal(taskId) {
+    document.getElementById('actionTaskId').value = taskId;
+    document.getElementById('newTaskActionText').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('taskActionsModal'));
+    modal.show();
+    loadTaskActions(taskId);
+}
+
+function loadTaskActions(taskId) {
+    const listContainer = document.getElementById('taskActionsList');
+    listContainer.innerHTML = '<div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm"></div> Cargando...</div>';
+    
+    fetch(`/api/tasks/${taskId}/actions`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (data.actions.length === 0) {
+                    listContainer.innerHTML = '<div class="text-center text-muted py-3" style="font-size: 0.9rem;">No hay acciones registradas aún.</div>';
+                } else {
+                    listContainer.innerHTML = data.actions.map(action => `
+                        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold" style="color: #0f172a; font-size: 0.85rem;"><i class="bi bi-person-fill text-primary me-1"></i> ${action.user_name}</span>
+                                <span class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i> ${action.created_at_fmt}</span>
+                            </div>
+                            <div style="color: #475569; font-size: 0.9rem; white-space: pre-wrap;">${action.action_text}</div>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                listContainer.innerHTML = '<div class="text-danger py-2">Error al cargar acciones.</div>';
+            }
+        })
+        .catch(err => {
+            listContainer.innerHTML = '<div class="text-danger py-2">Error de conexión.</div>';
+        });
+}
+
+function submitTaskAction() {
+    const taskId = document.getElementById('actionTaskId').value;
+    const text = document.getElementById('newTaskActionText').value.trim();
+    if (!text) return alert("El texto no puede estar vacío.");
+    
+    const formData = new FormData();
+    formData.append('action_text', text);
+    formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
+    
+    fetch(`/api/tasks/${taskId}/actions`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('newTaskActionText').value = '';
+            loadTaskActions(taskId);
+        } else {
+            alert(data.message || 'Error al guardar.');
+        }
+    })
+    .catch(err => alert("Error de conexión."));
+}
+</script>
+
+<!-- Modal Registro de Acciones de Tarea -->
+<div class="modal fade" id="taskActionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div style="background: linear-gradient(135deg, #1e293b, #334155); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                <h5 class="mb-0 text-white fw-bold"><i class="bi bi-card-list me-2"></i> Registro de Acciones</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="background: #f8fafc; padding: 24px;">
+                <input type="hidden" id="actionTaskId">
+                
+                <div class="mb-4">
+                    <h6 class="fw-bold text-muted mb-3 text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.05em;">Historial</h6>
+                    <div id="taskActionsList" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Acciones inyectadas vía JS -->
+                        <div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm"></div> Cargando...</div>
+                    </div>
+                </div>
+
+                <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                    <h6 class="fw-bold mb-2" style="font-size: 0.9rem; color: #0f172a;"><i class="bi bi-plus-circle me-1"></i> Agregar Nueva Acción</h6>
+                    <textarea id="newTaskActionText" class="form-control mb-3" rows="3" placeholder="Describe la acción realizada (ej. 'Llevé la PC al taller para revisión')" style="border-radius: 8px; font-size: 0.9rem;"></textarea>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-sm" style="background: #1e293b; color: white; border-radius: 8px; padding: 6px 16px; font-weight: 600;" onclick="submitTaskAction()">
+                            Guardar Acción
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

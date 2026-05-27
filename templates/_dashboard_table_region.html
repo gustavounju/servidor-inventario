@@ -1,0 +1,614 @@
+<div id="dashboardTableRegion">
+        <datalist id="fueroOptions">
+            {% for name in fueros.values()|unique|sort %}
+            <option value="{{ name }}">
+            {% endfor %}
+        </datalist>
+        <section class="inventory-table-shell">
+        {% if estado == 'False' %}
+        <div class="table-responsive inventory-table-wrap" id="inventoryTableContainer">
+            <table id="inventoryTable" class="table table-striped table-hover table-sm mb-0 inventory-table table-gold">
+                <thead>
+                    <tr>
+                        <th>
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='pc_name', order='desc' if sort_by == 'pc_name' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Nombre PC {% if sort_by == 'pc_name' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='last_user', order='desc' if sort_by == 'last_user' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Usuario {% if sort_by == 'last_user' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='processor', order='desc' if sort_by == 'processor' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Hardware {% if sort_by == 'processor' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('dashboard.dashboard', sort_by='printer_model', order='desc' if sort_by == 'printer_model' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
+                                class="text-dark text-decoration-none">
+                                Red / Impresión {% if sort_by == 'printer_model' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                            </a>
+                        </th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pc in pcs %}
+                    {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or (pc.printer_model | upper) == 'NONE' or pc.printer_model == '-' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
+                    {% set printer_alert_sin_impresora = pc.alerta_sin_impresora and printer_missing %}
+                    {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
+                    {% set row_class = [] %}
+                    {% set alert_reasons = [] %}
+                    
+                    {% if pc.alerta_ram_baja %}{% set _ = alert_reasons.append('Tiene menos de 8 GB de RAM. Puede estar lenta para uso diario.') %}{% endif %}
+                    {% if printer_alert_sin_impresora %}{% set _ = alert_reasons.append('No se detectó una impresora instalada o asignada a esta PC.') %}{% endif %}
+                    {% if pc.alerta_disco %}{% set _ = alert_reasons.append('Revisar disco: puede tener poco espacio libre o un estado SMART no saludable.') %}{% endif %}
+                    {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('La PC lleva más de 15 días encendida sin reiniciar. Conviene reiniciarla.') %}{% endif %}
+                    {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Hay otra PC reportando el mismo nombre en la red.') %}{% endif %}
+                    {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('Usa Windows 7. Es un sistema viejo y conviene planificar actualización.') %}{% endif %}
+                    {% if pc.sin_reporte_30d %}{% set _ = alert_reasons.append('Sin actividad hace más de 30 días: puede estar apagada o dada de baja.') %}{% endif %}
+                    
+                    {% set tooltip_text = "Estado: Saludable" if not alert_reasons else "Alertas detectadas:\n• " + alert_reasons|join('\n• ') %}
+
+                    {% if pc.is_active == 'False' %}
+                    {% set _ = row_class.append('row-graveyard') %}
+                    {% set tooltip_text = "Equipo dado de baja (Cementerio)" %}
+                    {% elif alerta_count >= 2 or (pc.os_name and 'Windows 7' in pc.os_name and alerta_count >= 1) %}
+                    {% set _ = row_class.append('tr-riesgo-critico') %}
+                    {% elif alerta_count == 1 or (pc.os_name and 'Windows 7' in pc.os_name) %}
+                    {% set _ = row_class.append('tr-riesgo-medio') %}
+                    {% endif %}
+                    {% if pc.sin_reporte_30d %}{% set _ = row_class.append('tr-sin-actividad') %}{% endif %}
+                    <tr class="{{ ' '.join(row_class) }}" 
+                        title="{{ tooltip_text }}"
+                        data-alerta-ram="{{ pc.alerta_ram_baja | default(0) }}"
+                        data-alerta-sin-imp="{{ pc.alerta_sin_impresora | default(0) }}"
+                        data-alerta-impresora-red="{{ pc.alerta_impresora_red | default(0) }}"
+                        data-so="{{ pc.os_name | default('') }}"
+                        data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
+                        data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}" style="cursor: pointer;"
+                        onclick="if(!event.target.closest('a') && !event.target.closest('button')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
+                        <td
+                            style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
+                            <div class="inventory-pc-name d-flex align-items-start justify-content-between">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="text-truncate" title="{{ pc.pc_name }}">{{ pc.pc_name }}</div>
+                                    <div class="inventory-pc-meta">
+                                        {% if alerta_count == 0 %}
+                                        <span class="inventory-priority inventory-priority--healthy">Estable</span>
+                                        {% elif alerta_count == 1 %}
+                                        <span class="inventory-priority inventory-priority--warning">Revisar hoy</span>
+                                        {% else %}
+                                        <span class="inventory-priority inventory-priority--critical">Prioridad alta</span>
+                                        {% endif %}
+                                        {% if pc.tareas_pendientes %}
+                                        <span class="inventory-mini-badge inventory-mini-badge--task">{{ pc.tareas_pendientes }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if pc.last_report %}
+                                    <div style="font-size:0.68rem;margin-top:3px;{% if pc.sin_reporte_30d %}color:#dc2626;font-weight:700;{% elif pc.dias_sin_reporte is not none and pc.dias_sin_reporte > 7 %}color:#d97706;{% else %}color:#9ca3af;{% endif %}">
+                                        <i class="bi bi-clock-history"></i>
+                                        {% if pc.sin_reporte_30d %}
+                                        <span title="Último reporte: {{ pc.last_report }}">⚠ {{ pc.dias_sin_reporte }}d sin actividad</span>
+                                        {% elif pc.dias_sin_reporte is not none %}
+                                        <span title="Último reporte: {{ pc.last_report }}">{{ pc.dias_sin_reporte }}d atrás</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex flex-column align-items-end ms-1" style="min-width: 42px;">
+                                    {% if pc.os_name and 'Windows' in pc.os_name %}
+                                    <div class="position-relative mb-1" style="line-height: 1;">
+                                        {% if 'Windows 11' in pc.os_name %}
+                                        <i class="bi bi-windows text-primary" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
+                                        <span class="badge bg-primary text-white p-0 px-1 position-absolute top-0 start-100 translate-middle" style="font-size: 0.45rem; border-radius: 3px;">11</span>
+                                        {% elif 'Windows 10' in pc.os_name %}
+                                        <i class="bi bi-windows text-info" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
+                                        <span class="badge bg-info text-dark p-0 px-1 position-absolute top-0 start-100 translate-middle" style="font-size: 0.45rem; border-radius: 3px;">10</span>
+                                        {% elif 'Windows 7' in pc.os_name %}
+                                        <i class="bi bi-windows text-danger" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
+                                        <span class="badge bg-danger text-white p-0 px-1 position-absolute top-0 start-100 translate-middle" style="font-size: 0.45rem; border-radius: 3px;">7</span>
+                                        {% else %}
+                                        <i class="bi bi-windows text-secondary" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+
+                                    {% if pc.office_version and pc.office_version != 'No detectado' and pc.office_version != 'N/A' %}
+                                    <span class="badge bg-success text-white d-flex align-items-center justify-content-center" 
+                                          style="font-size: 0.55rem; padding: 2px 4px; border-radius: 4px; min-width: 24px;" 
+                                          title="Software: {{ pc.office_version }}">
+                                        {% if '2016' in pc.office_version %}16
+                                        {% elif '2019' in pc.office_version %}19
+                                        {% elif '2021' in pc.office_version %}21
+                                        {% elif '365' in pc.office_version %}365
+                                        {% elif '2013' in pc.office_version %}13
+                                        {% elif '2010' in pc.office_version %}10
+                                        {% elif '2007' in pc.office_version %}07
+                                        {% elif '2003' in pc.office_version %}03
+                                        {% else %}OFF{% endif %}
+                                    </span>
+                                    {% endif %}
+
+                                    {% if pc.alerta_nombre_duplicado %}
+                                    <span class="badge bg-danger text-white mt-1" style="font-size: 0.5rem;" title="Nombre duplicado">DUP</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if pc.ad_real_name %}
+                            <div class="inventory-operator">
+                                <div class="inventory-operator__name" title="Nombre registrado en el servidor de usuarios de la institución">{{ pc.ad_real_name }}</div>
+                                <div class="inventory-operator__meta"><i class="bi bi-person-badge"></i> {{ pc.last_user }}</div>
+                            </div>
+                            {% else %}
+                            <div class="inventory-operator">
+                                <div class="inventory-operator__name" title="Este usuario aún no tiene un nombre real asociado">{{ pc.last_user or '-' }}</div>
+                                <div class="inventory-operator__meta">Sin nombre real asignado</div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-1">
+                                <span class="badge text-white inventory-fuero-badge"
+                                    style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }}; white-space: normal; text-align: center; display: inline-block; font-size: 0.75rem;">
+                                    {{ pc.fuero or '-' }}
+                                </span>
+                            </div>
+                            
+                            {% if pc.ad_phone %}
+                            <div class="small text-primary mt-1" style="font-size: 0.8rem; font-weight: 500;">
+                                <i class="bi bi-telephone-fw"></i> Teléfono: {{ pc.ad_phone }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="inventory-col-hardware">
+                            <div class="inventory-hardware">
+                                <div class="inventory-hardware__main" title="{{ pc.processor }}">{{ pc.processor or '-' }}</div>
+                                <div class="inventory-hardware__meta">
+                                    <span class="inventory-spec-chip" title="Placa madre">{{ pc.motherboard_model or 'Sin placa' }}</span>
+                                </div>
+                                {% if pc.ram_detalles and pc.ram_detalles != 'N/A' %}
+                                <div class="inventory-cell-note" title="Detalle útil para taller: capacidad, tipo DDR y velocidad por módulo">
+                                    Memoria instalada: {{ pc.ram_detalles }}
+                                </div>
+                                {% endif %}
+                                {% if pc.disk_summary_lines %}
+                                <div class="inventory-cell-note" title="{{ pc.disk_models }}">
+                                    Discos:
+                                    {% for disk_line in pc.disk_summary_lines %}
+                                        {% if not loop.first %} | {% endif %}{{ disk_line }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="inventory-col-network">
+                            {% set printer_port_value = pc.printer_port or '' %}
+                            {% set printer_is_shared = printer_port_value.startswith('\\\\') %}
+                            {% set printer_is_direct_network = ('.' in printer_port_value) or ('WSD' in printer_port_value) or ('IP_' in printer_port_value) %}
+                            {% set printer_has_catalog = pc.assigned_network_printer %}
+                            <div class="inventory-network">
+                                <div class="inventory-network__top">
+                                    <span class="inventory-ip" title="Dirección IP actual de la PC">
+                                        IP PC: {{ pc.ip_address or '-' }}
+                                    </span>
+                                    {% if pc.monitors %}
+                                    <span class="inventory-mini-badge inventory-mini-badge--os" title="Monitor o fabricante detectado">
+                                        Monitor: {{ pc.monitors }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            {% if printer_missing %}
+                                <div class="inventory-cell-note">Sin impresora</div>
+                            {% else %}
+                                <div class="small mt-1" style="font-size: 0.75rem;">
+                                    <div class="d-flex align-items-center">
+                                        {% if pc.assigned_network_printer %}
+                                            {# Estilo para impresoras asignadas oficialmente (pueden ser varias) #}
+                                            {% for prn in pc.assigned_network_printer.split(' | ') %}
+                                                <div class="mb-1" title="Esta es una impresora oficial registrada en el catálogo">
+                                                    <span class="badge bg-info text-dark" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-check2-circle"></i> Catálogo oficial
+                                                    </span>
+                                                    <span class="fw-bold" style="font-size: 0.8rem;">{{ prn }}</span>
+                                                    
+                                                    {% set prn_id = (pc.assigned_network_printer_id.split(',')[loop.index0]) if pc.assigned_network_printer_id else '' %}
+                                                    {% if prn_id %}
+                                                    <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=prn_id) }}" 
+                                                          method="POST" class="d-inline ms-1">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+                                                        <button type="submit" class="btn btn-sm btn-link p-0 text-danger text-decoration-none" 
+                                                                title="Desvincular esta impresora"
+                                                                onclick="return confirm('¿Desvincular esta impresora del equipo?');">
+                                                            <i class="bi bi-dash-circle-fill" style="font-size: 0.8rem;"></i>
+                                                        </button>
+                                                    </form>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+
+                                        {% if not pc.assigned_network_printer or pc.detected_printers_count > 0 %}
+                                            {# Badge de Red / Compartida / Local detectada #}
+                                            <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                                                {% if printer_is_shared %}
+                                                    <span class="badge bg-secondary text-white" style="font-size: 0.7rem;" 
+                                                          title="Esta PC no imprime directo a la impresora: usa otra PC como host (Puerto: {{ pc.printer_port }})">
+                                                        <i class="bi bi-share-fill"></i> Compartida desde otra PC
+                                                    </span>
+                                                {% elif printer_is_direct_network %}
+                                                    <span class="badge bg-info text-dark" style="font-size: 0.7rem;"
+                                                          title="Esta PC se conecta directo a la impresora por IP o por descubrimiento de red">
+                                                        <i class="bi bi-diagram-3"></i> Impresora por IP
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-light text-dark border" style="font-size: 0.7rem;"
+                                                          title="La impresora parece estar conectada físicamente a esta PC">
+                                                        <i class="bi bi-usb-symbol"></i> Conectada a esta PC
+                                                    </span>
+                                                {% endif %}
+                                                
+                                                {% if pc.detected_printers_count > 0 %}
+                                                    <button type="button" class="btn btn-xs btn-warning fw-bold py-0 px-2" 
+                                                            style="font-size: 0.65rem; border-radius: 4px;"
+                                                            onclick="showDetectedPrinters('{{ pc.pc_name }}')"
+                                                            title="¡Atención! Hemos detectado {{ pc.detected_printers_count }} impresoras en este equipo que no están en el inventario oficial. Haz clic para gestionarlas.">
+                                                        <i class="bi bi-plus-circle-dotted"></i> Revisar {{ pc.detected_printers_count }} impresora{% if pc.detected_printers_count != 1 %}s{% endif %}
+                                                    </button>
+                                                {% elif (not pc.assigned_network_printer) and pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
+                                                    <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" 
+                                                            onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')"
+                                                            title="Clic para registrar esta impresora en el catálogo oficial de infraestructura">
+                                                        <i class="bi bi-plus-circle-fill"></i>
+                                                    </button>
+                                                    <span class="text-muted opacity-75" style="font-size: 0.65rem; font-style: italic;" title="La PC la detectó, pero todavía no fue cargada al catálogo oficial">Pendiente de registrar</span>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+
+                                        {# Mostrar Modelo o Pendiente (Solo si no hay nada promocionado aún o para la primaria) #}
+                                        {% if not pc.assigned_network_printer %}
+                                            {% if pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) and (printer_is_shared or printer_is_direct_network) %}
+                                                <div class="mt-1" title="Se detectó una impresora de red o compartida, pero todavía no quedó consolidada en el catálogo oficial.">
+                                                    <span class="badge bg-warning text-dark" style="font-size: 0.7rem; border: 1px solid #cc9a06;">
+                                                        <i class="bi bi-clock-history"></i> Falta confirmar en inventario
+                                                    </span>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.75rem;" title="Último dato recibido desde esta PC">
+                                                    Detectada: {{ pc.printer_model }}
+                                                </div>
+                                            {% elif pc.printer_model and "SIN IMPRESORA" not in (pc.printer_model | upper) %}
+                                                <div class="fw-bold" style="font-size: 0.85rem;">{{ pc.printer_model }}</div>
+                                            {% endif %}
+                                        {% endif %}
+                                </div>
+                            {% endif %}
+
+                            {% if pc.assigned_network_printer and (pc.assigned_network_printer not in (pc.printer_model or '') and pc.assigned_network_printer not in (pc.printer_sn or '')) %}
+                            <div class="mt-1" style="font-size: 0.75rem;">
+                                <span class="text-muted"><i class="bi bi-check-circle-fill text-success"></i> Registrada oficialmente como: {{ pc.assigned_network_printer }}</span>
+                            </div>
+                            {% endif %}
+
+                            {% if pc.printer_port and pc.printer_port.startswith('\\\\') %}
+                                {% set sharing_host = pc.printer_port.split('\\')[2] %}
+                                <div class="mt-1" style="font-size: 0.7rem;">
+                                    <i class="bi bi-share text-muted"></i> Host que comparte la impresora: 
+                                    <a href="{{ url_for('dashboard.pc_detail', pc_name=sharing_host | upper) }}" class="fw-bold text-decoration-none">
+                                        {{ sharing_host | upper }}
+                                    </a>
+                                    
+                                    {# Deteccion Host Offline #}
+                                    {% if pc_ports and sharing_host | upper in pc_ports %}
+                                        {% set host_port = pc_ports[sharing_host | upper] %}
+                                        {% if 'USB' not in host_port and 'LPT' not in host_port and 'COM' not in host_port and 'Local' not in host_port %}
+                                            <span class="text-danger fw-bold ms-1" style="font-size: 0.65rem;" title="El PC dueño ya no reporta tener esta impresora conectada físicamente">
+                                                <i class="bi bi-exclamation-triangle-fill"></i> El host ya no la reporta
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <td class="text-center p-1">
+                            <div class="inventory-row-actions">
+                                <div class="inventory-alert-stack">
+                                <!-- Alertas -->
+                                {% if pc.alerta_ram_baja %}
+                                <div class="inventory-alert-chip inventory-alert-chip--warning" title="Tiene menos de 8 GB de RAM. Puede estar lenta para uso diario.">💾 RAM baja</div>
+                                {% endif %}
+                                {% if printer_alert_sin_impresora %}
+                                <div class="inventory-alert-chip inventory-alert-chip--info" title="No se detectó una impresora instalada o asignada a esta PC.">🖨️ Sin impresora</div>
+                                {% endif %}
+                                {% if pc.alerta_disco %}
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Revisar disco: puede tener poco espacio libre o un estado SMART no saludable.">💿 Revisar disco</div>
+                                {% endif %}
+                                {% if pc.alerta_uptime %}
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="La PC lleva más de 15 días encendida sin reiniciar. Conviene reiniciarla.">⏳ Reiniciar PC</div>
+                                {% endif %}
+                                {% if pc.alerta_nombre_duplicado %}
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Hay otra PC reportando el mismo nombre en la red.">⚠️ Nombre duplicado</div>
+                                {% endif %}
+                                {% if pc.sin_reporte_30d %}
+                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Esta PC lleva más de 30 días sin enviar datos al servidor. Puede estar apagada, desconectada o dada de baja.">📡 Sin actividad +30d</div>
+                                {% endif %}
+                            </div>
+
+                                <div class="dropdown" onclick="event.stopPropagation();">
+                                    <button class="btn btn-sm inventory-actions-toggle dropdown-toggle"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false"
+                                            title="Más acciones">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-end inventory-actions-menu">
+                                        <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}"
+                                           class="dropdown-item"
+                                           onclick="event.stopPropagation();">
+                                            <i class="bi bi-eye"></i> Ver detalle
+                                        </a>
+
+                                        {% if pc.is_active == 'True' %}
+                                        <button type="button"
+                                                class="dropdown-item"
+                                                onclick="event.stopPropagation(); showSecurity('{{ pc.pc_name }}')">
+                                            <i class="bi bi-activity"></i> Diagnóstico
+                                        </button>
+                                        {% if pc.pc_name.upper() != 'PC GENERICA' and pc.pc_name.upper() != 'PC-GENERICA' %}
+                                        <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}"
+                                              method="POST"
+                                              onsubmit="event.stopPropagation(); return confirm('¿Pasar este equipo al cementerio? Si el script de inventario vuelve a ejecutarse en esa PC, se reactivará sola.');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-trash"></i> Pasar a cementerio
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% else %}
+                                        <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}"
+                                              method="POST"
+                                              onsubmit="event.stopPropagation();">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item text-success">
+                                                <i class="bi bi-power"></i> Reactivar
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('dashboard.delete_permanent_pc', pc_name=pc.pc_name) }}"
+                                              method="POST"
+                                              onsubmit="event.stopPropagation(); return confirm('¿Estás SEGURO de borrar DEFINITIVAMENTE este equipo {{ pc.pc_name }}? Esta acción NO se puede deshacer y borrará todo su historial.');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-x-octagon-fill"></i> Borrar definitivo
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center;">Sin datos.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="fuero-tree" id="inventoryTableContainer">
+            {% if fuero_tree %}
+                {% macro render_fuero_node(node, level=0) %}
+                <details class="fuero-tree-node fuero-tree-node--level-{{ level }}" {% if level > 0 or node.name == 'Sin fuero asignado' or q or (alerta and alerta != 'ninguna') %}open{% endif %}>
+                    <summary class="fuero-tree-node__summary">
+                        <span class="fuero-tree-node__folder"><i class="bi bi-folder2-open"></i></span>
+                        <span class="fuero-tree-node__name">{{ node.name }}</span>
+                        {% if level == 0 and node.uncataloged_printers %}
+                        <span class="fuero-tree-node__pending-printers" title="{{ node.uncataloged_printers }} impresora{% if node.uncataloged_printers != 1 %}s{% endif %} detectada{% if node.uncataloged_printers != 1 %}s{% endif %} sin catalogar">
+                            <i class="bi bi-printer"></i> {{ node.uncataloged_printers }} sin catalogar
+                        </span>
+                        {% endif %}
+                        <span class="fuero-tree-node__count">{{ node.count }} PC{% if node.count != 1 %}s{% endif %}</span>
+                    </summary>
+                    <div class="fuero-tree-node__body">
+                        {% for child in node.children %}
+                            {{ render_fuero_node(child, level + 1) }}
+                        {% endfor %}
+                        {% for pc in node.pcs %}
+                            {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or (pc.printer_model | upper) == 'NONE' or pc.printer_model == '-' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
+                            {% set printer_alert_sin_impresora = pc.alerta_sin_impresora and printer_missing %}
+                            {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
+                            {% set alert_reasons = [] %}
+                            {% if pc.alerta_ram_baja %}{% set _ = alert_reasons.append('RAM baja: menos de 8 GB') %}{% endif %}
+                            {% if printer_alert_sin_impresora %}{% set _ = alert_reasons.append('No se detectó impresora') %}{% endif %}
+                            {% if pc.alerta_disco %}{% set _ = alert_reasons.append('Revisar disco') %}{% endif %}
+                            {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('Reiniciar PC') %}{% endif %}
+                            {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Nombre duplicado') %}{% endif %}
+                            {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('Actualizar Windows 7') %}{% endif %}
+                            {% if pc.sin_reporte_30d %}{% set _ = alert_reasons.append('Sin actividad +30d') %}{% endif %}
+                            <div class="fuero-tree-pc {% if pc.sin_reporte_30d %}fuero-tree-pc--inactive{% endif %}" title="{{ pc.fuero or 'Sin fuero asignado' }}" onclick="if(!event.target.closest('a') && !event.target.closest('button') && !event.target.closest('.dropdown-menu')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
+                                <div class="fuero-tree-pc__main">
+                                    <i class="bi bi-pc-display-horizontal"></i>
+                                    <div class="fuero-tree-pc__identity">
+                                        <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="fuero-tree-pc__name" onclick="event.stopPropagation();">{{ pc.pc_name }}</a>
+                                        <span>{{ pc.ad_real_name or pc.last_user or 'Sin usuario' }}</span>
+                                    </div>
+                                </div>
+                                <div class="fuero-tree-pc__meta">
+                                    <span title="IP actual"><i class="bi bi-hdd-network"></i> {{ pc.ip_address or '-' }}</span>
+                                    <span title="Sistema operativo"><i class="bi bi-windows"></i> {{ pc.os_name or '-' }}</span>
+                                    {% if pc.last_report %}
+                                    <span title="Último reporte del script de inventario" {% if pc.sin_reporte_30d %}style="color:#dc2626;font-weight:700;"{% elif pc.dias_sin_reporte is not none and pc.dias_sin_reporte > 7 %}style="color:#d97706;"{% endif %}>
+                                        <i class="bi bi-clock-history"></i>
+                                        {% if pc.sin_reporte_30d %}⚠ {{ pc.dias_sin_reporte }}d sin actividad
+                                        {% elif pc.dias_sin_reporte is not none %}{{ pc.dias_sin_reporte }}d atrás
+                                        {% endif %}
+                                    </span>
+                                    {% endif %}
+                                    {% if pc.office_version and pc.office_version != 'No detectado' and pc.office_version != 'N/A' %}
+                                    <span title="Microsoft Office"><i class="bi bi-microsoft"></i> {{ pc.office_version }}</span>
+                                    {% endif %}
+                                    {% if pc.monitors and pc.monitors != 'N/A' %}
+                                    <span title="Monitor detectado"><i class="bi bi-display"></i> {{ pc.monitors }}</span>
+                                    {% endif %}
+                                    <span class="fuero-tree-printer-group {% if not pc.assigned_network_printer and pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}fuero-tree-printer-group--pending{% endif %}">
+                                        <span class="fuero-tree-printer-group__model" title="{% if pc.assigned_network_printer %}Impresora registrada en catálogo{% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}Impresora detectada, pendiente de sumar al catálogo{% else %}Impresión{% endif %}">
+                                            <i class="bi bi-printer"></i>
+                                            {% if pc.assigned_network_printer %}{{ pc.assigned_network_printer }} (catálogo){% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}{{ pc.printer_model }}{% else %}Sin impresora{% endif %}
+                                        </span>
+                                        {% if pc.assigned_network_printer %}
+                                        {% elif pc.printer_port and pc.printer_port.startswith('\\\\') %}
+                                        <span class="fuero-tree-printer-group__type" title="{{ pc.printer_port }}"><i class="bi bi-share"></i> Compartida</span>
+                                        {% elif pc.printer_port and ('.' in pc.printer_port or 'WSD' in pc.printer_port or 'IP_' in pc.printer_port) %}
+                                        <span class="fuero-tree-printer-group__type" title="Impresora por red detectada, pendiente de sumar al catálogo"><i class="bi bi-diagram-3"></i> Red/IP</span>
+                                        {% elif pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}
+                                        <span class="fuero-tree-printer-group__type" title="{{ pc.printer_port or '' }}"><i class="bi bi-usb-symbol"></i> Local/USB</span>
+                                        {% endif %}
+                                        {% if pc.detected_printers_count > 0 %}
+                                        <button type="button"
+                                                class="fuero-tree-printer-group__action"
+                                                onclick="event.stopPropagation(); showDetectedPrinters('{{ pc.pc_name }}')"
+                                                title="Hay impresoras detectadas que todavía no están en el catálogo.">
+                                            <i class="bi bi-plus-circle-dotted"></i>
+                                            <span>Sumar {{ pc.detected_printers_count }}</span>
+                                        </button>
+                                        {% elif not pc.assigned_network_printer and pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in (pc.printer_model | upper) %}
+                                        <button type="button"
+                                                class="fuero-tree-printer-group__action"
+                                                onclick="event.stopPropagation(); promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')"
+                                                title="Sumar esta impresora detectada al catálogo oficial.">
+                                            <i class="bi bi-plus-circle-fill"></i>
+                                        </button>
+                                        {% endif %}
+                                    </span>
+                                    {% if pc.detected_printers_preview %}
+                                    <span class="fuero-tree-detected-printers" title="Impresoras detectadas sin catalogar">
+                                        <i class="bi bi-printer"></i>
+                                        {% for printer in pc.detected_printers_preview %}
+                                            {% if not loop.first %}<span class="fuero-tree-detected-printers__sep">+</span>{% endif %}
+                                            <span>{{ printer.model }}</span>
+                                            <small>{{ printer.connection }}</small>
+                                        {% endfor %}
+                                    </span>
+                                    {% endif %}
+                                    {% if not pc.fuero or pc.fuero == 'Desconocido' %}
+                                    <form action="{{ url_for('dashboard.update_pc_fuero', pc_name=pc.pc_name) }}"
+                                          method="POST"
+                                          class="fuero-tree-fuero-form"
+                                          onclick="event.stopPropagation();">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input name="fuero" list="fueroOptions" placeholder="Asignar fuero" required>
+                                        <button type="submit" title="Guardar fuero">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    {% if pc.tareas_pendientes %}
+                                    <span class="fuero-tree-chip fuero-tree-chip--task" title="Tareas pendientes">{{ pc.tareas_pendientes }} tareas</span>
+                                    {% endif %}
+                                    {% if alerta_count == 0 and not (pc.os_name and 'Windows 7' in pc.os_name) %}
+                                    <span class="fuero-tree-chip fuero-tree-chip--ok">Estable</span>
+                                    {% else %}
+                                    <span class="fuero-tree-chip {% if alerta_count >= 2 %}fuero-tree-chip--danger{% else %}fuero-tree-chip--warning{% endif %}" title="{{ alert_reasons|join(', ') }}">{{ alert_reasons|join(', ') }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="fuero-tree-pc__actions" onclick="event.stopPropagation();">
+                                    <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}"
+                                       class="fuero-tree-action"
+                                       title="Ver detalle"
+                                       aria-label="Ver detalle de {{ pc.pc_name }}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="fuero-tree-action"
+                                            onclick="showSecurity('{{ pc.pc_name }}')"
+                                            title="Diagnóstico"
+                                            aria-label="Diagnóstico de {{ pc.pc_name }}">
+                                        <i class="bi bi-activity"></i>
+                                    </button>
+                                    <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}"
+                                          method="POST"
+                                          class="d-inline"
+                                          onsubmit="return confirm('¿Pasar este equipo al cementerio? Si el script de inventario vuelve a ejecutarse en esa PC, se reactivará sola.');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit"
+                                                class="fuero-tree-action fuero-tree-action--danger"
+                                                title="Pasar a cementerio"
+                                                aria-label="Pasar {{ pc.pc_name }} a cementerio">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </details>
+                {% endmacro %}
+
+                {% for root in fuero_tree %}
+                    {{ render_fuero_node(root) }}
+                {% endfor %}
+            {% else %}
+                <div class="fuero-tree-empty">Sin PCs activas para mostrar con los filtros actuales.</div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Paginación -->
+        {% if total_pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-3 mb-1 inventory-pagination-wrap" id="mainPagination">
+            <ul class="pagination justify-content-center">
+                <!-- Anterior -->
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link"
+                        href="{{ url_for('dashboard.dashboard', page=page-1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, sort_by=sort_by, order=order, per_page=per_page) }}">
+                        Anterior
+                    </a>
+                </li>
+
+                <!-- Info Pagina -->
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        Página {{ page }} de {{ total_pages }}
+                    </span>
+                </li>
+
+                <!-- Siguiente -->
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link"
+                        href="{{ url_for('dashboard.dashboard', page=page+1, q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, sort_by=sort_by, order=order, per_page=per_page) }}">
+                        Siguiente
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Selector de filas por página -->
+            <div class="d-flex justify-content-center align-items-center mt-2">
+                <form action="{{ url_for('dashboard.dashboard') }}" method="GET" class="d-flex align-items-center">
+                    <input type="hidden" name="q" value="{{ q }}">
+                    <input type="hidden" name="estado" value="{{ estado }}">
+                    <input type="hidden" name="alerta" value="{{ alerta }}">
+
+                    <label class="me-2 small text-muted">Filas:</label>
+                    <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()"
+                        style="width: auto;">
+                        <option value="10" {% if per_page==10 %}selected{% endif %}>10</option>
+                        <option value="25" {% if per_page==25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if per_page==50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if per_page==100 %}selected{% endif %}>100</option>
+                    </select>
+                </form>
+            </div>
+        </nav>
+        {% endif %}
+        </section>
+</div>

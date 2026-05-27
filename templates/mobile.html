@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Inventario GOLD — Técnicos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/gold.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f3d62">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <style>
+        :root {
+            --mob-primary: #0f4c75;
+            --mob-accent: #3282b8;
+            --mob-bg: #f8fafc;
+            --mob-card: #ffffff;
+            --mob-text: #1b262c;
+            --mob-muted: #64748b;
+            --mob-border: #e2e8f0;
+            --mob-gradient: linear-gradient(135deg, #0f4c75, #3282b8);
+        }
+
+        .module-switcher {
+            margin-top: 0;
+        }
+
+        .module-switcher-link.active {
+            background: var(--mob-gradient);
+        }
+
+        /* ===== TASK CARDS ===== */
+        .task-card {
+            background: var(--mob-card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--mob-border);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .task-card:active {
+            transform: scale(0.985);
+        }
+
+        .task-card.priority {
+            border-left: 4px solid var(--mob-accent);
+        }
+
+        .task-card .task-desc {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--mob-text);
+            margin-bottom: 6px;
+            line-height: 1.35;
+        }
+
+        .task-card .task-meta {
+            font-size: 0.78rem;
+            color: var(--mob-muted);
+            margin-bottom: 12px;
+        }
+
+        .task-card .task-time {
+            font-size: 0.72rem;
+            color: var(--mob-muted);
+        }
+
+        .notif-body {
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* ===== BOTTOM NAV ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.08), 0 -8px 24px rgba(0, 0, 0, 0.06);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+            z-index: 1000;
+        }
+
+        .bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.72rem;
+            font-weight: 600;
+            gap: 2px;
+            padding: 0 20px;
+            transition: color 0.15s;
+        }
+
+        .bottom-nav .nav-item i {
+            font-size: 1.5rem;
+        }
+
+        .bottom-nav .nav-item.active {
+            color: var(--mob-primary);
+        }
+
+        /* ===== LOGIN SCREEN ===== */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--mob-gradient);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 28px;
+        }
+
+        .login-logo {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+        }
+
+        .login-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.03em;
+            margin-bottom: 4px;
+        }
+
+        .login-subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+            margin-bottom: 28px;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 24px;
+            width: 100%;
+            max-width: 340px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        }
+
+        .login-card select,
+        .login-card .btn {
+            width: 100%;
+        }
+
+        .login-card .btn-login {
+            background: var(--mob-gradient);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 13px;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-top: 12px;
+            transition: filter 0.15s;
+        }
+
+        .login-card .btn-login:hover {
+            filter: brightness(1.1);
+        }
+
+        .login-note {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.14);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.8rem;
+            line-height: 1.45;
+        }
+
+        .status-board {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .status-board .mini-card {
+            background: #fff;
+            border: 1px solid var(--mob-border);
+            border-radius: 16px;
+            padding: 12px 14px;
+            box-shadow: 0 6px 20px rgba(15, 76, 117, 0.08);
+        }
+
+        .status-board .mini-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--mob-muted);
+            font-weight: 700;
+        }
+
+        .status-board .mini-value {
+            margin-top: 5px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--mob-text);
+        }
+
+        .secure-banner {
+            display: none;
+            margin-bottom: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border-left: 4px solid #f59e0b;
+            background: #fff7ed;
+            color: #9a3412;
+            font-size: 0.83rem;
+            line-height: 1.45;
+        }
+
+        .task-card .task-badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .task-card .meta-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef6fb;
+            color: #1d4e89;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        /* ===== FAB ===== */
+        .fab-add {
+            position: fixed;
+            bottom: 76px;
+            right: 20px;
+            width: 58px;
+            height: 58px;
+            border-radius: 18px;
+            background: var(--mob-gradient);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            box-shadow: 0 6px 20px rgba(15, 76, 117, 0.4);
+            z-index: 999;
+            border: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .fab-add:hover,
+        .fab-add:active {
+            transform: scale(0.93);
+        }
+
+        /* ===== SECTION TITLE ===== */
+        .section-title {
+            color: var(--mob-muted);
+            font-weight: 700;
+            font-size: 0.78rem;
+            margin: 18px 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* ===== ESTADO VACÍO ===== */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--mob-muted);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            opacity: 0.4;
+        }
+
+        .empty-state p {
+            margin-top: 12px;
+            font-size: 0.9rem;
+        }
+
+        /* ===== BOTONES DE ACCIÓN EN CARD ===== */
+        .btn-action {
+            width: 100%;
+            padding: 11px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .btn-claim {
+            background: transparent;
+            border: 2px solid var(--mob-accent);
+            color: var(--mob-accent);
+        }
+
+        .btn-claim:hover {
+            background: var(--mob-accent);
+            color: #fff;
+        }
+
+        .btn-done {
+            background: linear-gradient(135deg, #059669, #34d399);
+            border: none;
+            color: #fff;
+        }
+
+        .btn-done:hover {
+            filter: brightness(1.08);
+        }
+
+        @media (max-width: 520px) {
+            .status-board {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="/static/js/security.js"></script>
+</head>
+
+<body>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-logo">🇦🇷</div>
+        <div class="login-title">Taller Movil SP</div>
+        <p class="login-subtitle" style="color: #fcd34d; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">¡Feliz Semana de Mayo!</p>
+        <div class="login-card">
+            <p class="fw-bold mb-2" style="color:#1e293b;font-size:0.9rem;">Acceso móvil validado</p>
+            <div class="alert alert-primary mb-0" style="border-radius:12px;">
+                <div class="fw-bold">Ingresas como {{ mobile_identity or current_user.display_name or current_user.username }}</div>
+                <div class="small mt-1">La identidad técnica sale de tu sesión del sistema.</div>
+            </div>
+            <p class="text-center mt-3 mb-0" style="font-size:0.72rem;color:#94a3b8;">
+                v{{ app_version }}
+            </p>
+        </div>
+        <div class="login-note">
+            Para avisos en segundo plano y mejor instalación como app, usa esta pantalla con `HTTPS` y acepta notificaciones del navegador.
+        </div>
+    </div>
+
+    <!-- App Header (Solo móvil) -->
+    <header id="appHeader" style="display:none; position:fixed; top:0; left:0; width:100%; height:60px; background:var(--mob-primary); color:#fff; align-items:center; padding:0 18px; z-index:1500; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+        <div style="flex-grow:1; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em;">
+            🛠️ <span id="headerName" style="margin-left:5px;">GOLD Mobile</span>
+        </div>
+        <div class="header-actions" style="display:flex; gap:8px; align-items:center;">
+            <button id="btnSound" onclick="toggleSound()" class="header-btn" style="background:transparent; border:none; color:#fff; font-size:1.2rem; padding:4px;">
+                <i id="iconSound" class="bi bi-volume-up-fill"></i>
+            </button>
+            <button class="header-btn" onclick="forceRefresh()" style="background:transparent; border:none; color:#fff; font-size:1.2rem; padding:4px;">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <button class="header-btn" onclick="logout()" style="background:transparent; border:none; color:#fff; font-size:1.2rem; padding:4px;">
+                <i class="bi bi-box-arrow-right"></i>
+            </button>
+        </div>
+    </header>
+
+
+    <!-- Main Content -->
+    <div class="container py-3" id="mainContent" style="display:none; margin-top: 60px;">
+
+        <div class="status-board mb-3">
+            <div class="mini-card" style="cursor:pointer;" onclick="switchTab('pool')">
+                <div class="mini-label">Tareas Libres</div>
+                <div class="mini-value" id="mobilePoolCard">0</div>
+            </div>
+            <!-- El usuario ya sale arriba en el header, no hace falta repetirlo abajo -->
+        </div>
+
+
+
+        <!-- Tab: Mis Tareas -->
+        <div id="tabMyTasks">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="section-title">Mis Pendientes</div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="forceRefresh()" style="border-radius:8px;">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div id="myTasksList">
+                <div class="empty-state"><i class="bi bi-hourglass-split"></i>
+                    <p>Cargando...</p>
+                </div>
+            </div>
+
+            <div class="section-title mt-4">Mi Historial Reciente</div>
+            <div id="myHistoryList">
+                <div class="empty-state small py-3">
+                    <p>No tienes tareas finalizadas recientes.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Bolsa (Unassigned) -->
+        <div id="tabPool" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="section-title">Bolsa de Tareas</div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="forceRefresh()" style="border-radius:8px;">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div id="poolList">
+                <div class="empty-state"><i class="bi bi-check-circle"></i>
+                    <p>No hay tareas libres.</p>
+                </div>
+            </div>
+        </div>
+
+        {% if current_user.role != 'operador' %}
+            <!-- Tab: Notificaciones -->
+            <div id="tabNotifs" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="section-title">Historial de Alertas</div>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadNotifications()" style="border-radius:8px;">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                <div id="notifsList">
+                    <div class="empty-state"><i class="bi bi-chat-left-dots"></i>
+                        <p>Cargando historial...</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- FAB Add Button -->
+    <button class="fab-add" onclick="openAddTask()" id="fabAdd" style="display:none;">
+        <i class="bi bi-plus"></i>
+    </button>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav" id="bottomNav" style="display:none;">
+        <a href="#" class="nav-item active" onclick="switchTab('myTasks')">
+            <i class="bi bi-list-check"></i>
+            <span>Tareas</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchTab('pool')">
+            <i class="bi bi-basket"></i>
+            <span>Libres <span id="navPoolCount" class="badge rounded-pill bg-danger ms-1"
+                    style="display:none;"></span></span>
+        </a>
+        {% if current_user.role != 'operador' %}
+            <a href="#" class="nav-item" onclick="switchTab('notifs')">
+                <i class="bi bi-chat-text"></i>
+                <span>Avisos <span id="navNotifCount" class="badge rounded-pill bg-danger ms-1" style="display:none;"></span></span>
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Toast: nueva notificación -->
+    <div id="notifToast" style="display:none; position:fixed; top:70px; left:50%; transform:translateX(-50%); z-index:2000; background:#0f4c75; color:#fff; padding:10px 20px; border-radius:16px; font-size:0.85rem; font-weight:600; box-shadow:0 4px 20px rgba(0,0,0,0.3); max-width:90vw; text-align:center; cursor:pointer;" onclick="openAvisosFromToast()">
+        🔔 <span id="notifToastText">Nueva notificación</span>
+    </div>
+
+    <!-- Modales -->
+    <div class="modal fade" id="addTaskModal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Nueva Tarea</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addTaskForm">
+                        <div class="mb-3">
+                            <label class="form-label">¿Qué hay que hacer?</label>
+                            <textarea id="taskDesc" class="form-control" rows="3" placeholder="Descripción de la tarea"
+                                required></textarea>
+                            <div class="d-grid mt-2">
+                                <button type="button" class="btn btn-outline-secondary" onclick="startVoiceInput()"
+                                    style="border-radius:10px;">
+                                    <i class="bi bi-mic-fill"></i> Hablar para llenar
+                                </button>
+                                <small class="text-muted text-center mt-1" style="font-size: 0.75rem;">
+                                    Diga: "Hacer algo <strong>solicitado por</strong> Alguien"
+                                </small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">¿Quién lo solicitó?</label>
+                            <input type="text" id="taskSolicitante" class="form-control"
+                                placeholder="Ej: Secretaria, Dirección... (Requerido)" list="mobileRequestersList">
+                            <datalist id="mobileRequestersList"></datalist>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">PC (Opcional)</label>
+                            <select id="taskPC" class="form-select">
+                                <option value="">-- Sin PC específica --</option>
+                            </select>
+                        </div>
+                        <div class="form-check form-switch mb-3 p-3 rounded" style="background:var(--mob-bg)">
+                            <input class="form-check-input" type="checkbox" id="taskDonenow">
+                            <label class="form-check-label fw-bold" for="taskDonenow">¡Ya la hice!</label>
+                            <div class="small text-muted">Se marcará como finalizada y asignada a ti inmediatamente.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitTask()">
+                        <i class="bi bi-check-lg me-1"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="completeTaskModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-success">
+                    <h5 class="modal-title"><i class="bi bi-check2-circle me-2"></i>Asignar PC para Finalizar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted">Esta tarea no tiene PC asignada. Selecciona una para el historial.</p>
+                    <select id="completeTaskPC" class="form-select">
+                        <option value="">-- Seleccionar PC --</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="confirmCompleteWithPC()">
+                        <i class="bi bi-check-lg me-1"></i>Finalizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- DATA & STATE ---
+        let currentUser = {{ (mobile_identity or current_user.technician_name or current_user.display_name or current_user.username or '')|tojson }};
+        const isOperator = {{ (current_user.role == 'operador')|tojson }};
+        const preferredTechnician = currentUser;
+        let currentTab = 'myTasks';
+
+        let allUnassigned = [];
+        let allActive = [];
+        let allMyHistory = [];
+        let allPCs = [];
+        let allTechs = [];
+        let allRequesters = [];
+
+        let soundEnabled = localStorage.getItem('soundEnabled') !== 'false'; // Default a true
+        let lastTaskIds = new Set();
+        let lastNotifId = parseInt(localStorage.getItem('lastNotifId') || '0');
+        let unreadNotifCount = 0;
+        let pollTimer = null;
+
+        const VAPID_PUBLIC_KEY = "BOu99N41agBTHQmpQHo8yrbTdQ7Kb392R1NgXiy8DeK5f7WVvHB-OXmqm-ptw2CpoIqM0cZZOUtYRYGaBdAUufE";
+
+        // --- AUDIO ROBUSTNESS ---
+        let audioCtx = null;
+        let audioFallback = null;
+
+        function initAudio() {
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC && !audioCtx) {
+                    audioCtx = new AC();
+                    console.log("AudioContext initialized (State: " + audioCtx.state + ")");
+                }
+                // Fallback: Tono de alerta corto (C4)
+                if (!audioFallback) {
+                    audioFallback = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVtvT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT18=");
+                    audioFallback.load();
+                }
+            } catch (e) { console.error("Audio Init Error:", e); }
+        }
+
+        // Desbloquear audio en la primera interacción (Requisito de navegadores)
+        function unlockAudio() {
+            if (!audioCtx) initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().then(() => {
+                    console.log("AudioContext RESUMED");
+                    // Opcional: Probar sonido silencioso para asegurar el canal
+                    playBeep(0.001);
+                });
+            }
+            // Quitar listeners una vez desbloqueado
+            document.removeEventListener('click', unlockAudio);
+            document.removeEventListener('touchstart', unlockAudio);
+        }
+        document.addEventListener('click', unlockAudio);
+        document.addEventListener('touchstart', unlockAudio);
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+        });
+
+        async function initApp() {
+            try {
+                localStorage.removeItem('techName');
+                updateSoundUI();
+                checkDiagnostics();
+                registerServiceWorker();
+                
+                await loadData();
+                
+                if (!currentUser) {
+                    showLogin();
+                } else {
+                    showApp();
+                }
+            } catch (e) {
+                console.error("InitApp Fatal Error:", e);
+                const dbg = document.getElementById('debugPanel');
+                if (dbg) dbg.style.display = 'block';
+                const out = document.getElementById('debugOutput');
+                if (out) out.innerHTML = `<span class="text-danger fw-bold">FATAL ERROR:</span> ${e.message}<br><small>Hable con soporte técnico.</small>`;
+            }
+        }
+
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => {
+                        console.log('SW Registered', reg);
+                        // El SW se registró, pero tal vez el navegador no muestra el prompt por el SSL
+                        setTimeout(() => {
+                            if (!deferredPrompt) {
+                                showPwaHelp();
+                                document.getElementById('debugPanel').style.display = 'block';
+                                document.getElementById('debugOutput').innerHTML = `<span class="text-warning fw-bold">⚠️ Registro de red OK, pero instalación automática bloqueada.</span><br><small>Es probable que el navegador no confíe en el certificado SSL de este servidor.</small>`;
+                            }
+                        }, 4000);
+                    })
+                    .catch(err => {
+                        console.log('SW Error', err);
+                        // Mostrar ayuda manual inmediatamente si falla el registro (probable SSL)
+                        showPwaHelp();
+                        document.getElementById('debugPanel').style.display = 'block';
+                        document.getElementById('debugOutput').innerHTML = `<span class="text-danger fw-bold">❌ ERROR: ${err.message || err}</span><br><small>Es probable que el navegador bloquee el Service Worker por el certificado SSL.</small>`;
+                    });
+            } else {
+                showPwaHelp();
+            }
+        }
+
+        function showPwaHelp() {
+            const hLogin = document.getElementById('pwaManualHelp');
+            const hApp = document.getElementById('pwaManualHelpApp');
+            if (hLogin) hLogin.style.display = 'block';
+            if (hApp) hApp.style.display = 'block';
+        }
+
+        // --- PWA MANUAL INSTALL LOGIC ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevenir que Chrome 76+ muestre automáticamente el prompt
+            e.preventDefault();
+            // Guardar el evento para dispararlo más tarde
+            deferredPrompt = e;
+            // Mostrar los botones de instalación
+            const btnLogin = document.getElementById('btnManualInstallLogin');
+            const btnHeader = document.getElementById('btnManualInstallHeader');
+            if (btnLogin) btnLogin.style.display = 'block';
+            if (btnHeader) btnHeader.style.display = 'flex';
+            
+            console.log("'beforeinstallprompt' capturado y botones mostrados");
+        });
+
+        async function triggerInstall() {
+            if (!deferredPrompt) return;
+            // Mostrar el prompt
+            deferredPrompt.prompt();
+            // Esperar a la respuesta del usuario
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            // Ya no podemos usar el evento, así que lo limpiamos
+            deferredPrompt = null;
+            // Ocultar botones
+            const btnLogin = document.getElementById('btnManualInstallLogin');
+            const btnHeader = document.getElementById('btnManualInstallHeader');
+            if (btnLogin) btnLogin.style.display = 'none';
+            if (btnHeader) btnHeader.style.display = 'none';
+        }
+
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('Aplicación instalada correctamente');
+            alert("¡Aplicación instalada! Ahora puedes abrirla desde tu pantalla de inicio.");
+        });
+
+        function checkDiagnostics() {
+            const isSecure = window.isSecureContext;
+            const hasSW = "serviceWorker" in navigator;
+            
+            console.log(`Diagnostics: Secure=${isSecure}, SW=${hasSW}`);
+            
+            const dbg = document.getElementById('debugOutput');
+            const secureBanner = document.getElementById('secureBanner');
+            if (secureBanner) {
+                if (!isSecure) {
+                    secureBanner.style.display = 'block';
+                    secureBanner.innerHTML = '<strong>Conexión HTTP detectada.</strong> En este modo el navegador puede bloquear PWA, service worker y notificaciones push en segundo plano.';
+                } else {
+                    secureBanner.style.display = 'none';
+                }
+            }
+            // Si hay Red X en el candado, el navegador a veces dice isSecure=true pero bloquea todo.
+            // Siempre mostramos un pequeño aviso recordatorio si no hay prompt tras 5 seg.
+        }
+
+
+        async function forceRefresh() {
+            await loadData();
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch('/api/mobile/data?t=' + new Date().getTime());
+                if (!res.ok) throw new Error("Status: " + res.status);
+
+                const data = await res.json();
+
+                // Debug Output (Solo actualizar la primera línea de estado)
+                const dbg = document.getElementById('debugOutput');
+                if (dbg) {
+                    const statusLine = `OK ${new Date().toLocaleTimeString()} | Techs: ${(data.technicians ? data.technicians.length : 0)}`;
+                    // Si ya hay logs debajo, solo actualizamos la primera parte
+                    if (dbg.innerHTML.includes('<br>')) {
+                        const parts = dbg.innerHTML.split('<br>');
+                        parts[0] = statusLine;
+                        dbg.innerHTML = parts.join('<br>');
+                    } else {
+                        dbg.textContent = statusLine;
+                    }
+                }
+
+                if (data.error) throw new Error(data.error);
+
+                // Assign Globals
+                allTechs = data.technicians || [];
+                allUnassigned = data.unassigned || [];
+                allActive = data.active_tasks || [];
+                allMyHistory = data.my_history || [];
+                allPCs = data.pcs || [];
+                allRequesters = data.requesters || [];
+
+                const poolCard = document.getElementById('mobilePoolCard');
+                const notifCard = document.getElementById('mobileNotifCard');
+                const sessionCard = document.getElementById('mobileSessionCard');
+                if (poolCard) poolCard.textContent = String(allUnassigned.length || 0);
+                if (notifCard) notifCard.textContent = String(unreadNotifCount || 0);
+                if (sessionCard) sessionCard.textContent = currentUser || preferredTechnician || 'Sin iniciar';
+
+                // Sound & Vibration Alert on new unassigned tasks
+                if (allUnassigned) {
+                    const currentIds = new Set(allUnassigned.map(t => t.id));
+                    const newTasks = [...currentIds].filter(id => !lastTaskIds.has(id));
+
+                    if (newTasks.length > 0) {
+                        if (lastTaskIds.size > 0) { // No sonar en la carga inicial
+                            playBeep();
+                            // Vibración: patrón doble (200ms ON, 100ms OFF, 200ms ON)
+                            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                        }
+                    }
+
+                    // Actualizar badge visual Bolsa
+                    const cnt = allUnassigned.length;
+                    const badge = document.getElementById('navPoolCount');
+                    if (badge) {
+                        badge.textContent = cnt > 0 ? cnt : '';
+                        badge.style.display = cnt > 0 ? 'inline-block' : 'none';
+                    }
+
+                    lastTaskIds = currentIds;
+                }
+
+                // Background notification check (Avisos en tiempo real)
+                if (!isOperator) try {
+                    const nRes = await fetch('/api/mobile/notifications?t=' + Date.now());
+                    const nData = await nRes.json();
+                    if (Array.isArray(nData) && nData.length > 0) {
+                        const latestId = nData[0].id;
+                        if (latestId > lastNotifId) {
+                            const newCount = nData.filter(n => n.id > lastNotifId).length;
+                            if (lastNotifId > 0) { // No alertar en la carga inicial
+                                // Sonido y Vibración para aviso
+                                if (soundEnabled) playBeep(0.3);
+                                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                                
+                                // Mostrar badge en pestaña Avisos
+                                unreadNotifCount += newCount;
+                                const notifBadge = document.getElementById('navNotifCount');
+                                if (notifBadge) {
+                                    notifBadge.textContent = unreadNotifCount;
+                                    notifBadge.style.display = 'inline-block';
+                                }
+                                const notifCard = document.getElementById('mobileNotifCard');
+                                if (notifCard) notifCard.textContent = String(unreadNotifCount);
+                                // Mostrar toast flotante
+                                const toastEl = document.getElementById('notifToast');
+                                const toastText = document.getElementById('notifToastText');
+                                if (toastEl && toastText) {
+                                    toastText.textContent = nData[0].title + ': ' + nData[0].body.substring(0, 60);
+                                    toastEl.style.display = 'block';
+                                    setTimeout(() => { toastEl.style.display = 'none'; }, 8000);
+                                }
+                                // Si el tab notifs está abierto, refrescar la lista
+                                if (currentTab === 'notifs') loadNotifications();
+                            }
+                            lastNotifId = latestId;
+                            localStorage.setItem('lastNotifId', lastNotifId);
+                        }
+                    }
+                } catch(eNotif) { /* silencioso, no interrumpir el poll principal */ }
+
+                populatePCSelect(allPCs);
+                populateRequesters(allRequesters);
+                renderLists();
+
+                // Poll
+                if (pollTimer) clearTimeout(pollTimer);
+                pollTimer = setTimeout(loadData, 10000);
+
+            } catch (e) {
+                console.error("Load Error:", e);
+                document.getElementById('debugPanel').style.display = 'block';
+                document.getElementById('debugOutput').textContent = "ERROR: " + e.message;
+            }
+        }
+
+        // --- RENDERERS ---
+        function populatePCSelect(pcs) {
+            const sel = document.getElementById('taskPC');
+            const selComplete = document.getElementById('completeTaskPC');
+            const currentPC = sel.value;
+
+            // Reset
+            sel.innerHTML = '<option value="">-- Sin PC específica --</option>';
+            selComplete.innerHTML = '<option value="">-- Seleccionar PC --</option>';
+
+            pcs.forEach(pc => {
+                const opt = document.createElement('option');
+                opt.value = pc.name;
+                opt.textContent = `${pc.name} | ${pc.user} (${pc.area})`;
+                sel.appendChild(opt);
+
+                const opt2 = document.createElement('option');
+                opt2.value = pc.name;
+                opt2.textContent = `${pc.name} | ${pc.user} (${pc.area})`;
+                selComplete.appendChild(opt2);
+            });
+
+            if (currentPC) sel.value = currentPC;
+        }
+
+        function renderLists() {
+            if (!currentUser) return;
+            const normUser = currentUser.trim().toLowerCase();
+
+            // My Tasks (Pending)
+            const myTasks = allActive.filter(t => t.assigned_to && t.assigned_to.trim().toLowerCase() === normUser);
+            const myContainer = document.getElementById('myTasksList');
+            if (myTasks.length === 0) {
+                myContainer.innerHTML = `<div class="text-center text-muted py-4"><i class="bi bi-emoji-smile display-6 opacity-50"></i><br><small>Sin tareas pendientes.</small></div>`;
+            } else {
+                myContainer.innerHTML = myTasks.map(t => createTaskCard(t, 'mine')).join('');
+            }
+
+            // My History
+            const historyContainer = document.getElementById('myHistoryList');
+            if (allMyHistory.length === 0) {
+                historyContainer.innerHTML = `<div class="text-center text-muted py-3 small opacity-50">Sin historial registrado.</div>`;
+            } else {
+                historyContainer.innerHTML = allMyHistory.map(t => createTaskCard(t, 'done')).join('');
+            }
+
+            // Pool
+            const poolTasks = allUnassigned.filter(t => !t.assigned_to);
+            const poolContainer = document.getElementById('poolList');
+            if (poolTasks.length === 0) {
+                poolContainer.innerHTML = `<div class="text-center text-muted py-5"><i class="bi bi-check-circle display-4 opacity-50"></i><br>Nada en la bolsa.</div>`;
+            } else {
+                poolContainer.innerHTML = poolTasks.map(t => createTaskCard(t, 'pool')).join('');
+            }
+        }
+
+        function createTaskCard(task, type) {
+            const fueroText = task.fuero || task.pc_fuero;
+            const fueroBadge = fueroText ? `<span class="badge bg-info text-dark me-1">${fueroText}</span>` : '';
+            const pcBadge = task.pc_name ? `<span class="badge bg-secondary me-1">${task.pc_name}</span>` : '';
+            
+            const dateSource = task.completed_at || task.created_at;
+            const date = new Date(dateSource.replace(' ', 'T'));
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const dateStr = date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+
+            let btn = '';
+            let style = '';
+            if (type === 'mine') {
+                btn = `<button class="btn btn-done btn-action" onclick="completeTask(${task.id})"><i class="bi bi-check-lg me-1"></i>Marcar como hecha</button>`;
+            } else if (type === 'pool') {
+                btn = `<button class="btn btn-claim btn-action" onclick="claimTask(${task.id})"><i class="bi bi-hand-index-thumb me-1"></i>Tomar esta tarea</button>`;
+            } else if (type === 'done') {
+                style = 'opacity: 0.75; border-left: 4px solid #10b981;';
+                btn = `<div class="text-success small fw-bold"><i class="bi bi-check-all me-1"></i>Finalizada ${timeStr}</div>`;
+            }
+
+            return `
+            <div class="task-card ${type === 'mine' ? 'priority' : ''}" style="${style}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="task-badges">${pcBadge}${fueroBadge}</div>
+                    <span class="task-time">${dateStr} ${timeStr}</span>
+                </div>
+                <div class="task-desc">${task.descripcion}</div>
+                <div class="task-meta">
+                    <span class="meta-badge"><i class="bi bi-person"></i>${task.solicitante || 'Sistema'}</span>
+                    ${task.assigned_to ? `<span class="meta-badge"><i class="bi bi-person-badge"></i>${task.assigned_to}</span>` : ''}
+                </div>
+                ${btn}
+            </div>
+            `;
+        }
+
+        function populateRequesters(items) {
+            const datalist = document.getElementById('mobileRequestersList');
+            if (!datalist) return;
+            datalist.innerHTML = '';
+            const seen = new Set();
+            (items || []).forEach(item => {
+                const value = (item.real_name || item.username || '').trim();
+                if (!value) return;
+                const key = value.toLowerCase();
+                if (seen.has(key)) return;
+                seen.add(key);
+                const opt = document.createElement('option');
+                opt.value = value;
+                datalist.appendChild(opt);
+            });
+        }
+
+        // --- APP FLOW ---
+        function showLogin() {
+            const login = document.getElementById('loginScreen');
+            const header = document.getElementById('appHeader');
+            const content = document.getElementById('mainContent');
+            const nav = document.getElementById('bottomNav');
+            const fab = document.getElementById('fabAdd');
+
+            if (login) login.style.display = 'flex';
+            if (header) header.style.display = 'none';
+            if (content) content.style.display = 'none';
+            if (nav) nav.style.display = 'none';
+            if (fab) fab.style.display = 'none';
+        }
+
+        function logout() {
+            if (confirm("¿Salir?")) {
+                currentUser = null;
+                window.location.href = '/logout';
+            }
+        }
+
+        function showApp() {
+            const login = document.getElementById('loginScreen');
+            const header = document.getElementById('appHeader');
+            const content = document.getElementById('mainContent');
+            const nav = document.getElementById('bottomNav');
+            const fab = document.getElementById('fabAdd');
+            const hName = document.getElementById('headerName');
+
+            if (login) login.style.display = 'none';
+            if (header) header.style.display = 'flex';
+            if (content) content.style.display = 'block';
+            if (nav) nav.style.display = 'flex';
+            if (fab) fab.style.display = 'flex';
+            
+            if (hName) hName.textContent = currentUser;
+            const sessionCard = document.getElementById('mobileSessionCard');
+            if (sessionCard) sessionCard.textContent = currentUser;
+            
+            renderLists();
+            // Intentar suscribir a notificaciones push al iniciar sesión
+            setTimeout(() => {
+                console.log("Iniciando suscripción FCM...");
+                subscribeToPush();
+            }, 3000);
+        }
+
+        function switchTab(tab) {
+            if (isOperator && tab === 'notifs') return;
+            currentTab = tab;
+            document.getElementById('tabMyTasks').style.display = tab === 'myTasks' ? 'block' : 'none';
+            document.getElementById('tabPool').style.display = tab === 'pool' ? 'block' : 'none';
+            const tabNotifs = document.getElementById('tabNotifs');
+            if (tabNotifs) tabNotifs.style.display = tab === 'notifs' ? 'block' : 'none';
+
+            const items = document.querySelectorAll('.nav-item');
+            if (items.length >= 3) {
+                items[0].classList.toggle('active', tab === 'myTasks');
+                items[1].classList.toggle('active', tab === 'pool');
+                items[2].classList.toggle('active', tab === 'notifs');
+            }
+            if (tab === 'notifs') {
+                // Limpiar badge de avisos no leídos
+                unreadNotifCount = 0;
+                const notifBadge = document.getElementById('navNotifCount');
+                if (notifBadge) notifBadge.style.display = 'none';
+                const notifCard = document.getElementById('mobileNotifCard');
+                if (notifCard) notifCard.textContent = '0';
+                loadNotifications();
+                startNotifRefresh();
+            } else {
+                stopNotifRefresh();
+            }
+        }
+
+        function openAvisosFromToast() {
+            if (isOperator) return;
+            document.getElementById('notifToast').style.display = 'none';
+            switchTab('notifs');
+        }
+
+        let notifRefreshInterval = null;
+        function startNotifRefresh() {
+            if (notifRefreshInterval) return;
+            console.log("Iniciando auto-refresco de avisos...");
+            notifRefreshInterval = setInterval(() => {
+                if (currentTab === 'notifs') {
+                    loadNotifications();
+                }
+            }, 30000); // 30 segundos
+        }
+
+        function stopNotifRefresh() {
+            if (notifRefreshInterval) {
+                console.log("Deteniendo auto-refresco de avisos.");
+                clearInterval(notifRefreshInterval);
+                notifRefreshInterval = null;
+            }
+        }
+
+        async function loadNotifications() {
+            if (isOperator) return;
+            const container = document.getElementById('notifsList');
+            if (!container) return;
+            try {
+                const res = await fetch('/api/mobile/notifications?t=' + Date.now());
+                const data = await res.json();
+                if (data.length === 0) {
+                    container.innerHTML = `<div class="empty-state"><i class="bi bi-chat-left"></i><p>No hay mensajes recientes.</p></div>`;
+                    return;
+                }
+                container.innerHTML = data.map(n => {
+                    // Simple markdown-like bold converter for *text*
+                    const formattedBody = n.body.replace(/\*(.*?)\*/g, '<b>$1</b>');
+                    return `
+                        <div class="task-card" style="border-left: 4px solid #ffd700;">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold" style="color:var(--mob-primary);font-size:0.85rem;">${n.title}</span>
+                                <span class="task-time">${formatDate(n.created_at)}</span>
+                            </div>
+                            <div class="small notif-body">${formattedBody}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = `<div class="text-danger p-3 small">Error al cargar avisos.</div>`;
+            }
+        }
+
+        function formatDate(str) {
+            if (!str) return "";
+            const d = new Date(str.replace(' ', 'T'));
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " " + d.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+        }
+
+        // --- ACTIONS ---
+        function openAddTask() {
+            document.getElementById('taskDesc').value = '';
+            document.getElementById('taskSolicitante').value = '';
+            document.getElementById('taskPC').value = '';
+            document.getElementById('taskDonenow').checked = false;
+            new bootstrap.Modal(document.getElementById('addTaskModal')).show();
+        }
+
+        async function submitTask() {
+            const desc = document.getElementById('taskDesc').value.trim();
+            const solicitante = document.getElementById('taskSolicitante').value.trim();
+            const pc = document.getElementById('taskPC').value;
+            const done = document.getElementById('taskDonenow').checked;
+
+            if (!desc) return alert("Falta descripción");
+            if (!solicitante) return alert("Falta solicitante");
+            if (done && !pc) return alert("Para finalizar ya, elige PC.");
+
+            // Obtener datos adicionales de la IA si existen
+            const modal = document.getElementById('addTaskModal');
+            const tecnico = modal.dataset.tecnico || "";
+            const esInfra = (pc === 'Infraestructura');
+
+            try {
+                const res = await fetch('/api/mobile/create_task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        descripcion: desc,
+                        solicitante: solicitante,
+                        pc_name: pc,
+                        is_done: done,
+                        es_infraestructura: esInfra,
+                        tecnico: tecnico
+                    })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+                    // Limpiar dataset
+                    modal.dataset.tecnico = "";
+                    loadData();
+                    if (done) alert("Guardado y finalizado.");
+                } else {
+                    alert("Error: " + json.message);
+                }
+            } catch (e) { alert("Error red"); }
+        }
+
+        async function claimTask(id) {
+            if (!confirm("¿Tomar tarea?")) return;
+            await updateTask(id, 'claim');
+            switchTab('myTasks');
+        }
+
+        let taskToCompleteId = null;
+        async function completeTask(id) {
+            const t = allActive.find(k => k.id === id);
+            if (!t) return;
+            if (!t.pc_name) {
+                taskToCompleteId = id;
+                document.getElementById('completeTaskPC').value = '';
+                new bootstrap.Modal(document.getElementById('completeTaskModal')).show();
+            } else {
+                if (confirm("¿Finalizar?")) await updateTask(id, 'complete');
+            }
+        }
+
+        async function confirmCompleteWithPC() {
+            const pc = document.getElementById('completeTaskPC').value;
+            if (!pc) return alert("Elige PC");
+            await updateTask(taskToCompleteId, 'complete', pc);
+            bootstrap.Modal.getInstance(document.getElementById('completeTaskModal')).hide();
+        }
+
+        async function updateTask(id, action, pcName = null) {
+            try {
+                const payload = { id: id, action: action };
+                if (pcName) payload.pc_name = pcName;
+
+                const res = await fetch('/api/mobile/update_task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    await loadData();
+                } else alert("Error: " + json.message);
+            } catch (e) { alert("Error red"); }
+        }
+
+        // --- AUDIO ---
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('soundEnabled', soundEnabled);
+            updateSoundUI();
+            if (soundEnabled) playBeep(0.01);
+        }
+
+        function updateSoundUI() {
+            const btn = document.getElementById('btnSound');
+            const icon = document.getElementById('iconSound');
+            if (!btn || !icon) return;
+            
+            if (soundEnabled) {
+                btn.classList.add('btn-warning');
+                btn.classList.remove('btn-outline-secondary');
+                icon.classList.remove('bi-volume-mute-fill');
+                icon.classList.add('bi-volume-up-fill');
+            } else {
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-outline-secondary');
+                icon.classList.add('bi-volume-mute-fill');
+                icon.classList.remove('bi-volume-up-fill');
+            }
+        }
+
+        function tryTestSound() {
+            unlockAudio();
+            setTimeout(() => {
+                const oldState = soundEnabled;
+                soundEnabled = true;
+                playBeep(0.5);
+                soundEnabled = oldState;
+                alert("Se intentó reproducir el sonido de prueba.\n\nSi no escuchaste nada:\n1. Revisa el volumen multimedia del celular.\n2. Asegúrate de haber tocado la pantalla antes de esta prueba.");
+            }, 100);
+        }
+
+        function playBeep(dur = 0.2) {
+            const dbg = document.getElementById('debugOutput');
+            if (dbg) dbg.innerHTML += `<br><span class="text-info">[SOUND] Triggered (Enabled: ${soundEnabled})</span>`;
+            
+            if (!soundEnabled) return;
+            
+            // 1. Intentar con Web Audio API (Pitido Sintético)
+            try {
+                if (!audioCtx) initAudio();
+                
+                // Forzar resume si está suspendido (debería llamarse desde evento)
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                if (audioCtx && audioCtx.state === 'running') {
+                    const pulse = (freq, start, duration, vol) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(freq, start);
+                        gain.gain.setValueAtTime(0, start);
+                        gain.gain.linearRampToValueAtTime(vol, start + 0.01);
+                        gain.gain.linearRampToValueAtTime(0, start + duration);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(start);
+                        osc.stop(start + duration);
+                    };
+
+                    const now = audioCtx.currentTime;
+                    if (dur < 0.1) {
+                        pulse(880, now, 0.05, 0.2); // Bip corto
+                    } else {
+                        // Melodía Ascendente 'Premium' (Re-Fa#-La)
+                        pulse(587.33, now, 0.1, 0.3);        // D5
+                        pulse(739.99, now + 0.12, 0.1, 0.3);  // F#5
+                        pulse(880.00, now + 0.24, 0.2, 0.3);  // A5
+                    }
+                    console.log("AudioContext played successfully");
+                    return; 
+                } else {
+                    console.warn("AudioContext NOT running (state: " + (audioCtx ? audioCtx.state : 'null') + ")");
+                }
+            } catch (e) { console.warn("Web Audio fail:", e); }
+
+            // 2. Fallback: HTML5 Audio
+            try {
+                if (audioFallback) {
+                    console.log("Attempting HTML5 Audio fallback...");
+                    audioFallback.volume = 0.8;
+                    audioFallback.currentTime = 0;
+                    const p = audioFallback.play();
+                    if (p) p.catch(e => console.error("Fallback play prevented:", e));
+                }
+            } catch (e) { console.error("All audio failed:", e); }
+        }
+
+        // --- VOICE INPUT ---
+        function startVoiceInput() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("Tu navegador no soporta reconocimiento de voz (Prueba Chrome/Edge).");
+                return;
+            }
+
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            // Aumentar tiempo: continuous=true mantiene el mic abierto un poco más, 
+            // aunque para comandos cortos false suele ser mejor, el usuario pide mas tiempo.
+            // Pero API web suele cortar igual en silencio. Vamos a intentar manejarlo por UI.
+            recognition.continuous = false;
+
+            // Visual feedback
+            const btn = document.querySelector('button[onclick="startVoiceInput()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-mic-fill text-danger"></i> Escuchando... (Hable ahora)';
+            btn.disabled = true;
+
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const speechResult = event.results[0][0].transcript;
+                console.log("Escuchado: " + speechResult);
+                parseVoiceInput(speechResult);
+            };
+
+            recognition.onspeechend = () => {
+                recognition.stop();
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Error Speech: " + event.error);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                if (event.error === 'no-speech') {
+                    // Ignorar silencio
+                } else if (event.error === 'not-allowed') {
+                    alert('🚫 Acceso denegado al micrófono.\n\nNOTA: Si usa Chrome en Android por IP (no localhost), Google bloquea el micrófono por seguridad (requiere HTTPS).\n\nSolución rápida: Vaya a chrome://flags, busque "Insecure origins treated as secure" y agregue esta IP:port.');
+                } else {
+                    alert('Error reconocimiento: ' + event.error);
+                }
+            };
+        }
+
+        async function parseVoiceInput(text) {
+            // Reemplazo de Regex local por llamada a API con IA (Gemini)
+            const startTime = Date.now();
+            const btn = document.querySelector('button[onclick="startVoiceInput()"]');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando IA...';
+            btn.disabled = true;
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+
+                const res = await fetch('/api/mobile/parse_voice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!res.ok) throw new Error("Error API " + res.status);
+                const json = await res.json();
+
+                if (json.status === 'success') {
+                    const data = json.data;
+                    document.getElementById('taskDesc').value = capitalize(data.descripcion || text);
+                    document.getElementById('taskSolicitante').value = capitalize(data.solicitante || "");
+
+                    // Si es tarea de infraestructura, pre-seleccionar "Infraestructura"
+                    if (data.es_infraestructura) {
+                        const pcSelect = document.getElementById('taskPC');
+                        // Buscar la opción "Infraestructura" en el dropdown
+                        for (let i = 0; i < pcSelect.options.length; i++) {
+                            if (pcSelect.options[i].value === 'Infraestructura') {
+                                pcSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Guardar el técnico ejecutor para enviarlo al backend
+                    if (data.tecnico) {
+                        console.log("Técnico detectado:", data.tecnico);
+                        document.getElementById('addTaskModal').dataset.tecnico = data.tecnico;
+                    }
+                } else {
+                    // Fallback
+                    document.getElementById('taskDesc').value = capitalize(text);
+                }
+
+            } catch (e) {
+                const elapsed = Math.round((Date.now() - startTime) / 1000);
+                console.error("AI Error (" + elapsed + "s):", e);
+                // Fallback silencioso a poner todo en descripción
+                document.getElementById('taskDesc').value = capitalize(text);
+                alert("Error conectando con IA (" + elapsed + "s): " + (e.message || e) + ".\nSe copió todo el texto.");
+            } finally {
+                // Restaurar botón
+                btn.innerHTML = '<i class="bi bi-mic-fill"></i> Hablar para llenar';
+                btn.disabled = false;
+            }
+        }
+
+        function capitalize(s) {
+            return s && s[0].toUpperCase() + s.slice(1);
+        }
+
+        // --- FIREBASE PUSH SUBSCRIPTION ---
+        async function subscribeToPush() {
+            const dbg = document.getElementById('debugOutput');
+            if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Iniciando... (User: ${currentUser})</span>`;
+
+            if (!currentUser) return;
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                if (dbg) dbg.innerHTML += `<br><span class="text-danger">[FCM] Push no soportado</span>`;
+                console.log('[FCM] Push not supported in this browser.');
+                return;
+            }
+            try {
+                // Pedir permiso de notificaciones
+                if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Pidiendo permiso...</span>`;
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    if (dbg) dbg.innerHTML += `<br><span class="text-warning">[FCM] Permiso: ${permission}</span>`;
+                    console.log('[FCM] Permiso de notificaciones denegado.');
+                    return;
+                }
+
+                // Esperar a que el SW esté listo
+                if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Esperando SW...</span>`;
+                const swReg = await navigator.serviceWorker.ready;
+                if (dbg) dbg.innerHTML += `<br><span class="text-success">[FCM] SW Listo!</span>`;
+
+                // Obtener token FCM
+                const messaging = firebase.messaging();
+                const token = await messaging.getToken({
+                    vapidKey: VAPID_PUBLIC_KEY,
+                    serviceWorkerRegistration: swReg
+                });
+
+                if (!token) {
+                    console.warn('[FCM] No se obtuvo token.');
+                    return;
+                }
+
+                console.log('[FCM] Token obtenido:', token.substring(0, 20) + '...');
+                document.getElementById('debugOutput').innerHTML += `<br><span class="text-success">[FCM] Token OK: ${token.substring(0,10)}...</span>`;
+
+                // Enviar token al servidor
+                const res = await fetch('/api/mobile/subscribe_push', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    console.log('[FCM] Token registrado en servidor ✅');
+                } else {
+                    console.error('[FCM] Error registrando token:', json.message);
+                }
+
+                // Manejar mensajes en foreground (página abierta)
+                messaging.onMessage((payload) => {
+                    console.log('[FCM] Mensaje en foreground:', payload);
+                    const toastEl = document.getElementById('notifToast');
+                    const toastText = document.getElementById('notifToastText');
+                    if (toastEl && toastText && payload.notification) {
+                        toastText.textContent = payload.notification.title + ': ' + (payload.notification.body || '').substring(0, 60);
+                        toastEl.style.display = 'block';
+                        if (soundEnabled) playBeep(0.5);
+                        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                        setTimeout(() => { toastEl.style.display = 'none'; }, 8000);
+                    }
+                });
+
+            } catch (e) {
+                console.error('[FCM] Error en suscripción push:', e);
+                document.getElementById('debugOutput').innerHTML += `<br><span class="text-danger">[FCM] Error: ${e.message || e}</span>`;
+            }
+        }
+
+    </script>
+
+    <!-- Firebase SDK (debe ir DESPUÉS del script principal) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+    <script>
+        // Inicializar Firebase en la página principal
+        firebase.initializeApp({
+            apiKey: "AIzaSyC6PcD59xCNoqodWc3j3Xx-RkYaWRbUwHg",
+            authDomain: "inventario-gold.firebaseapp.com",
+            projectId: "inventario-gold",
+            storageBucket: "inventario-gold.firebasestorage.app",
+            messagingSenderId: "155956386088",
+            appId: "1:155956386088:web:0aac3dcc29079442ff981d"
+        });
+    </script>
+</body>
+
+</html>

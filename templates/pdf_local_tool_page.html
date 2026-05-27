@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor PDF Local</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pdf_local_tool.css') }}">
+</head>
+<body class="pdf-tool-page">
+    <div class="pdf-tool-shell">
+        <div class="pdf-tool-header">
+            <div class="pdf-tool-title">
+                <i class="bi bi-file-earmark-pdf-fill" style="font-size:2rem;"></i>
+                <div>
+                    <h1>Editor PDF Local</h1>
+                    <p class="pdf-tool-subtitle">Herramienta única para editar, girar, comprimir y aplicar OCR dentro de la intranet.</p>
+                </div>
+            </div>
+            <a class="pdf-tool-close" href="{{ url_for('auth.login') }}">
+                <i class="bi bi-x-lg"></i> Cerrar
+            </a>
+        </div>
+
+        <div class="pdf-tool-panel">
+            <div class="pdf-tool-toolbar">
+                <input type="file" id="pdfInput" accept="application/pdf" style="display:none;">
+                <button id="btnOpen" type="button" class="pdf-tool-btn pdf-tool-btn--open">
+                    <i class="bi bi-folder2-open"></i> Abrir PDF
+                </button>
+                <button id="btnSave" type="button" class="pdf-tool-btn pdf-tool-btn--save" style="display:none;">
+                    <i class="bi bi-save"></i> Guardar Cambios
+                </button>
+                <button id="btnOCR" type="button" class="pdf-tool-btn pdf-tool-btn--ocr" style="display:none;">
+                    <i class="bi bi-text-paragraph"></i> OCR
+                </button>
+                <div id="splitControls" class="pdf-tool-input-group" style="display:none;">
+                    <input type="number" id="maxMbInput" value="5" min="1" max="50" title="Tamaño máximo por parte (MB)">
+                    <span><strong>MB max</strong></span>
+                    <button id="btnSplit" type="button" class="pdf-tool-btn pdf-tool-btn--split">
+                        <i class="bi bi-scissors"></i> Dividir
+                    </button>
+                </div>
+                <div id="compressControls" class="pdf-tool-input-group" style="display:none;">
+                    <span><strong>Comprimir:</strong></span>
+                    <select id="compressLevelSelect" class="pdf-tool-select" title="Nivel de compresión" style="margin: 0 8px; padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.9rem;">
+                        <option value="auto">Automático</option>
+                        <option value="leve" selected>Leve (Alta Calidad)</option>
+                        <option value="medio">Moderado</option>
+                        <option value="agresivo">Agresivo (Baja Calidad)</option>
+                    </select>
+                    <button id="btnCompress" type="button" class="pdf-tool-btn pdf-tool-btn--raster" title="Convierte páginas a imagen para reducir tamaño.">
+                        <i class="bi bi-file-image"></i> Aplicar
+                    </button>
+                </div>
+                <span id="pdfInfo" class="pdf-tool-info"></span>
+            </div>
+
+            <div id="pdfPagesContainer" class="pdf-tool-pages"></div>
+
+            <div id="ocrPanel" class="pdf-tool-ocr">
+                <div class="pdf-tool-ocr-header">
+                    <strong>Texto extraído</strong>
+                    <span id="ocrStatus" class="pdf-tool-ocr-status"></span>
+                    <button id="btnCopyOCR" type="button" class="pdf-tool-btn pdf-tool-btn--copy" style="margin-left:auto;">
+                        <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                </div>
+                <textarea id="ocrText" readonly></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/pdfjs/pdf.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/pdf-lib/pdf-lib.min.js') }}"></script>
+    <script>
+        window.pdfLocalToolConfig = {
+            workerSrc: "{{ url_for('static', filename='vendor/pdfjs/pdf.worker.min.js') }}",
+            ocrEndpoint: "{{ url_for('auth.local_pdf_ocr') }}",
+            ocrStatusEndpointTemplate: "{{ url_for('auth.local_pdf_ocr_status', job_id='__JOB_ID__') }}"
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/pdf_local_tool.js') }}"></script>
+</body>
+</html>
