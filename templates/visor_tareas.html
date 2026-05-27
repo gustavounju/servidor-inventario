@@ -441,7 +441,18 @@
                                     </div>
                                 </td>
                                 <td class="desc-cell">
-                                    <div>{{ task.descripcion }}</div>
+                                    \1
+                                {% if task.acciones %}
+                                <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
+                                    {% for accion in task.acciones %}
+                                    <div class="small" style="color: #64748b; margin-bottom: 2px;">
+                                        <i class="bi bi-chat-text me-1"></i>
+                                        <strong style="color: #334155;">{{ accion.technician_name }}:</strong> {{ accion.action_text }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+
                                     {% if task.solucion %}
                                     <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #cbd5e1;">
                                         <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
@@ -507,7 +518,18 @@
                                 </div>
                             </td>
                             <td class="desc-cell">
-                                <div>{{ task.descripcion }}</div>
+                                \1
+                                {% if task.acciones %}
+                                <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
+                                    {% for accion in task.acciones %}
+                                    <div class="small" style="color: #64748b; margin-bottom: 2px;">
+                                        <i class="bi bi-chat-text me-1"></i>
+                                        <strong style="color: #334155;">{{ accion.technician_name }}:</strong> {{ accion.action_text }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+
 
                             </td>
                             <td>
@@ -543,7 +565,18 @@
                             <td style="width: 110px;" class="text-muted small">{{ task.created_at_fmt or '--:--' }}</td>
                             <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name }}</span></td>
                             <td class="desc-cell text-muted">
-                                <div>{{ task.descripcion }}</div>
+                                \1
+                                {% if task.acciones %}
+                                <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
+                                    {% for accion in task.acciones %}
+                                    <div class="small" style="color: #64748b; margin-bottom: 2px;">
+                                        <i class="bi bi-chat-text me-1"></i>
+                                        <strong style="color: #334155;">{{ accion.technician_name }}:</strong> {{ accion.action_text }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+
                                 {% if task.solucion %}
                                 <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #94a3b8;">
                                     <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}

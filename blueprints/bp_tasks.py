@@ -865,6 +865,23 @@ def report_tasks_completed_pdf():
     nombre_pc_sufijo = f"_{pc_name}" if pc_name else ""
     return send_file(output, mimetype="application/pdf", as_attachment=True, download_name=f"Reporte_Tareas{nombre_pc_sufijo}_{fecha_filtro_str}.pdf")
 
+
+def _attach_task_actions_bulk(tasks, conn):
+    if not tasks:
+        return tasks
+    task_ids = [t['id'] for t in tasks]
+    placeholders = ', '.join(['%s'] * len(task_ids))
+    actions = conn.execute(f"SELECT * FROM task_actions WHERE task_id IN ({placeholders}) ORDER BY created_at ASC", tuple(task_ids)).fetchall()
+    
+    from collections import defaultdict
+    actions_map = defaultdict(list)
+    for a in actions:
+        actions_map[a['task_id']].append(a)
+        
+    for t in tasks:
+        t['acciones'] = actions_map.get(t['id'], [])
+    return tasks
+
 @bp_tasks.route("/visor")
 def visor():
     """Vista de 'visor' para mostrar trabajos con filtros."""
@@ -892,7 +909,7 @@ def visor():
                     params.extend([tech_filtro, tech_filtro])
                 
                 base_sql += " ORDER BY t.created_at DESC LIMIT 200"
-                tareas = _attach_task_user_matches(conn.execute(base_sql, params).fetchall(), conn)
+                tareas = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute(base_sql, params).fetchall(), conn), conn)
                 
                 return render_template("visor_tareas.html", 
                                        tareas_hoy=[_decorate_visor_task(t) for t in tareas], 
@@ -904,24 +921,24 @@ def visor():
                                        tech_filtro=tech_filtro,
                                        is_filtered=True)
             else:
-                tareas_hoy = _attach_task_user_matches(conn.execute("""
+                tareas_hoy = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
                     ORDER BY t.created_at DESC
-                """).fetchall(), conn)
-                tareas_anteriores = _attach_task_user_matches(conn.execute("""
+                """).fetchall(), conn), conn)
+                tareas_anteriores = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE DATE(t.created_at) < CURDATE() AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     ORDER BY t.created_at DESC LIMIT 50
-                """).fetchall(), conn)
-                tareas_pendientes = _attach_task_user_matches(conn.execute("""
+                """).fetchall(), conn), conn)
+                tareas_pendientes = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE t.estado != 'Hecha'
                     ORDER BY t.created_at DESC
-                """).fetchall(), conn)
+                """).fetchall(), conn), conn)
                 return render_template("visor_tareas.html", 
                                        tareas_hoy=[_decorate_visor_task(t) for t in tareas_hoy], 
                                        tareas_anteriores=[_decorate_visor_task(t) for t in tareas_anteriores],
