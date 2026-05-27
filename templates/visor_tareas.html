@@ -447,30 +447,6 @@
                                         <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
                                     </div>
                                     {% endif %}
-                                    {% if task.has_user_match %}
-                                    <div class="ad-match-box">
-                                        <div class="ad-match-title"><i class="bi bi-diagram-3"></i>{% if task.matched_pc_count == 1 %}Coincidencia AD detectada{% else %}Coincidencias AD ({{ task.matched_pc_count }}){% endif %}</div>
-                                        <div class="ad-match-list">
-                                            {% for pc_match in task.matched_pcs %}
-                                            <div class="d-flex align-items-center gap-1">
-                                                <a class="ad-match-chip{% if pc_match.is_current_pc %} ad-match-chip-current{% endif %}" href="/pc/{{ pc_match.pc_name | urlencode }}">
-                                                    {{ pc_match.pc_name }}{% if pc_match.fuero %} · {{ pc_match.fuero }}{% endif %}{% if pc_match.is_current_pc %} <span>actual</span>{% endif %}
-                                                </a>
-                                                {% if not pc_match.is_current_pc %}
-                                                <span class="ad-match-assign-btn" onclick="quickAssign({{ task.id }}, '{{ pc_match.pc_name }}')" title="Asignar tarea a esta PC">
-                                                    <i class="bi bi-plus"></i>
-                                                </span>
-                                                {% endif %}
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                    {% else %}
-                                    <div class="ad-match-box ad-match-box-empty">
-                                        <div class="ad-match-title"><i class="bi bi-person-x"></i>Sin coincidencia AD</div>
-                                        <div class="ad-match-note">No se encontró una PC activa vinculada al solicitante.</div>
-                                    </div>
-                                    {% endif %}
                                 </td>
                                 <td>
                                     {% if task.assigned_to or task.completed_by %}
@@ -532,30 +508,7 @@
                             </td>
                             <td class="desc-cell">
                                 <div>{{ task.descripcion }}</div>
-                                {% if task.has_user_match %}
-                                <div class="ad-match-box">
-                                    <div class="ad-match-title"><i class="bi bi-diagram-3"></i>{% if task.matched_pc_count == 1 %}Coincidencia AD detectada{% else %}Coincidencias AD ({{ task.matched_pc_count }}){% endif %}</div>
-                                    <div class="ad-match-list">
-                                        {% for pc_match in task.matched_pcs %}
-                                        <div class="d-flex align-items-center gap-1">
-                                            <a class="ad-match-chip{% if pc_match.is_current_pc %} ad-match-chip-current{% endif %}" href="/pc/{{ pc_match.pc_name | urlencode }}">
-                                                {{ pc_match.pc_name }}{% if pc_match.fuero %} · {{ pc_match.fuero }}{% endif %}{% if pc_match.is_current_pc %} <span>actual</span>{% endif %}
-                                            </a>
-                                            {% if not pc_match.is_current_pc %}
-                                            <span class="ad-match-assign-btn" onclick="quickAssign({{ task.id }}, '{{ pc_match.pc_name }}')" title="Asignar tarea a esta PC">
-                                                <i class="bi bi-plus"></i>
-                                            </span>
-                                            {% endif %}
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% else %}
-                                <div class="ad-match-box ad-match-box-empty">
-                                    <div class="ad-match-title"><i class="bi bi-person-x"></i>Sin coincidencia AD</div>
-                                    <div class="ad-match-note">No se encontró una PC activa vinculada al solicitante.</div>
-                                </div>
-                                {% endif %}
+
                             </td>
                             <td>
                                 {% if task.assigned_to %}
@@ -596,23 +549,7 @@
                                     <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
                                 </div>
                                 {% endif %}
-                                {% if task.has_user_match %}
-                                <div class="ad-match-box">
-                                    <div class="ad-match-title"><i class="bi bi-diagram-3"></i>{% if task.matched_pc_count == 1 %}Coincidencia AD detectada{% else %}Coincidencias AD ({{ task.matched_pc_count }}){% endif %}</div>
-                                    <div class="ad-match-list">
-                                        {% for pc_match in task.matched_pcs %}
-                                        <a class="ad-match-chip{% if pc_match.is_current_pc %} ad-match-chip-current{% endif %}" href="/pc/{{ pc_match.pc_name | urlencode }}">
-                                            {{ pc_match.pc_name }}{% if pc_match.fuero %} · {{ pc_match.fuero }}{% endif %}{% if pc_match.is_current_pc %} <span>actual</span>{% endif %}
-                                        </a>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% else %}
-                                <div class="ad-match-box ad-match-box-empty">
-                                    <div class="ad-match-title"><i class="bi bi-person-x"></i>Sin coincidencia AD</div>
-                                    <div class="ad-match-note">No se encontró una PC activa vinculada al solicitante.</div>
-                                </div>
-                                {% endif %}
+
                             </td>
                             <td style="width: 130px;">
                                 <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
@@ -723,38 +660,7 @@
         }
 
         function renderAdMatch(task) {
-            if (task.has_user_match && Array.isArray(task.matched_pcs) && task.matched_pcs.length) {
-                const title = task.matched_pc_count === 1
-                    ? 'Coincidencia AD detectada'
-                    : `Coincidencias AD (${task.matched_pc_count})`;
-                const chips = task.matched_pcs.map(pc => {
-                    const currentClass = pc.is_current_pc ? ' ad-match-chip-current' : '';
-                    const label = pc.fuero ? `${pc.pc_name} · ${pc.fuero}` : pc.pc_name;
-                    const currentLabel = pc.is_current_pc ? '<span>actual</span>' : '';
-                    const assignBtn = !pc.is_current_pc 
-                        ? `<span class="ad-match-assign-btn" onclick="quickAssign(${task.id}, '${pc.pc_name}')" title="Asignar tarea a esta PC"><i class="bi bi-plus"></i></span>`
-                        : '';
-                    return `
-                        <div class="d-flex align-items-center gap-1">
-                            <a class="ad-match-chip${currentClass}" href="/pc/${encodeURIComponent(pc.pc_name)}">${escapeHtml(label)}${currentLabel}</a>
-                            ${assignBtn}
-                        </div>
-                    `;
-                }).join('');
-                return `
-                    <div class="ad-match-box">
-                        <div class="ad-match-title"><i class="bi bi-diagram-3"></i>${title}</div>
-                        <div class="ad-match-list">${chips}</div>
-                    </div>
-                `;
-            }
-
-            return `
-                <div class="ad-match-box ad-match-box-empty">
-                    <div class="ad-match-title"><i class="bi bi-person-x"></i>Sin coincidencia AD</div>
-                    <div class="ad-match-note">No se encontró una PC activa vinculada al solicitante.</div>
-                </div>
-            `;
+            return '';
         }
 
         function renderHoy(tasks) {
