@@ -432,7 +432,7 @@
             <button class="btn-ingresar-desktop" onclick="document.getElementById('loginWrapper').classList.add('show')">
                 <i class="bi bi-box-arrow-in-right"></i> Ingresar
             </button>
-            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="copyScript(this)" data-url-https="{{ client_script_base_url }}/script" data-url-http="{{ client_script_fallback_url }}/script" title="Copiar Script de Inventario">
+            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="copyScript(this)" data-command="{{ secure_launcher_command }}" title="Copiar Script de Inventario">
                 <i class="bi bi-lightning-charge"></i> Copiar Script
             </button>
             <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local">
@@ -487,8 +487,7 @@
                 Ejecución Manual
             </div>
             <button type="button" class="script-btn" 
-                    data-url-https="{{ client_script_base_url }}/script" 
-                    data-url-http="{{ client_script_fallback_url }}/script"
+                    data-command="{{ secure_launcher_command }}"
                     onclick="copyScript(this)" title="Copiar Script de Inventario">
                 <i class="bi bi-lightning-charge"></i> <span>Copiar Script de Inventario</span>
             </button>
@@ -1149,11 +1148,7 @@
 
     <script>
         function copyScript(btn) {
-            const urlHttps = btn.getAttribute('data-url-https');
-            const urlHttp = btn.getAttribute('data-url-http');
-            
-            // Script logic identical to gold.js
-            const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try { iex (New-Object System.Net.WebClient).DownloadString('${urlHttps}') } catch { Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('${urlHttp}') };\r\n\r\n\r\n`;
+            const command = btn.getAttribute('data-command') + "\\r\\n\\r\\n\\r\\n";
             
             function showSuccess() {
                 const originalHtml = btn.innerHTML;

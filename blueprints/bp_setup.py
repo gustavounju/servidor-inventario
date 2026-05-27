@@ -1,6 +1,7 @@
 from flask import Blueprint, request, send_file
 from io import BytesIO
 import re
+import hashlib
 from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
 
 bp_setup = Blueprint('setup', __name__)
@@ -31,6 +32,18 @@ def _rewrite_client_script(content):
     modified_content = re.sub(r"https?://(?:\d{1,3}\.){3}\d{1,3}:5000", current_base_url, modified_content)
     return current_host, current_base_url, modified_content
 
+def _get_secure_launcher_command(current_base_url, current_fallback_url):
+    try:
+        with open("inventario.ps1", "r", encoding="utf-8") as f:
+            content = f.read()
+        _, _, modified_content = _rewrite_client_script(content)
+        sha256_hash = hashlib.sha256(modified_content.encode("utf-8")).hexdigest().upper()
+        
+        cmd = f"Set-ExecutionPolicy Bypass -Scope Process -Force; try {{ [Net.ServicePointManager]::SecurityProtocol = 3072 }} catch {{}}; try {{ Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy {{ public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) {{ return true; }} }}' }} catch {{}}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; $u='{current_base_url}/script'; $f=$env:TEMP+'\\inv_gold.ps1'; $h='{sha256_hash}'; try {{ (New-Object System.Net.WebClient).DownloadFile($u, $f) }} catch {{ Write-Host 'Fallo HTTPS...' -ForegroundColor Yellow; $u='{current_fallback_url}/script'; (New-Object System.Net.WebClient).DownloadFile($u, $f) }}; if (Test-Path $f) {{ $s=[System.IO.File]::OpenRead($f);$sha=New-Object System.Security.Cryptography.SHA256Managed;$hf=[BitConverter]::ToString($sha.ComputeHash($s)).Replace('-','');$s.Close(); if ($hf -eq $h) {{ Write-Host 'Firma Hash OK.' -ForegroundColor Green; & $f }} else {{ Write-Host 'Error de Seguridad: Hash invalido. MitM bloqueado.' -ForegroundColor Red }}; Remove-Item $f -Force }}"
+        return cmd
+    except Exception as e:
+        return f"Write-Host 'Error interno de servidor generando comando: {e}' -ForegroundColor Red"
+
 @bp_setup.route("/script")
 def get_script():
     """Devuelve el contenido del script inventario.ps1 modificado con la IP actual para ser copiado."""
@@ -52,6 +65,7 @@ def install_page():
     """Página simple para descargar los scripts del cliente."""
     current_host, current_base_url = _build_client_base_url()
     current_fallback_url = get_public_script_fallback_url()
+    secure_cmd = _get_secure_launcher_command(current_base_url, current_fallback_url)
     
     return f"""
     <html>
@@ -91,16 +105,16 @@ def install_page():
         </div>
         
         <div class="card" style="background-color: #e9ecef;">
-            <h2 style="color: #495057; font-size: 1.2rem; margin-top:0;">⚡ Método Rápido (Antiguo)</h2>
-            <p style="font-size: 0.9rem; color: #6c757d;">Para técnicos: Ejecuta el inventario sin descargar archivos. Abre <b>PowerShell como Administrador</b>, copia este comando y presiona Enter:</p>
-            <div style="background: #212529; color: #20c20e; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 0.85rem; word-break: break-all; margin-bottom: 15px;">
-                Set-ExecutionPolicy Bypass -Scope Process -Force; try {{ [Net.ServicePointManager]::SecurityProtocol = 3072 }} catch {{}}; try {{ Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy {{ public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) {{ return true; }} }}' }} catch {{}}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try {{ iex (New-Object System.Net.WebClient).DownloadString('{current_base_url}/script') }} catch {{ Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('{current_fallback_url}/script') }}
+            <h2 style="color: #495057; font-size: 1.2rem; margin-top:0;">⚡ Método Rápido (Seguro)</h2>
+            <p style="font-size: 0.9rem; color: #6c757d;">Para técnicos: Ejecuta el inventario validando la integridad del código (SHA-256). Abre <b>PowerShell como Administrador</b>, copia este comando y presiona Enter:</p>
+            <div id="cmdText" style="background: #212529; color: #20c20e; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 0.85rem; word-break: break-all; margin-bottom: 15px;">
+                {secure_cmd}
             </div>
             <button onclick="copyCommand()" style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Copiar Comando</button>
             <span id="copyMsg" style="color: green; margin-left: 10px; display: none;">¡Copiado!</span>
             <script>
                 function copyCommand() {{
-                    const cmd = "Set-ExecutionPolicy Bypass -Scope Process -Force; try {{ [Net.ServicePointManager]::SecurityProtocol = 3072 }} catch {{}}; try {{ Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy {{ public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) {{ return true; }} }}' }} catch {{}}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try {{ iex (New-Object System.Net.WebClient).DownloadString('{current_base_url}/script') }} catch {{ Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('{current_fallback_url}/script') }};\\r\\n\\r\\n\\r\\n";
+                    const cmd = document.getElementById('cmdText').innerText.trim() + "\\r\\n\\r\\n\\r\\n";
                     if (navigator.clipboard && window.isSecureContext) {{
                         navigator.clipboard.writeText(cmd).then(showCopied);
                     }} else {{

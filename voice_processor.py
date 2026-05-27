@@ -5,8 +5,10 @@ from groq import Groq
 
 load_dotenv()
 
-# GROQ API setup
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "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")
+# GROQ API setup — la clave DEBE estar en el archivo .env como GROQ_API_KEY
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+if not GROQ_API_KEY:
+    raise EnvironmentError("GROQ_API_KEY no está definida en el archivo .env. El procesador de voz no puede iniciar.")
 client = Groq(api_key=GROQ_API_KEY)
 
 

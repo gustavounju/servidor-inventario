@@ -34,11 +34,14 @@ from blueprints.bp_users import bp_users
 from blueprints.bp_maps import bp_maps
 from utils.auth import allowed_module_links, auth_guard, auth_mode_label, available_roles, csrf_guard, current_user, ensure_default_admin, generate_csrf_token, has_permission, is_authenticated, role_label
 from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
+from blueprints.bp_setup import _get_secure_launcher_command
 
 # Inicializar Flask
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_dev_secret_key_12345')
+app.secret_key = os.environ.get('FLASK_SECRET_KEY')
+if not app.secret_key:
+    raise EnvironmentError("FLASK_SECRET_KEY no está definida en el .env. El servidor no puede arrancar de forma segura.")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -186,6 +189,7 @@ def inject_global_vars():
         'available_roles': available_roles(),
         'client_script_base_url': get_public_app_base_url(),
         'client_script_fallback_url': get_public_script_fallback_url(),
+        'secure_launcher_command': _get_secure_launcher_command(get_public_app_base_url(), get_public_script_fallback_url()),
         'total_pages': 1,
         'page': 1,
         'per_page': 25,

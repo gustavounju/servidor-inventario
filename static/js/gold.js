@@ -63,11 +63,7 @@ function onFilterClick(type) {
 }
 
 function copyScript(btn) {
-    const urlHttps = btn.getAttribute('data-url-https');
-    const urlHttp = btn.getAttribute('data-url-http');
-    
-    // Add SSL bypass and use DownloadString like in the /install page
-    const command = `Set-ExecutionPolicy Bypass -Scope Process -Force; try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; try { Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy { public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; } }' } catch {}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; try { iex (New-Object System.Net.WebClient).DownloadString('${urlHttps}') } catch { Write-Host 'Fallo HTTPS, intentando HTTP alternativo...' -ForegroundColor Yellow; iex (New-Object System.Net.WebClient).DownloadString('${urlHttp}') };\r\n\r\n\r\n`;
+    const command = btn.getAttribute('data-command') + "\\r\\n\\r\\n\\r\\n";
     
     function showSuccess() {
         const originalHtml = btn.innerHTML;

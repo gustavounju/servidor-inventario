@@ -118,7 +118,10 @@ def configured_admin_username():
 
 
 def configured_admin_password():
-    return os.environ.get("BOOTSTRAP_ADMIN_PASSWORD", "tdg729tdg")
+    pwd = os.environ.get("BOOTSTRAP_ADMIN_PASSWORD")
+    if not pwd:
+        raise EnvironmentError("BOOTSTRAP_ADMIN_PASSWORD no está definida en el archivo .env.")
+    return pwd
 
 
 def auth_mode():
