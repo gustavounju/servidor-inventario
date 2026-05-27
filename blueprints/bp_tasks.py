@@ -1005,3 +1005,49 @@ def api_visor_data():
                 })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_tasks.route("/api/tasks/<int:task_id>/actions", methods=["GET"])
+def get_task_actions(task_id):
+    try:
+        with get_db_connection() as conn:
+            actions = conn.execute(
+                "SELECT id, user_name, action_text, created_at FROM task_actions WHERE task_id = %s ORDER BY created_at ASC",
+                (task_id,)
+            ).fetchall()
+            
+            result = []
+            for a in actions:
+                a_dict = dict(a)
+                a_dict["created_at_fmt"] = a["created_at"].strftime("%d/%m/%Y %H:%M:%S") if a["created_at"] else ""
+                result.append(a_dict)
+                
+            return jsonify({"status": "success", "actions": result})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_tasks.route("/api/tasks/<int:task_id>/actions", methods=["POST"])
+def add_task_action(task_id):
+    action_text = request.form.get("action_text", "").strip()
+    if not action_text:
+        return jsonify({"status": "error", "message": "El texto de la acción no puede estar vacío"}), 400
+        
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO task_actions (task_id, user_name, action_text) VALUES (%s, %s, %s)",
+                (task_id, current_username(), action_text)
+            )
+            
+            # Log it in audit_logs
+            pc_row = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
+            if pc_row:
+                pc_name = pc_row["pc_name"]
+                conn.execute(
+                    "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (pc_name, f"Acción en Tarea #{task_id}", "", action_text[:100], current_username(), "ACCION_TAREA", request.remote_addr)
+                )
+            
+            conn.commit()
+            return jsonify({"status": "success", "message": "Acción agregada correctamente"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500

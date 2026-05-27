@@ -1,0 +1,7 @@
+function taskCard(t, mode) {
+  const color = mode === 'free' ? 'var(--yellow)' : mode === 'mine' ? 'var(--accent)' : 'var(--green)';
+  const pill  = mode === 'free' ? '<span class="status-pill pill-pending">Libre</span>'
+              : mode === 'mine' ? '<span class="status-pill pill-mine">Tomada</span>'
+              : '';
+  const priority = classifyTaskPriority(t, mode);
+  const pcData = t.pc_name ? `'${t.pc_name}

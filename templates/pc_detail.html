@@ -1,252 +1,501 @@
-<!DOCTYPE html>
-<html lang="es">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ pc.pc_name }} — Detalle PC | Inventario GOLD</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="/static/css/gold.css">
-  <style>
-    .table th {
-      width: 25%;
-      white-space: nowrap;
-      font-weight: 600;
-      color: var(--text-muted);
-      font-size: 0.82rem;
-    }
-
-    .table td {
-      word-break: break-word;
-      color: var(--text-color);
-    }
-
-    /* Override table-gold for detail tables */
-    .detail-table thead th {
-      background: var(--table-header-bg);
-      color: #fff;
-      border: none;
-      padding: 9px 12px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .detail-table tbody td {
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--border-color);
-      color: var(--text-color);
-      padding: 9px 12px;
-      font-size: 0.855rem;
-      transition: background 0.12s;
-    }
-
-    .detail-table tbody tr:hover td {
-      background: color-mix(in srgb, var(--accent-color) 5%, var(--card-bg));
-    }
-
-    .section-heading {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--text-color);
-      margin: 22px 0 10px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid var(--border-color);
-    }
-
-    .section-heading i {
-      color: var(--accent-color);
-    }
-
-    .pc-detail-shell {
-      display: grid;
-      gap: 14px;
-    }
-
-    .pc-detail-summary {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .pc-detail-chip {
-      align-items: center;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 4px;
-      color: #475569;
-      display: inline-flex;
-      font-size: 0.72rem;
-      font-weight: 800;
-      gap: 5px;
-      min-height: 24px;
-      padding: 3px 8px;
-    }
-
-    .pc-detail-chip--ok {
-      background: #f0fdf4;
-      border-color: #bbf7d0;
-      color: #15803d;
-    }
-
-    .pc-detail-chip--pending {
-      background: #fff7ed;
-      border-color: #fdba74;
-      color: #9a3412;
-    }
-
-    .pc-detail-chip--danger {
-      background: #fef2f2;
-      border-color: #fecaca;
-      color: #b91c1c;
-    }
-
-    .pc-detail-grid {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    }
-
-    .pc-detail-card {
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
-      padding: 14px;
-    }
-
-    .pc-detail-card__title {
-      color: #64748b;
-      font-size: 0.68rem;
-      font-weight: 900;
-      letter-spacing: 0.04em;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-
-    .pc-detail-card__value {
-      color: #0f172a;
-      font-size: 0.95rem;
-      font-weight: 800;
-      line-height: 1.25;
-      word-break: break-word;
-    }
-
-    .pc-detail-card__meta {
-      color: #64748b;
-      font-size: 0.78rem;
-      margin-top: 6px;
-    }
-
-    .pc-detail-printer {
-      border-left: 4px solid #22c55e;
-      grid-column: 1 / -1;
-    }
-
-    .pc-detail-printer--pending {
-      border-left-color: #f97316;
-    }
-
-    .pc-detail-printer--missing {
-      border-left-color: #94a3b8;
-    }
-
-  </style>
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <script defer src="/static/js/security.js"></script>
-  <script defer src="/static/js/gold.js"></script>
-</head>
-
-<body class="has-fixed-header">
-  
-  {% include '_module_switcher.html' %}
-  {% include '_shared_modals.html' %}
-
-  <!-- Contenedor Principal con margen para el header fijo -->
-  <div class="container-fluid px-3 pt-2 pb-0" style="margin-top: 56px;">
-    
-    <!-- MINI HERO HEADER -->
-    <div class="hero-header mb-3">
-      <div class="d-flex flex-wrap align-items-center gap-2">
-        <h1 class="hero-title mb-0">🖥️ {{ pc.pc_name }}</h1>
-        {% if pc.is_active == 'True' %}
-        <span class="badge"
-          style="background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">●
-          Activa</span>
-        {% else %}
-        <span class="badge"
-          style="background:rgba(107,114,128,0.2);color:#9ca3af;border:1px solid rgba(107,114,128,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">⚰️
-          Cementerio</span>
-        {% endif %}
-        {% if pc.alerta_ram_baja %}
-        <span class="badge"
-          style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;"
-          title="RAM baja">⚠️ RAM</span>
-        {% endif %}
-        {% if pc.alerta_impresora_red %}
-        <span class="badge"
-          style="background:rgba(14,165,233,0.18);color:#0ea5e9;border:1px solid rgba(14,165,233,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">🌐
-          Imp. en Red</span>
-        {% elif pc.alerta_sin_impresora %}
-        <span class="badge"
-          style="background:rgba(107,114,128,0.18);color:#9ca3af;border:1px solid rgba(107,114,128,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">🖨️
-          Sin Imp.</span>
-        {% endif %}
-      </div>
-      <p class="hero-subtitle mt-2 mb-2" style="display:flex; gap:18px; flex-wrap:wrap;">
-        <span><i class="bi bi-person-fill me-1"></i><strong>{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or
-            '-' }}</strong></span>
-        {% if pc.ad_real_name %}
-        <span class="small opacity-75">({{ pc.last_user }})</span>
-        {% endif %}
-        <span><i class="bi bi-building me-1"></i><strong>{{ pc.fuero or '-' }}</strong></span>
-        <span><i class="bi bi-wifi me-1"></i><strong>{{ pc.ip_address or '-' }}</strong></span>
-      </p>
-      <div class="d-flex gap-2 flex-wrap">
-        {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
-        {% if pc.is_active == 'True' %}
-        <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST"
-          class="d-inline" onsubmit="return confirm('¿Pasar esta PC al cementerio? Si el script de inventario vuelve a ejecutarse en este equipo, se reactivará sola.')">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="hero-stat" style="color:#fca5a5;cursor:pointer;border:0;background:none;">
-            <i class="bi bi-archive me-1"></i>Pasar a cementerio
-          </button>
-        </form>
-        {% else %}
-        <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" method="POST" class="d-inline">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="hero-stat" style="color:#86efac;border:0;background:none;">
-            <i class="bi bi-activity me-1"></i>Reactivar
-          </button>
-        </form>
-        {% endif %}
-        <a href="{{ url_for('tasks.report_tasks_completed') }}?pc={{ pc.pc_name }}" class="hero-stat">
-          <i class="bi bi-file-earmark-excel me-1"></i>Exportar tareas
-        </a>
-        {% endif %}
-      </div>
-    </div>
-
-    {% if pc.alerta_nombre_duplicado %}
-    <div class="alert alert-danger shadow-sm d-flex align-items-center" role="alert">
-      <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
-      <div>
-        <strong>¡Atención! Posible Nombre de PC Duplicado.</strong><br>
-        Se ha detectado que otra máquina física con hardware o IP completamente distinta está reportando bajo este mismo
-        nombre (<code>{{ pc.pc_name }}</code>). Esto suele causar colisiones en la red y sobrescribir el inventario. Por
-        favor, identifique la PC duplicada y cambie su nombre en el dominio.
-      </div>
-    </div>
-    {% endif %}
-
-    {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
+<!DOCTYPE html>
+
+<html lang="es">
+
+
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>{{ pc.pc_name }} — Detalle PC | Inventario GOLD</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+  <link rel="stylesheet" href="/static/css/gold.css">
+
+  <style>
+
+    .table th {
+
+      width: 25%;
+
+      white-space: nowrap;
+
+      font-weight: 600;
+
+      color: var(--text-muted);
+
+      font-size: 0.82rem;
+
+    }
+
+
+
+    .table td {
+
+      word-break: break-word;
+
+      color: var(--text-color);
+
+    }
+
+
+
+    /* Override table-gold for detail tables */
+
+    .detail-table thead th {
+
+      background: var(--table-header-bg);
+
+      color: #fff;
+
+      border: none;
+
+      padding: 9px 12px;
+
+      font-size: 0.72rem;
+
+      font-weight: 700;
+
+      text-transform: uppercase;
+
+      letter-spacing: 0.05em;
+
+    }
+
+
+
+    .detail-table tbody td {
+
+      background: var(--card-bg);
+
+      border-bottom: 1px solid var(--border-color);
+
+      color: var(--text-color);
+
+      padding: 9px 12px;
+
+      font-size: 0.855rem;
+
+      transition: background 0.12s;
+
+    }
+
+
+
+    .detail-table tbody tr:hover td {
+
+      background: color-mix(in srgb, var(--accent-color) 5%, var(--card-bg));
+
+    }
+
+
+
+    .section-heading {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 8px;
+
+      font-size: 1.05rem;
+
+      font-weight: 700;
+
+      color: var(--text-color);
+
+      margin: 22px 0 10px;
+
+      padding-bottom: 8px;
+
+      border-bottom: 2px solid var(--border-color);
+
+    }
+
+
+
+    .section-heading i {
+
+      color: var(--accent-color);
+
+    }
+
+
+
+    .pc-detail-shell {
+
+      display: grid;
+
+      gap: 14px;
+
+    }
+
+
+
+    .pc-detail-summary {
+
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 6px;
+
+    }
+
+
+
+    .pc-detail-chip {
+
+      align-items: center;
+
+      background: #f8fafc;
+
+      border: 1px solid #e2e8f0;
+
+      border-radius: 4px;
+
+      color: #475569;
+
+      display: inline-flex;
+
+      font-size: 0.72rem;
+
+      font-weight: 800;
+
+      gap: 5px;
+
+      min-height: 24px;
+
+      padding: 3px 8px;
+
+    }
+
+
+
+    .pc-detail-chip--ok {
+
+      background: #f0fdf4;
+
+      border-color: #bbf7d0;
+
+      color: #15803d;
+
+    }
+
+
+
+    .pc-detail-chip--pending {
+
+      background: #fff7ed;
+
+      border-color: #fdba74;
+
+      color: #9a3412;
+
+    }
+
+
+
+    .pc-detail-chip--danger {
+
+      background: #fef2f2;
+
+      border-color: #fecaca;
+
+      color: #b91c1c;
+
+    }
+
+
+
+    .pc-detail-grid {
+
+      display: grid;
+
+      gap: 12px;
+
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+
+    }
+
+
+
+    .pc-detail-card {
+
+      background: #fff;
+
+      border: 1px solid #e2e8f0;
+
+      border-radius: 8px;
+
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+
+      padding: 14px;
+
+    }
+
+
+
+    .pc-detail-card__title {
+
+      color: #64748b;
+
+      font-size: 0.68rem;
+
+      font-weight: 900;
+
+      letter-spacing: 0.04em;
+
+      margin-bottom: 8px;
+
+      text-transform: uppercase;
+
+    }
+
+
+
+    .pc-detail-card__value {
+
+      color: #0f172a;
+
+      font-size: 0.95rem;
+
+      font-weight: 800;
+
+      line-height: 1.25;
+
+      word-break: break-word;
+
+    }
+
+
+
+    .pc-detail-card__meta {
+
+      color: #64748b;
+
+      font-size: 0.78rem;
+
+      margin-top: 6px;
+
+    }
+
+
+
+    .pc-detail-printer {
+
+      border-left: 4px solid #22c55e;
+
+      grid-column: 1 / -1;
+
+    }
+
+
+
+    .pc-detail-printer--pending {
+
+      border-left-color: #f97316;
+
+    }
+
+
+
+    .pc-detail-printer--missing {
+
+      border-left-color: #94a3b8;
+
+    }
+
+
+
+  </style>
+
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <script defer src="/static/js/security.js"></script>
+
+  <script defer src="/static/js/gold.js"></script>
+
+</head>
+
+
+
+<body class="has-fixed-header">
+
+  
+
+  {% include '_module_switcher.html' %}
+
+  {% include '_shared_modals.html' %}
+
+
+
+  <!-- Contenedor Principal con margen para el header fijo -->
+
+  <div class="container-fluid px-3 pt-2 pb-0" style="margin-top: 56px;">
+
+    
+
+    <!-- MINI HERO HEADER -->
+
+    <div class="hero-header mb-3">
+
+      <div class="d-flex flex-wrap align-items-center gap-2">
+
+        <h1 class="hero-title mb-0">🖥️ {{ pc.pc_name }}</h1>
+
+        {% if pc.is_active == 'True' %}
+
+        <span class="badge"
+
+          style="background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">●
+
+          Activa</span>
+
+        {% else %}
+
+        <span class="badge"
+
+          style="background:rgba(107,114,128,0.2);color:#9ca3af;border:1px solid rgba(107,114,128,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">⚰️
+
+          Cementerio</span>
+
+        {% endif %}
+
+        {% if pc.alerta_ram_baja %}
+
+        <span class="badge"
+
+          style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;"
+
+          title="RAM baja">⚠️ RAM</span>
+
+        {% endif %}
+
+        {% if pc.alerta_impresora_red %}
+
+        <span class="badge"
+
+          style="background:rgba(14,165,233,0.18);color:#0ea5e9;border:1px solid rgba(14,165,233,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">🌐
+
+          Imp. en Red</span>
+
+        {% elif pc.alerta_sin_impresora %}
+
+        <span class="badge"
+
+          style="background:rgba(107,114,128,0.18);color:#9ca3af;border:1px solid rgba(107,114,128,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;">🖨️
+
+          Sin Imp.</span>
+
+        {% endif %}
+
+      </div>
+
+      <p class="hero-subtitle mt-2 mb-2" style="display:flex; gap:18px; flex-wrap:wrap;">
+
+        <span><i class="bi bi-person-fill me-1"></i><strong>{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or
+
+            '-' }}</strong></span>
+
+        {% if pc.ad_real_name %}
+
+        <span class="small opacity-75">({{ pc.last_user }})</span>
+
+        {% endif %}
+
+        <span><i class="bi bi-building me-1"></i><strong>{{ pc.fuero or '-' }}</strong></span>
+
+        <span><i class="bi bi-wifi me-1"></i><strong>{{ pc.ip_address or '-' }}</strong></span>
+
+      </p>
+
+      <div class="d-flex gap-2 flex-wrap">
+
+        {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
+
+        {% if pc.is_active == 'True' %}
+
+        <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST"
+
+          class="d-inline" onsubmit="return confirm('¿Pasar esta PC al cementerio? Si el script de inventario vuelve a ejecutarse en este equipo, se reactivará sola.')">
+
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <button type="submit" class="hero-stat" style="color:#fca5a5;cursor:pointer;border:0;background:none;">
+
+            <i class="bi bi-archive me-1"></i>Pasar a cementerio
+
+          </button>
+
+        </form>
+
+        {% else %}
+
+        <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" method="POST" class="d-inline">
+
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <button type="submit" class="hero-stat" style="color:#86efac;border:0;background:none;">
+
+            <i class="bi bi-activity me-1"></i>Reactivar
+
+          </button>
+
+        </form>
+
+        {% endif %}
+
+        <a href="{{ url_for('tasks.report_tasks_completed') }}?pc={{ pc.pc_name }}" class="hero-stat">
+
+          <i class="bi bi-file-earmark-excel me-1"></i>Exportar tareas
+
+        </a>
+
+        {% endif %}
+
+      </div>
+
+    </div>
+
+
+
+    {% if pc.alerta_nombre_duplicado %}
+
+    <div class="alert alert-danger shadow-sm d-flex align-items-center" role="alert">
+
+      <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+
+      <div>
+
+        <strong>¡Atención! Posible Nombre de PC Duplicado.</strong><br>
+
+        Se ha detectado que otra máquina física con hardware o IP completamente distinta está reportando bajo este mismo
+
+        nombre (<code>{{ pc.pc_name }}</code>). Esto suele causar colisiones en la red y sobrescribir el inventario. Por
+
+        favor, identifique la PC duplicada y cambie su nombre en el dominio.
+
+      </div>
+
+    </div>
+
+    {% endif %}
+
+
+
+    {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
+
     <!-- NAV TABS -->
     <style>
       .pd-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--border-color, #e2e8f0); }
@@ -268,981 +517,1949 @@
 
     <!-- TAB: RESUMEN -->
     <div class="pd-pane active" id="pane-resumen">
-    <!-- BLOQUE 1: Datos principales de la PC -->
-    <div class="card shadow-sm mb-4" id="pcResumen">
-      <div class="gold-card-header"><i class="bi bi-pc-display"></i> Resumen del Equipo</div>
-      <div class="card-body">
-        {% set printer_missing = not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in pc.printer_model | upper %}
-        {% set printer_cataloged = assigned_network_printers|length > 0 %}
-        {% set printer_pending = (not printer_cataloged) and (not printer_missing) %}
-        {% set printer_is_shared = pc.printer_port and pc.printer_port.startswith('\\\\') %}
-        {% set printer_is_network = pc.printer_port and ('.' in pc.printer_port or 'WSD' in pc.printer_port or 'IP_' in pc.printer_port) %}
-
-        <div class="pc-detail-shell">
-          <div class="pc-detail-summary">
-            <span class="pc-detail-chip"><i class="bi bi-windows"></i>{{ pc.os_name or 'Sistema no detectado' }}</span>
-            {% if pc.office_version and pc.office_version != 'N/A' %}
-            <span class="pc-detail-chip"><i class="bi bi-microsoft"></i>{{ pc.office_version }}</span>
-            {% endif %}
-            {% if pc.monitors and pc.monitors != 'N/A' %}
-            <span class="pc-detail-chip"><i class="bi bi-display"></i>{{ pc.monitors }}</span>
-            {% endif %}
-            <span class="pc-detail-chip"><i class="bi bi-hdd-network"></i>{{ pc.ip_address or '-' }}</span>
-            <span class="pc-detail-chip"><i class="bi bi-clock-history"></i>{{ pc.last_report | datetime_es }}</span>
-          </div>
-
-          <div class="pc-detail-grid">
-            <div class="pc-detail-card">
-              <div class="pc-detail-card__title">Usuario y fuero</div>
-              <div class="pc-detail-card__value">{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '-' }}</div>
-              <div class="pc-detail-card__meta">{{ pc.last_user or '-' }} · {{ pc.fuero or '-' }}</div>
-            </div>
-
-            <div class="pc-detail-card">
-              <div class="pc-detail-card__title">Hardware base</div>
-              <div class="pc-detail-card__value">{{ pc.processor or '-' }}</div>
-              <div class="pc-detail-card__meta">{{ pc.ram_gb }} GB RAM · {{ pc.motherboard_model or 'Sin placa detectada' }}</div>
-            </div>
-
-            <div class="pc-detail-card">
-              <div class="pc-detail-card__title">Discos</div>
-              <div class="pc-detail-card__value">
-                {% if disk_summary_lines %}
-                  {% for disk_line in disk_summary_lines %}
-                  <div>{{ disk_line }}</div>
-                  {% endfor %}
-                {% else %}
-                  {{ pc.disk_models or '-' }}
-                {% endif %}
-              </div>
-            </div>
-
-            <div class="pc-detail-card pc-detail-printer {% if printer_pending %}pc-detail-printer--pending{% elif printer_missing %}pc-detail-printer--missing{% endif %}">
-              <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-                <div>
-                  <div class="pc-detail-card__title">Impresión</div>
-                  <div class="pc-detail-card__value">
-                    {% if printer_missing %}
-                    Sin impresora detectada
-                    {% elif printer_cataloged %}
-                    {{ assigned_network_printers[0].brand_model }} <span class="pc-detail-chip pc-detail-chip--ok">Catálogo</span>
-                    {% else %}
-                    {{ pc.printer_model }}
-                    {% endif %}
-                  </div>
-                </div>
-                {% if printer_pending %}
-                <button type="button" class="btn btn-sm btn-warning fw-bold" title="Sumar esta impresora al catálogo oficial"
-                  onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')">
-                  <i class="bi bi-plus-circle-fill"></i>
-                </button>
-                {% endif %}
-              </div>
-
-              <div class="pc-detail-summary mt-2">
-                {% if printer_missing %}
-                <span class="pc-detail-chip">Sin impresora</span>
-                {% elif printer_cataloged %}
-                <span class="pc-detail-chip pc-detail-chip--ok"><i class="bi bi-check2-circle"></i>Registrada en catálogo</span>
-                {% else %}
-                <span class="pc-detail-chip pc-detail-chip--pending"><i class="bi bi-exclamation-triangle"></i>Pendiente de catálogo</span>
-                {% endif %}
-
-                {% if printer_is_shared %}
-                <span class="pc-detail-chip"><i class="bi bi-share"></i>Compartida por otra PC</span>
-                {% elif printer_is_network %}
-                <span class="pc-detail-chip {% if printer_pending %}pc-detail-chip--pending{% endif %}"><i class="bi bi-diagram-3"></i>Por red/IP</span>
-                {% elif not printer_missing %}
-                <span class="pc-detail-chip"><i class="bi bi-usb-symbol"></i>Local/USB</span>
-                {% endif %}
-
-                {% if preferred_printer_serial and preferred_printer_serial != 'N/A' %}
-                <span class="pc-detail-chip"><i class="bi bi-upc-scan"></i>{{ preferred_printer_serial }}</span>
-                {% endif %}
-                {% if pc.printer_port and pc.printer_port != 'N/A' %}
-                <span class="pc-detail-chip"><i class="bi bi-plug"></i>{{ pc.printer_port }}</span>
-                {% endif %}
-              </div>
-
-              {% if detected_printers %}
-              <div class="pc-detail-card__meta">
-                Detectadas por el script:
-                {% for prn in detected_printers %}
-                <span class="pc-detail-chip {% if not printer_cataloged or prn.printer_model != assigned_network_printers[0].brand_model %}pc-detail-chip--pending{% endif %}">
-                  {{ prn.printer_model }}
-                </span>
-                {% endfor %}
-                <button type="button" class="btn btn-sm btn-outline-primary py-0 ms-1" onclick="showDetectedPrinters('{{ pc.pc_name }}')">
-                  Verificar
-                </button>
-              </div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      </div><!-- /.card-body -->
-    </div><!-- /.card bloque 1 -->
-
+    <!-- BLOQUE 1: Datos principales de la PC -->
+
+    <div class="card shadow-sm mb-4" id="pcResumen">
+
+      <div class="gold-card-header"><i class="bi bi-pc-display"></i> Resumen del Equipo</div>
+
+      <div class="card-body">
+
+        {% set printer_missing = not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in pc.printer_model | upper %}
+
+        {% set printer_cataloged = assigned_network_printers|length > 0 %}
+
+        {% set printer_pending = (not printer_cataloged) and (not printer_missing) %}
+
+        {% set printer_is_shared = pc.printer_port and pc.printer_port.startswith('\\\\') %}
+
+        {% set printer_is_network = pc.printer_port and ('.' in pc.printer_port or 'WSD' in pc.printer_port or 'IP_' in pc.printer_port) %}
+
+
+
+        <div class="pc-detail-shell">
+
+          <div class="pc-detail-summary">
+
+            <span class="pc-detail-chip"><i class="bi bi-windows"></i>{{ pc.os_name or 'Sistema no detectado' }}</span>
+
+            {% if pc.office_version and pc.office_version != 'N/A' %}
+
+            <span class="pc-detail-chip"><i class="bi bi-microsoft"></i>{{ pc.office_version }}</span>
+
+            {% endif %}
+
+            {% if pc.monitors and pc.monitors != 'N/A' %}
+
+            <span class="pc-detail-chip"><i class="bi bi-display"></i>{{ pc.monitors }}</span>
+
+            {% endif %}
+
+            <span class="pc-detail-chip"><i class="bi bi-hdd-network"></i>{{ pc.ip_address or '-' }}</span>
+
+            <span class="pc-detail-chip"><i class="bi bi-clock-history"></i>{{ pc.last_report | datetime_es }}</span>
+
+          </div>
+
+
+
+          <div class="pc-detail-grid">
+
+            <div class="pc-detail-card">
+
+              <div class="pc-detail-card__title">Usuario y fuero</div>
+
+              <div class="pc-detail-card__value">{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '-' }}</div>
+
+              <div class="pc-detail-card__meta">{{ pc.last_user or '-' }} · {{ pc.fuero or '-' }}</div>
+
+            </div>
+
+
+
+            <div class="pc-detail-card">
+
+              <div class="pc-detail-card__title">Hardware base</div>
+
+              <div class="pc-detail-card__value">{{ pc.processor or '-' }}</div>
+
+              <div class="pc-detail-card__meta">{{ pc.ram_gb }} GB RAM · {{ pc.motherboard_model or 'Sin placa detectada' }}</div>
+
+            </div>
+
+
+
+            <div class="pc-detail-card">
+
+              <div class="pc-detail-card__title">Discos</div>
+
+              <div class="pc-detail-card__value">
+
+                {% if disk_summary_lines %}
+
+                  {% for disk_line in disk_summary_lines %}
+
+                  <div>{{ disk_line }}</div>
+
+                  {% endfor %}
+
+                {% else %}
+
+                  {{ pc.disk_models or '-' }}
+
+                {% endif %}
+
+              </div>
+
+            </div>
+
+
+
+            <div class="pc-detail-card pc-detail-printer {% if printer_pending %}pc-detail-printer--pending{% elif printer_missing %}pc-detail-printer--missing{% endif %}">
+
+              <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+
+                <div>
+
+                  <div class="pc-detail-card__title">Impresión</div>
+
+                  <div class="pc-detail-card__value">
+
+                    {% if printer_missing %}
+
+                    Sin impresora detectada
+
+                    {% elif printer_cataloged %}
+
+                    {{ assigned_network_printers[0].brand_model }} <span class="pc-detail-chip pc-detail-chip--ok">Catálogo</span>
+
+                    {% else %}
+
+                    {{ pc.printer_model }}
+
+                    {% endif %}
+
+                  </div>
+
+                </div>
+
+                {% if printer_pending %}
+
+                <button type="button" class="btn btn-sm btn-warning fw-bold" title="Sumar esta impresora al catálogo oficial"
+
+                  onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')">
+
+                  <i class="bi bi-plus-circle-fill"></i>
+
+                </button>
+
+                {% endif %}
+
+              </div>
+
+
+
+              <div class="pc-detail-summary mt-2">
+
+                {% if printer_missing %}
+
+                <span class="pc-detail-chip">Sin impresora</span>
+
+                {% elif printer_cataloged %}
+
+                <span class="pc-detail-chip pc-detail-chip--ok"><i class="bi bi-check2-circle"></i>Registrada en catálogo</span>
+
+                {% else %}
+
+                <span class="pc-detail-chip pc-detail-chip--pending"><i class="bi bi-exclamation-triangle"></i>Pendiente de catálogo</span>
+
+                {% endif %}
+
+
+
+                {% if printer_is_shared %}
+
+                <span class="pc-detail-chip"><i class="bi bi-share"></i>Compartida por otra PC</span>
+
+                {% elif printer_is_network %}
+
+                <span class="pc-detail-chip {% if printer_pending %}pc-detail-chip--pending{% endif %}"><i class="bi bi-diagram-3"></i>Por red/IP</span>
+
+                {% elif not printer_missing %}
+
+                <span class="pc-detail-chip"><i class="bi bi-usb-symbol"></i>Local/USB</span>
+
+                {% endif %}
+
+
+
+                {% if preferred_printer_serial and preferred_printer_serial != 'N/A' %}
+
+                <span class="pc-detail-chip"><i class="bi bi-upc-scan"></i>{{ preferred_printer_serial }}</span>
+
+                {% endif %}
+
+                {% if pc.printer_port and pc.printer_port != 'N/A' %}
+
+                <span class="pc-detail-chip"><i class="bi bi-plug"></i>{{ pc.printer_port }}</span>
+
+                {% endif %}
+
+              </div>
+
+
+
+              {% if detected_printers %}
+
+              <div class="pc-detail-card__meta">
+
+                Detectadas por el script:
+
+                {% for prn in detected_printers %}
+
+                <span class="pc-detail-chip {% if not printer_cataloged or prn.printer_model != assigned_network_printers[0].brand_model %}pc-detail-chip--pending{% endif %}">
+
+                  {{ prn.printer_model }}
+
+                </span>
+
+                {% endfor %}
+
+                <button type="button" class="btn btn-sm btn-outline-primary py-0 ms-1" onclick="showDetectedPrinters('{{ pc.pc_name }}')">
+
+                  Verificar
+
+                </button>
+
+              </div>
+
+              {% endif %}
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div><!-- /.card-body -->
+
+    </div><!-- /.card bloque 1 -->
+
+
+
 
     </div>
 
     <!-- TAB: TAREAS -->
     <div class="pd-pane" id="pane-tareas">
-    <!-- BLOQUE 3: Tareas de la PC -->
-    <div class="d-flex justify-content-between align-items-center mb-2" id="pcTareas">
-      <h3 class="mt-2 mb-0">Tareas</h3>
-      <!-- Botón duplicado para agregar tarea (abre el mismo modal) -->
-      {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
-      <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
-        <i class="bi bi-plus-lg"></i> Nueva tarea
-      </button>
-      {% endif %}
-    </div>
-
-    <div class="table-responsive">
-      <table class="table table-sm table-striped table-hover">
-        <thead class="thead-light">
-          <tr>
-            <th style="width: 15%;">Fecha</th>
-            <th>Descripción</th>
-            <th style="width: 15%;">Solicitante</th>
-            <th style="width: 10%;">Técnico</th>
-            <th style="width: 10%;">Estado</th>
-            <th style="width: 20%;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for t in tareas %}
-          <tr>
-            <td>
-              {{ t.created_at | datetime_es }}
-            </td>
-            <td>{{ t.descripcion }}</td>
-            <td>{{ t.solicitante or '' }}</td>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                {% if t.estado == 'Hecha' %}
-                  <span class="text-success fw-medium">{{ t.completed_by or t.assigned_to or '-' }}</span>
-                {% else %}
-                  <span>{{ t.assigned_to or '-' }}</span>
-                {% endif %}
-                <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1" 
-                  style="font-size: 0.75rem; border-radius: 4px;" 
-                  onclick="openReassignModal('{{ t.id }}', '{{ t.completed_by or t.assigned_to or '' }}')" 
-                  title="Cambiar Técnico">
-                  <i class="bi bi-pencil"></i>
-                </button>
-              </div>
-            </td>
-            <td>{{ t.estado }}</td>
-            <td>
-              {% if t.estado != 'Hecha' %}
-              <button type="button" class="btn btn-sm btn-success mb-1"
-                onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}', '{{ pc.pc_name }}')">
-                <i class="bi bi-check-lg"></i> Hecha
-              </button>
-              {% endif %}
-
-              {% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}
-              <button type="button" class="btn btn-sm btn-warning mb-1" onclick="openMigrateModal('{{ t.id }}')">
-                <i class="bi bi-arrow-right"></i> Asignar
-              </button>
-              {% endif %}
-
-              <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline"
-                onsubmit="return confirm('¿Borrar esta tarea?');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-sm btn-danger mb-1">
-                  Borrar
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="6" class="text-center">Sin tareas aún.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <!-- FIN BLOQUE 3 -->
-
+    <!-- BLOQUE 3: Tareas de la PC -->
+
+    <div class="d-flex justify-content-between align-items-center mb-2" id="pcTareas">
+
+      <h3 class="mt-2 mb-0">Tareas</h3>
+
+      <!-- Botón duplicado para agregar tarea (abre el mismo modal) -->
+
+      {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
+
+      <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
+
+        <i class="bi bi-plus-lg"></i> Nueva tarea
+
+      </button>
+
+      {% endif %}
+
+    </div>
+
+
+
+    <div class="table-responsive">
+
+      <table class="table table-sm table-striped table-hover">
+
+        <thead class="thead-light">
+
+          <tr>
+
+            <th style="width: 15%;">Fecha</th>
+
+            <th>Descripción</th>
+
+            <th style="width: 15%;">Solicitante</th>
+
+            <th style="width: 10%;">Técnico</th>
+
+            <th style="width: 10%;">Estado</th>
+
+            <th style="width: 20%;">Acciones</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          {% for t in tareas %}
+
+          <tr>
+
+            <td>
+
+              {{ t.created_at | datetime_es }}
+
+            </td>
+
+            <td>{{ t.descripcion }}</td>
+
+            <td>{{ t.solicitante or '' }}</td>
+
+            <td>
+
+              <div class="d-flex align-items-center gap-2">
+
+                {% if t.estado == 'Hecha' %}
+
+                  <span class="text-success fw-medium">{{ t.completed_by or t.assigned_to or '-' }}</span>
+
+                {% else %}
+
+                  <span>{{ t.assigned_to or '-' }}</span>
+
+                {% endif %}
+
+                <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1" 
+
+                  style="font-size: 0.75rem; border-radius: 4px;" 
+
+                  onclick="openReassignModal('{{ t.id }}', '{{ t.completed_by or t.assigned_to or '' }}')" 
+
+                  title="Cambiar Técnico">
+
+                  <i class="bi bi-pencil"></i>
+
+                </button>
+
+              </div>
+
+            </td>
+
+            <td>{{ t.estado }}</td>
+
+            <td>
+
+              {% if t.estado != 'Hecha' %}
+
+              <button type="button" class="btn btn-sm btn-success mb-1"
+
+                onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}', '{{ pc.pc_name }}')">
+
+                <i class="bi bi-check-lg"></i> Hecha
+
+              </button>
+
+              {% endif %}
+              <button type=\"button\" class=\"btn btn-sm mb-1\" style=\"background-color: #0ea5e9; color: white; border: none;\" onclick=\"openTaskActionsModal('{{ t.id }}')\">
+                <i class=\"bi bi-card-list\"></i> Acciones
+              </button>
+
+
+
+              {% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}
+
+              <button type="button" class="btn btn-sm btn-warning mb-1" onclick="openMigrateModal('{{ t.id }}')">
+
+                <i class="bi bi-arrow-right"></i> Asignar
+
+              </button>
+
+              {% endif %}
+
+
+
+              <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline"
+
+                onsubmit="return confirm('¿Borrar esta tarea?');">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <button type="submit" class="btn btn-sm btn-danger mb-1">
+
+                  Borrar
+
+                </button>
+
+              </form>
+
+            </td>
+
+          </tr>
+
+          {% else %}
+
+          <tr>
+
+            <td colspan="6" class="text-center">Sin tareas aún.</td>
+
+          </tr>
+
+          {% endfor %}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <!-- FIN BLOQUE 3 -->
+
+
+
 
     </div>
 
     <!-- TAB: RED Y ENERGÍA -->
     <div class="pd-pane" id="pane-red">
-    <!-- BLOQUE 2: Infraestructura de Red & Energia -->
-    <div class="card shadow-sm mb-4" id="pcInfra">
-      <div class="gold-card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-diagram-3"></i> Infraestructura de Red y Energía</span>
-        <button type="button" class="btn btn-sm btn-outline-secondary"
-          style="border-color:rgba(255,255,255,0.4);color:#fff;font-size:0.78rem;" data-bs-toggle="modal"
-          data-bs-target="#modalEditarInfra">
-          <i class="bi bi-pencil"></i> Editar
-        </button>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-4">
-            <p><strong>Edificio:</strong> {{ pc.building or '-' }}</p>
-            <p><strong>Piso:</strong> {{ pc.floor or '-' }}</p>
-          </div>
-          <div class="col-md-4">
-            <p><strong>Switch:</strong> {{ pc.switch_name or '-' }} (Puerto {{ pc.switch_port or '-' }})</p>
-            <p><strong>Pachera:</strong> {{ pc.pachera_name or '-' }} (Boca {{ pc.pachera_port or '-' }})</p>
-          </div>
-          <!-- Integracion UPS -->
-          <div class="col-md-4 border-start">
-            <h6 class="text-primary fw-bold mb-2"><i class="bi bi-plug"></i> Respaldo Eléctrico (UPS)</h6>
-            {% if pc_ups_list %}
-            {% for pc_ups in pc_ups_list %}
-            <div class="{% if not loop.last %}mb-3 border-bottom pb-3{% endif %}">
-              <p class="mb-1"><strong>UPS:</strong> {{ pc_ups.code }}</p>
-              <p class="mb-2"><strong>Modelo:</strong> {{ pc_ups.model }}</p>
-              {% if pc_ups.battery_code %}
-              <span class="badge bg-success"><i class="bi bi-battery-charging"></i> Batería: {{ pc_ups.battery_code
-                }}</span>
-              {% else %}
-              <span class="badge bg-danger"><i class="bi bi-battery"></i> Sin Batería</span>
-              {% endif %}
-              <div class="mt-2 d-flex gap-2">
-                <!-- Botón de Asignar/Cambiar Batería -->
-                <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
-                  data-bs-target="#modalAssignBatteryToUPS{{ pc_ups.id }}" title="Asignar/Cambiar Batería">
-                  <i class="bi bi-battery-half"></i> {% if pc_ups.battery_code %}Cambiar Batería{% else %}Asignar
-                  Batería{%
-                  endif %}
-                </button>
-
-                <!-- Botón Desvincular UPS -->
-                <form action="{{ url_for('infrastructure.assign_ups_to_pc', ups_id=pc_ups.id) }}" method="POST"
-                  class="m-0">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular UPS"
-                    onclick="return confirm('¿Quitar UPS de este equipo?');">
-                    <i class="bi bi-trash"></i> Desvincular
-                  </button>
-                </form>
-              </div>
-
-              <!-- Modal Asignar Bateria a esta UPS -->
-              <div class="modal fade" id="modalAssignBatteryToUPS{{ pc_ups.id }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                  <div class="modal-content">
-                    <form action="{{ url_for('infrastructure.assign_battery_to_ups', ups_id=pc_ups.id) }}"
-                      method="POST">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <!-- Retornamos a la página anterior de la PC -->
-                      <input type="hidden" name="next" value="{{ request.path }}">
-                      <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title">Batería para UPS {{ pc_ups.code }}</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                          aria-label="Close"></button>
-                      </div>
-                      <div class="modal-body">
-                        <p>Seleccione qué batería del Stock se instalará en esta UPS. Si actualmente tiene una, se
-                          devolverá
-                          al Stock.</p>
-                        <div class="mb-3">
-                          <label class="form-label fw-bold">Batería Disponible:</label>
-                          <select class="form-select" name="battery_id">
-                            <option value="">-- Quitar batería / Ninguna --</option>
-                            {% for bat in baterias_disponibles %}
-                            <option value="{{ bat.id }}">{{ bat.code }} ({{ bat.brand_model }})</option>
-                            {% endfor %}
-                          </select>
-                        </div>
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success">Guardar</button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {% endfor %}
-            <div class="mt-3">
-              <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAssignUPS">
-                <i class="bi bi-plug-fill"></i> Agregar otra UPS
-              </button>
-            </div>
-            {% else %}
-            <p class="text-muted small mb-2">Sin UPS asignada.</p>
-            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalAssignUPS">
-              <i class="bi bi-link"></i> Asignar UPS a este equipo
-            </button>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') %}
-    <!-- BLOQUE 2.5: Componentes Asignados -->
-    <div class="card shadow-sm mb-4 border-info" id="pcComponentes">
-      <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-cpu"></i> Periféricos y Componentes Asignados</h5>
-        <button class="btn btn-sm btn-light text-info fw-bold" data-bs-toggle="modal"
-          data-bs-target="#modalAssignComponent">
-          <i class="bi bi-plus-circle"></i> Vincular Componente
-        </button>
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Tipo</th>
-              <th>Marca/Modelo</th>
-              <th>N° Serie</th>
-              <th class="text-end">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for comp in pc_components if not comp.assigned_to_component_id %}
-            <tr>
-              <td><span class="fw-bold">{{ comp.component_type }}</span></td>
-              <td>{{ comp.brand_model }}</td>
-              <td class="text-muted">{{ comp.serial_number }}</td>
-              <td class="text-end">
-                {% if comp.component_type == 'DVR' %}
-                <!-- Botón para asignar un disco a este DVR -->
-                <button class="btn btn-sm btn-outline-success me-1"
-                  onclick="openAssignSubcomponentModal('{{ comp.id }}', '{{ comp.component_type }} ({{ comp.serial_number }})')"
-                  title="Agregar Disco Interno">
-                  <i class="bi bi-hdd-network"></i>
-                </button>
-                {% endif %}
-                <form action="{{ url_for('infrastructure.assign_component_to_pc', component_id=comp.id) }}"
-                  method="POST" class="d-inline">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Devolver al stock y desvincular"
-                    onclick="return confirm('¿Desvincular componente del equipo? Pasará a Stock.');">
-                    <i class="bi bi-x-circle"></i>
-                  </button>
-                </form>
-              </td>
-            </tr>
-            <!-- Sub-componentes de este padre (Ej: HDD de DVR) -->
-            {% for subc in pc_components if subc.assigned_to_component_id == comp.id %}
-            <tr class="table-secondary">
-              <td class="ps-4"><i class="bi bi-arrow-return-right text-muted me-1"></i> {{ subc.component_type }}
-              </td>
-              <td>{{ subc.brand_model }}</td>
-              <td class="text-muted">{{ subc.serial_number }}</td>
-              <td class="text-end">
-                <form action="{{ url_for('infrastructure.assign_component_to_component', component_id=subc.id) }}"
-                  method="POST" class="d-inline">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <input type="hidden" name="parent_id" value="">
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular del DVR"
-                    onclick="return confirm('¿Desvincular componente del DVR?');">
-                    <i class="bi bi-x"></i>
-                  </button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-            {% else %}
-            <tr>
-              <td colspan="4" class="text-center text-muted">No hay componentes asignados manuales (fuera del inventario
-                principal).</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div> <!-- /.card de componentes -->
-    {% endif %}
-
-    {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
-    <!-- BLOQUE 2.8: Impresoras de Red Asignadas -->
-    <div class="card shadow-sm mb-4 border-secondary" id="pcImpresoras">
-      <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-printer"></i> Impresoras de Red Asignadas</h5>
-        <button class="btn btn-sm btn-light text-secondary fw-bold" data-bs-toggle="modal"
-          data-bs-target="#modalAssignNetworkPrinter">
-          <i class="bi bi-plus-circle"></i> Vincular Impresora
-        </button>
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Dirección IP</th>
-              <th>Marca/Modelo</th>
-              <th>N° Serie</th>
-              <th class="text-end">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for np in assigned_network_printers %}
-            <tr>
-              <td><span class="fw-bold text-primary">{{ np.ip_address }}</span></td>
-              <td>{{ np.brand_model }}</td>
-              <td class="text-muted">{{ np.serial_number }}</td>
-              <td class="text-end">
-                <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=np.id) }}" method="POST"
-                  class="d-inline">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular impresora de esta PC"
-                    onclick="return confirm('¿Desvincular esta impresora de red del equipo?');">
-                    <i class="bi bi-x-circle"></i> Desvincular
-                  </button>
-                </form>
-              </td>
-            </tr>
-            {% else %}
-            <tr>
-              <td colspan="4" class="text-center text-muted">No hay impresoras de red asignadas a este equipo.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div> <!-- /.card de impresoras -->
-    {% endif %}
-
-    <!-- BLOQUE 3: Tareas de la PC -->
-    <div class="d-flex justify-content-between align-items-center mb-2" id="pcTareas">
-      <h3 class="mt-2 mb-0">Tareas</h3>
-      <!-- Botón duplicado para agregar tarea (abre el mismo modal) -->
-      {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
-      <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
-        <i class="bi bi-plus-lg"></i> Nueva tarea
-      </button>
-      {% endif %}
-    </div>
-
-    <div class="table-responsive">
-      <table class="table table-sm table-striped table-hover">
-        <thead class="thead-light">
-          <tr>
-            <th style="width: 15%;">Fecha</th>
-            <th>Descripción</th>
-            <th style="width: 15%;">Solicitante</th>
-            <th style="width: 10%;">Técnico</th>
-            <th style="width: 10%;">Estado</th>
-            <th style="width: 20%;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for t in tareas %}
-          <tr>
-            <td>
-              {{ t.created_at | datetime_es }}
-            </td>
-            <td>{{ t.descripcion }}</td>
-            <td>{{ t.solicitante or '' }}</td>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                {% if t.estado == 'Hecha' %}
-                  <span class="text-success fw-medium">{{ t.completed_by or t.assigned_to or '-' }}</span>
-                {% else %}
-                  <span>{{ t.assigned_to or '-' }}</span>
-                {% endif %}
-                <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1" 
-                  style="font-size: 0.75rem; border-radius: 4px;" 
-                  onclick="openReassignModal('{{ t.id }}', '{{ t.completed_by or t.assigned_to or '' }}')" 
-                  title="Cambiar Técnico">
-                  <i class="bi bi-pencil"></i>
-                </button>
-              </div>
-            </td>
-            <td>{{ t.estado }}</td>
-            <td>
-              {% if t.estado != 'Hecha' %}
-              <button type="button" class="btn btn-sm btn-success mb-1"
-                onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}', '{{ pc.pc_name }}')">
-                <i class="bi bi-check-lg"></i> Hecha
-              </button>
-              {% endif %}
-
-              {% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}
-              <button type="button" class="btn btn-sm btn-warning mb-1" onclick="openMigrateModal('{{ t.id }}')">
-                <i class="bi bi-arrow-right"></i> Asignar
-              </button>
-              {% endif %}
-
-              <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline"
-                onsubmit="return confirm('¿Borrar esta tarea?');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-sm btn-danger mb-1">
-                  Borrar
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="6" class="text-center">Sin tareas aún.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <!-- FIN BLOQUE 3 -->
-
-    <!-- BLOQUE 4: Historial de Cambios -->
-    <div class="d-flex justify-content-between align-items-center mb-2" id="pcHistorial">
-      <h3 class="mt-4 mb-0">Historial de Cambios</h3>
-      <button type="button" class="btn btn-sm btn-outline-dark mt-3" data-bs-toggle="modal"
-        data-bs-target="#modalManualAudit">
-        <i class="bi bi-pencil-square"></i> Registrar Cambio Manual
-      </button>
-    </div>
-    <div class="table-responsive mb-4">
-      <table class="table table-sm table-bordered">
-        <thead class="table-light">
-          <tr>
-            <th style="width: 15%;">Fecha</th>
-            <th style="width: 15%;">Responsable</th>
-            <th style="width: 15%;">Acción</th>
-            <th style="width: 15%;">Campo</th>
-            <th>Valor Anterior</th>
-            <th>Valor Nuevo</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for log in audit_logs %}
-          {# LOGICA PARA LENGUAJE HUMANO #}
-          {% set pc = log.pc_name %}
-          {% set user = log.user_name or 'SISTEMA' %}
-          {% set field = log.field %}
-          {% set old = log.old_value or '(nada)' %}
-          {% set new = log.new_value or '(vacío)' %}
-          
-          {% set human_desc = "Cambio genérico registrado en " ~ pc %}
-          {% if 'Tarea #' in field %}
-              {% if 'Completada' in field %}
-                  {% set human_desc = "El usuario " ~ user ~ " finalizó una tarea que estaba pendiente en " ~ pc ~ ". El trabajo fue: " ~ new %}
-              {% else %}
-                  {% set human_desc = user ~ " actualizó una tarea en " ~ pc %}
-              {% endif %}
-          {% elif log.action_type == 'INVENTARIO_AUTOMATICO' %}
-              {% set human_desc = "El script de inventario detectó automáticamente que " ~ field ~ " cambió de " ~ old ~ " a " ~ new ~ " en " ~ pc %}
-          {% elif log.action_type == 'GESTION_INFRAESTRUCTURA' %}
-              {% set human_desc = user ~ " realizó una gestión de hardware físico (" ~ field ~ ") en " ~ pc %}
-          {% elif log.action_type == 'EDICION_MANUAL' %}
-              {% set human_desc = user ~ " editó manualmente la información técnica de " ~ pc ~ " (Campo: " ~ field ~ ")" %}
-          {% elif log.action_type == 'BORRADO_PERMANENTE' %}
-              {% set human_desc = user ~ " eliminó permanentemente un registro del sistema: " ~ old %}
-          {% else %}
-              {% set human_desc = "Se actualizó " ~ field ~ " en " ~ pc ~ " (de " ~ old ~ " a " ~ new ~ ")" %}
-          {% endif %}
-          <tr data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ human_desc }}">
-            <td class="small">
-              {{ log.changed_at | datetime_es }}
-            </td>
-            <td>
-              <div class="fw-bold" style="font-size: 0.75rem;">{{ log.user_name or 'SISTEMA' }}</div>
-              <div class="text-muted" style="font-size: 0.6rem;">{{ log.ip_address or '' }}</div>
-            </td>
-            <td>
-               <span class="badge {% if log.action_type == 'INVENTARIO_AUTOMATICO' %}bg-light text-secondary{% elif 'TAREAS' in log.action_type %}bg-success-subtle text-success{% elif 'MANUAL' in log.action_type %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %}" style="font-size: 0.65rem; text-transform: uppercase;">
-                 {{ log.action_type.replace('_', ' ') if log.action_type else 'UPDATE' }}
-               </span>
-            </td>
-            <td class="fw-bold">{{ log.field }}</td>
-            <td class="text-danger small">{{ log.old_value }}</td>
-            <td class="text-success small">{{ log.new_value }}</td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="6" class="text-center text-muted">Sin cambios registrados.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div><!-- /.table-responsive historial -->
-  </div><!-- /.container-fluid main -->
-
-
-  <!-- Modal Nueva Tarea -->
-  <div class="modal fade" id="modalNuevaTarea" tabindex="-1" role="dialog" aria-labelledby="modalNuevaTareaLabel"
-    aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <form id="form-nueva-tarea" action="{{ url_for('tasks.add_task', pc_name=pc.pc_name) }}" method="post">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalNuevaTareaLabel">Agregar nueva tarea</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-
-            <div class="form-group mb-3">
-              <label for="descripcion">Descripción</label>
-              <input type="text" name="descripcion" id="descripcion" class="form-control"
-                placeholder="Descripción de la tarea" required>
-            </div>
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <label for="tipo_actividad" class="form-label">Tipo de Actividad</label>
-                <select name="tipo_actividad" id="tipo_actividad" class="form-select">
-                  <option value="tarea">📝 Tarea</option>
-                  <option value="incidente">🔥 Incidente</option>
-                  <option value="riesgo">⚠️ Riesgo</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label for="prioridad" class="form-label">Prioridad</label>
-                <select name="prioridad" id="prioridad" class="form-select">
-                  <option value="1">1 - Baja</option>
-                  <option value="2" selected>2 - Media</option>
-                  <option value="3">3 - Alta</option>
-                  <option value="4">4 - Crítica</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group mb-3">
-              <label for="impacto_valor" class="form-label">Impacto esperado (1-4)</label>
-              <select name="impacto_valor" id="impacto_valor" class="form-select">
-                <option value="1">1 - Mínimo</option>
-                <option value="2">2 - Parcial</option>
-                <option value="3">3 - Generalizado</option>
-                <option value="4">4 - Bloqueante</option>
-              </select>
-            </div>
-
-            <div class="form-group mb-3">
-              <label for="categoria">Categoría Técnica</label>
-              <select name="categoria" id="categoria" class="form-control">
+    <!-- BLOQUE 2: Infraestructura de Red & Energia -->
+
+    <div class="card shadow-sm mb-4" id="pcInfra">
+
+      <div class="gold-card-header d-flex justify-content-between align-items-center">
+
+        <span><i class="bi bi-diagram-3"></i> Infraestructura de Red y Energía</span>
+
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+
+          style="border-color:rgba(255,255,255,0.4);color:#fff;font-size:0.78rem;" data-bs-toggle="modal"
+
+          data-bs-target="#modalEditarInfra">
+
+          <i class="bi bi-pencil"></i> Editar
+
+        </button>
+
+      </div>
+
+      <div class="card-body">
+
+        <div class="row">
+
+          <div class="col-md-4">
+
+            <p><strong>Edificio:</strong> {{ pc.building or '-' }}</p>
+
+            <p><strong>Piso:</strong> {{ pc.floor or '-' }}</p>
+
+          </div>
+
+          <div class="col-md-4">
+
+            <p><strong>Switch:</strong> {{ pc.switch_name or '-' }} (Puerto {{ pc.switch_port or '-' }})</p>
+
+            <p><strong>Pachera:</strong> {{ pc.pachera_name or '-' }} (Boca {{ pc.pachera_port or '-' }})</p>
+
+          </div>
+
+          <!-- Integracion UPS -->
+
+          <div class="col-md-4 border-start">
+
+            <h6 class="text-primary fw-bold mb-2"><i class="bi bi-plug"></i> Respaldo Eléctrico (UPS)</h6>
+
+            {% if pc_ups_list %}
+
+            {% for pc_ups in pc_ups_list %}
+
+            <div class="{% if not loop.last %}mb-3 border-bottom pb-3{% endif %}">
+
+              <p class="mb-1"><strong>UPS:</strong> {{ pc_ups.code }}</p>
+
+              <p class="mb-2"><strong>Modelo:</strong> {{ pc_ups.model }}</p>
+
+              {% if pc_ups.battery_code %}
+
+              <span class="badge bg-success"><i class="bi bi-battery-charging"></i> Batería: {{ pc_ups.battery_code
+
+                }}</span>
+
+              {% else %}
+
+              <span class="badge bg-danger"><i class="bi bi-battery"></i> Sin Batería</span>
+
+              {% endif %}
+
+              <div class="mt-2 d-flex gap-2">
+
+                <!-- Botón de Asignar/Cambiar Batería -->
+
+                <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+
+                  data-bs-target="#modalAssignBatteryToUPS{{ pc_ups.id }}" title="Asignar/Cambiar Batería">
+
+                  <i class="bi bi-battery-half"></i> {% if pc_ups.battery_code %}Cambiar Batería{% else %}Asignar
+
+                  Batería{%
+
+                  endif %}
+
+                </button>
+
+
+
+                <!-- Botón Desvincular UPS -->
+
+                <form action="{{ url_for('infrastructure.assign_ups_to_pc', ups_id=pc_ups.id) }}" method="POST"
+
+                  class="m-0">
+
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                  <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
+
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular UPS"
+
+                    onclick="return confirm('¿Quitar UPS de este equipo?');">
+
+                    <i class="bi bi-trash"></i> Desvincular
+
+                  </button>
+
+                </form>
+
+              </div>
+
+
+
+              <!-- Modal Asignar Bateria a esta UPS -->
+
+              <div class="modal fade" id="modalAssignBatteryToUPS{{ pc_ups.id }}" tabindex="-1" aria-hidden="true">
+
+                <div class="modal-dialog">
+
+                  <div class="modal-content">
+
+                    <form action="{{ url_for('infrastructure.assign_battery_to_ups', ups_id=pc_ups.id) }}"
+
+                      method="POST">
+
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                      <!-- Retornamos a la página anterior de la PC -->
+
+                      <input type="hidden" name="next" value="{{ request.path }}">
+
+                      <div class="modal-header bg-success text-white">
+
+                        <h5 class="modal-title">Batería para UPS {{ pc_ups.code }}</h5>
+
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+                          aria-label="Close"></button>
+
+                      </div>
+
+                      <div class="modal-body">
+
+                        <p>Seleccione qué batería del Stock se instalará en esta UPS. Si actualmente tiene una, se
+
+                          devolverá
+
+                          al Stock.</p>
+
+                        <div class="mb-3">
+
+                          <label class="form-label fw-bold">Batería Disponible:</label>
+
+                          <select class="form-select" name="battery_id">
+
+                            <option value="">-- Quitar batería / Ninguna --</option>
+
+                            {% for bat in baterias_disponibles %}
+
+                            <option value="{{ bat.id }}">{{ bat.code }} ({{ bat.brand_model }})</option>
+
+                            {% endfor %}
+
+                          </select>
+
+                        </div>
+
+                      </div>
+
+                      <div class="modal-footer">
+
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+                        <button type="submit" class="btn btn-success">Guardar</button>
+
+                      </div>
+
+                    </form>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            {% endfor %}
+
+            <div class="mt-3">
+
+              <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAssignUPS">
+
+                <i class="bi bi-plug-fill"></i> Agregar otra UPS
+
+              </button>
+
+            </div>
+
+            {% else %}
+
+            <p class="text-muted small mb-2">Sin UPS asignada.</p>
+
+            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalAssignUPS">
+
+              <i class="bi bi-link"></i> Asignar UPS a este equipo
+
+            </button>
+
+            {% endif %}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    {% endif %}
+
+
+
+    {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') %}
+
+    <!-- BLOQUE 2.5: Componentes Asignados -->
+
+    <div class="card shadow-sm mb-4 border-info" id="pcComponentes">
+
+      <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+
+        <h5 class="mb-0"><i class="bi bi-cpu"></i> Periféricos y Componentes Asignados</h5>
+
+        <button class="btn btn-sm btn-light text-info fw-bold" data-bs-toggle="modal"
+
+          data-bs-target="#modalAssignComponent">
+
+          <i class="bi bi-plus-circle"></i> Vincular Componente
+
+        </button>
+
+      </div>
+
+      <div class="card-body p-0">
+
+        <table class="table table-hover mb-0">
+
+          <thead class="table-light">
+
+            <tr>
+
+              <th>Tipo</th>
+
+              <th>Marca/Modelo</th>
+
+              <th>N° Serie</th>
+
+              <th class="text-end">Acciones</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for comp in pc_components if not comp.assigned_to_component_id %}
+
+            <tr>
+
+              <td><span class="fw-bold">{{ comp.component_type }}</span></td>
+
+              <td>{{ comp.brand_model }}</td>
+
+              <td class="text-muted">{{ comp.serial_number }}</td>
+
+              <td class="text-end">
+
+                {% if comp.component_type == 'DVR' %}
+
+                <!-- Botón para asignar un disco a este DVR -->
+
+                <button class="btn btn-sm btn-outline-success me-1"
+
+                  onclick="openAssignSubcomponentModal('{{ comp.id }}', '{{ comp.component_type }} ({{ comp.serial_number }})')"
+
+                  title="Agregar Disco Interno">
+
+                  <i class="bi bi-hdd-network"></i>
+
+                </button>
+
+                {% endif %}
+
+                <form action="{{ url_for('infrastructure.assign_component_to_pc', component_id=comp.id) }}"
+
+                  method="POST" class="d-inline">
+
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                  <input type="hidden" name="pc_name" value=""> <!-- empty value to unassign -->
+
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Devolver al stock y desvincular"
+
+                    onclick="return confirm('¿Desvincular componente del equipo? Pasará a Stock.');">
+
+                    <i class="bi bi-x-circle"></i>
+
+                  </button>
+
+                </form>
+
+              </td>
+
+            </tr>
+
+            <!-- Sub-componentes de este padre (Ej: HDD de DVR) -->
+
+            {% for subc in pc_components if subc.assigned_to_component_id == comp.id %}
+
+            <tr class="table-secondary">
+
+              <td class="ps-4"><i class="bi bi-arrow-return-right text-muted me-1"></i> {{ subc.component_type }}
+
+              </td>
+
+              <td>{{ subc.brand_model }}</td>
+
+              <td class="text-muted">{{ subc.serial_number }}</td>
+
+              <td class="text-end">
+
+                <form action="{{ url_for('infrastructure.assign_component_to_component', component_id=subc.id) }}"
+
+                  method="POST" class="d-inline">
+
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                  <input type="hidden" name="parent_id" value="">
+
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular del DVR"
+
+                    onclick="return confirm('¿Desvincular componente del DVR?');">
+
+                    <i class="bi bi-x"></i>
+
+                  </button>
+
+                </form>
+
+              </td>
+
+            </tr>
+
+            {% endfor %}
+
+            {% else %}
+
+            <tr>
+
+              <td colspan="4" class="text-center text-muted">No hay componentes asignados manuales (fuera del inventario
+
+                principal).</td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div> <!-- /.card de componentes -->
+
+    {% endif %}
+
+
+
+    {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
+
+    <!-- BLOQUE 2.8: Impresoras de Red Asignadas -->
+
+    <div class="card shadow-sm mb-4 border-secondary" id="pcImpresoras">
+
+      <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+
+        <h5 class="mb-0"><i class="bi bi-printer"></i> Impresoras de Red Asignadas</h5>
+
+        <button class="btn btn-sm btn-light text-secondary fw-bold" data-bs-toggle="modal"
+
+          data-bs-target="#modalAssignNetworkPrinter">
+
+          <i class="bi bi-plus-circle"></i> Vincular Impresora
+
+        </button>
+
+      </div>
+
+      <div class="card-body p-0">
+
+        <table class="table table-hover mb-0">
+
+          <thead class="table-light">
+
+            <tr>
+
+              <th>Dirección IP</th>
+
+              <th>Marca/Modelo</th>
+
+              <th>N° Serie</th>
+
+              <th class="text-end">Acciones</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for np in assigned_network_printers %}
+
+            <tr>
+
+              <td><span class="fw-bold text-primary">{{ np.ip_address }}</span></td>
+
+              <td>{{ np.brand_model }}</td>
+
+              <td class="text-muted">{{ np.serial_number }}</td>
+
+              <td class="text-end">
+
+                <form action="{{ url_for('infrastructure.unassign_network_printer', printer_id=np.id) }}" method="POST"
+
+                  class="d-inline">
+
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                  <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Desvincular impresora de esta PC"
+
+                    onclick="return confirm('¿Desvincular esta impresora de red del equipo?');">
+
+                    <i class="bi bi-x-circle"></i> Desvincular
+
+                  </button>
+
+                </form>
+
+              </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+
+              <td colspan="4" class="text-center text-muted">No hay impresoras de red asignadas a este equipo.</td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div> <!-- /.card de impresoras -->
+
+    {% endif %}
+
+
+
+    <!-- BLOQUE 3: Tareas de la PC -->
+
+    <div class="d-flex justify-content-between align-items-center mb-2" id="pcTareas">
+
+      <h3 class="mt-2 mb-0">Tareas</h3>
+
+      <!-- Botón duplicado para agregar tarea (abre el mismo modal) -->
+
+      {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
+
+      <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
+
+        <i class="bi bi-plus-lg"></i> Nueva tarea
+
+      </button>
+
+      {% endif %}
+
+    </div>
+
+
+
+    <div class="table-responsive">
+
+      <table class="table table-sm table-striped table-hover">
+
+        <thead class="thead-light">
+
+          <tr>
+
+            <th style="width: 15%;">Fecha</th>
+
+            <th>Descripción</th>
+
+            <th style="width: 15%;">Solicitante</th>
+
+            <th style="width: 10%;">Técnico</th>
+
+            <th style="width: 10%;">Estado</th>
+
+            <th style="width: 20%;">Acciones</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          {% for t in tareas %}
+
+          <tr>
+
+            <td>
+
+              {{ t.created_at | datetime_es }}
+
+            </td>
+
+            <td>{{ t.descripcion }}</td>
+
+            <td>{{ t.solicitante or '' }}</td>
+
+            <td>
+
+              <div class="d-flex align-items-center gap-2">
+
+                {% if t.estado == 'Hecha' %}
+
+                  <span class="text-success fw-medium">{{ t.completed_by or t.assigned_to or '-' }}</span>
+
+                {% else %}
+
+                  <span>{{ t.assigned_to or '-' }}</span>
+
+                {% endif %}
+
+                <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1" 
+
+                  style="font-size: 0.75rem; border-radius: 4px;" 
+
+                  onclick="openReassignModal('{{ t.id }}', '{{ t.completed_by or t.assigned_to or '' }}')" 
+
+                  title="Cambiar Técnico">
+
+                  <i class="bi bi-pencil"></i>
+
+                </button>
+
+              </div>
+
+            </td>
+
+            <td>{{ t.estado }}</td>
+
+            <td>
+
+              {% if t.estado != 'Hecha' %}
+
+              <button type="button" class="btn btn-sm btn-success mb-1"
+
+                onclick="openCompleteTaskModal('{{ t.id }}', '{{ t.assigned_to or '' }}', '{{ pc.pc_name }}')">
+
+                <i class="bi bi-check-lg"></i> Hecha
+
+              </button>
+
+              {% endif %}
+              <button type=\"button\" class=\"btn btn-sm mb-1\" style=\"background-color: #0ea5e9; color: white; border: none;\" onclick=\"openTaskActionsModal('{{ t.id }}')\">
+                <i class=\"bi bi-card-list\"></i> Acciones
+              </button>
+
+
+
+              {% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}
+
+              <button type="button" class="btn btn-sm btn-warning mb-1" onclick="openMigrateModal('{{ t.id }}')">
+
+                <i class="bi bi-arrow-right"></i> Asignar
+
+              </button>
+
+              {% endif %}
+
+
+
+              <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline"
+
+                onsubmit="return confirm('¿Borrar esta tarea?');">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <button type="submit" class="btn btn-sm btn-danger mb-1">
+
+                  Borrar
+
+                </button>
+
+              </form>
+
+            </td>
+
+          </tr>
+
+          {% else %}
+
+          <tr>
+
+            <td colspan="6" class="text-center">Sin tareas aún.</td>
+
+          </tr>
+
+          {% endfor %}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <!-- FIN BLOQUE 3 -->
+
+
+
+    <!-- BLOQUE 4: Historial de Cambios -->
+
+    <div class="d-flex justify-content-between align-items-center mb-2" id="pcHistorial">
+
+      <h3 class="mt-4 mb-0">Historial de Cambios</h3>
+
+      <button type="button" class="btn btn-sm btn-outline-dark mt-3" data-bs-toggle="modal"
+
+        data-bs-target="#modalManualAudit">
+
+        <i class="bi bi-pencil-square"></i> Registrar Cambio Manual
+
+      </button>
+
+    </div>
+
+    <div class="table-responsive mb-4">
+
+      <table class="table table-sm table-bordered">
+
+        <thead class="table-light">
+
+          <tr>
+
+            <th style="width: 15%;">Fecha</th>
+
+            <th style="width: 15%;">Responsable</th>
+
+            <th style="width: 15%;">Acción</th>
+
+            <th style="width: 15%;">Campo</th>
+
+            <th>Valor Anterior</th>
+
+            <th>Valor Nuevo</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          {% for log in audit_logs %}
+
+          {# LOGICA PARA LENGUAJE HUMANO #}
+
+          {% set pc = log.pc_name %}
+
+          {% set user = log.user_name or 'SISTEMA' %}
+
+          {% set field = log.field %}
+
+          {% set old = log.old_value or '(nada)' %}
+
+          {% set new = log.new_value or '(vacío)' %}
+
+          
+
+          {% set human_desc = "Cambio genérico registrado en " ~ pc %}
+
+          {% if 'Tarea #' in field %}
+
+              {% if 'Completada' in field %}
+
+                  {% set human_desc = "El usuario " ~ user ~ " finalizó una tarea que estaba pendiente en " ~ pc ~ ". El trabajo fue: " ~ new %}
+
+              {% else %}
+
+                  {% set human_desc = user ~ " actualizó una tarea en " ~ pc %}
+
+              {% endif %}
+
+          {% elif log.action_type == 'INVENTARIO_AUTOMATICO' %}
+
+              {% set human_desc = "El script de inventario detectó automáticamente que " ~ field ~ " cambió de " ~ old ~ " a " ~ new ~ " en " ~ pc %}
+
+          {% elif log.action_type == 'GESTION_INFRAESTRUCTURA' %}
+
+              {% set human_desc = user ~ " realizó una gestión de hardware físico (" ~ field ~ ") en " ~ pc %}
+
+          {% elif log.action_type == 'EDICION_MANUAL' %}
+
+              {% set human_desc = user ~ " editó manualmente la información técnica de " ~ pc ~ " (Campo: " ~ field ~ ")" %}
+
+          {% elif log.action_type == 'BORRADO_PERMANENTE' %}
+
+              {% set human_desc = user ~ " eliminó permanentemente un registro del sistema: " ~ old %}
+
+          {% else %}
+
+              {% set human_desc = "Se actualizó " ~ field ~ " en " ~ pc ~ " (de " ~ old ~ " a " ~ new ~ ")" %}
+
+          {% endif %}
+
+          <tr data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ human_desc }}">
+
+            <td class="small">
+
+              {{ log.changed_at | datetime_es }}
+
+            </td>
+
+            <td>
+
+              <div class="fw-bold" style="font-size: 0.75rem;">{{ log.user_name or 'SISTEMA' }}</div>
+
+              <div class="text-muted" style="font-size: 0.6rem;">{{ log.ip_address or '' }}</div>
+
+            </td>
+
+            <td>
+
+               <span class="badge {% if log.action_type == 'INVENTARIO_AUTOMATICO' %}bg-light text-secondary{% elif 'TAREAS' in log.action_type %}bg-success-subtle text-success{% elif 'MANUAL' in log.action_type %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %}" style="font-size: 0.65rem; text-transform: uppercase;">
+
+                 {{ log.action_type.replace('_', ' ') if log.action_type else 'UPDATE' }}
+
+               </span>
+
+            </td>
+
+            <td class="fw-bold">{{ log.field }}</td>
+
+            <td class="text-danger small">{{ log.old_value }}</td>
+
+            <td class="text-success small">{{ log.new_value }}</td>
+
+          </tr>
+
+          {% else %}
+
+          <tr>
+
+            <td colspan="6" class="text-center text-muted">Sin cambios registrados.</td>
+
+          </tr>
+
+          {% endfor %}
+
+        </tbody>
+
+      </table>
+
+    </div><!-- /.table-responsive historial -->
+
+  </div><!-- /.container-fluid main -->
+
+
+
+
+
+  <!-- Modal Nueva Tarea -->
+
+  <div class="modal fade" id="modalNuevaTarea" tabindex="-1" role="dialog" aria-labelledby="modalNuevaTareaLabel"
+
+    aria-hidden="true">
+
+    <div class="modal-dialog" role="document">
+
+      <div class="modal-content">
+
+        <form id="form-nueva-tarea" action="{{ url_for('tasks.add_task', pc_name=pc.pc_name) }}" method="post">
+
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="modal-header">
+
+            <h5 class="modal-title" id="modalNuevaTareaLabel">Agregar nueva tarea</h5>
+
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+
+
+            <div class="form-group mb-3">
+
+              <label for="descripcion">Descripción</label>
+
+              <input type="text" name="descripcion" id="descripcion" class="form-control"
+
+                placeholder="Descripción de la tarea" required>
+
+            </div>
+
+            <div class="row g-3 mb-3">
+
+              <div class="col-md-6">
+
+                <label for="tipo_actividad" class="form-label">Tipo de Actividad</label>
+
+                <select name="tipo_actividad" id="tipo_actividad" class="form-select">
+
+                  <option value="tarea">📝 Tarea</option>
+
+                  <option value="incidente">🔥 Incidente</option>
+
+                  <option value="riesgo">⚠️ Riesgo</option>
+
+                </select>
+
+              </div>
+
+              <div class="col-md-6">
+
+                <label for="prioridad" class="form-label">Prioridad</label>
+
+                <select name="prioridad" id="prioridad" class="form-select">
+
+                  <option value="1">1 - Baja</option>
+
+                  <option value="2" selected>2 - Media</option>
+
+                  <option value="3">3 - Alta</option>
+
+                  <option value="4">4 - Crítica</option>
+
+                </select>
+
+              </div>
+
+            </div>
+
+
+
+            <div class="form-group mb-3">
+
+              <label for="impacto_valor" class="form-label">Impacto esperado (1-4)</label>
+
+              <select name="impacto_valor" id="impacto_valor" class="form-select">
+
+                <option value="1">1 - Mínimo</option>
+
+                <option value="2">2 - Parcial</option>
+
+                <option value="3">3 - Generalizado</option>
+
+                <option value="4">4 - Bloqueante</option>
+
+              </select>
+
+            </div>
+
+
+
+            <div class="form-group mb-3">
+
+              <label for="categoria">Categoría Técnica</label>
+
+              <select name="categoria" id="categoria" class="form-control">
+
                 <option value="">-- Automático --</option>
                 <option value="Audiencias">Audiencias</option>
                 <option value="Impresoras">Impresoras</option>
-                <option value="Red/Conectividad">Red/Conectividad</option>
-                <option value="Hardware">Hardware</option>
-                <option value="Software">Software</option>
-                <option value="Usuarios">Usuarios</option>
-                <option value="General">General</option>
-              </select>
-            </div>
-
-            <div class="form-group mb-3">
-              <label for="technician">Asignar a Técnico (Opcional)</label>
-              <select name="technician" id="technician" class="form-control">
-                <option value="">-- Sin Asignar --</option>
-                {% for tech in technicians %}
-                <option value="{{ tech.name }}">{{ tech.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="form-group mb-3">
-              <label for="solicitante">Solicitante</label>
-              <input type="text" name="solicitante" id="solicitante" class="form-control"
-                placeholder="Quién solicita (Dirección, Escuela, etc.)" list="pcUsersDatalist" required>
-              <datalist id="pcUsersDatalist">
-                {% for user in ad_users_list %}
-                <option value="{{ user.real_name }}">{{ user.username }}</option>
-                {% endfor %}
-              </datalist>
-            </div>
-
-            <div class="form-group">
-              <label for="resumen_impacto" class="form-label">Justificación de Impacto (Opcional)</label>
-              <textarea name="resumen_impacto" id="resumen_impacto" class="form-control" rows="2" placeholder="Por qué es crítico..."></textarea>
-            </div>
-
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              Cancelar
-            </button>
-            <button type="submit" class="btn btn-primary">
-              Guardar tarea
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-
-
-
-
-  <!-- Modal Editar Infraestructura -->
-  <div class="modal fade" id="modalEditarInfra" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form action="{{ url_for('dashboard.update_pc_infrastructure', pc_name=pc.pc_name) }}" method="post">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="modal-header">
-            <h5 class="modal-title">Editar Infraestructura</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row g-2 mb-3">
-              <div class="col-md-6">
-                <label for="building" class="form-label">Edificio</label>
-                <input type="text" class="form-control" id="building" name="building" value="{{ pc.building or '' }}">
-              </div>
-              <div class="col-md-6">
-                <label for="floor" class="form-label">Piso</label>
-                <input type="text" class="form-control" id="floor" name="floor" value="{{ pc.floor or '' }}">
-              </div>
-            </div>
-
-            <div class="row g-2 mb-3">
-              <div class="col-md-6">
-                <label for="switch_name" class="form-label">Nombre Switch</label>
-                <input type="text" class="form-control" id="switch_name" name="switch_name"
-                  value="{{ pc.switch_name or '' }}">
-              </div>
-              <div class="col-md-6">
-                <label for="switch_port" class="form-label">Puerto Switch</label>
-                <input type="text" class="form-control" id="switch_port" name="switch_port"
-                  value="{{ pc.switch_port or '' }}">
-              </div>
-            </div>
-
-            <div class="row g-2">
-              <div class="col-md-6">
-                <label for="pachera_name" class="form-label">Nombre Pachera</label>
-                <input type="text" class="form-control" id="pachera_name" name="pachera_name"
-                  value="{{ pc.pachera_name or '' }}">
-              </div>
-              <div class="col-md-6">
-                <label for="pachera_port" class="form-label">Boca Pachera</label>
-                <input type="text" class="form-control" id="pachera_port" name="pachera_port"
-                  value="{{ pc.pachera_port or '' }}">
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Auditoria Manual -->
-  <div class="modal fade" id="modalManualAudit" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form action="{{ url_for('tasks.add_manual_audit', pc_name=pc.pc_name) }}" method="post">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="modal-header bg-dark text-white">
-            <h5 class="modal-title">Registrar Cambio Manual</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-              aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <p class="small text-muted">Use esto para registrar cambios de componentes que el sistema no detecta
-              automáticamente (ej: Fuentes, Gabinetes, Periféricos analógicos).</p>
-
-            <div class="mb-3">
-              <label for="campo" class="form-label">Componente / Campo</label>
-              <input type="text" class="form-control" id="campo" name="campo" list="componentesList"
-                placeholder="Ej: Fuente de Poder" required>
-              <datalist id="componentesList">
-                <option value="Fuente de Poder">
-                <option value="Gabinete">
-                <option value="Teclado">
-                <option value="Mouse">
-                <option value="Monitor (Adicional)">
-                <option value="Estabilizador/UPS">
-                <option value="Placa de Red PCI">
-                <option value="Cooler/Ventilador">
-              </datalist>
-            </div>
-
-            <div class="mb-3">
-              <label for="valor_anterior" class="form-label">Valor Anterior (Opcional)</label>
-              <input type="text" class="form-control" id="valor_anterior" name="valor_anterior"
-                placeholder="Ej: Generica 500W">
-            </div>
-
-            <div class="mb-3">
-              <label for="valor_nuevo" class="form-label">Valor Nuevo / Detalle</label>
-              <input type="text" class="form-control" id="valor_nuevo" name="valor_nuevo"
-                placeholder="Ej: Sentey 600W 80 Plus" required>
-            </div>
-
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-dark">Registrar Cambio</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Asignar UPS -->
-  <div class="modal fade" id="modalAssignUPS" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="assignUpsForm" method="POST"
-          onsubmit="this.action = '/infra/ups/' + document.getElementById('selectUPS').value + '/assign_pc';">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">Asignar UPS</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-              aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label fw-bold">UPS Disponible:</label>
-              <select class="form-select" id="selectUPS" required>
-                <option value="">-- Seleccionar --</option>
-                {% for u in available_ups %}
-                <option value="{{ u.id }}">{{ u.code }} (Mod: {{ u.model }})</option>
-                {% endfor %}
-              </select>
-            </div>
-            <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success">Asignar a Equipo</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Vincular Componente a PC -->
-  <div class="modal fade" id="modalAssignComponent" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="formAssignComponent" method="POST" action="">
-          <div class="modal-header bg-info text-white">
-            <h5 class="modal-title">Vincular Componente del Stock</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-              aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label fw-bold">Componente Disponible (Stock):</label>
-              <select class="form-select" id="selectComponent"
-                onchange="document.getElementById('formAssignComponent').action='/infra/components/' + this.value + '/assign_pc'"
-                required>
-                <option value="">-- Seleccionar --</option>
-                {% for c in available_components %}
-                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number
-                  }})
-                </option>
-                {% endfor %}
-              </select>
-            </div>
-            <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-info text-white">Vincular Componente</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Vincular Impresora de Red -->
-  <div class="modal fade" id="modalAssignNetworkPrinter" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form action="#" method="POST" id="formAssignNetworkPrinter">
-          <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
-          <div class="modal-header bg-secondary text-white">
-            <h5 class="modal-title">Vincular Impresora de Red a {{ pc.pc_name }}</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p>Seleccione la impresora de red que desea agregar a este equipo.</p>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Impresora Disponible:</label>
-              <select class="form-select" id="printer_select_id" required>
-                <option value="">-- Seleccione una impresora --</option>
-                {% for np in available_network_printers %}
-                <option value="{{ np.id }}">{{ np.ip_address }} - {{ np.brand_model }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-info text-white"
-              onclick="document.getElementById('formAssignNetworkPrinter').action = '/infra/network_printers/' + document.getElementById('printer_select_id').value + '/assign_pc';">Vincular
-              Impresora</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Vincular Sub-componente (ej: HDD a DVR) -->
-  <div class="modal fade" id="modalAssignSubcomponent" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="formAssignSubcomponent" method="POST" action="">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">Vincular Componente Interno</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-              aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <p>Destino: <strong id="lblParentComponent"></strong></p>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Componente Disponible (Stock):</label>
-              <select class="form-select" id="selectSubcomponent"
-                onchange="document.getElementById('formAssignSubcomponent').action='/infra/components/' + this.value + '/assign_component'"
-                required>
-                <option value="">-- Seleccionar --</option>
-                {% for c in available_components %}
-                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number
-                  }})
-                </option>
-                {% endfor %}
-              </select>
-            </div>
-            <input type="hidden" name="parent_component_id" id="parentComponentId" value="">
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success">Vincular internamente</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-      document.addEventListener('DOMContentLoaded', function () {
-          var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-          var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-              return new bootstrap.Tooltip(tooltipTriggerEl)
-          })
-      });
-  </script>
-  <script>
-    function openAssignSubcomponentModal(parentId, parentName) {
-      document.getElementById('parentComponentId').value = parentId;
-      document.getElementById('lblParentComponent').innerText = parentName;
-      document.getElementById('formAssignSubcomponent').action = ""; // Will be set by select onchange
-      document.getElementById('selectSubcomponent').value = "";
-      var modal = new bootstrap.Modal(document.getElementById('modalAssignSubcomponent'));
-      modal.show();
-    }
-
-  </script>
-
-</body>
-
-</html>
+                <option value="Red/Conectividad">Red/Conectividad</option>
+
+                <option value="Hardware">Hardware</option>
+
+                <option value="Software">Software</option>
+
+                <option value="Usuarios">Usuarios</option>
+
+                <option value="General">General</option>
+
+              </select>
+
+            </div>
+
+
+
+            <div class="form-group mb-3">
+
+              <label for="technician">Asignar a Técnico (Opcional)</label>
+
+              <select name="technician" id="technician" class="form-control">
+
+                <option value="">-- Sin Asignar --</option>
+
+                {% for tech in technicians %}
+
+                <option value="{{ tech.name }}">{{ tech.name }}</option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+
+
+            <div class="form-group mb-3">
+
+              <label for="solicitante">Solicitante</label>
+
+              <input type="text" name="solicitante" id="solicitante" class="form-control"
+
+                placeholder="Quién solicita (Dirección, Escuela, etc.)" list="pcUsersDatalist" required>
+
+              <datalist id="pcUsersDatalist">
+
+                {% for user in ad_users_list %}
+
+                <option value="{{ user.real_name }}">{{ user.username }}</option>
+
+                {% endfor %}
+
+              </datalist>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+              <label for="resumen_impacto" class="form-label">Justificación de Impacto (Opcional)</label>
+
+              <textarea name="resumen_impacto" id="resumen_impacto" class="form-control" rows="2" placeholder="Por qué es crítico..."></textarea>
+
+            </div>
+
+
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+
+              Cancelar
+
+            </button>
+
+            <button type="submit" class="btn btn-primary">
+
+              Guardar tarea
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+  <!-- Modal Editar Infraestructura -->
+
+  <div class="modal fade" id="modalEditarInfra" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form action="{{ url_for('dashboard.update_pc_infrastructure', pc_name=pc.pc_name) }}" method="post">
+
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="modal-header">
+
+            <h5 class="modal-title">Editar Infraestructura</h5>
+
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <div class="row g-2 mb-3">
+
+              <div class="col-md-6">
+
+                <label for="building" class="form-label">Edificio</label>
+
+                <input type="text" class="form-control" id="building" name="building" value="{{ pc.building or '' }}">
+
+              </div>
+
+              <div class="col-md-6">
+
+                <label for="floor" class="form-label">Piso</label>
+
+                <input type="text" class="form-control" id="floor" name="floor" value="{{ pc.floor or '' }}">
+
+              </div>
+
+            </div>
+
+
+
+            <div class="row g-2 mb-3">
+
+              <div class="col-md-6">
+
+                <label for="switch_name" class="form-label">Nombre Switch</label>
+
+                <input type="text" class="form-control" id="switch_name" name="switch_name"
+
+                  value="{{ pc.switch_name or '' }}">
+
+              </div>
+
+              <div class="col-md-6">
+
+                <label for="switch_port" class="form-label">Puerto Switch</label>
+
+                <input type="text" class="form-control" id="switch_port" name="switch_port"
+
+                  value="{{ pc.switch_port or '' }}">
+
+              </div>
+
+            </div>
+
+
+
+            <div class="row g-2">
+
+              <div class="col-md-6">
+
+                <label for="pachera_name" class="form-label">Nombre Pachera</label>
+
+                <input type="text" class="form-control" id="pachera_name" name="pachera_name"
+
+                  value="{{ pc.pachera_name or '' }}">
+
+              </div>
+
+              <div class="col-md-6">
+
+                <label for="pachera_port" class="form-label">Boca Pachera</label>
+
+                <input type="text" class="form-control" id="pachera_port" name="pachera_port"
+
+                  value="{{ pc.pachera_port or '' }}">
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Modal Auditoria Manual -->
+
+  <div class="modal fade" id="modalManualAudit" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form action="{{ url_for('tasks.add_manual_audit', pc_name=pc.pc_name) }}" method="post">
+
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="modal-header bg-dark text-white">
+
+            <h5 class="modal-title">Registrar Cambio Manual</h5>
+
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+              aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <p class="small text-muted">Use esto para registrar cambios de componentes que el sistema no detecta
+
+              automáticamente (ej: Fuentes, Gabinetes, Periféricos analógicos).</p>
+
+
+
+            <div class="mb-3">
+
+              <label for="campo" class="form-label">Componente / Campo</label>
+
+              <input type="text" class="form-control" id="campo" name="campo" list="componentesList"
+
+                placeholder="Ej: Fuente de Poder" required>
+
+              <datalist id="componentesList">
+
+                <option value="Fuente de Poder">
+
+                <option value="Gabinete">
+
+                <option value="Teclado">
+
+                <option value="Mouse">
+
+                <option value="Monitor (Adicional)">
+
+                <option value="Estabilizador/UPS">
+
+                <option value="Placa de Red PCI">
+
+                <option value="Cooler/Ventilador">
+
+              </datalist>
+
+            </div>
+
+
+
+            <div class="mb-3">
+
+              <label for="valor_anterior" class="form-label">Valor Anterior (Opcional)</label>
+
+              <input type="text" class="form-control" id="valor_anterior" name="valor_anterior"
+
+                placeholder="Ej: Generica 500W">
+
+            </div>
+
+
+
+            <div class="mb-3">
+
+              <label for="valor_nuevo" class="form-label">Valor Nuevo / Detalle</label>
+
+              <input type="text" class="form-control" id="valor_nuevo" name="valor_nuevo"
+
+                placeholder="Ej: Sentey 600W 80 Plus" required>
+
+            </div>
+
+
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-dark">Registrar Cambio</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Modal Asignar UPS -->
+
+  <div class="modal fade" id="modalAssignUPS" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form id="assignUpsForm" method="POST"
+
+          onsubmit="this.action = '/infra/ups/' + document.getElementById('selectUPS').value + '/assign_pc';">
+
+          <div class="modal-header bg-success text-white">
+
+            <h5 class="modal-title">Asignar UPS</h5>
+
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+              aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <div class="mb-3">
+
+              <label class="form-label fw-bold">UPS Disponible:</label>
+
+              <select class="form-select" id="selectUPS" required>
+
+                <option value="">-- Seleccionar --</option>
+
+                {% for u in available_ups %}
+
+                <option value="{{ u.id }}">{{ u.code }} (Mod: {{ u.model }})</option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+            <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-success">Asignar a Equipo</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Modal Vincular Componente a PC -->
+
+  <div class="modal fade" id="modalAssignComponent" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form id="formAssignComponent" method="POST" action="">
+
+          <div class="modal-header bg-info text-white">
+
+            <h5 class="modal-title">Vincular Componente del Stock</h5>
+
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+              aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <div class="mb-3">
+
+              <label class="form-label fw-bold">Componente Disponible (Stock):</label>
+
+              <select class="form-select" id="selectComponent"
+
+                onchange="document.getElementById('formAssignComponent').action='/infra/components/' + this.value + '/assign_pc'"
+
+                required>
+
+                <option value="">-- Seleccionar --</option>
+
+                {% for c in available_components %}
+
+                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number
+
+                  }})
+
+                </option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+            <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-info text-white">Vincular Componente</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Modal Vincular Impresora de Red -->
+
+  <div class="modal fade" id="modalAssignNetworkPrinter" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form action="#" method="POST" id="formAssignNetworkPrinter">
+
+          <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+
+          <div class="modal-header bg-secondary text-white">
+
+            <h5 class="modal-title">Vincular Impresora de Red a {{ pc.pc_name }}</h5>
+
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <p>Seleccione la impresora de red que desea agregar a este equipo.</p>
+
+            <div class="mb-3">
+
+              <label class="form-label fw-bold">Impresora Disponible:</label>
+
+              <select class="form-select" id="printer_select_id" required>
+
+                <option value="">-- Seleccione una impresora --</option>
+
+                {% for np in available_network_printers %}
+
+                <option value="{{ np.id }}">{{ np.ip_address }} - {{ np.brand_model }}</option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-info text-white"
+
+              onclick="document.getElementById('formAssignNetworkPrinter').action = '/infra/network_printers/' + document.getElementById('printer_select_id').value + '/assign_pc';">Vincular
+
+              Impresora</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Modal Vincular Sub-componente (ej: HDD a DVR) -->
+
+  <div class="modal fade" id="modalAssignSubcomponent" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form id="formAssignSubcomponent" method="POST" action="">
+
+          <div class="modal-header bg-success text-white">
+
+            <h5 class="modal-title">Vincular Componente Interno</h5>
+
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+              aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <p>Destino: <strong id="lblParentComponent"></strong></p>
+
+            <div class="mb-3">
+
+              <label class="form-label fw-bold">Componente Disponible (Stock):</label>
+
+              <select class="form-select" id="selectSubcomponent"
+
+                onchange="document.getElementById('formAssignSubcomponent').action='/infra/components/' + this.value + '/assign_component'"
+
+                required>
+
+                <option value="">-- Seleccionar --</option>
+
+                {% for c in available_components %}
+
+                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number
+
+                  }})
+
+                </option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+            <input type="hidden" name="parent_component_id" id="parentComponentId" value="">
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-success">Vincular internamente</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+
+      document.addEventListener('DOMContentLoaded', function () {
+
+          var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+
+          var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+
+              return new bootstrap.Tooltip(tooltipTriggerEl)
+
+          })
+
+      });
+
+  </script>
+
+  <script>
+
+    function openAssignSubcomponentModal(parentId, parentName) {
+
+      document.getElementById('parentComponentId').value = parentId;
+
+      document.getElementById('lblParentComponent').innerText = parentName;
+
+      document.getElementById('formAssignSubcomponent').action = ""; // Will be set by select onchange
+
+      document.getElementById('selectSubcomponent').value = "";
+
+      var modal = new bootstrap.Modal(document.getElementById('modalAssignSubcomponent'));
+
+      modal.show();
+
+    }
+
+
+
+  </script>
+
+
+
+</body>
+
+
+
+</html>
+
     </div>
 
     <!-- TAB: COMPONENTES -->
@@ -1258,78 +2475,150 @@
           <i class="bi bi-pencil-square"></i> Registrar Cambio Manual
         </button>
       </div>
-    <!-- BLOQUE 4: Historial de Cambios -->
-    <div class="d-flex justify-content-between align-items-center mb-2" id="pcHistorial">
-      <h3 class="mt-4 mb-0">Historial de Cambios</h3>
-      <button type="button" class="btn btn-sm btn-outline-dark mt-3" data-bs-toggle="modal"
-        data-bs-target="#modalManualAudit">
-        <i class="bi bi-pencil-square"></i> Registrar Cambio Manual
-      </button>
-    </div>
-    <div class="table-responsive mb-4">
-      <table class="table table-sm table-bordered">
-        <thead class="table-light">
-          <tr>
-            <th style="width: 15%;">Fecha</th>
-            <th style="width: 15%;">Responsable</th>
-            <th style="width: 15%;">Acción</th>
-            <th style="width: 15%;">Campo</th>
-            <th>Valor Anterior</th>
-            <th>Valor Nuevo</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for log in audit_logs %}
-          {# LOGICA PARA LENGUAJE HUMANO #}
-          {% set pc = log.pc_name %}
-          {% set user = log.user_name or 'SISTEMA' %}
-          {% set field = log.field %}
-          {% set old = log.old_value or '(nada)' %}
-          {% set new = log.new_value or '(vacío)' %}
-          
-          {% set human_desc = "Cambio genérico registrado en " ~ pc %}
-          {% if 'Tarea #' in field %}
-              {% if 'Completada' in field %}
-                  {% set human_desc = "El usuario " ~ user ~ " finalizó una tarea que estaba pendiente en " ~ pc ~ ". El trabajo fue: " ~ new %}
-              {% else %}
-                  {% set human_desc = user ~ " actualizó una tarea en " ~ pc %}
-              {% endif %}
-          {% elif log.action_type == 'INVENTARIO_AUTOMATICO' %}
-              {% set human_desc = "El script de inventario detectó automáticamente que " ~ field ~ " cambió de " ~ old ~ " a " ~ new ~ " en " ~ pc %}
-          {% elif log.action_type == 'GESTION_INFRAESTRUCTURA' %}
-              {% set human_desc = user ~ " realizó una gestión de hardware físico (" ~ field ~ ") en " ~ pc %}
-          {% elif log.action_type == 'EDICION_MANUAL' %}
-              {% set human_desc = user ~ " editó manualmente la información técnica de " ~ pc ~ " (Campo: " ~ field ~ ")" %}
-          {% elif log.action_type == 'BORRADO_PERMANENTE' %}
-              {% set human_desc = user ~ " eliminó permanentemente un registro del sistema: " ~ old %}
-          {% else %}
-              {% set human_desc = "Se actualizó " ~ field ~ " en " ~ pc ~ " (de " ~ old ~ " a " ~ new ~ ")" %}
-          {% endif %}
-          <tr data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ human_desc }}">
-            <td class="small">
-              {{ log.changed_at | datetime_es }}
-            </td>
-            <td>
-              <div class="fw-bold" style="font-size: 0.75rem;">{{ log.user_name or 'SISTEMA' }}</div>
-              <div class="text-muted" style="font-size: 0.6rem;">{{ log.ip_address or '' }}</div>
-            </td>
-            <td>
-               <span class="badge {% if log.action_type == 'INVENTARIO_AUTOMATICO' %}bg-light text-secondary{% elif 'TAREAS' in log.action_type %}bg-success-subtle text-success{% elif 'MANUAL' in log.action_type %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %}" style="font-size: 0.65rem; text-transform: uppercase;">
-                 {{ log.action_type.replace('_', ' ') if log.action_type else 'UPDATE' }}
-               </span>
-            </td>
-            <td class="fw-bold">{{ log.field }}</td>
-            <td class="text-danger small">{{ log.old_value }}</td>
-            <td class="text-success small">{{ log.new_value }}</td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="6" class="text-center text-muted">Sin cambios registrados.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div><!-- /.table-responsive historial -->
+    <!-- BLOQUE 4: Historial de Cambios -->
+
+    <div class="d-flex justify-content-between align-items-center mb-2" id="pcHistorial">
+
+      <h3 class="mt-4 mb-0">Historial de Cambios</h3>
+
+      <button type="button" class="btn btn-sm btn-outline-dark mt-3" data-bs-toggle="modal"
+
+        data-bs-target="#modalManualAudit">
+
+        <i class="bi bi-pencil-square"></i> Registrar Cambio Manual
+
+      </button>
+
+    </div>
+
+    <div class="table-responsive mb-4">
+
+      <table class="table table-sm table-bordered">
+
+        <thead class="table-light">
+
+          <tr>
+
+            <th style="width: 15%;">Fecha</th>
+
+            <th style="width: 15%;">Responsable</th>
+
+            <th style="width: 15%;">Acción</th>
+
+            <th style="width: 15%;">Campo</th>
+
+            <th>Valor Anterior</th>
+
+            <th>Valor Nuevo</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          {% for log in audit_logs %}
+
+          {# LOGICA PARA LENGUAJE HUMANO #}
+
+          {% set pc = log.pc_name %}
+
+          {% set user = log.user_name or 'SISTEMA' %}
+
+          {% set field = log.field %}
+
+          {% set old = log.old_value or '(nada)' %}
+
+          {% set new = log.new_value or '(vacío)' %}
+
+          
+
+          {% set human_desc = "Cambio genérico registrado en " ~ pc %}
+
+          {% if 'Tarea #' in field %}
+
+              {% if 'Completada' in field %}
+
+                  {% set human_desc = "El usuario " ~ user ~ " finalizó una tarea que estaba pendiente en " ~ pc ~ ". El trabajo fue: " ~ new %}
+
+              {% else %}
+
+                  {% set human_desc = user ~ " actualizó una tarea en " ~ pc %}
+
+              {% endif %}
+
+          {% elif log.action_type == 'INVENTARIO_AUTOMATICO' %}
+
+              {% set human_desc = "El script de inventario detectó automáticamente que " ~ field ~ " cambió de " ~ old ~ " a " ~ new ~ " en " ~ pc %}
+
+          {% elif log.action_type == 'GESTION_INFRAESTRUCTURA' %}
+
+              {% set human_desc = user ~ " realizó una gestión de hardware físico (" ~ field ~ ") en " ~ pc %}
+
+          {% elif log.action_type == 'EDICION_MANUAL' %}
+
+              {% set human_desc = user ~ " editó manualmente la información técnica de " ~ pc ~ " (Campo: " ~ field ~ ")" %}
+
+          {% elif log.action_type == 'BORRADO_PERMANENTE' %}
+
+              {% set human_desc = user ~ " eliminó permanentemente un registro del sistema: " ~ old %}
+
+          {% else %}
+
+              {% set human_desc = "Se actualizó " ~ field ~ " en " ~ pc ~ " (de " ~ old ~ " a " ~ new ~ ")" %}
+
+          {% endif %}
+
+          <tr data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ human_desc }}">
+
+            <td class="small">
+
+              {{ log.changed_at | datetime_es }}
+
+            </td>
+
+            <td>
+
+              <div class="fw-bold" style="font-size: 0.75rem;">{{ log.user_name or 'SISTEMA' }}</div>
+
+              <div class="text-muted" style="font-size: 0.6rem;">{{ log.ip_address or '' }}</div>
+
+            </td>
+
+            <td>
+
+               <span class="badge {% if log.action_type == 'INVENTARIO_AUTOMATICO' %}bg-light text-secondary{% elif 'TAREAS' in log.action_type %}bg-success-subtle text-success{% elif 'MANUAL' in log.action_type %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %}" style="font-size: 0.65rem; text-transform: uppercase;">
+
+                 {{ log.action_type.replace('_', ' ') if log.action_type else 'UPDATE' }}
+
+               </span>
+
+            </td>
+
+            <td class="fw-bold">{{ log.field }}</td>
+
+            <td class="text-danger small">{{ log.old_value }}</td>
+
+            <td class="text-success small">{{ log.new_value }}</td>
+
+          </tr>
+
+          {% else %}
+
+          <tr>
+
+            <td colspan="6" class="text-center text-muted">Sin cambios registrados.</td>
+
+          </tr>
+
+          {% endfor %}
+
+        </tbody>
+
+      </table>
+
+    </div><!-- /.table-responsive historial -->
+
 
     </div>
 
@@ -1348,97 +2637,185 @@
     })();
     </script>
 
-    </div><!-- /.container-fluid main -->
-
-
-  <!-- Modal Nueva Tarea -->
-  <div class="modal fade" id="modalNuevaTarea" tabindex="-1" role="dialog" aria-labelledby="modalNuevaTareaLabel"
-    aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <form id="form-nueva-tarea" action="{{ url_for('tasks.add_task', pc_name=pc.pc_name) }}" method="post">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalNuevaTareaLabel">Agregar nueva tarea</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-
-            <div class="form-group mb-3">
-              <label for="descripcion">Descripción</label>
-              <input type="text" name="descripcion" id="descripcion" class="form-control"
-                placeholder="Descripción de la tarea" required>
-            </div>
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <label for="tipo_actividad" class="form-label">Tipo de Actividad</label>
-                <select name="tipo_actividad" id="tipo_actividad" class="form-select">
-                  <option value="tarea">📝 Tarea</option>
-                  <option value="incidente">🔥 Incidente</option>
-                  <option value="riesgo">⚠️ Riesgo</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label for="prioridad" class="form-label">Prioridad</label>
-                <select name="prioridad" id="prioridad" class="form-select">
-                  <option value="1">1 - Baja</option>
-                  <option value="2" selected>2 - Media</option>
-                  <option value="3">3 - Alta</option>
-                  <option value="4">4 - Crítica</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group mb-3">
-              <label for="impacto_valor" class="form-label">Impacto esperado (1-4)</label>
-              <select name="impacto_valor" id="impacto_valor" class="form-select">
-                <option value="1">1 - Mínimo</option>
-                <option value="2">2 - Parcial</option>
-                <option value="3">3 - Generalizado</option>
-                <option value="4">4 - Bloqueante</option>
-              </select>
-            </div>
-
-            <div class="form-group mb-3">
-              <label for="categoria">Categoría Técnica</label>
-              <select name="categoria" id="categoria" class="form-control">
+    </div><!-- /.container-fluid main -->
+
+
+
+
+
+  <!-- Modal Nueva Tarea -->
+
+  <div class="modal fade" id="modalNuevaTarea" tabindex="-1" role="dialog" aria-labelledby="modalNuevaTareaLabel"
+
+    aria-hidden="true">
+
+    <div class="modal-dialog" role="document">
+
+      <div class="modal-content">
+
+        <form id="form-nueva-tarea" action="{{ url_for('tasks.add_task', pc_name=pc.pc_name) }}" method="post">
+
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="modal-header">
+
+            <h5 class="modal-title" id="modalNuevaTareaLabel">Agregar nueva tarea</h5>
+
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+
+
+            <div class="form-group mb-3">
+
+              <label for="descripcion">Descripción</label>
+
+              <input type="text" name="descripcion" id="descripcion" class="form-control"
+
+                placeholder="Descripción de la tarea" required>
+
+            </div>
+
+            <div class="row g-3 mb-3">
+
+              <div class="col-md-6">
+
+                <label for="tipo_actividad" class="form-label">Tipo de Actividad</label>
+
+                <select name="tipo_actividad" id="tipo_actividad" class="form-select">
+
+                  <option value="tarea">📝 Tarea</option>
+
+                  <option value="incidente">🔥 Incidente</option>
+
+                  <option value="riesgo">⚠️ Riesgo</option>
+
+                </select>
+
+              </div>
+
+              <div class="col-md-6">
+
+                <label for="prioridad" class="form-label">Prioridad</label>
+
+                <select name="prioridad" id="prioridad" class="form-select">
+
+                  <option value="1">1 - Baja</option>
+
+                  <option value="2" selected>2 - Media</option>
+
+                  <option value="3">3 - Alta</option>
+
+                  <option value="4">4 - Crítica</option>
+
+                </select>
+
+              </div>
+
+            </div>
+
+
+
+            <div class="form-group mb-3">
+
+              <label for="impacto_valor" class="form-label">Impacto esperado (1-4)</label>
+
+              <select name="impacto_valor" id="impacto_valor" class="form-select">
+
+                <option value="1">1 - Mínimo</option>
+
+                <option value="2">2 - Parcial</option>
+
+                <option value="3">3 - Generalizado</option>
+
+                <option value="4">4 - Bloqueante</option>
+
+              </select>
+
+            </div>
+
+
+
+            <div class="form-group mb-3">
+
+              <label for="categoria">Categoría Técnica</label>
+
+              <select name="categoria" id="categoria" class="form-control">
+
                 <option value="">-- Automático --</option>
                 <option value="Audiencias">Audiencias</option>
                 <option value="Impresoras">Impresoras</option>
-                <option value="Red/Conectividad">Red/Conectividad</option>
-                <option value="Hardware">Hardware</option>
-                <option value="Software">Software</option>
-                <option value="Usuarios">Usuarios</option>
-                <option value="General">General</option>
-              </select>
-            </div>
-
-            <div class="form-group mb-3">
-              <label for="technician">Asignar a Técnico (Opcional)</label>
-              <select name="technician" id="technician" class="form-control">
-                <option value="">-- Sin Asignar --</option>
-                {% for tech in technicians %}
-                <option value="{{ tech.name }}">{{ tech.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="form-group mb-3">
-              <label for="solicitante">Solicitante</label>
-              <input type="text" name="solicitante" id="solicitante" class="form-control"
-                placeholder="Quién solicita (Dirección, Escuela, etc.)" list="pcUsersDatalist" required>
-              <datalist id="pcUsersDatalist">
-                {% for user in ad_users_list %}
-                <option value="{{ user.real_name }}">{{ user.username }}</option>
-                {% endfor %}
-              </datalist>
-            </div>
-
-            <div class="form-group">
-              <label for="resumen_impacto" class="form-label">Justificación de Impacto (Opcional)</label>
-              <textarea name="resumen_impacto" id="resumen_impacto" class="form-control" rows="2" placeholder="Por qué es crítico..."></textarea>
-            </div>
-
+                <option value="Red/Conectividad">Red/Conectividad</option>
+
+                <option value="Hardware">Hardware</option>
+
+                <option value="Software">Software</option>
+
+                <option value="Usuarios">Usuarios</option>
+
+                <option value="General">General</option>
+
+              </select>
+
+            </div>
+
+
+
+            <div class="form-group mb-3">
+
+              <label for="technician">Asignar a Técnico (Opcional)</label>
+
+              <select name="technician" id="technician" class="form-control">
+
+                <option value="">-- Sin Asignar --</option>
+
+                {% for tech in technicians %}
+
+                <option value="{{ tech.name }}">{{ tech.name }}</option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+
+
+            <div class="form-group mb-3">
+
+              <label for="solicitante">Solicitante</label>
+
+              <input type="text" name="solicitante" id="solicitante" class="form-control"
+
+                placeholder="Quién solicita (Dirección, Escuela, etc.)" list="pcUsersDatalist" required>
+
+              <datalist id="pcUsersDatalist">
+
+                {% for user in ad_users_list %}
+
+                <option value="{{ user.real_name }}">{{ user.username }}</option>
+
+                {% endfor %}
+
+              </datalist>
+
+            </div>
+
+
+
+            <div class="form-group">
+
+              <label for="resumen_impacto" class="form-label">Justificación de Impacto (Opcional)</label>
+
+              <textarea name="resumen_impacto" id="resumen_impacto" class="form-control" rows="2" placeholder="Por qué es crítico..."></textarea>
+
+            </div>
+
+
+
             <div class="form-check form-switch mb-3">
               <input class="form-check-input" type="checkbox" id="is_done" name="is_done">
               <label class="form-check-label" for="is_done">Ya está resuelta</label>
@@ -1448,279 +2825,552 @@
               <label for="solucion" class="form-label fw-bold">Solución</label>
               <textarea name="solucion" id="solucion" class="form-control" rows="3" placeholder="¿Cómo se resolvió?"></textarea>
             </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              Cancelar
-            </button>
-            <button type="submit" class="btn btn-primary">
-              Guardar tarea
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-
-
-
-
-  <!-- Modal Editar Infraestructura -->
-  <div class="modal fade" id="modalEditarInfra" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form action="{{ url_for('dashboard.update_pc_infrastructure', pc_name=pc.pc_name) }}" method="post">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="modal-header">
-            <h5 class="modal-title">Editar Infraestructura</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row g-2 mb-3">
-              <div class="col-md-6">
-                <label for="building" class="form-label">Edificio</label>
-                <input type="text" class="form-control" id="building" name="building" value="{{ pc.building or '' }}">
-              </div>
-              <div class="col-md-6">
-                <label for="floor" class="form-label">Piso</label>
-                <input type="text" class="form-control" id="floor" name="floor" value="{{ pc.floor or '' }}">
-              </div>
-            </div>
-
-            <div class="row g-2 mb-3">
-              <div class="col-md-6">
-                <label for="switch_name" class="form-label">Nombre Switch</label>
-                <input type="text" class="form-control" id="switch_name" name="switch_name"
-                  value="{{ pc.switch_name or '' }}">
-              </div>
-              <div class="col-md-6">
-                <label for="switch_port" class="form-label">Puerto Switch</label>
-                <input type="text" class="form-control" id="switch_port" name="switch_port"
-                  value="{{ pc.switch_port or '' }}">
-              </div>
-            </div>
-
-            <div class="row g-2">
-              <div class="col-md-6">
-                <label for="pachera_name" class="form-label">Nombre Pachera</label>
-                <input type="text" class="form-control" id="pachera_name" name="pachera_name"
-                  value="{{ pc.pachera_name or '' }}">
-              </div>
-              <div class="col-md-6">
-                <label for="pachera_port" class="form-label">Boca Pachera</label>
-                <input type="text" class="form-control" id="pachera_port" name="pachera_port"
-                  value="{{ pc.pachera_port or '' }}">
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Auditoria Manual -->
-  <div class="modal fade" id="modalManualAudit" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form action="{{ url_for('tasks.add_manual_audit', pc_name=pc.pc_name) }}" method="post">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="modal-header bg-dark text-white">
-            <h5 class="modal-title">Registrar Cambio Manual</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-              aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <p class="small text-muted">Use esto para registrar cambios de componentes que el sistema no detecta
-              automáticamente (ej: Fuentes, Gabinetes, Periféricos analógicos).</p>
-
-            <div class="mb-3">
-              <label for="campo" class="form-label">Componente / Campo</label>
-              <input type="text" class="form-control" id="campo" name="campo" list="componentesList"
-                placeholder="Ej: Fuente de Poder" required>
-              <datalist id="componentesList">
-                <option value="Fuente de Poder">
-                <option value="Gabinete">
-                <option value="Teclado">
-                <option value="Mouse">
-                <option value="Monitor (Adicional)">
-                <option value="Estabilizador/UPS">
-                <option value="Placa de Red PCI">
-                <option value="Cooler/Ventilador">
-              </datalist>
-            </div>
-
-            <div class="mb-3">
-              <label for="valor_anterior" class="form-label">Valor Anterior (Opcional)</label>
-              <input type="text" class="form-control" id="valor_anterior" name="valor_anterior"
-                placeholder="Ej: Generica 500W">
-            </div>
-
-            <div class="mb-3">
-              <label for="valor_nuevo" class="form-label">Valor Nuevo / Detalle</label>
-              <input type="text" class="form-control" id="valor_nuevo" name="valor_nuevo"
-                placeholder="Ej: Sentey 600W 80 Plus" required>
-            </div>
-
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-dark">Registrar Cambio</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Asignar UPS -->
-  <div class="modal fade" id="modalAssignUPS" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="assignUpsForm" method="POST"
-          onsubmit="this.action = '/infra/ups/' + document.getElementById('selectUPS').value + '/assign_pc';">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">Asignar UPS</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-              aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label fw-bold">UPS Disponible:</label>
-              <select class="form-select" id="selectUPS" required>
-                <option value="">-- Seleccionar --</option>
-                {% for u in available_ups %}
-                <option value="{{ u.id }}">{{ u.code }} (Mod: {{ u.model }})</option>
-                {% endfor %}
-              </select>
-            </div>
-            <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success">Asignar a Equipo</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Vincular Componente a PC -->
-  <div class="modal fade" id="modalAssignComponent" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="formAssignComponent" method="POST" action="">
-          <div class="modal-header bg-info text-white">
-            <h5 class="modal-title">Vincular Componente del Stock</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-              aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label fw-bold">Componente Disponible (Stock):</label>
-              <select class="form-select" id="selectComponent"
-                onchange="document.getElementById('formAssignComponent').action='/infra/components/' + this.value + '/assign_pc'"
-                required>
-                <option value="">-- Seleccionar --</option>
-                {% for c in available_components %}
-                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number
-                  }})
-                </option>
-                {% endfor %}
-              </select>
-            </div>
-            <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-info text-white">Vincular Componente</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Vincular Impresora de Red -->
-  <div class="modal fade" id="modalAssignNetworkPrinter" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form action="#" method="POST" id="formAssignNetworkPrinter">
-          <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
-          <div class="modal-header bg-secondary text-white">
-            <h5 class="modal-title">Vincular Impresora de Red a {{ pc.pc_name }}</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p>Seleccione la impresora de red que desea agregar a este equipo.</p>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Impresora Disponible:</label>
-              <select class="form-select" id="printer_select_id" required>
-                <option value="">-- Seleccione una impresora --</option>
-                {% for np in available_network_printers %}
-                <option value="{{ np.id }}">{{ np.ip_address }} - {{ np.brand_model }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-info text-white"
-              onclick="document.getElementById('formAssignNetworkPrinter').action = '/infra/network_printers/' + document.getElementById('printer_select_id').value + '/assign_pc';">Vincular
-              Impresora</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Vincular Sub-componente (ej: HDD a DVR) -->
-  <div class="modal fade" id="modalAssignSubcomponent" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="formAssignSubcomponent" method="POST" action="">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">Vincular Componente Interno</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-              aria-label="Cerrar"></button>
-          </div>
-          <div class="modal-body">
-            <p>Destino: <strong id="lblParentComponent"></strong></p>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Componente Disponible (Stock):</label>
-              <select class="form-select" id="selectSubcomponent"
-                onchange="document.getElementById('formAssignSubcomponent').action='/infra/components/' + this.value + '/assign_component'"
-                required>
-                <option value="">-- Seleccionar --</option>
-                {% for c in available_components %}
-                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number
-                  }})
-                </option>
-                {% endfor %}
-              </select>
-            </div>
-            <input type="hidden" name="parent_component_id" id="parentComponentId" value="">
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success">Vincular internamente</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-      document.addEventListener('DOMContentLoaded', function () {
-          var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-          var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-              return new bootstrap.Tooltip(tooltipTriggerEl)
-          })
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+
+              Cancelar
+
+            </button>
+
+            <button type="submit" class="btn btn-primary">
+
+              Guardar tarea
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+  <!-- Modal Editar Infraestructura -->
+
+  <div class="modal fade" id="modalEditarInfra" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form action="{{ url_for('dashboard.update_pc_infrastructure', pc_name=pc.pc_name) }}" method="post">
+
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="modal-header">
+
+            <h5 class="modal-title">Editar Infraestructura</h5>
+
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <div class="row g-2 mb-3">
+
+              <div class="col-md-6">
+
+                <label for="building" class="form-label">Edificio</label>
+
+                <input type="text" class="form-control" id="building" name="building" value="{{ pc.building or '' }}">
+
+              </div>
+
+              <div class="col-md-6">
+
+                <label for="floor" class="form-label">Piso</label>
+
+                <input type="text" class="form-control" id="floor" name="floor" value="{{ pc.floor or '' }}">
+
+              </div>
+
+            </div>
+
+
+
+            <div class="row g-2 mb-3">
+
+              <div class="col-md-6">
+
+                <label for="switch_name" class="form-label">Nombre Switch</label>
+
+                <input type="text" class="form-control" id="switch_name" name="switch_name"
+
+                  value="{{ pc.switch_name or '' }}">
+
+              </div>
+
+              <div class="col-md-6">
+
+                <label for="switch_port" class="form-label">Puerto Switch</label>
+
+                <input type="text" class="form-control" id="switch_port" name="switch_port"
+
+                  value="{{ pc.switch_port or '' }}">
+
+              </div>
+
+            </div>
+
+
+
+            <div class="row g-2">
+
+              <div class="col-md-6">
+
+                <label for="pachera_name" class="form-label">Nombre Pachera</label>
+
+                <input type="text" class="form-control" id="pachera_name" name="pachera_name"
+
+                  value="{{ pc.pachera_name or '' }}">
+
+              </div>
+
+              <div class="col-md-6">
+
+                <label for="pachera_port" class="form-label">Boca Pachera</label>
+
+                <input type="text" class="form-control" id="pachera_port" name="pachera_port"
+
+                  value="{{ pc.pachera_port or '' }}">
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Modal Auditoria Manual -->
+
+  <div class="modal fade" id="modalManualAudit" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form action="{{ url_for('tasks.add_manual_audit', pc_name=pc.pc_name) }}" method="post">
+
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="modal-header bg-dark text-white">
+
+            <h5 class="modal-title">Registrar Cambio Manual</h5>
+
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+              aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <p class="small text-muted">Use esto para registrar cambios de componentes que el sistema no detecta
+
+              automáticamente (ej: Fuentes, Gabinetes, Periféricos analógicos).</p>
+
+
+
+            <div class="mb-3">
+
+              <label for="campo" class="form-label">Componente / Campo</label>
+
+              <input type="text" class="form-control" id="campo" name="campo" list="componentesList"
+
+                placeholder="Ej: Fuente de Poder" required>
+
+              <datalist id="componentesList">
+
+                <option value="Fuente de Poder">
+
+                <option value="Gabinete">
+
+                <option value="Teclado">
+
+                <option value="Mouse">
+
+                <option value="Monitor (Adicional)">
+
+                <option value="Estabilizador/UPS">
+
+                <option value="Placa de Red PCI">
+
+                <option value="Cooler/Ventilador">
+
+              </datalist>
+
+            </div>
+
+
+
+            <div class="mb-3">
+
+              <label for="valor_anterior" class="form-label">Valor Anterior (Opcional)</label>
+
+              <input type="text" class="form-control" id="valor_anterior" name="valor_anterior"
+
+                placeholder="Ej: Generica 500W">
+
+            </div>
+
+
+
+            <div class="mb-3">
+
+              <label for="valor_nuevo" class="form-label">Valor Nuevo / Detalle</label>
+
+              <input type="text" class="form-control" id="valor_nuevo" name="valor_nuevo"
+
+                placeholder="Ej: Sentey 600W 80 Plus" required>
+
+            </div>
+
+
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-dark">Registrar Cambio</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Modal Asignar UPS -->
+
+  <div class="modal fade" id="modalAssignUPS" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form id="assignUpsForm" method="POST"
+
+          onsubmit="this.action = '/infra/ups/' + document.getElementById('selectUPS').value + '/assign_pc';">
+
+          <div class="modal-header bg-success text-white">
+
+            <h5 class="modal-title">Asignar UPS</h5>
+
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+              aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <div class="mb-3">
+
+              <label class="form-label fw-bold">UPS Disponible:</label>
+
+              <select class="form-select" id="selectUPS" required>
+
+                <option value="">-- Seleccionar --</option>
+
+                {% for u in available_ups %}
+
+                <option value="{{ u.id }}">{{ u.code }} (Mod: {{ u.model }})</option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+            <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-success">Asignar a Equipo</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Modal Vincular Componente a PC -->
+
+  <div class="modal fade" id="modalAssignComponent" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form id="formAssignComponent" method="POST" action="">
+
+          <div class="modal-header bg-info text-white">
+
+            <h5 class="modal-title">Vincular Componente del Stock</h5>
+
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+              aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <div class="mb-3">
+
+              <label class="form-label fw-bold">Componente Disponible (Stock):</label>
+
+              <select class="form-select" id="selectComponent"
+
+                onchange="document.getElementById('formAssignComponent').action='/infra/components/' + this.value + '/assign_pc'"
+
+                required>
+
+                <option value="">-- Seleccionar --</option>
+
+                {% for c in available_components %}
+
+                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number
+
+                  }})
+
+                </option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+            <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-info text-white">Vincular Componente</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Modal Vincular Impresora de Red -->
+
+  <div class="modal fade" id="modalAssignNetworkPrinter" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form action="#" method="POST" id="formAssignNetworkPrinter">
+
+          <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
+
+          <div class="modal-header bg-secondary text-white">
+
+            <h5 class="modal-title">Vincular Impresora de Red a {{ pc.pc_name }}</h5>
+
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <p>Seleccione la impresora de red que desea agregar a este equipo.</p>
+
+            <div class="mb-3">
+
+              <label class="form-label fw-bold">Impresora Disponible:</label>
+
+              <select class="form-select" id="printer_select_id" required>
+
+                <option value="">-- Seleccione una impresora --</option>
+
+                {% for np in available_network_printers %}
+
+                <option value="{{ np.id }}">{{ np.ip_address }} - {{ np.brand_model }}</option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-info text-white"
+
+              onclick="document.getElementById('formAssignNetworkPrinter').action = '/infra/network_printers/' + document.getElementById('printer_select_id').value + '/assign_pc';">Vincular
+
+              Impresora</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Modal Vincular Sub-componente (ej: HDD a DVR) -->
+
+  <div class="modal fade" id="modalAssignSubcomponent" tabindex="-1" aria-hidden="true">
+
+    <div class="modal-dialog">
+
+      <div class="modal-content">
+
+        <form id="formAssignSubcomponent" method="POST" action="">
+
+          <div class="modal-header bg-success text-white">
+
+            <h5 class="modal-title">Vincular Componente Interno</h5>
+
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+              aria-label="Cerrar"></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <p>Destino: <strong id="lblParentComponent"></strong></p>
+
+            <div class="mb-3">
+
+              <label class="form-label fw-bold">Componente Disponible (Stock):</label>
+
+              <select class="form-select" id="selectSubcomponent"
+
+                onchange="document.getElementById('formAssignSubcomponent').action='/infra/components/' + this.value + '/assign_component'"
+
+                required>
+
+                <option value="">-- Seleccionar --</option>
+
+                {% for c in available_components %}
+
+                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number
+
+                  }})
+
+                </option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+            <input type="hidden" name="parent_component_id" id="parentComponentId" value="">
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            <button type="submit" class="btn btn-success">Vincular internamente</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+
+      document.addEventListener('DOMContentLoaded', function () {
+
+          var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+
+          var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+
+              return new bootstrap.Tooltip(tooltipTriggerEl)
+
+          })
+
           document.getElementById('is_done')?.addEventListener('change', function() {
               const container = document.getElementById('solucion_container');
               if (container) {
@@ -1738,20 +3388,37 @@
                   return false;
               }
           });
-      });
-  </script>
-  <script>
-    function openAssignSubcomponentModal(parentId, parentName) {
-      document.getElementById('parentComponentId').value = parentId;
-      document.getElementById('lblParentComponent').innerText = parentName;
-      document.getElementById('formAssignSubcomponent').action = ""; // Will be set by select onchange
-      document.getElementById('selectSubcomponent').value = "";
-      var modal = new bootstrap.Modal(document.getElementById('modalAssignSubcomponent'));
-      modal.show();
-    }
-
-  </script>
-
-</body>
-
-</html>
+      });
+
+  </script>
+
+  <script>
+
+    function openAssignSubcomponentModal(parentId, parentName) {
+
+      document.getElementById('parentComponentId').value = parentId;
+
+      document.getElementById('lblParentComponent').innerText = parentName;
+
+      document.getElementById('formAssignSubcomponent').action = ""; // Will be set by select onchange
+
+      document.getElementById('selectSubcomponent').value = "";
+
+      var modal = new bootstrap.Modal(document.getElementById('modalAssignSubcomponent'));
+
+      modal.show();
+
+    }
+
+
+
+  </script>
+
+
+
+</body>
+
+
+
+</html>
+

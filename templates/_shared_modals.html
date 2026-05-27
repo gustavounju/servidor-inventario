@@ -2885,4 +2885,100 @@
   function quickTaskDone(taskId, pcName, assignedTo) {
     openCompleteTaskModal(taskId, assignedTo || '', pcName || 'PC Generica');
   }
+
+function openTaskActionsModal(taskId) {
+    document.getElementById('actionTaskId').value = taskId;
+    document.getElementById('newTaskActionText').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('taskActionsModal'));
+    modal.show();
+    loadTaskActions(taskId);
+}
+
+function loadTaskActions(taskId) {
+    const listContainer = document.getElementById('taskActionsList');
+    listContainer.innerHTML = '<div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm"></div> Cargando...</div>';
+    
+    fetch(`/api/tasks/${taskId}/actions`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (data.actions.length === 0) {
+                    listContainer.innerHTML = '<div class="text-center text-muted py-3" style="font-size: 0.9rem;">No hay acciones registradas aún.</div>';
+                } else {
+                    listContainer.innerHTML = data.actions.map(action => `
+                        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold" style="color: #0f172a; font-size: 0.85rem;"><i class="bi bi-person-fill text-primary me-1"></i> ${action.user_name}</span>
+                                <span class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i> ${action.created_at_fmt}</span>
+                            </div>
+                            <div style="color: #475569; font-size: 0.9rem; white-space: pre-wrap;">${action.action_text}</div>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                listContainer.innerHTML = '<div class="text-danger py-2">Error al cargar acciones.</div>';
+            }
+        })
+        .catch(err => {
+            listContainer.innerHTML = '<div class="text-danger py-2">Error de conexión.</div>';
+        });
+}
+
+function submitTaskAction() {
+    const taskId = document.getElementById('actionTaskId').value;
+    const text = document.getElementById('newTaskActionText').value.trim();
+    if (!text) return alert("El texto no puede estar vacío.");
+    
+    const formData = new FormData();
+    formData.append('action_text', text);
+    formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
+    
+    fetch(`/api/tasks/${taskId}/actions`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('newTaskActionText').value = '';
+            loadTaskActions(taskId);
+        } else {
+            alert(data.message || 'Error al guardar.');
+        }
+    })
+    .catch(err => alert("Error de conexión."));
+}
 </script>
+
+<!-- Modal Registro de Acciones de Tarea -->
+<div class="modal fade" id="taskActionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div style="background: linear-gradient(135deg, #1e293b, #334155); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                <h5 class="mb-0 text-white fw-bold"><i class="bi bi-card-list me-2"></i> Registro de Acciones</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="background: #f8fafc; padding: 24px;">
+                <input type="hidden" id="actionTaskId">
+                
+                <div class="mb-4">
+                    <h6 class="fw-bold text-muted mb-3 text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.05em;">Historial</h6>
+                    <div id="taskActionsList" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Acciones inyectadas vía JS -->
+                        <div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm"></div> Cargando...</div>
+                    </div>
+                </div>
+
+                <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                    <h6 class="fw-bold mb-2" style="font-size: 0.9rem; color: #0f172a;"><i class="bi bi-plus-circle me-1"></i> Agregar Nueva Acción</h6>
+                    <textarea id="newTaskActionText" class="form-control mb-3" rows="3" placeholder="Describe la acción realizada (ej. 'Llevé la PC al taller para revisión')" style="border-radius: 8px; font-size: 0.9rem;"></textarea>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-sm" style="background: #1e293b; color: white; border-radius: 8px; padding: 6px 16px; font-weight: 600;" onclick="submitTaskAction()">
+                            Guardar Acción
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -635,6 +635,7 @@ def run_all_migrations():
     migrate_db_v33()
     migrate_db_v34()
     migrate_db_v35()
+    migrate_db_v36()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -754,3 +755,25 @@ def migrate_db_v35():
             print("Aplicando migración V35: Agregando 'solucion' a tasks...")
             conn.execute("ALTER TABLE tasks ADD COLUMN solucion TEXT")
     print("Migración v35 verificada.")
+
+def migrate_db_v36():
+    """Migración V36: Crear tabla task_actions para el historial de tareas."""
+    print("Verificando migración de DB v36...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "task_actions"):
+            print("Aplicando migración V36: creando tabla task_actions...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS task_actions (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    task_id INT NOT NULL,
+                    user_name VARCHAR(255) NOT NULL,
+                    action_text TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+            print("Creando índice para task_actions...")
+            conn.execute("CREATE INDEX idx_task_actions_task_id ON task_actions (task_id)")
+    print("Migración V36 verificada.")
