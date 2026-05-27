@@ -2459,11 +2459,14 @@
                     ${t.phone ? `<a href="tel:${t.phone}" class="btn btn-xs btn-outline-secondary p-1" style="border-radius: 6px;" title="Llamar: ${t.phone}"><i class="bi bi-telephone-fill"></i></a>` : ''}
                 </div>
 
-                ${renderTaskMatchBox(t)}
+                
                 
                 <div class="pt-actions">
                     <button class="btn-pt-action btn-pt-confirm" onclick='quickTaskDone(${t.id}, ${JSON.stringify(pcName)}, ${JSON.stringify(t.assigned_to || "")})'>
                         <i class="bi bi-check-lg"></i> Confirmar
+                    </button>
+                    <button class="btn-pt-action" style="border-color:#bae6fd; background:#e0f2fe; color:#0284c7; flex:0 0 38px;" onclick="openTaskActionsModal(${t.id})" title="Acciones">
+                        <i class="bi bi-card-list"></i>
                     </button>
                     <button class="btn-pt-action btn-pt-delete" onclick="quickDeleteTask(${t.id})" title="Eliminar">
                         <i class="bi bi-trash3"></i>
