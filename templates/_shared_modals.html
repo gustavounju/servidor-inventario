@@ -2451,6 +2451,17 @@
                 
                 <div class="pt-desc" title="${t.descripcion}">${t.descripcion}</div>
                 
+                ${t.acciones && t.acciones.length > 0 ? `
+                <div class="mt-1 mb-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 8px; border-radius: 6px; overflow-y: auto; max-height: 120px;">
+                    ${t.acciones.map(accion => `
+                    <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 4px;">
+                        <i class="bi bi-chat-text me-1"></i>
+                        <strong style="color: #334155;">${accion.user_name}:</strong> ${accion.action_text}
+                    </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+                
                 <div class="pt-requester-box">
                     <div class="pt-req-info">
                         <span class="pt-req-name"><i class="bi bi-person me-1"></i>${t.solicitante || 'Sin nombre'}</span>

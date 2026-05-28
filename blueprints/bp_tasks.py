@@ -229,12 +229,20 @@ def api_pending_tasks():
                 ORDER BY t.created_at DESC
             """).fetchall()
             
-            # Formatear fechas para JSON
+            # Adjuntar matches y acciones a las tareas pendientes
+            tasks = _attach_task_user_matches(tasks, conn)
+            tasks = _attach_task_actions_bulk(tasks, conn)
+            
             result = []
-            for d in _attach_task_user_matches(tasks, conn):
+            for d in tasks:
                 if d['created_at']:
                     # Formato legible: "11 Abr, 14:30"
                     d['created_at_fmt'] = d['created_at'].strftime("%d %b, %H:%M")
+                
+                # Asegurar que las acciones sean diccionarios para jsonify
+                if 'acciones' in d and d['acciones']:
+                    d['acciones'] = [dict(a) for a in d['acciones']]
+                    
                 result.append(d)
 
             return jsonify({
