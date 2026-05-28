@@ -875,16 +875,18 @@ def report_tasks_completed_pdf():
 
 
 def _attach_task_actions_bulk(tasks, conn):
-    if not tasks:
-        return tasks
+    if not tasks: return tasks
     task_ids = [t['id'] for t in tasks]
-    placeholders = ', '.join(['%s'] * len(task_ids))
-    actions = conn.execute(f"SELECT * FROM task_actions WHERE task_id IN ({placeholders}) ORDER BY created_at ASC", tuple(task_ids)).fetchall()
+    placeholders = ",".join(["%s"] * len(task_ids))
+    actions = conn.execute(f"SELECT id, task_id, user_name, action_text, created_at FROM task_actions WHERE task_id IN ({placeholders}) ORDER BY created_at ASC", tuple(task_ids)).fetchall()
     
-    from collections import defaultdict
-    actions_map = defaultdict(list)
+    actions_map = {tid: [] for tid in task_ids}
     for a in actions:
-        actions_map[a['task_id']].append(a)
+        a_dict = dict(a)
+        if a_dict["created_at"]:
+            a_dict["created_at_fmt"] = a_dict["created_at"].strftime("%d/%m %H:%M")
+            a_dict["created_at"] = a_dict["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+        actions_map[a['task_id']].append(a_dict)
         
     for t in tasks:
         t['acciones'] = actions_map.get(t['id'], [])
@@ -1043,7 +1045,9 @@ def get_task_actions(task_id):
             result = []
             for a in actions:
                 a_dict = dict(a)
-                a_dict["created_at_fmt"] = a["created_at"].strftime("%d/%m/%Y %H:%M:%S") if a["created_at"] else ""
+                if a_dict["created_at"]:
+                    a_dict["created_at_fmt"] = a_dict["created_at"].strftime("%d/%m/%Y %H:%M:%S")
+                    a_dict["created_at"] = a_dict["created_at"].strftime("%Y-%m-%d %H:%M:%S")
                 result.append(a_dict)
                 
             return jsonify({"status": "success", "actions": result})
@@ -1052,7 +1056,11 @@ def get_task_actions(task_id):
 
 @bp_tasks.route("/api/tasks/<int:task_id>/actions", methods=["POST"])
 def add_task_action(task_id):
-    action_text = request.form.get("action_text", "").strip()
+    if request.is_json:
+        action_text = request.json.get("action_text", "").strip()
+    else:
+        action_text = request.form.get("action_text", "").strip()
+        
     if not action_text:
         return jsonify({"status": "error", "message": "El texto de la acción no puede estar vacío"}), 400
         

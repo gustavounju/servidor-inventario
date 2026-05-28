@@ -501,24 +501,21 @@ function submitMobileTaskAction() {
     const text = document.getElementById('mobileNewTaskAction').value.trim();
     if (!text) return alert("El texto no puede estar vacío.");
     
-    const formData = new FormData();
-    formData.append('action_text', text);
-    formData.append('csrf_token', CSRF);
-    
-    fetch(`/api/tasks/${taskId}/actions`, {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
+    postJSON(`/api/tasks/${taskId}/actions`, { action_text: text })
+    .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
             document.getElementById('mobileNewTaskAction').value = '';
             loadMobileTaskActions(taskId);
+            refreshData(true);
         } else {
             alert(data.message || 'Error al guardar.');
         }
     })
-    .catch(err => alert("Error de conexión."));
+    .catch(err => {
+        console.error("Error submitMobileTaskAction:", err);
+        alert("Error de conexión al guardar la acción.");
+    });
 }
 </script>
 </head>
