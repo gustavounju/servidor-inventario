@@ -994,16 +994,16 @@ def api_visor_data():
                 })
             else:
                 # Tareas de hoy
-                tareas_hoy_rows = _attach_task_user_matches(conn.execute("""
+                tareas_hoy_rows = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user 
                     FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
                     ORDER BY t.created_at DESC
-                """).fetchall(), conn)
+                """).fetchall(), conn), conn)
                 
                 # Tareas anteriores (pendientes o recientes)
-                tareas_anteriores_rows = _attach_task_user_matches(conn.execute("""
+                tareas_anteriores_rows = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user 
                     FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
@@ -1011,16 +1011,16 @@ def api_visor_data():
                     AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     ORDER BY t.created_at DESC
                     LIMIT 50
-                """).fetchall(), conn)
+                """).fetchall(), conn), conn)
 
                 # Tareas pendientes
-                tareas_pendientes_rows = _attach_task_user_matches(conn.execute("""
+                tareas_pendientes_rows = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user 
                     FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE t.estado != 'Hecha'
                     ORDER BY t.created_at DESC
-                """).fetchall(), conn)
+                """).fetchall(), conn), conn)
 
                 return jsonify({
                     "status": "success", 
