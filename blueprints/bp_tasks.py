@@ -1058,9 +1058,12 @@ def add_task_action(task_id):
         
     try:
         with get_db_connection() as conn:
+            from utils.auth import current_technician_identity
+            username = current_username() or current_technician_identity() or "Desconocido"
+            
             conn.execute(
                 "INSERT INTO task_actions (task_id, user_name, action_text) VALUES (%s, %s, %s)",
-                (task_id, current_username(), action_text)
+                (task_id, username, action_text)
             )
             
             # Log it in audit_logs
@@ -1069,7 +1072,7 @@ def add_task_action(task_id):
                 pc_name = pc_row["pc_name"]
                 conn.execute(
                     "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                    (pc_name, f"Acción en Tarea #{task_id}", "", action_text[:100], current_username(), "ACCION_TAREA", request.remote_addr)
+                    (pc_name, f"Acción en Tarea #{task_id}", "", action_text[:100], username, "ACCION_TAREA", request.remote_addr)
                 )
             
             conn.commit()
