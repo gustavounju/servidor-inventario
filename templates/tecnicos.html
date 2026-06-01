@@ -453,6 +453,15 @@
         font-size: 0.85em;
         margin-left: 4px;
     }
+
+    @media (max-width: 420px) {
+      .top-bar { padding: 8px 6px; gap: 4px; }
+      .tech-badge { padding: 4px 6px; font-size: 0.75rem; gap: 4px; }
+      .tech-badge i { font-size: 0.85rem; }
+      .brand-name { font-size: 0.95rem; }
+      .top-bar-actions { gap: 4px !important; flex-wrap: wrap; justify-content: flex-end; }
+      #techBadgeLabel { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+    }
   </style>
   <script>
     const savedTheme = localStorage.getItem('techTheme');
@@ -531,7 +540,7 @@ function submitMobileTaskAction() {
         <div class="brand-name">Técnicos</div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div class="top-bar-actions" style="display:flex;align-items:center;gap:8px;">
       <button type="button" class="tech-badge" onclick="toggleTheme()" title="Cambiar tema" style="border:none;background:rgba(255,255,255,0.15)">
         <i class="bi bi-palette-fill"></i>
       </button>
