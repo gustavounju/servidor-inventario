@@ -639,3 +639,89 @@ def ignore_detected_printer(detect_id):
             return jsonify({"status": "success", "message": "Impresora ignorada correctamente."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+from flask import current_app
+from werkzeug.utils import secure_filename
+import uuid
+from utils.auth import current_technician_identity
+
+@bp_api.route("/api/racks", methods=["GET"])
+def api_get_racks():
+    try:
+        with get_db_connection() as conn:
+            racks = conn.execute("SELECT * FROM racks ORDER BY nombre").fetchall()
+        return jsonify({"status": "success", "data": [dict(r) for r in racks]})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/racks/status", methods=["GET"])
+def api_get_racks_status():
+    try:
+        with get_db_connection() as conn:
+            racks = conn.execute("SELECT * FROM racks ORDER BY nombre").fetchall()
+            status_data = []
+            for rack in racks:
+                last_audit = conn.execute(
+                    "SELECT * FROM rack_audits WHERE rack_id = %s ORDER BY timestamp DESC LIMIT 1", 
+                    (rack["id"],)
+                ).fetchone()
+                
+                status_color = "green"
+                if last_audit:
+                    temp = float(last_audit.get("temperatura_celsius_float") or 0)
+                    if not last_audit.get("estado_luces_bool") or not last_audit.get("limpieza_ok_bool") or temp > 28.0:
+                        status_color = "red"
+                
+                status_data.append({
+                    "rack": dict(rack),
+                    "last_audit": dict(last_audit) if last_audit else None,
+                    "status_color": status_color
+                })
+        return jsonify({"status": "success", "data": status_data})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/racks/audit", methods=["POST"])
+def api_post_rack_audit():
+    try:
+        rack_id = request.form.get("rack_id")
+        estado_luces = 1 if request.form.get("estado_luces") == "on" else 0
+        limpieza_ok = 1 if request.form.get("limpieza_ok") == "on" else 0
+        
+        try:
+            temperatura = float(request.form.get("temperatura") or 0)
+        except ValueError:
+            return jsonify({"status": "error", "message": "Temperatura inválida."}), 400
+            
+        observaciones = request.form.get("observaciones", "").strip()
+        
+        if (estado_luces == 0 or limpieza_ok == 0 or temperatura > 28.0) and not observaciones:
+            return jsonify({"status": "error", "message": "Las observaciones son obligatorias si hay fallas o temperatura alta."}), 400
+
+        foto_file = request.files.get("foto")
+        ruta_foto = ""
+        
+        if foto_file and foto_file.filename != "":
+            filename = secure_filename(foto_file.filename)
+            ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'jpg'
+            unique_filename = f"rack_{rack_id}_{uuid.uuid4().hex[:8]}.{ext}"
+            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+            foto_file.save(upload_path)
+            ruta_foto = unique_filename
+            
+        tecnico = current_technician_identity()
+        
+        with get_db_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO rack_audits (rack_id, estado_luces_bool, limpieza_ok_bool, temperatura_celsius_float, observaciones_text, ruta_foto_text, tecnico)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (rack_id, estado_luces, limpieza_ok, temperatura, observaciones, ruta_foto, tecnico)
+            )
+            conn.commit()
+            
+        return jsonify({"status": "success", "message": "Auditoría guardada exitosamente."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+

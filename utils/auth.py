@@ -17,6 +17,7 @@ PERMISSION_COLUMN_MAP = {
     "infrastructure": "can_access_infrastructure",
     "reports": "can_access_reports",
     "operadores": "can_access_operadores",
+    "audit_racks": "can_audit_racks",
 }
 
 ROLE_PRESETS = {
@@ -301,7 +302,7 @@ def _fetch_auth_user(username):
             """
             SELECT id, username, display_name, role, technician_name, password_hash,
                    is_superuser, is_active, must_change_password, phone,
-                   can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores
+                   can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores, can_audit_racks
             FROM app_users
             WHERE username = %s
             LIMIT 1
@@ -419,7 +420,7 @@ def _ensure_ad_shadow_user(ad_user):
             """
             SELECT id, username, display_name, role, technician_name, password_hash,
                    is_superuser, is_active, must_change_password, phone,
-                   can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores
+                   can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores, can_audit_racks
             FROM app_users WHERE username = %s LIMIT 1
             """,
             (username,),
@@ -461,9 +462,9 @@ def _ensure_ad_shadow_user(ad_user):
             INSERT INTO app_users (
                 username, display_name, role, technician_name, password_hash,
                 is_superuser, is_active, must_change_password, phone,
-                can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores
+                can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores, can_audit_racks
             )
-            VALUES (%s, %s, %s, NULL, %s, %s, %s, 0, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, NULL, %s, %s, %s, 0, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 username,
@@ -478,6 +479,7 @@ def _ensure_ad_shadow_user(ad_user):
                 1 if default_permissions["infrastructure"] else 0,
                 1 if default_permissions["reports"] else 0,
                 1 if default_permissions.get("operadores") else 0,
+                1 if default_permissions.get("audit_racks") else 0,
             ),
         )
         conn.commit()
@@ -496,6 +498,7 @@ def _ensure_ad_shadow_user(ad_user):
                 "can_access_infrastructure": default_permissions["infrastructure"],
                 "can_access_reports": default_permissions["reports"],
                 "can_access_operadores": default_permissions.get("operadores", False),
+                "can_audit_racks": default_permissions.get("audit_racks", False),
                 "phone": ad_user.get("phone") or "",
             },
             "ad",
@@ -549,7 +552,7 @@ def list_app_users():
             """
             SELECT au.id, au.username, au.display_name, au.role, au.technician_name, au.is_superuser, au.is_active,
                    au.must_change_password, au.phone, au.can_access_dashboard, au.can_access_mobile,
-                   au.can_access_infrastructure, au.can_access_reports, au.can_access_operadores, au.created_at, au.updated_at,
+                   au.can_access_infrastructure, au.can_access_reports, au.can_access_operadores, au.can_audit_racks, au.created_at, au.updated_at,
                    CASE WHEN ad.username IS NULL THEN 0 ELSE 1 END AS is_ad_user
             FROM app_users au
             LEFT JOIN ad_users ad ON LOWER(ad.username) = LOWER(au.username)
@@ -633,9 +636,9 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Fal
             INSERT INTO app_users (
                 username, display_name, role, technician_name, password_hash,
                 is_superuser, is_active, must_change_password, phone,
-                can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores
+                can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores, can_audit_racks
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE
                 display_name = VALUES(display_name),
                 role = VALUES(role),
@@ -649,6 +652,7 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Fal
                 can_access_infrastructure = VALUES(can_access_infrastructure),
                 can_access_reports = VALUES(can_access_reports),
                 can_access_operadores = VALUES(can_access_operadores),
+                can_audit_racks = VALUES(can_audit_racks),
                 phone = VALUES(phone),
                 updated_at = CURRENT_TIMESTAMP
             """,
@@ -667,6 +671,7 @@ def upsert_app_user(username, password, display_name=None, is_superuser_flag=Fal
                 1 if effective_permissions["infrastructure"] else 0,
                 1 if effective_permissions["reports"] else 0,
                 1 if effective_permissions.get("operadores") else 0,
+                1 if effective_permissions.get("audit_racks") else 0,
             ),
         )
         conn.commit()

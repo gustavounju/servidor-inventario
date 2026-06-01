@@ -455,12 +455,13 @@
     }
 
     @media (max-width: 420px) {
-      .top-bar { padding: 8px 6px; gap: 4px; }
-      .tech-badge { padding: 4px 6px; font-size: 0.75rem; gap: 4px; }
+      .top-bar { padding: 8px 6px; gap: 2px; }
+      .tech-badge { padding: 4px 4px; font-size: 0.75rem; gap: 2px; }
       .tech-badge i { font-size: 0.85rem; }
-      .brand-name { font-size: 0.95rem; }
-      .top-bar-actions { gap: 4px !important; flex-wrap: wrap; justify-content: flex-end; }
-      #techBadgeLabel { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+      .brand-name { font-size: 0.85rem; }
+      .top-bar-brand { gap: 4px; }
+      .top-bar-actions { gap: 2px !important; flex-wrap: nowrap; justify-content: flex-end; }
+      #techBadgeLabel { max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
     }
   </style>
   <script>
@@ -629,6 +630,11 @@ function submitMobileTaskAction() {
         <i class="bi bi-upc-scan"></i>
       </button>
     {% endif %}
+    {% if current_user.can_audit_racks %}
+      <button class="fab-secondary" onclick="openRackAuditModal()" title="Auditar Racks" style="color:var(--accent);">
+        <i class="bi bi-server"></i>
+      </button>
+    {% endif %}
     <button class="fab-main" id="fabVoice" onclick="toggleVoice()" title="Dictar tarea por voz">
       <i class="bi bi-mic-fill" id="fabIcon"></i>
     </button>
@@ -755,6 +761,60 @@ function submitMobileTaskAction() {
 <audio id="sndNew" preload="auto">
   <source src="data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBAAAA..." type="audio/wav">
 </audio>
+
+<!-- ── Auditoría de Racks ── -->
+<div class="voice-overlay" id="rackAuditOverlay">
+  <div class="manual-sheet">
+    <div class="sheet-handle"></div>
+    <p style="font-size:.94rem;font-weight:700;margin-bottom:14px;"><i class="bi bi-server" style="color:var(--accent)"></i> Auditoría de Rack</p>
+    
+    <form id="rackAuditForm" onsubmit="submitRackAudit(event)">
+      <div class="input-group-gold">
+        <div class="input-label-gold">Rack a auditar</div>
+        <select class="pc-dropdown" id="raRackId" name="rack_id" style="background:transparent;border:none;padding:0;" required>
+          <option value="">Cargando racks...</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div style="flex:1;">
+          <label class="toggle-switch">
+            <input type="checkbox" id="raLuces" name="estado_luces" checked>
+            <span class="toggle-track"></span>
+            Luces OK
+          </label>
+        </div>
+        <div style="flex:1;">
+          <label class="toggle-switch">
+            <input type="checkbox" id="raLimpieza" name="limpieza_ok" checked>
+            <span class="toggle-track"></span>
+            Limpieza OK
+          </label>
+        </div>
+      </div>
+
+      <div class="input-group-gold">
+        <div class="input-label-gold">Temperatura (°C)</div>
+        <input class="gold-input" type="number" step="0.1" id="raTemp" name="temperatura" placeholder="Ej: 24.5" required>
+      </div>
+
+      <div class="input-group-gold" id="raObsContainer">
+        <div class="input-label-gold">Observaciones</div>
+        <textarea class="gold-input" id="raObs" name="observaciones" rows="2" placeholder="Detalles de fallas (obligatorio si algo falla o T > 28°C)"></textarea>
+      </div>
+
+      <div class="input-group-gold">
+        <div class="input-label-gold">Foto (Opcional)</div>
+        <input class="gold-input" type="file" id="raFoto" name="foto" accept="image/*" capture="environment">
+      </div>
+
+      <div class="voice-actions" style="margin-top:20px;">
+        <button type="button" class="btn-vact btn-vcancel" onclick="closeRackAuditModal()">Cancelar</button>
+        <button type="submit" class="btn-vact btn-vsave"><i class="bi bi-check2-circle"></i> Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- ── Historial de Acciones ── -->
 <div class="voice-overlay" id="taskActionsOverlay">
@@ -1412,6 +1472,68 @@ function updateAlertsButton() {
   if (!btn) return;
   const granted = 'Notification' in window && Notification.permission === 'granted';
   btn.style.display = granted && pushSubscribed ? 'none' : '';
+}
+
+// ── Rack Audit Modal ──────────────────────────────────
+async function loadRackDropdown() {
+  try {
+    const res = await fetch('/api/racks');
+    const data = await res.json();
+    if (data.status === 'success') {
+      const select = document.getElementById('raRackId');
+      select.innerHTML = '<option value="">Selecciona un Rack...</option>' + 
+        data.data.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
+    }
+  } catch (err) {
+    console.error('Error cargando racks:', err);
+  }
+}
+
+function openRackAuditModal() {
+  document.getElementById('rackAuditForm').reset();
+  loadRackDropdown();
+  document.getElementById('rackAuditOverlay').classList.add('open');
+}
+
+function closeRackAuditModal() {
+  document.getElementById('rackAuditOverlay').classList.remove('open');
+}
+
+async function submitRackAudit(event) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  
+  const temp = parseFloat(formData.get('temperatura'));
+  const obs = formData.get('observaciones').trim();
+  const luces = form.estado_luces.checked;
+  const limpieza = form.limpieza_ok.checked;
+  
+  if ((!luces || !limpieza || temp > 28.0) && !obs) {
+    alert("Las observaciones son obligatorias si hay fallas o la temperatura supera los 28°C.");
+    document.getElementById('raObs').focus();
+    return;
+  }
+  
+  const btn = form.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Guardando...';
+  
+  try {
+    const res = await fetch('/api/racks/audit', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.status === 'success') {
+      closeRackAuditModal();
+      alert('Auditoría guardada exitosamente.');
+    } else {
+      alert(data.message || 'Error al guardar la auditoría.');
+    }
+  } catch (err) {
+    alert('Error de conexión.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-check2-circle"></i> Guardar';
+  }
 }
 
 // ── Manual Modal ──────────────────────────────────

@@ -174,6 +174,13 @@ def init_db():
             # Si falla es porque probablemente ya existe
             pass
 
+        # Intentar añadir columna can_audit_racks si no existe
+        try:
+            conn.execute("ALTER TABLE app_users ADD COLUMN can_audit_racks TINYINT(1) DEFAULT 0 AFTER can_access_reports")
+            print("Migración: Columna 'can_audit_racks' añadida exitosamente.")
+        except Exception:
+            pass
+
         conn.execute("""
             CREATE TABLE IF NOT EXISTS components (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -275,8 +282,37 @@ def init_db():
                 can_access_mobile TINYINT(1) DEFAULT 1,
                 can_access_infrastructure TINYINT(1) DEFAULT 0,
                 can_access_reports TINYINT(1) DEFAULT 0,
+                can_audit_racks TINYINT(1) DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS racks (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL UNIQUE,
+                ubicacion VARCHAR(100)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+        
+        # Seed default racks
+        default_racks = ['Rack Central', 'Piso 1', 'Piso 2', 'Backup']
+        for rack in default_racks:
+            conn.execute("INSERT IGNORE INTO racks (nombre, ubicacion) VALUES (%s, '')", (rack,))
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS rack_audits (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                rack_id INT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                estado_luces_bool TINYINT(1) DEFAULT 1,
+                limpieza_ok_bool TINYINT(1) DEFAULT 1,
+                temperatura_celsius_float FLOAT,
+                observaciones_text TEXT,
+                ruta_foto_text TEXT,
+                tecnico VARCHAR(255),
+                FOREIGN KEY (rack_id) REFERENCES racks(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
     print("Base de datos lista y estructura verificada.")

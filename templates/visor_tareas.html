@@ -408,6 +408,15 @@
                 </div>
             </div>
 
+            <div id="rackStatusContainer" style="display:none; margin-bottom: 2rem;">
+                <div class="section-header">
+                    <h2>Estado de Racks (Semaforización)</h2>
+                </div>
+                <div class="kpi-grid" id="rackGrid">
+                    <!-- Racks will be injected here -->
+                </div>
+            </div>
+
             <div class="section-header">
                 <h2>Registro del Día</h2>
                 <div class="spinner-border spinner-border-sm text-accent" id="refreshSpinner" style="display: none;" role="status"></div>
@@ -669,7 +678,39 @@
                 }
             } catch (e) { console.error(e); }
             finally { if (spinner) setTimeout(() => spinner.style.display = 'none', 800); }
+            
+            // Also refresh rack status
+            refreshRackStatus();
         }
+
+        async function refreshRackStatus() {
+            try {
+                const response = await fetch('/api/racks/status');
+                const data = await response.json();
+                if (data.status === 'success' && data.data.length > 0) {
+                    document.getElementById('rackStatusContainer').style.display = 'block';
+                    const grid = document.getElementById('rackGrid');
+                    grid.innerHTML = data.data.map(item => {
+                        const iconColor = item.status_color === 'red' ? 'text-danger bg-danger' : 'text-success bg-success';
+                        const icon = item.status_color === 'red' ? 'bi-exclamation-triangle' : 'bi-check-circle';
+                        const lastAudit = item.last_audit ? new Date(item.last_audit.timestamp).toLocaleString('es-AR') : 'Nunca';
+                        return `
+                        <div class="kpi-card">
+                            <div class="kpi-icon ${iconColor} bg-opacity-10"><i class="bi ${icon}"></i></div>
+                            <div class="kpi-info" style="flex:1;">
+                                <h3 style="font-size: 1.1rem; margin-bottom: 4px;">${item.rack.nombre}</h3>
+                                <p style="margin-bottom: 2px;">Temp: ${item.last_audit ? item.last_audit.temperatura_celsius_float + '°C' : '--'}</p>
+                                <p style="font-size: 0.65rem; color: #64748b; text-transform:none;">Último: ${lastAudit}</p>
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // Initialize rack status on load
+        document.addEventListener('DOMContentLoaded', refreshRackStatus);
 
         function applyFilters() {
             const fecha = document.getElementById('filterFecha').value;
