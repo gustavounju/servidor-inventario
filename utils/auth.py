@@ -861,7 +861,7 @@ def auth_guard():
     ua = (request.user_agent.string or "").lower()
     is_mobile_client = any(token in ua for token in ["android", "iphone", "ipad", "mobile"])
     
-    if is_mobile_client:
+    if is_mobile_client and not (request.path.startswith("/api/") or request.headers.get("X-Requested-With") == "XMLHttpRequest"):
         permission_name = required_permission_for_endpoint()
         # Si estamos en móvil, permitimos las experiencias diseñadas para celular.
         # o endpoints públicos (que ya pasaron el primer filtro de should_enforce_auth).
