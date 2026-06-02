@@ -113,54 +113,6 @@
             text-transform: uppercase;
             font-weight: 700;
         }
-
-        .rack-grid {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: nowrap;
-            padding: 4px;
-            margin-left: -4px;
-            margin-right: -4px;
-            margin-top: -4px;
-        }
-
-        .rack-card {
-            background: var(--visor-card);
-            border: 1px solid var(--visor-border);
-            border-radius: 8px;
-            padding: 0.5rem 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            min-width: 140px;
-            flex: 1;
-        }
-
-        .rack-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .rack-info h3 {
-            font-size: 0.85rem;
-            font-weight: 800;
-            margin: 0 0 2px 0;
-            white-space: nowrap;
-        }
-
-        .rack-info p {
-            font-size: 0.65rem;
-            color: #94a3b8;
-            margin: 0;
-            white-space: nowrap;
-        }
-
         .table-container {
             background: var(--visor-card);
             border: 1px solid var(--visor-border);
@@ -454,27 +406,6 @@
                     </div>
                 </div>
             </div>
-
-            <div id="rackStatusContainer" style="display:none; margin-bottom: 2rem;">
-                <div class="section-header d-flex justify-content-between align-items-center">
-                    <h2 class="m-0">Estado de Racks (Semaforización)</h2>
-                    <a href="/infra/racks/audits" class="btn btn-sm btn-outline-primary" style="font-weight: 500;"><i class="bi bi-clock-history"></i> Historial</a>
-                </div>
-                <div class="rack-grid" id="rackGrid">
-                    <!-- Racks will be injected here -->
-                </div>
-            </div>
-
-            <div id="switchStatusContainer" style="display:none; margin-bottom: 2rem;">
-                <div class="section-header d-flex justify-content-between align-items-center">
-                    <h2 class="m-0">Estado de Switches (Semaforización)</h2>
-                    <a href="/infra/switches" class="btn btn-sm btn-outline-primary" style="font-weight: 500;"><i class="bi bi-router"></i> Gestión / QRs</a>
-                </div>
-                <div class="rack-grid" id="switchGrid">
-                    <!-- Switches will be injected here -->
-                </div>
-            </div>
-
             <div class="section-header">
                 <h2>Registro del Día</h2>
                 <div class="spinner-border spinner-border-sm text-accent" id="refreshSpinner" style="display: none;" role="status"></div>
@@ -737,9 +668,6 @@
             } catch (e) { console.error(e); }
             finally { if (spinner) setTimeout(() => spinner.style.display = 'none', 800); }
             
-            // Also refresh rack and switch status
-            refreshRackStatus();
-            refreshSwitchStatus();
         }
 
         async function refreshRackStatus() {
@@ -768,44 +696,6 @@
                 }
             } catch(e) { console.error(e); }
         }
-
-        // Initialize rack status on load
-        document.addEventListener('DOMContentLoaded', () => {
-            refreshRackStatus();
-            refreshSwitchStatus();
-        });
-
-        async function refreshSwitchStatus() {
-            try {
-                const response = await fetch('/api/switches/status');
-                const data = await response.json();
-                if (data.status === 'success') {
-                    document.getElementById('switchStatusContainer').style.display = 'block';
-                    const grid = document.getElementById('switchGrid');
-                    
-                    if (data.data.length > 0) {
-                        grid.innerHTML = data.data.map(item => {
-                            const iconColor = item.status_color === 'red' ? 'text-danger bg-danger' : 'text-success bg-success';
-                            const icon = item.status_color === 'red' ? 'bi-exclamation-triangle' : 'bi-router';
-                            const lastAudit = item.last_audit ? new Date(item.last_audit.timestamp).toLocaleString('es-AR') : 'Nunca';
-                            return `
-                            <div class="rack-card" style="transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                                <div class="rack-icon ${iconColor} bg-opacity-10"><i class="bi ${icon}"></i></div>
-                                <div class="rack-info" style="flex:1;">
-                                    <h3>${item.switch.nombre}</h3>
-                                    <p style="margin-bottom: 1px;">Puertos: ${item.switch.puertos_totales}</p>
-                                    <p style="text-transform:none;">Último: ${lastAudit.split(',')[0]}</p>
-                                </div>
-                            </div>
-                            `;
-                        }).join('');
-                    } else {
-                        grid.innerHTML = '<div class="text-muted small p-2">Aún no hay switches registrados. Haz clic en Gestión para agregar el primero.</div>';
-                    }
-                }
-            } catch(e) { console.error(e); }
-        }
-
         function applyFilters() {
             const fecha = document.getElementById('filterFecha').value;
             const pc = document.getElementById('filterPc').value;
@@ -1005,108 +895,5 @@
         });
 
         // Auto refresh cada 30 seg
-        // --- Rack Audit Details Modal ---
-        function showRackAuditModal(rackIdStr) {
-            if (!window.rackStatusData) return;
-            const rackId = parseInt(rackIdStr, 10);
-            const item = window.rackStatusData.find(d => d.rack.id === rackId);
-            if (!item) return;
-
-            document.getElementById('modalRackName').textContent = item.rack.nombre;
-            
-            if (item.last_audit) {
-                document.getElementById('modalRackDate').textContent = new Date(item.last_audit.timestamp).toLocaleString('es-AR');
-                document.getElementById('modalRackTech').textContent = item.last_audit.tecnico || 'N/A';
-                document.getElementById('modalRackTemp').textContent = item.last_audit.temperatura_celsius_float + '°C';
-                
-                const tempFloat = parseFloat(item.last_audit.temperatura_celsius_float || 0);
-                document.getElementById('modalRackTemp').className = tempFloat > 24.0 ? 'text-danger fw-bold' : 'text-success fw-bold';
-
-                const lucesOK = !!item.last_audit.estado_luces_bool;
-                document.getElementById('modalRackLuces').innerHTML = lucesOK ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falla</span>';
-                
-                const limpiezaOK = !!item.last_audit.limpieza_ok_bool;
-                document.getElementById('modalRackLimpieza').innerHTML = limpiezaOK ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falta Limpieza</span>';
-
-                const iluminacionOK = item.last_audit.iluminacion_ok_bool !== undefined ? !!item.last_audit.iluminacion_ok_bool : true;
-                document.getElementById('modalRackIluminacion').innerHTML = iluminacionOK ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falla</span>';
-
-                document.getElementById('modalRackObs').textContent = item.last_audit.observaciones_text || 'Ninguna observación.';
-                
-                if (item.last_audit.ruta_foto_text) {
-                    const photoUrl = '/uploads/' + item.last_audit.ruta_foto_text;
-                    document.getElementById('modalRackPhotoContainer').style.display = 'block';
-                    document.getElementById('modalRackPhoto').src = photoUrl;
-                    document.getElementById('modalRackPhotoLink').href = photoUrl;
-                } else {
-                    document.getElementById('modalRackPhotoContainer').style.display = 'none';
-                }
-                document.getElementById('rackAuditContent').style.display = 'block';
-                document.getElementById('rackAuditEmpty').style.display = 'none';
-            } else {
-                document.getElementById('rackAuditContent').style.display = 'none';
-                document.getElementById('rackAuditEmpty').style.display = 'block';
-            }
-
-            document.getElementById('rackAuditModalOverlay').style.display = 'flex';
-        }
-
-        function hideRackAuditModal() {
-            document.getElementById('rackAuditModalOverlay').style.display = 'none';
-        }
-    </script>
-
-    <!-- Modal Detalle Rack -->
-    <div class="modal-overlay" id="rackAuditModalOverlay" style="display: none; align-items: center; justify-content: center; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 10000;">
-        <div class="glass-modal" style="max-width: 500px; width: 90%; background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
-            <div class="modal-header d-flex justify-content-between align-items-center" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
-                <h2 style="font-size: 1.2rem; margin: 0; color: #fff;"><i class="bi bi-server text-accent"></i> Detalles de <span id="modalRackName"></span></h2>
-                <button type="button" class="btn-close btn-close-white" onclick="hideRackAuditModal()" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="rackAuditEmpty" style="display:none; text-align:center; padding: 2rem 0; color: #94a3b8;">
-                    No hay auditorías registradas para este rack.
-                </div>
-                <div id="rackAuditContent" style="color: #e2e8f0;">
-                    <p class="mb-2"><small class="text-muted">Última auditoría:</small> <strong id="modalRackDate"></strong></p>
-                    <p class="mb-3"><small class="text-muted">Técnico:</small> <strong id="modalRackTech"></strong></p>
-                    
-                    <div class="d-flex justify-content-between mb-3 p-3" style="background: rgba(0,0,0,0.2); border-radius: 8px;">
-                        <div class="text-center">
-                            <div class="text-muted" style="font-size: 0.8rem;">Temperatura</div>
-                            <div id="modalRackTemp" style="font-size: 1.2rem;"></div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-muted" style="font-size: 0.8rem;">Luces Unifi/Red</div>
-                            <div id="modalRackLuces" style="margin-top: 4px;"></div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-muted" style="font-size: 0.8rem;">Limpieza</div>
-                            <div id="modalRackLimpieza" style="margin-top: 4px;"></div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-muted" style="font-size: 0.8rem;">Iluminación</div>
-                            <div id="modalRackIluminacion" style="margin-top: 4px;"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="text-muted" style="font-size: 0.8rem; display: block; margin-bottom: 4px;">Observaciones:</label>
-                        <div id="modalRackObs" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; font-size: 0.9rem; min-height: 50px;"></div>
-                    </div>
-
-                    <div id="modalRackPhotoContainer" style="display:none; margin-top: 1rem; text-align: center;">
-                        <label class="text-muted" style="font-size: 0.8rem; display: block; margin-bottom: 8px; text-align: left;">Foto Adjunta:</label>
-                        <a id="modalRackPhotoLink" href="#" target="_blank">
-                            <img id="modalRackPhoto" src="" alt="Foto Auditoría" style="max-width: 100%; max-height: 250px; border-radius: 8px; object-fit: contain; border: 1px solid rgba(255,255,255,0.1);">
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer" style="padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 1rem; text-align: right; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; background: transparent;">
-                <button type="button" class="btn btn-outline-light" onclick="hideRackAuditModal()">Cerrar</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
