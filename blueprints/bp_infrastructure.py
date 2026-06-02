@@ -729,7 +729,8 @@ def switches_dashboard():
     """Renders the dashboard for managing switches and generating QRs."""
     with get_db_connection() as conn:
         switches = conn.execute("SELECT * FROM switches ORDER BY nombre").fetchall()
-    return render_template('switches_dashboard.html', switches=switches)
+        racks = conn.execute("SELECT id, nombre FROM racks ORDER BY nombre").fetchall()
+    return render_template('switches_dashboard.html', switches=switches, racks=racks)
 
 @bp_infrastructure.route('/qr/<qr_code>')
 def scan_qr(qr_code):
