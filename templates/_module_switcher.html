@@ -60,6 +60,9 @@
                     <button class="system-icon-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Topografía">
                         <i class="bi bi-diagram-3"></i>
                     </button>
+                    <a href="{{ url_for('infrastructure.switches_dashboard') }}" class="system-icon-btn" title="Gestión de Switches y QRs">
+                        <i class="bi bi-router"></i>
+                    </a>
                     <a href="{{ url_for('maps.index') }}" class="system-icon-btn" title="Planos Topológicos">
                         <i class="bi bi-map-fill"></i>
                     </a>
@@ -144,6 +147,10 @@
                 <button class="action-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Topografía">
                     <i class="bi bi-diagram-3"></i>
                 </button>
+                
+                <a href="{{ url_for('infrastructure.switches_dashboard') }}" class="action-btn" title="Gestión de Switches y QRs">
+                    <i class="bi bi-router"></i>
+                </a>
                 
                 <a href="{{ url_for('maps.index') }}" class="action-btn" title="Planos Topológicos">
                     <i class="bi bi-map-fill"></i>
