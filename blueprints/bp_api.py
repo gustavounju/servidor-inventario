@@ -726,3 +726,119 @@ def api_post_rack_audit():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# --- SWITCHES API ---
+
+@bp_api.route("/api/switches", methods=["GET"])
+def api_get_switches():
+    try:
+        with get_db_connection() as conn:
+            switches = conn.execute("SELECT * FROM switches ORDER BY nombre").fetchall()
+        return jsonify({"status": "success", "data": [dict(s) for s in switches]})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/switches", methods=["POST"])
+def api_post_switch():
+    try:
+        data = request.get_json() if request.is_json else request.form
+        nombre = data.get("nombre", "").strip()
+        marca = data.get("marca", "").strip()
+        modelo = data.get("modelo", "").strip()
+        edificio = data.get("edificio", "").strip()
+        lugar = data.get("lugar", "").strip()
+        
+        try:
+            puertos_totales = int(data.get("puertos_totales") or 0)
+            puertos_poe = int(data.get("puertos_poe") or 0)
+        except ValueError:
+            return jsonify({"status": "error", "message": "Los puertos deben ser numéricos."}), 400
+
+        if not nombre:
+            return jsonify({"status": "error", "message": "El nombre es obligatorio."}), 400
+
+        import uuid
+        codigo_qr = f"SW-{uuid.uuid4().hex[:8].upper()}"
+
+        with get_db_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO switches (codigo_qr, nombre, marca, modelo, edificio, lugar, puertos_totales, puertos_poe)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (codigo_qr, nombre, marca, modelo, edificio, lugar, puertos_totales, puertos_poe)
+            )
+            conn.commit()
+        return jsonify({"status": "success", "message": "Switch creado exitosamente.", "codigo_qr": codigo_qr})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/switches/<int:switch_id>", methods=["DELETE"])
+def api_delete_switch(switch_id):
+    try:
+        with get_db_connection() as conn:
+            conn.execute("DELETE FROM switches WHERE id = %s", (switch_id,))
+            conn.commit()
+        return jsonify({"status": "success", "message": "Switch eliminado exitosamente."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/switches/status", methods=["GET"])
+def api_get_switches_status():
+    try:
+        with get_db_connection() as conn:
+            switches = conn.execute("SELECT * FROM switches ORDER BY nombre").fetchall()
+            status_data = []
+            for sw in switches:
+                last_audit = conn.execute(
+                    "SELECT * FROM switch_audits WHERE switch_id = %s ORDER BY timestamp DESC LIMIT 1",
+                    (sw["id"],)
+                ).fetchone()
+                
+                status_color = "green"
+                if last_audit:
+                    if last_audit["estado_general"] != "Online" or last_audit["puertos_fallados"] > 0:
+                        status_color = "red"
+
+                status_data.append({
+                    "switch": dict(sw),
+                    "last_audit": dict(last_audit) if last_audit else None,
+                    "status_color": status_color
+                })
+
+        return jsonify({"status": "success", "data": status_data})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/switches/audit", methods=["POST"])
+def api_post_switch_audit():
+    try:
+        from utils.auth import current_technician_identity
+        switch_id = request.form.get("switch_id")
+        estado_general = request.form.get("estado_general", "Online")
+        observaciones = request.form.get("observaciones", "").strip()
+        
+        try:
+            puertos_libres = int(request.form.get("puertos_libres") or 0)
+            puertos_ocupados = int(request.form.get("puertos_ocupados") or 0)
+            puertos_fallados = int(request.form.get("puertos_fallados") or 0)
+        except ValueError:
+            return jsonify({"status": "error", "message": "Valores de puertos inválidos."}), 400
+            
+        if (estado_general != "Online" or puertos_fallados > 0) and not observaciones:
+            return jsonify({"status": "error", "message": "Las observaciones son obligatorias si hay fallas."}), 400
+
+        tecnico = current_technician_identity()
+        
+        with get_db_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO switch_audits (switch_id, estado_general, puertos_libres, puertos_ocupados, puertos_fallados, observaciones_text, tecnico)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (switch_id, estado_general, puertos_libres, puertos_ocupados, puertos_fallados, observaciones, tecnico)
+            )
+            conn.commit()
+            
+        return jsonify({"status": "success", "message": "Auditoría de switch guardada exitosamente."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500

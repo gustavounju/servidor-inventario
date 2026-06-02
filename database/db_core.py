@@ -323,4 +323,35 @@ def init_db():
                 FOREIGN KEY (rack_id) REFERENCES racks(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS switches (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                codigo_qr VARCHAR(100) UNIQUE NOT NULL,
+                nombre VARCHAR(100) NOT NULL,
+                marca VARCHAR(100),
+                modelo VARCHAR(100),
+                edificio VARCHAR(100),
+                lugar VARCHAR(100),
+                puertos_totales INT DEFAULT 0,
+                puertos_poe INT DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS switch_audits (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                switch_id INT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                estado_general VARCHAR(50) DEFAULT 'Online',
+                puertos_libres INT DEFAULT 0,
+                puertos_ocupados INT DEFAULT 0,
+                puertos_fallados INT DEFAULT 0,
+                observaciones_text TEXT,
+                tecnico VARCHAR(255),
+                FOREIGN KEY (switch_id) REFERENCES switches(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
     print("Base de datos lista y estructura verificada.")

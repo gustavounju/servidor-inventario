@@ -1,0 +1,223 @@
+{% extends "index.html" %}
+
+{% block title %}Inventario - Gestión de Switches{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 mb-0 text-gray-800"><i class="bi bi-router text-primary me-2"></i>Gestión de Switches</h2>
+            <p class="text-muted mb-0">Inventario y auditoría de equipos de red</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSwitchModal">
+                <i class="bi bi-plus-lg me-1"></i> Añadir Switch
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Nombre / Ubicación</th>
+                            <th>Modelo</th>
+                            <th>Puertos Totales</th>
+                            <th>PoE</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for switch in switches %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ switch.nombre }}</div>
+                                <div class="text-muted small"><i class="bi bi-geo-alt"></i> {{ switch.edificio }} - {{ switch.lugar }}</div>
+                            </td>
+                            <td>
+                                <div>{{ switch.marca }}</div>
+                                <div class="text-muted small">{{ switch.modelo }}</div>
+                            </td>
+                            <td>{{ switch.puertos_totales }}</td>
+                            <td>{{ switch.puertos_poe }}</td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-dark" onclick="showQrModal('{{ switch.nombre }}', '{{ switch.codigo_qr }}')">
+                                    <i class="bi bi-qr-code"></i> Imprimir QR
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteSwitch({{ switch.id }})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-router display-4 d-block mb-3 opacity-50"></i>
+                                No hay switches registrados en el sistema.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Añadir Switch -->
+<div class="modal fade" id="addSwitchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">Registrar Nuevo Switch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addSwitchForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre / Identificador</label>
+                        <input type="text" class="form-control" name="nombre" placeholder="Ej. SW-PISO-1" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Marca</label>
+                            <input type="text" class="form-control" name="marca" placeholder="Ubiquiti">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Modelo</label>
+                            <input type="text" class="form-control" name="modelo" placeholder="UniFi 48 PoE">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Edificio</label>
+                            <input type="text" class="form-control" name="edificio" placeholder="Sede Central">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Lugar/Piso</label>
+                            <input type="text" class="form-control" name="lugar" placeholder="Rack Piso 1">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Puertos Totales</label>
+                            <input type="number" class="form-control" name="puertos_totales" placeholder="48" min="0">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Puertos PoE</label>
+                            <input type="number" class="form-control" name="puertos_poe" placeholder="48" min="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary rounded-3" onclick="submitNewSwitch()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Imprimir QR -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold" id="qrModalTitle">Código QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center" id="printableQrArea">
+                <p class="text-muted small mb-3">Escanea este código para realizar una auditoría técnica.</p>
+                <!-- El ID se usa para inyectar el canvas del QR -->
+                <div id="qrCodeContainer" class="d-flex justify-content-center mb-3 bg-white p-3 rounded-4 border"></div>
+                <h6 class="fw-bold mb-0" id="qrSwitchName"></h6>
+                <div class="small text-muted" style="font-family: monospace;" id="qrSwitchCode"></div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0 d-flex justify-content-center">
+                <button type="button" class="btn btn-outline-dark w-100 rounded-3" onclick="printQR()">
+                    <i class="bi bi-printer"></i> Imprimir Etiqueta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cargar librería QRCode.js para generar códigos al vuelo -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+    function submitNewSwitch() {
+        const form = document.getElementById('addSwitchForm');
+        const data = new FormData(form);
+        
+        fetch('/api/switches', {
+            method: 'POST',
+            body: data
+        })
+        .then(response => response.json())
+        .then(result => {
+            if(result.status === 'success') {
+                window.location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        });
+    }
+
+    function deleteSwitch(id) {
+        if(confirm('¿Seguro que deseas eliminar este switch? Se perderá también su historial de auditorías.')) {
+            fetch(`/api/switches/${id}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(result => {
+                if(result.status === 'success') window.location.reload();
+                else alert('Error: ' + result.message);
+            });
+        }
+    }
+
+    let currentQrCode = null;
+
+    function showQrModal(name, code) {
+        document.getElementById('qrSwitchName').innerText = name;
+        document.getElementById('qrSwitchCode').innerText = code;
+        
+        // Limpiar QR anterior
+        const container = document.getElementById('qrCodeContainer');
+        container.innerHTML = '';
+        
+        // Construir la URL completa basada en el origen actual
+        // Ejemplo: http://10.15.2.251:5000/infra/qr/SW-1234ABCD
+        const qrUrl = window.location.origin + '/infra/qr/' + code;
+        
+        // Generar nuevo QR
+        currentQrCode = new QRCode(container, {
+            text: qrUrl,
+            width: 200,
+            height: 200,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+        
+        const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+        modal.show();
+    }
+
+    function printQR() {
+        const printContent = document.getElementById('printableQrArea').innerHTML;
+        const printWindow = window.open('', '', 'height=600,width=800');
+        printWindow.document.write('<html><head><title>Imprimir QR Switch</title>');
+        printWindow.document.write('<style>body { text-align: center; font-family: sans-serif; padding-top: 50px; } img { margin: 0 auto; }</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(printContent);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        
+        // Esperar a que la imagen se cargue en el iframe para imprimir
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+    }
+</script>
+{% endblock %}

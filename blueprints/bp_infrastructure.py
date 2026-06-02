@@ -720,3 +720,31 @@ async def snmp_fetch(ip):
         snmp_engine.close_dispatcher()
         
     return result
+
+
+# --- SWITCHES ---
+
+@bp_infrastructure.route('/switches')
+def switches_dashboard():
+    """Renders the dashboard for managing switches and generating QRs."""
+    with get_db_connection() as conn:
+        switches = conn.execute("SELECT * FROM switches ORDER BY nombre").fetchall()
+    return render_template('switches_dashboard.html', switches=switches)
+
+@bp_infrastructure.route('/qr/<qr_code>')
+def scan_qr(qr_code):
+    """
+    Interceptor for QR codes.
+    If a technician scans a QR, they land here.
+    We look up the switch. If found, redirect to mobile audit form.
+    """
+    with get_db_connection() as conn:
+        switch = conn.execute("SELECT * FROM switches WHERE codigo_qr = %s", (qr_code,)).fetchone()
+        
+    if switch:
+        # Redirect to mobile view for auditing this switch
+        # Wait, the mobile view might be in bp_mobile, but we can render a specific template directly here
+        return render_template('switch_audit.html', switch=switch)
+    else:
+        flash("Código QR no reconocido o switch no encontrado.", "error")
+        return redirect(url_for('dashboard.index'))
