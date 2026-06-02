@@ -630,7 +630,7 @@ function submitMobileTaskAction() {
         <i class="bi bi-upc-scan"></i>
       </button>
     {% endif %}
-    {% if current_user.can_audit_racks %}
+    {% if has_access('audit_racks') %}
       <button class="fab-secondary" onclick="openRackAuditModal()" title="Auditar Racks" style="color:var(--accent);">
         <i class="bi bi-server"></i>
       </button>
@@ -769,6 +769,7 @@ function submitMobileTaskAction() {
     <p style="font-size:.94rem;font-weight:700;margin-bottom:14px;"><i class="bi bi-server" style="color:var(--accent)"></i> Auditoría de Rack</p>
     
     <form id="rackAuditForm" onsubmit="submitRackAudit(event)">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="input-group-gold">
         <div class="input-label-gold">Rack a auditar</div>
         <select class="pc-dropdown" id="raRackId" name="rack_id" style="background:transparent;border:none;padding:0;" required>
@@ -776,20 +777,31 @@ function submitMobileTaskAction() {
         </select>
       </div>
 
-      <div style="display:flex; gap:10px; margin-bottom:14px;">
-        <div style="flex:1;">
-          <label class="toggle-switch">
-            <input type="checkbox" id="raLuces" name="estado_luces" checked>
-            <span class="toggle-track"></span>
-            Luces OK
-          </label>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1;">
+            <label class="toggle-switch">
+                <input type="checkbox" id="raLuces" name="estado_luces" checked>
+                <span class="toggle-track"></span>
+                Luces Unifi/Red
+            </label>
+            </div>
+            <div style="flex:1;">
+            <label class="toggle-switch">
+                <input type="checkbox" id="raLimpieza" name="limpieza_ok" checked>
+                <span class="toggle-track"></span>
+                Limpieza OK
+            </label>
+            </div>
         </div>
-        <div style="flex:1;">
-          <label class="toggle-switch">
-            <input type="checkbox" id="raLimpieza" name="limpieza_ok" checked>
-            <span class="toggle-track"></span>
-            Limpieza OK
-          </label>
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1;">
+            <label class="toggle-switch">
+                <input type="checkbox" id="raIluminacion" name="iluminacion_ok" checked>
+                <span class="toggle-track"></span>
+                Iluminación del lugar
+            </label>
+            </div>
         </div>
       </div>
 
@@ -1504,12 +1516,13 @@ async function submitRackAudit(event) {
   const form = event.target;
   const formData = new FormData(form);
   
-  const temp = parseFloat(formData.get('temperatura'));
-  const obs = formData.get('observaciones').trim();
   const luces = form.estado_luces.checked;
   const limpieza = form.limpieza_ok.checked;
-  
-  if ((!luces || !limpieza || temp > 28.0) && !obs) {
+  const iluminacion = form.iluminacion_ok.checked;
+  const temp = parseFloat(form.temperatura.value) || 0;
+  const obs = form.observaciones.value.trim();
+
+  if ((!luces || !limpieza || !iluminacion || temp > 28.0) && !obs) {
     alert("Las observaciones son obligatorias si hay fallas o la temperatura supera los 28°C.");
     document.getElementById('raObs').focus();
     return;
@@ -1524,7 +1537,7 @@ async function submitRackAudit(event) {
     const data = await res.json();
     if (data.status === 'success') {
       closeRackAuditModal();
-      alert('Auditoría guardada exitosamente.');
+      // Se eliminó la alerta para hacerlo más fluido
     } else {
       alert(data.message || 'Error al guardar la auditoría.');
     }

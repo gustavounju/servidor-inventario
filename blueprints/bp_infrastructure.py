@@ -14,6 +14,24 @@ from utils.constants import FUERO_COLORS, FUERO_MAPPING, clean_hex_string
 
 bp_infrastructure = Blueprint('infrastructure', __name__, url_prefix='/infra')
 
+@bp_infrastructure.route('/racks/audits')
+def rack_audits_history():
+    """Renders the full history of rack audits."""
+    try:
+        with get_db_connection() as conn:
+            audits = conn.execute("""
+                SELECT a.*, r.nombre as rack_name 
+                FROM rack_audits a
+                JOIN racks r ON a.rack_id = r.id
+                ORDER BY a.timestamp DESC
+            """).fetchall()
+    except Exception as e:
+        flash(f"Error cargando historial de auditorías: {e}", "error")
+        audits = []
+
+    return render_template('rack_audits_history.html', audits=audits)
+
+
 @bp_infrastructure.route('/topology')
 def topology_view():
     """Renders the topology graph view."""

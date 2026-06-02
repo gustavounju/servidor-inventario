@@ -301,6 +301,13 @@ def init_db():
         for rack in default_racks:
             conn.execute("INSERT IGNORE INTO racks (nombre, ubicacion) VALUES (%s, '')", (rack,))
 
+        # Intentar añadir columna iluminacion_ok_bool si no existe
+        try:
+            conn.execute("ALTER TABLE rack_audits ADD COLUMN iluminacion_ok_bool TINYINT(1) DEFAULT 1 AFTER limpieza_ok_bool")
+            print("Migración: Columna 'iluminacion_ok_bool' añadida exitosamente.")
+        except Exception:
+            pass
+
         conn.execute("""
             CREATE TABLE IF NOT EXISTS rack_audits (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -308,6 +315,7 @@ def init_db():
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                 estado_luces_bool TINYINT(1) DEFAULT 1,
                 limpieza_ok_bool TINYINT(1) DEFAULT 1,
+                iluminacion_ok_bool TINYINT(1) DEFAULT 1,
                 temperatura_celsius_float FLOAT,
                 observaciones_text TEXT,
                 ruta_foto_text TEXT,

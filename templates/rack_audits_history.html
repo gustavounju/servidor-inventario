@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial Auditoría de Racks | Inventario GOLD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/gold.css">
+    <style>
+        .audit-container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .audit-table-card {
+            border-radius: 20px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            background: #fff;
+        }
+
+        .audit-table thead th {
+            background: #1e293b;
+            color: #fff;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            padding: 14px 20px;
+            border-bottom: none;
+        }
+
+        .audit-table tbody td {
+            padding: 14px 20px;
+            font-size: 0.85rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .audit-table tbody tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .val-badge {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.78rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .user-avatar {
+            width: 24px;
+            height: 24px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #475569;
+        }
+    </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="/static/js/security.js"></script>
+</head>
+
+<body class="has-fixed-header">
+    {% include '_module_switcher.html' %}
+    {% include '_shared_modals.html' %}
+
+    <div class="audit-container" style="margin-top: 110px;">
+        
+        <header class="hero-header mb-4" style="background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.15);">
+                            <i class="bi bi-server text-white fs-4"></i>
+                        </div>
+                        <div>
+                            <h1 class="hero-title text-white m-0" style="font-size: 1.8rem;">Historial de Auditorías de Racks</h1>
+                            <p class="hero-subtitle text-white opacity-75 m-0" style="font-size: 0.95rem;">Registro de controles de temperatura, luces, limpieza y observaciones.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="/dashboard" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left"></i> Volver al Visor</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="audit-table-card">
+            <div class="table-responsive">
+                <table class="table audit-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%">Fecha / Hora</th>
+                            <th style="width: 12%">Rack</th>
+                            <th style="width: 10%">Temp (°C)</th>
+                            <th style="width: 10%">Luces Unifi/Red</th>
+                            <th style="width: 10%">Limpieza</th>
+                            <th style="width: 10%">Iluminación</th>
+                            <th style="width: 15%">Observaciones</th>
+                            <th style="width: 11%">Técnico</th>
+                            <th style="width: 10%">Foto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in audits %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-dark">{{ log.timestamp.strftime('%d/%m/%Y') if log.timestamp else 'N/A' }}</div>
+                                <div style="font-size: 0.75rem;" class="text-muted">{{ log.timestamp.strftime('%H:%M:%S') if log.timestamp else '' }}</div>
+                            </td>
+                            <td><div class="fw-bold text-primary">{{ log.rack_name }}</div></td>
+                            <td>
+                                {% set temp = log.temperatura_celsius_float or 0.0 %}
+                                <div class="val-badge {% if temp > 28.0 %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+                                    {{ temp }}°C
+                                </div>
+                            </td>
+                            <td>
+                                {% if log.estado_luces_bool %}
+                                    <span class="badge bg-success">OK</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Falla</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.limpieza_ok_bool %}
+                                    <span class="badge bg-success">OK</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Falta</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.iluminacion_ok_bool is none or log.iluminacion_ok_bool %}
+                                    <span class="badge bg-success">OK</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Falla</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 0.8rem; color: #475569;">
+                                {{ log.observaciones_text or '-' }}
+                            </td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">
+                                        {{ (log.tecnico[:1] if log.tecnico else 'S') | upper }}
+                                    </div>
+                                    <div class="fw-bold text-dark" style="font-size: 0.8rem;">{{ log.tecnico or 'Desconocido' }}</div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if log.ruta_foto_text %}
+                                    <a href="/uploads/{{ log.ruta_foto_text }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Ver Foto">
+                                        <i class="bi bi-image"></i>
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted opacity-50"><i class="bi bi-dash"></i></span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5">
+                                <i class="bi bi-server fs-1 text-muted opacity-25 d-block mb-3"></i>
+                                <div class="text-muted fw-bold">No hay registros de auditorías de racks aún.</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/theme.js"></script>
+</body>
+</html>

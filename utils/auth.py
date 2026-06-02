@@ -26,6 +26,7 @@ ROLE_PRESETS = {
         "mobile": True,
         "infrastructure": True,
         "reports": True,
+        "audit_racks": True,
     },
     "operador": {
         "dashboard": False,
@@ -33,24 +34,28 @@ ROLE_PRESETS = {
         "infrastructure": False,
         "reports": False,
         "operadores": True,
+        "audit_racks": False,
     },
     "tecnico": {
         "dashboard": False,
         "mobile": True,
         "infrastructure": False,
         "reports": False,
+        "audit_racks": False,
     },
     "infraestructura": {
         "dashboard": True,
         "mobile": True,
         "infrastructure": True,
         "reports": True,
+        "audit_racks": True,
     },
     "consulta": {
         "dashboard": False,
         "mobile": False,
         "infrastructure": False,
         "reports": True,
+        "audit_racks": False,
     },
 }
 

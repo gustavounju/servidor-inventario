@@ -331,6 +331,7 @@
                                         <label class="um-perm-chip"><input type="checkbox" name="perm_infrastructure" id="permInfrastructure"><span><i class="bi bi-hdd-network"></i> Infra</span></label>
                                         <label class="um-perm-chip"><input type="checkbox" name="perm_reports" id="permReports"><span><i class="bi bi-file-bar-graph"></i> Reportes</span></label>
                                         <label class="um-perm-chip"><input type="checkbox" name="perm_operadores" id="permOperadores"><span><i class="bi bi-headset"></i> Operadores</span></label>
+                                        <label class="um-perm-chip"><input type="checkbox" name="perm_audit_racks" id="permAuditRacks"><span><i class="bi bi-server"></i> Auditoría Racks</span></label>
                                     </div>
                                     <div class="um-flags-row">
                                         <label class="um-flag-chip"><input type="checkbox" name="is_superuser" id="newIsSuperuser" onchange="applyRolePreset()"><span><i class="bi bi-lightning-fill text-warning"></i> Superusuario</span></label>
@@ -426,6 +427,7 @@
                                     {% if app_user.can_access_infrastructure %}<span class="um-access-dot" title="Infraestructura"><i class="bi bi-hdd-network-fill"></i></span>{% endif %}
                                     {% if app_user.can_access_reports %}<span class="um-access-dot" title="Reportes"><i class="bi bi-file-earmark-bar-graph-fill"></i></span>{% endif %}
                                     {% if app_user.can_access_operadores %}<span class="um-access-dot" title="Operadores"><i class="bi bi-headset"></i></span>{% endif %}
+                                    {% if app_user.can_audit_racks %}<span class="um-access-dot" title="Auditoría Racks"><i class="bi bi-server"></i></span>{% endif %}
                                 </div>
                             </div>
 
@@ -1365,6 +1367,7 @@
         if (preset.infrastructure) fields['perm_infrastructure'] = 'on';
         if (preset.reports) fields['perm_reports'] = 'on';
         if (preset.operadores) fields['perm_operadores'] = 'on';
+        if (preset.audit_racks) fields['perm_audit_racks'] = 'on';
 
         for (const [key, value] of Object.entries(fields)) {
             const input = document.createElement('input');
@@ -1411,11 +1414,11 @@
     }
 
     const rolePresets = {
-        administrador: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false },
-        operador: { dashboard: false, mobile: false, infrastructure: false, reports: false, operadores: true },
-        tecnico: { dashboard: false, mobile: true, infrastructure: false, reports: false, operadores: false },
-        infraestructura: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false },
-        consulta: { dashboard: false, mobile: false, infrastructure: false, reports: true, operadores: false }
+        administrador: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false, audit_racks: true },
+        operador: { dashboard: false, mobile: false, infrastructure: false, reports: false, operadores: true, audit_racks: false },
+        tecnico: { dashboard: false, mobile: true, infrastructure: false, reports: false, operadores: false, audit_racks: false },
+        infraestructura: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false, audit_racks: true },
+        consulta: { dashboard: false, mobile: false, infrastructure: false, reports: true, operadores: false, audit_racks: false }
     };
 
     function setAccessChecks(values) {
@@ -1426,6 +1429,8 @@
         document.getElementById('permReports').checked = !!values.reports;
         const operadoresEl = document.getElementById('permOperadores');
         if (operadoresEl) operadoresEl.checked = !!values.operadores;
+        const auditRacksEl = document.getElementById('permAuditRacks');
+        if (auditRacksEl) auditRacksEl.checked = !!values.audit_racks;
     }
 
     function applyRolePreset() {
@@ -1442,7 +1447,7 @@
         }
 
         if (superuserEl.checked) {
-            setAccessChecks({ dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: true });
+            setAccessChecks({ dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: true, audit_racks: true });
             return;
         }
         setAccessChecks(rolePresets[role] || rolePresets.tecnico);
@@ -1466,7 +1471,8 @@
             mobile: !!user.can_access_mobile,
             infrastructure: !!user.can_access_infrastructure,
             reports: !!user.can_access_reports,
-            operadores: !!user.can_access_operadores
+            operadores: !!user.can_access_operadores,
+            audit_racks: !!user.can_audit_racks
         });
         const passwordEl = document.getElementById('appPassword');
         const isAD = adUsernamesSet.has((user.username || '').toLowerCase());
