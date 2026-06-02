@@ -297,7 +297,7 @@ def init_db():
         """)
         
         # Seed default racks
-        default_racks = ['Rack Central', 'Piso 1', 'Piso 2', 'Backup']
+        default_racks = ['Rack Central', 'Piso 1', 'Piso 2', 'Backup', 'Familia', 'Residual', 'Biblioteca']
         for rack in default_racks:
             conn.execute("INSERT IGNORE INTO racks (nombre, ubicacion) VALUES (%s, '')", (rack,))
 
