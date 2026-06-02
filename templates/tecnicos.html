@@ -1490,13 +1490,21 @@ function updateAlertsButton() {
 async function loadRackDropdown() {
   try {
     const res = await fetch('/api/racks');
+    if (!res.ok) {
+      const text = await res.text();
+      alert("HTTP Error " + res.status + ": " + text.substring(0, 100));
+      return;
+    }
     const data = await res.json();
     if (data.status === 'success') {
       const select = document.getElementById('raRackId');
       select.innerHTML = '<option value="">Selecciona un Rack...</option>' + 
         data.data.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
+    } else {
+      alert("Server Error: " + JSON.stringify(data));
     }
   } catch (err) {
+    alert("Fetch error: " + err.message);
     console.error('Error cargando racks:', err);
   }
 }
