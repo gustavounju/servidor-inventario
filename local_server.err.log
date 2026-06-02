@@ -3,67 +3,39 @@ WARNING: This is a development server. Do not use it in a production deployment.
  * Running on http://127.0.0.1:8080
  * Running on http://192.168.1.8:8080
 Press CTRL+C to quit
-192.168.1.8 - - [10/May/2026 00:09:16] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:09:46] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:09:47] "GET /api/visor/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:10:47] "GET /api/visor/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:10:47] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:10:56] "GET /tecnicos HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:10:56] "GET /favicon.ico HTTP/1.1" 304 -
-192.168.1.8 - - [10/May/2026 00:10:56] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:10:56] "GET /tecnicos HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:10:56] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:10:56] "GET /favicon.ico HTTP/1.1" 304 -
-192.168.1.45 - - [10/May/2026 00:11:06] "GET /logout HTTP/1.1" 302 -
-192.168.1.45 - - [10/May/2026 00:11:06] "GET /login HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:07] "GET /favicon.ico HTTP/1.1" 302 -
-192.168.1.45 - - [10/May/2026 00:11:07] "GET /login?next=/favicon.ico HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:19] "POST /login HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:19] "GET /favicon.ico HTTP/1.1" 302 -
-192.168.1.45 - - [10/May/2026 00:11:19] "GET /login?next=/favicon.ico HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:11:26] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:35] "POST /login HTTP/1.1" 302 -
-192.168.1.45 - - [10/May/2026 00:11:35] "GET / HTTP/1.1" 302 -
-192.168.1.45 - - [10/May/2026 00:11:35] "GET /tecnicos HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:35] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:35] "GET /favicon.ico HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:42] "GET /tecnicos/scanner HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:42] "GET /static/js/security.js HTTP/1.1" 304 -
-192.168.1.45 - - [10/May/2026 00:11:43] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:43] "GET /api/components/suppliers HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:11:47] "GET /api/visor/data HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:56] "GET /tecnicos/scanner?code=7790400021806 HTTP/1.1" 302 -
-192.168.1.45 - - [10/May/2026 00:11:56] "GET /login?next=/tecnicos/scanner?code%3D7790400021806 HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:11:56] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:11:57] "GET /favicon.ico HTTP/1.1" 302 -
-192.168.1.45 - - [10/May/2026 00:11:57] "GET /login?next=/favicon.ico HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:12:15] "POST /api/mobile/voice-upload HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:12:26] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:12:28] "POST /api/mobile/create_task HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:12:28] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:12:35] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:12:47] "GET /api/visor/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:12:52] "GET /visor HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:12:52] "GET /static/css/gold.css HTTP/1.1" 304 -
-192.168.1.8 - - [10/May/2026 00:12:52] "GET /favicon.ico HTTP/1.1" 304 -
-192.168.1.8 - - [10/May/2026 00:12:52] "GET /api/visor/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:12:57] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:13:05] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:13:08] "POST /api/mobile/update_task HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:13:09] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:13:14] "GET /visor HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:13:14] "GET /static/css/gold.css HTTP/1.1" 304 -
-192.168.1.8 - - [10/May/2026 00:13:14] "GET /favicon.ico HTTP/1.1" 304 -
-192.168.1.8 - - [10/May/2026 00:13:15] "GET /api/visor/data HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:13:19] "GET / HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:13:19] "GET /static/css/gold.css HTTP/1.1" 304 -
-192.168.1.8 - - [10/May/2026 00:13:19] "GET /static/js/security.js HTTP/1.1" 304 -
-192.168.1.8 - - [10/May/2026 00:13:19] "GET /static/js/gold.js?v=3.0.1 HTTP/1.1" 304 -
-G:\unju2025\google gravity\ServidorInventario\.venv\Lib\site-packages\urllib3\connectionpool.py:1097: InsecureRequestWarning: Unverified HTTPS request is being made to host 'sigj.justiciajujuy.gov.ar'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#tls-warnings
-  warnings.warn(
-192.168.1.8 - - [10/May/2026 00:13:19] "GET /infra/status_check HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:13:20] "GET /logout HTTP/1.1" 302 -
-192.168.1.8 - - [10/May/2026 00:13:20] "GET /login HTTP/1.1" 200 -
-192.168.1.8 - - [10/May/2026 00:13:27] "GET /api/mobile/data HTTP/1.1" 200 -
-192.168.1.45 - - [10/May/2026 00:13:31] "GET /logout HTTP/1.1" 302 -
-192.168.1.45 - - [10/May/2026 00:13:31] "GET /login HTTP/1.1" 200 -
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.8:5000
+Press CTRL+C to quit
+192.168.1.8 - - [23/May/2026 02:12:48] "GET /login HTTP/1.1" 200 -
+192.168.1.8 - - [23/May/2026 02:12:48] "GET /static/vendor/bootstrap-icons/font/bootstrap-icons.css HTTP/1.1" 200 -
+192.168.1.8 - - [23/May/2026 02:12:48] "GET /static/vendor/bootstrap-icons/font/fonts/bootstrap-icons.woff2?1bb88866b4085542c8ed5fb61b9393dd HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:12:48] "GET /static/vendor/pdfjs/pdf.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:12:48] "GET /static/vendor/pdf-lib/pdf-lib.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:12:48] "GET /favicon.ico HTTP/1.1" 302 -
+192.168.1.8 - - [23/May/2026 02:12:48] "GET /login?next=/favicon.ico HTTP/1.1" 200 -
+192.168.1.8 - - [23/May/2026 02:12:49] "GET /pdf-local HTTP/1.1" 200 -
+192.168.1.8 - - [23/May/2026 02:12:49] "GET /static/vendor/bootstrap-icons/font/bootstrap-icons.css HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:12:49] "GET /static/vendor/pdfjs/pdf.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:12:49] "GET /static/vendor/pdf-lib/pdf-lib.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:12:49] "GET /static/css/pdf_local_tool.css HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:12:49] "GET /static/js/pdf_local_tool.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:12:49] "GET /favicon.ico HTTP/1.1" 302 -
+192.168.1.8 - - [23/May/2026 02:12:49] "GET /login?next=/favicon.ico HTTP/1.1" 200 -
+192.168.1.8 - - [23/May/2026 02:12:58] "GET /static/vendor/pdfjs/pdf.worker.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:13:09] "GET /static/vendor/pdfjs/pdf.worker.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:13:09] "GET /static/vendor/pdfjs/pdf.worker.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:13:10] "GET /static/vendor/pdfjs/pdf.worker.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:13:17] "GET /static/vendor/pdfjs/pdf.worker.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:13:18] "GET /static/vendor/pdfjs/pdf.worker.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:13:19] "GET /static/vendor/pdfjs/pdf.worker.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:13:33] "POST /api/local/pdf-ocr HTTP/1.1" 202 -
+192.168.1.8 - - [23/May/2026 02:13:34] "GET /api/local/pdf-ocr/3099870efa5241d68e7fb20d04b8fae4 HTTP/1.1" 200 -
+192.168.1.8 - - [23/May/2026 02:13:36] "GET /api/local/pdf-ocr/3099870efa5241d68e7fb20d04b8fae4 HTTP/1.1" 200 -
+192.168.1.8 - - [23/May/2026 02:13:45] "GET /login HTTP/1.1" 200 -
+192.168.1.8 - - [23/May/2026 02:13:45] "GET /static/vendor/bootstrap-icons/font/bootstrap-icons.css HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:13:45] "GET /static/vendor/pdfjs/pdf.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:13:45] "GET /static/vendor/pdf-lib/pdf-lib.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [23/May/2026 02:13:45] "GET /favicon.ico HTTP/1.1" 302 -
+192.168.1.8 - - [23/May/2026 02:13:45] "GET /login?next=/favicon.ico HTTP/1.1" 200 -

@@ -928,7 +928,7 @@
                 document.getElementById('modalRackTemp').textContent = item.last_audit.temperatura_celsius_float + '°C';
                 
                 const tempFloat = parseFloat(item.last_audit.temperatura_celsius_float || 0);
-                document.getElementById('modalRackTemp').className = tempFloat > 28.0 ? 'text-danger fw-bold' : 'text-success fw-bold';
+                document.getElementById('modalRackTemp').className = tempFloat > 24.0 ? 'text-danger fw-bold' : 'text-success fw-bold';
 
                 const lucesOK = !!item.last_audit.estado_luces_bool;
                 document.getElementById('modalRackLuces').innerHTML = lucesOK ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falla</span>';

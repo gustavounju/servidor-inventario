@@ -62,10 +62,14 @@ Verificando migración de DB v31...
 Migración V31 verificada.
 Verificando migración de DB v33...
 Migración V33 verificada.
+Verificando migraciÃ³n de DB v34...
+MigraciÃ³n V34 verificada. Tareas normalizadas: 0
+Verificando migración de DB v35...
+Migración v35 verificada.
 Verificando Migración V32 (Posiciones de Usuarios)...
 Migración V32 verificada.
 IA: Entrenada con 43 ejemplos semilla.
-IA: Refinada con 22 tareas históricas.
+IA: Refinada con 23 tareas históricas.
 
 ================================================================
  MODO DESARROLLO (Windows)
@@ -74,6 +78,6 @@ IA: Refinada con 22 tareas históricas.
  - Fallback:  http://0.0.0.0:8080
 ================================================================
  * Serving Flask app 'servidor'
- * Debug mode: off
  * Serving Flask app 'servidor'
  * Debug mode: on
+ * Debug mode: off

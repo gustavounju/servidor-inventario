@@ -1522,8 +1522,8 @@ async function submitRackAudit(event) {
   const temp = parseFloat(form.temperatura.value) || 0;
   const obs = form.observaciones.value.trim();
 
-  if ((!luces || !limpieza || !iluminacion || temp > 28.0) && !obs) {
-    alert("Las observaciones son obligatorias si hay fallas o la temperatura supera los 28°C.");
+  if ((!luces || !limpieza || !iluminacion || temp > 24.0) && !obs) {
+    alert("Las observaciones son obligatorias si hay fallas o la temperatura supera los 24°C.");
     document.getElementById('raObs').focus();
     return;
   }

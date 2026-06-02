@@ -669,7 +669,7 @@ def api_get_racks_status():
                 status_color = "green"
                 if last_audit:
                     temp = float(last_audit.get("temperatura_celsius_float") or 0)
-                    if not last_audit.get("estado_luces_bool") or not last_audit.get("limpieza_ok_bool") or not last_audit.get("iluminacion_ok_bool", True) or temp > 28.0:
+                    if not last_audit.get("estado_luces_bool") or not last_audit.get("limpieza_ok_bool") or not last_audit.get("iluminacion_ok_bool", True) or temp > 24.0:
                         status_color = "red"
                 
                 status_data.append({
@@ -696,7 +696,7 @@ def api_post_rack_audit():
             
         observaciones = request.form.get("observaciones", "").strip()
         
-        if (estado_luces == 0 or limpieza_ok == 0 or iluminacion_ok == 0 or temperatura > 28.0) and not observaciones:
+        if (estado_luces == 0 or limpieza_ok == 0 or iluminacion_ok == 0 or temperatura > 24.0) and not observaciones:
             return jsonify({"status": "error", "message": "Las observaciones son obligatorias si hay fallas o temperatura alta."}), 400
 
         foto_file = request.files.get("foto")

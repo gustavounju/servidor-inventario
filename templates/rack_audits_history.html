@@ -98,7 +98,7 @@
                     </div>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <a href="/dashboard" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left"></i> Volver al Visor</a>
+                    <a href="/visor" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left"></i> Volver al Visor</a>
                 </div>
             </div>
         </header>
@@ -129,7 +129,7 @@
                             <td><div class="fw-bold text-primary">{{ log.rack_name }}</div></td>
                             <td>
                                 {% set temp = log.temperatura_celsius_float or 0.0 %}
-                                <div class="val-badge {% if temp > 28.0 %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+                                <div class="val-badge {% if temp > 24.0 %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
                                     {{ temp }}°C
                                 </div>
                             </td>
