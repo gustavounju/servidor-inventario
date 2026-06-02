@@ -114,6 +114,50 @@
             font-weight: 700;
         }
 
+        .rack-grid {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+
+        .rack-card {
+            background: var(--visor-card);
+            border: 1px solid var(--visor-border);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 140px;
+            flex: 1;
+        }
+
+        .rack-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .rack-info h3 {
+            font-size: 0.85rem;
+            font-weight: 800;
+            margin: 0 0 2px 0;
+            white-space: nowrap;
+        }
+
+        .rack-info p {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            margin: 0;
+            white-space: nowrap;
+        }
+
         .table-container {
             background: var(--visor-card);
             border: 1px solid var(--visor-border);
@@ -413,7 +457,7 @@
                     <h2 class="m-0">Estado de Racks (Semaforización)</h2>
                     <a href="/infra/racks/audits" class="btn btn-sm btn-outline-primary" style="font-weight: 500;"><i class="bi bi-clock-history"></i> Historial</a>
                 </div>
-                <div class="kpi-grid" id="rackGrid">
+                <div class="rack-grid" id="rackGrid">
                     <!-- Racks will be injected here -->
                 </div>
             </div>
@@ -697,12 +741,12 @@
                         const icon = item.status_color === 'red' ? 'bi-exclamation-triangle' : 'bi-check-circle';
                         const lastAudit = item.last_audit ? new Date(item.last_audit.timestamp).toLocaleString('es-AR') : 'Nunca';
                         return `
-                        <div class="kpi-card" onclick="showRackAuditModal('${item.rack.id}')" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                            <div class="kpi-icon ${iconColor} bg-opacity-10"><i class="bi ${icon}"></i></div>
-                            <div class="kpi-info" style="flex:1;">
-                                <h3 style="font-size: 1.1rem; margin-bottom: 4px;">${item.rack.nombre}</h3>
-                                <p style="margin-bottom: 2px;">Temp: ${item.last_audit ? item.last_audit.temperatura_celsius_float + '°C' : '--'}</p>
-                                <p style="font-size: 0.65rem; color: #64748b; text-transform:none;">Último: ${lastAudit}</p>
+                        <div class="rack-card" onclick="showRackAuditModal('${item.rack.id}')" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <div class="rack-icon ${iconColor} bg-opacity-10"><i class="bi ${icon}"></i></div>
+                            <div class="rack-info" style="flex:1;">
+                                <h3>${item.rack.nombre}</h3>
+                                <p style="margin-bottom: 1px;">Temp: ${item.last_audit ? item.last_audit.temperatura_celsius_float + '°C' : '--'}</p>
+                                <p style="text-transform:none;">Último: ${lastAudit.split(',')[0]}</p>
                             </div>
                         </div>
                         `;
