@@ -22,7 +22,7 @@
                     <div class="ops-hero__eyebrow">Configuración</div>
                     <h1 class="ops-hero__title">Gestión de Efemérides</h1>
                     <p class="ops-hero__lead">
-                        Configura qué efeméride se muestra en la plataforma.
+                        Configura qué efeméride se muestra en la plataforma. Agrega, edita o elimina fechas conmemorativas.
                     </p>
                 </div>
             </div>
@@ -38,71 +38,134 @@
         {% endif %}
         {% endwith %}
 
-        <div class="container mt-4">
+        <div class="container mt-4 mb-5">
             <div class="row fade-in">
                 <div class="col-12">
                     <div class="card bg-dark text-light border-secondary">
-                        <div class="card-header border-secondary d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="fas fa-calendar-alt text-primary"></i> Efemérides Configurada</h5>
-                            <form action="{{ url_for('setup.turn_off_efemerides') }}" method="POST" class="m-0">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                <button type="submit" class="btn btn-sm btn-outline-warning">
-                                    <i class="fas fa-power-off"></i> Apagar Modo Manual
+                        <div class="card-header border-secondary d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h5 class="mb-0"><i class="fas fa-calendar-alt text-primary"></i> Base de Conocimiento de Efemérides</h5>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAddEfemeride">
+                                    <i class="fas fa-plus"></i> Nueva Efeméride
                                 </button>
-                            </form>
+                                <form action="{{ url_for('setup.turn_off_efemerides') }}" method="POST" class="m-0">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">
+                                        <i class="fas fa-power-off"></i> Apagar Modo Manual
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                         <div class="card-body">
-                            <p class="text-muted mb-4">
-                                Las efemérides se muestran automáticamente si la fecha actual coincide con el "Día/Mes". 
-                                Si activas una manualmente, esa sobreescribirá la automática y se mostrará siempre.
+                            <p class="text-muted mb-4" style="font-size: 0.9rem;">
+                                Las efemérides se muestran automáticamente si el día actual coincide con el "Día/Mes". 
+                                Si haces clic en <strong>Forzar Activa</strong>, esa efeméride se mostrará sin importar la fecha actual.
                             </p>
 
                             <div class="table-responsive">
                                 <table class="table table-dark table-hover align-middle">
                                     <thead>
                                         <tr>
-                                            <th>Fecha</th>
-                                            <th>Icono</th>
+                                            <th style="width: 80px;">Fecha</th>
+                                            <th style="width: 60px;">Icono</th>
                                             <th>Título</th>
                                             <th>Descripción</th>
-                                            <th>Estado Manual</th>
-                                            <th>Acción</th>
+                                            <th style="width: 150px;">Estado</th>
+                                            <th style="width: 250px;">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for e in efemerides %}
                                         <tr class="{% if e.is_active %}table-active border-primary{% endif %}">
-                                            <td>{{ e.dia_mes }}</td>
-                                            <td style="font-size: 1.5rem;">{{ e.icono }}</td>
+                                            <td class="text-nowrap font-monospace">{{ e.dia_mes }}</td>
+                                            <td style="font-size: 1.5rem; text-align: center;">{{ e.icono }}</td>
                                             <td><strong>{{ e.titulo }}</strong></td>
-                                            <td class="text-muted" style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <td class="text-muted" style="font-size: 0.9rem;">
                                                 {{ e.descripcion }}
                                             </td>
                                             <td>
                                                 {% if e.is_active %}
-                                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> FORZADA ACTIVA</span>
+                                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> FORZADA</span>
                                                 {% else %}
-                                                    <span class="badge bg-secondary">Automática / Inactiva</span>
+                                                    <span class="badge bg-secondary opacity-50">Auto</span>
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                {% if not e.is_active %}
-                                                <form action="{{ url_for('setup.toggle_efemeride', ef_id=e.id) }}" method="POST" class="m-0">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                                    <button type="submit" class="btn btn-sm btn-primary">
-                                                        <i class="fas fa-play"></i> Forzar Activa
+                                                <div class="d-flex gap-1">
+                                                    {% if not e.is_active %}
+                                                    <form action="{{ url_for('setup.toggle_efemeride', ef_id=e.id) }}" method="POST" class="m-0">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                        <button type="submit" class="btn btn-sm btn-primary" title="Forzar Activa">
+                                                            <i class="fas fa-play"></i>
+                                                        </button>
+                                                    </form>
+                                                    {% else %}
+                                                    <button class="btn btn-sm btn-success disabled" disabled title="Actualmente Forzada">
+                                                        <i class="fas fa-check"></i>
                                                     </button>
-                                                </form>
-                                                {% else %}
-                                                <button class="btn btn-sm btn-success disabled" disabled>
-                                                    <i class="fas fa-check"></i> Activa
-                                                </button>
-                                                {% endif %}
+                                                    {% endif %}
+                                                    
+                                                    <button type="button" class="btn btn-sm btn-outline-info" title="Editar"
+                                                            data-bs-toggle="modal" data-bs-target="#modalEditEfemeride_{{ e.id }}">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    
+                                                    <form action="{{ url_for('setup.delete_efemeride', ef_id=e.id) }}" method="POST" class="m-0" onsubmit="return confirm('¿Seguro que deseas eliminar esta efeméride?');">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+
+                                                <!-- Modal Edit -->
+                                                <div class="modal fade" id="modalEditEfemeride_{{ e.id }}" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content bg-dark text-light border-secondary">
+                                                            <form action="{{ url_for('setup.edit_efemeride', ef_id=e.id) }}" method="POST">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                                <div class="modal-header border-secondary">
+                                                                    <h5 class="modal-title">Editar Efeméride</h5>
+                                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body text-start">
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label text-muted">Día y Mes (MM-DD)</label>
+                                                                        <input type="text" class="form-control bg-dark text-light border-secondary" name="dia_mes" value="{{ e.dia_mes }}" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]">
+                                                                        <div class="form-text text-secondary">Formato MM-DD. Ejemplo para 25 de Mayo: 05-25</div>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label text-muted">Título</label>
+                                                                        <input type="text" class="form-control bg-dark text-light border-secondary" name="titulo" value="{{ e.titulo }}" required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label text-muted">Descripción (Hover)</label>
+                                                                        <textarea class="form-control bg-dark text-light border-secondary" name="descripcion" rows="2">{{ e.descripcion }}</textarea>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label text-muted">Ícono (Emoji)</label>
+                                                                        <input type="text" class="form-control bg-dark text-light border-secondary" name="icono" value="{{ e.icono }}" required>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer border-secondary">
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
+                                {% if not efemerides %}
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fas fa-calendar-times fs-1 mb-3 opacity-50"></i>
+                                    <p>No hay efemérides configuradas en la base de datos.</p>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -110,6 +173,45 @@
             </div>
         </div>
     </main>
+
+    <!-- Modal Add -->
+    <div class="modal fade" id="modalAddEfemeride" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <form action="{{ url_for('setup.add_efemeride') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title">Nueva Efeméride</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-start">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Día y Mes (MM-DD)</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="dia_mes" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]">
+                            <div class="form-text text-secondary">Formato Mes-Día. Ejemplo para 25 de Mayo: 05-25</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Título</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="titulo" required placeholder="Ej: Revolución de Mayo">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Descripción (Hover)</label>
+                            <textarea class="form-control bg-dark text-light border-secondary" name="descripcion" rows="2" placeholder="Breve texto que aparecerá al pasar el mouse por encima..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Ícono (Emoji)</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="icono" value="🇦🇷" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Crear Efeméride</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

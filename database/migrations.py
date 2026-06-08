@@ -637,6 +637,7 @@ def run_all_migrations():
     migrate_db_v35()
     migrate_db_v36()
     migrate_db_v37()
+    migrate_db_v38()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -823,3 +824,36 @@ def migrate_db_v37():
                     (dia_mes, titulo, desc, icono)
                 )
     print("Migración V37 verificada.")
+
+
+def migrate_db_v38():
+    """Migración V38: Semilla extendida de efemérides (Internacionales e Informáticas)."""
+    print("Verificando migración de DB v38...")
+    with get_db_connection() as conn:
+        if _table_exists(conn, "efemerides"):
+            # Chequeamos si ya se insertó una de las efemérides nuevas para no duplicar
+            existing = conn.execute("SELECT id FROM efemerides WHERE titulo = 'Día del Programador'").fetchone()
+            if not existing:
+                print("Aplicando migración V38: insertando semilla extendida de efemérides...")
+                efemerides_seed_v38 = [
+                    ('01-01', 'Año Nuevo', '¡Feliz y próspero Año Nuevo!', '🎆'),
+                    ('01-28', 'Día de la Privacidad de la Información', 'Concientización sobre la protección de datos.', '🔐'),
+                    ('02-14', 'Día de San Valentín', 'Día del amor y la amistad.', '❤️'),
+                    ('03-08', 'Día Internacional de la Mujer', 'En conmemoración a la lucha por la igualdad.', '👩'),
+                    ('03-31', 'World Backup Day', 'Día Mundial de la Copia de Seguridad. ¡Verifica tus respaldos!', '💾'),
+                    ('04-22', 'Día de la Tierra', 'Protejamos nuestro planeta.', '🌍'),
+                    ('05-17', 'Día de Internet', 'Día Mundial de las Telecomunicaciones y la Sociedad de la Información.', '🌐'),
+                    ('06-05', 'Día del Medio Ambiente', 'Concientización global sobre el cuidado del medio ambiente.', '🌱'),
+                    ('07-20', 'Día del Amigo', 'Celebración de la amistad.', '🤝'),
+                    ('09-13', 'Día del Programador', 'En el día 256 del año, celebramos a los creadores de código.', '💻'),
+                    ('10-31', 'Halloween', '¡Feliz Noche de Brujas!', '🎃'),
+                    ('11-30', 'Día Internacional de la Seguridad Informática', 'Protege tus contraseñas y tu infraestructura.', '🛡️'),
+                    ('12-24', 'Nochebuena', 'Víspera de Navidad.', '⭐')
+                ]
+                
+                for dia_mes, titulo, desc, icono in efemerides_seed_v38:
+                    conn.execute(
+                        "INSERT INTO efemerides (dia_mes, titulo, descripcion, icono, is_active) VALUES (%s, %s, %s, %s, 0)",
+                        (dia_mes, titulo, desc, icono)
+                    )
+    print("Migración V38 verificada.")

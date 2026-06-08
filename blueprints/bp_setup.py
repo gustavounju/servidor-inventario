@@ -219,3 +219,40 @@ def turn_off_efemerides():
         conn.execute("UPDATE efemerides SET is_active = 0")
         conn.commit()
     return redirect(url_for('setup.view_efemerides'))
+
+@bp_setup.route("/efemerides/add", methods=["POST"])
+def add_efemeride():
+    dia_mes = request.form.get("dia_mes")
+    titulo = request.form.get("titulo")
+    descripcion = request.form.get("descripcion")
+    icono = request.form.get("icono", "📅")
+    if dia_mes and titulo:
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO efemerides (dia_mes, titulo, descripcion, icono) VALUES (%s, %s, %s, %s)",
+                (dia_mes, titulo, descripcion, icono)
+            )
+            conn.commit()
+    return redirect(url_for('setup.view_efemerides'))
+
+@bp_setup.route("/efemerides/<int:ef_id>/edit", methods=["POST"])
+def edit_efemeride(ef_id):
+    dia_mes = request.form.get("dia_mes")
+    titulo = request.form.get("titulo")
+    descripcion = request.form.get("descripcion")
+    icono = request.form.get("icono", "📅")
+    if dia_mes and titulo:
+        with get_db_connection() as conn:
+            conn.execute(
+                "UPDATE efemerides SET dia_mes=%s, titulo=%s, descripcion=%s, icono=%s WHERE id=%s",
+                (dia_mes, titulo, descripcion, icono, ef_id)
+            )
+            conn.commit()
+    return redirect(url_for('setup.view_efemerides'))
+
+@bp_setup.route("/efemerides/<int:ef_id>/delete", methods=["POST"])
+def delete_efemeride(ef_id):
+    with get_db_connection() as conn:
+        conn.execute("DELETE FROM efemerides WHERE id=%s", (ef_id,))
+        conn.commit()
+    return redirect(url_for('setup.view_efemerides'))
