@@ -534,29 +534,39 @@ function submitMobileTaskAction() {
 <div class="app-shell">
 
   <!-- Top Bar -->
-  <div class="top-bar">
+  <div class="top-bar" style="background: linear-gradient(135deg, rgba(67, 161, 213, 0.95) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(67, 161, 213, 0.95) 100%); border-bottom: 2px solid #fcd34d; color: #0f172a; text-shadow: none;">
     <div class="top-bar-brand">
-      <div class="brand-dot"></div>
+      <div style="font-size: 1.2rem;">⚽</div>
       <div>
-        <div class="brand-name">Técnicos</div>
+        <div class="brand-name" style="color:#0f172a; font-weight:900;">Técnicos</div>
       </div>
     </div>
     <div class="top-bar-actions" style="display:flex;align-items:center;gap:8px;">
-      <button type="button" class="tech-badge" onclick="toggleTheme()" title="Cambiar tema" style="border:none;background:rgba(255,255,255,0.15)">
-        <i class="bi bi-palette-fill"></i>
+      <button type="button" class="tech-badge" onclick="toggleTheme()" title="Cambiar tema" style="border:none;background:rgba(15,23,42,0.1); color:#0f172a;">
+        <i class="bi bi-palette-fill" style="color:#0f172a;"></i>
       </button>
-      <button type="button" class="tech-badge" id="enableAlertsBtn" onclick="enableAlerts()" title="Activar avisos" style="border:none;">
-        <i class="bi bi-bell-fill"></i>
+      <button type="button" class="tech-badge" id="enableAlertsBtn" onclick="enableAlerts()" title="Activar avisos" style="border:none;background:rgba(15,23,42,0.1); color:#0f172a;">
+        <i class="bi bi-bell-fill" style="color:#0f172a;"></i>
       </button>
-      <div class="tech-badge" onclick="selectTechnician()">
-        <i class="bi bi-person-circle"></i>
+      <div class="tech-badge" onclick="selectTechnician()" style="background:rgba(15,23,42,0.1); color:#0f172a; border-color:transparent;">
+        <i class="bi bi-person-circle" style="color:#0f172a;"></i>
         <span id="techBadgeLabel">{{ mobile_identity or 'Seleccionar' }}</span>
       </div>
-      <a href="/logout" class="tech-badge" style="color:var(--red);border-color:rgba(239,68,68,0.25);text-decoration:none;" title="Cerrar sesión">
-        <i class="bi bi-box-arrow-right"></i>
+      <a href="/logout" class="tech-badge" style="background:rgba(15,23,42,0.1); color:#0f172a; border-color:transparent; text-decoration:none;" title="Cerrar sesión">
+        <i class="bi bi-box-arrow-right" style="color:#0f172a;"></i>
       </a>
     </div>
   </div>
+
+  {% if efemeride_actual %}
+  <div style="background: var(--card); padding: 12px 20px; border-bottom: 1px solid var(--border); display:flex; align-items:center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); z-index: 10;">
+      <div style="font-size: 1.8rem; line-height: 1;">{{ efemeride_actual.icono }}</div>
+      <div>
+          <div style="font-weight: 800; font-size: 0.95rem; color: var(--accent); margin-bottom: 2px;">{{ efemeride_actual.titulo }}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.35;">{{ efemeride_actual.descripcion }}</div>
+      </div>
+  </div>
+  {% endif %}
 
   <!-- Tab Nav -->
   <div class="tab-nav">

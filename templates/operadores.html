@@ -292,27 +292,37 @@
 <body>
 
 <div class="app-shell">
-  <header class="top-bar">
+  <header class="top-bar" style="background: linear-gradient(135deg, rgba(67, 161, 213, 0.95) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(67, 161, 213, 0.95) 100%); border-bottom: 2px solid #fcd34d; color: #0f172a; text-shadow: none;">
     <div class="top-bar-brand">
-      <div class="brand-dot"></div>
+      <div style="font-size: 1.2rem;">⚽</div>
       <div>
-        <div class="brand-name">OPERADORES TELEFONICOS</div>
-        <div class="brand-sub">Central de Atención Telefónica</div>
+        <div class="brand-name" style="color:#0f172a; font-weight:900;">OPERADORES TELEFONICOS</div>
+        <div class="brand-sub" style="color:rgba(15,23,42,0.8); font-weight: 600;">Central de Atención Telefónica</div>
       </div>
     </div>
     <div class="top-actions">
-      <div class="user-badge">
-        <i class="bi bi-headset"></i>
-        <span>{{ user.display_name }}</span>
+      <div class="user-badge" style="background:rgba(15,23,42,0.1); color:#0f172a; border-color:transparent;">
+        <i class="bi bi-headset" style="color:#0f172a;"></i>
+        <span>{{ current_user.display_name or current_user.username }}</span>
       </div>
-      <button type="button" class="logout-btn" onclick="toggleTheme()" title="Cambiar tema" style="color: #fff; margin-right: 4px;">
+      <button type="button" class="logout-btn" onclick="toggleTheme()" title="Cambiar tema" style="background:rgba(15,23,42,0.1); color:#0f172a; border-color:transparent; margin-right: 4px;">
         <i class="bi bi-palette"></i>
       </button>
-      <a href="{{ url_for('auth.logout') }}" class="logout-btn" title="Salir" aria-label="Salir">
+      <a href="{{ url_for('auth.logout') }}" class="logout-btn" title="Salir" aria-label="Salir" style="background:rgba(15,23,42,0.1); color:#0f172a; border-color:transparent;">
         <i class="bi bi-box-arrow-right"></i>
       </a>
     </div>
   </header>
+
+  {% if efemeride_actual %}
+  <div style="background: var(--card); padding: 12px 20px; border-bottom: 1px solid var(--border); display:flex; align-items:center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); z-index: 10;">
+      <div style="font-size: 1.8rem; line-height: 1;">{{ efemeride_actual.icono }}</div>
+      <div>
+          <div style="font-weight: 800; font-size: 0.95rem; color: var(--accent); margin-bottom: 2px;">{{ efemeride_actual.titulo }}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.35;">{{ efemeride_actual.descripcion }}</div>
+      </div>
+  </div>
+  {% endif %}
 
   <main class="content-area">
     <!-- Stats -->
