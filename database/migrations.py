@@ -639,6 +639,7 @@ def run_all_migrations():
     migrate_db_v37()
     migrate_db_v38()
     migrate_db_v39()
+    migrate_db_v40()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -902,4 +903,45 @@ def migrate_db_v39():
                             (dia_mes, titulo, desc, icono)
                         )
     print("Migración V39 verificada.")
+
+def migrate_db_v40():
+    """Migración V40: Semilla de efemérides internacionales aclarando país."""
+    print("Verificando migración de DB v40...")
+    with get_db_connection() as conn:
+        if _table_exists(conn, "efemerides"):
+            existing = conn.execute("SELECT id FROM efemerides WHERE titulo = 'Día de la Independencia (EEUU)'").fetchone()
+            if not existing:
+                print("Aplicando migración V40: insertando efemérides internacionales aclarando países...")
+                efemerides_seed_v40 = [
+                    ('07-04', 'Día de la Independencia (EEUU)', 'Celebración de la independencia de los Estados Unidos de América.', '🇺🇸'),
+                    ('09-16', 'Día de la Independencia (México)', 'Grito de Dolores y celebración de la independencia mexicana.', '🇲🇽'),
+                    ('09-18', 'Fiestas Patrias (Chile)', 'Primera Junta Nacional de Gobierno de Chile.', '🇨🇱'),
+                    ('10-12', 'Fiesta Nacional de España', 'Día de la Hispanidad en España.', '🇪🇸'),
+                    ('07-14', 'Día Nacional de Francia', 'Toma de la Bastilla y celebración nacional en Francia.', '🇫🇷'),
+                    ('09-07', 'Día de la Independencia (Brasil)', 'Grito de Ipiranga e independencia de Brasil.', '🇧🇷'),
+                    ('07-28', 'Día de la Independencia (Perú)', 'Celebración de la declaración de independencia del Perú.', '🇵🇪'),
+                    ('02-27', 'Día de la Independencia (Rep. Dominicana)', 'Celebración de la independencia dominicana.', '🇩🇴'),
+                    ('08-06', 'Día de la Independencia (Bolivia)', 'Declaración de la independencia de Bolivia.', '🇧🇴'),
+                    ('08-25', 'Declaratoria de la Independencia (Uruguay)', 'Día de la independencia uruguaya.', '🇺🇾'),
+                    ('05-14', 'Día de la Independencia (Paraguay)', 'Aniversario de la independencia paraguaya.', '🇵🇾'),
+                    ('07-05', 'Día de la Independencia (Venezuela)', 'Firma del Acta de la Declaración de Independencia de Venezuela.', '🇻🇪'),
+                    ('07-20', 'Día de la Independencia (Colombia)', 'Grito de Independencia de Colombia.', '🇨🇴'),
+                    ('08-10', 'Primer Grito de Independencia (Ecuador)', 'Día nacional y de la independencia de Ecuador.', '🇪🇨'),
+                    ('09-15', 'Día de la Independencia (Centroamérica)', 'Celebrado en Guatemala, El Salvador, Honduras, Nicaragua y Costa Rica.', '🌎'),
+                    ('11-20', 'Día de la Conciencia Negra (Brasil)', 'Día de Zumbi dos Palmares en Brasil.', '✊🏿'),
+                    ('05-05', 'Cinco de Mayo (México/EEUU)', 'Conmemoración de la Batalla de Puebla.', '🎉'),
+                    ('10-31', 'Día de la Canción Criolla (Perú)', 'Festividad peruana dedicada a su música tradicional.', '🎸'),
+                    ('11-01', 'Día de Todos los Santos', 'Celebración en países hispanos y católicos.', '🕯️'),
+                    ('11-02', 'Día de Muertos (México)', 'Tradicional celebración mexicana para honrar a los difuntos.', '💀')
+                ]
+                
+                for dia_mes, titulo, desc, icono in efemerides_seed_v40:
+                    dup = conn.execute("SELECT id FROM efemerides WHERE dia_mes = %s AND titulo = %s", (dia_mes, titulo)).fetchone()
+                    if not dup:
+                        conn.execute(
+                            "INSERT INTO efemerides (dia_mes, titulo, descripcion, icono, is_active) VALUES (%s, %s, %s, %s, 0)",
+                            (dia_mes, titulo, desc, icono)
+                        )
+    print("Migración V40 verificada.")
+
 
