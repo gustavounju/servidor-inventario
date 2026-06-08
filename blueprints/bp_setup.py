@@ -1,4 +1,5 @@
-from flask import Blueprint, request, send_file
+from flask import Blueprint, request, send_file, render_template, redirect, url_for
+from database.db_core import get_db_connection
 from io import BytesIO
 import re
 import hashlib
@@ -197,3 +198,24 @@ def download_certificate():
         )
     except Exception as e:
         return f"Error: {e}", 404
+
+@bp_setup.route("/efemerides", methods=["GET"])
+def view_efemerides():
+    with get_db_connection() as conn:
+        efemerides = conn.execute("SELECT * FROM efemerides ORDER BY dia_mes ASC").fetchall()
+    return render_template("admin_efemerides.html", efemerides=efemerides)
+
+@bp_setup.route("/efemerides/<int:ef_id>/toggle", methods=["POST"])
+def toggle_efemeride(ef_id):
+    with get_db_connection() as conn:
+        conn.execute("UPDATE efemerides SET is_active = 0")
+        conn.execute("UPDATE efemerides SET is_active = 1 WHERE id = %s", (ef_id,))
+        conn.commit()
+    return redirect(url_for('setup.view_efemerides'))
+
+@bp_setup.route("/efemerides/turn_off", methods=["POST"])
+def turn_off_efemerides():
+    with get_db_connection() as conn:
+        conn.execute("UPDATE efemerides SET is_active = 0")
+        conn.commit()
+    return redirect(url_for('setup.view_efemerides'))

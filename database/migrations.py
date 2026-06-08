@@ -636,6 +636,7 @@ def run_all_migrations():
     migrate_db_v34()
     migrate_db_v35()
     migrate_db_v36()
+    migrate_db_v37()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -777,3 +778,48 @@ def migrate_db_v36():
             print("Creando índice para task_actions...")
             conn.execute("CREATE INDEX idx_task_actions_task_id ON task_actions (task_id)")
     print("Migración V36 verificada.")
+
+
+def migrate_db_v37():
+    """Migración V37: Crear tabla efemerides y cargar datos iniciales."""
+    print("Verificando migración de DB v37...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "efemerides"):
+            print("Aplicando migración V37: creando tabla efemerides...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS efemerides (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    dia_mes VARCHAR(5) NOT NULL,
+                    titulo VARCHAR(255) NOT NULL,
+                    descripcion TEXT,
+                    icono VARCHAR(10) DEFAULT '🇦🇷',
+                    is_active TINYINT(1) DEFAULT 0
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+            
+            # Carga inicial
+            efemerides_seed = [
+                ('03-24', 'Día Nacional de la Memoria por la Verdad y la Justicia', 'Feriado inamovible en Argentina.', '🕊️'),
+                ('04-02', 'Día del Veterano y de los Caídos en la Guerra de Malvinas', 'Homenaje a los caídos y veteranos de la guerra de 1982.', '🇦🇷'),
+                ('05-01', 'Día del Trabajador', 'Celebración mundial del movimiento obrero.', '👷'),
+                ('05-25', '¡Semana de Mayo! 🇦🇷', 'Conmemoración de la Revolución de Mayo de 1810.', '🇦🇷'),
+                ('06-20', 'Día de la Bandera', 'En conmemoración del paso a la inmortalidad de Manuel Belgrano.', '🇦🇷'),
+                ('07-09', 'Día de la Independencia', 'Declaración de la independencia en 1816 en Tucumán.', '🇦🇷'),
+                ('08-17', 'Paso a la Inmortalidad del Gral. José de San Martín', 'Homenaje al Libertador de América.', '🐎'),
+                ('09-11', 'Día del Maestro', 'En conmemoración del fallecimiento de Domingo Faustino Sarmiento.', '📚'),
+                ('09-21', 'Día del Estudiante / Primavera', 'Comienzo de la primavera y celebración de los estudiantes.', '🌸'),
+                ('10-12', 'Día del Respeto a la Diversidad Cultural', 'Conmemoración del encuentro de culturas y respeto a la diversidad.', '🌎'),
+                ('11-20', 'Día de la Soberanía Nacional', 'Batalla de la Vuelta de Obligado.', '⚓'),
+                ('12-08', 'Inmaculada Concepción de María', 'Feriado religioso.', '✝️'),
+                ('12-25', 'Navidad', 'Celebración de Navidad.', '🎄'),
+                ('12-31', 'Fin de Año', '¡Feliz año nuevo!', '🥂')
+            ]
+            
+            for dia_mes, titulo, desc, icono in efemerides_seed:
+                conn.execute(
+                    "INSERT INTO efemerides (dia_mes, titulo, descripcion, icono, is_active) VALUES (%s, %s, %s, %s, 0)",
+                    (dia_mes, titulo, desc, icono)
+                )
+    print("Migración V37 verificada.")

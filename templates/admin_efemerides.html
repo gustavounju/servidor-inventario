@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Efemérides Dinámicas{% endblock %}
+
+{% block page_title %}Gestión de Efemérides{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-12">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt text-primary"></i> Efemérides Configurada</h5>
+                <form action="{{ url_for('setup.turn_off_efemerides') }}" method="POST" class="m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-sm btn-outline-warning">
+                        <i class="fas fa-power-off"></i> Apagar Modo Manual
+                    </button>
+                </form>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">
+                    Las efemérides se muestran automáticamente si la fecha actual coincide con el "Día/Mes". 
+                    Si activas una manualmente, esa sobreescribirá la automática y se mostrará siempre.
+                </p>
+
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Icono</th>
+                                <th>Título</th>
+                                <th>Descripción</th>
+                                <th>Estado Manual</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in efemerides %}
+                            <tr class="{% if e.is_active %}table-active border-primary{% endif %}">
+                                <td>{{ e.dia_mes }}</td>
+                                <td style="font-size: 1.5rem;">{{ e.icono }}</td>
+                                <td><strong>{{ e.titulo }}</strong></td>
+                                <td class="text-muted" style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ e.descripcion }}
+                                </td>
+                                <td>
+                                    {% if e.is_active %}
+                                        <span class="badge bg-success"><i class="fas fa-check-circle"></i> FORZADA ACTIVA</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Automática / Inactiva</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not e.is_active %}
+                                    <form action="{{ url_for('setup.toggle_efemeride', ef_id=e.id) }}" method="POST" class="m-0">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-play"></i> Forzar Activa
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-success disabled" disabled>
+                                        <i class="fas fa-check"></i> Activa
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

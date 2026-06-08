@@ -98,6 +98,23 @@ def inject_global_vars():
         'kpi_usuarios_pendientes': 0
     }
     
+    efemeride_actual = None
+    try:
+        import datetime
+        with get_db_connection() as conn:
+            efemeride_activa = conn.execute("SELECT * FROM efemerides WHERE is_active = 1 LIMIT 1").fetchone()
+            if efemeride_activa:
+                efemeride_actual = dict(efemeride_activa)
+            else:
+                today_mmdd = datetime.datetime.now().strftime("%m-%d")
+                efemeride_hoy = conn.execute("SELECT * FROM efemerides WHERE dia_mes = %s LIMIT 1", (today_mmdd,)).fetchone()
+                if efemeride_hoy:
+                    efemeride_actual = dict(efemeride_hoy)
+    except Exception as e:
+        print(f"Error fetching efemerides: {e}")
+        
+    extra_data['efemeride_actual'] = efemeride_actual
+    
     if is_authenticated():
         try:
             with get_db_connection() as conn:

@@ -416,15 +416,12 @@
     {% endif %}
 
     <div class="landing-container">
-        <div style="margin-bottom: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; animation: pulse 2s infinite;">
-            <svg viewBox="0 0 100 100" width="70" height="70" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));">
-                <!-- Escarapela Argentina -->
-                <circle cx="50" cy="50" r="45" fill="#74ACDF"/>
-                <circle cx="50" cy="50" r="30" fill="#FFFFFF"/>
-                <circle cx="50" cy="50" r="15" fill="#74ACDF"/>
-            </svg>
-            <span style="font-size: 0.95rem; font-weight: 700; color: #fcd34d; letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">¡Semana de Mayo!</span>
+        {% if efemeride_actual %}
+        <div style="margin-bottom: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; animation: pulse 2s infinite;" title="{{ efemeride_actual.descripcion }}">
+            <div style="font-size: 70px; line-height: 1; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));">{{ efemeride_actual.icono }}</div>
+            <span style="font-size: 0.95rem; font-weight: 700; color: #fcd34d; letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">{{ efemeride_actual.titulo }}</span>
         </div>
+        {% endif %}
         <h1 style="font-size: 3.5rem; margin-bottom: 8px;">Departamento de Informática</h1>
         <p style="font-size: 1.4rem; font-weight: 500; opacity: 1; margin-bottom: 40px;">Centro Judicial de San Pedro de Jujuy</p>
         
@@ -449,7 +446,9 @@
                 <span class="taller-title-desktop">Taller SP 🇦🇷</span>
                 <span class="taller-title-mobile">Taller Movil SP 🇦🇷</span>
             </h1>
-            <p style="color: #fcd34d; font-weight: bold; margin-bottom: 8px; font-size: 0.95rem;">¡Feliz Semana de Mayo!</p>
+            {% if efemeride_actual %}
+            <p style="color: #fcd34d; font-weight: bold; margin-bottom: 8px; font-size: 0.95rem;" title="{{ efemeride_actual.descripcion }}">{{ efemeride_actual.titulo }} {{ efemeride_actual.icono }}</p>
+            {% endif %}
             <p>Acceso administrativo para dashboard, infraestructura, stock y panel movil.</p>
             <p style="margin-top:8px;font-size:0.85rem;opacity:0.85;">Modo de autenticacion: {{ auth_mode_label }}</p>
             <div class="access-preview">
