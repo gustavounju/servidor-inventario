@@ -99,8 +99,10 @@ def inject_global_vars():
     }
     
     efemeride_actual = None
+    import datetime
+    import random
+    
     try:
-        import datetime
         with get_db_connection() as conn:
             efemeride_activa = conn.execute("SELECT * FROM efemerides WHERE is_active = 1 LIMIT 1").fetchone()
             if efemeride_activa:
@@ -112,6 +114,25 @@ def inject_global_vars():
                     efemeride_actual = dict(efemeride_hoy)
     except Exception as e:
         print(f"Error fetching efemerides: {e}")
+        
+    if not efemeride_actual:
+        mensajes_motivacionales = [
+            {'titulo': 'Trabajo en equipo', 'descripcion': 'El talento gana partidos, pero el trabajo en equipo gana campeonatos.', 'icono': '🤝'},
+            {'titulo': 'Innovación Diaria', 'descripcion': 'La innovación distingue a los líderes de los seguidores. ¡A crear!', 'icono': '💡'},
+            {'titulo': 'Código Limpio', 'descripcion': 'Cualquier tonto puede escribir código que un ordenador entienda. Los buenos programadores escriben código que los humanos entienden.', 'icono': '💻'},
+            {'titulo': 'Mejora Continua', 'descripcion': 'No busques culpables, busca soluciones. Un paso a la vez.', 'icono': '📈'},
+            {'titulo': 'Actitud Positiva', 'descripcion': 'Tu actitud, no tu aptitud, determinará tu altitud. ¡Que tengas una excelente jornada!', 'icono': '🚀'},
+            {'titulo': 'Soporte IT', 'descripcion': '¿Ya intentaste apagarlo y volverlo a encender? (La vieja confiable).', 'icono': '🔌'},
+            {'titulo': 'Cero Bugs', 'descripcion': 'Que tu café sea fuerte y tus errores de compilación sean pocos.', 'icono': '☕'},
+            {'titulo': 'Resolución', 'descripcion': 'Todo problema es una oportunidad disfrazada. ¡Vamos por esos tickets!', 'icono': '🛠️'},
+            {'titulo': 'Ciberseguridad', 'descripcion': 'La cadena es tan fuerte como su eslabón más débil. Nunca subestimes la seguridad.', 'icono': '🔒'},
+            {'titulo': 'Eficiencia IT', 'descripcion': 'Automatiza lo aburrido para tener más tiempo de construir lo asombroso.', 'icono': '⚙️'}
+        ]
+        # Se escoge un mensaje pseudo-aleatorio basado en el día del año para que no cambie a cada rato
+        today_seed = datetime.datetime.now().timetuple().tm_yday
+        random.seed(today_seed)
+        efemeride_actual = random.choice(mensajes_motivacionales)
+        random.seed() # Restaurar la semilla real
         
     extra_data['efemeride_actual'] = efemeride_actual
     
