@@ -82,12 +82,10 @@
                                     </thead>
                                     <tbody>
                                         {% for e in efemerides %}
-                                        {% set is_past = e.dia_mes < hoy_str %}
-                                        {% set is_today = e.dia_mes == hoy_str %}
-                                        <tr class="efemeride-row {% if is_past %}ef-past opacity-50{% endif %} {% if e.is_active %}table-active border-primary{% elif is_today %}table-warning text-dark{% endif %}" {% if is_past %}style="display: none;"{% endif %}>
+                                        <tr class="efemeride-row {% if e.is_past %}ef-past opacity-50{% endif %} {% if e.is_active %}table-active border-primary{% elif e.is_today %}table-warning text-dark{% endif %}" {% if e.is_past %}style="display: none;"{% endif %}>
                                             <td class="text-nowrap font-monospace">
                                                 {{ e.dia_mes }}
-                                                {% if is_today %}<span class="badge bg-danger ms-1">HOY</span>{% endif %}
+                                                {% if e.is_today %}<span class="badge bg-danger ms-1">HOY</span>{% endif %}
                                             </td>
                                             <td style="font-size: 1.5rem; text-align: center;">{{ e.icono }}</td>
                                             <td><strong>{{ e.titulo }}</strong></td>

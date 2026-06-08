@@ -204,12 +204,20 @@ def view_efemerides():
     from datetime import datetime
     hoy_str = datetime.now().strftime("%m-%d")
     with get_db_connection() as conn:
-        # Ordena para que las futuras (y hoy) aparezcan primero, y las pasadas al final
-        efemerides = conn.execute(
+        rows = conn.execute(
             "SELECT * FROM efemerides ORDER BY (dia_mes >= %s) DESC, dia_mes ASC",
             (hoy_str,)
         ).fetchall()
-    return render_template("admin_efemerides.html", efemerides=efemerides, hoy_str=hoy_str)
+        
+        # Convert to dictionary to pre-evaluate is_past and is_today
+        efemerides = []
+        for r in rows:
+            e_dict = dict(r)
+            e_dict['is_past'] = e_dict['dia_mes'] < hoy_str
+            e_dict['is_today'] = e_dict['dia_mes'] == hoy_str
+            efemerides.append(e_dict)
+            
+    return render_template("admin_efemerides.html", efemerides=efemerides)
 
 @bp_setup.route("/efemerides/<int:ef_id>/toggle", methods=["POST"])
 def toggle_efemeride(ef_id):

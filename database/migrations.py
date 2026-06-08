@@ -638,6 +638,7 @@ def run_all_migrations():
     migrate_db_v36()
     migrate_db_v37()
     migrate_db_v38()
+    migrate_db_v39()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -857,3 +858,48 @@ def migrate_db_v38():
                         (dia_mes, titulo, desc, icono)
                     )
     print("Migración V38 verificada.")
+
+def migrate_db_v39():
+    """Migración V39: Semilla gigante de efemérides para rellenar días vacíos."""
+    print("Verificando migración de DB v39...")
+    with get_db_connection() as conn:
+        if _table_exists(conn, "efemerides"):
+            existing = conn.execute("SELECT id FROM efemerides WHERE titulo = 'Día del Trabajador del Estado'").fetchone()
+            if not existing:
+                print("Aplicando migración V39: insertando semilla gigante de efemérides...")
+                efemerides_seed_v39 = [
+                    ('01-06', 'Día de Reyes', 'Llegada de los Reyes Magos.', '👑'),
+                    ('02-24', 'Día del Mecánico', 'Homenaje a los mecánicos y trabajadores automotrices.', '🔧'),
+                    ('03-22', 'Día Mundial del Agua', 'Concientización sobre la importancia del agua dulce.', '💧'),
+                    ('04-07', 'Día Mundial de la Salud', 'Celebración de la OMS y concientización sobre la salud.', '🏥'),
+                    ('04-23', 'Día Internacional del Libro', 'Día mundial de la lectura y los derechos de autor.', '📖'),
+                    ('05-15', 'Día Internacional de la Familia', 'Celebración de las familias en todo el mundo.', '👨‍👩‍👧‍👦'),
+                    ('06-27', 'Día del Trabajador del Estado', 'Día de descanso para la administración pública.', '🏛️'),
+                    ('07-28', 'Día de la Gendarmería Nacional', 'Aniversario de la creación de la Gendarmería Argentina.', '👮'),
+                    ('08-12', 'Día del Trabajador de Televisión', 'Día del empleado de la televisión, telecomunicaciones y datos.', '📺'),
+                    ('08-29', 'Día del Abogado', 'En homenaje a Juan Bautista Alberdi.', '⚖️'),
+                    ('09-04', 'Día de la Secretaria', 'Homenaje a las secretarias y administrativos.', '📝'),
+                    ('09-28', 'Día Internacional del Derecho a Saber', 'Acceso a la información pública.', '🔍'),
+                    ('10-01', 'Día Internacional del Café', '¡Disfruta de una buena taza de café mientras programas!', '☕'),
+                    ('10-24', 'Día de las Naciones Unidas', 'Día de las Naciones Unidas (ONU).', '🇺🇳'),
+                    ('11-06', 'Día de los Parques Nacionales', 'Aniversario de los Parques Nacionales Argentinos.', '🏞️'),
+                    ('11-10', 'Día de la Tradición', 'En homenaje a José Hernández, autor del Martín Fierro.', '🧉'),
+                    ('12-10', 'Día de los Derechos Humanos', 'Declaración Universal de los Derechos Humanos.', '🕊️'),
+                    ('01-15', 'Wikipedia Day', 'Día en que se lanzó Wikipedia.', '🌐'),
+                    ('04-04', 'Día del Error 404', '¡Página no encontrada!', '🚫'),
+                    ('05-04', 'Star Wars Day', 'May the 4th be with you.', '🛸'),
+                    ('05-25', 'Geek Pride Day', 'Día del Orgullo Friki / Towel Day.', '🤓'),
+                    ('07-17', 'World Emoji Day', 'Día Mundial del Emoji.', '😃'),
+                    ('10-18', 'Día Mundial de la Protección de la Naturaleza', 'A cuidar el entorno natural.', '🌲')
+                ]
+                
+                for dia_mes, titulo, desc, icono in efemerides_seed_v39:
+                    # check for duplicates just in case
+                    dup = conn.execute("SELECT id FROM efemerides WHERE dia_mes = %s AND titulo = %s", (dia_mes, titulo)).fetchone()
+                    if not dup:
+                        conn.execute(
+                            "INSERT INTO efemerides (dia_mes, titulo, descripcion, icono, is_active) VALUES (%s, %s, %s, %s, 0)",
+                            (dia_mes, titulo, desc, icono)
+                        )
+    print("Migración V39 verificada.")
+
