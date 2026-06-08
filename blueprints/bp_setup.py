@@ -201,9 +201,15 @@ def download_certificate():
 
 @bp_setup.route("/efemerides", methods=["GET"])
 def view_efemerides():
+    from datetime import datetime
+    hoy_str = datetime.now().strftime("%m-%d")
     with get_db_connection() as conn:
-        efemerides = conn.execute("SELECT * FROM efemerides ORDER BY dia_mes ASC").fetchall()
-    return render_template("admin_efemerides.html", efemerides=efemerides)
+        # Ordena para que las futuras (y hoy) aparezcan primero, y las pasadas al final
+        efemerides = conn.execute(
+            "SELECT * FROM efemerides ORDER BY (dia_mes >= %s) DESC, dia_mes ASC",
+            (hoy_str,)
+        ).fetchall()
+    return render_template("admin_efemerides.html", efemerides=efemerides, hoy_str=hoy_str)
 
 @bp_setup.route("/efemerides/<int:ef_id>/toggle", methods=["POST"])
 def toggle_efemeride(ef_id):
