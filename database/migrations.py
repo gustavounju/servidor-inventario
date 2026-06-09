@@ -640,6 +640,7 @@ def run_all_migrations():
     migrate_db_v38()
     migrate_db_v39()
     migrate_db_v40()
+    migrate_db_v41()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -944,4 +945,75 @@ def migrate_db_v40():
                         )
     print("Migración V40 verificada.")
 
-
+def migrate_db_v41():
+    """Migración V41: Más efemérides internacionales y nacionales para cubrir más días del año."""
+    print("Verificando migración de DB v41...")
+    with get_db_connection() as conn:
+        if _table_exists(conn, "efemerides"):
+            existing = conn.execute("SELECT id FROM efemerides WHERE titulo = 'Día de Canadá (Canadá)'").fetchone()
+            if not existing:
+                print("Aplicando migración V41: insertando más efemérides internacionales aclarando países...")
+                efemerides_seed_v41 = [
+                    ('01-26', 'Día de Australia (Australia)', 'Día oficial nacional de Australia.', '🇦🇺'),
+                    ('02-06', 'Día de Waitangi (Nueva Zelanda)', 'Firma del Tratado de Waitangi.', '🇳🇿'),
+                    ('02-11', 'Día de la Fundación Nacional (Japón)', 'Conmemoración de la fundación de Japón.', '🇯🇵'),
+                    ('03-01', 'Día de la Independencia (Corea del Sur)', 'Movimiento de Independencia de 1919.', '🇰🇷'),
+                    ('03-17', 'Día de San Patricio (Irlanda)', 'Fiesta patronal de Irlanda celebrada a nivel mundial.', '🇮🇪'),
+                    ('03-25', 'Día de la Independencia (Grecia)', 'Conmemoración del inicio de la Guerra de Independencia griega.', '🇬🇷'),
+                    ('04-25', 'Día de la Liberación (Italia)', 'Fin de la ocupación nazi en Italia.', '🇮🇹'),
+                    ('04-27', 'Día del Rey (Países Bajos)', 'Celebración nacional en honor al monarca neerlandés.', '🇳🇱'),
+                    ('05-17', 'Día de la Constitución (Noruega)', 'Firma de la constitución noruega en 1814.', '🇳🇴'),
+                    ('06-02', 'Día de la República (Italia)', 'Nacimiento de la República Italiana.', '🇮🇹'),
+                    ('06-05', 'Día de la Constitución (Dinamarca)', 'Firma de la constitución danesa.', '🇩🇰'),
+                    ('06-06', 'Día Nacional de Suecia (Suecia)', 'Celebración nacional del reino de Suecia.', '🇸🇪'),
+                    ('06-12', 'Día de Rusia (Rusia)', 'Declaración de la soberanía estatal de la Federación Rusa.', '🇷🇺'),
+                    ('07-01', 'Día de Canadá (Canadá)', 'Aniversario de la Confederación de Canadá.', '🇨🇦'),
+                    ('08-01', 'Fiesta Nacional (Suiza)', 'Fundación de la Confederación Suiza.', '🇨🇭'),
+                    ('08-09', 'Día Nacional (Singapur)', 'Independencia de Singapur.', '🇸🇬'),
+                    ('08-15', 'Día de la Independencia (India)', 'Fin del dominio británico en la India.', '🇮🇳'),
+                    ('09-02', 'Día Nacional (Vietnam)', 'Declaración de la independencia de Vietnam.', '🇻🇳'),
+                    ('10-01', 'Día Nacional (China)', 'Fundación de la República Popular China.', '🇨🇳'),
+                    ('10-03', 'Día de la Unidad Alemana (Alemania)', 'Reunificación de Alemania Oriental y Occidental.', '🇩🇪'),
+                    ('10-26', 'Día Nacional (Austria)', 'Declaración de neutralidad permanente.', '🇦🇹'),
+                    ('10-29', 'Día de la República (Turquía)', 'Proclamación de la República de Turquía.', '🇹🇷'),
+                    ('11-11', 'Día de los Veteranos / Armisticio (EEUU/Europa)', 'Fin de la Primera Guerra Mundial.', '🕊️'),
+                    ('11-18', 'Día de la Independencia (Marruecos)', 'Conmemoración del retorno del rey Mohammed V.', '🇲🇦'),
+                    ('12-06', 'Día de la Independencia (Finlandia)', 'Declaración de independencia de Rusia.', '🇫🇮'),
+                    ('12-12', 'Día de Jamhuri (Kenia)', 'Día de la República en Kenia.', '🇰🇪'),
+                    
+                    # Más Días Internacionales / ONU
+                    ('01-24', 'Día Internacional de la Educación (ONU)', 'El papel de la educación en la paz mundial.', '📚'),
+                    ('02-04', 'Día Mundial contra el Cáncer (Internacional)', 'Lucha y prevención contra esta enfermedad.', '🎗️'),
+                    ('02-13', 'Día Mundial de la Radio (ONU)', 'Importancia del medio radial.', '📻'),
+                    ('02-20', 'Día Mundial de la Justicia Social (ONU)', 'Promover la equidad y los derechos sociales.', '⚖️'),
+                    ('03-03', 'Día Mundial de la Naturaleza (ONU)', 'Concientización sobre la flora y fauna salvajes.', '🐘'),
+                    ('03-21', 'Día Mundial de la Poesía (UNESCO)', 'Apoyo a la diversidad lingüística.', '📝'),
+                    ('03-22', 'Día Mundial del Agua (ONU)', 'Importancia del agua dulce.', '💧'),
+                    ('04-07', 'Día Mundial de la Salud (OMS)', 'Aniversario de la fundación de la Organización Mundial de la Salud.', '🏥'),
+                    ('04-23', 'Día Mundial del Libro (UNESCO)', 'Fomento de la lectura y derechos de autor.', '📖'),
+                    ('05-03', 'Día Mundial de la Libertad de Prensa (ONU)', 'Promoción y defensa de la libertad de información.', '📰'),
+                    ('05-15', 'Día Internacional de las Familias (ONU)', 'Importancia de la familia en la sociedad.', '👪'),
+                    ('06-08', 'Día Mundial de los Océanos (ONU)', 'Cuidado y conservación de nuestros océanos.', '🌊'),
+                    ('06-20', 'Día Mundial de los Refugiados (ONU)', 'Solidaridad con los desplazados.', '🌍'),
+                    ('07-11', 'Día Mundial de la Población (ONU)', 'Cuestiones demográficas globales.', '👥'),
+                    ('07-18', 'Día Internacional de Nelson Mandela (ONU)', 'En honor a su legado de paz.', '🕊️'),
+                    ('08-12', 'Día Internacional de la Juventud (ONU)', 'Papel de los jóvenes en el cambio global.', '🎓'),
+                    ('08-19', 'Día Mundial de la Asistencia Humanitaria (ONU)', 'Reconocimiento a los trabajadores humanitarios.', '🤝'),
+                    ('09-08', 'Día Internacional de la Alfabetización (UNESCO)', 'Importancia de la lectoescritura.', '✍️'),
+                    ('09-21', 'Día Internacional de la Paz (ONU)', 'Fortalecimiento de los ideales de paz.', '🕊️'),
+                    ('10-05', 'Día Mundial de los Docentes (UNESCO)', 'Reconocimiento a los maestros del mundo.', '👨‍🏫'),
+                    ('10-16', 'Día Mundial de la Alimentación (FAO)', 'Lucha contra el hambre.', '🌾'),
+                    ('10-24', 'Día de las Naciones Unidas (ONU)', 'Aniversario de la Carta de la ONU.', '🇺🇳'),
+                    ('11-20', 'Día Universal del Niño (ONU)', 'Promoción de los derechos de los niños.', '🚸'),
+                    ('12-01', 'Día Mundial del SIDA (ONU)', 'Apoyo a las personas que viven con VIH.', '🎗️'),
+                    ('12-10', 'Día de los Derechos Humanos (ONU)', 'Declaración Universal de los Derechos Humanos.', '📜')
+                ]
+                
+                for dia_mes, titulo, desc, icono in efemerides_seed_v41:
+                    dup = conn.execute("SELECT id FROM efemerides WHERE dia_mes = %s AND titulo = %s", (dia_mes, titulo)).fetchone()
+                    if not dup:
+                        conn.execute(
+                            "INSERT INTO efemerides (dia_mes, titulo, descripcion, icono, is_active) VALUES (%s, %s, %s, %s, 0)",
+                            (dia_mes, titulo, desc, icono)
+                        )
+    print("Migración V41 verificada.")
