@@ -1,0 +1,31 @@
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5090
+ * Running on http://192.168.1.8:5090
+Press CTRL+C to quit
+127.0.0.1 - - [22/May/2026 21:55:30] "GET /pdf-local HTTP/1.1" 200 -
+127.0.0.1 - - [22/May/2026 21:55:31] "GET /api/local/pdf-ocr/test-job HTTP/1.1" 404 -
+127.0.0.1 - - [22/May/2026 21:57:07] "POST /api/local/pdf-ocr HTTP/1.1" 202 -
+127.0.0.1 - - [22/May/2026 21:57:17] "GET /api/local/pdf-ocr/7f40b2518f0d4f27aab76ff5a5421dd0 HTTP/1.1" 200 -
+192.168.1.8 - - [22/May/2026 22:15:44] "GET / HTTP/1.1" 302 -
+192.168.1.8 - - [22/May/2026 22:15:44] "GET /pdf-local HTTP/1.1" 200 -
+192.168.1.8 - - [22/May/2026 22:15:44] "GET /static/css/pdf_local_tool.css HTTP/1.1" 304 -
+192.168.1.8 - - [22/May/2026 22:15:44] "GET /static/vendor/pdf-lib/pdf-lib.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [22/May/2026 22:15:44] "GET /static/vendor/pdfjs/pdf.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [22/May/2026 22:15:44] "GET /static/vendor/bootstrap-icons/font/bootstrap-icons.css HTTP/1.1" 304 -
+192.168.1.8 - - [22/May/2026 22:15:44] "GET /static/js/pdf_local_tool.js HTTP/1.1" 200 -
+192.168.1.8 - - [22/May/2026 22:15:44] "GET /static/vendor/bootstrap-icons/font/fonts/bootstrap-icons.woff2?1bb88866b4085542c8ed5fb61b9393dd HTTP/1.1" 304 -
+192.168.1.8 - - [22/May/2026 22:15:48] "GET /static/vendor/pdfjs/pdf.worker.min.js HTTP/1.1" 304 -
+192.168.1.8 - - [22/May/2026 22:15:49] "POST /api/local/pdf-ocr HTTP/1.1" 202 -
+192.168.1.8 - - [22/May/2026 22:15:50] "POST /api/local/pdf-ocr HTTP/1.1" 202 -
+192.168.1.8 - - [22/May/2026 22:15:50] "GET /api/local/pdf-ocr/b0843aa1fa7640ceacd4860ad54d6b8a HTTP/1.1" 200 -
+192.168.1.8 - - [22/May/2026 22:15:51] "POST /api/local/pdf-ocr HTTP/1.1" 202 -
+192.168.1.8 - - [22/May/2026 22:15:51] "GET /api/local/pdf-ocr/526728cc20f743a591aa8998028d22b6 HTTP/1.1" 200 -
+192.168.1.8 - - [22/May/2026 22:15:52] "POST /api/local/pdf-ocr HTTP/1.1" 202 -
+192.168.1.8 - - [22/May/2026 22:15:52] "GET /api/local/pdf-ocr/479ecb56cdb44645b300f9cd7a2aabaa HTTP/1.1" 200 -
+192.168.1.8 - - [22/May/2026 22:15:53] "GET /api/local/pdf-ocr/eed65fee6889426694bf179e10df04b9 HTTP/1.1" 200 -
+192.168.1.8 - - [22/May/2026 22:15:53] "POST /api/local/pdf-ocr HTTP/1.1" 202 -
+192.168.1.8 - - [22/May/2026 22:15:54] "POST /api/local/pdf-ocr HTTP/1.1" 202 -
+192.168.1.8 - - [22/May/2026 22:15:54] "GET /api/local/pdf-ocr/9f6c422120784232b17db9cdd420b4d5 HTTP/1.1" 200 -
+192.168.1.8 - - [22/May/2026 22:15:55] "GET /api/local/pdf-ocr/025d4e22d10a455d9c4e6e42b09a9b0a HTTP/1.1" 200 -
+127.0.0.1 - - [22/May/2026 22:42:23] "GET /pdf-local HTTP/1.1" 200 -

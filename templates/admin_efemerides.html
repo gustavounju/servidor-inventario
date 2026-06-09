@@ -17,21 +17,10 @@
         }
     </style>
 </head>
-<body class="has-fixed-header bg-dark text-light">
-    {% include '_module_switcher.html' %}
+<body style="margin: 0; padding: 0; overflow-x: hidden; background: transparent; color: #1e293b;">
 
-    <main class="ops-shell">
-        <section class="ops-hero" style="background-color: #212529;">
-            <div class="ops-hero__top">
-                <div>
-                    <div class="ops-hero__eyebrow">Configuración</div>
-                    <h1 class="ops-hero__title">Gestión de Efemérides</h1>
-                    <p class="ops-hero__lead">
-                        Configura qué efeméride se muestra en la plataforma. Agrega, edita o elimina fechas conmemorativas.
-                    </p>
-                </div>
-            </div>
-        </section>
+    <main class="container-fluid" style="padding: 20px;">
+
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -43,11 +32,11 @@
         {% endif %}
         {% endwith %}
 
-        <div class="container mt-4 mb-5">
+        <div class="container-fluid mt-2 mb-4">
             <div class="row fade-in">
                 <div class="col-12">
-                    <div class="card bg-dark text-light border-secondary">
-                        <div class="card-header border-secondary d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pb-3 border-bottom mb-3" style="border-color: #e2e8f0 !important;">
                             <h5 class="mb-0"><i class="fas fa-calendar-alt text-primary"></i> Base de Conocimiento de Efemérides</h5>
                             <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAddEfemeride">
@@ -61,20 +50,20 @@
                                 </form>
                             </div>
                         </div>
-                        <div class="card-body">
+                        <div>
                             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                                 <p class="text-muted mb-0" style="font-size: 0.9rem; max-width: 70%;">
                                     Las efemérides se muestran automáticamente si el día actual coincide con el "Día/Mes". 
                                     Si haces clic en <strong>Forzar Activa</strong>, esa efeméride se mostrará sin importar la fecha actual.
                                 </p>
-                                <div class="form-check form-switch bg-dark bg-opacity-50 p-2 rounded border border-secondary" style="padding-left: 2.5rem !important;">
+                                <div class="form-check form-switch p-2 rounded border" style="background: #f8fafc; border-color: #e2e8f0 !important; padding-left: 2.5rem !important;">
                                     <input class="form-check-input" type="checkbox" role="switch" id="togglePast" checked onchange="togglePastRows()">
-                                    <label class="form-check-label text-warning small fw-bold" for="togglePast" style="cursor: pointer;">Ocultar Fechas Pasadas</label>
+                                    <label class="form-check-label text-secondary small fw-bold" for="togglePast" style="cursor: pointer;">Ocultar Fechas Pasadas</label>
                                 </div>
                             </div>
 
                             <div class="table-responsive">
-                                <table class="table table-dark table-hover align-middle">
+                                <table class="table table-hover align-middle" style="font-size: 0.85rem;">
                                     <thead>
                                         <tr>
                                             <th style="width: 80px;">Fecha</th>
@@ -87,7 +76,7 @@
                                     </thead>
                                     <tbody id="efemerides-tbody" class="hide-past">
                                         {% for e in efemerides %}
-                                        <tr class="efemeride-row {% if e.is_past %}ef-past opacity-50{% endif %} {% if e.is_active %}table-active border-primary{% elif e.is_today %}table-warning text-dark{% endif %}">
+                                        <tr class="efemeride-row {% if e.is_past %}ef-past opacity-50{% endif %} {% if e.is_active %}table-primary{% elif e.is_today %}table-warning{% endif %}">
                                             <td class="text-nowrap font-monospace">
                                                 {{ e.dia_mes }}
                                                 {% if e.is_today %}<span class="badge bg-danger ms-1">HOY</span>{% endif %}
@@ -135,33 +124,33 @@
                                                 <!-- Modal Edit -->
                                                 <div class="modal fade" id="modalEditEfemeride_{{ e.id }}" tabindex="-1" aria-hidden="true">
                                                     <div class="modal-dialog">
-                                                        <div class="modal-content bg-dark text-light border-secondary">
+                                                        <div class="modal-content" style="background: #fff; color: #1e293b; border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                                                             <form action="{{ url_for('setup.edit_efemeride', ef_id=e.id) }}" method="POST">
                                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                                                <div class="modal-header border-secondary">
+                                                                <div class="modal-header border-bottom" style="border-color: #e2e8f0 !important;">
                                                                     <h5 class="modal-title">Editar Efeméride</h5>
-                                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                                 </div>
                                                                 <div class="modal-body text-start">
                                                                     <div class="mb-3">
                                                                         <label class="form-label text-muted">Día y Mes (MM-DD)</label>
-                                                                        <input type="text" class="form-control bg-dark text-light border-secondary" name="dia_mes" value="{{ e.dia_mes }}" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]">
+                                                                        <input type="text" class="form-control" name="dia_mes" value="{{ e.dia_mes }}" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]" style="border-color: #cbd5e1;">
                                                                         <div class="form-text text-secondary">Formato MM-DD. Ejemplo para 25 de Mayo: 05-25</div>
                                                                     </div>
                                                                     <div class="mb-3">
                                                                         <label class="form-label text-muted">Título</label>
-                                                                        <input type="text" class="form-control bg-dark text-light border-secondary" name="titulo" value="{{ e.titulo }}" required>
+                                                                        <input type="text" class="form-control" name="titulo" value="{{ e.titulo }}" required style="border-color: #cbd5e1;">
                                                                     </div>
                                                                     <div class="mb-3">
                                                                         <label class="form-label text-muted">Descripción (Hover)</label>
-                                                                        <textarea class="form-control bg-dark text-light border-secondary" name="descripcion" rows="2">{{ e.descripcion }}</textarea>
+                                                                        <textarea class="form-control" name="descripcion" rows="2" style="border-color: #cbd5e1;">{{ e.descripcion }}</textarea>
                                                                     </div>
                                                                     <div class="mb-3">
                                                                         <label class="form-label text-muted">Ícono (Emoji)</label>
-                                                                        <input type="text" class="form-control bg-dark text-light border-secondary" name="icono" value="{{ e.icono }}" required>
+                                                                        <input type="text" class="form-control" name="icono" value="{{ e.icono }}" required style="border-color: #cbd5e1;">
                                                                     </div>
                                                                 </div>
-                                                                <div class="modal-footer border-secondary">
+                                                                <div class="modal-footer border-top" style="border-color: #e2e8f0 !important;">
                                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                                                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                                                                 </div>
@@ -191,33 +180,33 @@
     <!-- Modal Add -->
     <div class="modal fade" id="modalAddEfemeride" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-content" style="background: #fff; color: #1e293b; border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                 <form action="{{ url_for('setup.add_efemeride') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <div class="modal-header border-secondary">
+                    <div class="modal-header border-bottom" style="border-color: #e2e8f0 !important;">
                         <h5 class="modal-title">Nueva Efeméride</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body text-start">
                         <div class="mb-3">
                             <label class="form-label text-muted">Día y Mes (MM-DD)</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="dia_mes" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]">
+                            <input type="text" class="form-control" name="dia_mes" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]" style="border-color: #cbd5e1;">
                             <div class="form-text text-secondary">Formato Mes-Día. Ejemplo para 25 de Mayo: 05-25</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">Título</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="titulo" required placeholder="Ej: Revolución de Mayo">
+                            <input type="text" class="form-control" name="titulo" required placeholder="Ej: Revolución de Mayo" style="border-color: #cbd5e1;">
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">Descripción (Hover)</label>
-                            <textarea class="form-control bg-dark text-light border-secondary" name="descripcion" rows="2" placeholder="Breve texto que aparecerá al pasar el mouse por encima..."></textarea>
+                            <textarea class="form-control" name="descripcion" rows="2" placeholder="Breve texto que aparecerá al pasar el mouse por encima..." style="border-color: #cbd5e1;"></textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">Ícono (Emoji)</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="icono" value="🇦🇷" required>
+                            <input type="text" class="form-control" name="icono" value="🇦🇷" required style="border-color: #cbd5e1;">
                         </div>
                     </div>
-                    <div class="modal-footer border-secondary">
+                    <div class="modal-footer border-top" style="border-color: #e2e8f0 !important;">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-success">Crear Efeméride</button>
                     </div>
