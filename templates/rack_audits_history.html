@@ -78,12 +78,15 @@
     <script defer src="/static/js/security.js"></script>
 </head>
 
-<body class="has-fixed-header">
+<body class="{% if request.args.get('modal') != '1' %}has-fixed-header{% else %}bg-white{% endif %}">
+    {% if request.args.get('modal') != '1' %}
     {% include '_module_switcher.html' %}
     {% include '_shared_modals.html' %}
+    {% endif %}
 
-    <div class="audit-container" style="margin-top: 110px;">
+    <div class="audit-container" style="{% if request.args.get('modal') != '1' %}margin-top: 110px;{% else %}margin-top: 0; padding-top: 0;{% endif %}">
         
+        {% if request.args.get('modal') != '1' %}
         <header class="hero-header mb-4" style="background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);">
             <div class="row align-items-center">
                 <div class="col-md-8">
@@ -102,6 +105,7 @@
                 </div>
             </div>
         </header>
+        {% endif %}
 
         <div class="audit-table-card">
             <div class="table-responsive">

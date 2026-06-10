@@ -1045,9 +1045,13 @@ def get_task_actions(task_id):
             result = []
             for a in actions:
                 a_dict = dict(a)
-                if a_dict["created_at"]:
-                    a_dict["created_at_fmt"] = a_dict["created_at"].strftime("%d/%m/%Y %H:%M:%S")
-                    a_dict["created_at"] = a_dict["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+                if a_dict.get("created_at"):
+                    if hasattr(a_dict["created_at"], "strftime"):
+                        a_dict["created_at_fmt"] = a_dict["created_at"].strftime("%d/%m/%Y %H:%M:%S")
+                        a_dict["created_at"] = a_dict["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+                    else:
+                        a_dict["created_at_fmt"] = str(a_dict["created_at"])
+                        a_dict["created_at"] = str(a_dict["created_at"])
                 result.append(a_dict)
                 
             return jsonify({"status": "success", "actions": result})
