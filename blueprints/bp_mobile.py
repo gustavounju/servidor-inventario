@@ -5,6 +5,7 @@ from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.push_notifications import notify_all_technicians
 from utils.auth import current_technician_identity, current_user, list_technician_users
+from blueprints.bp_tasks import _attach_task_actions_bulk
 # from voice_processor import process_voice_command # Ensure it handles import cleanly if missing
 
 bp_mobile = Blueprint('mobile', __name__)
@@ -36,6 +37,7 @@ def api_mobile_data():
         with get_db_connection() as conn:
             techs = list_technician_users()
             unassigned = [dict(r) for r in conn.execute("SELECT * FROM tasks WHERE (pc_name IS NULL OR pc_name = '') AND estado != 'Hecha' ORDER BY created_at DESC").fetchall()]
+            unassigned = _attach_task_actions_bulk(unassigned, conn)
             all_active = [dict(r) for r in conn.execute("""
                 SELECT t.*, p.fuero as pc_fuero 
                 FROM tasks t 
@@ -46,6 +48,7 @@ def api_mobile_data():
                     t.prioridad DESC, 
                     t.created_at DESC
             """).fetchall()]
+            all_active = _attach_task_actions_bulk(all_active, conn)
             
             # Registrar última actividad móvil (ping de 30seg)
             tech_identity = current_technician_identity()
@@ -58,6 +61,7 @@ def api_mobile_data():
                 "SELECT t.*, p.fuero as pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE t.estado = 'Hecha' AND t.completed_by = %s ORDER BY t.completed_at DESC LIMIT 50",
                 (tech_identity,)
             ).fetchall()]
+            my_history = _attach_task_actions_bulk(my_history, conn)
 
             pcs_query = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
             requesters = [dict(r) for r in conn.execute(

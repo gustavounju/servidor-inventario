@@ -952,7 +952,19 @@
                     <span class="task-time">${dateStr} ${timeStr}</span>
                 </div>
                 <div class="task-desc">${task.descripcion}</div>
-                <div class="task-meta">
+                ${task.acciones && task.acciones.length > 0 ? `
+                    <div class="mt-2" style="font-size: 0.85rem;">
+                        ${task.acciones.map(a => {
+                            const isMe = (a.user_name || '').toLowerCase() === currentUser.toLowerCase();
+                            if (!isMe) {
+                                return \`<div class="p-2 mb-1 rounded bg-warning text-dark fw-bold border border-warning shadow-sm"><i class="bi bi-exclamation-triangle-fill me-1"></i>\${a.user_name}: \${a.action_text}</div>\`;
+                            } else {
+                                return \`<div class="p-1 mb-1 text-muted border-start border-2 ms-1 ps-2"><small>Tú: \${a.action_text}</small></div>\`;
+                            }
+                        }).join('')}
+                    </div>
+                ` : ''}
+                <div class="task-meta mt-1">
                     <span class="meta-badge"><i class="bi bi-person"></i>${task.solicitante || 'Sistema'}</span>
                     ${task.assigned_to ? `<span class="meta-badge"><i class="bi bi-person-badge"></i>${task.assigned_to}</span>` : ''}
                 </div>

@@ -1088,6 +1088,17 @@ def add_task_action(task_id):
                 )
             
             conn.commit()
+            
+            try:
+                from services.push_notifications import notify_all_technicians
+                notify_all_technicians(
+                    title=f"Nueva nota en Tarea #{task_id}",
+                    body=f"{username}: {action_text}",
+                    url="/tecnicos"
+                )
+            except Exception as e:
+                print(f"Error notifying action: {e}")
+
             return jsonify({"status": "success", "message": "Acción agregada correctamente"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

@@ -568,6 +568,11 @@
                                         <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
                                     </div>
                                     {% endif %}
+                                    {% if task.estado != 'Hecha' %}
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Añadir Nota</button>
+                                    </div>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     {% if task.assigned_to or task.completed_by %}
@@ -640,7 +645,11 @@
                                 </div>
                                 {% endif %}
 
-
+                                {% if task.estado != 'Hecha' %}
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Añadir Nota</button>
+                                </div>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if task.assigned_to %}
@@ -800,6 +809,34 @@
             refreshRackStatus();
         }
 
+        async function promptAddAction(taskId) {
+            const text = window.prompt("Ingrese la nota para esta tarea:");
+            if (!text || !text.trim()) return;
+            
+            try {
+                const formData = new URLSearchParams();
+                formData.append('action_text', text.trim());
+                
+                const response = await fetch(`/api/tasks/${taskId}/actions`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    refreshData();
+                } else {
+                    alert("Error: " + result.message);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error de red.");
+            }
+        }
+
     </script>
 
     <!-- Modal Historial de Racks (Iframe) -->
@@ -931,6 +968,11 @@
                                 <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
                             </div>
                         ` : ''}
+                        ${task.estado !== 'Hecha' ? `
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Añadir Nota</button>
+                            </div>
+                        ` : ''}
                         ${renderAdMatch(task)}
                     </td>
                     <td>
@@ -1026,6 +1068,11 @@
                             </div>
                             `).join('')}
                         </div>
+                        ` : ''}
+                        ${task.estado !== 'Hecha' ? `
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Añadir Nota</button>
+                            </div>
                         ` : ''}
 
                         ${renderAdMatch(task)}
