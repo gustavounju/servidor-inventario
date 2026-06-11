@@ -1,0 +1,30 @@
+
+    const savedTheme = localStorage.getItem('techTheme');
+    if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+  
+function openTaskActionsOverlay(taskId) {
+    document.getElementById('mobileActionTaskId').value = taskId;
+    document.getElementById('mobileNewTaskAction').value = '';
+    document.getElementById('taskActionsOverlay').classList.add('open');
+    loadMobileTaskActions(taskId);
+}
+
+function closeTaskActionsOverlay() {
+    document.getElementById('taskActionsOverlay').classList.remove('open');
+}
+
+function loadMobileTaskActions(taskId) {
+    const list = document.getElementById('mobileTaskActionsList');
+    list.innerHTML = '<div class="text-center text-muted py-2">Cargando...</div>';
+    fetch(`/api/tasks/${taskId}/actions`)
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                if(data.actions.length === 0) {
+                    list.innerHTML = '<div class="text-center text-muted py-2">Sin acciones registradas.</div>';
+                } else {
+                    list.innerHTML = data.actions.map(a => `
+                        <div style="background: var(--bg); border: 1px solid rgba(0,0,0,0.05); border-radius: 6px; padding: 8px; margin-bottom: 6px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.75rem;">
+                                <strong>${a.user_name}</strong>
+                                <s

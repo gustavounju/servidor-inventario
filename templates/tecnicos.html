@@ -1233,9 +1233,9 @@ function taskCard(t, mode) {
               ${t.acciones.map(a => {
                   const isMe = (a.user_name || '').toLowerCase() === (techId || '').toLowerCase();
                   if (!isMe) {
-                      return \`<div class="p-2 mb-1 rounded bg-warning text-dark fw-bold border border-warning shadow-sm"><i class="bi bi-exclamation-triangle-fill me-1"></i>\${escHtml(a.user_name)}: \${escHtml(a.action_text)}</div>\`;
+                      return `<div class="p-2 mb-1 rounded bg-warning text-dark fw-bold border border-warning shadow-sm"><i class="bi bi-exclamation-triangle-fill me-1"></i>${escHtml(a.user_name)}: ${escHtml(a.action_text)}</div>`;
                   } else {
-                      return \`<div class="p-1 mb-1 text-muted border-start border-2 ms-1 ps-2"><small>Tú: \${escHtml(a.action_text)}</small></div>\`;
+                      return `<div class="p-1 mb-1 text-muted border-start border-2 ms-1 ps-2"><small>Tú: ${escHtml(a.action_text)}</small></div>`;
                   }
               }).join('')}
           </div>
