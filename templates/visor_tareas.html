@@ -817,6 +817,11 @@
                 const formData = new URLSearchParams();
                 formData.append('action_text', text.trim());
                 
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                if (csrfToken) {
+                    formData.append('csrf_token', csrfToken);
+                }
+                
                 const response = await fetch(`/api/tasks/${taskId}/actions`, {
                     method: 'POST',
                     body: formData,
