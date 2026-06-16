@@ -23,10 +23,18 @@ from services.ai_assistant import train_ai_model
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+_GLOBAL_CACHE_LOCK = threading.Lock()
 _GLOBAL_CACHE = {
     'timestamp': 0,
-    'data': None
+    'data': None,
+    'authenticated': False
 }
+
+def invalidate_global_cache():
+    """Invalida el caché global. Llamar después de cualquier INSERT/UPDATE/DELETE."""
+    with _GLOBAL_CACHE_LOCK:
+        _GLOBAL_CACHE['data'] = None
+        _GLOBAL_CACHE['timestamp'] = 0
 
 # Blueprints
 from blueprints.bp_dashboard import bp_dashboard
@@ -55,7 +63,9 @@ if not app.secret_key:
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'false').lower() == 'true'
+_is_linux = platform.system() != 'Windows'
+_secure_env = os.environ.get('SESSION_COOKIE_SECURE', 'false').lower() == 'true'
+app.config['SESSION_COOKIE_SECURE'] = _is_linux or _secure_env
 from datetime import timedelta
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
@@ -85,54 +95,59 @@ app.jinja_env.filters['datetime_es'] = format_datetime_es
 # Contexto Global para todas las plantillas (Jinja2)
 @app.context_processor
 def inject_global_vars():
-    from utils.auth import list_app_users, list_technician_users
-    global _GLOBAL_CACHE
-    
+    from utils.auth import is_authenticated, current_user, auth_mode_label, has_permission, allowed_module_links, role_label, available_roles, get_public_app_base_url, get_public_script_fallback_url, _get_secure_launcher_command
     now = time.time()
-    if _GLOBAL_CACHE['data'] is not None and (now - _GLOBAL_CACHE['timestamp'] < 60):
-        # Usar caché
-        cached_data = _GLOBAL_CACHE['data']
-        kpis = cached_data['kpis']
-        extra_data = cached_data['extra_data']
-        return {
-            'app_version': APP_VERSION,
-            'csrf_token': generate_csrf_token,
-            'is_authenticated': is_authenticated(),
-            'current_user': current_user(),
-            'auth_mode_label': auth_mode_label(),
-            'has_access': has_permission,
-            'module_access_links': allowed_module_links(),
-            'current_role_label': role_label(),
-            'available_roles': available_roles(),
-            'client_script_base_url': get_public_app_base_url(),
-            'client_script_fallback_url': get_public_script_fallback_url(),
-            'secure_launcher_command': _get_secure_launcher_command(get_public_app_base_url(), get_public_script_fallback_url()),
-            'total_pages': 1,
-            'page': 1,
-            'per_page': 25,
-            **kpis,
-            **extra_data
-        }
+    user_auth = is_authenticated()
+    
+    with _GLOBAL_CACHE_LOCK:
+        cache_ok = (
+            _GLOBAL_CACHE['data'] is not None
+            and (now - _GLOBAL_CACHE['timestamp'] < 60)
+            and (_GLOBAL_CACHE.get('authenticated', False) == user_auth)
+        )
+        if cache_ok:
+            cached_data = _GLOBAL_CACHE['data']
+            kpis = cached_data['kpis']
+            extra_data = cached_data['extra_data']
+            
+    if not cache_ok:
+        kpis, extra_data = _load_kpis_from_db(user_auth)
+        with _GLOBAL_CACHE_LOCK:
+            _GLOBAL_CACHE['data'] = {'kpis': kpis, 'extra_data': extra_data}
+            _GLOBAL_CACHE['timestamp'] = time.time()
+            _GLOBAL_CACHE['authenticated'] = user_auth
 
-    # KPIs Globales para el Header Premium (Command Center)
+    return {
+        'app_version': APP_VERSION,
+        'csrf_token': generate_csrf_token,
+        'is_authenticated': user_auth,
+        'current_user': current_user(),
+        'auth_mode_label': auth_mode_label(),
+        'has_access': has_permission,
+        'module_access_links': allowed_module_links(),
+        'current_role_label': role_label(),
+        'available_roles': available_roles(),
+        'client_script_base_url': get_public_app_base_url(),
+        'client_script_fallback_url': get_public_script_fallback_url(),
+        'secure_launcher_command': _get_secure_launcher_command(get_public_app_base_url(), get_public_script_fallback_url()),
+        'total_pages': 1,
+        'page': 1,
+        'per_page': 25,
+        **kpis,
+        **extra_data
+    }
+
+def _load_kpis_from_db(user_auth):
+    from utils.auth import list_app_users
     kpis = {
-        'kpi_total_activas': 0,
-        'kpi_total_graveyard': 0,
-        'kpi_win7': 0,
-        'kpi_alerta_ram': 0,
-        'kpi_total_impresoras_oficial': 0,
-        'kpi_tareas_hoy': 0,
-        'kpi_total_pendientes': 0,
-        'kpi_alerta_media': 0,
-        'kpi_criticas': 0
+        'kpi_total_activas': 0, 'kpi_total_graveyard': 0, 'kpi_win7': 0,
+        'kpi_alerta_ram': 0, 'kpi_total_impresoras_oficial': 0,
+        'kpi_tareas_hoy': 0, 'kpi_total_pendientes': 0,
+        'kpi_alerta_media': 0, 'kpi_criticas': 0
     }
     extra_data = {
-        'ad_users_list': [],
-        'fueros': {},
-        'technicians': [],
-        'app_users_list': [],
-        'all_pcs': [],
-        'kpi_usuarios_pendientes': 0
+        'ad_users_list': [], 'fueros': {}, 'technicians': [],
+        'app_users_list': [], 'all_pcs': [], 'kpi_usuarios_pendientes': 0
     }
     
     efemeride_actual = None
@@ -163,25 +178,23 @@ def inject_global_vars():
             {'titulo': 'Ciberseguridad', 'descripcion': 'La cadena es tan fuerte como su eslabón más débil. Nunca subestimes la seguridad.', 'icono': '🔒'},
             {'titulo': 'Eficiencia IT', 'descripcion': 'Automatiza lo aburrido para tener más tiempo de construir lo asombroso.', 'icono': '⚙️'}
         ]
-        # Se escoge un mensaje pseudo-aleatorio basado en el día del año para que no cambie a cada rato
         today_seed = datetime.datetime.now().timetuple().tm_yday
+        import random
         random.seed(today_seed)
         efemeride_actual = random.choice(mensajes_motivacionales)
-        random.seed() # Restaurar la semilla real
+        random.seed()
         
     extra_data['efemeride_actual'] = efemeride_actual
     
-    if is_authenticated():
+    if user_auth:
         try:
             with get_db_connection() as conn:
-                kpis['kpi_total_activas'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
+                kpis['kpi_total_activas'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura', 'PC-Generica')").fetchone()["c"]
                 kpis['kpi_total_graveyard'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 0").fetchone()["c"]
-                kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
-                kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
+                kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND os_name LIKE %s AND pc_name NOT IN ('PC Generica', 'Infraestructura', 'PC-Generica')", ("%Windows 7%",)).fetchone()["c"]
+                kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_ram_baja = 1 AND pc_name NOT IN ('PC Generica', 'Infraestructura', 'PC-Generica')").fetchone()["c"]
                 
-                # Impresoras: Solo contar las que están en el catálogo oficial (Infraestructura)
                 kpis['kpi_total_impresoras_oficial'] = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
-                
                 kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
                 kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
                 
@@ -193,15 +206,10 @@ def inject_global_vars():
                     known_fueros.setdefault(item['label'], item['label'])
                 extra_data['fueros'] = dict(sorted(known_fueros.items(), key=lambda item: item[0].lower()))
 
-                # Extra Data for Shared Modals
-                # 1. Obtener usuarios del sistema actuales
                 sys_users = list_app_users()
                 extra_data['app_users_list'] = sys_users
                 sys_usernames = {str(u['username']).strip().lower() for u in sys_users}
 
-                # 2. Obtener usuarios potenciales de AD
-                # 2. Obtener usuarios oficiales del directorio (AD_USERS)
-                # Ya no incluimos UNION con PCS para evitar "basura" de nombres detectados por scripts
                 ad_users_query = """
                     SELECT LOWER(TRIM(username)) as username, real_name, phone, 1 as is_official
                     FROM ad_users
@@ -209,11 +217,8 @@ def inject_global_vars():
                 """
                 all_ad_raw = [dict(row) for row in conn.execute(ad_users_query).fetchall()]
 
-                
-                # 3. Filtrar y Deduplicar: SI el usuario ya existe en el sistema superior, NO sale en el directorio
-                # Deduplicación para casos donde un registro histórico (PCS) coincide con uno oficial (ad_users)
-                seen_usernames = {} # username -> user_obj
-                ad_usernames = set() # usernames que sabemos que son de AD
+                seen_usernames = {}
+                ad_usernames = set()
                 
                 for u in all_ad_raw:
                     uname = str(u['username']).strip().lower()
@@ -223,9 +228,7 @@ def inject_global_vars():
                     if uname in sys_usernames:
                         continue
                     
-                    # Si ya vimos este username
                     if uname in seen_usernames:
-                        # Prioridad al oficial
                         if u['is_official'] and not seen_usernames[uname]['is_official']:
                             seen_usernames[uname] = u
                         continue
@@ -238,10 +241,6 @@ def inject_global_vars():
                 extra_data['directorio_filtrado'] = directorio_filtrado
                 extra_data['ad_usernames'] = ad_usernames
                 
-                # Debug log
-                now_str = datetime.datetime.now().strftime("%H:%M:%S")
-                logging.debug(f"[{now_str}]: AppUsers={len(sys_usernames)} Directorio={len(directorio_filtrado)} AD_Total={len(ad_usernames)}")
-
                 extra_data['all_pcs'] = [dict(row) for row in conn.execute(
                     "SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 1 ORDER BY pc_name"
                 ).fetchall()]
@@ -249,28 +248,7 @@ def inject_global_vars():
         except Exception as e:
             logging.error(f"Error in context processor KPIs: {e}")
             
-    _GLOBAL_CACHE['data'] = {'kpis': kpis, 'extra_data': extra_data}
-    _GLOBAL_CACHE['timestamp'] = now
-
-    return {
-        'app_version': APP_VERSION,
-        'csrf_token': generate_csrf_token,
-        'is_authenticated': is_authenticated(),
-        'current_user': current_user(),
-        'auth_mode_label': auth_mode_label(),
-        'has_access': has_permission,
-        'module_access_links': allowed_module_links(),
-        'current_role_label': role_label(),
-        'available_roles': available_roles(),
-        'client_script_base_url': get_public_app_base_url(),
-        'client_script_fallback_url': get_public_script_fallback_url(),
-        'secure_launcher_command': _get_secure_launcher_command(get_public_app_base_url(), get_public_script_fallback_url()),
-        'total_pages': 1,
-        'page': 1,
-        'per_page': 25,
-        **kpis,
-        **extra_data
-    }
+    return kpis, extra_data
 
 
 @app.before_request

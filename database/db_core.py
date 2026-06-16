@@ -4,6 +4,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from utils.constants import DEFAULT_FUERO_MAPPING
+from dbutils.pooled_db import PooledDB
 
 load_dotenv()
 
@@ -36,6 +37,11 @@ class DBConnectionWrapper:
 
     def commit(self):
         self.conn.commit()
+        try:
+            from servidor import invalidate_global_cache
+            invalidate_global_cache()
+        except ImportError:
+            pass
 
     def rollback(self):
         self.conn.rollback()
@@ -62,7 +68,12 @@ class DBConnectionWrapper:
         self.close()
 
 
-def get_db_connection():
+_DB_POOL = None
+
+def _get_pool():
+    global _DB_POOL
+    if _DB_POOL is not None:
+        return _DB_POOL
     host = os.environ.get("DB_HOST", "127.0.0.1")
     user = os.environ.get("DB_USER", "root")
     password = os.environ.get("DB_PASS", "")
@@ -70,7 +81,12 @@ def get_db_connection():
     port = int(os.environ.get("DB_PORT", "3306"))
     session_time_zone = os.environ.get("DB_TIME_ZONE", "-03:00")
 
-    conn = pymysql.connect(
+    _DB_POOL = PooledDB(
+        creator=pymysql,
+        mincached=2,
+        maxcached=10,
+        maxconnections=20,
+        blocking=True,
         host=host,
         user=user,
         password=password,
@@ -80,8 +96,13 @@ def get_db_connection():
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=False,
         connect_timeout=10,
-        init_command=f"SET time_zone = '{session_time_zone}'",
+        init_command=f"SET time_zone = '{session_time_zone}'"
     )
+    return _DB_POOL
+
+def get_db_connection():
+    """Obtiene una conexión del pool. Siempre usar con 'with': with get_db_connection() as conn."""
+    conn = _get_pool().connection()
     return DBConnectionWrapper(conn)
 
 
@@ -355,12 +376,16 @@ def init_db():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
 
-        # Migración de is_active a TINYINT
+        # Migración de is_active VARCHAR('True'/'False') -> TINYINT(1)
         try:
-            conn.execute("UPDATE pcs SET is_active = '1' WHERE is_active = 1")
-            conn.execute("UPDATE pcs SET is_active = '0' WHERE is_active = 0")
-            conn.execute("ALTER TABLE pcs MODIFY COLUMN is_active TINYINT(1) DEFAULT 1")
+            # Primero convertir los valores string que venían del sistema anterior
+            conn.execute("UPDATE pcs SET is_active = 1 WHERE TRIM(is_active) IN ('True', 'true', '1')")
+            conn.execute("UPDATE pcs SET is_active = 0 WHERE TRIM(is_active) IN ('False', 'false', '0')")
+            # Luego cambiar el tipo de columna
+            conn.execute("ALTER TABLE pcs MODIFY COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1")
+            logging.info("Migración is_active completada: columna convertida a TINYINT(1).")
         except Exception as e:
+            # Es normal que falle si ya está migrada (columna ya es TINYINT)
             logging.debug(f"Migración is_active ya aplicada o error menor: {e}")
 
     print("Base de datos lista y estructura verificada.")

@@ -96,7 +96,7 @@ def get_pc_detail_context(pc_name):
             if len(parts) >= 3:
                 potential_host = parts[2].upper()
                 sharing_pc_data = conn.execute(
-                    "SELECT pc_name, is_active, printer_port, printer_sn, printer_model FROM pcs WHERE UPPER(pc_name) = %s OR ip_address = %s LIMIT 1", 
+                    "SELECT pc_name, is_active, printer_port, printer_sn, printer_model FROM pcs WHERE pc_name = %s OR ip_address = %s LIMIT 1", 
                     (potential_host, potential_host)
                 ).fetchone()
         

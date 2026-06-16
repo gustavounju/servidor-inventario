@@ -164,9 +164,9 @@ def process_inventory_data(data):
                             """
                             SELECT printer_sn, printer_model, pc_name 
                             FROM pcs 
-                            WHERE (UPPER(pc_name) = %s OR UPPER(pc_name) LIKE %s OR ip_address = %s) 
+                            WHERE (pc_name = %s OR pc_name LIKE %s OR ip_address = %s) 
                             AND printer_sn IS NOT NULL AND printer_sn != 'N/A' AND printer_sn != '' 
-                            ORDER BY (UPPER(pc_name) = %s) DESC, last_report DESC 
+                            ORDER BY (pc_name = %s) DESC, last_report DESC 
                             LIMIT 1
                             """, 
                             (host_ref, f"{host_ref}%", host_raw, host_ref)
@@ -394,6 +394,13 @@ def process_inventory_data(data):
 
 @bp_api.route("/submit_inventory", methods=["POST"])
 def receive_inventory():
+    api_token = os.environ.get("API_TOKEN", "super-secret-token")
+    auth_header = request.headers.get("Authorization", "")
+    token_query = request.args.get("api_key", "")
+    
+    if auth_header != f"Bearer {api_token}" and token_query != api_token:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+        
     try:
         raw_data = request.get_data()
         try:
@@ -415,9 +422,18 @@ def upload_manual_inventory():
     if 'file' not in request.files: return redirect(url_for('dashboard.dashboard'))
     file = request.files['file']
     if file.filename == '': return redirect(url_for('dashboard.dashboard'))
+    if not file.filename.lower().endswith('.json'):
+        from flask import flash
+        flash("Solo se admiten archivos .json", "error")
+        return redirect(url_for('dashboard.dashboard'))
+        
     if file:
         try:
             content = file.read()
+            if len(content) > 2 * 1024 * 1024:
+                from flask import flash
+                flash("Archivo demasiado grande (max 2MB)", "error")
+                return redirect(url_for('dashboard.dashboard'))
             try: data = json.loads(content.decode("utf-8"))
             except: data = json.loads(content.decode("utf-16"))
             pc_name = process_inventory_data(data)
@@ -483,7 +499,7 @@ def api_pc_printer(pc_ref):
         pc_ref = pc_ref.upper()
         with get_db_connection() as conn:
             row = conn.execute(
-                "SELECT printer_sn, printer_model, printer_port FROM pcs WHERE UPPER(pc_name) = %s OR ip_address = %s LIMIT 1", 
+                "SELECT printer_sn, printer_model, printer_port FROM pcs WHERE pc_name = %s OR ip_address = %s LIMIT 1", 
                 (pc_ref, pc_ref)
             ).fetchone()
             if not row:

@@ -13,7 +13,7 @@ def get_fuero_summary_data():
             FROM pcs
             WHERE is_active = 1
               AND fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido'
-              AND UPPER(pc_name) NOT IN ('PC GENERICA','INFRAESTRUCTURA','PC-GENERICA')
+              AND pc_name NOT IN ('PC GENERICA','INFRAESTRUCTURA','PC-GENERICA')
             GROUP BY fuero
         """).fetchall()
 
