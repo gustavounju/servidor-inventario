@@ -1275,13 +1275,20 @@ async function claimTask(id) {
 
 
 
-function openCompleteModal(taskId) {
+function openCompleteModal(taskId, action = null) {
   const task = (allData.active_tasks || []).concat(allData.my_history || []).find(t => t.id == taskId);
   if (!task) return;
 
   const modal = document.getElementById('completeOverlay');
   modal.dataset.taskId = taskId;
-  modal.dataset.mode = task.estado === 'Hecha' ? 'edit' : 'complete';
+  let mode;
+  if (action === 'edit_only') {
+      mode = 'edit_only';
+  } else {
+      mode = task.estado === 'Hecha' ? 'edit' : 'complete';
+  }
+  
+  modal.dataset.mode = mode;
 
   document.getElementById('completePcSelect').value = task.pc_name || 'PC Generica';
   document.getElementById('completeDesc').value = task.descripcion || '';
@@ -1290,26 +1297,36 @@ function openCompleteModal(taskId) {
   const titleEl = document.getElementById('modalCompleteTitle');
   const btnEl = document.getElementById('btnConfirmComplete');
   const pcGroup = document.getElementById('pcCompleteGroup');
+  const solContainer = document.getElementById('completeSolucion').parentElement;
 
-  if (task.estado === 'Hecha') {
+  if (mode === 'edit_only') {
+    titleEl.innerHTML = '<i class="bi bi-pencil" style="color:var(--accent)"></i> Editar Tarea';
+    btnEl.innerHTML = '<i class="bi bi-save"></i> Guardar Cambios';
+    btnEl.className = 'btn-vact btn-vsave';
+    btnEl.onclick = confirmEdit;
+    pcGroup.style.display = 'block';
+    if (solContainer) solContainer.style.display = 'none';
+  } else if (mode === 'edit') {
     titleEl.innerHTML = '<i class="bi bi-pencil" style="color:var(--accent)"></i> Editar Tarea';
     btnEl.innerHTML = '<i class="bi bi-save"></i> Guardar Cambios';
     btnEl.className = 'btn-vact btn-vsave';
     btnEl.onclick = confirmEdit;
     pcGroup.style.display = 'none';
+    if (solContainer) solContainer.style.display = 'block';
   } else {
     titleEl.innerHTML = '<i class="bi bi-check2-circle" style="color:var(--green)"></i> Completar Tarea';
     btnEl.innerHTML = '<i class="bi bi-check-lg"></i> Marcar como Hecha';
     btnEl.className = 'btn-vact btn-vsave-done';
     btnEl.onclick = confirmComplete;
     pcGroup.style.display = task.pc_name ? 'none' : 'block';
+    if (solContainer) solContainer.style.display = 'block';
   }
 
   modal.classList.add('open');
 }
 
 function editTask(taskId) {
-  openCompleteModal(taskId);
+  openCompleteModal(taskId, 'edit_only');
 }
 
 function closeCompleteModal() {
