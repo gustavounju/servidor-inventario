@@ -95,7 +95,7 @@ app.jinja_env.filters['datetime_es'] = format_datetime_es
 # Contexto Global para todas las plantillas (Jinja2)
 @app.context_processor
 def inject_global_vars():
-    from utils.auth import is_authenticated, current_user, auth_mode_label, has_permission, allowed_module_links, role_label, available_roles, get_public_app_base_url, get_public_script_fallback_url, _get_secure_launcher_command
+    from utils.auth import is_authenticated, current_user, auth_mode_label, has_permission, allowed_module_links, role_label, available_roles
     now = time.time()
     user_auth = is_authenticated()
     
