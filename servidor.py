@@ -94,29 +94,48 @@ def inject_global_vars():
         cached_data = _GLOBAL_CACHE['data']
         kpis = cached_data['kpis']
         extra_data = cached_data['extra_data']
-    else:
-        # KPIs Globales para el Header Premium (Command Center)
-        kpis = {
-            'kpi_total_activas': 0,
-            'kpi_total_graveyard': 0,
-            'kpi_win7': 0,
-            'kpi_alerta_ram': 0,
-            'kpi_total_impresoras_oficial': 0,
-            'kpi_tareas_hoy': 0,
-            'kpi_total_pendientes': 0,
-            'kpi_alerta_media': 0,
-            'kpi_criticas': 0
+        return {
+            'app_version': APP_VERSION,
+            'csrf_token': generate_csrf_token,
+            'is_authenticated': is_authenticated(),
+            'current_user': current_user(),
+            'auth_mode_label': auth_mode_label(),
+            'has_access': has_permission,
+            'module_access_links': allowed_module_links(),
+            'current_role_label': role_label(),
+            'available_roles': available_roles(),
+            'client_script_base_url': get_public_app_base_url(),
+            'client_script_fallback_url': get_public_script_fallback_url(),
+            'secure_launcher_command': _get_secure_launcher_command(get_public_app_base_url(), get_public_script_fallback_url()),
+            'total_pages': 1,
+            'page': 1,
+            'per_page': 25,
+            **kpis,
+            **extra_data
         }
-        extra_data = {
-            'ad_users_list': [],
-            'fueros': {},
-            'technicians': [],
-            'app_users_list': [],
-            'all_pcs': [],
-            'kpi_usuarios_pendientes': 0
-        }
-        
-        efemeride_actual = None
+
+    # KPIs Globales para el Header Premium (Command Center)
+    kpis = {
+        'kpi_total_activas': 0,
+        'kpi_total_graveyard': 0,
+        'kpi_win7': 0,
+        'kpi_alerta_ram': 0,
+        'kpi_total_impresoras_oficial': 0,
+        'kpi_tareas_hoy': 0,
+        'kpi_total_pendientes': 0,
+        'kpi_alerta_media': 0,
+        'kpi_criticas': 0
+    }
+    extra_data = {
+        'ad_users_list': [],
+        'fueros': {},
+        'technicians': [],
+        'app_users_list': [],
+        'all_pcs': [],
+        'kpi_usuarios_pendientes': 0
+    }
+    
+    efemeride_actual = None
     
     try:
         with get_db_connection() as conn:
@@ -155,10 +174,10 @@ def inject_global_vars():
     if is_authenticated():
         try:
             with get_db_connection() as conn:
-                kpis['kpi_total_activas'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
-                kpis['kpi_total_graveyard'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
-                kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
-                kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
+                kpis['kpi_total_activas'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
+                kpis['kpi_total_graveyard'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 0").fetchone()["c"]
+                kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
+                kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
                 
                 # Impresoras: Solo contar las que están en el catálogo oficial (Infraestructura)
                 kpis['kpi_total_impresoras_oficial'] = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
@@ -224,14 +243,14 @@ def inject_global_vars():
                 logging.debug(f"[{now_str}]: AppUsers={len(sys_usernames)} Directorio={len(directorio_filtrado)} AD_Total={len(ad_usernames)}")
 
                 extra_data['all_pcs'] = [dict(row) for row in conn.execute(
-                    "SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 'True' ORDER BY pc_name"
+                    "SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 1 ORDER BY pc_name"
                 ).fetchall()]
                 
         except Exception as e:
             logging.error(f"Error in context processor KPIs: {e}")
             
-        _GLOBAL_CACHE['data'] = {'kpis': kpis, 'extra_data': extra_data}
-        _GLOBAL_CACHE['timestamp'] = now
+    _GLOBAL_CACHE['data'] = {'kpis': kpis, 'extra_data': extra_data}
+    _GLOBAL_CACHE['timestamp'] = now
 
     return {
         'app_version': APP_VERSION,

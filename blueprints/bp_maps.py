@@ -66,7 +66,7 @@ def view_map(map_id):
             pcs_on_map = conn.execute("""
                 SELECT pc_name, x_pos, y_pos, fuero, last_user 
                 FROM pcs 
-                WHERE map_id = %s AND is_active = 'True' 
+                WHERE map_id = %s AND is_active = 1 
                 AND pc_name NOT LIKE %s AND pc_name NOT LIKE %s
             """, (map_id, pattern_gen, pattern_infra)).fetchall()
             
@@ -80,7 +80,7 @@ def view_map(map_id):
             available_pcs = conn.execute("""
                 SELECT pc_name, fuero 
                 FROM pcs 
-                WHERE (map_id IS NULL OR map_id != %s) AND is_active = 'True' 
+                WHERE (map_id IS NULL OR map_id != %s) AND is_active = 1 
                 AND pc_name NOT LIKE %s AND pc_name NOT LIKE %s
                 ORDER BY pc_name
             """, (map_id, pattern_gen, pattern_infra)).fetchall()

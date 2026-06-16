@@ -277,7 +277,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
 
             if estado in ("True", "False"):
                 filter_sql += " AND p.is_active = %s"
-                filter_params.append(estado)
+                filter_params.append(1 if estado == "True" else 0)
             if alerta == "ram":
                 filter_sql += " AND p.alerta_ram_baja = 1"
             elif alerta == "sin_impresora_alerta":
@@ -532,7 +532,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 """SELECT p.pc_name, p.last_report,
                     (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%')) AS tareas_pendientes
                 FROM pcs p
-                WHERE p.is_active = 'True'
+                WHERE p.is_active = 1
                 AND (UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%')
                 ORDER BY CASE WHEN UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%' THEN 0 ELSE 1 END, p.pc_name ASC"""
             ).fetchall()
@@ -543,17 +543,17 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 pc_dict["tareas"] = [dict(t) for t in conn.execute("SELECT * FROM tasks WHERE pc_name = %s AND (estado != 'Hecha' OR UPPER(pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(pc_name) LIKE 'INFRAESTRUCTURA%%') ORDER BY created_at DESC", (pc_dict["pc_name"],)).fetchall()]
                 auxiliary_pcs.append(pc_dict)
 
-            kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
-            kpi_total_graveyard = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
-            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
-            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_sin_impresora = 1 AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
-            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_impresora_red = 1 AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
+            kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
+            kpi_total_graveyard = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 0").fetchone()["c"]
+            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
+            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_sin_impresora = 1 AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
+            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_impresora_red = 1 AND UPPER(pc_name) NOT LIKE 'PC-GENERICA%%' AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
 
             count_network_catalog = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
             count_local_printers = conn.execute("""
                 SELECT COUNT(*) as c
                 FROM pcs
-                WHERE is_active = 'True'
+                WHERE is_active = 1
                 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
                 AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%SIN IMPRESORA%')
                 AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%')
@@ -562,9 +562,9 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             """).fetchone()["c"]
 
             kpi_total_impresoras = count_network_catalog + count_local_printers
-            kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
-            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 10%",)).fetchone()["c"]
-            kpi_win11 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 11%",)).fetchone()["c"]
+            kpi_win7 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
+            kpi_win10 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 10%",)).fetchone()["c"]
+            kpi_win11 = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 11%",)).fetchone()["c"]
             kpi_tareas_hoy = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
             kpi_tareas_pendientes_total = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
             kpi_incidentes = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha' AND tipo_actividad = 'incidente'").fetchone()["c"]
@@ -573,7 +573,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
 
             kpi_saludables = conn.execute("""
                 SELECT COUNT(*) as c FROM pcs
-                WHERE is_active = 'True'
+                WHERE is_active = 1
                 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
                 AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
                 AND alerta_ram_baja = 0 AND IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) = 0
@@ -581,21 +581,21 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             """).fetchone()["c"]
             kpi_alerta_media = conn.execute("""
                 SELECT COUNT(*) as c FROM pcs
-                WHERE is_active = 'True'
+                WHERE is_active = 1
                 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
                 AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
                 AND (alerta_ram_baja + IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + alerta_disco + alerta_uptime + alerta_nombre_duplicado) = 1
             """).fetchone()["c"]
             kpi_criticas = conn.execute("""
                 SELECT COUNT(*) as c FROM pcs
-                WHERE is_active = 'True'
+                WHERE is_active = 1
                 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
                 AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
                 AND (alerta_ram_baja + IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + alerta_disco + alerta_uptime + alerta_nombre_duplicado) >= 2
             """).fetchone()["c"]
             kpi_sin_impresora_inventario = conn.execute("""
                 SELECT COUNT(*) as c FROM pcs
-                WHERE is_active = 'True'
+                WHERE is_active = 1
                 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
                 AND UPPER(pc_name) NOT LIKE 'PC%%GENERICA%%' AND UPPER(pc_name) NOT LIKE 'INFRAESTRUCTURA%%'
                 AND (printer_model IS NULL OR printer_model = '' OR printer_model = 'N/A' OR UPPER(printer_model) IN ('NONE', '-') OR UPPER(printer_model) LIKE '%%SIN IMPRESORA%%')
@@ -603,7 +603,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             """).fetchone()["c"]
 
             all_pcs_dropdown = [dict(row) for row in conn.execute(
-                """SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 'True'
+                """SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 1
                 ORDER BY CASE WHEN UPPER(pc_name) LIKE 'PC%%GENERICA%%' THEN 0 WHEN UPPER(pc_name) LIKE 'INFRAESTRUCTURA%%' THEN 1 ELSE 2 END, pc_name ASC"""
             ).fetchall()]
 
@@ -639,7 +639,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             app_users_list = list_app_users()
             pending_users_list = [u for u in app_users_list if not u.get("is_active")]
 
-            pc_ports_query = conn.execute("SELECT pc_name, printer_port FROM pcs WHERE is_active = 'True'").fetchall()
+            pc_ports_query = conn.execute("SELECT pc_name, printer_port FROM pcs WHERE is_active = 1").fetchall()
             pc_ports = {row["pc_name"].upper(): (row["printer_port"] or "") for row in pc_ports_query}
 
             techs_actives_query = conn.execute(

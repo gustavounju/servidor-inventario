@@ -64,7 +64,7 @@ def api_mobile_data():
             ).fetchall()]
             my_history = _attach_task_actions_bulk(my_history, conn)
 
-            pcs_query = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
+            pcs_query = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE is_active=1 ORDER BY pc_name").fetchall()
             requesters = [dict(r) for r in conn.execute(
                 """
                 SELECT username, real_name, phone

@@ -354,7 +354,7 @@
 
         <h1 class="hero-title mb-0">🖥️ {{ pc.pc_name }}</h1>
 
-        {% if pc.is_active == 'True' %}
+        {% if pc.is_active == 1 %}
 
         <span class="badge"
 
@@ -424,7 +424,7 @@
 
         {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
 
-        {% if pc.is_active == 'True' %}
+        {% if pc.is_active == 1 %}
 
         <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST"
 

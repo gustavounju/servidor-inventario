@@ -85,7 +85,7 @@ def _cleanup_shared_printer_clients(conn, pc_name, ip_address, request_ip):
         f"""
         SELECT pc_name, printer_model, printer_port, printer_sn
         FROM pcs
-        WHERE is_active = 'True'
+        WHERE is_active = 1
           AND pc_name != %s
           AND ({where_clause})
         """,
@@ -204,12 +204,12 @@ def _cleanup_pc_printer_state(conn, pc_name, request_ip):
 
 
 def decommission_pc_service(pc_name, request_ip):
-    """Mueve una PC al cementerio (is_active='False')."""
+    """Mueve una PC al cementerio (is_active=0)."""
     try:
         with get_db_connection() as conn:
             _cleanup_pc_printer_state(conn, pc_name, request_ip)
             conn.execute(
-                "UPDATE pcs SET is_active = 'False' WHERE pc_name = %s",
+                "UPDATE pcs SET is_active = 0 WHERE pc_name = %s",
                 (pc_name,),
             )
             log_audit_event(
@@ -233,7 +233,7 @@ def reactivate_pc_service(pc_name, request_ip):
     try:
         with get_db_connection() as conn:
             conn.execute(
-                "UPDATE pcs SET is_active = 'True' WHERE pc_name = %s",
+                "UPDATE pcs SET is_active = 1 WHERE pc_name = %s",
                 (pc_name,),
             )
             log_audit_event(

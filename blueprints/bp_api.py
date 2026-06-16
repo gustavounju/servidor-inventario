@@ -273,7 +273,7 @@ def process_inventory_data(data):
     INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, mac_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, office_version, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, is_active, full_json_data)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'True', %s)
     ON DUPLICATE KEY UPDATE
-        fuero=VALUES(fuero), os_name=VALUES(os_name), processor=VALUES(processor), ram_gb=VALUES(ram_gb), ip_address=VALUES(ip_address), mac_address=VALUES(mac_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_models=VALUES(disk_models), disk_speeds_rpm=VALUES(disk_speeds_rpm), motherboard_model=VALUES(motherboard_model), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), printer_sn=VALUES(printer_sn), office_version=VALUES(office_version), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), alerta_nombre_duplicado=VALUES(alerta_nombre_duplicado), is_active='True', full_json_data=VALUES(full_json_data)
+        fuero=VALUES(fuero), os_name=VALUES(os_name), processor=VALUES(processor), ram_gb=VALUES(ram_gb), ip_address=VALUES(ip_address), mac_address=VALUES(mac_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_models=VALUES(disk_models), disk_speeds_rpm=VALUES(disk_speeds_rpm), motherboard_model=VALUES(motherboard_model), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), printer_sn=VALUES(printer_sn), office_version=VALUES(office_version), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), alerta_nombre_duplicado=VALUES(alerta_nombre_duplicado), is_active=1, full_json_data=VALUES(full_json_data)
     """
     
     with get_db_connection() as conn:
@@ -522,7 +522,7 @@ def api_detected_printers():
                     pcs.printer_sn AS primary_printer_sn
                 FROM pc_detected_printers dp
                 INNER JOIN pcs ON pcs.pc_name = dp.pc_name
-                WHERE pcs.is_active = 'True'
+                WHERE pcs.is_active = 1
                   AND dp.is_ignored = 0
                   AND (dp.printer_model IS NOT NULL AND dp.printer_model != '' AND dp.printer_model != 'N/A' AND UPPER(dp.printer_model) NOT LIKE '%%SIN IMPRESORA%%')
                   AND (dp.printer_port IS NULL OR dp.printer_port NOT LIKE '\\\\\\\\%%') 
@@ -544,7 +544,7 @@ def api_detected_printers():
                     pcs.fuero,
                     NULL AS detect_id
                 FROM pcs
-                WHERE pcs.is_active = 'True'
+                WHERE pcs.is_active = 1
                   AND (pcs.printer_model IS NOT NULL AND pcs.printer_model != '' AND pcs.printer_model != 'N/A' AND UPPER(pcs.printer_model) NOT LIKE '%%SIN IMPRESORA%%')
             """
             if pc_filter:

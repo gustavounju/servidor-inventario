@@ -62,7 +62,7 @@ def topology_data():
 
     with get_db_connection() as conn:
         # 1. Fetch PCs
-        pcs = conn.execute("SELECT pc_name, last_user, ip_address, fuero, os_name, switch_name, printer_model FROM pcs WHERE is_active = 'True'").fetchall()
+        pcs = conn.execute("SELECT pc_name, last_user, ip_address, fuero, os_name, switch_name, printer_model FROM pcs WHERE is_active = 1").fetchall()
         for pc in pcs:
             pc_name = pc['pc_name']
             # Color based on OS or Fuero? Let's use a standard color for PCs
@@ -118,10 +118,10 @@ def inject_infra_kpis():
     if is_authenticated():
         try:
             with get_db_connection() as conn:
-                kpis['kpi_total_activas'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
-                kpis['kpi_total_graveyard'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
-                kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
-                kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
+                kpis['kpi_total_activas'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
+                kpis['kpi_total_graveyard'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 0").fetchone()["c"]
+                kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
+                kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
                 # Impresoras: Solo contar las que están en el catálogo oficial (Infraestructura)
                 kpis['kpi_total_impresoras_oficial'] = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
                 kpis['kpi_tareas_hoy'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
@@ -167,7 +167,7 @@ def index():
             SELECT p.pc_name, p.fuero, p.last_user, u.real_name as ad_real_name 
             FROM pcs p 
             LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username 
-            WHERE p.is_active = 'True' 
+            WHERE p.is_active = 1 
             ORDER BY p.pc_name
         """).fetchall()
         

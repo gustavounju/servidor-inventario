@@ -757,7 +757,9 @@ def required_permission_for_endpoint(endpoint=None):
         "stock.add_component", 
         "stock.assign_component", 
         "stock.return_component",
-        "stock.list_suppliers"
+        "stock.list_suppliers",
+        "tasks.get_task_actions",
+        "tasks.add_task_action"
     }
     if endpoint in mobile_allowed_stock_endpoints:
         return "mobile"

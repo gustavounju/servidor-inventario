@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify, redirect, url_for, render_template, send_file
 import datetime
 from datetime import datetime as dt
+import math
+import uuid
+import pymysql
 from io import BytesIO
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
-import sqlite3
 
 from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
@@ -49,7 +51,7 @@ def _build_task_user_match_index(conn):
         """
         SELECT pc_name, last_user, fuero
         FROM pcs
-        WHERE is_active = 'True'
+        WHERE is_active = 1
         ORDER BY pc_name
         """
     ).fetchall()
@@ -178,13 +180,13 @@ def inject_tasks_kpis():
     if is_authenticated():
         try:
             with get_db_connection() as conn:
-                kpis['kpi_total_activas'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
-                kpis['kpi_total_graveyard'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'False'").fetchone()["c"]
-                kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
-                kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
+                kpis['kpi_total_activas'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
+                kpis['kpi_total_graveyard'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 0").fetchone()["c"]
+                kpis['kpi_win7'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND os_name LIKE %s AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')", ("%Windows 7%",)).fetchone()["c"]
+                kpis['kpi_alerta_ram'] = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_ram_baja = 1 AND UPPER(pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')").fetchone()["c"]
                 net_pr = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
                 loc_pr = conn.execute("""
-                    SELECT COUNT(*) as c FROM pcs WHERE is_active = 'True' 
+                    SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 
                     AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
                     AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%') AND alerta_impresora_red = 0
                     AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
@@ -194,7 +196,7 @@ def inject_tasks_kpis():
                 # Mejoramos la consistencia del conteo de pendientes
                 kpis['kpi_total_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha'").fetchone()["c"]
                 # Usuarios pendientes de aprobación (AD)
-                kpis['kpi_usuarios_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM app_users WHERE is_active = 'False'").fetchone()["c"]
+                kpis['kpi_usuarios_pendientes'] = conn.execute("SELECT COUNT(*) as c FROM app_users WHERE is_active = 0").fetchone()["c"]
         except Exception as e:
             print(f"Error in context processor KPIs (Tasks): {e}")
 
@@ -303,9 +305,9 @@ def add_task(pc_name):
 
     if is_done:
         estado = "Hecha"
-        completed_by = current_username()
+        completed_by = technician if technician else current_username()
         completed_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        assigned_to = current_username()
+        assigned_to = technician if technician else current_username()
     elif technician:
         assigned_to = technician
         estado = "Asignada"
@@ -369,7 +371,7 @@ def add_technician():
             with get_db_connection() as conn:
                 conn.execute("INSERT INTO technicians (name) VALUES (%s)", (name,))
                 conn.commit()
-        except sqlite3.IntegrityError: pass
+        except pymysql.err.IntegrityError: pass
     return redirect(url_for("dashboard.dashboard"))
 
 @bp_tasks.route("/technicians/delete/<int:tech_id>", methods=["POST"])
@@ -458,9 +460,9 @@ def create_loose_task():
 
     if is_done:
         estado = "Hecha"
-        completed_by = current_username()
+        completed_by = technician if technician else current_username()
         completed_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        assigned_to = current_username()
+        assigned_to = technician if technician else current_username()
     elif technician:
         assigned_to = technician
         estado = "Asignada"

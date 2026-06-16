@@ -357,8 +357,8 @@ def init_db():
 
         # Migración de is_active a TINYINT
         try:
-            conn.execute("UPDATE pcs SET is_active = '1' WHERE is_active = 'True'")
-            conn.execute("UPDATE pcs SET is_active = '0' WHERE is_active = 'False'")
+            conn.execute("UPDATE pcs SET is_active = '1' WHERE is_active = 1")
+            conn.execute("UPDATE pcs SET is_active = '0' WHERE is_active = 0")
             conn.execute("ALTER TABLE pcs MODIFY COLUMN is_active TINYINT(1) DEFAULT 1")
         except Exception as e:
             logging.debug(f"Migración is_active ya aplicada o error menor: {e}")

@@ -11,7 +11,7 @@ def get_fuero_summary_data():
         pc_counts = conn.execute("""
             SELECT fuero, COUNT(*) as cnt
             FROM pcs
-            WHERE is_active = 'True'
+            WHERE is_active = 1
               AND fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido'
               AND UPPER(pc_name) NOT IN ('PC GENERICA','INFRAESTRUCTURA','PC-GENERICA')
             GROUP BY fuero
@@ -26,7 +26,7 @@ def get_fuero_summary_data():
                 UNION
                 SELECT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, fuero 
                 FROM pcs 
-                WHERE is_active = 'True' AND last_user IS NOT NULL AND last_user != ''
+                WHERE is_active = 1 AND last_user IS NOT NULL AND last_user != ''
             ) u ON u.fuero = f.fuero
             GROUP BY f.fuero
         """).fetchall()
@@ -40,7 +40,7 @@ def get_fuero_summary_data():
 
         local_printer_counts = conn.execute("""
             SELECT fuero, COUNT(*) as cnt FROM pcs
-            WHERE is_active = 'True'
+            WHERE is_active = 1
               AND (printer_model IS NOT NULL AND printer_model != '' AND printer_model != 'N/A' AND UPPER(printer_model) NOT LIKE '%%SIN IMPRESORA%%')
               AND (printer_port IS NULL OR printer_port NOT LIKE '\\\\\\\\%%')
               AND fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido'
@@ -68,7 +68,7 @@ def get_fuero_detail_data(fuero_name):
                 SELECT p.pc_name, p.last_user, p.ip_address, p.os_name, p.printer_model, p.printer_port, p.printer_sn,
                 (SELECT COUNT(*) FROM components c WHERE (c.serial_number = p.printer_sn AND p.printer_sn != 'N/A') OR (c.component_type LIKE 'Imp%%' AND c.assigned_pc = p.pc_name)) as is_stocked
                 FROM pcs p
-                WHERE p.is_active = 'True' AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND p.fuero = %s 
+                WHERE p.is_active = 1 AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND p.fuero = %s 
                 ORDER BY p.pc_name
             """, (fuero_name,)).fetchall()
             
@@ -78,7 +78,7 @@ def get_fuero_detail_data(fuero_name):
                 SELECT DISTINCT LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) as username, COALESCE(u.real_name, p.last_user) as real_name, u.phone
                 FROM pcs p
                 LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
-                WHERE p.is_active = 'True' AND p.fuero = %s AND p.last_user IS NOT NULL AND p.last_user != ''
+                WHERE p.is_active = 1 AND p.fuero = %s AND p.last_user IS NOT NULL AND p.last_user != ''
                 ORDER BY real_name
             """, (fuero_name, fuero_name)).fetchall()
             
@@ -96,7 +96,7 @@ def get_fuero_detail_data(fuero_name):
                 SELECT p.pc_name, p.last_user, p.ip_address, p.os_name, p.printer_model, p.printer_port, p.printer_sn,
                 (SELECT COUNT(*) FROM components c WHERE (c.serial_number = p.printer_sn AND p.printer_sn != 'N/A') OR (c.component_type LIKE 'Imp%%' AND c.assigned_pc = p.pc_name)) as is_stocked
                 FROM pcs p
-                WHERE p.is_active = 'True' AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido') 
+                WHERE p.is_active = 1 AND UPPER(p.pc_name) NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA') AND (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido') 
                 ORDER BY p.pc_name
             """).fetchall()
             
@@ -106,7 +106,7 @@ def get_fuero_detail_data(fuero_name):
                 SELECT DISTINCT LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) as username, COALESCE(u.real_name, p.last_user) as real_name, u.phone
                 FROM pcs p
                 LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username
-                WHERE p.is_active = 'True' AND (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido') AND p.last_user IS NOT NULL AND p.last_user != ''
+                WHERE p.is_active = 1 AND (p.fuero IS NULL OR p.fuero = '' OR p.fuero = 'Desconocido') AND p.last_user IS NOT NULL AND p.last_user != ''
                 ORDER BY real_name
             """).fetchall()
             

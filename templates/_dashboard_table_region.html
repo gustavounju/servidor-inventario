@@ -55,7 +55,7 @@
                     
                     {% set tooltip_text = "Estado: Saludable" if not alert_reasons else "Alertas detectadas:\n• " + alert_reasons|join('\n• ') %}
 
-                    {% if pc.is_active == 'False' %}
+                    {% if pc.is_active == 0 %}
                     {% set _ = row_class.append('row-graveyard') %}
                     {% set tooltip_text = "Equipo dado de baja (Cementerio)" %}
                     {% elif alerta_count >= 2 or (pc.os_name and 'Windows 7' in pc.os_name and alerta_count >= 1) %}
@@ -70,7 +70,7 @@
                         data-alerta-sin-imp="{{ pc.alerta_sin_impresora | default(0) }}"
                         data-alerta-impresora-red="{{ pc.alerta_impresora_red | default(0) }}"
                         data-so="{{ pc.os_name | default('') }}"
-                        data-estado="{% if pc.is_active == 'False' %}baja{% else %}activa{% endif %}"
+                        data-estado="{% if pc.is_active == 0 %}baja{% else %}activa{% endif %}"
                         data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}" style="cursor: pointer;"
                         onclick="if(!event.target.closest('a') && !event.target.closest('button')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
                         <td
@@ -357,7 +357,7 @@
                                             <i class="bi bi-eye"></i> Ver detalle
                                         </a>
 
-                                        {% if pc.is_active == 'True' %}
+                                        {% if pc.is_active == 1 %}
                                         <button type="button"
                                                 class="dropdown-item"
                                                 onclick="event.stopPropagation(); showSecurity('{{ pc.pc_name }}')">

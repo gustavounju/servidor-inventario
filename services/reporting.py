@@ -25,7 +25,7 @@ def format_datetime_es(dt_val):
 
     try:
         if isinstance(dt_val, str):
-            # Si es string (legacy SQLite: 'YYYY-MM-DD HH:MM:SS' o ISO)
+            # Si es string
             try:
                 dt_obj = datetime.datetime.strptime(dt_val, "%Y-%m-%d %H:%M:%S")
             except ValueError:

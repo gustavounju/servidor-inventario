@@ -81,7 +81,7 @@ def get_pc_detail_context(pc_name):
         
         audit_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = %s ORDER BY changed_at DESC", (pc_name,)).fetchall()
         
-        all_pcs = conn.execute("SELECT pc_name, fuero, last_user FROM pcs WHERE is_active='True' ORDER BY pc_name").fetchall()
+        all_pcs = conn.execute("SELECT pc_name, fuero, last_user FROM pcs WHERE is_active=1 ORDER BY pc_name").fetchall()
         
         pc_ups_list = conn.execute('''
             SELECT u.*, b.serial_number as battery_code FROM ups_inventory u
@@ -104,7 +104,7 @@ def get_pc_detail_context(pc_name):
         if pc["pc_name"] and (pc["pc_name"].upper() not in ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')):
             pat_name = f"%\\\\\\\\{pc['pc_name'].upper()}\\\\%"
             pat_ip = f"%\\\\\\\\{pc['ip_address']}\\\\%" if pc['ip_address'] and pc['ip_address'] != 'N/A' else None
-            query = "SELECT pc_name FROM pcs WHERE is_active='True' AND UPPER(printer_port) LIKE %s"
+            query = "SELECT pc_name FROM pcs WHERE is_active=1 AND UPPER(printer_port) LIKE %s"
             params = [pat_name]
             if pat_ip:
                 query += " OR UPPER(printer_port) LIKE %s"; params.append(pat_ip)
