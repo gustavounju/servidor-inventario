@@ -1,6 +1,7 @@
 from flask import Blueprint, abort, jsonify, request, render_template
 import datetime
 import os
+import logging
 from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.push_notifications import notify_all_technicians
@@ -102,7 +103,7 @@ def api_mobile_notifications():
             rows = [dict(r) for r in conn.execute("SELECT * FROM app_notifications ORDER BY created_at DESC LIMIT 50").fetchall()]
             return jsonify(_json_serializable(rows))
     except Exception as e:
-        print(f"Error api_mobile_notifications: {e}")
+        logging.error(f"Error api_mobile_notifications: {e}")
         return jsonify({"error": str(e)}), 500
 
 @bp_mobile.route("/api/mobile/create_task", methods=["POST"])
@@ -158,7 +159,7 @@ def api_mobile_create_task():
                 url="/tecnicos"
             )
         except Exception as e:
-            print(f"Error sending push: {e}")
+            logging.error(f"Error sending push: {e}")
 
         return jsonify({"status": "success", "id": new_id})
     except Exception as e:
@@ -234,7 +235,7 @@ def api_mobile_parse_voice():
             result = voice_processor.process_voice_command(text)
             return jsonify({"status": "success", "data": result})
         except Exception as e:
-            print(f"Error in api_mobile_parse_voice: {e}")
+            logging.error(f"Error in api_mobile_parse_voice: {e}")
             return jsonify({"status": "success", "data": {"descripcion": text, "solicitante": "", "error_voice": str(e)}})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -258,7 +259,7 @@ def api_subscribe_push():
                 (technician, token)
             )
             conn.commit()
-        print(f"[FCM] Token registrado para: {technician}")
+        logging.info(f"[FCM] Token registrado para: {technician}")
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -280,7 +281,7 @@ def voice_upload():
     ext = audio_file.filename.split('.')[-1] if '.' in audio_file.filename else "mpeg"
     filename = f"voice_{int(datetime.datetime.now().timestamp())}.{ext}"
     temp_path = os.path.join(upload_dir, filename)
-    print(f"DEBUG: Guardando audio recibido como {temp_path}")
+    logging.debug(f"Guardando audio recibido como {temp_path}")
     
     try:
         audio_file.save(temp_path)
@@ -289,7 +290,7 @@ def voice_upload():
         result = process_voice_command(audio_path=temp_path)
         return jsonify({"status": "success", "result": result})
     except Exception as e:
-        print(f"Error en voice-upload: {e}")
+        logging.error(f"Error en voice-upload: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         if os.path.exists(temp_path):

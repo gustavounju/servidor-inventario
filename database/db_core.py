@@ -1,6 +1,7 @@
 import pymysql
 import pymysql.cursors
 import os
+import logging
 from dotenv import load_dotenv
 from utils.constants import DEFAULT_FUERO_MAPPING
 
@@ -77,7 +78,7 @@ def get_db_connection():
         port=port,
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
-        autocommit=True,
+        autocommit=False,
         connect_timeout=10,
         init_command=f"SET time_zone = '{session_time_zone}'",
     )
@@ -109,7 +110,7 @@ def init_db():
                 alerta_ram_baja TINYINT(1) DEFAULT 0,
                 alerta_sin_impresora TINYINT(1) DEFAULT 0,
                 alerta_impresora_red TINYINT(1) DEFAULT 0,
-                is_active VARCHAR(5) DEFAULT 'True',
+                is_active TINYINT(1) DEFAULT 1,
                 full_json_data LONGTEXT,
                 fuero TEXT,
                 switch_name TEXT,
@@ -170,16 +171,15 @@ def init_db():
         try:
             conn.execute("ALTER TABLE pcs ADD COLUMN office_version TEXT AFTER printer_sn")
             print("Migración: Columna 'office_version' añadida exitosamente.")
-        except Exception:
-            # Si falla es porque probablemente ya existe
-            pass
+        except Exception as e:
+            logging.debug(f"Columna office_version ya existe o error menor: {e}")
 
         # Intentar añadir columna can_audit_racks si no existe
         try:
             conn.execute("ALTER TABLE app_users ADD COLUMN can_audit_racks TINYINT(1) DEFAULT 0 AFTER can_access_reports")
             print("Migración: Columna 'can_audit_racks' añadida exitosamente.")
-        except Exception:
-            pass
+        except Exception as e:
+            logging.debug(f"Columna can_audit_racks ya existe o error menor: {e}")
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS components (
@@ -301,13 +301,6 @@ def init_db():
         for rack in default_racks:
             conn.execute("INSERT IGNORE INTO racks (nombre, ubicacion) VALUES (%s, '')", (rack,))
 
-        # Intentar añadir columna iluminacion_ok_bool si no existe
-        try:
-            conn.execute("ALTER TABLE rack_audits ADD COLUMN iluminacion_ok_bool TINYINT(1) DEFAULT 1 AFTER limpieza_ok_bool")
-            print("Migración: Columna 'iluminacion_ok_bool' añadida exitosamente.")
-        except Exception:
-            pass
-
         conn.execute("""
             CREATE TABLE IF NOT EXISTS rack_audits (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -323,6 +316,13 @@ def init_db():
                 FOREIGN KEY (rack_id) REFERENCES racks(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
+
+        # Intentar añadir columna iluminacion_ok_bool si no existe
+        try:
+            conn.execute("ALTER TABLE rack_audits ADD COLUMN iluminacion_ok_bool TINYINT(1) DEFAULT 1 AFTER limpieza_ok_bool")
+            print("Migración: Columna 'iluminacion_ok_bool' añadida exitosamente.")
+        except Exception as e:
+            logging.debug(f"Columna iluminacion_ok_bool ya existe o error menor: {e}")
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS switches (
@@ -354,4 +354,13 @@ def init_db():
                 FOREIGN KEY (switch_id) REFERENCES switches(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
+
+        # Migración de is_active a TINYINT
+        try:
+            conn.execute("UPDATE pcs SET is_active = '1' WHERE is_active = 'True'")
+            conn.execute("UPDATE pcs SET is_active = '0' WHERE is_active = 'False'")
+            conn.execute("ALTER TABLE pcs MODIFY COLUMN is_active TINYINT(1) DEFAULT 1")
+        except Exception as e:
+            logging.debug(f"Migración is_active ya aplicada o error menor: {e}")
+
     print("Base de datos lista y estructura verificada.")

@@ -1,4 +1,5 @@
 from database.db_core import get_db_connection
+import logging
 from utils.constants import DEFAULT_FUERO_MAPPING
 import os
 
@@ -712,7 +713,7 @@ def migrate_db_v31():
         # Foreign Key para map_id en pcs (si no existe)
         try:
             conn.execute("ALTER TABLE pcs ADD CONSTRAINT fk_pcs_map FOREIGN KEY (map_id) REFERENCES infrastructure_maps(id) ON DELETE SET NULL")
-        except Exception: pass
+        except Exception as e: logging.debug(f"Migración ignorada o error menor: {e}")
 
         # 3. Añadir campos a Impresoras de Red
         new_prn_cols = {
@@ -728,7 +729,7 @@ def migrate_db_v31():
         # Foreign Key para map_id en printers
         try:
             conn.execute("ALTER TABLE network_printers ADD CONSTRAINT fk_prn_map FOREIGN KEY (map_id) REFERENCES infrastructure_maps(id) ON DELETE SET NULL")
-        except Exception: pass
+        except Exception as e: logging.debug(f"Migración ignorada o error menor: {e}")
 
     print("Migración V31 verificada.")
 
@@ -748,7 +749,7 @@ def migration_v32(conn):
     # Foreign Key
     try:
         conn.execute("ALTER TABLE ad_users ADD CONSTRAINT fk_user_map FOREIGN KEY (map_id) REFERENCES infrastructure_maps(id) ON DELETE SET NULL")
-    except Exception: pass
+    except Exception as e: logging.debug(f"Migración map_id ignorada o error menor: {e}")
     
     print("Migración V32 verificada.")
 

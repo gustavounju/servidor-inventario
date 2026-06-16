@@ -13,7 +13,7 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 ### Desarrollo (Casa/Oficina)
 - **Host**: 127.0.0.1
 - **Usuario**: root
-- **Contraseña**: tdg729tdg
+- **Contraseña**: [OCULTA]
 - **Base de datos**: inventario_dev
 - **Puerto**: 3306
 
@@ -57,7 +57,7 @@ ServidorInventario/
 
 ### Usuario por Defecto
 - **Usuario**: administrador
-- **Contraseña**: tdg729tdg
+- **Contraseña**: [OCULTA]
 - **Rol**: Administrador (acceso completo)
 
 ## 📊 Módulos Disponibles
@@ -78,10 +78,10 @@ ServidorInventario/
 
 ## ⚙️ Variables de Entorno (.env)
 ```env
-GEMINI_API_KEY=AIzaSyAvmllmCU2XGZAKB7n8A62LcpeqCiEEpDI
+GEMINI_API_KEY=[OCULTA]
 DB_HOST=127.0.0.1
 DB_USER=root
-DB_PASS=tdg729tdg
+DB_PASS=[OCULTA]
 DB_NAME=inventario_dev
 DB_PORT=3306
 

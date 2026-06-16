@@ -14,9 +14,19 @@ from database.db_core import init_db, get_db_connection
 from database.migrations import run_all_migrations
 
 # Utils e IA
+import time
+import logging
+import datetime
+import random
 from utils.constants import UPLOAD_FOLDER, LOG_FOLDER, APP_VERSION, list_fuero_mapping_rows
-APP_VERSION = "3.0.1"
 from services.ai_assistant import train_ai_model
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+_GLOBAL_CACHE = {
+    'timestamp': 0,
+    'data': None
+}
 
 # Blueprints
 from blueprints.bp_dashboard import bp_dashboard
@@ -76,31 +86,37 @@ app.jinja_env.filters['datetime_es'] = format_datetime_es
 @app.context_processor
 def inject_global_vars():
     from utils.auth import list_app_users, list_technician_users
+    global _GLOBAL_CACHE
     
-    # KPIs Globales para el Header Premium (Command Center)
-    kpis = {
-        'kpi_total_activas': 0,
-        'kpi_total_graveyard': 0,
-        'kpi_win7': 0,
-        'kpi_alerta_ram': 0,
-        'kpi_total_impresoras_oficial': 0,
-        'kpi_tareas_hoy': 0,
-        'kpi_total_pendientes': 0,
-        'kpi_alerta_media': 0,
-        'kpi_criticas': 0
-    }
-    extra_data = {
-        'ad_users_list': [],
-        'fueros': {},
-        'technicians': [],
-        'app_users_list': [],
-        'all_pcs': [],
-        'kpi_usuarios_pendientes': 0
-    }
-    
-    efemeride_actual = None
-    import datetime
-    import random
+    now = time.time()
+    if _GLOBAL_CACHE['data'] is not None and (now - _GLOBAL_CACHE['timestamp'] < 60):
+        # Usar caché
+        cached_data = _GLOBAL_CACHE['data']
+        kpis = cached_data['kpis']
+        extra_data = cached_data['extra_data']
+    else:
+        # KPIs Globales para el Header Premium (Command Center)
+        kpis = {
+            'kpi_total_activas': 0,
+            'kpi_total_graveyard': 0,
+            'kpi_win7': 0,
+            'kpi_alerta_ram': 0,
+            'kpi_total_impresoras_oficial': 0,
+            'kpi_tareas_hoy': 0,
+            'kpi_total_pendientes': 0,
+            'kpi_alerta_media': 0,
+            'kpi_criticas': 0
+        }
+        extra_data = {
+            'ad_users_list': [],
+            'fueros': {},
+            'technicians': [],
+            'app_users_list': [],
+            'all_pcs': [],
+            'kpi_usuarios_pendientes': 0
+        }
+        
+        efemeride_actual = None
     
     try:
         with get_db_connection() as conn:
@@ -113,7 +129,7 @@ def inject_global_vars():
                 if efemeride_hoy:
                     efemeride_actual = dict(efemeride_hoy)
     except Exception as e:
-        print(f"Error fetching efemerides: {e}")
+        logging.error(f"Error fetching efemerides: {e}")
         
     if not efemeride_actual:
         mensajes_motivacionales = [
@@ -204,16 +220,18 @@ def inject_global_vars():
                 extra_data['ad_usernames'] = ad_usernames
                 
                 # Debug log
-                import datetime
-                now = datetime.datetime.now().strftime("%H:%M:%S")
-                print(f"DEBUG [{now}]: AppUsers={len(sys_usernames)} Directorio={len(directorio_filtrado)} AD_Total={len(ad_usernames)}")
+                now_str = datetime.datetime.now().strftime("%H:%M:%S")
+                logging.debug(f"[{now_str}]: AppUsers={len(sys_usernames)} Directorio={len(directorio_filtrado)} AD_Total={len(ad_usernames)}")
 
                 extra_data['all_pcs'] = [dict(row) for row in conn.execute(
                     "SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 'True' ORDER BY pc_name"
                 ).fetchall()]
                 
         except Exception as e:
-            print(f"Error in context processor KPIs: {e}")
+            logging.error(f"Error in context processor KPIs: {e}")
+            
+        _GLOBAL_CACHE['data'] = {'kpis': kpis, 'extra_data': extra_data}
+        _GLOBAL_CACHE['timestamp'] = now
 
     return {
         'app_version': APP_VERSION,
@@ -270,7 +288,7 @@ with app.app_context():
     run_all_migrations()
     default_admin_created = ensure_default_admin()
     if default_admin_created:
-        print("Usuario inicial creado: administrador / tdg729tdg")
+        logging.info("Usuario inicial 'administrador' creado.")
     
     def ensure_generic_pc():
         """Asegura que exista una PC genrica y una de Infraestructura para asignar tareas a hardware no inventariado."""
@@ -315,7 +333,8 @@ if __name__ == "__main__":
                 print(f"Error en fallback 8080: {e}")
         
         threading.Thread(target=run_fallback, daemon=True).start()
-        app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+        debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+        app.run(host='0.0.0.0', port=5000, debug=debug_mode, use_reloader=False)
     else:
         print("\n" + "="*64)
         print(" MODO PRODUCCIÓN (Linux)")
