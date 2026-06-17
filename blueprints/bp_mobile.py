@@ -63,6 +63,13 @@ def api_mobile_data():
                 (tech_identity,)
             ).fetchall()]
             my_history = _attach_task_actions_bulk(my_history, conn)
+            
+            # Total histórico de tareas tomadas/resueltas por este técnico
+            my_historical_total = 0
+            if tech_identity:
+                row = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE (estado = 'Hecha' AND completed_by = %s) OR (estado != 'Hecha' AND assigned_to = %s)", (tech_identity, tech_identity)).fetchone()
+                if row:
+                    my_historical_total = row["c"]
 
             pcs_query = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE is_active=1 ORDER BY pc_name").fetchall()
             requesters = [dict(r) for r in conn.execute(
@@ -96,6 +103,7 @@ def api_mobile_data():
             "unassigned": unassigned, 
             "active_tasks": all_active, 
             "my_history": my_history,
+            "my_historical_total": my_historical_total,
             "pcs": pcs, 
             "requesters": requesters,
             "global_stats": global_stats

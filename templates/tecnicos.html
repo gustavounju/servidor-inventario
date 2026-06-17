@@ -1169,7 +1169,7 @@ function renderOpsOverview(myTasks, free, done, globalStats) {
   // Personal
   document.getElementById('opsMineCount').textContent = myTasks.length;
   document.getElementById('opsMyDoneCount').textContent = myDoneToday;
-  document.getElementById('opsMyTotalCount').textContent = myTasks.length + myDoneToday;
+  document.getElementById('opsMyTotalCount').textContent = allData.my_historical_total || 0;
   
   // Global
   if (globalStats) {
