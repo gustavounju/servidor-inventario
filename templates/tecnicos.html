@@ -391,8 +391,8 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
-      margin-bottom: 10px;
     }
+    .metrics-carousel::-webkit-scrollbar { display: none; }
     .ops-card {
       background: var(--input-bg);
       border: 1px solid var(--border);
@@ -593,19 +593,44 @@ function submitMobileTaskAction() {
       <div class="ops-overview" id="opsOverview">
         <div class="ops-title">Resumen de tareas</div>
         <div class="ops-headline" id="opsHeadline">Cargando tareas asignadas...</div>
-        <div class="ops-grid">
-          <div class="ops-card">
-            <div class="ops-kpi" id="opsMineCount">0</div>
-            <div class="ops-label">Tomadas</div>
+        <div class="metrics-carousel" id="metricsCarousel" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 8px; scrollbar-width: none; margin-bottom: 8px;">
+          <!-- Slide 1: Mis Métricas -->
+          <div style="flex: 0 0 100%; scroll-snap-align: start;">
+            <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px;"><i class="bi bi-person-fill"></i> Mis Métricas (Hoy)</div>
+            <div class="ops-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsMineCount">0</div>
+                <div class="ops-label">En Curso</div>
+              </div>
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsMyDoneCount">0</div>
+                <div class="ops-label">Hechas</div>
+              </div>
+            </div>
           </div>
-          <div class="ops-card">
-            <div class="ops-kpi" id="opsFreeCount">0</div>
-            <div class="ops-label">Libres</div>
+          <!-- Slide 2: Equipo -->
+          <div style="flex: 0 0 100%; scroll-snap-align: start;">
+            <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;"><i class="bi bi-people-fill"></i> Equipo (Global)</div>
+            <div class="ops-grid">
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsGlobalMine">0</div>
+                <div class="ops-label">Tomadas</div>
+              </div>
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsGlobalFree">0</div>
+                <div class="ops-label">Libres</div>
+              </div>
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsGlobalDone">0</div>
+                <div class="ops-label">Hechas</div>
+              </div>
+            </div>
           </div>
-          <div class="ops-card">
-            <div class="ops-kpi" id="opsResolvedCount">0</div>
-            <div class="ops-label">Hechas</div>
-          </div>
+        </div>
+        <!-- Carousel Dots -->
+        <div style="display: flex; justify-content: center; gap: 6px; margin-bottom: 12px;" id="carouselDots">
+          <div class="dot active" style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent); transition: all .3s;"></div>
+          <div class="dot" style="width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all .3s;"></div>
         </div>
         <div class="ops-focus">
           <i class="bi bi-lightning-charge-fill"></i>
@@ -1143,18 +1168,50 @@ function renderOpsOverview(myTasks, free, done, globalStats) {
 
   document.getElementById('opsHeadline').textContent = headline;
   
+  // Calculate "my done today"
+  const isToday = (dateString) => {
+    if (!dateString) return false;
+    const d = new Date(dateString.replace(' ', 'T'));
+    const today = new Date();
+    return d.getDate() === today.getDate() &&
+           d.getMonth() === today.getMonth() &&
+           d.getFullYear() === today.getFullYear();
+  };
+  const myDoneToday = (done || []).filter(t => isToday(t.completed_at)).length;
+
+  // Personal
+  document.getElementById('opsMineCount').textContent = myTasks.length;
+  document.getElementById('opsMyDoneCount').textContent = myDoneToday;
+  
+  // Global
   if (globalStats) {
-    document.getElementById('opsMineCount').textContent = globalStats.tomadas || 0;
-    document.getElementById('opsFreeCount').textContent = globalStats.libres || 0;
-    document.getElementById('opsResolvedCount').textContent = globalStats.hechas_hoy || 0;
-  } else {
-    document.getElementById('opsMineCount').textContent = myTasks.length;
-    document.getElementById('opsFreeCount').textContent = free.length;
-    document.getElementById('opsResolvedCount').textContent = (done || []).length;
+    document.getElementById('opsGlobalMine').textContent = globalStats.tomadas || 0;
+    document.getElementById('opsGlobalFree').textContent = globalStats.libres || 0;
+    document.getElementById('opsGlobalDone').textContent = globalStats.hechas_hoy || 0;
   }
   
   document.getElementById('opsFocusText').textContent = focus;
 }
+
+// Carousel scroll listener to update dots
+document.addEventListener('DOMContentLoaded', () => {
+  const carousel = document.getElementById('metricsCarousel');
+  const dots = document.querySelectorAll('#carouselDots .dot');
+  if (carousel && dots.length > 0) {
+    carousel.addEventListener('scroll', () => {
+      const index = Math.round(carousel.scrollLeft / carousel.clientWidth);
+      dots.forEach((dot, i) => {
+        if (i === index) {
+          dot.classList.add('active');
+          dot.style.background = 'var(--accent)';
+        } else {
+          dot.classList.remove('active');
+          dot.style.background = 'var(--border)';
+        }
+      });
+    });
+  }
+});
 
 // ── Render ────────────────────────────────────────
 function renderAll() {
