@@ -597,14 +597,18 @@ function submitMobileTaskAction() {
           <!-- Slide 1: Mis Métricas -->
           <div style="flex: 0 0 100%; scroll-snap-align: start;">
             <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px;"><i class="bi bi-person-fill"></i> Mis Métricas (Hoy)</div>
-            <div class="ops-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+            <div class="ops-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
               <div class="ops-card">
                 <div class="ops-kpi" id="opsMineCount">0</div>
                 <div class="ops-label">En Curso</div>
               </div>
               <div class="ops-card">
-                <div class="ops-kpi" id="opsMyDoneCount" style="color: var(--green);">0</div>
+                <div class="ops-kpi" id="opsMyDoneCount">0</div>
                 <div class="ops-label">Hechas</div>
+              </div>
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsMyTotalCount" style="color: var(--green);">0</div>
+                <div class="ops-label">Total</div>
               </div>
             </div>
           </div>
@@ -1165,6 +1169,7 @@ function renderOpsOverview(myTasks, free, done, globalStats) {
   // Personal
   document.getElementById('opsMineCount').textContent = myTasks.length;
   document.getElementById('opsMyDoneCount').textContent = myDoneToday;
+  document.getElementById('opsMyTotalCount').textContent = myTasks.length + myDoneToday;
   
   // Global
   if (globalStats) {
