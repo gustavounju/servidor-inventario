@@ -603,7 +603,7 @@ function submitMobileTaskAction() {
                 <div class="ops-label">En Curso</div>
               </div>
               <div class="ops-card">
-                <div class="ops-kpi" id="opsMyDoneCount">0</div>
+                <div class="ops-kpi" id="opsMyDoneCount" style="color: var(--green);">0</div>
                 <div class="ops-label">Hechas</div>
               </div>
             </div>
@@ -631,10 +631,6 @@ function submitMobileTaskAction() {
         <div style="display: flex; justify-content: center; gap: 6px; margin-bottom: 12px;" id="carouselDots">
           <div class="dot active" style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent); transition: all .3s;"></div>
           <div class="dot" style="width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all .3s;"></div>
-        </div>
-        <div class="ops-focus">
-          <i class="bi bi-lightning-charge-fill"></i>
-          <div id="opsFocusText">Preparando prioridades de trabajo.</div>
         </div>
       </div>
       <div id="list-mias"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
@@ -1149,22 +1145,9 @@ function classifyTaskPriority(task, mode) {
 }
 
 function renderOpsOverview(myTasks, free, done, globalStats) {
-  const urgentMine = myTasks.filter(t => classifyTaskPriority(t, 'mine').label !== 'En flujo').length;
-  const missingPc = free.filter(t => !t.pc_name).length;
   const headline = techId
     ? `${techId} tiene ${myTasks.length} tarea${myTasks.length === 1 ? '' : 's'} activa${myTasks.length === 1 ? '' : 's'} y ${free.length} por tomar.`
     : `Hay ${free.length} tareas libres esperando asignación.`;
-
-  let focus = 'La carga está pareja. Conviene sostener el ritmo actual y cerrar pendientes antes de abrir nuevas intervenciones.';
-  if (free.length >= 6) {
-    focus = `Hay acumulación de tareas libres. Conviene absorber primero ${Math.min(free.length, 3)} para evitar cola operativa.`;
-  } else if (missingPc > 0) {
-    focus = `Hay ${missingPc} tarea${missingPc === 1 ? '' : 's'} sin PC asignada. Conviene identificar equipo o sector antes de cerrarlas.`;
-  } else if (urgentMine > 0) {
-    focus = `Tienes ${urgentMine} tarea${urgentMine === 1 ? '' : 's'} que ya pide seguimiento hoy. Priorizá cierre antes de tomar más trabajo.`;
-  } else if ((done || []).length >= 5) {
-    focus = `Buen ritmo de resolución: ya cerraste ${(done || []).length} tarea${(done || []).length === 1 ? '' : 's'} recientes.`;
-  }
 
   document.getElementById('opsHeadline').textContent = headline;
   
@@ -1189,8 +1172,6 @@ function renderOpsOverview(myTasks, free, done, globalStats) {
     document.getElementById('opsGlobalFree').textContent = globalStats.libres || 0;
     document.getElementById('opsGlobalDone').textContent = globalStats.hechas_hoy || 0;
   }
-  
-  document.getElementById('opsFocusText').textContent = focus;
 }
 
 // Carousel scroll listener to update dots
