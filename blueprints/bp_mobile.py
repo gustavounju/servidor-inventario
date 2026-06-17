@@ -81,13 +81,24 @@ def api_mobile_data():
             ).fetchall()]
             pcs = [{"name": r["pc_name"], "user": r["last_user"] or "Desconocido", "area": r["fuero"] or "Desconocido"} for r in pcs_query]
 
+            # Estadísticas globales para el contador del móvil
+            global_tomadas = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha' AND assigned_to IS NOT NULL AND assigned_to != ''").fetchone()["c"]
+            global_libres = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado != 'Hecha' AND (assigned_to IS NULL OR assigned_to = '')").fetchone()["c"]
+            global_hechas = conn.execute("SELECT COUNT(*) as c FROM tasks WHERE estado = 'Hecha' AND DATE(completed_at) = CURDATE()").fetchone()["c"]
+            global_stats = {
+                "tomadas": global_tomadas,
+                "libres": global_libres,
+                "hechas_hoy": global_hechas
+            }
+
         payload = {
             "technicians": techs, 
             "unassigned": unassigned, 
             "active_tasks": all_active, 
             "my_history": my_history,
             "pcs": pcs, 
-            "requesters": requesters
+            "requesters": requesters,
+            "global_stats": global_stats
         }
         return jsonify(_json_serializable(payload))
     except Exception as e:

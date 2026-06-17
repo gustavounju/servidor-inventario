@@ -1123,7 +1123,7 @@ function classifyTaskPriority(task, mode) {
   return { label: 'En curso', css: 'meta-chip-priority-low' };
 }
 
-function renderOpsOverview(myTasks, free, done) {
+function renderOpsOverview(myTasks, free, done, globalStats) {
   const urgentMine = myTasks.filter(t => classifyTaskPriority(t, 'mine').label !== 'En flujo').length;
   const missingPc = free.filter(t => !t.pc_name).length;
   const headline = techId
@@ -1142,9 +1142,17 @@ function renderOpsOverview(myTasks, free, done) {
   }
 
   document.getElementById('opsHeadline').textContent = headline;
-  document.getElementById('opsMineCount').textContent = myTasks.length;
-  document.getElementById('opsFreeCount').textContent = free.length;
-  document.getElementById('opsResolvedCount').textContent = (done || []).length;
+  
+  if (globalStats) {
+    document.getElementById('opsMineCount').textContent = globalStats.tomadas || 0;
+    document.getElementById('opsFreeCount').textContent = globalStats.libres || 0;
+    document.getElementById('opsResolvedCount').textContent = globalStats.hechas_hoy || 0;
+  } else {
+    document.getElementById('opsMineCount').textContent = myTasks.length;
+    document.getElementById('opsFreeCount').textContent = free.length;
+    document.getElementById('opsResolvedCount').textContent = (done || []).length;
+  }
+  
   document.getElementById('opsFocusText').textContent = focus;
 }
 
@@ -1160,7 +1168,7 @@ function renderAll() {
   renderTaskList('list-mias', myTasks, 'mine');
   renderDoneToday(done);
   renderTaskList('list-libres', free, 'free');
-  renderOpsOverview(myTasks, free, done);
+  renderOpsOverview(myTasks, free, done, allData.global_stats);
 
   // Badges
   const badgeL = document.getElementById('badge-libres');
