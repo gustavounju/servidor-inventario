@@ -739,6 +739,53 @@ def api_post_rack_audit():
                 """,
                 (rack_id, estado_luces, limpieza_ok, iluminacion_ok, temperatura, observaciones, ruta_foto, tecnico)
             )
+            
+            # --- TAREA GLOBAL AGRUPADA (Flujo Transparente) ---
+            try:
+                import datetime
+                
+                # 1. Obtener nombre del rack para el registro
+                rack_row = conn.execute("SELECT nombre FROM racks WHERE id = %s", (rack_id,)).fetchone()
+                rack_name = rack_row["nombre"] if rack_row else f"ID {rack_id}"
+                
+                # 2. Buscar o crear la Tarea Diaria
+                today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+                task_desc = f"Auditoría de Racks - {today_str}"
+                
+                existing_task = conn.execute(
+                    "SELECT id FROM tasks WHERE descripcion = %s AND assigned_to = %s LIMIT 1",
+                    (task_desc, tecnico)
+                ).fetchone()
+                
+                if existing_task:
+                    task_id = existing_task["id"]
+                    # Actualizar fecha de completado
+                    conn.execute("UPDATE tasks SET completed_at = NOW() WHERE id = %s", (task_id,))
+                else:
+                    # Crear nueva tarea en estado Hecha
+                    cursor = conn.execute(
+                        """
+                        INSERT INTO tasks (descripcion, solicitante, categoria, tipo_actividad, estado, assigned_to, pc_name, completed_by, completed_at, created_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                        """,
+                        (task_desc, 'Sistema', 'Mantenimiento', 'tarea', 'Hecha', tecnico, 'Infraestructura', tecnico)
+                    )
+                    task_id = cursor.lastrowid
+                
+                # 3. Registrar la acción (el rack revisado)
+                str_luces = "OK" if estado_luces else "Falla"
+                str_limpieza = "OK" if limpieza_ok else "Falla"
+                accion_texto = f"Revisó Rack '{rack_name}'. Luces: {str_luces}, Limpieza: {str_limpieza}, Temp: {temperatura}°C"
+                if observaciones:
+                    accion_texto += f" | Obs: {observaciones}"
+                    
+                conn.execute(
+                    "INSERT INTO task_actions (task_id, user_name, action_text) VALUES (%s, %s, %s)",
+                    (task_id, tecnico, accion_texto)
+                )
+            except Exception as e:
+                print(f"Error registrando la tarea agrupada de rack: {e}")
+                
             conn.commit()
             
         return jsonify({"status": "success", "message": "Auditoría guardada exitosamente."})
