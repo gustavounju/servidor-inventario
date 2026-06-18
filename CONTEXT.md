@@ -18,7 +18,7 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 - **Puerto**: 3306
 
 ### Producción (Centro Judicial)
-- **Host**: 10.15.0.62
+- **Host**: 10.15.3.20
 - **Usuario/Contraseña**: Por configurar
 - **Puerto**: 3306
 
@@ -73,22 +73,43 @@ ServidorInventario/
 1. **Desarrollo local** en Windows (casa/oficina)
 2. **Pruebas** con MySQL local
 3. **Subida** de cambios a GitLab
-4. **Despliegue** en servidor Ubuntu con MySQL remoto (10.15.0.62)
+4. **Despliegue** en servidor Ubuntu con MySQL remoto (10.15.3.20)
 5. **Configuración** de variables de entorno para producción
 
 ## ⚙️ Variables de Entorno (.env)
 ```env
+# Claves principales
+FLASK_SECRET_KEY=[OCULTA]
 GEMINI_API_KEY=[OCULTA]
+
+# Base de Datos
 DB_HOST=127.0.0.1
+DB_PORT=3306
 DB_USER=root
 DB_PASS=[OCULTA]
 DB_NAME=inventario_dev
-DB_PORT=3306
+
+# Configuración de Servidor y Sesión
+SESSION_COOKIE_SECURE=false
+INVENTARIO_PUBLIC_BASE_URL=
+INVENTARIO_PUBLIC_HTTP_FALLBACK_URL=
+
+# Autenticación y Usuarios
+AUTH_MODE=local
+BOOTSTRAP_ADMIN_USERNAME=administrador
+BOOTSTRAP_ADMIN_PASSWORD=[OCULTA]
+INVENTARIO_API_TOKEN=
 
 # Green-API WhatsApp
 GREEN_API_ID_INSTANCE=7107547800
 GREEN_API_TOKEN_INSTANCE=5d291257bd7045a6b85b3c7b19d60cf3b59e0f9845124c8e83
 GREEN_API_PHONE=120363407471144144@g.us
+
+# OCR (Opcional)
+PDF_OCR_LANG=spa+eng
+PDF_OCR_DPI=300
+PDF_OCR_MIN_CHARS=20
+TESSERACT_CMD=
 ```
 
 ## 🚀 Comandos de Ejecución
@@ -125,5 +146,5 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 
 ---
 
-**Última actualización**: 18 de Marzo 2026  
+**Última actualización**: 18 de Junio 2026  
 **Versión del sistema**: Según APP_VERSION en utils/constants.py
