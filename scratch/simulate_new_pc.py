@@ -1,5 +1,4 @@
 import requests
-import json
 import datetime
 
 def simulate_new_pc():

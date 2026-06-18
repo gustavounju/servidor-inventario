@@ -1,3 +1,6 @@
+import json
+import traceback
+import os
 from flask import Blueprint, request, jsonify, redirect, url_for
 import json
 import datetime
@@ -53,7 +56,7 @@ def _build_printer_match_key(model, port):
     return ""
 
 def process_inventory_data(data):
-    from utils.constants import detect_fuero, clean_hex_string
+    from utils.constants import clean_hex_string
     debug_logs = []
     pc_name = data.get("PC_Nombre")
     if not pc_name: raise ValueError("Falta PC_Nombre en el JSON")
@@ -233,7 +236,7 @@ def process_inventory_data(data):
         current_pc = conn.execute("SELECT * FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
         if current_pc:
             # Check for reactivation from Cementerio
-            if str(current_pc.get("is_active", "True")) == "False":
+            if current_pc.get("is_active") == 0 or current_pc.get("is_active") == False or str(current_pc.get("is_active")) == "False":
                 reactivado = True
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                              (pc_name, "Estado de PC", "Cementerio (Baja)", "Reactivado (Activo)", "SISTEMA", "INVENTARIO_AUTOMATICO", request.remote_addr))
@@ -271,7 +274,7 @@ def process_inventory_data(data):
 
     sql = """
     INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, mac_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, office_version, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, is_active, full_json_data)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'True', %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, %s)
     ON DUPLICATE KEY UPDATE
         fuero=VALUES(fuero), os_name=VALUES(os_name), processor=VALUES(processor), ram_gb=VALUES(ram_gb), ip_address=VALUES(ip_address), mac_address=VALUES(mac_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_models=VALUES(disk_models), disk_speeds_rpm=VALUES(disk_speeds_rpm), motherboard_model=VALUES(motherboard_model), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), printer_sn=VALUES(printer_sn), office_version=VALUES(office_version), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), alerta_nombre_duplicado=VALUES(alerta_nombre_duplicado), is_active=1, full_json_data=VALUES(full_json_data)
     """

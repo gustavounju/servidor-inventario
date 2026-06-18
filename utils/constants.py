@@ -193,7 +193,7 @@ def clean_hex_string(s):
             bytes_data = bytes.fromhex(hex_data)
             try:
                 decoded = bytes_data.decode('utf-8', errors='ignore')
-            except:
+            except Exception:
                 decoded = bytes_data.decode('latin-1', errors='ignore')
             
             import re
@@ -205,6 +205,6 @@ def clean_hex_string(s):
             if len(cleaned) > 2:
                 return cleaned.strip()
             return decoded.strip()
-        except:
+        except Exception:
             return s
     return s

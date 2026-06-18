@@ -7,29 +7,29 @@
 /* ===== GOOGLE FONTS (Inter) ===== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-/* ===== VARIABLES DE TEMA — OCEANIC (default) ===== */
+/* ===== VARIABLES DE TEMA — PREMIUM DARK MODE (Por Defecto) ===== */
 :root {
-    --bg-color: #f8fafc;
-    --text-color: #1e293b;
-    --text-muted: #64748b;
-    --card-bg: #ffffff;
-    --card-border: #e2e8f0;
-    --accent-color: #475569;
-    --accent-dark: #334155;
-    --primary-gradient: linear-gradient(180deg, #334155 0%, #1e293b 100%);
-    --secondary-gradient: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-    --hero-bg: linear-gradient(135deg, #334155 0%, #1e293b 100%);
-    --table-header-bg: #334155;
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --kpi-shadow: rgba(0, 0, 0, 0.05);
-    --border-color: #e2e8f0;
-    --input-focus-shadow: rgba(71, 85, 105, 0.15);
-    --navbar-bg: #1e293b;
-    --navbar-border: rgba(255, 255, 255, 0.08);
-    --radius-xl: 16px;
-    --radius-lg: 12px;
-    --shadow-lg: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --bg-color: #020617;
+    --text-color: #e2e8f0;
+    --text-muted: #475569;
+    --card-bg: rgba(15, 23, 42, 0.7);
+    --card-border: #1e293b;
+    --accent-color: #818cf8;
+    --accent-dark: #6366f1;
+    --primary-gradient: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    --secondary-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    --hero-bg: linear-gradient(135deg, #000000 0%, #020617 60%, #1e1b4b 100%);
+    --table-header-bg: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.05);
+    --kpi-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --border-color: #1e293b;
+    --input-focus-shadow: rgba(99, 102, 241, 0.25);
+    --navbar-bg: #020617;
+    --navbar-border: rgba(255, 255, 255, 0.05);
+    --radius-xl: 20px;
+    --radius-lg: 16px;
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
 }
 
 [data-theme="emerald"] {
@@ -49,8 +49,8 @@
 
 [data-theme="midnight"] {
     --bg-color: #020617;
-    --text-color: #f1f5f9;
-    --text-muted: #94a3b8;
+    --text-color: #e2e8f0;
+    --text-muted: #475569;
     --card-bg: #0f172a;
     --card-border: #1e293b;
     --accent-color: #818cf8;
@@ -2323,11 +2323,23 @@ body {
 }
 
 /* ===== MODALES MODERNOS ===== */
+.modal-backdrop {
+    background-color: rgba(2, 6, 23, 0.6) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-backdrop.show {
+    opacity: 1;
+}
+
 .modal-content {
-    background: var(--card-bg);
-    border: none;
-    border-radius: 18px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 20px rgba(99, 102, 241, 0.1);
     overflow: hidden;
 }
 
@@ -2919,6 +2931,33 @@ textarea.form-control {
         padding: 12px 16px;
     }
 }
+/* FORCE DARK MODE FOR BOOTSTRAP TABLES */
+.table {
+    --bs-table-color: var(--text-color);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--card-border);
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.02);
+    --bs-table-striped-color: var(--text-color);
+    --bs-table-active-bg: rgba(255, 255, 255, 0.04);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.06);
+    --bs-table-hover-color: var(--text-color);
+    color: var(--text-color);
+    border-color: var(--card-border);
+}
+
+.table th, .table td {
+    border-bottom: 1px solid var(--card-border);
+    background-color: transparent !important;
+}
+
+.table > :not(caption) > * > * {
+    background-color: transparent !important;
+    color: var(--text-color);
+}
+
+/* =========================================================================
+   11. TABLA PRINCIPAL (INVENTORY)
+   ========================================================================= */
 /* ===== NEW APP SHELL (COMMAND CENTER) ===== */
 :root {
     --header-height: 70px;
@@ -3255,42 +3294,66 @@ textarea.form-control {
 }
 .kpi-scroll-container::-webkit-scrollbar { display: none; }
 .kpi-mini-chip {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 0.72rem; color: #475569;
-    text-decoration: none; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.72rem; color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 6px 10px;
+    text-decoration: none; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.kpi-mini-chip i { font-size: 0.85rem; opacity: 0.7; }
-.kpi-mini-chip strong { color: #111827; font-weight: 900; }
-.kpi-mini-chip span { font-weight: 500; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.02em; }
-.kpi-mini-chip:hover { color: #0f172a; transform: translateY(-1px); }
-.kpi-mini-chip.active { color: #1d4ed8; border-bottom: 2px solid #2563eb; font-weight: 900; }
-.kpi-mini-chip.active strong { color: #1d4ed8; }
+.kpi-mini-chip i { font-size: 0.85rem; opacity: 0.8; }
+.kpi-mini-chip strong { color: var(--text-color); font-weight: 800; }
+.kpi-mini-chip span { font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.kpi-mini-chip:hover { 
+    color: var(--text-color); 
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px); 
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 12px rgba(59, 130, 246, 0.2);
+}
+.kpi-mini-chip.active { 
+    color: #fff; 
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4); 
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+}
+.kpi-mini-chip.active strong { color: #fff; }
 
 .fleet-mini-chip {
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    gap: 5px;
-    min-height: 26px;
-    padding: 4px 7px;
+    border-radius: 8px;
+    gap: 6px;
+    min-height: 28px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .fleet-mini-chip.active {
-    border-bottom-width: 1px;
+    box-shadow: 0 0 15px currentColor;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .fleet-mini-chip--healthy {
-    border-color: #bbf7d0;
-    color: #15803d;
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #34d399;
 }
+.fleet-mini-chip--healthy:hover { box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 12px rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.6); }
+.fleet-mini-chip--healthy strong { color: #34d399; }
 
 .fleet-mini-chip--warning {
-    border-color: #fed7aa;
-    color: #c2410c;
+    border-color: rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
 }
+.fleet-mini-chip--warning:hover { box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 12px rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.6); }
+.fleet-mini-chip--warning strong { color: #fbbf24; }
 
 .fleet-mini-chip--danger {
-    border-color: #fecaca;
-    color: #b91c1c;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(185, 28, 28, 0.1) 100%);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+.fleet-mini-chip--danger:hover { box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 16px rgba(239, 68, 68, 0.3); border-color: rgba(239, 68, 68, 0.8); }
+.fleet-mini-chip--danger strong { color: #fecaca; }
 }
 
 .fleet-mini-chip--info {

@@ -1,8 +1,11 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request, g
 import os
 import threading
 import platform
 import socket
+import uuid
+import json
+import logging.handlers
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -17,11 +20,51 @@ from database.migrations import run_all_migrations
 import time
 import logging
 import datetime
-import random
 from utils.constants import UPLOAD_FOLDER, LOG_FOLDER, APP_VERSION, list_fuero_mapping_rows
 from services.ai_assistant import train_ai_model
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# --- OBSERVABILIDAD E INSTRUMENTACIÓN ---
+os.makedirs('logs', exist_ok=True)
+
+class RequestIdFilter(logging.Filter):
+    def filter(self, record):
+        from flask import has_request_context, g
+        if has_request_context():
+            record.request_id = getattr(g, 'request_id', 'N/A')
+        else:
+            record.request_id = 'SYSTEM'
+        return True
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            'timestamp': self.formatTime(record, self.datefmt),
+            'level': record.levelname,
+            'event': record.getMessage(),
+            'request_id': getattr(record, 'request_id', 'N/A')
+        }
+        if record.exc_info:
+            log_record['exc_info'] = self.formatException(record.exc_info)
+        return json.dumps(log_record)
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+if logger.hasHandlers():
+    logger.handlers.clear()
+
+req_filter = RequestIdFilter()
+
+json_handler = logging.handlers.RotatingFileHandler(
+    'logs/inventario.json.log', maxBytes=5*1024*1024, backupCount=3, encoding='utf-8'
+)
+json_handler.setFormatter(JsonFormatter())
+json_handler.addFilter(req_filter)
+logger.addHandler(json_handler)
+
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - [%(request_id)s] - %(message)s'))
+console_handler.addFilter(req_filter)
+logger.addHandler(console_handler)
 
 _GLOBAL_CACHE_LOCK = threading.Lock()
 _GLOBAL_CACHE = {
@@ -57,6 +100,7 @@ from blueprints.bp_setup import _get_secure_launcher_command
 # Inicializar Flask
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000 # 1 year cache for static files
 app.secret_key = os.environ.get('FLASK_SECRET_KEY')
 if not app.secret_key:
     raise EnvironmentError("FLASK_SECRET_KEY no está definida en el .env. El servidor no puede arrancar de forma segura.")
@@ -95,7 +139,6 @@ app.jinja_env.filters['datetime_es'] = format_datetime_es
 # Contexto Global para todas las plantillas (Jinja2)
 @app.context_processor
 def inject_global_vars():
-    from utils.auth import is_authenticated, current_user, auth_mode_label, has_permission, allowed_module_links, role_label, available_roles
     now = time.time()
     user_auth = is_authenticated()
     
@@ -311,6 +354,40 @@ with app.app_context():
 
     ensure_generic_pc()
     train_ai_model()
+
+# --- SECURITY HARDENING & OBSERVABILITY ---
+@app.before_request
+def inject_request_id():
+    g.request_id = request.headers.get('X-Request-Id', str(uuid.uuid4()))
+    app.logger.info(f"Incoming Request: {request.method} {request.path}")
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    # response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:;"
+    return response
+
+@app.errorhandler(500)
+def handle_500_error(e):
+    from flask import jsonify, request
+    app.logger.error(f"Server Error: {e}")
+    if request.path.startswith('/api/'):
+        return jsonify({"status": "error", "message": "Error interno del servidor. Contacte al administrador."}), 500
+    return "Error interno del servidor. Contacte al administrador.", 500
+
+@app.errorhandler(Exception)
+def handle_unhandled_exception(e):
+    from flask import jsonify, request
+    # Ignorar HttpExceptions como 404
+    from werkzeug.exceptions import HTTPException
+    if isinstance(e, HTTPException):
+        return e
+    app.logger.error(f"Unhandled Exception: {e}")
+    if request.path.startswith('/api/'):
+        return jsonify({"status": "error", "message": "Ocurrió un problema inesperado."}), 500
+    return "Ocurrió un problema inesperado.", 500
 
 if __name__ == "__main__":
     sistema = platform.system()

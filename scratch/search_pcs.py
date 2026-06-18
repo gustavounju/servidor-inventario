@@ -1,5 +1,4 @@
 from database.db_core import get_db_connection
-import json
 
 def search_pcs(patterns):
     with get_db_connection() as conn:

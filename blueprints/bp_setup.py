@@ -31,6 +31,11 @@ def _rewrite_client_script(content):
         modified_content = modified_content.replace(source, current_base_url)
 
     modified_content = re.sub(r"https?://(?:\d{1,3}\.){3}\d{1,3}:5000", current_base_url, modified_content)
+    
+    import os
+    api_token = os.environ.get("API_TOKEN", "super-secret-token")
+    modified_content = modified_content.replace("__API_KEY__", api_token)
+    
     return current_host, current_base_url, modified_content
 
 def _get_secure_launcher_command(current_base_url, current_fallback_url):
@@ -115,7 +120,7 @@ def install_page():
             <span id="copyMsg" style="color: green; margin-left: 10px; display: none;">¡Copiado!</span>
             <script>
                 function copyCommand() {{
-                    const cmd = document.getElementById('cmdText').innerText.trim() + "\\r\\n\\r\\n\\r\\n";
+                    const cmd = document.getElementById('cmdText').innerText.trim();
                     if (navigator.clipboard && window.isSecureContext) {{
                         navigator.clipboard.writeText(cmd).then(showCopied);
                     }} else {{

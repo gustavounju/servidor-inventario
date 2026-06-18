@@ -10,92 +10,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/static/css/gold.css">
   <style>
     :root {
-      --bg: #eef3f2;
-      --bg2: #123c3b;
-      --bg3: #dbe8e5;
-      --card: #ffffff;
-      --card-hover: #f4faf8;
-      --border: rgba(18, 60, 59, 0.12);
-      --accent: #2f7d6d;
-      --accent2: #e05d44;
-      --green: #168a5b;
-      --yellow: #c98915;
-      --red: #c24135;
-      --text: #18302f;
-      --text-muted: #667875;
-      --input-bg: #f7fbfa;
-      --radius: 8px;
-      --radius-sm: 8px;
-      --shadow: 0 10px 28px rgba(18, 60, 59, 0.14);
-    }
-
-
-
-    :root[data-theme="dark"] {
-      --bg: #0b1121;
-      --bg2: #151e32;
-      --bg3: #1f2940;
-      --card: #151e32;
-      --card-hover: #1f2940;
-      --border: rgba(255, 255, 255, 0.08);
-      --accent: #3b82f6;
-      --accent2: #ef4444;
+      --bg: var(--bg-color);
+      --bg2: var(--navbar-bg);
+      --bg3: var(--card-border);
+      --card: var(--card-bg);
+      --card-hover: rgba(255, 255, 255, 0.05);
+      --border: var(--border-color);
+      --accent: var(--accent-color);
+      --accent2: var(--accent-dark);
       --green: #10b981;
       --yellow: #f59e0b;
       --red: #ef4444;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --input-bg: #0f172a;
-      --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    }
-
-    :root[data-theme="femenino"] {
-      --bg: #fdfafc;
-      --bg2: linear-gradient(90deg, #ff0018, #ffa52c, #ffff41, #008018, #0000f9, #86007d);
-      --bg3: #f3e8f0;
-      --card: #ffffff;
-      --card-hover: #faf5f8;
-      --border: rgba(134, 0, 125, 0.15);
-      --accent: #86007d;
-      --accent2: #ff0018;
-      --green: #008018;
-      --yellow: #ffa52c;
-      --red: #ff0018;
-      --text: #2d1b2e;
-      --text-muted: #8a6c8c;
-      --input-bg: #ffffff;
-      --shadow: 0 8px 24px rgba(255, 0, 120, 0.15);
-    }
-
-    :root[data-theme="retro"] {
-      --bg: #000000;
-      --bg2: #000000;
-      --bg3: #111111;
-      --card: #000000;
-      --card-hover: #111111;
-      --border: #2121ff;
-      --accent: #ffff00;
-      --accent2: #ff0000;
-      --green: #00ff00;
-      --yellow: #ffff00;
-      --red: #ff0000;
-      --text: #ffffff;
-      --text-muted: #aaaaaa;
-      --input-bg: #000000;
-      --shadow: 4px 4px 0px rgba(33, 33, 255, 0.5);
-    }
-    
-    [data-theme="retro"] * {
-      font-family: 'Courier New', Courier, monospace !important;
-      border-radius: 0 !important;
-      letter-spacing: 0.05em;
-    }
-    
-    [data-theme="retro"] .top-bar-brand {
-      border: 2px solid #ffff00;
-      padding: 4px 8px;
+      --text: var(--text-color);
+      --text-muted: var(--text-muted);
+      --input-bg: rgba(0, 0, 0, 0.2);
+      --radius: var(--radius-xl);
+      --radius-sm: var(--radius-lg);
+      --shadow: var(--shadow-lg);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -125,137 +59,98 @@
     .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: #f6c453; box-shadow: 0 0 0 4px rgba(246, 196, 83, 0.16); }
     .brand-name { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; }
     .brand-sub { font-size: 0.72rem; color: rgba(255,255,255,0.72); font-weight: 400; }
-    .tech-badge {
-      display: flex; align-items: center; gap: 6px;
-      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 20px; padding: 5px 12px; font-size: 0.8rem;
-      color: #fff; white-space: nowrap; cursor: pointer;
-    }
-    .tech-badge i { color: #dff7ef; font-size: 0.9rem; }
+    /* =========================================================
+       NUEVO LAYOUT: APP NATIVA (BOTTOM BAR)
+       ========================================================= */
+    .app-shell { display: flex; flex-direction: column; height: 100vh; height: 100dvh; background: var(--bg-color); }
 
-    /* ── Tab Nav ── */
-    .tab-nav {
-      display: flex;
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      box-shadow: 0 6px 18px rgba(18, 60, 59, 0.08);
+    /* --- Minimal Top Header --- */
+    .minimal-header {
+      padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
+      background: var(--card-bg); border-bottom: 1px solid var(--border-color);
+      z-index: 50; position: sticky; top: 0; backdrop-filter: blur(10px); background: rgba(15,23,42,0.85);
     }
-    .tab-btn {
-      flex: 1; padding: 11px 4px; border: none; background: none;
-      color: var(--text-muted); font-size: 0.75rem; font-weight: 600;
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
-      cursor: pointer; transition: color .2s; position: relative;
-      text-transform: uppercase; letter-spacing: 0.04em;
+    .minimal-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--text-color); font-size: 1.1rem; }
+    .minimal-actions { display: flex; gap: 12px; }
+    .minimal-actions button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 36px; height: 36px; color: var(--text-color); display:flex; align-items:center; justify-content:center; }
+
+    /* --- Bottom App Bar --- */
+    .bottom-app-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 8px 10px 20px 10px; z-index: 100;
+      box-shadow: 0 -10px 20px rgba(0,0,0,0.4);
     }
-    .tab-btn i { font-size: 1.1rem; }
-    .tab-btn.active { color: var(--accent); }
-    .tab-btn.active::after {
-      content: ''; position: absolute; bottom: 0; left: 20%; right: 20%;
-      height: 2px; background: var(--accent); border-radius: 2px 2px 0 0;
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--text-muted); text-decoration: none; font-size: 0.65rem; font-weight: 600; gap: 4px;
+      flex: 1; transition: all 0.2s; position: relative;
     }
-    .tab-badge {
-      position: absolute; top: 6px; right: calc(50% - 14px);
-      background: var(--red); color: #fff; font-size: 0.6rem; font-weight: 700;
-      border-radius: 8px; padding: 1px 5px; min-width: 16px; text-align: center;
+    .bottom-nav-item i { font-size: 1.3rem; transition: transform 0.2s; }
+    .bottom-nav-item.active { color: var(--accent-color); }
+    .bottom-nav-item.active i { transform: scale(1.15); }
+    
+    .bottom-nav-fab-container { position: relative; top: -20px; }
+    .bottom-nav-fab {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-color), #3b82f6);
+      box-shadow: 0 8px 20px rgba(59,130,246,0.4);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 1.6rem; border: 4px solid #0f172a; transition: transform 0.2s;
+    }
+    .bottom-nav-fab:active { transform: scale(0.9); }
+    .bottom-nav-fab.recording {
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      box-shadow: 0 8px 20px rgba(239,68,68,0.5);
+      animation: rec-pulse 1s infinite;
     }
 
-    /* ── Content Panels ── */
-    .content-area { flex: 1; overflow: hidden; position: relative; }
-    .panel { position: absolute; inset: 0; overflow-y: auto; padding: 16px; display: none; }
-    .panel.active { display: block; }
-    .panel::-webkit-scrollbar { width: 4px; }
-    .panel::-webkit-scrollbar-track { background: transparent; }
-    .panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .bottom-badge {
+      position: absolute; top: -2px; right: calc(50% - 18px);
+      background: #ef4444; color: white; border-radius: 10px; padding: 2px 6px;
+      font-size: 0.6rem; font-weight: 800; border: 2px solid #0f172a;
+    }
 
-    /* ── Cards ── */
+    /* --- Content Area --- */
+    .content-area { flex: 1; overflow-y: auto; padding-bottom: 90px; }
+    .panel { display: none; padding: 16px; }
+    .panel.active { display: block; animation: fade-in 0.3s ease; }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- Modern Task Cards --- */
     .task-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 14px 15px;
-      margin-bottom: 10px; transition: background .15s, transform .15s;
+      background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 16px;
+      margin-bottom: 12px; transition: transform 0.2s;
       position: relative; overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    .task-card:active { background: var(--card-hover); transform: scale(0.985); }
-    .task-card-accent {
-      position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 4px 0 0 4px;
-    }
-    .task-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
-    .task-desc { font-size: 0.88rem; font-weight: 600; line-height: 1.4; color: var(--text); }
-    .task-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .task-card:active { transform: scale(0.98); background: rgba(30, 41, 59, 0.9); }
+    .task-card-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+    .task-desc { font-size: 0.95rem; font-weight: 700; color: var(--text-color); margin-bottom: 8px; line-height: 1.3; }
+    .task-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .meta-chip {
-      display: flex; align-items: center; gap: 3px; background: var(--bg3);
-      border-radius: 6px; padding: 2px 7px; font-size: 0.7rem; color: var(--text-muted);
+      background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px; padding: 4px 8px; font-size: 0.7rem; color: var(--text-muted);
+      display: inline-flex; align-items: center; gap: 4px;
     }
-    .meta-chip-requester {
-      background: rgba(224,93,68,0.14);
-      border: 1px solid rgba(224,93,68,0.28);
-      color: #a83f2c;
-      font-weight: 800;
-    }
-    .meta-chip-requester i { color: var(--accent2); }
-    .meta-chip-button {
-      border: 0;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    .meta-chip-button:active { transform: scale(.98); }
-    .status-pill {
-      font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
-      text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
-    }
-    .pill-pending { background: rgba(245,158,11,0.15); color: var(--yellow); }
-    .pill-mine { background: rgba(47,125,109,0.14); color: var(--accent); }
-    .pill-done { background: rgba(34,197,94,0.15); color: var(--green); }
-
-    .card-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .card-actions { display: flex; gap: 10px; margin-top: 14px; }
     .btn-act {
-      flex: 1; padding: 8px; border: none; border-radius: var(--radius-sm);
-      font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all .2s;
-      display: flex; align-items: center; justify-content: center; gap: 5px;
+      flex: 1; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.85rem;
+      border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: opacity 0.2s;
     }
-    .btn-claim { background: rgba(47,125,109,0.14); color: var(--accent); border: 1px solid rgba(47,125,109,0.24); }
-    .btn-claim:active { background: rgba(47,125,109,0.24); }
-    .btn-done { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
-    .btn-done:active { background: rgba(34,197,94,0.3); }
+    .btn-act:active { opacity: 0.7; }
+    .btn-claim { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+    .btn-done { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
 
     /* ── Empty State ── */
     .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
     .empty-state i { font-size: 2.5rem; display: block; margin-bottom: 12px; opacity: .4; }
     .empty-state p { font-size: 0.85rem; }
-
-    /* ── FAB – Dictado por Voz ── */
-    .fab-area {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      padding: 16px 20px 28px;
-      background: linear-gradient(to top, var(--bg) 65%, rgba(238,243,242,0));
-      display: flex; align-items: flex-end; justify-content: center; gap: 14px;
-      pointer-events: none;
-    }
-    .fab-secondary {
-      width: 48px; height: 48px; border-radius: 50%; border: none;
-      background: var(--card); color: var(--text-muted);
-      font-size: 1.15rem; cursor: pointer; pointer-events: all;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--shadow); transition: all .2s;
-    }
-    .fab-secondary:active { transform: scale(.9); }
-    .fab-main {
-      width: 64px; height: 64px; border-radius: 50%; border: none;
-      background: linear-gradient(135deg, var(--accent), #34a58d);
-      color: #fff; font-size: 1.6rem; cursor: pointer; pointer-events: all;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 6px 28px rgba(47,125,109,0.34); transition: all .2s;
-    }
-    .fab-main:active { transform: scale(.9); }
-    .fab-main.recording {
-      background: linear-gradient(135deg, var(--red), #c0392b);
-      box-shadow: 0 6px 28px rgba(239,68,68,0.5);
-      animation: rec-pulse 1s ease-in-out infinite;
-    }
-    @keyframes rec-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.08); } }
-
-    /* Leave space for FAB */
-    .panel { padding-bottom: 100px; }
 
     /* ── Voice Modal ── */
     .voice-overlay {
@@ -465,9 +360,8 @@
     }
   </style>
   <script>
-    const savedTheme = localStorage.getItem('techTheme');
-    if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
-  
+    document.documentElement.setAttribute('data-theme', 'midnight');
+
 function openTaskActionsOverlay(taskId) {
     document.getElementById('mobileActionTaskId').value = taskId;
     document.getElementById('mobileNewTaskAction').value = '';
@@ -533,114 +427,51 @@ function submitMobileTaskAction() {
 
 <div class="app-shell">
 
-  <!-- Top Bar -->
-  <div class="top-bar" style="background: linear-gradient(135deg, rgba(67, 161, 213, 0.95) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(67, 161, 213, 0.95) 100%); border-bottom: 2px solid #fcd34d; color: #0f172a; text-shadow: none;">
-    <div class="top-bar-brand">
-      <div style="display:flex; align-items:center; margin-right: 6px;">
-        <img src="/static/img/trionda.jpg" alt="Trionda 2026" style="height: 28px; width: 28px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      </div>
-      <div>
-        <div class="brand-name" style="color:#0f172a; font-weight:900;">Técnicos</div>
-      </div>
+  <!-- Minimal Header -->
+  <div class="minimal-header">
+    <div class="minimal-brand">
+      <img src="/static/img/trionda.jpg" alt="Logo" style="height: 28px; width: 28px; border-radius: 50%;">
+      Técnicos
     </div>
-    <div class="top-bar-actions" style="display:flex;align-items:center;gap:8px;">
-      <button type="button" class="tech-badge" onclick="toggleTheme()" title="Cambiar tema" style="border:none;background:rgba(15,23,42,0.1); color:#0f172a;">
-        <i class="bi bi-palette-fill" style="color:#0f172a;"></i>
-      </button>
-      <button type="button" class="tech-badge" id="enableAlertsBtn" onclick="enableAlerts()" title="Activar avisos" style="border:none;background:rgba(15,23,42,0.1); color:#0f172a;">
-        <i class="bi bi-bell-fill" style="color:#0f172a;"></i>
-      </button>
-      <div class="tech-badge" onclick="selectTechnician()" style="background:rgba(15,23,42,0.1); color:#0f172a; border-color:transparent;">
-        <i class="bi bi-person-circle" style="color:#0f172a;"></i>
-        <span id="techBadgeLabel">{{ mobile_identity or 'Seleccionar' }}</span>
-      </div>
-      <a href="/logout" class="tech-badge" style="background:rgba(15,23,42,0.1); color:#0f172a; border-color:transparent; text-decoration:none;" title="Cerrar sesión">
-        <i class="bi bi-box-arrow-right" style="color:#0f172a;"></i>
-      </a>
+    <div class="minimal-actions">
+      <button onclick="refreshData()" title="Refrescar"><i class="bi bi-arrow-clockwise" id="refreshIcon"></i></button>
+      <button onclick="openManualModal()" title="Nueva Tarea Manual"><i class="bi bi-plus-lg"></i></button>
+      {% if has_access('audit_racks') %}
+      <button onclick="openRackAuditModal()" title="Auditar Racks"><i class="bi bi-server text-info"></i></button>
+      {% endif %}
     </div>
   </div>
 
   {% if efemeride_actual %}
-  <div style="background: var(--card); padding: 12px 20px; border-bottom: 1px solid var(--border); display:flex; align-items:center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); z-index: 10;">
+  <div style="background: rgba(15,23,42,0.8); padding: 12px 20px; border-bottom: 1px solid var(--border-color); display:flex; align-items:center; gap: 12px;">
       <div style="font-size: 1.8rem; line-height: 1;">{{ efemeride_actual.icono }}</div>
       <div>
-          <div style="font-weight: 800; font-size: 0.95rem; color: var(--accent); margin-bottom: 2px;">{{ efemeride_actual.titulo }}</div>
+          <div style="font-weight: 800; font-size: 0.95rem; color: var(--accent-color); margin-bottom: 2px;">{{ efemeride_actual.titulo }}</div>
           <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.35;">{{ efemeride_actual.descripcion }}</div>
       </div>
   </div>
   {% endif %}
-
-  <!-- Tab Nav -->
-  <div class="tab-nav">
-    <button class="tab-btn active" id="tab-mias" onclick="switchTab('mias')">
-      <i class="bi bi-list-task"></i> Mis Tareas
-    </button>
-    <button class="tab-btn" id="tab-libres" onclick="switchTab('libres')">
-      <i class="bi bi-inbox"></i> Libres
-      <span class="tab-badge" id="badge-libres" style="display:none">0</span>
-    </button>
-    {% if current_user.role == 'administrador' %}
-      <button class="tab-btn" id="tab-avisos" onclick="switchTab('avisos')">
-        <i class="bi bi-bell"></i> Avisos
-        <span class="tab-badge" id="badge-avisos" style="display:none">0</span>
-      </button>
-    {% endif %}
-  </div>
 
   <!-- Content -->
   <div class="content-area">
 
     <!-- Panel: Mis Tareas -->
     <div class="panel active" id="panel-mias">
-      <div class="ops-overview" id="opsOverview">
-        <div class="ops-title">Resumen de tareas</div>
-        <div class="ops-headline" id="opsHeadline">Cargando tareas asignadas...</div>
-        <div class="metrics-carousel" id="metricsCarousel" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 8px; scrollbar-width: none; margin-bottom: 8px;">
-          <!-- Slide 1: Mis Métricas -->
-          <div style="flex: 0 0 100%; scroll-snap-align: start;">
-            <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px;"><i class="bi bi-person-fill"></i> Mis Métricas (Hoy)</div>
-            <div class="ops-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsMineCount">0</div>
-                <div class="ops-label">En Curso</div>
-              </div>
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsMyDoneCount">0</div>
-                <div class="ops-label">Hechas</div>
-              </div>
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsMyTotalCount" style="color: var(--green);">0</div>
-                <div class="ops-label">Total</div>
-              </div>
-            </div>
+      <div class="ops-overview" id="opsOverview" style="margin-bottom: 16px;">
+        <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom: 8px;">Mis Métricas (Hoy)</div>
+        <div style="display: flex; gap: 12px;">
+          <div style="flex:1; background: rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; text-align: center;">
+            <div id="opsMineCount" style="font-size: 1.4rem; font-weight: 800; color: var(--text-color);">0</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform:uppercase; font-weight: 700;">En Curso</div>
           </div>
-          <!-- Slide 2: Equipo -->
-          <div style="flex: 0 0 100%; scroll-snap-align: start;">
-            <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;"><i class="bi bi-people-fill"></i> Equipo (Global)</div>
-            <div class="ops-grid">
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsGlobalMine">0</div>
-                <div class="ops-label">Tomadas</div>
-              </div>
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsGlobalFree">0</div>
-                <div class="ops-label">Libres</div>
-              </div>
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsGlobalDone">0</div>
-                <div class="ops-label">Hechas</div>
-              </div>
-            </div>
+          <div style="flex:1; background: rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; text-align: center;">
+            <div id="opsMyDoneCount" style="font-size: 1.4rem; font-weight: 800; color: #34d399;">0</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform:uppercase; font-weight: 700;">Hechas</div>
           </div>
-        </div>
-        <!-- Carousel Dots -->
-        <div style="display: flex; justify-content: center; gap: 6px; margin-bottom: 12px;" id="carouselDots">
-          <div class="dot active" style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent); transition: all .3s;"></div>
-          <div class="dot" style="width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all .3s;"></div>
         </div>
       </div>
       <div id="list-mias"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
-      <div id="list-done-today" style="margin-top:6px;"></div>
+      <div id="list-done-today" style="margin-top:16px;"></div>
     </div>
 
     <!-- Panel: Libres -->
@@ -657,28 +488,40 @@ function submitMobileTaskAction() {
 
   </div>
 
-  <!-- FAB Area -->
-  <div class="fab-area" style="gap: 12px;">
-    <button class="fab-secondary" onclick="openManualModal()" title="Tarea manual">
-      <i class="bi bi-pencil-square"></i>
-    </button>
+  <!-- Bottom App Bar -->
+  <nav class="bottom-app-bar">
+    <a href="#" class="bottom-nav-item active" id="tab-mias" onclick="switchTab('mias')">
+      <i class="bi bi-list-task"></i>
+      <span>Mis Tareas</span>
+    </a>
+    <a href="#" class="bottom-nav-item" id="tab-libres" onclick="switchTab('libres')">
+      <i class="bi bi-inbox"></i>
+      <span>Libres</span>
+      <span class="bottom-badge" id="badge-libres" style="display:none">0</span>
+    </a>
+    <div class="bottom-nav-fab-container">
+      <button class="bottom-nav-fab" id="fabVoice" onclick="toggleVoice()">
+        <i class="bi bi-mic-fill" id="fabIcon"></i>
+      </button>
+    </div>
+    {% if current_user.role == 'administrador' %}
+    <a href="#" class="bottom-nav-item" id="tab-avisos" onclick="switchTab('avisos')">
+      <i class="bi bi-bell"></i>
+      <span>Avisos</span>
+      <span class="bottom-badge" id="badge-avisos" style="display:none">0</span>
+    </a>
+    {% endif %}
     {% if current_user.role != 'operador' %}
-      <button class="fab-secondary" onclick="window.location.href='/tecnicos/scanner'" title="Escanear Código de Barras">
-        <i class="bi bi-upc-scan"></i>
-      </button>
+    <a href="/tecnicos/scanner" class="bottom-nav-item">
+      <i class="bi bi-upc-scan"></i>
+      <span>Scan</span>
+    </a>
     {% endif %}
-    {% if has_access('audit_racks') %}
-      <button class="fab-secondary" onclick="openRackAuditModal()" title="Auditar Racks" style="color:var(--accent);">
-        <i class="bi bi-server"></i>
-      </button>
-    {% endif %}
-    <button class="fab-main" id="fabVoice" onclick="toggleVoice()" title="Dictar tarea por voz">
-      <i class="bi bi-mic-fill" id="fabIcon"></i>
-    </button>
-    <button class="fab-secondary" onclick="refreshData()" title="Actualizar">
-      <i class="bi bi-arrow-clockwise" id="refreshIcon"></i>
-    </button>
-  </div>
+    <a href="#" class="bottom-nav-item" onclick="confirmLogout()">
+      <i class="bi bi-box-arrow-right"></i>
+      <span>Salir</span>
+    </a>
+  </nav>
 
 </div>
 
@@ -1047,29 +890,19 @@ function playTaskAlarm() {
 // ── Tabs ──────────────────────────────────────────
 function switchTab(name) {
   if (!isAdmin && name === 'avisos') return;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   const tab = document.getElementById('tab-' + name);
   const panel = document.getElementById('panel-' + name);
-  if (!tab || !panel) return;
-  tab.classList.add('active');
-  panel.classList.add('active');
+  if (tab) tab.classList.add('active');
+  if (panel) panel.classList.add('active');
   if (name === 'avisos') loadNotifications();
 }
 
-// ── Technician selector ────────────────────────────
-function selectTechnician() {
-  const techs = allData.technicians || [];
-  if (!techs.length) { alert('Sin técnicos disponibles.'); return; }
-  const opts = techs.map((t,i) => `${i+1}. ${t.name}`).join('\n');
-  const ans = prompt('Seleccioná tu nombre:\n\n' + opts);
-  if (!ans) return;
-  const idx = parseInt(ans) - 1;
-  if (idx >= 0 && idx < techs.length) {
-    techId = techs[idx].name;
-    document.getElementById('techBadgeLabel').textContent = techId;
-    document.cookie = `tech_identity=${encodeURIComponent(techId)};path=/;max-age=31536000`;
-    renderAll();
+// ── Logout ────────────────────────────────────────────
+function confirmLogout() {
+  if (confirm(`¿Seguro que deseas cerrar sesión${techId ? ', ' + techId : ''}?`)) {
+    window.location.href = "/logout";
   }
 }
 
@@ -1308,8 +1141,8 @@ function taskCard(t, mode) {
 // ── Acciones ──────────────────────────────────────
 async function claimTask(id) {
   if (!techId) {
-    alert("Por favor, selecciona tu nombre de técnico arriba primero.");
-    return selectTechnician();
+    alert("Sesión no iniciada o perfil no detectado.");
+    return window.location.href = "/logout";
   }
   try {
     const res = await postJSON(API + '/update_task', { id, action:'claim' });

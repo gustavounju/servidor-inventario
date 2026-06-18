@@ -1,7 +1,5 @@
 import datetime
-from io import BytesIO
 from fpdf import FPDF
-from database.db_core import get_db_connection
 
 # Helper para fechas en español
 def format_date_es(d_obj):
@@ -37,7 +35,7 @@ def format_datetime_es(dt_val):
         nombre_dia = dias[dt_obj.weekday()]
         nombre_mes = meses[dt_obj.month]
         return f"{nombre_dia} {dt_obj.day:02d} de {nombre_mes} del {dt_obj.year} a las {dt_obj.hour:02d}:{dt_obj.minute:02d}"
-    except Exception as e:
+    except Exception:
         # Fallback en caso de formato inesperado
         return str(dt_val)
 

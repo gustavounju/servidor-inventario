@@ -1,6 +1,4 @@
 from database.db_core import get_db_connection
-import json
-import sys
 
 def get_pc_json(pc_name):
     try:

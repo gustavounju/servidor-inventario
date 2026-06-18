@@ -151,7 +151,7 @@ try {
         ""Salud"": { ""Uptime_Dias"": 0 }
     }"
 
-    $servidor = "__INVENTARIO_SERVER_URL__/submit_inventory"
+    $servidor = "__INVENTARIO_SERVER_URL__/submit_inventory?api_key=__API_KEY__"
     $wc = New-Object System.Net.WebClient
     $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
     $wc.Encoding = [System.Text.Encoding]::UTF8

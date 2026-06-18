@@ -1,5 +1,4 @@
 from flask import Blueprint, jsonify, request, render_template
-from utils.auth import current_username
 from database.db_core import get_db_connection
 
 bp_stock = Blueprint('stock', __name__)

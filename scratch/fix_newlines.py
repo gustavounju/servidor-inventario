@@ -1,4 +1,3 @@
-import os
 
 filepath = 'blueprints/bp_tasks.py'
 with open(filepath, 'r', encoding='utf-8') as f:

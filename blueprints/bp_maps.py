@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 import os
 from database.db_core import get_db_connection
-from utils.auth import current_username, auth_guard
 from werkzeug.utils import secure_filename
 from utils.constants import UPLOAD_FOLDER
 

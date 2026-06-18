@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, jsonify, request
 from database.db_core import get_db_connection
-from utils.auth import is_authenticated, current_user, has_permission, role_label
+from utils.auth import is_authenticated, current_user, role_label
 import datetime
 from services.ai_assistant import predict_category
 from services.push_notifications import notify_all_technicians

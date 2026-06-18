@@ -90,7 +90,7 @@ class PdfOcrQueue:
             self._queue.put_nowait(queued_job)
         except queue.Full as exc:
             raise OcrQueueFullError(
-                f"El OCR está ocupado. Hay demasiados trabajos en espera. Reintenta en unos minutos."
+                "El OCR está ocupado. Hay demasiados trabajos en espera. Reintenta en unos minutos."
             ) from exc
 
         with self._lock:

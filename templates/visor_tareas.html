@@ -48,46 +48,6 @@
             transition: all 0.3s ease;
         }
 
-        /* --- MODO MUNDIAL 2026 --- */
-        .world-cup-theme {
-            background: linear-gradient(135deg, rgba(67, 161, 213, 0.95) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(67, 161, 213, 0.95) 100%) !important;
-            border-bottom: 3px solid #fcd34d !important;
-            box-shadow: 0 4px 20px rgba(67, 161, 213, 0.3);
-        }
-        .world-cup-theme .visor-logo span,
-        .world-cup-theme #visorClock {
-            color: #0f172a !important;
-            text-shadow: none !important;
-            font-weight: 900 !important;
-        }
-        .world-cup-theme .visor-logo i {
-            color: #d97706 !important; /* Oro */
-        }
-        .world-cup-theme .btn-auth {
-            background: #0f172a !important;
-            color: #fff !important;
-            border: none;
-        }
-        .world-cup-countdown {
-            font-weight: 800;
-            font-size: 0.9rem;
-            background: #0f172a;
-            color: #fcd34d !important;
-            padding: 6px 14px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            border: 1px solid rgba(252, 211, 77, 0.3);
-            letter-spacing: 0.5px;
-            animation: pulse-gold 2s infinite;
-        }
-        @keyframes pulse-gold {
-            0% { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0.4); }
-            70% { box-shadow: 0 0 0 6px rgba(252, 211, 77, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0); }
-        }
 
         .visor-logo {
             display: flex;
@@ -422,18 +382,12 @@
 <body>
 
     <div class="visor-shell">
-        <nav class="visor-nav world-cup-theme">
+        <nav class="visor-nav">
             <div class="d-flex align-items-center gap-4">
                 <a href="/" class="visor-logo">
                     <i class="bi bi-display"></i>
                     <span>VISOR DE TRABAJOS</span>
                 </a>
-                
-                <!-- Countdown Mundial -->
-                <div class="hide-mobile world-cup-countdown" id="wcCountdown" title="¡Cuenta regresiva para el Mundial 2026!">
-                    <i class="bi bi-trophy-fill" style="color: #fcd34d; font-size: 1.1rem;"></i>
-                    <span>Cargando...</span>
-                </div>
 
                 {% if efemeride_actual %}
                 <div class="hide-mobile" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; display:flex; align-items:center; gap: 8px; cursor: default; box-shadow: 0 2px 5px rgba(0,0,0,0.2);" title="{{ efemeride_actual.descripcion }}">
@@ -745,21 +699,6 @@
             const now = new Date();
             const timeStr = now.toLocaleTimeString('es-AR', { hour12: false });
             document.getElementById('visorClock').textContent = timeStr;
-            
-            // Lógica del Mundial 2026 (11 de Junio de 2026 14:00:00)
-            const wcDate = new Date('2026-06-11T14:00:00-05:00').getTime(); // Ajustado a CST aprox
-            const distance = wcDate - now.getTime();
-            const wcSpan = document.querySelector('#wcCountdown span');
-            
-            if (distance < 0) {
-                wcSpan.innerHTML = "¡EL MUNDIAL ESTÁ EN JUEGO! ⚽";
-            } else {
-                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                wcSpan.innerHTML = `MUNDIAL 2026: ${days}d ${hours}h ${minutes}m ${seconds}s ⚽`;
-            }
         }
         setInterval(updateClock, 1000);
         updateClock();

@@ -1,5 +1,4 @@
 import os
-import json
 
 def notify_all_technicians(title, body, url="/mobile"):
     """

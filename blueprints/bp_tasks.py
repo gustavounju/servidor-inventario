@@ -1,8 +1,6 @@
 from flask import Blueprint, request, jsonify, redirect, url_for, render_template, send_file
 import datetime
 from datetime import datetime as dt
-import math
-import uuid
 import pymysql
 from io import BytesIO
 from openpyxl import Workbook

@@ -838,7 +838,7 @@ try {
     # -----------------------------------------------------------
     # ENVÍO AL SERVIDOR (WEBCLIENT PARA COMPATIBILIDAD)
     # -----------------------------------------------------------
-    $servidor = "__INVENTARIO_SERVER_URL__/submit_inventory"
+    $servidor = "__INVENTARIO_SERVER_URL__/submit_inventory?api_key=__API_KEY__"
     Write-Host "Enviando a $servidor ..."
     try {
         # Usamos System.Net.WebClient porque Invoke-RestMethod no existe en PS 2.0

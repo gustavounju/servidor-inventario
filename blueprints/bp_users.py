@@ -5,7 +5,6 @@ from services.admin_audit import log_admin_event
 from services.fuero_service import recalculate_all_pc_fueros
 from services.user_admin import (
     hydrate_existing_user_defaults,
-    list_pending_users,
     normalize_managed_user_form,
     validate_managed_user_payload,
 )

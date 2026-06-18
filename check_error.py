@@ -1,7 +1,6 @@
 
-from flask import Flask
 import servidor
-from servidor import app, init_db, get_db_connection
+from servidor import app
 
 print("--- Testing Dashboard Route Logic ---")
 
@@ -12,7 +11,7 @@ try:
             response = servidor.dashboard()
             print("Dashboard executed successfully.")
             print("Response Status:", response)
-        except Exception as e:
+        except Exception:
             print("\n!!! ERROR IN DASHBOARD LOGIC !!!")
             import traceback
             traceback.print_exc()

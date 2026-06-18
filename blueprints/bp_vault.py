@@ -1,7 +1,7 @@
 import os
 import json
 import time
-from flask import Blueprint, jsonify, render_template, request, session, redirect, url_for, send_from_directory, flash
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for, send_from_directory, flash
 from utils.auth import current_user, is_authenticated
 
 bp_vault = Blueprint("vault", __name__)
@@ -125,13 +125,19 @@ def upload_file():
         flash("Nombre de archivo vacío.", "warning")
         return redirect(url_for("vault.vault_index"))
     
+    from werkzeug.utils import secure_filename
+    safe_filename = secure_filename(file.filename)
+    if not safe_filename:
+        flash("Nombre de archivo inválido.", "danger")
+        return redirect(url_for("vault.vault_index"))
+        
     path = get_vault_path()
     config = get_vault_config()
     
     current_size = get_folder_size(path)
     limit_bytes = config.get('limit_mb', DEFAULT_LIMIT_MB) * 1024 * 1024
     
-    file_path = os.path.join(path, file.filename)
+    file_path = os.path.join(path, safe_filename)
     file.save(file_path)
     
     if get_folder_size(path) > limit_bytes:
@@ -157,12 +163,14 @@ def delete_file(filename):
     if not is_authenticated() or not is_vault_authorized(user.get('username')):
         return redirect(url_for("dashboard.dashboard"))
     
+    from werkzeug.utils import secure_filename
+    safe_filename = secure_filename(filename)
     path = get_vault_path()
-    file_path = os.path.join(path, filename)
+    file_path = os.path.join(path, safe_filename)
     
     if os.path.exists(file_path) and os.path.isfile(file_path):
         os.remove(file_path)
-        flash(f"Archivo '{filename}' eliminado.", "info")
+        flash(f"Archivo '{safe_filename}' eliminado.", "info")
     
     return redirect(url_for("vault.vault_index"))
 
@@ -193,8 +201,10 @@ def pdf_rotate(filename):
     if not is_authenticated() or not is_vault_authorized(user.get('username')):
         return jsonify({"status": "error", "message": "Sin permisos"}), 403
     
+    from werkzeug.utils import secure_filename
+    safe_filename = secure_filename(filename)
     path = get_vault_path()
-    file_path = os.path.join(path, filename)
+    file_path = os.path.join(path, safe_filename)
     if not os.path.exists(file_path):
         return jsonify({"status": "error", "message": "Archivo no encontrado"}), 404
     
@@ -250,8 +260,10 @@ def pdf_ocr(filename):
     if not is_authenticated() or not is_vault_authorized(user.get('username')):
         return jsonify({"status": "error", "message": "Sin permisos"}), 403
 
+    from werkzeug.utils import secure_filename
+    safe_filename = secure_filename(filename)
     path = get_vault_path()
-    file_path = os.path.join(path, filename)
+    file_path = os.path.join(path, safe_filename)
     if not os.path.exists(file_path):
         return jsonify({"status": "error", "message": "Archivo no encontrado"}), 404
 

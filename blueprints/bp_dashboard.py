@@ -1,17 +1,14 @@
 from flask import Blueprint, render_template, request, redirect, url_for, abort, send_file, flash
-import os
 from datetime import datetime as dt
 from database.db_core import get_db_connection
 import socket
 from utils.constants import FUERO_COLORS, list_fuero_mapping_rows
 import datetime
-from datetime import datetime as dt
 from io import BytesIO
 from openpyxl import Workbook
-from utils.auth import current_username, list_technician_users
 from services.audit import log_audit_event
 from services.dashboard_overview import load_dashboard_overview
-from services.pc_actions import decommission_pc_service, reactivate_pc_service, update_pc_infrastructure_service, delete_permanent_pc_service
+from services.pc_actions import decommission_pc_service, reactivate_pc_service, delete_permanent_pc_service
 from services.pc_details_service import get_pc_detail_context
 from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data, recalculate_all_pc_fueros
 

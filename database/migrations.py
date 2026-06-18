@@ -642,6 +642,7 @@ def run_all_migrations():
     migrate_db_v39()
     migrate_db_v40()
     migrate_db_v41()
+    verify_migration_v42()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1018,3 +1019,25 @@ def migrate_db_v41():
                             (dia_mes, titulo, desc, icono)
                         )
     print("Migración V41 verificada.")
+
+def verify_migration_v42():
+    """Migración V42: Índices de Base de Datos para Rendimiento."""
+    print("Verificando migración de DB v42 (Índices de Rendimiento)...")
+    with get_db_connection() as conn:
+        if not _index_exists(conn, "pcs", "idx_pcs_is_active"):
+            print("Aplicando V42: Índice idx_pcs_is_active...")
+            conn.execute("CREATE INDEX idx_pcs_is_active ON pcs(is_active)")
+            
+        if not _index_exists(conn, "pcs", "idx_pcs_fuero"):
+            print("Aplicando V42: Índice idx_pcs_fuero...")
+            conn.execute("CREATE INDEX idx_pcs_fuero ON pcs(fuero(100))")
+            
+        if not _index_exists(conn, "tasks", "idx_tasks_estado"):
+            print("Aplicando V42: Índice idx_tasks_estado...")
+            conn.execute("CREATE INDEX idx_tasks_estado ON tasks(estado)")
+            
+        if not _index_exists(conn, "tasks", "idx_tasks_pc_name"):
+            print("Aplicando V42: Índice idx_tasks_pc_name...")
+            conn.execute("CREATE INDEX idx_tasks_pc_name ON tasks(pc_name)")
+            
+    print("Migración V42 verificada.")

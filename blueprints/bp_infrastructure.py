@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database.db_core import get_db_connection
-from datetime import datetime as dt
 from utils.auth import current_username
 import asyncio
 try:
@@ -10,7 +9,7 @@ except (ImportError, ModuleNotFoundError):
     # Backward compatibility or missing library
     SNMP_AVAILABLE = False
     print("WARNING: pysnmp (v5+) not found or incompatible. SNMP features will be disabled.")
-from utils.constants import FUERO_COLORS, FUERO_MAPPING, clean_hex_string
+from utils.constants import FUERO_COLORS, clean_hex_string
 
 bp_infrastructure = Blueprint('infrastructure', __name__, url_prefix='/infra')
 

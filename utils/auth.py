@@ -363,7 +363,6 @@ def _authenticate_against_ad(username, password):
         current_app.logger.warning("ldap3 no disponible para AD: %s", exc)
         return None
 
-    authentication = NTLM if _ad_default_domain() else SIMPLE
     use_ssl = os.environ.get("AD_USE_SSL", "false").strip().lower() == "true"
     connect_timeout = int(os.environ.get("AD_CONNECT_TIMEOUT", "5"))
     base_dn = os.environ.get("AD_BASE_DN", "").strip()
@@ -737,10 +736,22 @@ def refresh_session_user():
     auth_source = current_user().get("auth_source") or "local"
     if not username:
         return None
+
+    import time
+    now = time.time()
+    last_refresh = session.get("last_auth_refresh", 0)
+
+    # REGLA DE RENDIMIENTO: Evitar asediar la BD en cada click. 
+    # Solo re-validamos si el usuario sigue activo cada 60 segundos.
+    if (now - last_refresh) < 60:
+        return session.get(AUTH_SESSION_KEY)
+
     user = _fetch_auth_user(username)
     if not user or not user.get("is_active"):
         clear_auth_session()
         return None
+        
+    session["last_auth_refresh"] = now
     session[AUTH_SESSION_KEY] = build_session_user(user, auth_source)
     return session[AUTH_SESSION_KEY]
 

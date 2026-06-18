@@ -1,5 +1,4 @@
 from database.db_core import get_db_connection
-import json
 
 pc_name = "WIN7-PC-TEST"
 
