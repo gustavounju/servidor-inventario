@@ -158,8 +158,10 @@ ok "Service instalado y habilitado."
 
 # ─── PASO 5: Nginx ───────────────────────────────────────────
 step "5/7  Nginx"
-sudo cp "$NGINX_SRC" "$NGINX_DST_AVAIL"
-sudo ln -sf "$NGINX_DST_AVAIL" "$NGINX_DST_ENABLED"
+# PRECAUCION: Comentado para no pisar la configuracion manual del dominio (taller-sp)
+# que hizo el administrador de redes en produccion.
+# sudo cp "$NGINX_SRC" "$NGINX_DST_AVAIL"
+# sudo ln -sf "$NGINX_DST_AVAIL" "$NGINX_DST_ENABLED"
 if sudo nginx -t 2>/dev/null; then
     ok "Configuracion Nginx valida."
 else
