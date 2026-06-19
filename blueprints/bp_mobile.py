@@ -228,13 +228,19 @@ def api_mobile_update_task():
                  if cursor.rowcount == 0:
                      return jsonify({"status": "error", "message": "No se encontro la tarea para completar."}), 404
             elif action == "edit":
-                 # Set is_edited=1 if the task is already "Hecha"
-                 task = conn.execute("SELECT estado FROM tasks WHERE id=%s", (task_id,)).fetchone()
+                 # Set flags if the task is already "Hecha"
+                 task = conn.execute("SELECT estado, descripcion, solucion, desc_edited, sol_edited FROM tasks WHERE id=%s", (task_id,)).fetchone()
                  if task and task['estado'] == 'Hecha':
-                     sql = "UPDATE tasks SET descripcion=%s, solucion=%s, is_edited=1 WHERE id=%s"
+                     new_desc_edited = task['desc_edited'] or (task['descripcion'] != descripcion)
+                     new_sol_edited = task['sol_edited'] or (task['solucion'] != solucion)
+                     # Si alguna de las dos se edita, is_edited queda en 1 para retrocompatibilidad
+                     is_edited = 1 if (new_desc_edited or new_sol_edited) else 0
+                     
+                     sql = "UPDATE tasks SET descripcion=%s, solucion=%s, is_edited=%s, desc_edited=%s, sol_edited=%s WHERE id=%s"
+                     conn.execute(sql, (descripcion, solucion, is_edited, int(new_desc_edited), int(new_sol_edited), task_id))
                  else:
                      sql = "UPDATE tasks SET descripcion=%s, solucion=%s WHERE id=%s"
-                 conn.execute(sql, (descripcion, solucion, task_id))
+                     conn.execute(sql, (descripcion, solucion, task_id))
             elif action == "assign_pc":
                  if not pc_name:
                      return jsonify({"status": "error", "message": "Seleccioná una PC válida."}), 400
