@@ -146,7 +146,7 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 
 ## 🆕 Últimos Cambios (Changelog)
 - **Junio 2026**: Se implementó la **Auditoría Transparente de Racks**. Al cargar el estado de un Rack desde la vista móvil, el sistema agrupa automáticamente los registros de cada técnico en una única "Tarea Diaria" (Auditoría de Racks - [Fecha]) en estado "Hecha". Inyecta cada rack revisado como una nueva Acción dentro del historial de esa tarea, resolviendo la concurrencia y optimizando el tiempo del técnico en terreno al no requerir iniciar o finalizar sesiones manualmente.
-
+- **Hotfix (18 Junio 2026)**: Restauración del bloque de interfaz gráfica (carrusel de métricas) en la vista móvil de Técnicos (`tecnicos.html`). Esto soluciona un bug crítico de JavaScript que provocaba que las métricas personales del técnico no se actualizaran (quedaran en 0) y devuelve el reporte de visibilidad global a los usuarios en terreno.
 ---
 
 **Última actualización**: 18 de Junio 2026  
