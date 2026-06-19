@@ -1107,13 +1107,15 @@ function renderDoneToday(tasks) {
       <div style="padding-left:10px; width:100%;">
         <div class="task-card-header">
            <div class="task-desc">${escHtml(t.descripcion)}</div>
-           <button class="btn-act-mini" onclick="editTask(${t.id})" title="Editar"><i class="bi bi-pencil"></i></button>
         </div>
         ${t.solucion ? '<div class="task-solucion" style="font-size:0.8rem; color:var(--text); margin-top:4px; padding:6px; background:rgba(0,0,0,0.03); border-radius:4px; border-left:3px solid var(--green);"><strong>Solución:</strong> '+escHtml(t.solucion)+(t.is_edited ? ' <i class="bi bi-pencil-square" title="Solución editada" style="color:var(--text-muted); margin-left:4px; font-size:0.75rem;"></i>' : '')+'</div>' : ''}
         <div class="task-meta">
           ${t.pc_name ? '<span class="meta-chip"><i class="bi bi-pc-display"></i>'+escHtml(t.pc_name)+'</span>' : ''}
           <span class="meta-chip"><i class="bi bi-clock-history"></i>${fmtTime(t.completed_at)}</span>
           <span class="status-pill pill-done">Hecha</span>
+        </div>
+        <div class="task-actions" style="margin-top: 8px;">
+           <button class="btn-act w-100" style="background:var(--bg3); color:var(--text);" onclick="editTask(${t.id})"><i class="bi bi-pencil"></i> Editar Tarea / Solución</button>
         </div>
       </div>
     </div>`).join('');
