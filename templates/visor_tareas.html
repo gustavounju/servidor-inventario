@@ -129,35 +129,35 @@
         .rack-card {
             background: var(--visor-card);
             border: 1px solid var(--visor-border);
-            border-radius: 8px;
-            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            padding: 0.35rem 0.5rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            min-width: 140px;
+            gap: 0.4rem;
+            min-width: 90px;
             flex: 1;
         }
 
         .rack-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
+            width: 26px;
+            height: 26px;
+            border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 0.85rem;
             flex-shrink: 0;
         }
 
         .rack-info h3 {
-            font-size: 0.85rem;
+            font-size: 0.72rem;
             font-weight: 800;
-            margin: 0 0 2px 0;
+            margin: 0 0 1px 0;
             white-space: nowrap;
         }
 
         .rack-info p {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: #94a3b8;
             margin: 0;
             white-space: nowrap;
@@ -463,9 +463,6 @@
             <div id="rackStatusContainer" style="display:none; margin-bottom: 2rem;">
                 <div class="section-header d-flex justify-content-between align-items-center">
                     <h2 class="m-0">Estado de Racks (Semaforización)</h2>
-                    <button type="button" class="btn btn-sm btn-outline-primary" style="font-weight: 500;" data-bs-toggle="modal" data-bs-target="#auditsModal">
-                        <i class="bi bi-clock-history"></i> Historial
-                    </button>
                 </div>
                 <div class="rack-grid" id="rackGrid">
                     <!-- Racks will be injected here -->
@@ -841,11 +838,11 @@
                         const todayStr = new Date().toLocaleDateString('es-AR');
                         const auditDateStr = item.last_audit ? new Date(item.last_audit.timestamp).toLocaleDateString('es-AR') : null;
                         const isToday = auditDateStr === todayStr;
-                        const cardStyle = isToday ? '' : 'opacity: 0.45; filter: grayscale(0.6);';
+                        const cardStyle = isToday ? '' : 'opacity: 0.25; filter: grayscale(0.8);';
                         const warningDot = isToday ? '' : '<span title="No se auditaron métricas hoy" style="display:inline-block; width:6px; height:6px; background:var(--visor-pending); border-radius:50%; margin-left:6px; vertical-align:middle; box-shadow: 0 0 6px var(--visor-pending);"></span>';
 
                         return `
-                        <div class="rack-card" onclick="showRackAuditModal('${item.rack.id}')" style="cursor: pointer; transition: transform 0.2s, opacity 0.2s, filter 0.2s; ${cardStyle}" onmouseover="this.style.transform='scale(1.02)'; this.style.opacity='1'; this.style.filter='grayscale(0)'" onmouseout="this.style.transform='scale(1)'; this.style.opacity='${isToday ? '1' : '0.45'}'; this.style.filter='${isToday ? 'none' : 'grayscale(0.6)'}'">
+                        <div class="rack-card" onclick="showRackAuditModal('${item.rack.id}')" style="cursor: pointer; transition: transform 0.2s, opacity 0.2s, filter 0.2s; ${cardStyle}" onmouseover="this.style.transform='scale(1.02)'; this.style.opacity='1'; this.style.filter='grayscale(0)'" onmouseout="this.style.transform='scale(1)'; this.style.opacity='${isToday ? '1' : '0.25'}'; this.style.filter='${isToday ? 'none' : 'grayscale(0.8)'}'">
                             <div class="rack-icon ${iconColor} bg-opacity-10"><i class="bi ${icon}"></i></div>
                             <div class="rack-info" style="flex:1;">
                                 <h3>${item.rack.nombre}${warningDot}</h3>
@@ -854,6 +851,14 @@
                         </div>
                         `;
                     }).join('');
+                    
+                    const historyBtn = `
+                    <div class="rack-card text-center d-flex flex-column justify-content-center align-items-center p-1" style="min-width: 28px; max-width: 32px; flex: 0 0 auto; background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.3); cursor: pointer; transition: all 0.2s; color: var(--visor-accent);" onmouseover="this.style.background='rgba(56, 189, 248, 0.2)'" onmouseout="this.style.background='rgba(56, 189, 248, 0.08)'" data-bs-toggle="modal" data-bs-target="#auditsModal" title="Ver Historial">
+                        <i class="bi bi-clock-history mb-1" style="font-size: 0.9rem;"></i>
+                        <span style="writing-mode: vertical-rl; transform: rotate(180deg); font-size: 0.55rem; font-weight: 800; letter-spacing: 1px;">HISTORIAL</span>
+                    </div>
+                    `;
+                    grid.innerHTML += historyBtn;
                 }
             } catch(e) { console.error(e); }
         }
