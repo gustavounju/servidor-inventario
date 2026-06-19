@@ -786,7 +786,7 @@ function submitMobileTaskAction() {
 
     <div class="input-group-gold">
       <div class="input-label-gold">Resolución / Solución</div>
-      <textarea class="gold-input" id="completeSolucion" rows="3" placeholder="¿Cómo se solucionó?"></textarea>
+      <textarea class="gold-input" id="completeSolucion" rows="6" style="resize: vertical; min-height: 80px;" placeholder="¿Cómo se solucionó?"></textarea>
     </div>
 
     <div class="voice-actions">
@@ -1109,7 +1109,7 @@ function renderDoneToday(tasks) {
            <div class="task-desc">${escHtml(t.descripcion)}</div>
            <button class="btn-act-mini" onclick="editTask(${t.id})" title="Editar"><i class="bi bi-pencil"></i></button>
         </div>
-        ${t.solucion ? '<div class="task-solucion" style="font-size:0.8rem; color:var(--text); margin-top:4px; padding:6px; background:rgba(0,0,0,0.03); border-radius:4px; border-left:3px solid var(--green);"><strong>Solución:</strong> '+escHtml(t.solucion)+'</div>' : ''}
+        ${t.solucion ? '<div class="task-solucion" style="font-size:0.8rem; color:var(--text); margin-top:4px; padding:6px; background:rgba(0,0,0,0.03); border-radius:4px; border-left:3px solid var(--green);"><strong>Solución:</strong> '+escHtml(t.solucion)+(t.is_edited ? ' <i class="bi bi-pencil-square" title="Solución editada" style="color:var(--text-muted); margin-left:4px; font-size:0.75rem;"></i>' : '')+'</div>' : ''}
         <div class="task-meta">
           ${t.pc_name ? '<span class="meta-chip"><i class="bi bi-pc-display"></i>'+escHtml(t.pc_name)+'</span>' : ''}
           <span class="meta-chip"><i class="bi bi-clock-history"></i>${fmtTime(t.completed_at)}</span>
@@ -1225,7 +1225,7 @@ function openCompleteModal(taskId, action = null) {
     btnEl.className = 'btn-vact btn-vsave';
     btnEl.onclick = confirmEdit;
     pcGroup.style.display = 'block';
-    if (solContainer) solContainer.style.display = 'none';
+    if (solContainer) solContainer.style.display = (task.estado === 'Hecha') ? 'block' : 'none';
   } else if (mode === 'edit') {
     titleEl.innerHTML = '<i class="bi bi-pencil" style="color:var(--accent)"></i> Editar Tarea';
     btnEl.innerHTML = '<i class="bi bi-save"></i> Guardar Cambios';

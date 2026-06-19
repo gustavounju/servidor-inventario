@@ -164,6 +164,7 @@ def init_db():
                 impacto_valor INT DEFAULT 1,
                 resumen_impacto TEXT,
                 solucion TEXT,
+                is_edited TINYINT(1) DEFAULT 0,
                 FOREIGN KEY (pc_name) REFERENCES pcs(pc_name) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
@@ -194,6 +195,13 @@ def init_db():
             print("Migración: Columna 'office_version' añadida exitosamente.")
         except Exception as e:
             logging.debug(f"Columna office_version ya existe o error menor: {e}")
+
+        # Intentar añadir columna is_edited en tasks
+        try:
+            conn.execute("ALTER TABLE tasks ADD COLUMN is_edited TINYINT(1) DEFAULT 0 AFTER solucion")
+            print("Migración: Columna 'is_edited' añadida exitosamente.")
+        except Exception as e:
+            logging.debug(f"Columna is_edited ya existe o error menor: {e}")
 
         # Intentar añadir columna can_audit_racks si no existe
         try:

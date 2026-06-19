@@ -228,7 +228,12 @@ def api_mobile_update_task():
                  if cursor.rowcount == 0:
                      return jsonify({"status": "error", "message": "No se encontro la tarea para completar."}), 404
             elif action == "edit":
-                 sql = "UPDATE tasks SET descripcion=%s, solucion=%s WHERE id=%s"
+                 # Set is_edited=1 if the task is already "Hecha"
+                 task = conn.execute("SELECT estado FROM tasks WHERE id=%s", (task_id,)).fetchone()
+                 if task and task['estado'] == 'Hecha':
+                     sql = "UPDATE tasks SET descripcion=%s, solucion=%s, is_edited=1 WHERE id=%s"
+                 else:
+                     sql = "UPDATE tasks SET descripcion=%s, solucion=%s WHERE id=%s"
                  conn.execute(sql, (descripcion, solucion, task_id))
             elif action == "assign_pc":
                  if not pc_name:
