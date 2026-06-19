@@ -837,13 +837,20 @@
                         const iconColor = item.status_color === 'red' ? 'text-danger bg-danger' : 'text-success bg-success';
                         const icon = item.status_color === 'red' ? 'bi-exclamation-triangle' : 'bi-check-circle';
                         const lastAudit = item.last_audit ? new Date(item.last_audit.timestamp).toLocaleString('es-AR') : 'Nunca';
+                        
+                        const todayStr = new Date().toLocaleDateString('es-AR');
+                        const auditDateStr = item.last_audit ? new Date(item.last_audit.timestamp).toLocaleDateString('es-AR') : null;
+                        const isToday = auditDateStr === todayStr;
+                        const cardStyle = isToday ? '' : 'opacity: 0.45; filter: grayscale(0.6);';
+                        const warningDot = isToday ? '' : '<span title="No se auditaron métricas hoy" style="display:inline-block; width:6px; height:6px; background:var(--visor-pending); border-radius:50%; margin-left:6px; vertical-align:middle; box-shadow: 0 0 6px var(--visor-pending);"></span>';
+
                         return `
-                        <div class="rack-card" onclick="showRackAuditModal('${item.rack.id}')" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <div class="rack-card" onclick="showRackAuditModal('${item.rack.id}')" style="cursor: pointer; transition: transform 0.2s, opacity 0.2s, filter 0.2s; ${cardStyle}" onmouseover="this.style.transform='scale(1.02)'; this.style.opacity='1'; this.style.filter='grayscale(0)'" onmouseout="this.style.transform='scale(1)'; this.style.opacity='${isToday ? '1' : '0.45'}'; this.style.filter='${isToday ? 'none' : 'grayscale(0.6)'}'">
                             <div class="rack-icon ${iconColor} bg-opacity-10"><i class="bi ${icon}"></i></div>
                             <div class="rack-info" style="flex:1;">
-                                <h3>${item.rack.nombre}</h3>
+                                <h3>${item.rack.nombre}${warningDot}</h3>
                                 <p style="margin-bottom: 1px;">Temp: ${item.last_audit ? item.last_audit.temperatura_celsius_float + '°C' : '--'}</p>
-                                <p style="text-transform:none;">Último: ${lastAudit.split(',')[0]}</p>
+                                <p style="text-transform:none; color: ${isToday ? '#94a3b8' : 'var(--visor-pending)'};">Último: ${lastAudit.split(',')[0]}</p>
                             </div>
                         </div>
                         `;
