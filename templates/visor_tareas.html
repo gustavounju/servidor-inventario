@@ -849,8 +849,7 @@
                             <div class="rack-icon ${iconColor} bg-opacity-10"><i class="bi ${icon}"></i></div>
                             <div class="rack-info" style="flex:1;">
                                 <h3>${item.rack.nombre}${warningDot}</h3>
-                                <p style="margin-bottom: 1px;">Temp: ${item.last_audit ? item.last_audit.temperatura_celsius_float + '°C' : '--'}</p>
-                                <p style="text-transform:none; color: ${isToday ? '#94a3b8' : 'var(--visor-pending)'};">Último: ${lastAudit.split(',')[0]}</p>
+                                <p style="margin-bottom: 0;">Temp: ${item.last_audit ? item.last_audit.temperatura_celsius_float + '°C' : '--'}</p>
                             </div>
                         </div>
                         `;
