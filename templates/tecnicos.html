@@ -458,16 +458,50 @@ function submitMobileTaskAction() {
     <!-- Panel: Mis Tareas -->
     <div class="panel active" id="panel-mias">
       <div class="ops-overview" id="opsOverview" style="margin-bottom: 16px;">
-        <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom: 8px;">Mis Métricas (Hoy)</div>
-        <div style="display: flex; gap: 12px;">
-          <div style="flex:1; background: rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; text-align: center;">
-            <div id="opsMineCount" style="font-size: 1.4rem; font-weight: 800; color: var(--text-color);">0</div>
-            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform:uppercase; font-weight: 700;">En Curso</div>
+        <div class="ops-title">Resumen de tareas</div>
+        <div class="ops-headline" id="opsHeadline">Cargando tareas asignadas...</div>
+        <div class="metrics-carousel" id="metricsCarousel" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 8px; scrollbar-width: none; margin-bottom: 8px;">
+          <!-- Slide 1: Mis Métricas -->
+          <div style="flex: 0 0 100%; scroll-snap-align: start;">
+            <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px;"><i class="bi bi-person-fill"></i> Mis Métricas (Hoy)</div>
+            <div class="ops-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsMineCount">0</div>
+                <div class="ops-label">En Curso</div>
+              </div>
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsMyDoneCount">0</div>
+                <div class="ops-label">Hechas</div>
+              </div>
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsMyTotalCount" style="color: var(--green);">0</div>
+                <div class="ops-label">Total</div>
+              </div>
+            </div>
           </div>
-          <div style="flex:1; background: rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; text-align: center;">
-            <div id="opsMyDoneCount" style="font-size: 1.4rem; font-weight: 800; color: #34d399;">0</div>
-            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform:uppercase; font-weight: 700;">Hechas</div>
+          <!-- Slide 2: Global -->
+          <div style="flex: 0 0 100%; scroll-snap-align: start;">
+            <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--yellow); margin-bottom: 6px;"><i class="bi bi-globe"></i> Vista Global (Hoy)</div>
+            <div class="ops-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsGlobalMine">0</div>
+                <div class="ops-label">Tomadas</div>
+              </div>
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsGlobalFree">0</div>
+                <div class="ops-label">Libres</div>
+              </div>
+              <div class="ops-card">
+                <div class="ops-kpi" id="opsGlobalDone" style="color: var(--green);">0</div>
+                <div class="ops-label">Hechas</div>
+              </div>
+            </div>
           </div>
+        </div>
+        <!-- Dots del carousel -->
+        <div id="carouselDots" style="display: flex; justify-content: center; gap: 6px;">
+          <div class="dot active" style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); transition: background 0.3s;"></div>
+          <div class="dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.3s;"></div>
         </div>
       </div>
       <div id="list-mias"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
