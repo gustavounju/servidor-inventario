@@ -86,24 +86,30 @@
             background: var(--visor-card);
             border: 1px solid var(--visor-border);
             border-radius: 12px;
-            padding: 1rem;
+            padding: 0.6rem 1rem;
             display: flex;
             align-items: center;
             gap: 1rem;
         }
 
         .kpi-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        .kpi-info {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
         }
 
         .kpi-info h3 {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 800;
             margin: 0;
         }
@@ -407,19 +413,16 @@
         </nav>
 
         <main class="visor-content">
-            <div class="table-container mb-4 p-3" style="background: rgba(30, 41, 59, 0.5);">
-                <form id="filterForm" class="row g-3 align-items-end">
+            <div class="table-container mb-4 p-2" style="background: rgba(30, 41, 59, 0.5);">
+                <form id="filterForm" class="row g-2 align-items-center">
                     <div class="col-md-3">
-                        <label class="small text-muted fw-bold text-uppercase mb-1">Fecha</label>
-                        <input type="date" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterFecha" value="{{ hoy }}">
+                        <input type="date" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterFecha" value="{{ hoy }}" title="Fecha">
                     </div>
                     <div class="col-md-3">
-                        <label class="small text-muted fw-bold text-uppercase mb-1">PC / Equipo</label>
-                        <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterPc" placeholder="Buscar PC..." value="{{ pc_filtro or '' }}">
+                        <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterPc" placeholder="PC / Equipo..." value="{{ pc_filtro or '' }}" title="PC / Equipo">
                     </div>
                     <div class="col-md-3">
-                        <label class="small text-muted fw-bold text-uppercase mb-1">Técnico</label>
-                        <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterTech">
+                        <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterTech" title="Técnico">
                             <option value="">Todos los técnicos</option>
                             {% for tech in technicians %}
                             <option value="{{ tech.name }}" {% if tech_filtro == tech.name %}selected{% endif %}>{{ tech.name }}</option>
