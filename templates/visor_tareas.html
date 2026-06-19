@@ -505,7 +505,7 @@
                                     </div>
                                 </td>
                                 <td class="desc-cell">
-                                    {{ task.descripcion }}
+                                    {{ task.descripcion }}{% if task.is_edited %} <i class="bi bi-pencil-square" title="Editada" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>{% endif %}
                                 {% if task.acciones %}
                                 <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
                                     {% for accion in task.acciones %}
@@ -590,7 +590,7 @@
                                 </div>
                             </td>
                             <td class="desc-cell">
-                                {{ task.descripcion }}
+                                {{ task.descripcion }}{% if task.is_edited %} <i class="bi bi-pencil-square" title="Editada" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>{% endif %}
                                 {% if task.acciones %}
                                 <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
                                     {% for accion in task.acciones %}
@@ -641,7 +641,7 @@
                             <td style="width: 110px;" class="text-muted small">{{ task.created_at_fmt or '--:--' }}</td>
                             <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name }}</span></td>
                             <td class="desc-cell text-muted">
-                                {{ task.descripcion }}
+                                {{ task.descripcion }}{% if task.is_edited %} <i class="bi bi-pencil-square" title="Editada" style="color: rgba(255,255,255,0.3); font-size:0.75rem;"></i>{% endif %}
                                 {% if task.acciones %}
                                 <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
                                     {% for accion in task.acciones %}
@@ -900,7 +900,7 @@
                         </div>
                     </td>
                     <td class="desc-cell">
-                        <div>${task.descripcion}</div>
+                        <div>${task.descripcion}${task.is_edited ? ' <i class="bi bi-pencil-square" title="Editada" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>' : ''}</div>
                         ${task.acciones && task.acciones.length > 0 ? `
                         <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
                             ${task.acciones.map(accion => `
@@ -956,7 +956,7 @@
                     <td style="width: 110px;" class="text-muted small">${task.created_at_fmt || '--:--'}</td>
                     <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name || 'PC'}</span></td>
                     <td class="desc-cell text-muted">
-                        <div>${task.descripcion}</div>
+                        <div>${task.descripcion}${task.is_edited ? ' <i class="bi bi-pencil-square" title="Editada" style="color: rgba(255,255,255,0.3); font-size:0.75rem;"></i>' : ''}</div>
                         ${task.acciones && task.acciones.length > 0 ? `
                         <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
                             ${task.acciones.map(accion => `
@@ -1009,7 +1009,7 @@
                         </div>
                     </td>
                     <td class="desc-cell">
-                        <div>${task.descripcion}</div>
+                        <div>${task.descripcion}${task.is_edited ? ' <i class="bi bi-pencil-square" title="Editada" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>' : ''}</div>
                         ${task.acciones && task.acciones.length > 0 ? `
                         <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
                             ${task.acciones.map(accion => `
