@@ -520,6 +520,9 @@
                                     {% if task.solucion %}
                                     <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #cbd5e1;">
                                         <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
+                                        {% if task.is_edited %}
+                                        <i class="bi bi-pencil-square ms-1" title="Solución editada" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>
+                                        {% endif %}
                                     </div>
                                     {% endif %}
                                     {% if task.estado != 'Hecha' %}
@@ -653,6 +656,9 @@
                                 {% if task.solucion %}
                                 <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #94a3b8;">
                                     <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
+                                    {% if task.is_edited %}
+                                    <i class="bi bi-pencil-square ms-1" title="Solución editada" style="color: rgba(255,255,255,0.3); font-size:0.75rem;"></i>
+                                    {% endif %}
                                 </div>
                                 {% endif %}
 
@@ -909,6 +915,7 @@
                         ${task.solucion ? `
                             <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #cbd5e1;">
                                 <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
+                                ${task.is_edited ? '<i class="bi bi-pencil-square ms-1" title="Solución editada" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>' : ''}
                             </div>
                         ` : ''}
                         ${task.estado !== 'Hecha' ? `
@@ -964,6 +971,7 @@
                         ${task.solucion ? `
                             <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #94a3b8;">
                                 <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
+                                ${task.is_edited ? '<i class="bi bi-pencil-square ms-1" title="Solución editada" style="color: rgba(255,255,255,0.3); font-size:0.75rem;"></i>' : ''}
                             </div>
                         ` : ''}
                         ${renderAdMatch(task)}
