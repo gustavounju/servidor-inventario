@@ -115,7 +115,9 @@ PUBLIC_ENDPOINTS = {
     "sw.js",
     "manifest.json",
     "tasks.visor",
-    "tasks.api_visor_data"
+    "tasks.api_visor_data",
+    "api.api_get_racks_status",
+    "infrastructure.rack_audits_history"
 }
 
 

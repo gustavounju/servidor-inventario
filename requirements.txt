@@ -20,3 +20,5 @@ Pillow
 DBUtils
 pytest
 pytest-flask
+pytest
+pytest-flask
