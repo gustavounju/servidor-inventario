@@ -45,6 +45,7 @@ ServidorInventario/
 ├── templates/              # Plantillas HTML
 ├── static/                 # Assets estáticos
 ├── services/              # Servicios (AI, reporting)
+├── tests/                 # Pruebas automatizadas (pytest)
 └── logs/                  # Logs del sistema
 ```
 
@@ -148,7 +149,8 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 - **Junio 2026**: Se implementó la **Auditoría Transparente de Racks**. Al cargar el estado de un Rack desde la vista móvil, el sistema agrupa automáticamente los registros de cada técnico en una única "Tarea Diaria" (Auditoría de Racks - [Fecha]) en estado "Hecha". Inyecta cada rack revisado como una nueva Acción dentro del historial de esa tarea, resolviendo la concurrencia y optimizando el tiempo del técnico en terreno al no requerir iniciar o finalizar sesiones manualmente.
 - **Hotfix (18 Junio 2026)**: Restauración del bloque de interfaz gráfica (carrusel de métricas) en la vista móvil de Técnicos (`tecnicos.html`). Esto soluciona un bug crítico de JavaScript que provocaba que las métricas personales del técnico no se actualizaran (quedaran en 0) y devuelve el reporte de visibilidad global a los usuarios en terreno.
 - **Feature (18 Junio 2026)**: Se amplió el cuadro de texto para la "Solución" en la vista móvil (ahora permite multilinea y es redimensionable). Además, se habilitó la edición de la solución para tareas que ya se encuentran en estado "Hecha". El sistema ahora hace un seguimiento de estas modificaciones agregando un flag `is_edited` a la BD y mostrando un ícono de lápiz junto a la solución si ésta fue modificada a posteriori.
+- **Hotfix (19 Junio 2026)**: Exposición pública de las métricas de estado e historial de racks para el Visor General (`/visor`). Adicionalmente, se configuró una base incial para testing automatizado integrando `pytest` al stack técnico y agregando pruebas automatizadas para políticas de acceso de la API.
 ---
 
-**Última actualización**: 18 de Junio 2026  
+**Última actualización**: 19 de Junio 2026  
 **Versión del sistema**: Según APP_VERSION en utils/constants.py
