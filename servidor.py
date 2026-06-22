@@ -246,6 +246,8 @@ def _load_kpis_from_db(user_auth):
                 known_fueros = {row['fuero']: row['fuero'] for row in fueros_rows}
                 for item in list_fuero_mapping_rows():
                     known_fueros.setdefault(item['label'], item['label'])
+                known_fueros.setdefault("PC Generica", "PC Generica")
+                known_fueros.setdefault("Infraestructura", "Infraestructura")
                 extra_data['fueros'] = dict(sorted(known_fueros.items(), key=lambda item: item[0].lower()))
 
                 sys_users = list_app_users()
