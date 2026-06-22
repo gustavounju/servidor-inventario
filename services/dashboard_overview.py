@@ -603,7 +603,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             """).fetchone()["c"]
 
             all_pcs_dropdown = [dict(row) for row in conn.execute(
-                """SELECT pc_name, fuero, last_user FROM pcs WHERE is_active = 1
+                """SELECT pc_name, fuero, last_user FROM pcs WHERE (is_active = 1 OR pc_name IN ('PC Generica', 'Infraestructura', 'PC-GENERICA'))
                 ORDER BY CASE WHEN pc_name LIKE 'PC%%GENERICA%%' THEN 0 WHEN pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1 ELSE 2 END, pc_name ASC"""
             ).fetchall()]
 

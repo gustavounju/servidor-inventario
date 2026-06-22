@@ -71,7 +71,7 @@ def api_mobile_data():
                 if row:
                     my_historical_total = row["c"]
 
-            pcs_query = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE is_active=1 ORDER BY pc_name").fetchall()
+            pcs_query = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE (is_active=1 OR pc_name IN ('PC Generica', 'Infraestructura', 'PC-GENERICA')) ORDER BY CASE WHEN pc_name LIKE 'PC%%GENERICA%%' THEN 0 WHEN pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1 ELSE 2 END, pc_name ASC").fetchall()
             requesters = [dict(r) for r in conn.execute(
                 """
                 SELECT username, real_name, phone
