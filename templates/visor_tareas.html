@@ -2,222 +2,21 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor de Trabajos | Registro en Tiempo Real</title>
+    <title>Visor de Trabajos | Inventario GOLD</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/static/css/gold.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="/static/js/security.js"></script>
+    <!-- JS de Animaciones y UI (gold.js) -->
+    <script defer src="/static/js/gold.js?v={{ app_version }}"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
     <style>
-        :root {
-            --visor-bg: #0f172a;
-            --visor-card: #1e293b;
-            --visor-accent: #38bdf8;
-            --visor-success: #22c55e;
-            --visor-pending: #f59e0b;
-            --visor-border: rgba(255, 255, 255, 0.08);
-        }
-
-        body {
-            background-color: var(--visor-bg);
-            color: #f1f5f9;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-        }
-
-        .visor-shell {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .visor-nav {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--visor-border);
-            padding: 1rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-
-        .visor-logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-        }
-
-        .visor-logo i {
-            font-size: 1.5rem;
-            color: var(--visor-accent);
-        }
-
-        .visor-logo span {
-            font-weight: 800;
-            font-size: 1.25rem;
-            color: #fff;
-            letter-spacing: -0.02em;
-        }
-
-        .visor-content {
-            padding: 2rem;
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .kpi-card {
-            background: var(--visor-card);
-            border: 1px solid var(--visor-border);
-            border-radius: 12px;
-            padding: 0.6rem 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-        }
-
-        .kpi-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .kpi-info {
-            display: flex;
-            align-items: baseline;
-            gap: 0.5rem;
-        }
-
-        .kpi-info h3 {
-            font-size: 1.25rem;
-            font-weight: 800;
-            margin: 0;
-        }
-
-        .kpi-info p {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin: 0;
-            text-transform: uppercase;
-            font-weight: 700;
-        }
-
-        ::placeholder {
-            color: rgba(255, 255, 255, 0.5) !important;
-            opacity: 1; /* Firefox */
-        }
-
-        ::-ms-input-placeholder {
-            color: rgba(255, 255, 255, 0.5) !important;
-        }
-
-        .rack-grid {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: nowrap;
-            padding: 4px;
-            margin-left: -4px;
-            margin-right: -4px;
-            margin-top: -4px;
-        }
-
-        .rack-card {
-            background: var(--visor-card);
-            border: 1px solid var(--visor-border);
-            border-radius: 6px;
-            padding: 0.35rem 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            min-width: 90px;
-            flex: 1;
-        }
-
-        .rack-icon {
-            width: 26px;
-            height: 26px;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            flex-shrink: 0;
-        }
-
-        .rack-info h3 {
-            font-size: 0.72rem;
-            font-weight: 800;
-            margin: 0 0 1px 0;
-            white-space: nowrap;
-        }
-
-        .rack-info p {
-            font-size: 0.6rem;
-            color: #94a3b8;
-            margin: 0;
-            white-space: nowrap;
-        }
-
-        .table-container {
-            background: var(--visor-card);
-            border: 1px solid var(--visor-border);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-        }
-
-        .visor-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        .visor-table th {
-            background: rgba(255, 255, 255, 0.03);
-            padding: 1rem;
-            text-align: left;
-            font-weight: 700;
-            color: #94a3b8;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            border-bottom: 1px solid var(--visor-border);
-        }
-
-        .visor-table td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--visor-border);
-            vertical-align: middle;
-        }
-
-        .visor-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .visor-table tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
+        /* Preservamos las micro-interacciones específicas del visor original */
         .status-dot {
             width: 8px;
             height: 8px;
@@ -225,29 +24,24 @@
             display: inline-block;
             margin-right: 8px;
         }
-
-        .status-dot-pendiente { background: var(--visor-pending); box-shadow: 0 0 8px var(--visor-pending); animation: blink 2s infinite; }
-        .status-dot-hecha { background: var(--visor-success); box-shadow: 0 0 8px var(--visor-success); }
-        .status-dot-asignada { background: var(--visor-accent); box-shadow: 0 0 8px var(--visor-accent); }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
+        .status-dot-pendiente { background: var(--color-warning); box-shadow: 0 0 8px var(--color-warning); animation: blink 2s infinite; }
+        .status-dot-hecha { background: var(--color-stable); box-shadow: 0 0 8px var(--color-stable); }
+        .status-dot-asignada { background: var(--accent-color); box-shadow: 0 0 8px var(--accent-color); }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         .pc-badge {
             background: rgba(56, 189, 248, 0.1);
-            color: var(--visor-accent);
+            color: var(--accent-color);
             padding: 0.25rem 0.5rem;
             border-radius: 6px;
             font-weight: 700;
-            font-family: 'Courier New', monospace;
+            font-family: var(--font-mono);
             font-size: 0.8rem;
         }
 
         .tech-pill {
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--visor-border);
+            border: 1px solid var(--border-color);
             padding: 0.2rem 0.6rem;
             border-radius: 20px;
             font-size: 0.75rem;
@@ -270,535 +64,327 @@
             white-space: nowrap;
         }
 
-        .ad-match-box {
-            margin-top: 0.45rem;
-            padding: 0.5rem 0.65rem;
-            border-radius: 10px;
-            background: rgba(56, 189, 248, 0.08);
-            border: 1px solid rgba(56, 189, 248, 0.18);
-        }
-
-        .ad-match-box.ad-match-box-empty {
-            background: rgba(148, 163, 184, 0.08);
-            border-color: rgba(148, 163, 184, 0.16);
-        }
-
-        .ad-match-title {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.68rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: #7dd3fc;
-        }
-
-        .ad-match-box-empty .ad-match-title {
-            color: #94a3b8;
-        }
-
-        .ad-match-list {
-            margin-top: 0.35rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
-        }
-
-        .ad-match-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.18rem 0.5rem;
-            border-radius: 999px;
-            background: rgba(15, 23, 42, 0.45);
-            border: 1px solid rgba(125, 211, 252, 0.2);
-            color: #e0f2fe;
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        .ad-match-chip:hover {
-            border-color: var(--visor-accent);
-            background: rgba(56, 189, 248, 0.15);
-            color: #fff;
-        }
-
-        .ad-match-chip.ad-match-chip-current {
-            border-color: rgba(34, 197, 94, 0.35);
-            color: #86efac;
-        }
-
-        .ad-match-assign-btn {
-            background: var(--visor-accent);
-            color: #0f172a;
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .ad-match-assign-btn:hover {
-            transform: scale(1.2);
-        }
-
-        .ad-match-note {
-            margin-top: 0.3rem;
-            font-size: 0.74rem;
-            color: #cbd5e1;
-        }
-
-        .btn-auth {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--visor-border);
-            color: #fff;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .btn-auth:hover {
-            background: var(--visor-accent);
-            color: #0f172a;
-        }
-
-        .section-header {
-            margin: 2rem 0 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .section-header h2 {
-            font-size: 1.1rem;
-            font-weight: 800;
-            margin: 0;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .time-cell { font-weight: 600; color: #fff; }
-        .desc-cell { color: #e2e8f0; font-weight: 500; }
-
-        @media (max-width: 992px) {
-            .hide-mobile { display: none; }
-        }
+        /* Rack grid preservada para el top (esconde racks viejos) */
+        .rack-grid { display: flex; gap: 0.5rem; flex-wrap: nowrap; padding: 4px; overflow-x: auto; margin-bottom: 1rem;}
+        .rack-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.5rem; display: flex; align-items: center; gap: 0.4rem; min-width: 90px; flex: 1; }
+        .rack-icon { width: 26px; height: 26px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+        .rack-info h3 { font-size: 0.72rem; font-weight: 800; margin: 0 0 1px 0; white-space: nowrap; }
+        .rack-info p { font-size: 0.6rem; color: #94a3b8; margin: 0; white-space: nowrap; }
     </style>
 </head>
-<body>
 
-    <div class="visor-shell">
-        <nav class="visor-nav">
-            <div class="d-flex align-items-center gap-4">
-                <a href="/" class="visor-logo">
-                    <i class="bi bi-display"></i>
-                    <span>VISOR DE TRABAJOS</span>
-                </a>
+<body class="has-fixed-header">
 
-                {% if efemeride_actual %}
-                <div class="hide-mobile" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; display:flex; align-items:center; gap: 8px; cursor: default; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-                    <div style="font-size: 1.1em;">{{ efemeride_actual.icono }}</div>
-                    <div>
-                        <span style="font-weight: 700; color: var(--visor-accent);">{{ efemeride_actual.titulo }}</span>
-                        <span style="font-weight: 400; opacity: 0.9; margin-left: 4px;">- {{ efemeride_actual.descripcion }}</span>
+    <!-- NAVBAR MINIMALISTA DEL VISOR -->
+    <nav class="op-toolbar" style="justify-content: space-between;">
+        <div style="color: var(--text-color); font-weight: 700; font-family: var(--font-display); font-size: 1rem; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-display" style="color: var(--accent-color);"></i> VISOR DE TRABAJOS
+        </div>
+        
+        <div class="d-flex align-items-center gap-3">
+            {% if efemeride_actual %}
+            <div class="hide-mobile" style="color: var(--accent-color); cursor: default; display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 1.1em;">{{ efemeride_actual.icono }}</span>
+                <strong>{{ efemeride_actual.titulo }}</strong>
+                <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">- {{ efemeride_actual.descripcion }}</span>
+            </div>
+            <span class="op-divider hide-mobile"></span>
+            {% endif %}
+
+            <div id="visorClock" class="fw-bold text-accent hide-mobile" style="font-family: monospace; font-size: 1.1rem; color: var(--accent-color);">00:00:00</div>
+            
+            {% if is_authenticated %}
+                <span class="op-divider"></span>
+                <div class="op-user-label">{{ current_user.username | upper }}</div>
+                <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn">[ DASHBOARD ]</a>
+                <a href="{{ url_for('auth.logout') }}" class="op-btn op-btn--danger">[ SALIR ]</a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="op-btn" style="border: 1px solid var(--accent-color); color: var(--accent-color);">[ INGRESAR ]</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main style="padding-top: 0; padding-bottom: 20px;">
+        
+        {% set total_hoy = tareas_hoy | length %}
+        {% set hechas_hoy = tareas_hoy | selectattr("estado", "equalto", "Hecha") | list | length %}
+        {% set pendientes_hoy = tareas_hoy | selectattr("estado", "ne", "Hecha") | list | length %}
+        {% set total_pendientes_global = tareas_pendientes | length %}
+        
+        {% set total_radar = hechas_hoy + pendientes_hoy %}
+        {% if total_radar == 0 %}{% set total_radar = 1 %}{% endif %}
+        
+        {% set pct_hechas = (hechas_hoy * 100 / total_radar) | round(1) %}
+        {% set pct_pend = (pendientes_hoy * 100 / total_radar) | round(1) %}
+        {% set pct_asig = 0 %}
+
+        <!-- MIDNIGHT RADAR MASTHEAD -->
+        <div class="radar-masthead">
+            <div class="health-radar">
+                <div class="health-radar__labels">
+                    <span>Estado de Trabajos (Hoy)</span>
+                    <span>{{ total_hoy }} Registros</span>
+                </div>
+                <div class="health-radar__bar">
+                    <div class="health-radar__segment health-radar__segment--stable" style="width: {{ pct_hechas }}%;" title="Hechas: {{ hechas_hoy }}"></div>
+                    <div class="health-radar__segment health-radar__segment--warning" style="width: {{ pct_pend }}%;" title="Pendientes: {{ pendientes_hoy }}"></div>
+                </div>
+                <div class="health-radar__legend">
+                    <div class="health-radar__legend-item"><div class="health-radar__legend-dot" style="background: var(--color-stable);"></div> <span class="font-mono">{{ pct_hechas }}% Hechas</span></div>
+                    <div class="health-radar__legend-item"><div class="health-radar__legend-dot" style="background: var(--color-warning);"></div> <span class="font-mono">{{ pct_pend }}% Pendientes</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Racks Grid -->
+        <div id="rackStatusContainer" style="display:none; margin: 0 1rem 1rem 1rem;">
+            <div class="rack-grid" id="rackGrid">
+                <!-- Racks will be injected here -->
+            </div>
+        </div>
+
+        <!-- CONSOLE GRID -->
+        <div class="console-grid">
+            <!-- COLUMNA IZQUIERDA: ACCIÓN REQUERIDA (Priority Tickets) -->
+            <div class="console-panel">
+                <div class="console-panel__title">Acción Requerida</div>
+                
+                <div class="integrated-alert mb-3" style="background: rgba(30, 41, 59, 0.5); padding: 1rem;">
+                    <form id="filterForm" class="row g-2 align-items-center m-0">
+                        <div class="col-12">
+                            <label class="small text-muted mb-1 font-mono">FECHA</label>
+                            <input type="date" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterFecha" value="{{ hoy }}">
+                        </div>
+                        <div class="col-12 mt-2">
+                            <label class="small text-muted mb-1 font-mono">EQUIPO / PC</label>
+                            <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterPc" placeholder="Ej: MESA-ENTRADAS" value="{{ pc_filtro or '' }}">
+                        </div>
+                        <div class="col-12 mt-2">
+                            <label class="small text-muted mb-1 font-mono">TÉCNICO</label>
+                            <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterTech">
+                                <option value="">[ TODOS ]</option>
+                                {% for tech in technicians %}
+                                <option value="{{ tech.name }}" {% if tech_filtro == tech.name %}selected{% endif %}>{{ tech.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 mt-3 d-flex gap-2">
+                            <button type="button" class="btn btn-sm w-100 fw-bold" onclick="applyFilters()" style="background: var(--accent-color); color: #000; border: none; font-family: var(--font-mono);">
+                                <i class="bi bi-search me-1"></i> FILTRAR
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetFilters()" title="Limpiar Filtros">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                {% if total_pendientes_global > 0 %}
+                <div class="priority-ticket" style="border-left-color: var(--color-warning); cursor: pointer;" onclick="scrollToPendientes()">
+                    <div class="priority-ticket__header">
+                        <span class="priority-ticket__badge" style="background: rgba(249, 115, 22, 0.1); color: var(--color-warning);">ATENCIÓN</span>
+                        <i class="bi bi-arrow-down text-muted"></i>
                     </div>
+                    <h3 class="priority-ticket__title" id="ticketPendientes"><span data-countup>{{ total_pendientes_global }}</span> Tareas Pendientes</h3>
+                    <p class="priority-ticket__desc">Ir a la sección de pendientes para resolver o asignar.</p>
                 </div>
                 {% endif %}
-            </div>
-            <div class="d-flex align-items-center gap-3">
-                <div id="visorClock" class="fw-bold text-accent hide-mobile" style="font-family: monospace; font-size: 1.1rem; color: var(--visor-accent);">00:00:00</div>
-                {% if not is_authenticated %}
-                <a href="{{ url_for('auth.login') }}" class="btn-auth">Ingresar</a>
-                {% else %}
-                <a href="{{ url_for('dashboard.dashboard') }}" class="btn-auth">Panel Control</a>
-                {% endif %}
-            </div>
-        </nav>
-
-        <main class="visor-content">
-            <div class="table-container mb-4 p-2" style="background: rgba(30, 41, 59, 0.5);">
-                <form id="filterForm" class="row g-2 align-items-center">
-                    <div class="col-md-3">
-                        <input type="date" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterFecha" value="{{ hoy }}" title="Fecha">
+                
+                <div class="priority-ticket" style="border-left-color: var(--color-stable);">
+                    <div class="priority-ticket__header">
+                        <span class="priority-ticket__badge" style="background: rgba(34, 197, 94, 0.1); color: var(--color-stable);">COMPLETADAS</span>
                     </div>
-                    <div class="col-md-3">
-                        <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterPc" placeholder="pc/equipo" value="{{ pc_filtro or '' }}" title="pc/equipo">
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterTech" title="Técnico">
-                            <option value="">Todos los técnicos</option>
-                            {% for tech in technicians %}
-                            <option value="{{ tech.name }}" {% if tech_filtro == tech.name %}selected{% endif %}>{{ tech.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-3 d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-primary w-100 fw-bold" onclick="applyFilters()">
-                            <i class="bi bi-search me-1"></i> Filtrar
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetFilters()" title="Limpiar">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-list-task"></i></div>
-                    <div class="kpi-info">
-                        <h3 id="statTotalHoy">{{ tareas_hoy | length }}</h3>
-                        <p>Total Hoy</p>
-                    </div>
-                </div>
-                <div class="kpi-card" style="cursor: pointer; transition: all 0.2s;" onclick="scrollToPendientes()" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--visor-pending)'" onmouseout="this.style.transform='none'; this.style.borderColor='var(--visor-border)'" title="Ver tareas pendientes">
-                    <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-clock-history"></i></div>
-                    <div class="kpi-info">
-                        <h3 id="statPendientes">--</h3>
-                        <p>Pendientes</p>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon bg-success bg-opacity-10 text-success"><i class="bi bi-check2-circle"></i></div>
-                    <div class="kpi-info">
-                        <h3 id="statHechasHoy">--</h3>
-                        <p>Hechas Hoy</p>
-                    </div>
+                    <h3 class="priority-ticket__title" id="ticketHechas"><span data-countup>{{ hechas_hoy }}</span> Trabajos Resueltos Hoy</h3>
                 </div>
             </div>
-
-            <div id="rackStatusContainer" style="display:none; margin-bottom: 2rem;">
-                <div class="rack-grid" id="rackGrid">
-                    <!-- Racks will be injected here -->
+            
+            <!-- COLUMNA DERECHA: MÉTRICAS DE SISTEMA Y TABLAS -->
+            <div class="console-panel">
+                <div class="console-panel__title">Métricas de Trabajos <div class="spinner-border spinner-border-sm text-accent ms-2" id="refreshSpinner" style="display: none;" role="status"></div></div>
+                
+                <!-- KPIs (Reemplazando kpi-grid antiguo) -->
+                <div class="metrics-row mb-3">
+                    <div class="metric-box">
+                        <div class="metric-box__label">Total Registros (Filtro)</div>
+                        <div class="metric-box__value" id="statTotalHoy" data-countup>{{ total_hoy }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-box__label">Pendientes Activas</div>
+                        <div class="metric-box__value" id="statPendientes" style="color: var(--color-warning);" data-countup>{{ total_pendientes_global }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-box__label">Hechas Hoy</div>
+                        <div class="metric-box__value" id="statHechasHoy" style="color: var(--color-stable);" data-countup>{{ hechas_hoy }}</div>
+                    </div>
                 </div>
-            </div>
 
-            <div style="text-align: right; margin-bottom: 0.5rem; height: 0;">
-                <div class="spinner-border spinner-border-sm text-accent" id="refreshSpinner" style="display: none;" role="status"></div>
-            </div>
-
-            <div class="table-container">
-                <table class="visor-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 80px;">Hora</th>
-                            <th style="width: 180px;">Equipo / PC</th>
-                            <th style="width: 150px;" class="hide-mobile">Solicitante</th>
-                            <th>Descripción del Trabajo</th>
-                            <th style="width: 180px;">Técnico</th>
-                            <th style="width: 130px;">Resolución</th>
-                            <th style="width: 130px;">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableHoy">
-                        {% if tareas_hoy %}
-                            {% for task in tareas_hoy %}
+                <!-- TABLAS DE TRABAJO (Usando table base de gold.css) -->
+                <div class="table-responsive mb-4" style="border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; background: var(--card-bg);">
+                    <table class="table table-dark table-hover m-0 align-middle">
+                        <thead style="background: rgba(0,0,0,0.4);">
                             <tr>
-                                <td class="time-cell">
-                                    {{ task.created_at_time or '--:--' }}
-                                </td>
+                                <th style="width: 80px; font-family: var(--font-mono); font-size: 0.75rem;">HORA</th>
+                                <th style="font-family: var(--font-mono); font-size: 0.75rem;">PC/EQUIPO</th>
+                                <th class="d-none d-md-table-cell" style="font-family: var(--font-mono); font-size: 0.75rem;">SOLICITANTE</th>
+                                <th style="font-family: var(--font-mono); font-size: 0.75rem;">TRABAJO</th>
+                                <th style="width: 140px; font-family: var(--font-mono); font-size: 0.75rem;">ESTADO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableHoy">
+                            <!-- JS Injection o Server Side Injection here -->
+                            {% if tareas_hoy %}
+                                {% for task in tareas_hoy %}
+                                <tr>
+                                    <td class="text-muted small font-mono">{{ task.created_at_time or '--:--' }}</td>
+                                    <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
+                                    <td class="d-none d-md-table-cell">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-person text-muted"></i>
+                                            <span>{{ task.solicitante or 'N/A' }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="mb-1">{{ task.descripcion }}</div>
+                                        
+                                        {% if task.acciones %}
+                                        <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
+                                            {% for accion in task.acciones %}
+                                            <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                                <i class="bi bi-chat-text me-1"></i>
+                                                <strong style="color: #e2e8f0;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+
+                                        {% if task.solucion %}
+                                        <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #cbd5e1;">
+                                            <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
+                                        </div>
+                                        {% endif %}
+
+                                        {% if task.estado != 'Hecha' %}
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Nota</button>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="mb-1">
+                                            <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
+                                            <span class="fw-bold small">{{ task.estado }}</span>
+                                        </div>
+                                        {% if task.assigned_to or task.completed_by %}
+                                        <div class="tech-pill">
+                                            <i class="bi bi-tools"></i>
+                                            <span>{{ task.completed_by or task.assigned_to }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">No hay trabajos registrados hoy.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- TAREAS PENDIENTES GLOBALES -->
+                {% if tareas_pendientes %}
+                <div class="console-panel__title" id="sectionPendientes">Pendientes Activas</div>
+                <div class="table-responsive mb-4" id="tablePendientesContainer" style="border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; background: var(--card-bg);">
+                    <table class="table table-dark table-hover m-0 align-middle" id="tablePendientes">
+                        <thead style="background: rgba(0,0,0,0.4);">
+                            <tr>
+                                <th style="width: 110px; font-family: var(--font-mono); font-size: 0.75rem;">FECHA</th>
+                                <th style="font-family: var(--font-mono); font-size: 0.75rem;">PC/EQUIPO</th>
+                                <th class="d-none d-md-table-cell" style="font-family: var(--font-mono); font-size: 0.75rem;">SOLICITANTE</th>
+                                <th style="font-family: var(--font-mono); font-size: 0.75rem;">TRABAJO</th>
+                                <th style="width: 140px; font-family: var(--font-mono); font-size: 0.75rem;">ESTADO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Injection -->
+                            {% for task in tareas_pendientes %}
+                            <tr>
+                                <td class="text-muted small font-mono">{{ task.created_at_fmt or '--:--' }}</td>
                                 <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
-                                <td class="hide-mobile">
+                                <td class="d-none d-md-table-cell">
                                     <div class="d-flex align-items-center gap-2">
                                         <i class="bi bi-person text-muted"></i>
                                         <span>{{ task.solicitante or 'N/A' }}</span>
                                     </div>
                                 </td>
-                                <td class="desc-cell">
-                                    {{ task.descripcion }}{% if task.desc_edited %} <i class="bi bi-info-circle-fill" title="Descripción editada a posteriori" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>{% endif %}
-                                {% if task.acciones %}
-                                <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
-                                    {% for accion in task.acciones %}
-                                    <div class="small" style="color: #64748b; margin-bottom: 2px;">
-                                        <i class="bi bi-chat-text me-1"></i>
-                                        <strong style="color: #334155;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-
-                                    {% if task.solucion %}
-                                    <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #cbd5e1;">
-                                        <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
-                                        {% if task.sol_edited %}
-                                        <i class="bi bi-info-circle-fill ms-1" title="Solución editada a posteriori" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>
-                                        {% endif %}
+                                <td>
+                                    <div class="mb-1">{{ task.descripcion }}</div>
+                                    {% if task.acciones %}
+                                    <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
+                                        {% for accion in task.acciones %}
+                                        <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                            <i class="bi bi-chat-text me-1"></i>
+                                            <strong style="color: #e2e8f0;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
+                                        </div>
+                                        {% endfor %}
                                     </div>
                                     {% endif %}
-                                    {% if task.estado != 'Hecha' %}
                                     <div class="mt-2">
-                                        <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Añadir Nota</button>
+                                        <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Nota</button>
                                     </div>
-                                    {% endif %}
                                 </td>
                                 <td>
-                                    {% if task.assigned_to or task.completed_by %}
-                                    <div class="tech-pill">
-                                        <i class="bi bi-tools"></i>
-                                        <span>{{ task.completed_by or task.assigned_to }}</span>
+                                    <div class="mb-1">
+                                        <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
+                                        <span class="fw-bold small">{{ task.estado }}</span>
                                     </div>
-                                    {% else %}
-                                    <span class="text-muted small">Sin asignar</span>
+                                    {% if task.assigned_to %}
+                                    <div class="tech-pill"><i class="bi bi-tools"></i><span>{{ task.assigned_to }}</span></div>
                                     {% endif %}
-                                </td>
-                                <td>
-                                    <span class="duration-pill" title="{{ task.resolution_label }}">
-                                        <i class="bi bi-stopwatch"></i>
-                                        {{ task.resolution_time or '-' }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
-                                    <span class="fw-bold small">{{ task.estado }}</span>
                                 </td>
                             </tr>
                             {% endfor %}
-                        {% else %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <!-- HISTORIAL ANTERIOR -->
+                {% if tareas_anteriores %}
+                <div class="console-panel__title">Historial Reciente</div>
+                <div class="table-responsive" id="tableAnterioresContainer" style="opacity: 0.7; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; background: var(--card-bg);">
+                    <table class="table table-dark table-hover m-0 align-middle" id="tableAnteriores">
+                        <tbody>
+                            <!-- Injection -->
+                            {% for task in tareas_anteriores %}
                             <tr>
-                                <td colspan="7" class="text-center py-5 text-muted">No hay trabajos registrados hoy.</td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-
-            {% if tareas_pendientes %}
-            <div class="section-header">
-                <h2>Actividades Pendientes</h2>
-            </div>
-            <div class="table-container mb-4" id="tablePendientes">
-                <table class="visor-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 110px;">Fecha/Hora</th>
-                            <th style="width: 180px;">Equipo / PC</th>
-                            <th style="width: 150px;" class="hide-mobile">Solicitante</th>
-                            <th>Descripción del Trabajo</th>
-                            <th style="width: 180px;">Técnico</th>
-                            <th style="width: 130px;">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for task in tareas_pendientes %}
-                        <tr>
-                            <td class="time-cell">{{ task.created_at_fmt or '--:--' }}</td>
-                            <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
-                            <td class="hide-mobile">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="bi bi-person text-muted"></i>
-                                    <span>{{ task.solicitante or 'N/A' }}</span>
-                                </div>
-                            </td>
-                            <td class="desc-cell">
-                                {{ task.descripcion }}{% if task.desc_edited %} <i class="bi bi-info-circle-fill" title="Descripción editada a posteriori" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>{% endif %}
-                                {% if task.acciones %}
-                                <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
-                                    {% for accion in task.acciones %}
-                                    <div class="small" style="color: #64748b; margin-bottom: 2px;">
-                                        <i class="bi bi-chat-text me-1"></i>
-                                        <strong style="color: #334155;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
+                                <td style="width: 110px;" class="text-muted small font-mono">{{ task.created_at_fmt or '--:--' }}</td>
+                                <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name }}</span></td>
+                                <td class="text-muted">
+                                    <div class="mb-1">{{ task.descripcion }}</div>
+                                    {% if task.solucion %}
+                                    <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #94a3b8;">
+                                        <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
                                     </div>
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-
-                                {% if task.estado != 'Hecha' %}
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Añadir Nota</button>
-                                </div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if task.assigned_to %}
-                                <div class="tech-pill">
-                                    <i class="bi bi-tools"></i>
-                                    <span>{{ task.assigned_to }}</span>
-                                </div>
-                                {% else %}
-                                <span class="text-muted small">Sin asignar</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
-                                <span class="fw-bold small">{{ task.estado }}</span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% endif %}
-
-            {% if tareas_anteriores %}
-            <div class="section-header">
-                <h2>Historial Reciente</h2>
-            </div>
-            <div class="table-container" style="opacity: 0.7;" id="tableAnteriores">
-                <table class="visor-table">
-                    <tbody>
-                        {% for task in tareas_anteriores %}
-                        <tr>
-                            <td style="width: 110px;" class="text-muted small">{{ task.created_at_fmt or '--:--' }}</td>
-                            <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name }}</span></td>
-                            <td class="desc-cell text-muted">
-                                {{ task.descripcion }}{% if task.desc_edited %} <i class="bi bi-info-circle-fill" title="Descripción editada a posteriori" style="color: rgba(255,255,255,0.3); font-size:0.75rem;"></i>{% endif %}
-                                {% if task.acciones %}
-                                <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
-                                    {% for accion in task.acciones %}
-                                    <div class="small" style="color: #64748b; margin-bottom: 2px;">
-                                        <i class="bi bi-chat-text me-1"></i>
-                                        <strong style="color: #334155;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-
-                                {% if task.solucion %}
-                                <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #94a3b8;">
-                                    <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
-                                    {% if task.sol_edited %}
-                                    <i class="bi bi-info-circle-fill ms-1" title="Solución editada a posteriori" style="color: rgba(255,255,255,0.3); font-size:0.75rem;"></i>
                                     {% endif %}
-                                </div>
-                                {% endif %}
-
-                            </td>
-                            <td style="width: 130px;">
-                                <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
-                                <span class="small">{{ task.estado }}</span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                </td>
+                                <td style="width: 130px;">
+                                    <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
+                                    <span class="small">{{ task.estado }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
-        </main>
-    </div>
+        </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function scrollToPendientes() {
-            const container = document.getElementById('tablePendientes');
-            if (container) {
-                // Scroll hacia el header que está justo antes del contenedor
-                const header = container.previousElementSibling;
-                if (header && header.classList.contains('section-header')) {
-                    header.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-                
-                // Efecto visual para destacar la tabla
-                const originalBoxShadow = container.style.boxShadow;
-                container.style.transition = 'box-shadow 0.4s ease';
-                container.style.boxShadow = '0 0 0 2px var(--visor-pending), 0 0 20px rgba(245, 158, 11, 0.4)';
-                setTimeout(() => {
-                    container.style.boxShadow = originalBoxShadow || '0 10px 15px -3px rgba(0, 0, 0, 0.3)';
-                }, 2000);
-            } else {
-                alert('¡Excelente! No hay tareas pendientes en este momento.');
-            }
-        }
+    </main>
 
-        function updateClock() {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('es-AR', { hour12: false });
-            document.getElementById('visorClock').textContent = timeStr;
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        async function quickAssign(taskId, pcName) {
-            if (!confirm(`¿Deseas asignar esta tarea a la PC ${pcName}?`)) return;
-            const fd = new FormData();
-            fd.append('task_id', taskId);
-            fd.append('pc_name', pcName);
-            
-            // Agregar Token CSRF
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-            if (csrfToken) {
-                fd.append('csrf_token', csrfToken);
-            }
-            
-            try {
-                const r = await fetch('/tasks/assign', { method: 'POST', body: fd });
-                if (r.ok) refreshData();
-            } catch (e) { console.error(e); }
-        }
-
-        async function refreshData() {
-            const spinner = document.getElementById('refreshSpinner');
-            if (spinner) spinner.style.display = 'inline-block';
-            
-            const fecha = document.getElementById('filterFecha').value;
-            const pc = document.getElementById('filterPc').value;
-            const tech = document.getElementById('filterTech').value;
-            
-            const params = new URLSearchParams({ fecha, pc, technician: tech });
-
-            try {
-                const response = await fetch('/api/visor/data?' + params.toString());
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    renderHoy(data.tasks_hoy);
-                    if (data.tasks_pendientes) renderPendientes(data.tasks_pendientes);
-                    renderAnteriores(data.tasks_anteriores);
-                    updateStats(data);
-                }
-            } catch (e) { console.error(e); }
-            finally { if (spinner) setTimeout(() => spinner.style.display = 'none', 800); }
-            
-            // Also refresh rack and switch status
-            refreshRackStatus();
-        }
-
-        async function promptAddAction(taskId) {
-            const text = window.prompt("Ingrese la nota para esta tarea:");
-            if (!text || !text.trim()) return;
-            
-            try {
-                const formData = new URLSearchParams();
-                formData.append('action_text', text.trim());
-                
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                if (csrfToken) {
-                    formData.append('csrf_token', csrfToken);
-                }
-                
-                const response = await fetch(`/api/tasks/${taskId}/actions`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
-                });
-                
-                const result = await response.json();
-                if (result.status === 'success') {
-                    refreshData();
-                } else {
-                    alert("Error: " + result.message);
-                }
-            } catch (e) {
-                console.error(e);
-                alert("Error de red.");
-            }
-        }
-
-    </script>
-
-    <!-- Modal Historial de Racks (Iframe) -->
+    <!-- Modal Historial de Racks (Iframe) e Integración de JS -->
     <div class="modal fade" id="auditsModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1200px;">
             <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
@@ -810,9 +396,6 @@
                             </div>
                             <div>
                                 <h5 class="modal-title mb-0 fw-bold text-white" style="font-size: 1.05rem; letter-spacing: -0.02em;">Historial de Auditorías de Racks</h5>
-                                <div style="font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 2px;">
-                                    Registro de controles de temperatura, luces, limpieza y observaciones
-                                </div>
                             </div>
                         </div>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
@@ -825,11 +408,122 @@
         </div>
     </div>
     
+    <!-- Modal Detalle Rack -->
+    <div class="modal-overlay" id="rackAuditModalOverlay" style="display: none; align-items: center; justify-content: center; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 10000;">
+        <div class="glass-modal" style="max-width: 500px; width: 90%; background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.2rem; margin: 0; color: #fff;"><i class="bi bi-server text-accent"></i> Detalles de <span id="modalRackName"></span></h2>
+                <button type="button" class="btn-close btn-close-white" onclick="hideRackAuditModal()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="rackAuditEmpty" style="display:none; text-align:center; padding: 2rem 0; color: #94a3b8;">
+                    No hay auditorías registradas para este rack.
+                </div>
+                <div id="rackAuditContent" style="color: #e2e8f0;">
+                    <p class="mb-2"><small class="text-muted">Última auditoría:</small> <strong id="modalRackDate"></strong></p>
+                    <p class="mb-3"><small class="text-muted">Técnico:</small> <strong id="modalRackTech"></strong></p>
+                    <div class="d-flex justify-content-between mb-3 p-3" style="background: rgba(0,0,0,0.2); border-radius: 8px;">
+                        <div class="text-center"><div class="text-muted" style="font-size: 0.8rem;">Temperatura</div><div id="modalRackTemp" style="font-size: 1.2rem;"></div></div>
+                        <div class="text-center"><div class="text-muted" style="font-size: 0.8rem;">Luces Unifi/Red</div><div id="modalRackLuces" style="margin-top: 4px;"></div></div>
+                        <div class="text-center"><div class="text-muted" style="font-size: 0.8rem;">Limpieza</div><div id="modalRackLimpieza" style="margin-top: 4px;"></div></div>
+                        <div class="text-center"><div class="text-muted" style="font-size: 0.8rem;">Iluminación</div><div id="modalRackIluminacion" style="margin-top: 4px;"></div></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted" style="font-size: 0.8rem; display: block; margin-bottom: 4px;">Observaciones:</label>
+                        <div id="modalRackObs" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; font-size: 0.9rem; min-height: 50px;"></div>
+                    </div>
+                    <div id="modalRackPhotoContainer" style="display:none; margin-top: 1rem; text-align: center;">
+                        <label class="text-muted" style="font-size: 0.8rem; display: block; margin-bottom: 8px; text-align: left;">Foto Adjunta:</label>
+                        <a id="modalRackPhotoLink" href="#" target="_blank"><img id="modalRackPhoto" src="" alt="Foto" style="max-width: 100%; max-height: 250px; border-radius: 8px; object-fit: contain;"></a>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 1rem; text-align: right;">
+                <button type="button" class="btn btn-outline-light" onclick="hideRackAuditModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGICA JAVASCRIPT -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById('auditsModal').addEventListener('show.bs.modal', function () {
+        function scrollToPendientes() {
+            const container = document.getElementById('tablePendientesContainer') || document.getElementById('sectionPendientes');
+            if (container) {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const originalBoxShadow = container.style.boxShadow;
+                container.style.transition = 'box-shadow 0.4s ease';
+                container.style.boxShadow = '0 0 0 2px var(--color-warning), 0 0 20px rgba(245, 158, 11, 0.4)';
+                setTimeout(() => { container.style.boxShadow = originalBoxShadow || 'none'; }, 2000);
+            } else {
+                alert('¡Excelente! No hay tareas pendientes en este momento.');
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('es-AR', { hour12: false });
+            const clockEl = document.getElementById('visorClock');
+            if(clockEl) clockEl.textContent = timeStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        async function quickAssign(taskId, pcName) {
+            if (!confirm(`¿Deseas asignar esta tarea a la PC ${pcName}?`)) return;
+            const fd = new FormData();
+            fd.append('task_id', taskId);
+            fd.append('pc_name', pcName);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (csrfToken) fd.append('csrf_token', csrfToken);
+            try { const r = await fetch('/tasks/assign', { method: 'POST', body: fd }); if (r.ok) refreshData(); } catch (e) { console.error(e); }
+        }
+
+        async function refreshData() {
+            const spinner = document.getElementById('refreshSpinner');
+            if (spinner) spinner.style.display = 'inline-block';
+            
+            const fecha = document.getElementById('filterFecha')?.value || '';
+            const pc = document.getElementById('filterPc')?.value || '';
+            const tech = document.getElementById('filterTech')?.value || '';
+            const params = new URLSearchParams({ fecha, pc, technician: tech });
+
+            try {
+                const response = await fetch('/api/visor/data?' + params.toString());
+                const data = await response.json();
+                if (data.status === 'success') {
+                    renderHoy(data.tasks_hoy);
+                    if (data.tasks_pendientes) renderPendientes(data.tasks_pendientes);
+                    renderAnteriores(data.tasks_anteriores);
+                    updateStats(data);
+                }
+            } catch (e) { console.error(e); }
+            finally { if (spinner) setTimeout(() => spinner.style.display = 'none', 800); }
+            refreshRackStatus();
+        }
+
+        async function promptAddAction(taskId) {
+            const text = window.prompt("Ingrese la nota para esta tarea:");
+            if (!text || !text.trim()) return;
+            try {
+                const formData = new URLSearchParams();
+                formData.append('action_text', text.trim());
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                if (csrfToken) formData.append('csrf_token', csrfToken);
+                
+                const response = await fetch(`/api/tasks/${taskId}/actions`, {
+                    method: 'POST', body: formData, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+                const result = await response.json();
+                if (result.status === 'success') refreshData();
+                else alert("Error: " + result.message);
+            } catch (e) { console.error(e); alert("Error de red."); }
+        }
+
+        // Modals y Racks
+        document.getElementById('auditsModal')?.addEventListener('show.bs.modal', function () {
             const iframe = document.getElementById('auditsIframe');
             if (!iframe.src || iframe.src === window.location.href) {
-                // Pass modal=1 to hide the header in the iframe
                 iframe.src = "/infra/racks/audits?modal=1";
             }
         });
@@ -839,131 +533,123 @@
                 const response = await fetch('/api/racks/status');
                 const data = await response.json();
                 if (data.status === 'success' && data.data.length > 0) {
-                    window.rackStatusData = data.data; // Guardar para el modal
-                    document.getElementById('rackStatusContainer').style.display = 'block';
+                    window.rackStatusData = data.data; 
+                    const container = document.getElementById('rackStatusContainer');
+                    if(container) container.style.display = 'block';
                     const grid = document.getElementById('rackGrid');
-                    grid.innerHTML = data.data.map(item => {
-                        const iconColor = item.status_color === 'red' ? 'text-danger bg-danger' : 'text-success bg-success';
-                        const icon = item.status_color === 'red' ? 'bi-exclamation-triangle' : 'bi-check-circle';
-                        const lastAudit = item.last_audit ? new Date(item.last_audit.timestamp).toLocaleString('es-AR') : 'Nunca';
-                        
-                        const todayStr = new Date().toLocaleDateString('es-AR');
-                        const auditDateStr = item.last_audit ? new Date(item.last_audit.timestamp).toLocaleDateString('es-AR') : null;
-                        const isToday = auditDateStr === todayStr;
-                        const cardStyle = isToday ? '' : 'opacity: 0.25; filter: grayscale(0.8);';
-                        const warningDot = isToday ? '' : '<span title="No se auditaron métricas hoy" style="display:inline-block; width:6px; height:6px; background:var(--visor-pending); border-radius:50%; margin-left:6px; vertical-align:middle; box-shadow: 0 0 6px var(--visor-pending);"></span>';
-
-                        return `
-                        <div class="rack-card" onclick="showRackAuditModal('${item.rack.id}')" style="cursor: pointer; transition: transform 0.2s, opacity 0.2s, filter 0.2s; ${cardStyle}" onmouseover="this.style.transform='scale(1.02)'; this.style.opacity='1'; this.style.filter='grayscale(0)'" onmouseout="this.style.transform='scale(1)'; this.style.opacity='${isToday ? '1' : '0.25'}'; this.style.filter='${isToday ? 'none' : 'grayscale(0.8)'}'">
-                            <div class="rack-icon ${iconColor} bg-opacity-10"><i class="bi ${icon}"></i></div>
-                            <div class="rack-info" style="flex:1;">
-                                <h3>${item.rack.nombre}${warningDot}</h3>
-                                <p style="margin-bottom: 0;">Temp: ${item.last_audit ? item.last_audit.temperatura_celsius_float + '°C' : '--'}</p>
-                            </div>
-                        </div>
-                        `;
-                    }).join('');
-                    
-                    const historyBtn = `
-                    <div class="rack-card text-center d-flex flex-column justify-content-center align-items-center p-1" style="min-width: 28px; max-width: 32px; flex: 0 0 auto; background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.3); cursor: pointer; transition: all 0.2s; color: var(--visor-accent);" onmouseover="this.style.background='rgba(56, 189, 248, 0.2)'" onmouseout="this.style.background='rgba(56, 189, 248, 0.08)'" data-bs-toggle="modal" data-bs-target="#auditsModal" title="Ver Historial">
-                        <i class="bi bi-clock-history" style="font-size: 0.95rem;"></i>
-                    </div>
-                    `;
-                    grid.innerHTML += historyBtn;
+                    if(grid) {
+                        grid.innerHTML = data.data.map(item => {
+                            const iconColor = item.status_color === 'red' ? 'text-danger bg-danger' : 'text-success bg-success';
+                            const icon = item.status_color === 'red' ? 'bi-exclamation-triangle' : 'bi-check-circle';
+                            const todayStr = new Date().toLocaleDateString('es-AR');
+                            const tsStr = item.last_audit ? item.last_audit.timestamp.replace(' GMT', '') : null;
+                            const auditDateStr = tsStr ? new Date(tsStr).toLocaleDateString('es-AR') : null;
+                            const isToday = auditDateStr === todayStr;
+                            const cardStyle = isToday ? '' : 'opacity: 0.25; filter: grayscale(0.8);';
+                            const warningDot = isToday ? '' : '<span title="No se auditaron métricas hoy" style="display:inline-block; width:6px; height:6px; background:var(--color-warning); border-radius:50%; margin-left:6px; vertical-align:middle; box-shadow: 0 0 6px var(--color-warning);"></span>';
+                            return `
+                            <div class="rack-card" onclick="showRackAuditModal('${item.rack.id}')" style="cursor: pointer; transition: transform 0.2s, opacity 0.2s, filter 0.2s; ${cardStyle}" onmouseover="this.style.transform='scale(1.02)'; this.style.opacity='1'; this.style.filter='grayscale(0)'" onmouseout="this.style.transform='scale(1)'; this.style.opacity='${isToday ? '1' : '0.25'}'; this.style.filter='${isToday ? 'none' : 'grayscale(0.8)'}'">
+                                <div class="rack-icon ${iconColor} bg-opacity-10"><i class="bi ${icon}"></i></div>
+                                <div class="rack-info" style="flex:1;">
+                                    <h3>${item.rack.nombre}${warningDot}</h3>
+                                    <p style="margin-bottom: 0;">Temp: ${item.last_audit ? item.last_audit.temperatura_celsius_float + '°C' : '--'}</p>
+                                </div>
+                            </div>`;
+                        }).join('');
+                        grid.innerHTML += `
+                        <div class="rack-card text-center d-flex justify-content-center p-1" style="min-width: 32px; flex: 0 0 auto; background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.3); cursor:pointer;" data-bs-toggle="modal" data-bs-target="#auditsModal" title="Ver Historial">
+                            <i class="bi bi-clock-history" style="font-size: 1rem; color: var(--accent-color);"></i>
+                        </div>`;
+                    }
                 }
             } catch(e) { console.error(e); }
         }
 
-        // Initialize rack status on load
-        document.addEventListener('DOMContentLoaded', () => {
-            refreshRackStatus();
-        });
-
+        document.addEventListener('DOMContentLoaded', () => { refreshRackStatus(); });
         function applyFilters() {
-            const fecha = document.getElementById('filterFecha').value;
-            const pc = document.getElementById('filterPc').value;
-            const tech = document.getElementById('filterTech').value;
-            const params = new URLSearchParams({ fecha, pc, technician: tech });
+            const params = new URLSearchParams({ 
+                fecha: document.getElementById('filterFecha').value, 
+                pc: document.getElementById('filterPc').value, 
+                technician: document.getElementById('filterTech').value 
+            });
             window.location.search = params.toString();
         }
-
-        function resetFilters() {
-            window.location.href = window.location.pathname;
-        }
-
-        function escapeHtml(value) {
-            return String(value || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
-        function renderAdMatch(task) {
-            return '';
-        }
-
+        function resetFilters() { window.location.href = window.location.pathname; }
+        
         function renderHoy(tasks) {
             const tbody = document.getElementById('tableHoy');
             if (!tasks || tasks.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No hay trabajos registrados hoy.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No hay trabajos registrados hoy.</td></tr>';
                 return;
             }
-
             tbody.innerHTML = tasks.map(task => `
                 <tr>
-                    <td class="time-cell">${task.created_at_time || '--:--'}</td>
+                    <td class="text-muted small font-mono">${task.created_at_time || '--:--'}</td>
                     <td><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></td>
-                    <td class="hide-mobile">
+                    <td class="d-none d-md-table-cell">
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-person text-muted"></i>
                             <span>${task.solicitante || 'N/A'}</span>
                         </div>
                     </td>
-                    <td class="desc-cell">
-                        <div>${task.descripcion}${task.desc_edited ? ' <i class="bi bi-info-circle-fill" title="Descripción editada a posteriori" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>' : ''}</div>
+                    <td>
+                        <div class="mb-1">${task.descripcion}${task.desc_edited ? ' <i class="bi bi-info-circle-fill" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>' : ''}</div>
                         ${task.acciones && task.acciones.length > 0 ? `
-                        <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
+                        <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
                             ${task.acciones.map(accion => `
-                            <div class="small" style="color: #64748b; margin-bottom: 2px;">
-                                <i class="bi bi-chat-text me-1"></i>
-                                <strong style="color: #334155;">${accion.user_name}:</strong> ${accion.action_text}
+                            <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                <i class="bi bi-chat-text me-1"></i> <strong style="color: #e2e8f0;">${accion.user_name}:</strong> ${accion.action_text}
                             </div>
                             `).join('')}
-                        </div>
-                        ` : ''}
-
+                        </div>` : ''}
                         ${task.solucion ? `
-                            <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #cbd5e1;">
-                                <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
-                                ${task.sol_edited ? '<i class="bi bi-info-circle-fill ms-1" title="Solución editada a posteriori" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>' : ''}
-                            </div>
-                        ` : ''}
+                        <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #cbd5e1;">
+                            <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
+                        </div>` : ''}
                         ${task.estado !== 'Hecha' ? `
-                            <div class="mt-2">
-                                <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Añadir Nota</button>
-                            </div>
-                        ` : ''}
-                        ${renderAdMatch(task)}
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Nota</button>
+                        </div>` : ''}
                     </td>
                     <td>
-                        ${(task.assigned_to || task.completed_by) ? `
-                            <div class="tech-pill">
-                                <i class="bi bi-tools"></i>
-                                <span>${task.completed_by || task.assigned_to}</span>
-                            </div>
-                        ` : '<span class="text-muted small">Sin asignar</span>'}
+                        <div class="mb-1"><span class="status-dot status-dot-${task.estado.toLowerCase()}"></span><span class="fw-bold small">${task.estado}</span></div>
+                        ${(task.assigned_to || task.completed_by) ? `<div class="tech-pill"><i class="bi bi-tools"></i><span>${task.completed_by || task.assigned_to}</span></div>` : '<span class="text-muted small">Sin asignar</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPendientes(tasks) {
+            const container = document.getElementById('tablePendientesContainer');
+            if (!container) return;
+            const tbody = document.querySelector('#tablePendientes tbody');
+            if (!tbody || !tasks) return;
+            if (tasks.length === 0) { container.style.display = 'none'; document.getElementById('sectionPendientes').style.display='none'; return; } 
+            else { container.style.display = 'block'; document.getElementById('sectionPendientes').style.display='block'; }
+            
+            tbody.innerHTML = tasks.map(task => `
+                <tr>
+                    <td class="text-muted small font-mono">${task.created_at_fmt || '--:--'}</td>
+                    <td><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></td>
+                    <td class="d-none d-md-table-cell">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person text-muted"></i>
+                            <span>${task.solicitante || 'N/A'}</span>
+                        </div>
                     </td>
                     <td>
-                        <span class="duration-pill" title="${task.resolution_label || ''}">
-                            <i class="bi bi-stopwatch"></i>
-                            ${task.resolution_time || '-'}
-                        </span>
+                        <div class="mb-1">${task.descripcion}</div>
+                        ${task.acciones && task.acciones.length > 0 ? `
+                        <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
+                            ${task.acciones.map(a => `<div class="small" style="color: #cbd5e1;"><i class="bi bi-chat-text me-1"></i><strong>${a.user_name}:</strong> ${a.action_text}</div>`).join('')}
+                        </div>` : ''}
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Nota</button>
+                        </div>
                     </td>
                     <td>
-                        <span class="status-dot status-dot-${task.estado.toLowerCase()}"></span>
-                        <span class="fw-bold small">${task.estado}</span>
+                        <div class="mb-1"><span class="status-dot status-dot-${task.estado.toLowerCase()}"></span><span class="fw-bold small">${task.estado}</span></div>
+                        ${task.assigned_to ? `<div class="tech-pill"><i class="bi bi-tools"></i><span>${task.assigned_to}</span></div>` : '<span class="text-muted small">Sin asignar</span>'}
                     </td>
                 </tr>
             `).join('');
@@ -972,96 +658,15 @@
         function renderAnteriores(tasks) {
             const tbody = document.querySelector('#tableAnteriores tbody');
             if (!tbody || !tasks) return;
-            
             tbody.innerHTML = tasks.map(task => `
                 <tr>
-                    <td style="width: 110px;" class="text-muted small">${task.created_at_fmt || '--:--'}</td>
-                    <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name || 'PC'}</span></td>
-                    <td class="desc-cell text-muted">
-                        <div>${task.descripcion}${task.desc_edited ? ' <i class="bi bi-info-circle-fill" title="Descripción editada a posteriori" style="color: rgba(255,255,255,0.3); font-size:0.75rem;"></i>' : ''}</div>
-                        ${task.acciones && task.acciones.length > 0 ? `
-                        <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
-                            ${task.acciones.map(accion => `
-                            <div class="small" style="color: #64748b; margin-bottom: 2px;">
-                                <i class="bi bi-chat-text me-1"></i>
-                                <strong style="color: #334155;">${accion.user_name}:</strong> ${accion.action_text}
-                            </div>
-                            `).join('')}
-                        </div>
-                        ` : ''}
-
-                        ${task.solucion ? `
-                            <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--visor-success); color: #94a3b8;">
-                                <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
-                                ${task.sol_edited ? '<i class="bi bi-info-circle-fill ms-1" title="Solución editada a posteriori" style="color: rgba(255,255,255,0.3); font-size:0.75rem;"></i>' : ''}
-                            </div>
-                        ` : ''}
-                        ${renderAdMatch(task)}
+                    <td style="width: 110px;" class="text-muted small font-mono">${task.created_at_fmt || '--:--'}</td>
+                    <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name}</span></td>
+                    <td class="text-muted">
+                        <div class="mb-1">${task.descripcion}</div>
+                        ${task.solucion ? `<div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #94a3b8;"><strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}</div>` : ''}
                     </td>
-                    <td style="width: 130px;">
-                        <span class="status-dot status-dot-${task.estado.toLowerCase()}"></span>
-                        <span class="small">${task.estado}</span>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function renderPendientes(tasks) {
-            const container = document.getElementById('tablePendientes');
-            if (!container) return; // Si la tabla no estaba, no hacemos nada o la podríamos inyectar dinámicamente. 
-            // Para simplificar, asumimos que siempre recarga con JS la data.
-            const tbody = container.querySelector('tbody');
-            if (!tbody || !tasks) return;
-            
-            if (tasks.length === 0) {
-                container.style.display = 'none';
-                return;
-            } else {
-                container.style.display = 'block';
-            }
-            
-            tbody.innerHTML = tasks.map(task => `
-                <tr>
-                    <td class="time-cell">${task.created_at_fmt || '--:--'}</td>
-                    <td><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></td>
-                    <td class="hide-mobile">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-person text-muted"></i>
-                            <span>${task.solicitante || 'N/A'}</span>
-                        </div>
-                    </td>
-                    <td class="desc-cell">
-                        <div>${task.descripcion}${task.desc_edited ? ' <i class="bi bi-info-circle-fill" title="Descripción editada a posteriori" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>' : ''}</div>
-                        ${task.acciones && task.acciones.length > 0 ? `
-                        <div class="mt-2" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9; padding: 6px; border-radius: 4px;">
-                            ${task.acciones.map(accion => `
-                            <div class="small" style="color: #64748b; margin-bottom: 2px;">
-                                <i class="bi bi-chat-text me-1"></i>
-                                <strong style="color: #334155;">${accion.user_name}:</strong> ${accion.action_text}
-                            </div>
-                            `).join('')}
-                        </div>
-                        ` : ''}
-                        ${task.estado !== 'Hecha' ? `
-                            <div class="mt-2">
-                                <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Añadir Nota</button>
-                            </div>
-                        ` : ''}
-
-                        ${renderAdMatch(task)}
-                    </td>
-                    <td>
-                        ${task.assigned_to ? `
-                            <div class="tech-pill">
-                                <i class="bi bi-tools"></i>
-                                <span>${task.assigned_to}</span>
-                            </div>
-                        ` : '<span class="text-muted small">Sin asignar</span>'}
-                    </td>
-                    <td>
-                        <span class="status-dot status-dot-${task.estado.toLowerCase()}"></span>
-                        <span class="fw-bold small">${task.estado}</span>
-                    </td>
+                    <td style="width: 130px;"><span class="status-dot status-dot-${task.estado.toLowerCase()}"></span><span class="small">${task.estado}</span></td>
                 </tr>
             `).join('');
         }
@@ -1071,26 +676,21 @@
             const tasks_pendientes = data.tasks_pendientes || [];
             document.getElementById('statTotalHoy').textContent = tasks_hoy.length;
             
-            // Si tenemos data.tasks_pendientes usamos su longitud, sino contamos las de hoy
-            let pendientes_count = tasks_pendientes.length > 0 
-                ? tasks_pendientes.length 
-                : tasks_hoy.filter(t => t.estado !== 'Hecha').length;
-                
+            let pendientes_count = tasks_pendientes.length > 0 ? tasks_pendientes.length : tasks_hoy.filter(t => t.estado !== 'Hecha').length;
             const hechas = tasks_hoy.filter(t => t.estado === 'Hecha').length;
             
             document.getElementById('statPendientes').textContent = pendientes_count;
             document.getElementById('statHechasHoy').textContent = hechas;
+            
+            const tHechas = document.getElementById('ticketHechas');
+            if(tHechas) tHechas.innerHTML = `<span data-countup>${hechas}</span> Trabajos Resueltos Hoy`;
+            
+            const tPend = document.getElementById('ticketPendientes');
+            if(tPend) tPend.innerHTML = `<span data-countup>${pendientes_count}</span> Tareas Pendientes`;
+            
+            if(typeof window.initCountUps === 'function') window.initCountUps();
         }
 
-        // Carga inicial de stats si hay datos
-        window.addEventListener('load', () => {
-            const initialTasks = Array.from(document.querySelectorAll('#tableHoy tr')).length;
-            // Forzamos un refresh inicial para sincronizar stats
-            refreshData();
-        });
-
-        // Auto refresh cada 30 seg
-        // --- Rack Audit Details Modal ---
         function showRackAuditModal(rackIdStr) {
             if (!window.rackStatusData) return;
             const rackId = parseInt(rackIdStr, 10);
@@ -1098,23 +698,18 @@
             if (!item) return;
 
             document.getElementById('modalRackName').textContent = item.rack.nombre;
-            
             if (item.last_audit) {
-                document.getElementById('modalRackDate').textContent = new Date(item.last_audit.timestamp).toLocaleString('es-AR');
+                const tsStr = item.last_audit.timestamp.replace(' GMT', '');
+                document.getElementById('modalRackDate').textContent = new Date(tsStr).toLocaleString('es-AR');
                 document.getElementById('modalRackTech').textContent = item.last_audit.tecnico || 'N/A';
                 document.getElementById('modalRackTemp').textContent = item.last_audit.temperatura_celsius_float + '°C';
                 
                 const tempFloat = parseFloat(item.last_audit.temperatura_celsius_float || 0);
                 document.getElementById('modalRackTemp').className = tempFloat > 24.0 ? 'text-danger fw-bold' : 'text-success fw-bold';
 
-                const lucesOK = !!item.last_audit.estado_luces_bool;
-                document.getElementById('modalRackLuces').innerHTML = lucesOK ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falla</span>';
-                
-                const limpiezaOK = !!item.last_audit.limpieza_ok_bool;
-                document.getElementById('modalRackLimpieza').innerHTML = limpiezaOK ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falta Limpieza</span>';
-
-                const iluminacionOK = item.last_audit.iluminacion_ok_bool !== undefined ? !!item.last_audit.iluminacion_ok_bool : true;
-                document.getElementById('modalRackIluminacion').innerHTML = iluminacionOK ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falla</span>';
+                document.getElementById('modalRackLuces').innerHTML = !!item.last_audit.estado_luces_bool ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falla</span>';
+                document.getElementById('modalRackLimpieza').innerHTML = !!item.last_audit.limpieza_ok_bool ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falta Limpieza</span>';
+                document.getElementById('modalRackIluminacion').innerHTML = (item.last_audit.iluminacion_ok_bool !== undefined ? !!item.last_audit.iluminacion_ok_bool : true) ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falla</span>';
 
                 document.getElementById('modalRackObs').textContent = item.last_audit.observaciones_text || 'Ninguna observación.';
                 
@@ -1140,58 +735,9 @@
             document.getElementById('rackAuditModalOverlay').style.display = 'none';
         }
     </script>
-
-    <!-- Modal Detalle Rack -->
-    <div class="modal-overlay" id="rackAuditModalOverlay" style="display: none; align-items: center; justify-content: center; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 10000;">
-        <div class="glass-modal" style="max-width: 500px; width: 90%; background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
-            <div class="modal-header d-flex justify-content-between align-items-center" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
-                <h2 style="font-size: 1.2rem; margin: 0; color: #fff;"><i class="bi bi-server text-accent"></i> Detalles de <span id="modalRackName"></span></h2>
-                <button type="button" class="btn-close btn-close-white" onclick="hideRackAuditModal()" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="rackAuditEmpty" style="display:none; text-align:center; padding: 2rem 0; color: #94a3b8;">
-                    No hay auditorías registradas para este rack.
-                </div>
-                <div id="rackAuditContent" style="color: #e2e8f0;">
-                    <p class="mb-2"><small class="text-muted">Última auditoría:</small> <strong id="modalRackDate"></strong></p>
-                    <p class="mb-3"><small class="text-muted">Técnico:</small> <strong id="modalRackTech"></strong></p>
-                    
-                    <div class="d-flex justify-content-between mb-3 p-3" style="background: rgba(0,0,0,0.2); border-radius: 8px;">
-                        <div class="text-center">
-                            <div class="text-muted" style="font-size: 0.8rem;">Temperatura</div>
-                            <div id="modalRackTemp" style="font-size: 1.2rem;"></div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-muted" style="font-size: 0.8rem;">Luces Unifi/Red</div>
-                            <div id="modalRackLuces" style="margin-top: 4px;"></div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-muted" style="font-size: 0.8rem;">Limpieza</div>
-                            <div id="modalRackLimpieza" style="margin-top: 4px;"></div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-muted" style="font-size: 0.8rem;">Iluminación</div>
-                            <div id="modalRackIluminacion" style="margin-top: 4px;"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="text-muted" style="font-size: 0.8rem; display: block; margin-bottom: 4px;">Observaciones:</label>
-                        <div id="modalRackObs" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; font-size: 0.9rem; min-height: 50px;"></div>
-                    </div>
-
-                    <div id="modalRackPhotoContainer" style="display:none; margin-top: 1rem; text-align: center;">
-                        <label class="text-muted" style="font-size: 0.8rem; display: block; margin-bottom: 8px; text-align: left;">Foto Adjunta:</label>
-                        <a id="modalRackPhotoLink" href="#" target="_blank">
-                            <img id="modalRackPhoto" src="" alt="Foto Auditoría" style="max-width: 100%; max-height: 250px; border-radius: 8px; object-fit: contain; border: 1px solid rgba(255,255,255,0.1);">
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer" style="padding-top:1rem; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 1rem; text-align: right; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; background: transparent;">
-                <button type="button" class="btn btn-outline-light" onclick="hideRackAuditModal()">Cerrar</button>
-            </div>
-        </div>
-    </div>
+    
+    {% if is_authenticated %}
+    {% include '_shared_modals.html' %}
+    {% endif %}
 </body>
 </html>

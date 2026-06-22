@@ -55,8 +55,10 @@
         <a href="{{ url_for('maps.index') }}" class="op-btn">[ MAPAS ]</a>
         <a href="{{ url_for('infrastructure.switches_dashboard') }}" class="op-btn">[ SWITCHES ]</a>
 
-        <!-- Administración -->
+        <!-- Administración / Extras -->
         <span class="op-divider"></span>
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#efemeridesModal" title="Ver Efemérides del Día">[ EFEMÉRIDES ]</a>
+        
         {% if current_user.is_superuser %}
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#usersModal" title="Usuarios">
             [ USR{% if kpi_usuarios_pendientes and kpi_usuarios_pendientes > 0 %}:<span class="op-alert-text">{{ kpi_usuarios_pendientes }}</span>{% endif %} ]
@@ -113,6 +115,15 @@
         ⚡ SCRIPT
     </button>
     
+    {% if efemeride_actual %}
+    <span class="op-divider-sub"></span>
+    <div class="op-telemetry-item hide-mobile" style="color: var(--accent-color); cursor: default; display: flex; align-items: center; gap: 6px;">
+        <span style="font-size: 1.1em;">{{ efemeride_actual.icono }}</span>
+        <strong>{{ efemeride_actual.titulo }}</strong> 
+        <span style="color: #94a3b8; font-weight: 400;">- {{ efemeride_actual.descripcion }}</span>
+    </div>
+    {% endif %}
+
     <!-- Espaciador para empujar el reloj a la extrema derecha -->
     <div style="flex-grow: 1;"></div>
     

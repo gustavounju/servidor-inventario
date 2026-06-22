@@ -221,11 +221,10 @@ def _load_kpis_from_db(user_auth):
             {'titulo': 'Ciberseguridad', 'descripcion': 'La cadena es tan fuerte como su eslabón más débil. Nunca subestimes la seguridad.', 'icono': '🔒'},
             {'titulo': 'Eficiencia IT', 'descripcion': 'Automatiza lo aburrido para tener más tiempo de construir lo asombroso.', 'icono': '⚙️'}
         ]
-        today_seed = datetime.datetime.now().timetuple().tm_yday
-        import random
-        random.seed(today_seed)
-        efemeride_actual = random.choice(mensajes_motivacionales)
-        random.seed()
+        today_yday = datetime.datetime.now().timetuple().tm_yday
+        # Use modulo arithmetic to ensure a guaranteed different phrase every day
+        index = (today_yday * 3) % len(mensajes_motivacionales)
+        efemeride_actual = mensajes_motivacionales[index]
         
     extra_data['efemeride_actual'] = efemeride_actual
     
