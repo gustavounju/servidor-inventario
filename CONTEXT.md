@@ -154,6 +154,7 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 - **UI/UX Redesign (22 Junio 2026)**: Rediseño completo del Visor de Trabajos (`/visor`) a un estilo "Cyberpunk/Midnight", eliminando el menú lateral innecesario para priorizar visualización.
 - **Feature (22 Junio 2026)**: Sistema de Frases Motivacionales dinámicas. Se incorporó su visualización directamente en el Nav global del Visor y se reescribió la lógica de selección diaria en el servidor mediante aritmética modular para evitar repeticiones por PRNG y garantizar rotación diaria.
 - **Bugfix (22 Junio 2026)**: Se resolvió un bug con la zona horaria (GMT) en el frontend de Visor que impedía el resaltado visual correcto de las métricas de los racks tomadas en el día actual.
+- **Hotfix (22 Junio 2026)**: Se eliminó el uso de CDNs externos (Bootstrap, Chart.js) en todos los templates a favor de assets locales, y se parametrizaron todas las rutas estáticas usando `url_for` para evitar bloqueos del firewall en otras oficinas del tribunal y resolver conflictos de base URL ("Mixed Content") cuando el sistema corre detrás del proxy Nginx (`taller-sp.justiciajujuy.gov.ar`).
 ---
 
 **Última actualización**: 22 de Junio 2026  
