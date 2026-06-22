@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Gráficos e Indicadores</title>
-    <link rel="stylesheet" href="/static/css/gold.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
+    <script src="{{ url_for('static', filename='vendor/chartjs/chart.js') }}"></script>
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script defer src="/static/js/security.js"></script>
-    <script defer src="/static/js/gold.js"></script>
+    <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/gold.js') }}"></script>
 </head>
 </head>
 

@@ -7,12 +7,12 @@
     <title>Inventario GOLD — Técnicos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/static/css/gold.css">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f3d62">
-    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
     <style>
         :root {
             --mob-primary: #0f4c75;
@@ -339,7 +339,7 @@
         }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script defer src="/static/js/security.js"></script>
+    <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
 </head>
 
 <body>
@@ -570,7 +570,7 @@
     </div>
 
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script>
         // --- DATA & STATE ---
         let currentUser = {{ (mobile_identity or current_user.technician_name or current_user.display_name or current_user.username or '')|tojson }};

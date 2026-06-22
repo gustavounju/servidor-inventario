@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="/static/css/gold.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
   <style>
     :root {
       --bg: var(--bg-color);
@@ -430,7 +430,7 @@ function submitMobileTaskAction() {
   <!-- Minimal Header -->
   <div class="minimal-header">
     <div class="minimal-brand">
-      <img src="/static/img/trionda.jpg" alt="Logo" style="height: 28px; width: 28px; border-radius: 50%;">
+      <img src="{{ url_for('static', filename='img/trionda.jpg') }}" alt="Logo" style="height: 28px; width: 28px; border-radius: 50%;">
       Técnicos
     </div>
     <div class="minimal-actions">
