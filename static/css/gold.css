@@ -3571,7 +3571,8 @@ button.kpi-mini-chip:hover {
 .radar-masthead {
     background: transparent;
     border-bottom: none;
-    padding: 0.5rem 2rem 0 2rem;
+    padding: 0 2rem 0 2rem;
+    margin-top: 0;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
