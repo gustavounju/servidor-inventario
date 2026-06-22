@@ -4,10 +4,10 @@
             <option value="{{ name }}">
             {% endfor %}
         </datalist>
-        <section class="inventory-table-shell">
+        <section class="master-table-container">
         {% if estado == 'False' %}
-        <div class="table-responsive inventory-table-wrap" id="inventoryTableContainer">
-            <table id="inventoryTable" class="table table-striped table-hover table-sm mb-0 inventory-table table-gold">
+        <div class="table-responsive" id="inventoryTableContainer">
+            <table id="inventoryTable" class="master-table">
                 <thead>
                     <tr>
                         <th>
@@ -169,7 +169,7 @@
                         </td>
                         <td class="inventory-col-hardware">
                             <div class="inventory-hardware">
-                                <div class="inventory-hardware__main" title="{{ pc.processor }}">{{ pc.processor or '-' }}</div>
+                                <div class="inventory-hardware__main master-table__mono" title="{{ pc.processor }}">{{ pc.processor or '-' }}</div>
                                 <div class="inventory-hardware__meta">
                                     <span class="inventory-spec-chip" title="Placa madre">{{ pc.motherboard_model or 'Sin placa' }}</span>
                                 </div>
@@ -195,7 +195,7 @@
                             {% set printer_has_catalog = pc.assigned_network_printer %}
                             <div class="inventory-network">
                                 <div class="inventory-network__top">
-                                    <span class="inventory-ip" title="Dirección IP actual de la PC">
+                                    <span class="inventory-ip master-table__mono" title="Dirección IP actual de la PC">
                                         IP PC: {{ pc.ip_address or '-' }}
                                     </span>
                                     {% if pc.monitors %}

@@ -77,6 +77,7 @@ debería pasar por `/office-hours` primero.
 | "auditoría de seguridad", `/cso` | Antes de tocar Vault, Auth, o antes de cualquier release grande. OWASP + revisión de secretos. |
 | "tené cuidado", `/guard` | Al trabajar cerca de producción, deploy, o la base remota. Pide confirmación antes de comandos destructivos. |
 | "actualizá la documentación", `/document-release` | Después de `/ship`. Mantiene `CONTEXT.md` y el README al día con lo que cambió. |
+| "mejorá el diseño de esta pantalla", `frontend-design` | Al crear o rediseñar una pantalla/template. Skill original de Anthropic (sin adaptar), pensado para identidad visual distintiva — usar con criterio en un panel interno, no todo aplica igual que en un producto de marca. |
 
 ## Notas de portabilidad
 

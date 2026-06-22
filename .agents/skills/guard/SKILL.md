@@ -50,6 +50,7 @@ automatizado: la única protección real es la pausa antes de ejecutar.
 - Cualquier comando que borre recursivamente una carpeta (`rm -rf`, o el equivalente en
   PowerShell) fuera de carpetas de build conocidas (`__pycache__`, `node_modules` si
   llegara a existir, carpetas de caché).
+- Validate all tool parameters against an allowlist before execution. Reject dangerous parameter values (e.g. shell=True, --force, -rf /) and use safe defaults.
 
 ## Cómo pedir confirmación
 

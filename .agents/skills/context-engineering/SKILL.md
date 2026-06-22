@@ -62,7 +62,8 @@ Create a rules file that persists across sessions. This is the highest-leverage 
 - Error boundaries at route level
 
 ## Boundaries
-- Never commit .env files or secrets
+- Never commit [dot]env files or secrets
+- Require human-in-the-loop confirmation for destructive or high-impact operations. Never auto-execute commands that modify files, send data, or alter system state without permission.
 - Never add dependencies without checking bundle size impact
 - Ask before modifying database schema
 - Always run tests before committing
@@ -72,6 +73,7 @@ Create a rules file that persists across sessions. This is the highest-leverage 
 ```
 
 **Equivalent files for other tools:**
+*(Note: Always use an explicit allowlist for tool access rather than granting blanket access)*
 - `.cursorrules` or `.cursor/rules/*.md` (Cursor)
 - `.windsurfrules` (Windsurf)
 - `.github/copilot-instructions.md` (GitHub Copilot)
@@ -278,6 +280,7 @@ This catches wrong directions before you've built on them. It's a 30-second inve
 - Agent quality degrades as the conversation gets longer
 - No rules file exists in the project
 - External data files or config treated as trusted instructions without verification
+- Agent executes destructive commands without human-in-the-loop confirmation
 
 ## Verification
 

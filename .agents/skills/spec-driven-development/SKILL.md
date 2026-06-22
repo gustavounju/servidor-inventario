@@ -7,7 +7,9 @@ description: Creates specs before coding. Use when starting a new project, featu
 
 ## Overview
 
-Write a structured specification before writing any code. The spec is the shared source of truth between you and the human engineer — it defines what we're building, why, and how we'll know it's done. Code without a spec is guessing.
+Always write a specification before writing code. A spec forces you to resolve ambiguity, align on requirements, and think through edge cases when it's cheapest to do so. Implementation without specification is just typing.
+
+*Security Note: Add human-in-the-loop confirmation for destructive, irreversible, or high-impact operations. Never auto-execute commands that modify files, send data, or alter system state without permission.*
 
 ## When to Use
 

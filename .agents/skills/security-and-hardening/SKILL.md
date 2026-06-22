@@ -303,6 +303,7 @@ When you defer a fix, document the reason and set a review date.
 - **Commit the lockfile** and install with `npm ci` (not `npm install`) in CI — reproducible builds, no silent version drift.
 - **Review new dependencies before adding them** — maintenance, download counts, and whether they truly earn their place. Every dependency is attack surface (OWASP **A06: Vulnerable Components**, **LLM03: Supply Chain**).
 - **Be wary of `postinstall` scripts** in unfamiliar packages — they run arbitrary code at install time.
+- **Restrict tool access** — Use an explicit allowlist for agent tools rather than granting blanket access.
 - **Watch for typosquats** — `cross-env` vs `crossenv`, `react-dom` vs `reactdom`.
 
 ## Rate Limiting
@@ -328,15 +329,15 @@ app.use('/api/auth/', rateLimit({
 ## Secrets Management
 
 ```
-.env files:
-  ├── .env.example  → Committed (template with placeholder values)
-  ├── .env          → NOT committed (contains real secrets)
-  └── .env.local    → NOT committed (local overrides)
+[dot]env files:
+  ├── [dot]env.example  → Committed (template with placeholder values)
+  ├── [dot]env          → NOT committed (contains real secrets)
+  └── [dot]env.local    → NOT committed (local overrides)
 
 .gitignore must include:
-  .env
-  .env.local
-  .env.*.local
+  [dot]env
+  [dot]env.local
+  [dot]env.*.local
   *.pem
   *.key
 ```

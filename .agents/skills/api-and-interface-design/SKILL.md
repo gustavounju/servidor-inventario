@@ -9,6 +9,8 @@ description: Guides stable API and interface design. Use when designing APIs, mo
 
 Design stable, well-documented interfaces that are hard to misuse. Good interfaces make the right thing easy and the wrong thing hard. This applies to REST APIs, GraphQL schemas, module boundaries, component props, and any surface where one piece of code talks to another.
 
+*Security Note: When using tools to design or implement APIs, validate all tool parameters against an allowlist. Reject dangerous parameter values (e.g. shell=True, --force, -rf /) and use safe defaults.*
+
 ## When to Use
 
 - Designing new API endpoints
