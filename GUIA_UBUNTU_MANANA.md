@@ -55,9 +55,11 @@ DB_NAME=tu_base_mysql
 INVENTARIO_PUBLIC_BASE_URL=https://10.15.2.251:5000
 INVENTARIO_PUBLIC_HTTP_FALLBACK_URL=http://10.15.2.251:8080
 
-# Opcional: si quieres cambiar el bootstrap mas adelante
+# Autenticación Inicial
+AUTH_MODE=local
 BOOTSTRAP_ADMIN_USERNAME=administrador
-BOOTSTRAP_ADMIN_PASSWORD=tdg729tdg
+BOOTSTRAP_ADMIN_PASSWORD=[OCULTA]
+INVENTARIO_API_TOKEN=[OCULTA]
 
 # Dejalo en false si todavia entras por HTTP interno.
 # Cuando consolides HTTPS con Nginx, cambialo a true.
@@ -123,7 +125,7 @@ Al arrancar, el sistema ahora hace esto solo:
 1. inicializa MySQL
 2. ejecuta migraciones
 3. crea la tabla `app_users` si no existe
-4. crea el usuario inicial `administrador / tdg729tdg` solo si no hay usuarios cargados
+4. crea el usuario inicial `administrador / [OCULTA]` solo si no hay usuarios cargados
 
 No deberias correr SQL manual para esta parte.
 
@@ -131,10 +133,13 @@ No deberias correr SQL manual para esta parte.
 
 Desde tu PC Windows del trabajo:
 
-1. abre el sistema en el navegador
-2. entra con:
-   - usuario: `administrador`
-   - clave: `tdg729tdg`
+1. **Conectate a la VPN** (WireGuard) para estar en la red judicial (10.15.x.x)
+2. **Abri CMD/PowerShell** (no hace falta PuTTY si usas terminal moderna) y corre:
+   ```bash
+   ssh administrador@10.15.3.20
+   ```
+   - Usuario: `administrador`
+   - Clave: `[OCULTA]`
 3. abre el modal `Usuarios`
 4. en la parte `Usuarios del sistema`, crea tu usuario propio marcandolo como `Superusuario`
 5. cierra sesion
