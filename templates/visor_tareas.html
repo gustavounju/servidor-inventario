@@ -83,10 +83,10 @@
             </div>
             
             {% if efemeride_actual %}
-            <div class="hide-mobile" style="color: var(--accent-color); cursor: default; display: flex; align-items: center; gap: 6px; font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <div class="hide-mobile" style="color: var(--accent-color); cursor: default; display: flex; align-items: center; gap: 6px; font-size: 0.72rem; white-space: nowrap;">
                 <span style="font-size: 1.1em; flex-shrink: 0;">{{ efemeride_actual.icono }}</span>
                 <strong style="flex-shrink: 0;">{{ efemeride_actual.titulo }}</strong>
-                <span style="color: #94a3b8; font-weight: 400; margin-left: 5px; overflow: hidden; text-overflow: ellipsis;">- {{ efemeride_actual.descripcion }}</span>
+                <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">- {{ efemeride_actual.descripcion }}</span>
             </div>
             {% endif %}
         </div>
