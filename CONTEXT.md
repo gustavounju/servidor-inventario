@@ -150,7 +150,8 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 - **Hotfix (18 Junio 2026)**: Restauración del bloque de interfaz gráfica (carrusel de métricas) en la vista móvil de Técnicos (`tecnicos.html`). Esto soluciona un bug crítico de JavaScript que provocaba que las métricas personales del técnico no se actualizaran (quedaran en 0) y devuelve el reporte de visibilidad global a los usuarios en terreno.
 - **Feature (18 Junio 2026)**: Se amplió el cuadro de texto para la "Solución" en la vista móvil (ahora permite multilinea y es redimensionable). Además, se habilitó la edición de la solución para tareas que ya se encuentran en estado "Hecha". El sistema ahora hace un seguimiento de estas modificaciones agregando un flag `is_edited` a la BD y mostrando un ícono de lápiz junto a la solución si ésta fue modificada a posteriori.
 - **Hotfix (19 Junio 2026)**: Exposición pública de las métricas de estado e historial de racks para el Visor General (`/visor`). Adicionalmente, se configuró una base incial para testing automatizado integrando `pytest` al stack técnico y agregando pruebas automatizadas para políticas de acceso de la API.
+- **Seguridad (21 Junio 2026)**: Auditoría y remediación de seguridad sobre la carpeta `.agents/skills` usando la herramienta SkillSpector. Se mitigaron riesgos de inyección de prompt (P1), exposición de credenciales (PE3), permisos de herramientas (TM1) y se reforzó la prevención de toma de decisiones autónomas destructivas (EA2) introduciendo cláusulas estrictas de "Human-in-the-loop". Además, se incluyó el código de la herramienta de escaneo en la carpeta `tools/` y un script de escaneo automatizado (`audit_all.bat`).
 ---
 
-**Última actualización**: 19 de Junio 2026  
+**Última actualización**: 21 de Junio 2026  
 **Versión del sistema**: Según APP_VERSION en utils/constants.py
