@@ -98,14 +98,15 @@
     </nav>
 
     {% if efemeride_actual %}
-    <div class="hide-mobile" style="color: var(--accent-color); cursor: default; display: flex; align-items: center; gap: 6px; font-size: 0.75rem; white-space: nowrap; padding: 6px 16px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-color);">
+    <div class="hide-mobile" style="position: fixed; top: 40px; left: 0; width: 100%; z-index: 1040; color: var(--accent-color); cursor: default; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; white-space: nowrap; padding: 4px 16px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-color); box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
         <span style="font-size: 1.1em; flex-shrink: 0;">{{ efemeride_actual.icono }}</span>
         <strong style="flex-shrink: 0;">{{ efemeride_actual.titulo }}</strong>
         <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">- {{ efemeride_actual.descripcion }}</span>
     </div>
-    {% endif %}
-
+    <main style="padding-top: 30px; padding-bottom: 20px;">
+    {% else %}
     <main style="padding-top: 0; padding-bottom: 20px;">
+    {% endif %}
         
         {% set total_hoy = tareas_hoy | length %}
         {% set hechas_hoy = tareas_hoy | selectattr("estado", "equalto", "Hecha") | list | length %}
