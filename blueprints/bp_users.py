@@ -489,3 +489,30 @@ def remove_app_user(user_id):
     except Exception as exc:
         flash(f"No se pudo eliminar el usuario: {exc}", "error")
     return redirect(_safe_next_url())
+
+
+@bp_users.route("/admin/users/sync_ad", methods=["POST"])
+@superuser_required
+def sync_ad_users_route():
+    from services.ad_sync_service import sync_ad_users
+    try:
+        result = sync_ad_users()
+        if result.get("status") == "success":
+            flash(result["message"], "success")
+        else:
+            flash(result.get("message", "Error desconocido al sincronizar AD."), "error")
+            
+        with get_db_connection() as conn:
+            log_admin_event(
+                conn,
+                action_type="SYNC_AD_USERS",
+                actor_username=current_username(),
+                target_username="SISTEMA",
+                ip_address=request.remote_addr,
+                details=result,
+            )
+            conn.commit()
+    except Exception as exc:
+        flash(f"Error crítico en sincronización AD: {exc}", "error")
+        
+    return redirect(url_for("users.users_admin"))

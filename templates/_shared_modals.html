@@ -501,11 +501,17 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 16px; justify-content: space-between;">
                         <div class="input-group input-group-sm" style="max-width: 340px;">
                             <span class="input-group-text" style="background: #fff; border-color: #e2e8f0;"><i class="bi bi-search text-muted"></i></span>
                             <input type="text" id="userSearchInput" class="form-control" placeholder="Buscar en directorio..." onkeyup="filterUsersList()" style="border-color: #e2e8f0; border-left: none;">
                         </div>
+                        <form action="{{ url_for('users.sync_ad_users_route') }}" method="POST" style="margin: 0;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary" onclick="this.innerHTML='<i class=\'spinner-border spinner-border-sm me-1\'></i>Sincronizando...'; this.disabled=true; this.form.submit();">
+                                <i class="bi bi-arrow-repeat me-1"></i>Sincronizar desde AD
+                            </button>
+                        </form>
                     </div>
 
                     <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border-radius: 12px; border: 1px solid #e2e8f0;">
