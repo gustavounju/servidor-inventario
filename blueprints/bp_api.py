@@ -9,6 +9,7 @@ import re
 
 from database.db_core import get_db_connection
 from utils.constants import detect_fuero
+from utils.extensions import limiter
 
 bp_api = Blueprint('api', __name__)
 
@@ -396,6 +397,7 @@ def process_inventory_data(data):
 
 
 @bp_api.route("/submit_inventory", methods=["POST"])
+@limiter.limit("60 per minute")
 def receive_inventory():
     api_token = os.environ.get("API_TOKEN", "super-secret-token")
     auth_header = request.headers.get("Authorization", "")
@@ -445,6 +447,7 @@ def upload_manual_inventory():
         return redirect(url_for('dashboard.dashboard'))
 
 @bp_api.route("/health", methods=["GET"])
+@limiter.limit("60 per minute")
 def health():
     try:
         with get_db_connection() as conn:
@@ -674,6 +677,7 @@ def api_get_racks():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @bp_api.route("/api/racks/status", methods=["GET"])
+@limiter.limit("30 per minute")
 def api_get_racks_status():
     try:
         with get_db_connection() as conn:

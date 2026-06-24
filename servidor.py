@@ -114,6 +114,9 @@ from datetime import timedelta
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
+from utils.extensions import limiter
+limiter.init_app(app)
+
 # Asegurar directorios
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(LOG_FOLDER, exist_ok=True)

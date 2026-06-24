@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, redirect, render_template, request, sessio
 
 from utils.auth import AUTH_SESSION_KEY, auth_mode_label, clear_auth_session, default_landing_url, generate_csrf_token, is_authenticated, validate_login
 from services.pdf_ocr_queue import OcrFileTooLargeError, OcrQueueFullError, pdf_ocr_queue
-
+from utils.extensions import limiter
 
 bp_auth = Blueprint("auth", __name__)
 
@@ -17,6 +17,7 @@ def normalize_next_url(candidate):
 
 
 @bp_auth.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def login():
     if is_authenticated():
         return redirect(normalize_next_url(request.args.get("next")))
@@ -52,6 +53,7 @@ def pdf_local_tool():
 
 
 @bp_auth.route("/api/local/pdf-ocr", methods=["POST"])
+@limiter.limit("20 per minute")
 def local_pdf_ocr():
     uploaded = request.files.get("file")
     if not uploaded or not uploaded.filename:
@@ -100,8 +102,8 @@ def logout():
     clear_auth_session()
     return redirect(url_for("auth.login"))
 
-
 @bp_auth.route("/change_password", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def change_password():
     # Solo usuarios logueados
     if not is_authenticated():
