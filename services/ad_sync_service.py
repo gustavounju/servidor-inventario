@@ -15,7 +15,7 @@ def sync_ad_users():
         return {"status": "error", "message": "Faltan credenciales de sincronización (AD_SYNC_USER / AD_SYNC_PASSWORD)."}
 
     try:
-        from ldap3 import ALL, NTLM, SIMPLE, Connection, Server, SUBTREE
+        from ldap3 import ALL, NONE, NTLM, SIMPLE, Connection, Server, SUBTREE
     except Exception as exc:
         return {"status": "error", "message": f"ldap3 no disponible: {exc}"}
 
@@ -27,7 +27,7 @@ def sync_ad_users():
     if not base_dn:
         return {"status": "error", "message": "AD_BASE_DN no está configurado."}
 
-    server = Server(ad_server, use_ssl=use_ssl, get_info=ALL, connect_timeout=connect_timeout)
+    server = Server(ad_server, use_ssl=use_ssl, get_info=NONE, connect_timeout=connect_timeout)
     
     bind_user = f"{sync_user}@{domain}" if domain and "\\" not in sync_user and "@" not in sync_user else sync_user
 
