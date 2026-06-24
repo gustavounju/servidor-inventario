@@ -2,8 +2,11 @@ import os
 from flask import current_app
 from database.db_core import get_db_connection
 from utils.auth import _ad_default_domain
+from dotenv import load_dotenv
 
 def sync_ad_users():
+    load_dotenv(override=True)
+    
     ad_server = os.environ.get("AD_SERVER", "").strip()
     if not ad_server:
         return {"status": "error", "message": "AD_SERVER no está configurado."}
