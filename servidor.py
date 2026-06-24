@@ -222,11 +222,31 @@ def _load_kpis_from_db(user_auth):
             {'titulo': 'Cero Bugs', 'descripcion': 'Que tu café sea fuerte y tus errores de compilación sean pocos.', 'icono': '☕'},
             {'titulo': 'Resolución', 'descripcion': 'Todo problema es una oportunidad disfrazada. ¡Vamos por esos tickets!', 'icono': '🛠️'},
             {'titulo': 'Ciberseguridad', 'descripcion': 'La cadena es tan fuerte como su eslabón más débil. Nunca subestimes la seguridad.', 'icono': '🔒'},
-            {'titulo': 'Eficiencia IT', 'descripcion': 'Automatiza lo aburrido para tener más tiempo de construir lo asombroso.', 'icono': '⚙️'}
+            {'titulo': 'Eficiencia IT', 'descripcion': 'Automatiza lo aburrido para tener más tiempo de construir lo asombroso.', 'icono': '⚙️'},
+            {'titulo': 'Resiliencia', 'descripcion': 'El éxito es la capacidad de ir de fracaso en fracaso sin perder el entusiasmo.', 'icono': '🛡️'},
+            {'titulo': 'Curiosidad', 'descripcion': 'No tengo talentos especiales, pero sí soy profundamente curioso.', 'icono': '🔍'},
+            {'titulo': 'Paciencia', 'descripcion': 'La paciencia es amarga, pero su fruto es dulce. Respira y revisa los logs.', 'icono': '🧘‍♂️'},
+            {'titulo': 'Simplicidad', 'descripcion': 'La simplicidad es la máxima sofisticación. Evita la sobre-ingeniería.', 'icono': '✨'},
+            {'titulo': 'Calidad', 'descripcion': 'La calidad no es un acto, es un hábito.', 'icono': '🏆'},
+            {'titulo': 'Aprendizaje', 'descripcion': 'Siempre parece imposible hasta que se hace.', 'icono': '📚'},
+            {'titulo': 'Progreso', 'descripcion': 'No midas tu progreso con la regla de otra persona.', 'icono': '📏'},
+            {'titulo': 'Mantenimiento', 'descripcion': 'Refactorizar código no es un lujo, es una necesidad para la supervivencia del software.', 'icono': '🔧'},
+            {'titulo': 'Enfoque', 'descripcion': 'Concéntrate en la solución, no en el problema.', 'icono': '🎯'},
+            {'titulo': 'Creatividad', 'descripcion': 'La lógica te llevará de A a B. La imaginación te llevará a todas partes.', 'icono': '🎨'},
+            {'titulo': 'Documentación', 'descripcion': 'El código dice cómo, los comentarios dicen por qué.', 'icono': '📝'},
+            {'titulo': 'Agilidad', 'descripcion': 'Falla rápido, aprende más rápido.', 'icono': '⚡'},
+            {'titulo': 'Dedicación', 'descripcion': 'El único modo de hacer un gran trabajo es amar lo que haces.', 'icono': '❤️'},
+            {'titulo': 'Proactividad', 'descripcion': 'La mejor forma de predecir el futuro es creándolo.', 'icono': '🔮'},
+            {'titulo': 'Optimización', 'descripcion': 'La optimización prematura es la raíz de todos los males. Haz que funcione primero.', 'icono': '⏳'},
+            {'titulo': 'Colaboración', 'descripcion': 'Si quieres ir rápido, ve solo. Si quieres llegar lejos, ve acompañado.', 'icono': '🚶‍♂️'},
+            {'titulo': 'Humildad', 'descripcion': 'Incluso los mejores programadores hacen `print("hola")` para debuggear.', 'icono': '🐛'},
+            {'titulo': 'Determinación', 'descripcion': 'No importa lo lento que vayas, siempre y cuando no te detengas.', 'icono': '🐢'},
+            {'titulo': 'Visión', 'descripcion': 'El buen diseño añade valor más rápido de lo que añade coste.', 'icono': '👁️'},
+            {'titulo': 'Descanso', 'descripcion': 'A veces la mejor manera de resolver un problema es alejarse del teclado 5 minutos.', 'icono': '🛌'}
         ]
         today_yday = datetime.datetime.now().timetuple().tm_yday
         # Use modulo arithmetic to ensure a guaranteed different phrase every day
-        index = (today_yday * 3) % len(mensajes_motivacionales)
+        index = (today_yday * 7) % len(mensajes_motivacionales)
         efemeride_actual = mensajes_motivacionales[index]
         
     extra_data['efemeride_actual'] = efemeride_actual

@@ -42,7 +42,7 @@
                                 <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAddEfemeride">
                                     <i class="fas fa-plus"></i> Nueva Efeméride
                                 </button>
-                                <form action="{{ url_for('setup.turn_off_efemerides') }}" method="POST" class="m-0">
+                                <form action="{{ url_for('setup.turn_off_efemerides') }}" method="POST" class="m-0" target="_parent">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-outline-warning">
                                         <i class="fas fa-power-off"></i> Apagar Modo Manual
@@ -96,7 +96,7 @@
                                             <td>
                                                 <div class="d-flex gap-1">
                                                     {% if not e.is_active %}
-                                                    <form action="{{ url_for('setup.toggle_efemeride', ef_id=e.id) }}" method="POST" class="m-0">
+                                                    <form action="{{ url_for('setup.toggle_efemeride', ef_id=e.id) }}" method="POST" class="m-0" target="_parent">
                                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                         <button type="submit" class="btn btn-sm btn-primary" title="Forzar Activa">
                                                             <i class="fas fa-play"></i>
@@ -218,9 +218,9 @@
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script>
         function togglePastRows() {
-            const isChecked = document.getElementById('togglePast').checked;
+            const toggleEl = document.getElementById('togglePast');
             const tbody = document.getElementById('efemerides-tbody');
-            if (isChecked) {
+            if (toggleEl && toggleEl.checked) {
                 tbody.classList.add('hide-past');
             } else {
                 tbody.classList.remove('hide-past');
@@ -228,7 +228,8 @@
         }
         
         document.addEventListener("DOMContentLoaded", () => {
-            togglePastRows();
+            // Re-apply in case it gets stuck
+            setTimeout(togglePastRows, 100);
         });
     </script>
 </body>
