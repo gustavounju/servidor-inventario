@@ -245,9 +245,8 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
         <div class="modal-content console-panel" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15); background: #0f172a;">
 
-            <!-- Header moderno con gradiente y tabs -->
-            <div class="radar-masthead" style="padding: 0; border-bottom: 1px solid var(--border-color);">
-                <div style="padding: 20px 24px 0; display: flex; align-items: center; justify-content: space-between;">
+            <div style="background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-color); position: relative; z-index: 10;">
+                <div style="padding: 20px 24px 0; display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 14px;">
                         <div style="width: 42px; height: 42px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);">
                             <i class="bi bi-people-fill text-info" style="font-size: 1.1rem;"></i>
@@ -260,7 +259,7 @@
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="position: relative; z-index: 1050; cursor: pointer;"></button>
                 </div>
 
                 <!-- Tabs de navegación -->
@@ -555,9 +554,9 @@
 
                     <!-- Form de edición de teléfono inline -->
                     <div id="userPhoneEditFormContainer" class="d-none" style="margin-top: 16px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.5);">
-                        <div class="radar-masthead" style="padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px 16px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
                             <span class="fw-bold glow-text text-white" style="font-size: 0.88rem;"><i class="bi bi-pencil-square me-2 text-info"></i>Actualizar datos del usuario</span>
-                            <button type="button" class="btn-close btn-close-white btn-sm" onclick="closeUserPhoneEdit()"></button>
+                            <button type="button" class="btn-close btn-close-white btn-sm" onclick="closeUserPhoneEdit()" style="position: relative; z-index: 1050; cursor: pointer;"></button>
                         </div>
                         <div style="padding: 14px 16px;">
                             <form action="{{ url_for('users.update_user_phone') }}" method="POST" class="row g-2 align-items-end">
