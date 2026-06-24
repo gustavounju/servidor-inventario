@@ -243,20 +243,20 @@
 <!-- Modal Gestión de Usuarios -->
 <div class="modal fade" id="usersModal" tabindex="-1" aria-labelledby="usersModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
-        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+        <div class="modal-content console-panel" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15); background: #0f172a;">
 
             <!-- Header moderno con gradiente y tabs -->
-            <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 0;">
+            <div class="radar-masthead" style="padding: 0; border-bottom: 1px solid var(--border-color);">
                 <div style="padding: 20px 24px 0; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.12); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.15);">
-                            <i class="bi bi-people-fill" style="color: #fff; font-size: 1.1rem;"></i>
+                        <div style="width: 42px; height: 42px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);">
+                            <i class="bi bi-people-fill text-info" style="font-size: 1.1rem;"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title mb-0 fw-bold text-white" id="usersModalLabel" style="font-size: 1.05rem; letter-spacing: -0.02em;">Gestión de Usuarios</h5>
-                            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 2px;">
-                                Modo: <strong style="color: rgba(255,255,255,0.8);">{{ auth_mode_label }}</strong>
-                                &nbsp;·&nbsp; Sesión: <strong style="color: rgba(255,255,255,0.8);">{{ current_user.display_name or current_user.username }}</strong>
+                            <h5 class="modal-title mb-0 fw-bold text-white glow-text" id="usersModalLabel" style="font-size: 1.05rem; letter-spacing: -0.02em;">Gestión de Usuarios</h5>
+                            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                                Modo: <strong class="text-info">{{ auth_mode_label }}</strong>
+                                &nbsp;·&nbsp; Sesión: <strong class="text-info">{{ current_user.display_name or current_user.username }}</strong>
                             </div>
                         </div>
                     </div>
@@ -264,7 +264,7 @@
                 </div>
 
                 <!-- Tabs de navegación -->
-                <div style="display: flex; gap: 4px; padding: 12px 24px 0; margin-top: 4px;">
+                <div class="op-toolbar" style="display: flex; gap: 4px; padding: 12px 24px 0; margin-top: 4px; background: transparent; border: none;">
                     <button class="um-tab-btn active" onclick="switchUsersTab('tab-sistema', this)" id="btnTabSistema">
                         <i class="bi bi-shield-lock"></i> Acceso al Sistema
                     </button>
@@ -288,7 +288,7 @@
             {% endif %}
             {% endwith %}
 
-            <div class="modal-body" style="padding: 20px; background: #f8fafc;">
+            <div class="modal-body" style="padding: 20px; background: #0f172a;">
 
                 <!-- ====== TAB: SISTEMA ====== -->
                 <div id="tab-sistema" class="um-tab-panel">
@@ -325,16 +325,16 @@
                                 <div class="um-form-grid">
                                     <div class="um-field">
                                         <label class="um-label">Usuario</label>
-                                        <input type="text" name="username" id="appUsername" class="form-control" placeholder="ej: jperez" required onkeyup="checkDuplicateUser()">
+                                        <input type="text" name="username" id="appUsername" class="form-control bg-dark text-white border-secondary" placeholder="ej: jperez" required onkeyup="checkDuplicateUser()">
                                         <div id="userDuplicateWarning" class="text-danger small mt-1 d-none"><i class="bi bi-x-circle me-1"></i> Ya en uso.</div>
                                     </div>
                                     <div class="um-field">
                                         <label class="um-label">Nombre Visible</label>
-                                        <input type="text" name="display_name" id="appDisplayName" class="form-control" placeholder="ej: Juan Pérez">
+                                        <input type="text" name="display_name" id="appDisplayName" class="form-control bg-dark text-white border-secondary" placeholder="ej: Juan Pérez">
                                     </div>
                                     <div class="um-field">
                                         <label class="um-label">Rol</label>
-                                        <select name="role" id="appRole" class="form-select" onchange="applyRolePreset()">
+                                        <select name="role" id="appRole" class="form-select bg-dark text-white border-secondary" onchange="applyRolePreset()">
                                             <option value="tecnico">🔧 Técnico</option>
                                             <option value="operador">🖥️ Operador</option>
                                             <option value="administrador">🛡️ Administrador</option>
@@ -345,17 +345,17 @@
                                     <div class="um-field">
                                         <label class="um-label">Contraseña</label>
                                         <div class="input-group">
-                                            <input type="password" name="password" id="appPassword" class="form-control" placeholder="Clave del usuario">
-                                            <button class="btn btn-outline-secondary" type="button" id="toggleAppPassword"><i class="bi bi-eye"></i></button>
+                                            <input type="password" name="password" id="appPassword" class="form-control bg-dark text-white border-secondary" placeholder="Clave del usuario">
+                                            <button class="btn btn-outline-secondary border-secondary text-info" type="button" id="toggleAppPassword"><i class="bi bi-eye"></i></button>
                                         </div>
                                     </div>
                                     <div class="um-field">
                                         <label class="um-label">Nombre en Móvil</label>
-                                        <input type="text" name="technician_name" id="appTechName" class="form-control" placeholder="ej: Juan P.">
+                                        <input type="text" name="technician_name" id="appTechName" class="form-control bg-dark text-white border-secondary" placeholder="ej: Juan P.">
                                     </div>
                                     <div class="um-field">
                                         <label class="um-label">Teléfono Interno</label>
-                                        <input type="text" name="phone" id="appPhone" class="form-control" placeholder="ej: 4444">
+                                        <input type="text" name="phone" id="appPhone" class="form-control bg-dark text-white border-secondary" placeholder="ej: 4444">
                                     </div>
                                 </div>
 
@@ -373,7 +373,7 @@
                                         <label class="um-flag-chip"><input type="checkbox" name="is_superuser" id="newIsSuperuser" onchange="applyRolePreset()"><span><i class="bi bi-lightning-fill text-warning"></i> Superusuario</span></label>
                                         <label class="um-flag-chip"><input type="checkbox" name="is_active" id="newIsActive" checked><span><i class="bi bi-check-circle-fill text-success"></i> Activo</span></label>
                                         <label class="um-flag-chip"><input type="checkbox" name="must_change_password" id="newMustChangePassword"><span><i class="bi bi-key text-secondary"></i> Cambio forzado</span></label>
-                                        <button type="submit" class="btn btn-sm ms-auto" id="btnSubmitAppUser" style="background: linear-gradient(135deg, #334155, #1e293b); color: #fff; border: none; padding: 6px 20px; border-radius: 8px; font-weight: 700;">
+                                        <button type="submit" class="btn btn-sm ms-auto" id="btnSubmitAppUser" style="background: rgba(16, 185, 129, 0.2); color: var(--neon-green); border: 1px solid var(--neon-green); padding: 6px 20px; border-radius: 8px; font-weight: 700;">
                                             <i class="bi bi-floppy me-1"></i> Guardar
                                         </button>
                                     </div>
@@ -385,8 +385,8 @@
                     <!-- Buscador -->
                     <div style="display: flex; gap: 10px; margin-bottom: 16px;">
                         <div class="input-group input-group-sm" style="max-width: 340px;">
-                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0;"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" id="sysUserSearchInput" class="form-control" placeholder="Buscar usuario..." onkeyup="filterSysUsersList()" style="border-color: #e2e8f0; border-left: none;">
+                            <span class="input-group-text" style="background: rgba(0,0,0,0.2); border-color: var(--border-color); border-right: none;"><i class="bi bi-search text-info"></i></span>
+                            <input type="text" id="sysUserSearchInput" class="form-control bg-dark text-white" placeholder="Buscar usuario..." onkeyup="filterSysUsersList()" style="border-color: var(--border-color); border-left: none;">
                         </div>
                         <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center; margin-left: 4px;">{{ app_users_list | length }} usuarios registrados</span>
                     </div>
@@ -495,7 +495,7 @@
                 <!-- ====== TAB: DIRECTORIO ====== -->
                 <div id="tab-directorio" class="um-tab-panel" style="display: none;">
                     <div class="um-form-panel" style="margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%); border-radius: 12px; color: #fff;">
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; color: var(--neon-blue);">
                             <i class="bi bi-info-circle-fill"></i>
                             <span style="font-size: 0.82rem;">El directorio contiene los teléfonos y fueros de los usuarios de AD. Haz clic en una fila para pre-cargar sus datos en el formulario de acceso.</span>
                         </div>
@@ -503,8 +503,8 @@
 
                     <div style="display: flex; gap: 10px; margin-bottom: 16px; justify-content: space-between;">
                         <div class="input-group input-group-sm" style="max-width: 340px;">
-                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0;"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" id="userSearchInput" class="form-control" placeholder="Buscar en directorio..." onkeyup="filterUsersList()" style="border-color: #e2e8f0; border-left: none;">
+                            <span class="input-group-text" style="background: rgba(0,0,0,0.2); border-color: var(--border-color); border-right: none;"><i class="bi bi-search text-info"></i></span>
+                            <input type="text" id="userSearchInput" class="form-control bg-dark text-white" placeholder="Buscar en directorio..." onkeyup="filterUsersList()" style="border-color: var(--border-color); border-left: none;">
                         </div>
                         <form action="{{ url_for('users.sync_ad_users_route') }}" method="POST" style="margin: 0;" onsubmit="var btn=this.querySelector('button'); btn.disabled=true; btn.innerHTML='<i class=\'spinner-border spinner-border-sm me-1\'></i>Sincronizando...'; return true;">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -515,30 +515,30 @@
                         </form>
                     </div>
 
-                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border-radius: 12px; border: 1px solid #e2e8f0;">
-                        <table class="table table-sm table-hover align-middle mb-0" id="usersTableList" style="font-size: 0.85rem;">
-                            <thead style="background: #334155; color: #fff; position: sticky; top: 0; z-index: 2;">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <table class="table table-sm table-dark table-hover align-middle mb-0" id="usersTableList" style="font-size: 0.85rem; background: rgba(15, 23, 42, 0.8);">
+                            <thead style="background: rgba(0, 0, 0, 0.5); position: sticky; top: 0; z-index: 2;">
                                 <tr>
-                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Usuario AD</th>
-                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Nombre Real</th>
-                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Teléfono</th>
-                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Fuero</th>
-                                    <th style="padding: 10px 14px; text-align: right; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Editar</th>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border-color);">Usuario AD</th>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border-color);">Nombre Real</th>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border-color);">Teléfono</th>
+                                    <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border-color);">Fuero</th>
+                                    <th style="padding: 10px 14px; text-align: right; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border-color);">Editar</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for user in directorio_filtrado %}
-                                <tr class="user-item" style="cursor: pointer;" onclick="prefillAppUser('{{ user.username|e }}', '{{ user.real_name|e }}')" title="Clic para usar en formulario de acceso">
-                                    <td class="username-cell" style="padding: 9px 14px;"><code style="background: #f1f5f9; padding: 2px 7px; border-radius: 5px; color: #0369a1; font-size: 0.8rem;">{{ user.username }}</code></td>
-                                    <td class="realname-cell" style="padding: 9px 14px; font-weight: 600;">{{ user.real_name }}</td>
-                                    <td style="padding: 9px 14px; color: #64748b;">{{ user.phone or '—' }}</td>
+                                <tr class="user-item" style="cursor: pointer; border-bottom: 1px solid var(--border-color);" onclick="prefillAppUser('{{ user.username|e }}', '{{ user.real_name|e }}')" title="Clic para usar en formulario de acceso">
+                                    <td class="username-cell" style="padding: 9px 14px;"><code style="background: rgba(56, 189, 248, 0.1); padding: 2px 7px; border-radius: 5px; color: var(--neon-blue); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.8rem;">{{ user.username }}</code></td>
+                                    <td class="realname-cell" style="padding: 9px 14px; font-weight: 600; color: #fff;">{{ user.real_name }}</td>
+                                    <td style="padding: 9px 14px; color: var(--text-muted);">{{ user.phone or '—' }}</td>
                                     <td style="padding: 9px 14px;">
                                         {% if user.fuero %}
-                                        <span style="background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600;">{{ user.fuero }}</span>
-                                        {% else %}<span style="color: #cbd5e1;">—</span>{% endif %}
+                                        <span style="background: rgba(16, 185, 129, 0.1); color: var(--neon-green); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600;">{{ user.fuero }}</span>
+                                        {% else %}<span style="color: var(--text-muted);">—</span>{% endif %}
                                     </td>
                                     <td style="padding: 9px 14px; text-align: right;">
-                                        <button class="btn btn-xs btn-outline-primary py-0 px-2" 
+                                        <button class="btn btn-xs btn-outline-info py-0 px-2" 
                                                 data-username="{{ user.username|e }}"
                                                 data-realname="{{ user.real_name|e }}"
                                                 data-phone="{{ (user.phone or '')|e }}"
@@ -554,9 +554,9 @@
                     </div>
 
                     <!-- Form de edición de teléfono inline -->
-                    <div id="userPhoneEditFormContainer" class="d-none" style="margin-top: 16px; background: #fff; border: 1.5px solid #0369a1; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(3,105,161,0.12);">
-                        <div style="background: linear-gradient(135deg, #0369a1, #0284c7); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;">
-                            <span class="fw-bold text-white" style="font-size: 0.88rem;"><i class="bi bi-pencil-square me-2"></i>Actualizar datos del usuario</span>
+                    <div id="userPhoneEditFormContainer" class="d-none" style="margin-top: 16px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.5);">
+                        <div class="radar-masthead" style="padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
+                            <span class="fw-bold glow-text text-white" style="font-size: 0.88rem;"><i class="bi bi-pencil-square me-2 text-info"></i>Actualizar datos del usuario</span>
                             <button type="button" class="btn-close btn-close-white btn-sm" onclick="closeUserPhoneEdit()"></button>
                         </div>
                         <div style="padding: 14px 16px;">
@@ -565,19 +565,19 @@
                                 <input type="hidden" name="old_username" id="editOldUsername">
                                 <div class="col-sm-2">
                                     <label class="um-label">Usuario</label>
-                                    <input type="text" name="username" id="editUsername" class="form-control form-control-sm" placeholder="Usuario AD" readonly style="background: #f8fafc;">
+                                    <input type="text" name="username" id="editUsername" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Usuario AD" readonly>
                                 </div>
                                 <div class="col-sm-3">
                                     <label class="um-label">Nombre Completo</label>
-                                    <input type="text" name="realname" id="editRealname" class="form-control form-control-sm" placeholder="Nombre completo">
+                                    <input type="text" name="realname" id="editRealname" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Nombre completo">
                                 </div>
                                 <div class="col-sm-2">
                                     <label class="um-label">Teléfono IP</label>
-                                    <input type="text" name="phone" id="editPhone" class="form-control form-control-sm" placeholder="Ej: 4321">
+                                    <input type="text" name="phone" id="editPhone" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Ej: 4321">
                                 </div>
                                 <div class="col-sm-3">
                                     <label class="um-label">Fuero / Área</label>
-                                    <select name="fuero" id="editFuero" class="form-select form-select-sm">
+                                    <select name="fuero" id="editFuero" class="form-select form-select-sm bg-dark text-white border-secondary">
                                         <option value="">-- Sin Fuero --</option>
                                         {% for name in fueros.values()|unique|sort %}
                                         <option value="{{ name }}">{{ name }}</option>
@@ -1153,49 +1153,49 @@
 .um-tab-btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 8px 16px; border-radius: 10px 10px 0 0; border: none;
-    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.05); color: var(--text-muted);
     font-size: 0.82rem; font-weight: 700; cursor: pointer;
     transition: all 0.2s; font-family: inherit;
     border-bottom: 2px solid transparent;
 }
-.um-tab-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
-.um-tab-btn.active { background: rgba(255,255,255,0.18); color: #fff; border-bottom-color: #f59e0b; }
+.um-tab-btn:hover { background: rgba(56, 189, 248, 0.1); color: var(--neon-blue); }
+.um-tab-btn.active { background: rgba(16, 185, 129, 0.15); color: var(--neon-green); border-bottom-color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green); }
 
 /* ── Form Panel ── */
 .um-form-panel {
-    background: #fff; border-radius: 14px; border: 1.5px solid #e2e8f0;
+    background: rgba(15, 23, 42, 0.6); border-radius: 14px; border: 1px solid var(--border-color);
     margin-bottom: 20px; overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 .um-form-panel-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 14px 18px; cursor: pointer; transition: background 0.15s;
     user-select: none;
 }
-.um-form-panel-header:hover { background: #f8fafc; }
+.um-form-panel-header:hover { background: rgba(255,255,255,0.05); }
 .um-form-icon {
-    width: 36px; height: 36px; background: linear-gradient(135deg, #334155, #1e293b);
+    width: 36px; height: 36px; background: rgba(56, 189, 248, 0.1);
     border-radius: 9px; display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 1rem; flex-shrink: 0;
+    color: var(--neon-blue); font-size: 1rem; flex-shrink: 0; border: 1px solid rgba(56,189,248,0.3);
 }
-.um-form-icon.editing { background: linear-gradient(135deg, #b45309, #f59e0b); }
+.um-form-icon.editing { background: rgba(245, 158, 11, 0.1); color: var(--neon-orange); border-color: rgba(245, 158, 11, 0.3); }
 .um-chevron { color: #94a3b8; transition: transform 0.25s; font-size: 0.9rem; }
 .um-chevron.open { transform: rotate(180deg); }
 .um-reset-btn {
     font-size: 0.75rem; color: #ef4444; cursor: pointer; padding: 3px 10px;
-    border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
     transition: all 0.15s; font-weight: 600;
 }
-.um-reset-btn:hover { background: #fee2e2; }
+.um-reset-btn:hover { background: rgba(239, 68, 68, 0.2); }
 
-.um-form-body { padding: 16px 18px; border-top: 1px solid #f0f4f8; }
+.um-form-body { padding: 16px 18px; border-top: 1px solid var(--border-color); }
 .um-form-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
     margin-bottom: 14px;
 }
 .um-field {}
-.um-label { font-size: 0.75rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-.um-form-footer { background: #f8fafc; border-radius: 10px; padding: 12px 14px; border: 1px solid #e2e8f0; }
+.um-label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.um-form-footer { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px 14px; border: 1px solid var(--border-color); }
 .um-perms-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
 .um-flags-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 
@@ -1203,24 +1203,24 @@
 .um-perm-chip span, .um-flag-chip span {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 4px 11px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
-    border: 1.5px solid #e2e8f0; background: #fff; color: #475569;
+    border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: #94a3b8;
     cursor: pointer; transition: all 0.18s; user-select: none;
 }
-.um-perm-chip span:hover, .um-flag-chip span:hover { border-color: #94a3b8; background: #f8fafc; }
-.um-perm-chip input:checked + span { background: #1e293b; color: #fff; border-color: #1e293b; }
-.um-flag-chip input:checked + span { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+.um-perm-chip span:hover, .um-flag-chip span:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); }
+.um-perm-chip input:checked + span { background: rgba(16, 185, 129, 0.15); color: var(--neon-green); border-color: var(--neon-green); box-shadow: 0 0 10px rgba(16,185,129,0.2); }
+.um-flag-chip input:checked + span { background: rgba(245, 158, 11, 0.15); color: var(--neon-orange); border-color: var(--neon-orange); box-shadow: 0 0 10px rgba(245,158,11,0.2); }
 
 /* ── Grid de usuarios ── */
 .um-users-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px;
 }
 .um-user-card {
-    background: #fff; border-radius: 14px; border: 1.5px solid #e2e8f0;
+    background: rgba(15, 23, 42, 0.6); border-radius: 14px; border: 1px solid var(--border-color);
     padding: 14px 16px; transition: all 0.2s; display: flex; flex-direction: column; gap: 10px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); backdrop-filter: blur(10px);
 }
-.um-user-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-2px); }
-.um-user-card.um-user-pending { border-color: #fde68a; background: #fffbeb; }
+.um-user-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(56, 189, 248, 0.15); transform: translateY(-2px); }
+.um-user-card.um-user-pending { border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.05); }
 
 .um-user-card-top { display: flex; align-items: center; gap: 10px; }
 .um-avatar {
@@ -1228,70 +1228,70 @@
     justify-content: center; font-size: 1rem; font-weight: 800; color: #fff;
     position: relative; flex-shrink: 0; letter-spacing: -0.02em;
 }
-.um-avatar-local { background: linear-gradient(135deg, #334155, #475569); }
-.um-avatar-ad { background: linear-gradient(135deg, #0369a1, #0284c7); }
-.um-avatar-super { background: linear-gradient(135deg, #b91c1c, #dc2626); }
+.um-avatar-local { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--neon-green); color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
+.um-avatar-ad { background: rgba(56, 189, 248, 0.15); border: 1px solid var(--neon-blue); color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
+.um-avatar-super { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--neon-red); color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
 .um-avatar-badge {
     position: absolute; bottom: -4px; right: -4px;
     width: 18px; height: 18px; border-radius: 6px; font-size: 0.55rem;
     display: flex; align-items: center; justify-content: center;
-    color: #fff; border: 2px solid #fff;
+    color: #fff; border: 1px solid #0f172a;
 }
-.um-badge-ad { background: #0369a1; }
-.um-badge-local { background: #475569; }
+.um-badge-ad { background: var(--neon-blue); }
+.um-badge-local { background: var(--neon-green); }
 .um-user-info { min-width: 0; }
-.um-user-name { font-weight: 700; font-size: 0.88rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.um-user-code { font-size: 0.72rem; color: #64748b; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; }
+.um-user-name { font-weight: 700; font-size: 0.88rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
+.um-user-code { font-size: 0.72rem; color: var(--neon-blue); background: rgba(56, 189, 248, 0.1); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3); }
 
 .um-status-badge {
     font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
     display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
 }
-.um-status-active { background: #dcfce7; color: #16a34a; }
-.um-status-pending { background: #fef9c3; color: #a16207; }
-.um-status-inactive { background: #f1f5f9; color: #64748b; }
+.um-status-active { background: rgba(16, 185, 129, 0.1); color: var(--neon-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+.um-status-pending { background: rgba(245, 158, 11, 0.1); color: var(--neon-orange); border: 1px solid rgba(245, 158, 11, 0.3); }
+.um-status-inactive { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid var(--border-color); }
 
 .um-user-card-mid { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .um-role-section {}
 .um-role-chip {
     display: inline-flex; align-items: center; font-size: 0.76rem; font-weight: 700;
-    padding: 4px 10px; border-radius: 8px; border: 1.5px solid; cursor: pointer;
-    transition: all 0.15s; background: #fff; white-space: nowrap;
+    padding: 4px 10px; border-radius: 8px; border: 1px solid; cursor: pointer;
+    transition: all 0.15s; background: transparent; white-space: nowrap;
 }
 .um-role-chip.dropdown-toggle::after { margin-left: 4px; }
-.um-role-tecnico { border-color: #bfdbfe; color: #1d4ed8; }
-.um-role-tecnico:hover { background: #eff6ff; }
-.um-role-administrador { border-color: #fde68a; color: #b45309; }
-.um-role-administrador:hover { background: #fffbeb; }
-.um-role-operador { border-color: #bbf7d0; color: #15803d; }
-.um-role-operador:hover { background: #f0fdf4; }
-.um-role-infraestructura { border-color: #a5f3fc; color: #0e7490; }
-.um-role-infraestructura:hover { background: #ecfeff; }
-.um-role-consulta { border-color: #e9d5ff; color: #7e22ce; }
-.um-role-consulta:hover { background: #faf5ff; }
-.um-role-super { border-color: #fecaca; color: #b91c1c; cursor: default; }
+.um-role-tecnico { border-color: rgba(56, 189, 248, 0.5); color: var(--neon-blue); background: rgba(56, 189, 248, 0.1); }
+.um-role-tecnico:hover { background: rgba(56, 189, 248, 0.2); }
+.um-role-administrador { border-color: rgba(245, 158, 11, 0.5); color: var(--neon-orange); background: rgba(245, 158, 11, 0.1); }
+.um-role-administrador:hover { background: rgba(245, 158, 11, 0.2); }
+.um-role-operador { border-color: rgba(16, 185, 129, 0.5); color: var(--neon-green); background: rgba(16, 185, 129, 0.1); }
+.um-role-operador:hover { background: rgba(16, 185, 129, 0.2); }
+.um-role-infraestructura { border-color: rgba(168, 85, 247, 0.5); color: var(--neon-purple); background: rgba(168, 85, 247, 0.1); }
+.um-role-infraestructura:hover { background: rgba(168, 85, 247, 0.2); }
+.um-role-consulta { border-color: rgba(236, 72, 153, 0.5); color: var(--neon-pink); background: rgba(236, 72, 153, 0.1); }
+.um-role-consulta:hover { background: rgba(236, 72, 153, 0.2); }
+.um-role-super { border-color: rgba(239, 68, 68, 0.5); color: var(--neon-red); cursor: default; background: rgba(239, 68, 68, 0.1); }
 
 .um-access-pills { display: flex; gap: 4px; align-items: center; }
 .um-access-dot {
-    width: 26px; height: 26px; border-radius: 7px; background: #f1f5f9;
+    width: 26px; height: 26px; border-radius: 7px; background: rgba(255,255,255,0.05);
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.72rem; color: #475569; transition: all 0.15s;
+    font-size: 0.72rem; color: var(--neon-blue); transition: all 0.15s; border: 1px solid var(--border-color);
 }
-.um-access-dot:hover { background: #e2e8f0; }
+.um-access-dot:hover { background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); }
 
-.um-user-card-actions { display: flex; gap: 6px; border-top: 1px solid #f0f4f8; padding-top: 10px; }
+.um-user-card-actions { display: flex; gap: 6px; border-top: 1px solid var(--border-color); padding-top: 10px; }
 .um-action-btn {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 5px 11px; border-radius: 8px; font-size: 0.76rem; font-weight: 700;
-    border: 1.5px solid #e2e8f0; background: #fff; color: #475569;
+    border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: #cbd5e1;
     cursor: pointer; transition: all 0.15s; font-family: inherit;
 }
-.um-action-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
-.um-action-edit:hover { border-color: #334155; color: #1e293b; }
-.um-action-key { border-color: #fde68a; color: #b45309; }
-.um-action-key:hover { background: #fffbeb; border-color: #f59e0b; }
-.um-action-delete { border-color: #fecaca; color: #dc2626; padding: 5px 10px; }
-.um-action-delete:hover { background: #fef2f2; border-color: #ef4444; }
+.um-action-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff; }
+.um-action-edit:hover { border-color: rgba(56, 189, 248, 0.5); color: var(--neon-blue); background: rgba(56, 189, 248, 0.1); }
+.um-action-key { border-color: rgba(245, 158, 11, 0.3); color: var(--neon-orange); }
+.um-action-key:hover { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.5); }
+.um-action-delete { border-color: rgba(239, 68, 68, 0.3); color: var(--neon-red); padding: 5px 10px; }
+.um-action-delete:hover { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.5); }
 </style>
 
 <!-- Scripts para Modales (Se incluirán una sola vez) -->
