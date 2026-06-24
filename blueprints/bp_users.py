@@ -515,4 +515,4 @@ def sync_ad_users_route():
     except Exception as exc:
         flash(f"Error crítico en sincronización AD: {exc}", "error")
         
-    return redirect(url_for("users.users_admin"))
+    return redirect(_safe_next_url())
