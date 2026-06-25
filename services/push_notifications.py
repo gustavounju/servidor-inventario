@@ -21,9 +21,10 @@ def notify_all_technicians(title, body, url="/mobile"):
 
     # --- 2. EXTERNAL: Firebase Cloud Messaging ---
     try:
-        _send_fcm_push(title, body, url)
+        return _send_fcm_push(title, body, url)
     except Exception as e:
         print(f"[ERROR] FCM push failed: {e}")
+        return {"success": False, "error": str(e)}
 
 
 def notify_technician(technician_name, title, body, url="/mobile"):
@@ -32,17 +33,19 @@ def notify_technician(technician_name, title, body, url="/mobile"):
     technician device. Does NOT log to the internal DB to maintain privacy.
     """
     try:
-        _send_fcm_push(title, body, url, technician_name=technician_name)
+        return _send_fcm_push(title, body, url, technician_name=technician_name)
     except Exception as e:
         print(f"[ERROR] FCM personal push failed for {technician_name}: {e}")
+        return {"success": False, "error": str(e)}
 
 def _send_fcm_push(title, body, url="/mobile", technician_name=None):
     """Sends a push notification to FCM tokens via Firebase Admin SDK."""
     cred_path = os.environ.get("FIREBASE_CREDENTIALS", "firebase-credentials.json")
 
     if not os.path.exists(cred_path):
-        print("[FCM] No credentials file found. Skipping FCM push.")
-        return
+        err = f"No credentials file found at {cred_path}"
+        print(f"[FCM] {err}. Skipping FCM push.")
+        return {"success": False, "error": err}
 
     try:
         import firebase_admin
@@ -63,8 +66,9 @@ def _send_fcm_push(title, body, url="/mobile", technician_name=None):
 
         tokens = [r["token"] for r in rows if r.get("token")]
         if not tokens:
-            print("[FCM] No registered devices. Skipping.")
-            return
+            err = f"El técnico '{technician_name}' no tiene dispositivos habilitados para recibir notificaciones." if technician_name else "No hay dispositivos registrados."
+            print(f"[FCM] {err}")
+            return {"success": False, "error": err}
 
         # Send to all devices (MulticastMessage)
         message = messaging.MulticastMessage(
@@ -102,7 +106,15 @@ def _send_fcm_push(title, body, url="/mobile", technician_name=None):
                     conn.commit()
                 print(f"[FCM] Removed {len(invalid_tokens)} invalid token(s).")
 
+        if response.success_count > 0:
+            return {"success": True, "error": None}
+        else:
+            return {"success": False, "error": "Todos los tokens fueron rechazados por Firebase (posiblemente caducados)."}
+
     except ImportError:
-        print("[FCM] firebase-admin not installed. Run: pip install firebase-admin")
+        err = "firebase-admin not installed. Run: pip install firebase-admin"
+        print(f"[FCM] {err}")
+        return {"success": False, "error": err}
     except Exception as e:
         print(f"[FCM] Error sending push: {e}")
+        return {"success": False, "error": str(e)}

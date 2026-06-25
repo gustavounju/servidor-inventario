@@ -1117,10 +1117,14 @@ def send_admin_message():
         
         title = "Mensaje del Administrador"
         if technician_name == 'all':
-            notify_all_technicians(title=title, body=message, url="/mobile")
+            res = notify_all_technicians(title=title, body=message, url="/mobile")
+            if res and not res.get("success"):
+                return jsonify({"status": "error", "message": res.get("error")}), 400
             audit_msg = "Mensaje enviado a TODOS los técnicos"
         elif technician_name:
-            notify_technician(technician_name=technician_name, title=title, body=message, url="/mobile")
+            res = notify_technician(technician_name=technician_name, title=title, body=message, url="/mobile")
+            if res and not res.get("success"):
+                return jsonify({"status": "error", "message": res.get("error")}), 400
             audit_msg = f"Mensaje privado enviado a {technician_name}"
         else:
             return jsonify({"status": "error", "message": "Destinatario inválido"}), 400
