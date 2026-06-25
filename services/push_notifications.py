@@ -1,7 +1,8 @@
 import os
+import logging
 from database.db_core import get_db_connection
 
-def notify_all_technicians(title, body, url="/mobile"):
+def notify_all_technicians(title, body, url="/tecnicos"):
     """
     Sends an internal notification to all technicians.
     Logs to both `app_notifications` (for the global bell) and `tech_messages` (for the native popup).
@@ -15,9 +16,9 @@ def notify_all_technicians(title, body, url="/mobile"):
             )
             conn.commit()
             safe_title = title.encode('ascii', 'ignore').decode()
-            print(f"[NOTIF] Saved to DB: {safe_title}")
+            logging.info(f"[NOTIF] Saved to DB: {safe_title}")
     except Exception as e:
-        print(f"[ERROR] DB notification logging failed: {e}")
+        logging.error(f"[ERROR] DB notification logging failed: {e}")
 
     # 2. Log to internal private messages queue (for popups)
     try:
@@ -27,13 +28,13 @@ def notify_all_technicians(title, body, url="/mobile"):
                 (None, title, body, url)
             )
             conn.commit()
-            print(f"[INTERNAL MSG] Broadcast message queued for all technicians.")
-        return {"success": True, "error": None}
+            logging.info(f"[INTERNAL MSG] Broadcast message queued for all technicians.")
+        return {"status": "success", "error": None}
     except Exception as e:
-        print(f"[ERROR] Internal message queue failed: {e}")
-        return {"success": False, "error": str(e)}
+        logging.error(f"[ERROR] Internal message queue failed: {e}")
+        return {"status": "error", "error": str(e)}
 
-def notify_technician(technician_name, title, body, url="/mobile"):
+def notify_technician(technician_name, title, body, url="/tecnicos"):
     """
     Sends an internal private message to a specific technician.
     Only logs to `tech_messages` (for the native popup) to maintain privacy.
@@ -45,8 +46,8 @@ def notify_technician(technician_name, title, body, url="/mobile"):
                 (technician_name, title, body, url)
             )
             conn.commit()
-            print(f"[INTERNAL MSG] Private message queued for {technician_name}.")
-        return {"success": True, "error": None}
+            logging.info(f"[INTERNAL MSG] Private message queued for {technician_name}.")
+        return {"status": "success", "error": None}
     except Exception as e:
-        print(f"[ERROR] Internal private message failed for {technician_name}: {e}")
-        return {"success": False, "error": str(e)}
+        logging.error(f"[ERROR] Internal private message failed for {technician_name}: {e}")
+        return {"status": "error", "error": str(e)}

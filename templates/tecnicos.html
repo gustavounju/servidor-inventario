@@ -894,6 +894,30 @@ function playBeep(type = 'new') {
   } catch(e) {}
 }
 
+function playMessageAlarm() {
+  try {
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const start = ctx.currentTime;
+    // Doble beep suave
+    [0, 0.2].forEach((offset) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, start + offset);
+      gain.gain.setValueAtTime(0, start + offset);
+      gain.gain.linearRampToValueAtTime(0.3, start + offset + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + offset + 0.15);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start + offset);
+      osc.stop(start + offset + 0.2);
+    });
+  } catch(e) {}
+}
+
 function playTaskAlarm() {
   try {
     if (navigator.vibrate) navigator.vibrate([350, 120, 350, 120, 500]);
@@ -1702,7 +1726,7 @@ async function poll() {
     const msgRes = await fetch(API + '/poll_messages');
     const msgData = await msgRes.json();
     if (msgData.status === 'success' && msgData.messages && msgData.messages.length > 0) {
-      playTaskAlarm();
+      playMessageAlarm();
       for (const msg of msgData.messages) {
         if (document.visibilityState === 'visible') {
           if (msg.title && msg.title.includes('Administrador')) {
