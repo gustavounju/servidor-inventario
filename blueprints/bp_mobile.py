@@ -269,28 +269,42 @@ def api_mobile_parse_voice():
             return jsonify({"status": "success", "data": {"descripcion": text, "solicitante": "", "error_voice": str(e)}})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-@bp_mobile.route("/api/mobile/subscribe_push", methods=["POST"])
-def api_subscribe_push():
-    """Saves an FCM token for a technician device."""
+@bp_mobile.route("/api/mobile/poll_messages", methods=["GET"])
+def api_poll_messages():
+    """Fetches unread private messages for the logged in technician."""
     try:
-        data = request.json
         technician = current_technician_identity()
-        token = data.get("token", "").strip()
-        if not technician or not token:
-            return jsonify({"status": "error", "message": "Faltan datos"}), 400
+        if not technician:
+            return jsonify({"status": "error", "message": "No identity"}), 400
 
         with get_db_connection() as conn:
-            conn.execute(
+            # Seleccionar los mensajes no leídos (ya sean directos a él, o a TODOS)
+            rows = conn.execute(
                 """
-                INSERT INTO fcm_tokens (technician_name, token)
-                VALUES (%s, %s)
-                ON DUPLICATE KEY UPDATE token = VALUES(token), updated_at = NOW()
+                SELECT id, title, body, url, created_at 
+                FROM tech_messages 
+                WHERE read_at IS NULL 
+                  AND (technician_name = %s OR technician_name IS NULL)
                 """,
-                (technician, token)
-            )
-            conn.commit()
-        logging.info(f"[FCM] Token registrado para: {technician}")
-        return jsonify({"status": "success"})
+                (technician,)
+            ).fetchall()
+
+            if rows:
+                msg_ids = [r['id'] for r in rows]
+                # Formatear param list para la query IN
+                format_strings = ','.join(['%s'] * len(msg_ids))
+                conn.execute(
+                    f"UPDATE tech_messages SET read_at = NOW() WHERE id IN ({format_strings})",
+                    tuple(msg_ids)
+                )
+                conn.commit()
+
+        # Convertir datetime a string para JSON
+        for r in rows:
+            if r.get('created_at'):
+                r['created_at'] = r['created_at'].isoformat()
+                
+        return jsonify({"status": "success", "messages": rows})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 

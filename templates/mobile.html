@@ -1430,103 +1430,59 @@
             return s && s[0].toUpperCase() + s.slice(1);
         }
 
-        // --- FIREBASE PUSH SUBSCRIPTION ---
-        async function subscribeToPush() {
-            const dbg = document.getElementById('debugOutput');
-            if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Iniciando... (User: ${currentUser})</span>`;
-
+        // --- INTERNAL MESSAGING POLLING ---
+        async function pollMessages() {
             if (!currentUser) return;
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                if (dbg) dbg.innerHTML += `<br><span class="text-danger">[FCM] Push no soportado</span>`;
-                console.log('[FCM] Push not supported in this browser.');
-                return;
-            }
             try {
-                // Pedir permiso de notificaciones
-                if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Pidiendo permiso...</span>`;
-                const permission = await Notification.requestPermission();
-                if (permission !== 'granted') {
-                    if (dbg) dbg.innerHTML += `<br><span class="text-warning">[FCM] Permiso: ${permission}</span>`;
-                    console.log('[FCM] Permiso de notificaciones denegado.');
-                    return;
-                }
-
-                // Esperar a que el SW esté listo
-                if (dbg) dbg.innerHTML += `<br><span class="text-info">[FCM] Esperando SW...</span>`;
-                const swReg = await navigator.serviceWorker.ready;
-                if (dbg) dbg.innerHTML += `<br><span class="text-success">[FCM] SW Listo!</span>`;
-
-                // Obtener token FCM
-                const messaging = firebase.messaging();
-                const token = await messaging.getToken({
-                    vapidKey: VAPID_PUBLIC_KEY,
-                    serviceWorkerRegistration: swReg
-                });
-
-                if (!token) {
-                    console.warn('[FCM] No se obtuvo token.');
-                    return;
-                }
-
-                console.log('[FCM] Token obtenido:', token.substring(0, 20) + '...');
-                document.getElementById('debugOutput').innerHTML += `<br><span class="text-success">[FCM] Token OK: ${token.substring(0,10)}...</span>`;
-
-                // Enviar token al servidor
-                const res = await fetch('/api/mobile/subscribe_push', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: token })
-                });
-                const json = await res.json();
-                if (json.status === 'success') {
-                    console.log('[FCM] Token registrado en servidor ✅');
-                } else {
-                    console.error('[FCM] Error registrando token:', json.message);
-                }
-
-                // Manejar mensajes en foreground (página abierta)
-                messaging.onMessage((payload) => {
-                    console.log('[FCM] Mensaje en foreground:', payload);
-                    const title = payload.notification?.title || '';
-                    const body = payload.notification?.body || '';
-                    
-                    if (title.includes('Administrador')) {
-                        alert("🔔 " + title + "\n\n" + body);
-                    } else {
-                        const toastEl = document.getElementById('notifToast');
-                        const toastText = document.getElementById('notifToastText');
-                        if (toastEl && toastText && payload.notification) {
-                            toastText.textContent = title + ': ' + body.substring(0, 60);
-                            toastEl.style.display = 'block';
-                            if (soundEnabled) playBeep(0.5);
-                            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                            setTimeout(() => { toastEl.style.display = 'none'; }, 8000);
+                const res = await fetch('/api/mobile/poll_messages');
+                const data = await res.json();
+                if (data.status === 'success' && data.messages && data.messages.length > 0) {
+                    for (const msg of data.messages) {
+                        const title = msg.title || '';
+                        const body = msg.body || '';
+                        
+                        if (document.visibilityState === 'visible') {
+                            if (title.includes('Administrador')) {
+                                alert("🔔 " + title + "\n\n" + body);
+                            } else {
+                                const toastEl = document.getElementById('notifToast');
+                                const toastText = document.getElementById('notifToastText');
+                                if (toastEl && toastText) {
+                                    toastText.textContent = title + ': ' + body.substring(0, 60);
+                                    toastEl.style.display = 'block';
+                                    if (soundEnabled) playBeep(0.5);
+                                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                                    setTimeout(() => { toastEl.style.display = 'none'; }, 8000);
+                                }
+                            }
+                        } else if ('Notification' in window && Notification.permission === 'granted') {
+                            try { new Notification(title, { body: body, icon: '/static/icon-192.png', silent: false }); } catch(e){}
                         }
                     }
-                });
-
-            } catch (e) {
-                console.error('[FCM] Error en suscripción push:', e);
-                document.getElementById('debugOutput').innerHTML += `<br><span class="text-danger">[FCM] Error: ${e.message || e}</span>`;
+                }
+            } catch(e) {
+                console.error("Error polling messages:", e);
             }
+        }
+        
+        // Polling every 10 seconds
+        setInterval(pollMessages, 10000);
+        
+        // Request basic notification permission on load just in case
+        async function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission !== 'granted') {
+                try { await Notification.requestPermission(); } catch(e){}
+            }
+        }
+        
+        // Remove FCM subscription logic
+        async function subscribeToPush() {
+            requestNotificationPermission();
         }
 
     </script>
 
-    <!-- Firebase SDK (debe ir DESPUÉS del script principal) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
-    <script>
-        // Inicializar Firebase en la página principal
-        firebase.initializeApp({
-            apiKey: "AIzaSyC6PcD59xCNoqodWc3j3Xx-RkYaWRbUwHg",
-            authDomain: "inventario-gold.firebaseapp.com",
-            projectId: "inventario-gold",
-            storageBucket: "inventario-gold.firebasestorage.app",
-            messagingSenderId: "155956386088",
-            appId: "1:155956386088:web:0aac3dcc29079442ff981d"
-        });
-    </script>
+    <!-- Firebase SDK removed for offline/intranet compatibility -->
 </body>
 
 </html>
