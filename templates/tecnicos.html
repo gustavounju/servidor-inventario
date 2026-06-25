@@ -1753,7 +1753,7 @@ async function poll() {
     const data = await res.json();
     if (data.error) return;
     const newCount = (data.active_tasks||[]).length;
-    if (prevTaskCount > 0 && newCount > prevTaskCount) playMessageAlarm();
+    if (prevTaskCount > 0 && newCount > prevTaskCount) playTaskAlarm();
     prevTaskCount = newCount;
     allData = data;
     fillPcSelects(data.pcs || []);
