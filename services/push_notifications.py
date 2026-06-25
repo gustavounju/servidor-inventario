@@ -26,8 +26,18 @@ def notify_all_technicians(title, body, url="/mobile"):
         print(f"[ERROR] FCM push failed: {e}")
 
 
-def _send_fcm_push(title, body, url="/mobile"):
-    """Sends a push notification to all stored FCM tokens via Firebase Admin SDK."""
+def notify_technician(technician_name, title, body, url="/mobile"):
+    """
+    Sends a Firebase Cloud Messaging (FCM) push notification to a SPECIFIC
+    technician device. Does NOT log to the internal DB to maintain privacy.
+    """
+    try:
+        _send_fcm_push(title, body, url, technician_name=technician_name)
+    except Exception as e:
+        print(f"[ERROR] FCM personal push failed for {technician_name}: {e}")
+
+def _send_fcm_push(title, body, url="/mobile", technician_name=None):
+    """Sends a push notification to FCM tokens via Firebase Admin SDK."""
     cred_path = os.environ.get("FIREBASE_CREDENTIALS", "firebase-credentials.json")
 
     if not os.path.exists(cred_path):
@@ -43,10 +53,13 @@ def _send_fcm_push(title, body, url="/mobile"):
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
 
-        # Get all registered tokens from the DB
+        # Get registered tokens from the DB
         from database.db_core import get_db_connection
         with get_db_connection() as conn:
-            rows = conn.execute("SELECT token FROM fcm_tokens").fetchall()
+            if technician_name:
+                rows = conn.execute("SELECT token FROM fcm_tokens WHERE technician_name = %s", (technician_name,)).fetchall()
+            else:
+                rows = conn.execute("SELECT token FROM fcm_tokens").fetchall()
 
         tokens = [r["token"] for r in rows if r.get("token")]
         if not tokens:

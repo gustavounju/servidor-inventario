@@ -1102,3 +1102,37 @@ def add_task_action(task_id):
             return jsonify({"status": "success", "message": "Acción agregada correctamente"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_tasks.route("/api/visor/send_message", methods=["POST"])
+@superuser_required
+def send_admin_message():
+    technician_name = request.form.get("technician_name", "").strip()
+    message = request.form.get("message", "").strip()
+    
+    if not message:
+        return jsonify({"status": "error", "message": "El mensaje no puede estar vacío"}), 400
+        
+    try:
+        from services.push_notifications import notify_all_technicians, notify_technician
+        
+        title = "Mensaje del Administrador"
+        if technician_name == 'all':
+            notify_all_technicians(title=title, body=message, url="/mobile")
+            audit_msg = "Mensaje enviado a TODOS los técnicos"
+        elif technician_name:
+            notify_technician(technician_name=technician_name, title=title, body=message, url="/mobile")
+            audit_msg = f"Mensaje privado enviado a {technician_name}"
+        else:
+            return jsonify({"status": "error", "message": "Destinatario inválido"}), 400
+            
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO admin_audit_logs (action_type, details, admin_user, ip_address) VALUES (%s, %s, %s, %s)",
+                ("COMUNICADO_PUSH", f"{audit_msg}: {message[:50]}", current_username(), request.remote_addr)
+            )
+            conn.commit()
+            
+        return jsonify({"status": "success", "message": audit_msg})
+    except Exception as e:
+        print(f"Error sending admin message: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500

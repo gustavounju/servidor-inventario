@@ -89,6 +89,9 @@
             {% if is_authenticated %}
                 <span class="op-divider"></span>
                 <div class="op-user-label">{{ current_user.username | upper }}</div>
+                {% if current_user.role == 'administrador' %}
+                <button type="button" class="op-btn" style="border: 1px solid var(--color-warning); color: var(--color-warning);" onclick="showMsgModal()">[ COMUNICAR ]</button>
+                {% endif %}
                 <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn">[ DASHBOARD ]</a>
                 <a href="{{ url_for('auth.logout') }}" class="op-btn op-btn--danger">[ SALIR ]</a>
             {% else %}
@@ -446,9 +449,89 @@
         </div>
     </div>
 
+    <!-- Modal Enviar Mensaje (Admin) -->
+    <div class="modal-overlay" id="msgModalOverlay" style="display: none; align-items: center; justify-content: center; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 10000;">
+        <div class="glass-modal" style="max-width: 500px; width: 90%; background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.2rem; margin: 0; color: #fff;"><i class="bi bi-chat-left-dots text-warning"></i> Enviar Mensaje a Técnicos</h2>
+                <button type="button" class="btn-close btn-close-white" onclick="hideMsgModal()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="adminMsgForm" onsubmit="event.preventDefault(); sendAdminMessage();">
+                    <div class="mb-3">
+                        <label class="small text-muted mb-1 font-mono">DESTINATARIO</label>
+                        <select class="form-select bg-dark text-white border-secondary" id="msgTechnician" required>
+                            <option value="all">TODOS LOS TÉCNICOS</option>
+                            {% for tech in technicians %}
+                            <option value="{{ tech.name }}">{{ tech.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted mb-1 font-mono">MENSAJE</label>
+                        <textarea class="form-control bg-dark text-white border-secondary" id="msgText" rows="3" required placeholder="Escribe el comunicado aquí..."></textarea>
+                    </div>
+                    <div class="text-end mt-3 border-top border-secondary pt-3">
+                        <button type="button" class="btn btn-outline-light me-2" onclick="hideMsgModal()">Cancelar</button>
+                        <button type="submit" class="btn" style="background: var(--color-warning); color: #000; font-weight: bold;" id="btnSendMsg">
+                            <i class="bi bi-send-fill me-1"></i> Enviar Push
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- LOGICA JAVASCRIPT -->
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script>
+        function showMsgModal() {
+            const overlay = document.getElementById('msgModalOverlay');
+            if(overlay) overlay.style.display = 'flex';
+        }
+
+        function hideMsgModal() {
+            const overlay = document.getElementById('msgModalOverlay');
+            if(overlay) overlay.style.display = 'none';
+        }
+
+        async function sendAdminMessage() {
+            const btn = document.getElementById('btnSendMsg');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+            
+            const technician = document.getElementById('msgTechnician').value;
+            const message = document.getElementById('msgText').value;
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            
+            const fd = new URLSearchParams();
+            fd.append('technician_name', technician);
+            fd.append('message', message);
+            if(csrfToken) fd.append('csrf_token', csrfToken);
+
+            try {
+                const response = await fetch('/api/visor/send_message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: fd
+                });
+                const data = await response.json();
+                if(data.status === 'success') {
+                    alert('✅ ' + data.message);
+                    document.getElementById('msgText').value = '';
+                    hideMsgModal();
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            } catch(e) {
+                console.error(e);
+                alert('❌ Error de red al enviar el mensaje.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill me-1"></i> Enviar Push';
+            }
+        }
+
         function scrollToPendientes() {
             const container = document.getElementById('tablePendientesContainer') || document.getElementById('sectionPendientes');
             if (container) {
