@@ -29,10 +29,10 @@ def notify_all_technicians(title, body, url="/tecnicos"):
             )
             conn.commit()
             logging.info(f"[INTERNAL MSG] Broadcast message queued for all technicians.")
-        return {"status": "success", "error": None}
+        return {"success": True, "error": None}
     except Exception as e:
         logging.error(f"[ERROR] Internal message queue failed: {e}")
-        return {"status": "error", "error": str(e)}
+        return {"success": False, "error": str(e)}
 
 def notify_technician(technician_name, title, body, url="/tecnicos"):
     """
@@ -47,7 +47,7 @@ def notify_technician(technician_name, title, body, url="/tecnicos"):
             )
             conn.commit()
             logging.info(f"[INTERNAL MSG] Private message queued for {technician_name}.")
-        return {"status": "success", "error": None}
+        return {"success": True, "error": None}
     except Exception as e:
         logging.error(f"[ERROR] Internal private message failed for {technician_name}: {e}")
-        return {"status": "error", "error": str(e)}
+        return {"success": False, "error": str(e)}
