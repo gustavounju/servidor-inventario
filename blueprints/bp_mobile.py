@@ -284,7 +284,7 @@ def api_poll_messages():
                 SELECT id, title, body, url, created_at 
                 FROM tech_messages 
                 WHERE read_at IS NULL 
-                  AND (technician_name = %s OR technician_name IS NULL)
+                  AND technician_name = %s
                 """,
                 (technician,)
             ).fetchall()

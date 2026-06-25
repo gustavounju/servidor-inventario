@@ -20,15 +20,19 @@ def notify_all_technicians(title, body, url="/tecnicos"):
     except Exception as e:
         logging.error(f"[ERROR] DB notification logging failed: {e}")
 
-    # 2. Log to internal private messages queue (for popups)
+    # 2. Log to internal private messages queue (for popups) - Fanned out to all
     try:
         with get_db_connection() as conn:
-            conn.execute(
-                "INSERT INTO tech_messages (technician_name, title, body, url) VALUES (%s, %s, %s, %s)",
-                (None, title, body, url)
-            )
+            # Fetch all known technicians
+            techs = conn.execute("SELECT name FROM technicians").fetchall()
+            
+            for tech in techs:
+                conn.execute(
+                    "INSERT INTO tech_messages (technician_name, title, body, url) VALUES (%s, %s, %s, %s)",
+                    (tech['name'], title, body, url)
+                )
             conn.commit()
-            logging.info(f"[INTERNAL MSG] Broadcast message queued for all technicians.")
+            logging.info(f"[INTERNAL MSG] Broadcast message queued for {len(techs)} technicians.")
         return {"success": True, "error": None}
     except Exception as e:
         logging.error(f"[ERROR] Internal message queue failed: {e}")
