@@ -1127,8 +1127,8 @@ def send_admin_message():
             
         with get_db_connection() as conn:
             conn.execute(
-                "INSERT INTO admin_audit_logs (action_type, details, admin_user, ip_address) VALUES (%s, %s, %s, %s)",
-                ("COMUNICADO_PUSH", f"{audit_msg}: {message[:50]}", current_username(), request.remote_addr)
+                "INSERT INTO admin_audit_logs (action_type, details, actor_username, target_username, ip_address) VALUES (%s, %s, %s, %s, %s)",
+                ("COMUNICADO_PUSH", f"{audit_msg}: {message[:50]}", current_username(), technician_name, request.remote_addr)
             )
             conn.commit()
             
