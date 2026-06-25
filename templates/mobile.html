@@ -1487,14 +1487,21 @@
                 // Manejar mensajes en foreground (página abierta)
                 messaging.onMessage((payload) => {
                     console.log('[FCM] Mensaje en foreground:', payload);
-                    const toastEl = document.getElementById('notifToast');
-                    const toastText = document.getElementById('notifToastText');
-                    if (toastEl && toastText && payload.notification) {
-                        toastText.textContent = payload.notification.title + ': ' + (payload.notification.body || '').substring(0, 60);
-                        toastEl.style.display = 'block';
-                        if (soundEnabled) playBeep(0.5);
-                        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                        setTimeout(() => { toastEl.style.display = 'none'; }, 8000);
+                    const title = payload.notification?.title || '';
+                    const body = payload.notification?.body || '';
+                    
+                    if (title.includes('Administrador')) {
+                        alert("🔔 " + title + "\n\n" + body);
+                    } else {
+                        const toastEl = document.getElementById('notifToast');
+                        const toastText = document.getElementById('notifToastText');
+                        if (toastEl && toastText && payload.notification) {
+                            toastText.textContent = title + ': ' + body.substring(0, 60);
+                            toastEl.style.display = 'block';
+                            if (soundEnabled) playBeep(0.5);
+                            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                            setTimeout(() => { toastEl.style.display = 'none'; }, 8000);
+                        }
                     }
                 });
 

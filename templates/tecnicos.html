@@ -1424,8 +1424,12 @@ async function subscribeToPush(requestPermission = false) {
       playTaskAlarm();
       const title = payload.notification?.title || 'Nueva tarea disponible';
       const body = payload.notification?.body || 'Hay una tarea para revisar.';
-      if (document.visibilityState === 'visible' && Notification.permission === 'granted') {
-        new Notification(title, { body, icon: '/static/icon-192.png', silent: false, requireInteraction: true });
+      if (document.visibilityState === 'visible') {
+        if (title.includes('Administrador')) {
+          alert("🔔 " + title + "\n\n" + body);
+        } else if (Notification.permission === 'granted') {
+          try { new Notification(title, { body, icon: '/static/icon-192.png', silent: false }); } catch(e){}
+        }
       }
       refreshData(true);
     });
