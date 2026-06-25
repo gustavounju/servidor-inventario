@@ -22,10 +22,10 @@ def notify_all_technicians(title, body, url="/tecnicos"):
 
     # 2. Log to internal private messages queue (for popups) - Fanned out to all
     try:
+        from utils.auth import list_technician_users
+        techs = list_technician_users()
+        
         with get_db_connection() as conn:
-            # Fetch all known technicians
-            techs = conn.execute("SELECT name FROM technicians").fetchall()
-            
             for tech in techs:
                 conn.execute(
                     "INSERT INTO tech_messages (technician_name, title, body, url) VALUES (%s, %s, %s, %s)",
