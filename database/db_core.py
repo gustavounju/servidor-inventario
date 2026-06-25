@@ -303,6 +303,18 @@ def init_db():
         """)
 
         conn.execute("""
+            CREATE TABLE IF NOT EXISTS tech_messages (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                technician_name VARCHAR(100),
+                title TEXT,
+                body TEXT,
+                url TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                read_at DATETIME DEFAULT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS app_users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(255) NOT NULL UNIQUE,
