@@ -1070,8 +1070,8 @@ def add_task_action(task_id):
         
     try:
         with get_db_connection() as conn:
-            from utils.auth import current_technician_identity
-            username = current_username() or current_technician_identity() or "Desconocido"
+            from utils.auth import current_username, current_technician_identity
+            username = current_technician_identity() or current_username() or "Desconocido"
             
             conn.execute(
                 "INSERT INTO task_actions (task_id, user_name, action_text) VALUES (%s, %s, %s)",

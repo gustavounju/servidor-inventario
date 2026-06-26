@@ -1806,7 +1806,7 @@ async function loadInbox() {
         const senderSafe = escHtml(msg.sender || 'Sistema');
         
         return `
-          <div style="background: ${isRead ? 'var(--bg-hover)' : 'rgba(56, 189, 248, 0.1)'}; border: 1px solid ${isRead ? 'transparent' : 'rgba(56, 189, 248, 0.3)'}; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer;" onclick="openReadMessageModal(${msg.id}, '${titleSafe}', \`${bodySafe}\`, '${senderSafe}', '${msg.created_at}')">
+          <div style="background: ${isRead ? 'var(--bg-hover)' : 'rgba(56, 189, 248, 0.1)'}; border: 1px solid ${isRead ? 'transparent' : 'rgba(56, 189, 248, 0.3)'}; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer;" onclick="if('${msg.msg_type}' === 'task_note' && ${msg.task_id || 'null'}) { closeInboxModal(); openTaskActionsOverlay(${msg.task_id}); } else { openReadMessageModal(${msg.id}, '${titleSafe}', \`${bodySafe}\`, '${senderSafe}', '${msg.created_at}'); }">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
               <div style="font-size: 0.95rem; font-weight: ${isRead ? '600' : '700'}; color: var(--text);">${icon} ${titleSafe}</div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">${msg.created_at}</div>

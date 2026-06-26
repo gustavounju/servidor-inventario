@@ -390,6 +390,11 @@ def api_reply_message():
                     "INSERT INTO app_notifications (title, body, url) VALUES (%s, %s, %s)",
                     (f"Respuesta de {technician}", reply_text, "/dashboard")
                 )
+                # Guardar copia de la respuesta para el panel del admin
+                conn.execute(
+                    "INSERT INTO tech_messages (technician_name, sender, msg_type, title, body, url) VALUES (%s, %s, %s, %s, %s, %s)",
+                    ('admin', technician, 'reply', f"Re: {orig_msg['title']}", reply_text, "")
+                )
 
             conn.commit()
 

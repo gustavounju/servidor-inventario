@@ -949,3 +949,35 @@ def api_mark_notification_read(notif_id):
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/admin/tech_messages", methods=["GET"])
+def api_admin_tech_messages():
+    try:
+        from utils.auth import is_authenticated, current_user, is_superuser
+        if not is_authenticated() or (current_user().get('role') != 'administrador' and not is_superuser()):
+            return jsonify({"status": "error", "message": "No autorizado"}), 401
+
+        with get_db_connection() as conn:
+            # Traer mensajes directos enviados por admins y respuestas de técnicos
+            messages = conn.execute(
+                """
+                SELECT id, title, body, sender, technician_name, msg_type, created_at
+                FROM tech_messages 
+                WHERE msg_type IN ('direct', 'reply') 
+                ORDER BY created_at DESC 
+                LIMIT 50
+                """
+            ).fetchall()
+            
+            result = []
+            for m in messages:
+                md = dict(m)
+                if md["created_at"]:
+                    md["created_at"] = md["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+                result.append(md)
+                
+            return jsonify({"status": "success", "data": result})
+    except Exception as e:
+        print(f"Error fetching admin tech messages: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+

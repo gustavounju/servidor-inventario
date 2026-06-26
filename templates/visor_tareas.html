@@ -90,8 +90,8 @@
                 <span class="op-divider"></span>
                 <div class="op-user-label">{{ current_user.username | upper }}</div>
                 {% if current_user.role == 'administrador' %}
-                <button type="button" class="op-btn" id="adminNotifBtn" data-bs-toggle="modal" data-bs-target="#adminNotificationsModal" style="position: relative;">
-                    [ MSJS <span id="adminNotifBadge" class="badge rounded-pill bg-danger" style="display: none; font-size: 0.65rem; padding: 2px 5px; position: absolute; top: -5px; right: -5px;">0</span> ]
+                <button type="button" class="op-btn" style="border: 1px solid var(--accent-color); color: var(--accent-color); position: relative;" data-bs-toggle="modal" data-bs-target="#directMessagesModal" onclick="loadAdminTechMessages()">
+                    <i class="bi bi-chat-left-dots-fill me-1"></i>[ COMUNICACIÓN ]
                 </button>
                 <button type="button" class="op-btn" style="border: 1px solid var(--color-warning); color: var(--color-warning);" onclick="showMsgModal()">[ COMUNICAR ]</button>
                 {% endif %}
@@ -242,7 +242,7 @@
                             <!-- JS Injection o Server Side Injection here -->
                             {% if tareas_hoy %}
                                 {% for task in tareas_hoy %}
-                                <tr>
+                                <tr id="task-row-{{ task.id }}">
                                     <td class="text-muted small font-mono">{{ task.created_at_time or '--:--' }}</td>
                                     <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
                                     <td class="d-none d-md-table-cell">
@@ -317,7 +317,7 @@
                         <tbody>
                             <!-- Injection -->
                             {% for task in tareas_pendientes %}
-                            <tr>
+                            <tr id="task-row-{{ task.id }}">
                                 <td class="text-muted small font-mono">{{ task.created_at_fmt or '--:--' }}</td>
                                 <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
                                 <td class="d-none d-md-table-cell">
@@ -366,7 +366,7 @@
                         <tbody>
                             <!-- Injection -->
                             {% for task in tareas_anteriores %}
-                            <tr>
+                            <tr id="task-row-{{ task.id }}">
                                 <td style="width: 110px;" class="text-muted small font-mono">{{ task.created_at_fmt or '--:--' }}</td>
                                 <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name }}</span></td>
                                 <td class="text-muted">
@@ -671,7 +671,7 @@
                 return;
             }
             tbody.innerHTML = tasks.map(task => `
-                <tr>
+                <tr id="task-row-${task.id}">
                     <td class="text-muted small font-mono">${task.created_at_time || '--:--'}</td>
                     <td><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></td>
                     <td class="d-none d-md-table-cell">
@@ -822,6 +822,23 @@
         function hideRackAuditModal() {
             document.getElementById('rackAuditModalOverlay').style.display = 'none';
         }
+
+        function scrollToTask(taskId) {
+            const row = document.getElementById('task-row-' + taskId);
+            if (row) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                row.style.transition = 'background-color 0.5s';
+                const originalBg = row.style.backgroundColor;
+                row.style.backgroundColor = 'rgba(14, 165, 233, 0.3)'; // Highlight color
+                setTimeout(() => {
+                    row.style.backgroundColor = originalBg;
+                }, 2000);
+            } else {
+                console.warn('Task row not found in current view:', taskId);
+            }
+        }
+
+
     </script>
     
     {% if is_authenticated %}
