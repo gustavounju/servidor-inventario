@@ -3328,8 +3328,8 @@ function submitTaskAction() {
                 const sortedConvs = Object.values(conversations).sort((a, b) => new Date(b.latest_date) - new Date(a.latest_date));
                 
                 sortedConvs.forEach((conv, idx) => {
-                    // Ordenar mensajes DENTRO de la conversación de más reciente a más antiguo (últimos primero)
-                    conv.messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    // Ordenar mensajes de más antiguo a más reciente para que el flujo sea de arriba hacia abajo (chat normal)
+                    conv.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                     
                     let techLabel = "";
                     if (conv.recipients.size > 1) {
@@ -3346,60 +3346,68 @@ function submitTaskAction() {
                     const animDelay = idx * 0.05;
                     
                     html += `
-                    <div class="conversation-card" style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.02); border: 1px solid #e2e8f0; overflow: hidden; animation: slideInUp 0.4s ease-out ${animDelay}s both;">
-                        <div class="p-3 px-4 d-flex align-items-center justify-content-between" style="background: #f8fafc; border-bottom: 1px solid #f1f5f9;">
+                    <div class="conversation-card" style="background: #ffffff; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); border: 1px solid #e2e8f0; overflow: hidden; animation: slideInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${animDelay}s both; margin-bottom: 24px;">
+                        
+                        <!-- Header Premium -->
+                        <div class="p-4 d-flex align-items-center justify-content-between" style="background: linear-gradient(to right, #f8fafc, #ffffff); border-bottom: 1px solid #f1f5f9; position: relative;">
                             <div class="d-flex align-items-center gap-3">
-                                <div style="background: #0f172a; color: #ffffff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.2rem; flex-shrink: 0;">
+                                <div style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%); color: #ffffff; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.4rem; flex-shrink: 0; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15); transform: rotate(-3deg); transition: transform 0.3s ease;" onmouseover="this.style.transform='rotate(0deg)'" onmouseout="this.style.transform='rotate(-3deg)'">
                                     ${techInitial}
                                 </div>
                                 <div>
-                                    <div style="font-weight: 700; color: #0f172a; font-size: 1.05rem; letter-spacing: -0.01em;">${techLabel}</div>
-                                    <div style="color: #64748b; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px;">
-                                        <i class="bi bi-reply-all-fill opacity-75"></i> ${conv.title}
+                                    <div style="font-weight: 800; color: #0f172a; font-size: 1.15rem; letter-spacing: -0.02em; line-height: 1.2;">${techLabel}</div>
+                                    <div style="color: #64748b; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                        <i class="bi bi-chat-quote-fill text-primary opacity-75"></i> <span style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block;">${conv.title}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">
-                                Último mensaje<br>
-                                <span style="color: #64748b;">${new Date(conv.latest_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px;">Última Actividad</div>
+                                <div style="color: #475569; font-weight: 600; font-size: 0.9rem; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; display: inline-block;">${new Date(conv.latest_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                             </div>
                         </div>
-                        <div class="p-4" style="display: flex; flex-direction: column; gap: 24px; background: #ffffff;">
-                            ${conv.messages.map(msg => {
+
+                        <!-- Chat Body -->
+                        <div class="p-4" style="display: flex; flex-direction: column; gap: 16px; background: #fafaf9;">
+                            ${conv.messages.map((msg, mIdx) => {
                                 const isAdmin = msg.msg_type === 'direct'; 
                                 const safeBody = escapeHTML(msg.body).replace(/\\n/g, '<br>');
                                 const safeSender = escapeHTML(msg.sender);
+                                const isFirst = mIdx === 0;
                                 
-                                // Layout estilo chat directo
-                                return `
-                                <div style="display: flex; gap: 16px; width: 100%;">
-                                    <!-- Avatar del mensaje -->
-                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: ${isAdmin ? '#e0f2fe' : '#f1f5f9'}; color: ${isAdmin ? '#0284c7' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; flex-shrink: 0; border: 1px solid ${isAdmin ? '#bae6fd' : '#e2e8f0'};">
-                                        ${isAdmin ? '<i class="bi bi-person-fill"></i>' : techInitial}
-                                    </div>
-                                    <!-- Contenido -->
-                                    <div style="flex: 1; padding-top: 2px;">
-                                        <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;">
-                                            <span style="font-size: 0.9rem; font-weight: 700; color: #0f172a;">
-                                                ${isAdmin ? 'Tú' : safeSender}
-                                            </span>
-                                            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">
-                                                ${msg.created_at}
-                                            </span>
-                                        </div>
-                                        <div style="
-                                            font-size: 0.95rem;
-                                            line-height: 1.6;
-                                            color: #334155;
-                                        ">
-                                            ${safeBody}
+                                // Layout estilo iMessage / Chat moderno
+                                if (isAdmin) {
+                                    return `
+                                    <div style="display: flex; justify-content: flex-end; width: 100%; margin-top: ${isFirst ? '0' : '8px'}; animation: fadeIn 0.4s ease-out ${animDelay + (mIdx * 0.05)}s both;">
+                                        <div style="max-width: 80%; display: flex; flex-direction: column; align-items: flex-end;">
+                                            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; padding-right: 4px;">
+                                                Tú <span style="opacity: 0.5; margin: 0 4px;">•</span> ${new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                            </div>
+                                            <div style="background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; padding: 12px 18px; border-radius: 20px 20px 4px 20px; font-size: 0.95rem; line-height: 1.5; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);">
+                                                ${safeBody}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                `;
-                            }).join(`
-                                <div style="width: 100%; height: 1px; background: #f1f5f9; margin: 4px 0;"></div>
-                            `)}
+                                    `;
+                                } else {
+                                    const senderInitial = safeSender.charAt(0).toUpperCase();
+                                    return `
+                                    <div style="display: flex; justify-content: flex-start; width: 100%; gap: 10px; margin-top: ${isFirst ? '0' : '8px'}; animation: fadeIn 0.4s ease-out ${animDelay + (mIdx * 0.05)}s both;">
+                                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; color: #475569; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0; align-self: flex-end; margin-bottom: 2px;">
+                                            ${senderInitial}
+                                        </div>
+                                        <div style="max-width: 80%; display: flex; flex-direction: column; align-items: flex-start;">
+                                            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; padding-left: 4px;">
+                                                ${safeSender} <span style="opacity: 0.5; margin: 0 4px;">•</span> ${new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                            </div>
+                                            <div style="background: #ffffff; color: #334155; padding: 12px 18px; border-radius: 20px 20px 20px 4px; font-size: 0.95rem; line-height: 1.5; border: 1px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                                                ${safeBody}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    `;
+                                }
+                            }).join('')}
                         </div>
                     </div>
                     `;
