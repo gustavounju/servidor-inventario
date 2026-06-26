@@ -3344,18 +3344,18 @@ function submitTaskAction() {
                                 const safeBody = escapeHTML(msg.body).replace(/\\n/g, '<br>');
                                 const safeSender = escapeHTML(msg.sender);
                                 
-                                // Layout estilo feed limpio
+                                // Layout estilo chat directo
                                 return `
                                 <div style="display: flex; gap: 16px; width: 100%;">
                                     <!-- Avatar del mensaje -->
-                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: ${isAdmin ? '#e0f2fe' : '#f1f5f9'}; color: ${isAdmin ? '#0369a1' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; flex-shrink: 0; border: 1px solid ${isAdmin ? '#bae6fd' : '#e2e8f0'};">
-                                        ${isAdmin ? '<i class="bi bi-shield-lock-fill"></i>' : techInitial}
+                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: ${isAdmin ? '#e0f2fe' : '#f1f5f9'}; color: ${isAdmin ? '#0284c7' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; flex-shrink: 0; border: 1px solid ${isAdmin ? '#bae6fd' : '#e2e8f0'};">
+                                        ${isAdmin ? '<i class="bi bi-person-fill"></i>' : techInitial}
                                     </div>
                                     <!-- Contenido -->
                                     <div style="flex: 1; padding-top: 2px;">
                                         <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;">
                                             <span style="font-size: 0.9rem; font-weight: 700; color: #0f172a;">
-                                                ${isAdmin ? 'Tú (Sistema)' : safeSender}
+                                                ${isAdmin ? 'Tú' : safeSender}
                                             </span>
                                             <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">
                                                 ${msg.created_at}
