@@ -964,6 +964,7 @@ def api_admin_tech_messages():
                 SELECT id, title, body, sender, technician_name, msg_type, created_at
                 FROM tech_messages 
                 WHERE msg_type IN ('direct', 'reply') 
+                  AND sender != 'Sistema'
                 ORDER BY created_at DESC 
                 LIMIT 50
                 """
