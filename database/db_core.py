@@ -325,6 +325,20 @@ def init_db():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
 
+        # Intentar añadir columnas a tech_messages si no existen
+        nuevas_columnas = [
+            ("sender", "VARCHAR(100) DEFAULT 'Sistema'", "technician_name"),
+            ("task_id", "INT DEFAULT NULL", "sender"),
+            ("msg_type", "VARCHAR(50) DEFAULT 'direct'", "task_id"),
+            ("read_at", "DATETIME DEFAULT NULL", "created_at")
+        ]
+        for col, col_def, after in nuevas_columnas:
+            try:
+                conn.execute(f"ALTER TABLE tech_messages ADD COLUMN {col} {col_def} AFTER {after}")
+                print(f"Migración: Columna '{col}' añadida a tech_messages exitosamente.")
+            except Exception as e:
+                pass
+
         conn.execute("""
             CREATE TABLE IF NOT EXISTS app_users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
