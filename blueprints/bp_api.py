@@ -912,3 +912,40 @@ def api_post_switch_audit():
         return jsonify({"status": "success", "message": "Auditoría de switch guardada exitosamente."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+# --- ADMIN NOTIFICATIONS API ---
+
+@bp_api.route("/api/notifications/unread", methods=["GET"])
+def api_get_unread_notifications():
+    try:
+        with get_db_connection() as conn:
+            # Fetch unread notifications
+            notifications = conn.execute(
+                "SELECT id, title, body, url, created_at FROM app_notifications WHERE read_at IS NULL ORDER BY created_at DESC LIMIT 50"
+            ).fetchall()
+            
+            # Format datetime for JSON
+            result = []
+            for n in notifications:
+                nd = dict(n)
+                if nd["created_at"]:
+                    nd["created_at"] = nd["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+                result.append(nd)
+                
+            return jsonify({"status": "success", "data": result, "count": len(result)})
+    except Exception as e:
+        print(f"Error fetching notifications: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/notifications/<int:notif_id>/mark_read", methods=["POST"])
+def api_mark_notification_read(notif_id):
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "UPDATE app_notifications SET read_at = NOW() WHERE id = %s",
+                (notif_id,)
+            )
+            conn.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500

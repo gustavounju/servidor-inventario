@@ -298,14 +298,25 @@ def init_db():
                 title TEXT,
                 body TEXT,
                 url TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                read_at DATETIME DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
+
+        # Intentar añadir columna read_at si no existe
+        try:
+            conn.execute("ALTER TABLE app_notifications ADD COLUMN read_at DATETIME DEFAULT NULL AFTER created_at")
+            print("Migración: Columna 'read_at' añadida a app_notifications exitosamente.")
+        except Exception as e:
+            logging.debug(f"Columna read_at ya existe o error menor: {e}")
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS tech_messages (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 technician_name VARCHAR(100),
+                sender VARCHAR(100) DEFAULT 'Sistema',
+                task_id INT DEFAULT NULL,
+                msg_type VARCHAR(50) DEFAULT 'direct',
                 title TEXT,
                 body TEXT,
                 url TEXT,

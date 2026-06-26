@@ -1090,12 +1090,29 @@ def add_task_action(task_id):
             conn.commit()
             
             try:
-                from services.push_notifications import notify_all_technicians
-                notify_all_technicians(
-                    title=f"Nueva nota en Tarea #{task_id}",
-                    body=f"{username}: {action_text}",
-                    url="/tecnicos"
-                )
+                from services.push_notifications import notify_all_technicians, notify_technician
+                task_row = conn.execute("SELECT assigned_to FROM tasks WHERE id = %s", (task_id,)).fetchone()
+                assigned_to = task_row["assigned_to"] if task_row else None
+                
+                if assigned_to:
+                    notify_technician(
+                        technician_name=assigned_to,
+                        title=f"Nueva nota en Tarea #{task_id}",
+                        body=f"{username}: {action_text}",
+                        url="/tecnicos",
+                        sender=username,
+                        task_id=task_id,
+                        msg_type="task_note"
+                    )
+                else:
+                    notify_all_technicians(
+                        title=f"Nueva nota en Tarea #{task_id}",
+                        body=f"{username}: {action_text}",
+                        url="/tecnicos",
+                        sender=username,
+                        task_id=task_id,
+                        msg_type="task_note"
+                    )
             except Exception as e:
                 print(f"Error notifying action: {e}")
 
@@ -1116,13 +1133,14 @@ def send_admin_message():
         from services.push_notifications import notify_all_technicians, notify_technician
         
         title = "Mensaje del Administrador"
+        sender = current_username() or "Administrador"
         if technician_name == 'all':
-            res = notify_all_technicians(title=title, body=message, url="/tecnicos")
+            res = notify_all_technicians(title=title, body=message, url="/tecnicos", sender=sender, msg_type="direct")
             if res and not res.get("success"):
                 return jsonify({"status": "error", "message": res.get("error")}), 400
             audit_msg = "Mensaje enviado a TODOS los técnicos"
         elif technician_name:
-            res = notify_technician(technician_name=technician_name, title=title, body=message, url="/tecnicos")
+            res = notify_technician(technician_name=technician_name, title=title, body=message, url="/tecnicos", sender=sender, msg_type="direct")
             if res and not res.get("success"):
                 return jsonify({"status": "error", "message": res.get("error")}), 400
             audit_msg = f"Mensaje privado enviado a {technician_name}"

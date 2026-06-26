@@ -90,6 +90,9 @@
                 <span class="op-divider"></span>
                 <div class="op-user-label">{{ current_user.username | upper }}</div>
                 {% if current_user.role == 'administrador' %}
+                <button type="button" class="op-btn" id="adminNotifBtn" data-bs-toggle="modal" data-bs-target="#adminNotificationsModal" style="position: relative;">
+                    [ MSJS <span id="adminNotifBadge" class="badge rounded-pill bg-danger" style="display: none; font-size: 0.65rem; padding: 2px 5px; position: absolute; top: -5px; right: -5px;">0</span> ]
+                </button>
                 <button type="button" class="op-btn" style="border: 1px solid var(--color-warning); color: var(--color-warning);" onclick="showMsgModal()">[ COMUNICAR ]</button>
                 {% endif %}
                 <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn">[ DASHBOARD ]</a>

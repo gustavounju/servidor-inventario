@@ -3044,3 +3044,96 @@ function submitTaskAction() {
         </div>
     </div>
 </div>
+
+<!-- Modal Notificaciones de Técnicos (Mensajes Admin) -->
+<div class="modal fade" id="adminNotificationsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div style="background: linear-gradient(135deg, #1e293b, #334155); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                <h5 class="mb-0 text-white fw-bold"><i class="bi bi-chat-dots-fill me-2"></i> Mensajes de Técnicos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="background: #f8fafc; padding: 20px;">
+                <div id="adminNotificationsList" style="display: flex; flex-direction: column; gap: 12px;">
+                    <!-- Lista inyectada por JS -->
+                    <div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm"></div> Buscando mensajes...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Polling de Notificaciones para el Admin
+    function fetchAdminNotifications() {
+        fetch('/api/notifications/unread')
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    const badge = document.getElementById('adminNotifBadge');
+                    if (badge) {
+                        badge.textContent = data.count;
+                        badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+                    }
+                    
+                    const listContainer = document.getElementById('adminNotificationsList');
+                    if(listContainer) {
+                        if (data.count === 0) {
+                            listContainer.innerHTML = '<div class="text-center text-muted py-4" style="font-size: 0.9rem;"><i class="bi bi-inbox-fill text-secondary d-block mb-2" style="font-size: 2rem;"></i>No hay mensajes nuevos.</div>';
+                        } else {
+                            listContainer.innerHTML = data.data.map(n => `
+                                <div class="p-3 bg-white rounded-3 border position-relative shadow-sm" id="admin-notif-${n.id}">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong class="text-primary" style="font-size: 0.9rem;">${n.title}</strong>
+                                        <small class="text-muted" style="font-size: 0.75rem;">${n.created_at}</small>
+                                    </div>
+                                    <p class="mb-2 text-dark" style="font-size: 0.85rem; line-height: 1.4;">${n.body}</p>
+                                    <div class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;" onclick="markNotificationRead(${n.id})">
+                                            <i class="bi bi-check2-all me-1"></i>Marcar Leído
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('');
+                        }
+                    }
+                }
+            })
+            .catch(err => console.error("Error fetching notifications:", err));
+    }
+
+    function markNotificationRead(notifId) {
+        fetch(`/api/notifications/${notifId}/mark_read`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                const el = document.getElementById(`admin-notif-${notifId}`);
+                if(el) {
+                    el.style.opacity = '0.5';
+                    setTimeout(() => {
+                        el.remove();
+                        fetchAdminNotifications(); // Refrescar cuenta
+                    }, 300);
+                }
+            }
+        });
+    }
+
+    // Inicializar polling si existe el botón en la UI
+    document.addEventListener('DOMContentLoaded', () => {
+        if(document.getElementById('adminNotifBtn')) {
+            fetchAdminNotifications();
+            setInterval(fetchAdminNotifications, 30000); // 30 segundos
+            
+            // Refrescar al abrir el modal por las dudas
+            document.getElementById('adminNotificationsModal').addEventListener('show.bs.modal', function () {
+                fetchAdminNotifications();
+            });
+        }
+    });
+</script>
