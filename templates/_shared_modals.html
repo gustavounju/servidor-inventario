@@ -3296,11 +3296,26 @@ function submitTaskAction() {
                         conversations[key] = { 
                             title: key, 
                             messages: [],
-                            technician: escapeHTML(msg.technician_name),
+                            recipients: new Set(),
+                            replySenders: new Set(),
                             latest_date: msg.created_at 
                         };
                     }
-                    conversations[key].messages.push(msg);
+                    
+                    if (msg.msg_type === 'direct') {
+                        // Mensaje saliente del administrador
+                        conversations[key].recipients.add(escapeHTML(msg.technician_name));
+                        // Evitar mensajes repetidos en un broadcast a múltiples técnicos
+                        const exists = conversations[key].messages.find(m => m.msg_type === 'direct' && m.body === msg.body);
+                        if (!exists) {
+                            conversations[key].messages.push(msg);
+                        }
+                    } else {
+                        // Respuesta de un técnico
+                        conversations[key].replySenders.add(escapeHTML(msg.sender));
+                        conversations[key].messages.push(msg);
+                    }
+                    
                     // Actualizar latest_date de la conversación para ordenar globalmente
                     if (new Date(msg.created_at) > new Date(conversations[key].latest_date)) {
                         conversations[key].latest_date = msg.created_at;
@@ -3316,7 +3331,18 @@ function submitTaskAction() {
                     // Ordenar mensajes DENTRO de la conversación de más reciente a más antiguo (últimos primero)
                     conv.messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                     
-                    const techInitial = conv.technician ? conv.technician.charAt(0).toUpperCase() : 'T';
+                    let techLabel = "";
+                    if (conv.recipients.size > 1) {
+                        techLabel = "Todos los Técnicos";
+                    } else if (conv.recipients.size === 1) {
+                        techLabel = Array.from(conv.recipients)[0];
+                    } else if (conv.replySenders.size > 0) {
+                        techLabel = Array.from(conv.replySenders)[0];
+                    } else {
+                        techLabel = "Desconocido";
+                    }
+                    
+                    const techInitial = techLabel.charAt(0).toUpperCase();
                     const animDelay = idx * 0.05;
                     
                     html += `
@@ -3327,7 +3353,7 @@ function submitTaskAction() {
                                     ${techInitial}
                                 </div>
                                 <div>
-                                    <div style="font-weight: 700; color: #0f172a; font-size: 1.05rem; letter-spacing: -0.01em;">${conv.technician}</div>
+                                    <div style="font-weight: 700; color: #0f172a; font-size: 1.05rem; letter-spacing: -0.01em;">${techLabel}</div>
                                     <div style="color: #64748b; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px;">
                                         <i class="bi bi-reply-all-fill opacity-75"></i> ${conv.title}
                                     </div>
