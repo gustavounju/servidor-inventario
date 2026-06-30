@@ -950,3 +950,41 @@ def api_mark_notification_read(notif_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@bp_api.route("/api/admin/sent_messages", methods=["GET"])
+def api_admin_sent_messages():
+    try:
+        from utils.auth import is_authenticated, current_user, is_superuser, current_username
+        if not is_authenticated() or (current_user().get('role') != 'administrador' and not is_superuser()):
+            return jsonify({"status": "error", "message": "No autorizado"}), 401
+
+        sender = current_username()
+
+        with get_db_connection() as conn:
+            # Traer historial de mensajes/recordatorios enviados por este admin
+            messages = conn.execute(
+                """
+                SELECT id, title, body, technician_name, created_at, scheduled_for, read_at
+                FROM tech_messages 
+                WHERE sender = %s
+                ORDER BY created_at DESC 
+                LIMIT 100
+                """,
+                (sender,)
+            ).fetchall()
+            
+            result = []
+            for m in messages:
+                md = dict(m)
+                if md["created_at"]:
+                    md["created_at"] = md["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+                if md["scheduled_for"]:
+                    md["scheduled_for"] = md["scheduled_for"].strftime("%Y-%m-%d %H:%M:%S")
+                if md["read_at"]:
+                    md["read_at"] = md["read_at"].strftime("%Y-%m-%d %H:%M:%S")
+                result.append(md)
+                
+            return jsonify({"status": "success", "data": result})
+    except Exception as e:
+        print(f"Error fetching admin sent messages: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+

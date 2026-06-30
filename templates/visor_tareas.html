@@ -92,6 +92,7 @@
                 {% if current_user.role == 'administrador' %}
 
                 <button type="button" class="op-btn" style="border: 1px solid var(--color-warning); color: var(--color-warning);" onclick="showMsgModal()">[ COMUNICAR ]</button>
+                <button type="button" class="op-btn" style="border: 1px solid var(--color-warning); color: var(--color-warning);" onclick="showSentMessagesModal()">[ HISTORIAL ]</button>
                 {% endif %}
                 <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn">[ DASHBOARD ]</a>
                 <a href="{{ url_for('auth.logout') }}" class="op-btn op-btn--danger">[ SALIR ]</a>
@@ -488,9 +489,74 @@
         </div>
     </div>
 
+    <!-- Modal Historial de Mensajes -->
+    <div class="modal-overlay" id="sentMessagesModalOverlay" style="display: none; align-items: center; justify-content: center; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 10000;">
+        <div class="glass-modal" style="max-width: 600px; width: 90%; max-height: 80vh; display: flex; flex-direction: column; background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem; flex-shrink: 0;">
+                <h2 style="font-size: 1.2rem; margin: 0; color: #fff;"><i class="bi bi-clock-history text-warning"></i> Historial de Enviados</h2>
+                <button type="button" class="btn-close btn-close-white" onclick="hideSentMessagesModal()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex-grow: 1; padding-right: 5px;">
+                <div id="sentMessagesList" class="d-flex flex-column gap-3">
+                    <div class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm"></div> Cargando historial...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- LOGICA JAVASCRIPT -->
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script>
+        function showSentMessagesModal() {
+            document.getElementById('sentMessagesModalOverlay').style.display = 'flex';
+            loadSentMessages();
+        }
+        function hideSentMessagesModal() {
+            document.getElementById('sentMessagesModalOverlay').style.display = 'none';
+        }
+
+        async function loadSentMessages() {
+            const container = document.getElementById('sentMessagesList');
+            container.innerHTML = '<div class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm"></div> Cargando historial...</div>';
+            try {
+                const res = await fetch('/api/admin/sent_messages');
+                const result = await res.json();
+                if (result.status === 'success') {
+                    if (result.data.length === 0) {
+                        container.innerHTML = '<div class="text-center text-muted py-4">No hay mensajes enviados.</div>';
+                        return;
+                    }
+                    let html = '';
+                    result.data.forEach(msg => {
+                        const statusColor = msg.read_at ? '#22c55e' : '#94a3b8';
+                        const statusText = msg.read_at ? `Visto el ${msg.read_at}` : 'No visto';
+                        const scheduledText = msg.scheduled_for ? `<div style="color: var(--color-warning); font-size: 0.8rem; margin-bottom: 4px;"><i class="bi bi-clock"></i> Programado para: ${msg.scheduled_for}</div>` : '';
+                        
+                        html += `
+                        <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <strong style="color: #fff; font-size: 0.95rem;">Destinatario: ${msg.technician_name}</strong>
+                                    <div style="color: #94a3b8; font-size: 0.8rem;">Enviado el ${msg.created_at}</div>
+                                </div>
+                                <span class="badge" style="background: rgba(255,255,255,0.1); color: ${statusColor}; border: 1px solid ${statusColor}; font-weight: 500;">
+                                    ${msg.read_at ? '<i class="bi bi-check2-all"></i>' : '<i class="bi bi-check2"></i>'} ${statusText}
+                                </span>
+                            </div>
+                            ${scheduledText}
+                            <div style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.4; white-space: pre-wrap;">${msg.body}</div>
+                        </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `<div class="text-center text-danger py-4">Error: ${result.message}</div>`;
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="text-center text-danger py-4">Error de red</div>';
+            }
+        }
+
         function showMsgModal() {
             const overlay = document.getElementById('msgModalOverlay');
             if(overlay) overlay.style.display = 'flex';
