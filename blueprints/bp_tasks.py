@@ -1125,25 +1125,36 @@ def add_task_action(task_id):
 def send_admin_message():
     technician_name = request.form.get("technician_name", "").strip()
     message = request.form.get("message", "").strip()
+    scheduled_for_str = request.form.get("scheduled_for", "").strip()
     
     if not message:
         return jsonify({"status": "error", "message": "El mensaje no puede estar vacío"}), 400
         
+    scheduled_for = None
+    if scheduled_for_str:
+        # Expected format from input type="datetime-local": "YYYY-MM-DDTHH:MM"
+        try:
+            from datetime import datetime
+            dt = datetime.strptime(scheduled_for_str, "%Y-%m-%dT%H:%M")
+            scheduled_for = dt.strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            return jsonify({"status": "error", "message": "Formato de fecha inválido"}), 400
+
     try:
         from services.push_notifications import notify_all_technicians, notify_technician
         
-        title = "Mensaje del Administrador"
+        title = "Recordatorio del Administrador" if scheduled_for else "Mensaje del Administrador"
         sender = current_username() or "Administrador"
         if technician_name == 'all':
-            res = notify_all_technicians(title=title, body=message, url="/tecnicos", sender=sender, msg_type="direct")
+            res = notify_all_technicians(title=title, body=message, url="/tecnicos", sender=sender, msg_type="direct", scheduled_for=scheduled_for)
             if res and not res.get("success"):
                 return jsonify({"status": "error", "message": res.get("error")}), 400
-            audit_msg = "Mensaje enviado a TODOS los técnicos"
+            audit_msg = "Recordatorio enviado a TODOS los técnicos" if scheduled_for else "Mensaje enviado a TODOS los técnicos"
         elif technician_name:
-            res = notify_technician(technician_name=technician_name, title=title, body=message, url="/tecnicos", sender=sender, msg_type="direct")
+            res = notify_technician(technician_name=technician_name, title=title, body=message, url="/tecnicos", sender=sender, msg_type="direct", scheduled_for=scheduled_for)
             if res and not res.get("success"):
                 return jsonify({"status": "error", "message": res.get("error")}), 400
-            audit_msg = f"Mensaje privado enviado a {technician_name}"
+            audit_msg = f"Recordatorio privado enviado a {technician_name}" if scheduled_for else f"Mensaje privado enviado a {technician_name}"
         else:
             return jsonify({"status": "error", "message": "Destinatario inválido"}), 400
             

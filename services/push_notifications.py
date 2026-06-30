@@ -2,7 +2,7 @@ import os
 import logging
 from database.db_core import get_db_connection
 
-def notify_all_technicians(title, body, url="/tecnicos", sender="Sistema", task_id=None, msg_type="direct"):
+def notify_all_technicians(title, body, url="/tecnicos", sender="Sistema", task_id=None, msg_type="direct", scheduled_for=None):
     """
     Sends an internal notification to all technicians.
     Logs to both `app_notifications` (for the global bell) and `tech_messages` (for the native popup).
@@ -28,8 +28,8 @@ def notify_all_technicians(title, body, url="/tecnicos", sender="Sistema", task_
         with get_db_connection() as conn:
             for tech in techs:
                 conn.execute(
-                    "INSERT INTO tech_messages (technician_name, sender, task_id, msg_type, title, body, url) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                    (tech['name'], sender, task_id, msg_type, title, body, url)
+                    "INSERT INTO tech_messages (technician_name, sender, task_id, msg_type, title, body, url, scheduled_for) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    (tech['name'], sender, task_id, msg_type, title, body, url, scheduled_for)
                 )
             conn.commit()
             logging.info(f"[INTERNAL MSG] Broadcast message queued for {len(techs)} technicians.")
@@ -38,7 +38,7 @@ def notify_all_technicians(title, body, url="/tecnicos", sender="Sistema", task_
         logging.error(f"[ERROR] Internal message queue failed: {e}")
         return {"success": False, "error": str(e)}
 
-def notify_technician(technician_name, title, body, url="/tecnicos", sender="Sistema", task_id=None, msg_type="direct"):
+def notify_technician(technician_name, title, body, url="/tecnicos", sender="Sistema", task_id=None, msg_type="direct", scheduled_for=None):
     """
     Sends an internal private message to a specific technician.
     Only logs to `tech_messages` (for the native popup) to maintain privacy.
@@ -46,8 +46,8 @@ def notify_technician(technician_name, title, body, url="/tecnicos", sender="Sis
     try:
         with get_db_connection() as conn:
             conn.execute(
-                "INSERT INTO tech_messages (technician_name, sender, task_id, msg_type, title, body, url) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                (technician_name, sender, task_id, msg_type, title, body, url)
+                "INSERT INTO tech_messages (technician_name, sender, task_id, msg_type, title, body, url, scheduled_for) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (technician_name, sender, task_id, msg_type, title, body, url, scheduled_for)
             )
             conn.commit()
             logging.info(f"[INTERNAL MSG] Private message queued for {technician_name}.")

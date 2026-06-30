@@ -321,7 +321,8 @@ def init_db():
                 body TEXT,
                 url TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                read_at DATETIME DEFAULT NULL
+                read_at DATETIME DEFAULT NULL,
+                scheduled_for DATETIME DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
 
@@ -330,7 +331,8 @@ def init_db():
             ("sender", "VARCHAR(100) DEFAULT 'Sistema'", "technician_name"),
             ("task_id", "INT DEFAULT NULL", "sender"),
             ("msg_type", "VARCHAR(50) DEFAULT 'direct'", "task_id"),
-            ("read_at", "DATETIME DEFAULT NULL", "created_at")
+            ("read_at", "DATETIME DEFAULT NULL", "created_at"),
+            ("scheduled_for", "DATETIME DEFAULT NULL", "read_at")
         ]
         for col, col_def, after in nuevas_columnas:
             try:

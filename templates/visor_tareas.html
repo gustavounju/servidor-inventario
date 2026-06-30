@@ -90,9 +90,7 @@
                 <span class="op-divider"></span>
                 <div class="op-user-label">{{ current_user.username | upper }}</div>
                 {% if current_user.role == 'administrador' %}
-                <button type="button" class="op-btn" style="border: 1px solid var(--accent-color); color: var(--accent-color); position: relative;" data-bs-toggle="modal" data-bs-target="#directMessagesModal" onclick="loadAdminTechMessages()">
-                    <i class="bi bi-chat-left-dots-fill me-1"></i>[ COMUNICACIÓN ]
-                </button>
+
                 <button type="button" class="op-btn" style="border: 1px solid var(--color-warning); color: var(--color-warning);" onclick="showMsgModal()">[ COMUNICAR ]</button>
                 {% endif %}
                 <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn">[ DASHBOARD ]</a>
@@ -471,6 +469,11 @@
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label class="small text-muted mb-1 font-mono">FECHA Y HORA PROGRAMADA (Opcional)</label>
+                        <input type="datetime-local" class="form-control bg-dark text-white border-secondary" id="msgScheduledDate">
+                        <small class="text-muted d-block mt-1">Si dejas esto vacío, el mensaje se enviará al instante.</small>
+                    </div>
+                    <div class="mb-3">
                         <label class="small text-muted mb-1 font-mono">MENSAJE</label>
                         <textarea class="form-control bg-dark text-white border-secondary" id="msgText" rows="3" required placeholder="Escribe el comunicado aquí..."></textarea>
                     </div>
@@ -505,11 +508,13 @@
             
             const technician = document.getElementById('msgTechnician').value;
             const message = document.getElementById('msgText').value;
+            const scheduled_for = document.getElementById('msgScheduledDate').value;
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
             
             const fd = new URLSearchParams();
             fd.append('technician_name', technician);
             fd.append('message', message);
+            if(scheduled_for) fd.append('scheduled_for', scheduled_for);
             if(csrfToken) fd.append('csrf_token', csrfToken);
 
             try {

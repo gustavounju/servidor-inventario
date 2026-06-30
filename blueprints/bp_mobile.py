@@ -285,6 +285,7 @@ def api_poll_messages():
                 FROM tech_messages 
                 WHERE read_at IS NULL 
                   AND technician_name = %s
+                  AND (scheduled_for IS NULL OR scheduled_for <= NOW())
                 """,
                 (technician,)
             ).fetchall()
@@ -320,6 +321,7 @@ def api_inbox():
                 SELECT id, title, body, url, created_at, read_at, sender, task_id, msg_type
                 FROM tech_messages 
                 WHERE technician_name = %s
+                  AND (scheduled_for IS NULL OR scheduled_for <= NOW())
                 ORDER BY created_at DESC
                 LIMIT 50
                 """,
@@ -341,64 +343,6 @@ def api_inbox():
                 r['created_at'] = r['created_at'].strftime("%d/%m %H:%M")
                 
         return jsonify({"status": "success", "messages": rows})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-@bp_mobile.route("/api/mobile/messages/reply", methods=["POST"])
-def api_reply_message():
-    """Handles technician reply to a message."""
-    try:
-        technician = current_technician_identity()
-        if not technician:
-            return jsonify({"status": "error", "message": "No identity"}), 400
-
-        reply_text = request.form.get("reply_text", "").strip()
-        msg_id = request.form.get("msg_id")
-
-        if not reply_text or not msg_id:
-            return jsonify({"status": "error", "message": "Faltan datos requeridos"}), 400
-
-        with get_db_connection() as conn:
-            orig_msg = conn.execute("SELECT * FROM tech_messages WHERE id = %s AND technician_name = %s", (msg_id, technician)).fetchone()
-            if not orig_msg:
-                return jsonify({"status": "error", "message": "Mensaje original no encontrado"}), 404
-
-            msg_type = orig_msg.get("msg_type", "direct")
-            task_id = orig_msg.get("task_id")
-
-            if msg_type == "task_note" and task_id:
-                # Add to task actions
-                conn.execute(
-                    "INSERT INTO task_actions (task_id, user_name, action_text) VALUES (%s, %s, %s)",
-                    (task_id, technician, reply_text)
-                )
-                # Log audit
-                pc_row = conn.execute("SELECT pc_name FROM tasks WHERE id = %s", (task_id,)).fetchone()
-                if pc_row:
-                    conn.execute(
-                        "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                        (pc_row["pc_name"], f"Respuesta en Tarea #{task_id}", "", reply_text[:100], technician, "ACCION_TAREA", request.remote_addr)
-                    )
-                # Notify administrators globally about task note response
-                conn.execute(
-                    "INSERT INTO app_notifications (title, body, url) VALUES (%s, %s, %s)",
-                    (f"Respuesta de {technician} (Tarea #{task_id})", reply_text, "/dashboard")
-                )
-            else:
-                # Direct message response -> alert admin
-                conn.execute(
-                    "INSERT INTO app_notifications (title, body, url) VALUES (%s, %s, %s)",
-                    (f"Respuesta de {technician}", reply_text, "/dashboard")
-                )
-                # Guardar copia de la respuesta para el panel del admin
-                conn.execute(
-                    "INSERT INTO tech_messages (technician_name, sender, msg_type, title, body, url) VALUES (%s, %s, %s, %s, %s, %s)",
-                    ('admin', technician, 'reply', f"Re: {orig_msg['title']}", reply_text, "")
-                )
-
-            conn.commit()
-
-        return jsonify({"status": "success", "message": "Respuesta enviada"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
