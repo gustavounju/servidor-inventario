@@ -250,6 +250,15 @@
       border-radius: var(--radius-sm);
       padding: 10px 10px 11px;
     }
+
+    @keyframes blink-icon {
+      0% { color: inherit; transform: scale(1); }
+      50% { color: var(--accent); transform: scale(1.2); }
+      100% { color: inherit; transform: scale(1); }
+    }
+    .blinking-icon i {
+      animation: blink-icon 1s infinite;
+    }
     .ops-kpi { font-size: 1.1rem; font-weight: 800; margin-bottom: 3px; }
     .ops-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
     .ops-focus {
@@ -494,14 +503,7 @@ function submitMobileTaskAction() {
         <i class="bi bi-mic-fill" id="fabIcon"></i>
       </button>
     </div>
-    {% if current_user.role == 'administrador' %}
-    <a href="#" class="bottom-nav-item" onclick="openAvisos()">
-      <i class="bi bi-bell"></i>
-      <span>Avisos</span>
-      <span class="bottom-badge" id="badge-avisos" style="display:none">0</span>
-    </a>
-    {% endif %}
-    <a href="#" class="bottom-nav-item" onclick="openInboxModal()">
+    <a href="#" class="bottom-nav-item" id="nav-btn-mensajes" onclick="openLatestMessage()">
       <i class="bi bi-inbox"></i>
       <span>Mensajes</span>
       <span class="bottom-badge" id="badge-inbox" style="display:none">0</span>
@@ -1751,6 +1753,8 @@ async function poll() {
         badge.style.display = 'inline-flex';
         badge.textContent = msgData.messages.length;
       }
+      const navBtn = document.getElementById('nav-btn-mensajes');
+      if (navBtn) navBtn.classList.add('blinking-icon');
       
       // Mostrar notificaciones del sistema para mensajes nuevos
       for (const msg of msgData.messages) {
@@ -1768,10 +1772,35 @@ async function poll() {
 
 // ── Inbox Modals ──────────────────────────
 function openInboxModal() {
-  document.getElementById('inboxOverlay').classList.add('open');
+  // Ya no se usa, pero lo dejamos por si acaso
+}
+
+async function openLatestMessage() {
   const badge = document.getElementById('badge-inbox');
   if (badge) badge.style.display = 'none';
-  loadInbox();
+  const navBtn = document.getElementById('nav-btn-mensajes');
+  if (navBtn) navBtn.classList.remove('blinking-icon');
+  
+  try {
+    const res = await fetch(API + '/inbox');
+    const data = await res.json();
+    if (data.status === 'success') {
+      const msgs = data.messages || [];
+      if (msgs.length === 0) {
+        alert("No hay mensajes.");
+        return;
+      }
+      const msg = msgs[0];
+      const titleSafe = escHtml(msg.title || 'Mensaje');
+      const bodySafe = escHtml(msg.body);
+      const senderSafe = escHtml(msg.sender || 'Sistema');
+      openReadMessageModal(msg.id, titleSafe, bodySafe, senderSafe, msg.created_at);
+    } else {
+      alert("Error al cargar mensajes.");
+    }
+  } catch (e) {
+    alert("Error de conexión al cargar mensajes.");
+  }
 }
 
 function closeInboxModal() {
