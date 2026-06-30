@@ -790,7 +790,7 @@ function submitMobileTaskAction() {
   </div>
 </div>
 
-<!-- ── Leer / Responder Mensaje ── -->
+<!-- ── Leer Mensaje ── -->
 <div class="voice-overlay" id="readMessageOverlay" onclick="closeReadMessageModal()">
   <div class="manual-sheet" onclick="event.stopPropagation()">
     <div class="sheet-handle"></div>
@@ -801,15 +801,8 @@ function submitMobileTaskAction() {
       <p id="readMessageBody" style="margin:0; white-space: pre-wrap; font-size: 0.95rem; color: var(--text-muted); line-height: 1.5;"></p>
     </div>
     
-    <div class="input-group-gold" style="margin-top: 15px;">
-      <textarea class="gold-input" id="replyMessageText" rows="3" placeholder="Escribe tu respuesta aquí..."></textarea>
-    </div>
-    
-    <input type="hidden" id="replyMessageId">
-
     <div class="voice-actions" style="margin-top: 15px;">
-      <button class="btn-vact btn-vcancel" onclick="closeReadMessageModal()">Cerrar</button>
-      <button class="btn-vact btn-vsave" style="background: var(--primary);" onclick="submitReply()">Enviar Respuesta</button>
+      <button class="btn-vact btn-vcancel" onclick="closeReadMessageModal()" style="width: 100%;">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1832,8 +1825,6 @@ function openReadMessageModal(id, title, body, sender, date) {
   document.getElementById('readMessageTitle').innerHTML = icon + title;
   document.getElementById('readMessageMeta').innerHTML = `Enviado por <strong>${sender}</strong> el ${date}`;
   document.getElementById('readMessageBody').textContent = body;
-  document.getElementById('replyMessageText').value = '';
-  document.getElementById('replyMessageId').value = id;
   
   document.getElementById('readMessageOverlay').classList.add('open');
 }
@@ -1842,47 +1833,7 @@ function closeReadMessageModal() {
   document.getElementById('readMessageOverlay').classList.remove('open');
 }
 
-async function submitReply() {
-  const msgId = document.getElementById('replyMessageId').value;
-  const text = document.getElementById('replyMessageText').value.trim();
-  
-  if (!text) {
-    alert('Por favor, escribe una respuesta.');
-    return;
-  }
-  
-  const btn = event.currentTarget;
-  const originalHtml = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Enviando...';
-  
-  try {
-    const fd = new FormData();
-    fd.append('msg_id', msgId);
-    fd.append('reply_text', text);
-    fd.append('csrf_token', CSRF);
-    
-    const res = await fetch(API + '/messages/reply', {
-      method: 'POST',
-      body: fd
-    });
-    
-    const data = await res.json();
-    if (data.status === 'success') {
-      playBeep('done');
-      closeReadMessageModal();
-      // Opcionalmente volver al inbox
-      // openInboxModal();
-    } else {
-      alert("Error: " + data.message);
-    }
-  } catch (e) {
-    alert("Error de red al enviar la respuesta.");
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = originalHtml;
-  }
-}
+
 
 // ── Init ──────────────────────────────────────────
 
