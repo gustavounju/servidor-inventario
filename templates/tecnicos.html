@@ -1196,14 +1196,34 @@ function taskCard(t, mode) {
       </div>
       ${t.acciones && t.acciones.length > 0 ? `
           <div class="mt-2" style="font-size: 0.85rem;">
-              ${t.acciones.map(a => {
+              ${t.acciones.length > 1 ? `
+              <div id="mobile-hidden-actions-${t.id}" style="display: none; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed rgba(14, 165, 233, 0.2);">
+                  ${t.acciones.slice(0, -1).map(a => {
+                      const isMe = (a.user_name || '').toLowerCase() === (techId || '').toLowerCase();
+                      const timeStr = a.created_at_fmt ? `<span style="opacity:0.7; font-size:0.85em; margin-right:4px; font-family:var(--font-mono, monospace);">[${a.created_at_fmt}]</span>` : '';
+                      if (!isMe) {
+                          return `<div class="p-2 mb-1 rounded bg-warning text-dark fw-bold border border-warning shadow-sm">${timeStr}<i class="bi bi-exclamation-triangle-fill me-1"></i>${escHtml(a.user_name)}: ${escHtml(a.action_text)}</div>`;
+                      } else {
+                          return `<div class="p-1 mb-1 text-muted border-start border-2 ms-1 ps-2"><small>${timeStr}Tú: ${escHtml(a.action_text)}</small></div>`;
+                      }
+                  }).join('')}
+              </div>
+              ` : ''}
+              ${(() => {
+                  const a = t.acciones[t.acciones.length - 1];
                   const isMe = (a.user_name || '').toLowerCase() === (techId || '').toLowerCase();
+                  const timeStr = a.created_at_fmt ? `<span style="opacity:0.7; font-size:0.85em; margin-right:4px; font-family:var(--font-mono, monospace);">[${a.created_at_fmt}]</span>` : '';
                   if (!isMe) {
-                      return `<div class="p-2 mb-1 rounded bg-warning text-dark fw-bold border border-warning shadow-sm"><i class="bi bi-exclamation-triangle-fill me-1"></i>${escHtml(a.user_name)}: ${escHtml(a.action_text)}</div>`;
+                      return `<div class="p-2 mb-1 rounded bg-warning text-dark fw-bold border border-warning shadow-sm">${timeStr}<i class="bi bi-exclamation-triangle-fill me-1"></i>${escHtml(a.user_name)}: ${escHtml(a.action_text)}</div>`;
                   } else {
-                      return `<div class="p-1 mb-1 text-muted border-start border-2 ms-1 ps-2"><small>Tú: ${escHtml(a.action_text)}</small></div>`;
+                      return `<div class="p-1 mb-1 text-muted border-start border-2 ms-1 ps-2"><small>${timeStr}Tú: ${escHtml(a.action_text)}</small></div>`;
                   }
-              }).join('')}
+              })()}
+              ${t.acciones.length > 1 ? `
+              <div class="mt-1 text-end">
+                  <button id="btn-toggle-mobile-actions-${t.id}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px; color: #94a3b8;" onclick="toggleMobileHiddenActions(${t.id})"><i class="bi bi-eye me-1"></i>VER+</button>
+              </div>
+              ` : ''}
           </div>
       ` : ''}
       <div class="task-meta">
@@ -1297,6 +1317,20 @@ function editTask(taskId) {
 
 function closeCompleteModal() {
   document.getElementById('completeOverlay').classList.remove('open');
+}
+
+function toggleMobileHiddenActions(taskId) {
+    const el = document.getElementById('mobile-hidden-actions-' + taskId);
+    const btn = document.getElementById('btn-toggle-mobile-actions-' + taskId);
+    if(el) {
+        if(el.style.display === 'none') {
+            el.style.display = 'block';
+            if(btn) btn.innerHTML = '<i class="bi bi-eye-slash me-1"></i>VER-';
+        } else {
+            el.style.display = 'none';
+            if(btn) btn.innerHTML = '<i class="bi bi-eye me-1"></i>VER+';
+        }
+    }
 }
 
 async function confirmComplete() {
@@ -1850,7 +1884,7 @@ async function loadInbox() {
 function openReadMessageModal(id, title, body, sender, date) {
   closeInboxModal(); // Si venía del inbox, lo cierra para poner este encima (o no, pero simplifica)
   
-  const icon = title.includes('Nota') || title.includes('Tarea') ? '<i class="bi bi-chat-text text-info"></i> ' : '<i class="bi bi-megaphone-fill text-warning"></i> ';
+  const icon = title.includes('Acciones') || title.includes('Tarea') ? '<i class="bi bi-chat-text text-info"></i> ' : '<i class="bi bi-megaphone-fill text-warning"></i> ';
   document.getElementById('readMessageTitle').innerHTML = icon + title;
   document.getElementById('readMessageMeta').innerHTML = `Enviado por <strong>${sender}</strong> el ${date}`;
   document.getElementById('readMessageBody').textContent = body;

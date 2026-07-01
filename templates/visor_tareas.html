@@ -79,7 +79,7 @@
     <nav class="op-toolbar" style="justify-content: space-between; flex-wrap: nowrap;">
         <div class="d-flex align-items-center" style="gap: 8px;">
             <div style="color: var(--text-color); font-weight: 700; font-family: var(--font-display); font-size: 1rem; letter-spacing: 1px; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                <i class="bi bi-display" style="color: var(--accent-color);"></i> VISOR DE TRABAJOS
+                <i class="bi bi-display" style="color: var(--accent-color);"></i> CENTRO DE OPERACIONES / VISOR DE TAREAS
             </div>
         </div>
         
@@ -102,10 +102,12 @@
     </nav>
 
     {% if efemeride_actual %}
-    <div class="hide-mobile" style="position: fixed; top: 40px; left: 0; width: 100%; z-index: 1040; color: var(--accent-color); cursor: default; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; white-space: nowrap; padding: 4px 16px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-color); box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <span style="font-size: 1.1em; flex-shrink: 0;">{{ efemeride_actual.icono }}</span>
-        <strong style="flex-shrink: 0;">{{ efemeride_actual.titulo }}</strong>
-        <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">- {{ efemeride_actual.descripcion }}</span>
+    <div class="hide-mobile marquee-container" style="position: fixed; top: 40px; left: 0; width: 100%; z-index: 1040; color: var(--accent-color); cursor: default; display: flex; align-items: center; font-size: 0.75rem; white-space: nowrap; padding: 4px 16px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-color); box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div class="marquee-content" style="padding-left: 100vw;">
+            <span style="font-size: 1.1em; margin-right: 6px;">{{ efemeride_actual.icono }}</span>
+            <strong>{{ efemeride_actual.titulo }}</strong>
+            <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">- {{ efemeride_actual.descripcion }}</span>
+        </div>
     </div>
     <main style="padding-top: 30px; padding-bottom: 20px;">
     {% else %}
@@ -185,17 +187,7 @@
                     </form>
                 </div>
 
-                {% if total_pendientes_global > 0 %}
-                <div class="priority-ticket" style="border-left-color: var(--color-warning); cursor: pointer;" onclick="scrollToPendientes()">
-                    <div class="priority-ticket__header">
-                        <span class="priority-ticket__badge" style="background: rgba(249, 115, 22, 0.1); color: var(--color-warning);">ATENCIÓN</span>
-                        <i class="bi bi-arrow-down text-muted"></i>
-                    </div>
-                    <h3 class="priority-ticket__title" id="ticketPendientes"><span data-countup>{{ total_pendientes_global }}</span> Tareas Pendientes</h3>
-                    <p class="priority-ticket__desc">Ir a la sección de pendientes para resolver o asignar.</p>
-                </div>
-                {% endif %}
-                
+
                 <div class="priority-ticket" style="border-left-color: var(--color-stable);">
                     <div class="priority-ticket__header">
                         <span class="priority-ticket__badge" style="background: rgba(34, 197, 94, 0.1); color: var(--color-stable);">COMPLETADAS</span>
@@ -214,10 +206,21 @@
                         <div class="metric-box__label">Total Registros (Filtro)</div>
                         <div class="metric-box__value" id="statTotalHoy" data-countup>{{ total_hoy }}</div>
                     </div>
+                    {% if total_pendientes_global > 0 %}
+                    <div class="priority-ticket" style="border-left-color: var(--color-warning); cursor: pointer; flex: 1; margin-bottom: 0;" onclick="scrollToPendientes()">
+                        <div class="priority-ticket__header">
+                            <span class="priority-ticket__badge" style="background: rgba(249, 115, 22, 0.1); color: var(--color-warning);">ATENCIÓN</span>
+                            <i class="bi bi-arrow-down text-muted"></i>
+                        </div>
+                        <h3 class="priority-ticket__title" id="ticketPendientes" style="margin-bottom: 0;"><span data-countup>{{ total_pendientes_global }}</span> Tareas Pendientes</h3>
+                        <p class="priority-ticket__desc" style="font-size: 0.75rem; margin-top: 4px;">Ir a la sección de pendientes para resolver o asignar.</p>
+                    </div>
+                    {% else %}
                     <div class="metric-box">
                         <div class="metric-box__label">Pendientes Activas</div>
                         <div class="metric-box__value" id="statPendientes" style="color: var(--color-warning);" data-countup>{{ total_pendientes_global }}</div>
                     </div>
+                    {% endif %}
                     <div class="metric-box">
                         <div class="metric-box__label">Hechas Hoy</div>
                         <div class="metric-box__value" id="statHechasHoy" style="color: var(--color-stable);" data-countup>{{ hechas_hoy }}</div>
@@ -254,12 +257,23 @@
                                         
                                         {% if task.acciones %}
                                         <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
-                                            {% for accion in task.acciones %}
-                                            <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                                <i class="bi bi-chat-text me-1"></i>
-                                                <strong style="color: #e2e8f0;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
+                                            {% if task.acciones|length > 1 %}
+                                            <div id="hidden-actions-{{ task.id }}" style="display: none; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed rgba(14, 165, 233, 0.2);">
+                                                {% for accion in task.acciones[:-1] %}
+                                                <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                                    <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ accion.created_at_fmt }}]</span>
+                                                    <i class="bi bi-chat-text me-1"></i>
+                                                    <strong style="color: #e2e8f0;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
+                                                </div>
+                                                {% endfor %}
                                             </div>
-                                            {% endfor %}
+                                            {% endif %}
+                                            {% set last_action = task.acciones[-1] %}
+                                            <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                                <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ last_action.created_at_fmt }}]</span>
+                                                <i class="bi bi-chat-text me-1"></i>
+                                                <strong style="color: #e2e8f0;">{{ last_action.user_name }}:</strong> {{ last_action.action_text }}
+                                            </div>
                                         </div>
                                         {% endif %}
 
@@ -269,11 +283,14 @@
                                         </div>
                                         {% endif %}
 
-                                        {% if task.estado != 'Hecha' %}
-                                        <div class="mt-2">
-                                            <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Nota</button>
+                                        <div class="mt-2 d-flex gap-2">
+                                            {% if task.estado != 'Hecha' %}
+                                            <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Acciones</button>
+                                            {% endif %}
+                                            {% if task.acciones and task.acciones|length > 1 %}
+                                            <button id="btn-toggle-actions-{{ task.id }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px; color: #94a3b8;" onclick="toggleHiddenActions({{ task.id }})"><i class="bi bi-eye me-1"></i>VER+</button>
+                                            {% endif %}
                                         </div>
-                                        {% endif %}
                                     </td>
                                     <td>
                                         <div class="mb-1">
@@ -328,16 +345,30 @@
                                     <div class="mb-1">{{ task.descripcion }}</div>
                                     {% if task.acciones %}
                                     <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
-                                        {% for accion in task.acciones %}
-                                        <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                            <i class="bi bi-chat-text me-1"></i>
-                                            <strong style="color: #e2e8f0;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
+                                        {% if task.acciones|length > 1 %}
+                                        <div id="hidden-actions-{{ task.id }}" style="display: none; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed rgba(14, 165, 233, 0.2);">
+                                            {% for accion in task.acciones[:-1] %}
+                                            <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                                <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ accion.created_at_fmt }}]</span>
+                                                <i class="bi bi-chat-text me-1"></i>
+                                                <strong style="color: #e2e8f0;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
+                                            </div>
+                                            {% endfor %}
                                         </div>
-                                        {% endfor %}
+                                        {% endif %}
+                                        {% set last_action = task.acciones[-1] %}
+                                        <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                            <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ last_action.created_at_fmt }}]</span>
+                                            <i class="bi bi-chat-text me-1"></i>
+                                            <strong style="color: #e2e8f0;">{{ last_action.user_name }}:</strong> {{ last_action.action_text }}
+                                        </div>
                                     </div>
                                     {% endif %}
-                                    <div class="mt-2">
-                                        <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Nota</button>
+                                    <div class="mt-2 d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Acciones</button>
+                                        {% if task.acciones and task.acciones|length > 1 %}
+                                        <button id="btn-toggle-actions-{{ task.id }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px; color: #94a3b8;" onclick="toggleHiddenActions({{ task.id }})"><i class="bi bi-eye me-1"></i>VER+</button>
+                                        {% endif %}
                                     </div>
                                 </td>
                                 <td>
@@ -624,11 +655,19 @@
 
         function updateClock() {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('es-AR', { hour12: false });
-            const clockEl = document.getElementById('visorClock');
-            if(clockEl) clockEl.textContent = timeStr;
+            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const el = document.getElementById('visorClock');
+            if (!el) return;
+            const dayName = days[now.getDay()];
+            const day = now.getDate();
+            const month = months[now.getMonth()];
+            const year = now.getFullYear();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            el.textContent = `${dayName} ${day} de ${month} de ${year} · ${h}:${m}`;
         }
-        setInterval(updateClock, 1000);
+        setInterval(updateClock, 15000);
         updateClock();
 
         async function quickAssign(taskId, pcName) {
@@ -665,21 +704,36 @@
         }
 
         async function promptAddAction(taskId) {
-            const text = window.prompt("Ingrese la nota para esta tarea:");
+            const text = window.prompt("Ingrese la acción para esta tarea:");
             if (!text || !text.trim()) return;
             try {
                 const formData = new URLSearchParams();
-                formData.append('action_text', text.trim());
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                if (csrfToken) formData.append('csrf_token', csrfToken);
-                
-                const response = await fetch(`/api/tasks/${taskId}/actions`, {
-                    method: 'POST', body: formData, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                formData.append('action_text', text);
+                const res = await fetch(`/api/tasks/${taskId}/actions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
                 });
-                const result = await response.json();
-                if (result.status === 'success') refreshData();
-                else alert("Error: " + result.message);
-            } catch (e) { console.error(e); alert("Error de red."); }
+                if (!res.ok) throw new Error('Error al guardar la acción');
+                refreshData();
+            } catch (err) {
+                console.error(err);
+                alert("Ocurrió un error al guardar la acción");
+            }
+        }
+
+        function toggleHiddenActions(taskId) {
+            const el = document.getElementById('hidden-actions-' + taskId);
+            const btn = document.getElementById('btn-toggle-actions-' + taskId);
+            if(el) {
+                if(el.style.display === 'none') {
+                    el.style.display = 'block';
+                    if(btn) btn.innerHTML = '<i class="bi bi-eye-slash me-1"></i>(VER-)';
+                } else {
+                    el.style.display = 'none';
+                    if(btn) btn.innerHTML = '<i class="bi bi-eye me-1"></i>(VER+)';
+                }
+            }
         }
 
         // Modals y Racks
@@ -758,20 +812,36 @@
                         <div class="mb-1">${task.descripcion}${task.desc_edited ? ' <i class="bi bi-info-circle-fill" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>' : ''}</div>
                         ${task.acciones && task.acciones.length > 0 ? `
                         <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
-                            ${task.acciones.map(accion => `
-                            <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                <i class="bi bi-chat-text me-1"></i> <strong style="color: #e2e8f0;">${accion.user_name}:</strong> ${accion.action_text}
+                            ${task.acciones.length > 1 ? `
+                            <div id="hidden-actions-${task.id}" style="display: none; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed rgba(14, 165, 233, 0.2);">
+                                ${task.acciones.slice(0, -1).map(accion => `
+                                <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                    <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${accion.created_at_fmt}]</span>
+                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: #e2e8f0;">${accion.user_name}:</strong> ${accion.action_text}
+                                </div>
+                                `).join('')}
                             </div>
-                            `).join('')}
+                            ` : ''}
+                            ${(() => {
+                                const last = task.acciones[task.acciones.length - 1];
+                                return `<div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                    <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${last.created_at_fmt}]</span>
+                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: #e2e8f0;">${last.user_name}:</strong> ${last.action_text}
+                                </div>`;
+                            })()}
                         </div>` : ''}
                         ${task.solucion ? `
                         <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #cbd5e1;">
                             <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
                         </div>` : ''}
-                        ${task.estado !== 'Hecha' ? `
-                        <div class="mt-2">
-                            <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Nota</button>
-                        </div>` : ''}
+                        <div class="mt-2 d-flex gap-2">
+                            ${task.estado !== 'Hecha' ? `
+                            <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Acciones</button>
+                            ` : ''}
+                            ${task.acciones && task.acciones.length > 1 ? `
+                            <button id="btn-toggle-actions-${task.id}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px; color: #94a3b8;" onclick="toggleHiddenActions(${task.id})"><i class="bi bi-eye me-1"></i>VER+</button>
+                            ` : ''}
+                        </div>
                     </td>
                     <td>
                         <div class="mb-1"><span class="status-dot status-dot-${task.estado.toLowerCase()}"></span><span class="fw-bold small">${task.estado}</span></div>
@@ -803,10 +873,35 @@
                         <div class="mb-1">${task.descripcion}</div>
                         ${task.acciones && task.acciones.length > 0 ? `
                         <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
-                            ${task.acciones.map(a => `<div class="small" style="color: #cbd5e1;"><i class="bi bi-chat-text me-1"></i><strong>${a.user_name}:</strong> ${a.action_text}</div>`).join('')}
+                            ${task.acciones.length > 1 ? `
+                            <div id="hidden-actions-${task.id}" style="display: none; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed rgba(14, 165, 233, 0.2);">
+                                ${task.acciones.slice(0, -1).map(accion => `
+                                <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                    <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${accion.created_at_fmt}]</span>
+                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: #e2e8f0;">${accion.user_name}:</strong> ${accion.action_text}
+                                </div>
+                                `).join('')}
+                            </div>
+                            ` : ''}
+                            ${(() => {
+                                const last = task.acciones[task.acciones.length - 1];
+                                return `<div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
+                                    <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${last.created_at_fmt}]</span>
+                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: #e2e8f0;">${last.user_name}:</strong> ${last.action_text}
+                                </div>`;
+                            })()}
                         </div>` : ''}
-                        <div class="mt-2">
-                            <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Nota</button>
+                        ${task.solucion ? `
+                        <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #cbd5e1;">
+                            <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
+                        </div>` : ''}
+                        <div class="mt-2 d-flex gap-2">
+                            ${task.estado !== 'Hecha' ? `
+                            <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Acciones</button>
+                            ` : ''}
+                            ${task.acciones && task.acciones.length > 1 ? `
+                            <button id="btn-toggle-actions-${task.id}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px; color: #94a3b8;" onclick="toggleHiddenActions(${task.id})"><i class="bi bi-eye me-1"></i>VER+</button>
+                            ` : ''}
                         </div>
                     </td>
                     <td>

@@ -956,10 +956,11 @@
                     <div class="mt-2" style="font-size: 0.85rem;">
                         ${task.acciones.map(a => {
                             const isMe = (a.user_name || '').toLowerCase() === currentUser.toLowerCase();
+                            const timeStr = a.created_at_fmt ? `<span style="opacity:0.7; font-size:0.85em; margin-right:4px; font-family:var(--font-mono, monospace);">[${a.created_at_fmt}]</span>` : '';
                             if (!isMe) {
-                                return \`<div class="p-2 mb-1 rounded bg-warning text-dark fw-bold border border-warning shadow-sm"><i class="bi bi-exclamation-triangle-fill me-1"></i>\${a.user_name}: \${a.action_text}</div>\`;
+                                return `<div class="p-2 mb-1 rounded bg-warning text-dark fw-bold border border-warning shadow-sm">${timeStr}<i class="bi bi-exclamation-triangle-fill me-1"></i>${a.user_name}: ${a.action_text}</div>`;
                             } else {
-                                return \`<div class="p-1 mb-1 text-muted border-start border-2 ms-1 ps-2"><small>Tú: \${a.action_text}</small></div>\`;
+                                return `<div class="p-1 mb-1 text-muted border-start border-2 ms-1 ps-2"><small>${timeStr}Tú: ${a.action_text}</small></div>`;
                             }
                         }).join('')}
                     </div>

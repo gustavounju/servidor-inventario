@@ -4,14 +4,6 @@
     
     <!-- LADO IZQUIERDO: COMANDOS -->
     <div class="op-toolbar__search-zone" style="flex-grow: 1; display: flex; align-items: center;">
-        <form action="{{ url_for('dashboard.dashboard') }}" method="GET" class="op-cmd-form" style="margin-right: 16px;">
-            <span class="op-cmd-prompt">&gt;_</span>
-            <input type="text" name="q" class="op-cmd-input" placeholder="BUSCAR / COMANDO..." value="{{ request.args.get('q', '') }}" autocomplete="off" spellcheck="false" id="searchInput">
-            {% if request.endpoint == 'dashboard.dashboard' %}
-                {% if request.args.get('estado') %}<input type="hidden" name="estado" value="{{ request.args.get('estado') }}">{% endif %}
-                {% if request.args.get('alerta') %}<input type="hidden" name="alerta" value="{{ request.args.get('alerta') }}">{% endif %}
-            {% endif %}
-        </form>
 
         <div style="color: var(--text-color); font-weight: 700; font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 1px; margin-right: 16px; white-space: nowrap;">
             CENTRO DE OPERACIONES
@@ -118,16 +110,28 @@
     
     {% if efemeride_actual %}
     <span class="op-divider-sub"></span>
-    <div class="op-telemetry-item hide-mobile" style="color: var(--accent-color); cursor: default; display: flex; align-items: center; gap: 6px; font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45vw;">
-        <span style="font-size: 1.1em; flex-shrink: 0;">{{ efemeride_actual.icono }}</span>
-        <strong style="flex-shrink: 0;">{{ efemeride_actual.titulo }}</strong> 
-        <span style="color: #94a3b8; font-weight: 400; overflow: hidden; text-overflow: ellipsis;">- {{ efemeride_actual.descripcion }}</span>
+    <div class="op-telemetry-item hide-mobile marquee-container" style="color: var(--accent-color); cursor: default; max-width: 45vw; border: none; background: transparent; padding: 0;">
+        <div class="marquee-content" style="font-size: 0.75rem;">
+            <span style="font-size: 1.1em; margin-right: 4px;">{{ efemeride_actual.icono }}</span>
+            <strong>{{ efemeride_actual.titulo }}</strong> 
+            <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">- {{ efemeride_actual.descripcion }}</span>
+        </div>
     </div>
     {% endif %}
 
-    <!-- Espaciador para empujar el reloj a la extrema derecha -->
+    <!-- Espaciador para empujar a la derecha -->
     <div style="flex-grow: 1;"></div>
     
+    <!-- Buscador / Comandos (Movido aquí para despejar el título) -->
+    <form action="{{ url_for('dashboard.dashboard') }}" method="GET" class="op-cmd-form" style="width: auto; flex-shrink: 0; margin-right: 16px; display: flex; align-items: center; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1);">
+        <span class="op-cmd-prompt" style="font-size: 0.8rem; margin-right: 4px;">&gt;_</span>
+        <input type="text" name="q" class="op-cmd-input" placeholder="BUSCAR / COMANDO..." value="{{ request.args.get('q', '') }}" autocomplete="off" spellcheck="false" id="searchInput" style="background: transparent; border: none; color: white; font-family: var(--font-mono); font-size: 0.8rem; outline: none; width: 180px;">
+        {% if request.endpoint == 'dashboard.dashboard' %}
+            {% if request.args.get('estado') %}<input type="hidden" name="estado" value="{{ request.args.get('estado') }}">{% endif %}
+            {% if request.args.get('alerta') %}<input type="hidden" name="alerta" value="{{ request.args.get('alerta') }}">{% endif %}
+        {% endif %}
+    </form>
+
     <!-- Reloj -->
     <div id="heroDatetime" class="op-telemetry-item" style="color: var(--color-stable); font-weight: bold; font-family: var(--font-mono); font-size: 0.85rem; padding-right: 16px;"></div>
 </div>
