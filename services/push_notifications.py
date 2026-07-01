@@ -2,7 +2,7 @@ import os
 import logging
 from database.db_core import get_db_connection
 
-def notify_all_technicians(title, body, url="/tecnicos", sender="Sistema", task_id=None, msg_type="direct", scheduled_for=None):
+def notify_all_technicians(title, body, url="/tecnicos", sender="Sistema", task_id=None, msg_type="system", scheduled_for=None):
     """
     Sends an internal notification to all technicians.
     Logs to both `app_notifications` (for the global bell) and `tech_messages` (for the native popup).
@@ -21,22 +21,24 @@ def notify_all_technicians(title, body, url="/tecnicos", sender="Sistema", task_
         logging.error(f"[ERROR] DB notification logging failed: {e}")
 
     # 2. Log to internal private messages queue (for popups) - Fanned out to all
-    try:
-        from utils.auth import list_technician_users
-        techs = list_technician_users()
-        
-        with get_db_connection() as conn:
-            for tech in techs:
-                conn.execute(
-                    "INSERT INTO tech_messages (technician_name, sender, task_id, msg_type, title, body, url, scheduled_for) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                    (tech['name'], sender, task_id, msg_type, title, body, url, scheduled_for)
-                )
-            conn.commit()
-            logging.info(f"[INTERNAL MSG] Broadcast message queued for {len(techs)} technicians.")
-        return {"success": True, "error": None}
-    except Exception as e:
-        logging.error(f"[ERROR] Internal message queue failed: {e}")
-        return {"success": False, "error": str(e)}
+    if msg_type != "system":
+        try:
+            from utils.auth import list_technician_users
+            techs = list_technician_users()
+            
+            with get_db_connection() as conn:
+                for tech in techs:
+                    conn.execute(
+                        "INSERT INTO tech_messages (technician_name, sender, task_id, msg_type, title, body, url, scheduled_for) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                        (tech['name'], sender, task_id, msg_type, title, body, url, scheduled_for)
+                    )
+                conn.commit()
+                logging.info(f"[INTERNAL MSG] Broadcast message queued for {len(techs)} technicians.")
+            return {"success": True, "error": None}
+        except Exception as e:
+            logging.error(f"[ERROR] Internal message queue failed: {e}")
+            return {"success": False, "error": str(e)}
+    return {"success": True, "error": None}
 
 def notify_technician(technician_name, title, body, url="/tecnicos", sender="Sistema", task_id=None, msg_type="direct", scheduled_for=None):
     """

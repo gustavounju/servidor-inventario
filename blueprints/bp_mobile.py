@@ -170,15 +170,8 @@ def api_mobile_create_task():
              new_id = cursor.lastrowid
              conn.commit()
 
-        # Notify other technicians via Web Push
-        try:
-            notify_all_technicians(
-                title="Nueva Tarea",
-                body=f"{solicitante}: {descripcion}",
-                url="/tecnicos"
-            )
-        except Exception as e:
-            logging.error(f"Error sending push: {e}")
+        # Notify other technicians via Web Push - Removido a pedido del usuario
+        # para que no se comunique a todos en el área de mensajes.
 
         return jsonify({"status": "success", "id": new_id})
     except Exception as e:
