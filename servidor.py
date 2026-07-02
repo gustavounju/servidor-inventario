@@ -196,19 +196,29 @@ def _load_kpis_from_db(user_auth):
         'app_users_list': [], 'all_pcs': [], 'kpi_usuarios_pendientes': 0
     }
     
+    custom_message = None
     efemeride_bd = None
     try:
         with get_db_connection() as conn:
-            efemeride_activa = conn.execute("SELECT * FROM efemerides WHERE is_active = 1 LIMIT 1").fetchone()
-            if efemeride_activa:
-                efemeride_bd = dict(efemeride_activa)
-            else:
-                today_mmdd = datetime.datetime.now().strftime("%m-%d")
-                efemeride_hoy = conn.execute("SELECT * FROM efemerides WHERE dia_mes = %s LIMIT 1", (today_mmdd,)).fetchone()
-                if efemeride_hoy:
-                    efemeride_bd = dict(efemeride_hoy)
+            # Check for global custom message first
+            try:
+                custom_msg_row = conn.execute("SELECT * FROM app_settings WHERE setting_key = 'custom_global_message'").fetchone()
+                if custom_msg_row and custom_msg_row['is_active']:
+                    custom_message = custom_msg_row['setting_value']
+            except Exception:
+                pass
+            
+            if not custom_message:
+                efemeride_activa = conn.execute("SELECT * FROM efemerides WHERE is_active = 1 LIMIT 1").fetchone()
+                if efemeride_activa:
+                    efemeride_bd = dict(efemeride_activa)
+                else:
+                    today_mmdd = datetime.datetime.now().strftime("%m-%d")
+                    efemeride_hoy = conn.execute("SELECT * FROM efemerides WHERE dia_mes = %s LIMIT 1", (today_mmdd,)).fetchone()
+                    if efemeride_hoy:
+                        efemeride_bd = dict(efemeride_hoy)
     except Exception as e:
-        logging.error(f"Error fetching efemerides: {e}")
+        logging.error(f"Error fetching efemerides/settings: {e}")
         
     noticia_str = ""
     try:
@@ -255,18 +265,25 @@ def _load_kpis_from_db(user_auth):
     import random
     msg = random.choice(mensajes_motivacionales)
     
-    partes = []
-    if efemeride_bd:
-        partes.append(f"{efemeride_bd['icono']} {efemeride_bd['titulo']}: {efemeride_bd['descripcion']}")
-    if noticia_str:
-        partes.append(f"🌐 {noticia_str}")
-    partes.append(f"{msg['icono']} {msg['descripcion']}")
-    
-    efemeride_actual = {
-        'titulo': '',
-        'descripcion': "  |  ".join(partes),
-        'icono': '📡'
-    }
+    if custom_message:
+        efemeride_actual = {
+            'titulo': 'ATENCIÓN',
+            'descripcion': custom_message,
+            'icono': '⚠️'
+        }
+    else:
+        partes = []
+        if efemeride_bd:
+            partes.append(f"{efemeride_bd['icono']} {efemeride_bd['titulo']}: {efemeride_bd['descripcion']}")
+        if noticia_str:
+            partes.append(f"🌐 {noticia_str}")
+        partes.append(f"{msg['icono']} {msg['descripcion']}")
+        
+        efemeride_actual = {
+            'titulo': '',
+            'descripcion': "  |  ".join(partes),
+            'icono': '📡'
+        }
         
     extra_data['efemeride_actual'] = efemeride_actual
     

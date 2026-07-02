@@ -222,7 +222,33 @@ def view_efemerides():
             e_dict['is_today'] = e_dict['dia_mes'] == hoy_str
             efemerides.append(e_dict)
             
-    return render_template("admin_efemerides.html", efemerides=efemerides)
+        custom_msg_row = conn.execute("SELECT * FROM app_settings WHERE setting_key = 'custom_global_message'").fetchone()
+        custom_message = {
+            'active': bool(custom_msg_row['is_active']) if custom_msg_row else False,
+            'text': custom_msg_row['setting_value'] if custom_msg_row else ""
+        }
+            
+    return render_template("admin_efemerides.html", efemerides=efemerides, custom_message=custom_message)
+
+from flask import jsonify
+
+@bp_setup.route("/api/custom_message", methods=["POST"])
+def update_custom_message():
+    data = request.json
+    text = data.get("text", "")
+    is_active = 1 if data.get("is_active") else 0
+    
+    with get_db_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO app_settings (setting_key, setting_value, is_active)
+            VALUES ('custom_global_message', %s, %s)
+            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), is_active = VALUES(is_active)
+            """,
+            (text, is_active)
+        )
+        conn.commit()
+    return jsonify({"status": "success"})
 
 @bp_setup.route("/efemerides/<int:ef_id>/toggle", methods=["POST"])
 def toggle_efemeride(ef_id):

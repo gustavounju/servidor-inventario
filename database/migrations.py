@@ -643,8 +643,27 @@ def run_all_migrations():
     migrate_db_v40()
     migrate_db_v41()
     verify_migration_v42()
+    migrate_db_v43()
     with get_db_connection() as conn:
         migration_v32(conn)
+
+def migrate_db_v43():
+    """Migración V43: Crear tabla app_settings para configuración global clave-valor."""
+    print("Verificando migración de DB v43...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "app_settings"):
+            print("Aplicando migración V43: creando tabla app_settings...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_settings (
+                    setting_key VARCHAR(100) PRIMARY KEY,
+                    setting_value LONGTEXT,
+                    is_active TINYINT(1) DEFAULT 1,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+    print("Migración V43 verificada.")
 
 def migrate_db_v33():
     """Migración V33: Permiso de acceso para Operadores Telefónicos."""

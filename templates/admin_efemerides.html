@@ -15,12 +15,112 @@
         .hide-past .ef-past {
             display: none !important;
         }
+        
+        /* Dark Theme / Midnight Overrides */
+        body {
+            margin: 0; 
+            padding: 0; 
+            overflow-x: hidden; 
+            background: transparent; 
+            color: var(--text-color);
+        }
+
+        .ops-panel-dark {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .ops-header-dark {
+            border-bottom: 1px solid var(--card-border) !important;
+        }
+
+        .ops-table-dark {
+            color: var(--text-color);
+            margin-bottom: 0;
+        }
+        .ops-table-dark th {
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--card-border);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            background: transparent;
+        }
+        .ops-table-dark td {
+            border-bottom: 1px solid var(--card-border);
+            vertical-align: middle;
+            color: var(--text-color);
+            background: transparent;
+            transition: background 0.15s ease;
+        }
+        .ops-table-dark tr:hover td {
+            background-color: var(--glass-bg);
+        }
+        
+        /* State Highlights */
+        .ops-table-dark tr.table-primary td {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .ops-table-dark tr.table-warning td {
+            background-color: rgba(250, 204, 21, 0.1);
+        }
+        .ops-table-dark tr.ef-past td {
+            opacity: 0.4;
+        }
+
+        .text-muted-dark {
+            color: var(--text-muted) !important;
+        }
+
+        .modal-content-dark {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        .modal-header-dark, .modal-footer-dark {
+            border-color: var(--card-border) !important;
+        }
+        
+        .form-control-dark {
+            background: rgba(11, 14, 20, 0.6);
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+        }
+        .form-control-dark:focus {
+            background: rgba(11, 14, 20, 0.9);
+            border-color: var(--accent-color);
+            color: var(--text-color);
+            box-shadow: 0 0 0 0.2rem var(--input-focus-shadow);
+        }
+        .form-control-dark::placeholder {
+            color: rgba(148, 163, 184, 0.5);
+        }
+
+        .toggle-dark {
+            background: rgba(11, 14, 20, 0.5) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        .btn-outline-warning-dark {
+            color: var(--color-warning);
+            border-color: rgba(249, 115, 22, 0.5);
+        }
+        .btn-outline-warning-dark:hover {
+            background: rgba(249, 115, 22, 0.1);
+            color: var(--color-warning);
+        }
     </style>
 </head>
-<body style="margin: 0; padding: 0; overflow-x: hidden; background: transparent; color: #1e293b;">
+<body>
 
     <main class="container-fluid" style="padding: 20px;">
-
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -33,18 +133,43 @@
         {% endwith %}
 
         <div class="container-fluid mt-2 mb-4">
+            
+            <!-- Global Custom Message Card -->
+            <div class="row fade-in mb-4">
+                <div class="col-12">
+                    <div class="ops-panel-dark" style="border-left: 4px solid var(--color-warning);">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 font-display fw-bold text-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Anuncio Global (Override)
+                            </h5>
+                            <div class="form-check form-switch toggle-dark rounded p-2" style="padding-left: 2.5rem !important;">
+                                <input class="form-check-input" type="checkbox" role="switch" id="toggleGlobalMessage" {% if custom_message.active %}checked{% endif %} onchange="updateGlobalMessage()">
+                                <label class="form-check-label text-muted-dark fw-bold small" for="toggleGlobalMessage" style="cursor: pointer;">Activar Anuncio</label>
+                            </div>
+                        </div>
+                        <p class="text-muted-dark small mb-2">Si se activa, este mensaje reemplazará las efemérides y noticias regulares en todas las pantallas del sistema, incluyendo la vista móvil de los técnicos.</p>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="globalMessageText" class="form-control form-control-dark font-mono" placeholder="Ej: ALERTA: Servidor de base de datos en mantenimiento preventivo a las 14:00" value="{{ custom_message.text }}">
+                            <button class="btn btn-outline-warning text-warning" onclick="updateGlobalMessage()" style="border-color: rgba(250, 204, 21, 0.5);"><i class="fas fa-save"></i> Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="row fade-in">
                 <div class="col-12">
-                    <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pb-3 border-bottom mb-3" style="border-color: #e2e8f0 !important;">
-                            <h5 class="mb-0"><i class="fas fa-calendar-alt text-primary"></i> Base de Conocimiento de Efemérides</h5>
+                    <div class="ops-panel-dark">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pb-3 ops-header-dark mb-3">
+                            <h5 class="mb-0 font-display fw-bold" style="letter-spacing: -0.02em;">
+                                <i class="fas fa-satellite-dish text-primary me-2"></i> Base de Conocimiento de Efemérides
+                            </h5>
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAddEfemeride">
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddEfemeride">
                                     <i class="fas fa-plus"></i> Nueva Efeméride
                                 </button>
                                 <form action="{{ url_for('setup.turn_off_efemerides') }}" method="POST" class="m-0" target="_parent">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-sm btn-outline-warning">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning-dark">
                                         <i class="fas fa-power-off"></i> Apagar Modo Manual
                                     </button>
                                 </form>
@@ -52,70 +177,70 @@
                         </div>
                         <div>
                             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                                <p class="text-muted mb-0" style="font-size: 0.9rem; max-width: 70%;">
-                                    Las efemérides se muestran automáticamente si el día actual coincide con el "Día/Mes". 
+                                <p class="text-muted-dark mb-0" style="font-size: 0.85rem; max-width: 70%;">
+                                    <i class="fas fa-info-circle me-1"></i> Las efemérides se muestran automáticamente si el día actual coincide con el "Día/Mes". 
                                     Si haces clic en <strong>Forzar Activa</strong>, esa efeméride se mostrará sin importar la fecha actual.
                                 </p>
-                                <div class="form-check form-switch p-2 rounded border" style="background: #f8fafc; border-color: #e2e8f0 !important; padding-left: 2.5rem !important;">
+                                <div class="form-check form-switch p-2 rounded toggle-dark" style="padding-left: 2.5rem !important;">
                                     <input class="form-check-input" type="checkbox" role="switch" id="togglePast" checked onchange="togglePastRows()">
-                                    <label class="form-check-label text-secondary small fw-bold" for="togglePast" style="cursor: pointer;">Ocultar Fechas Pasadas</label>
+                                    <label class="form-check-label text-muted-dark small fw-bold" for="togglePast" style="cursor: pointer;">Ocultar Pasadas</label>
                                 </div>
                             </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                            <div class="table-responsive" style="border: 1px solid var(--card-border); border-radius: 8px;">
+                                <table class="table ops-table-dark align-middle" style="font-size: 0.85rem;">
                                     <thead>
                                         <tr>
-                                            <th style="width: 80px;">Fecha</th>
-                                            <th style="width: 60px;">Icono</th>
+                                            <th style="width: 80px; padding-left: 1rem;">Fecha</th>
+                                            <th style="width: 60px; text-align: center;">Icono</th>
                                             <th>Título</th>
                                             <th>Descripción</th>
-                                            <th style="width: 150px;">Estado</th>
-                                            <th style="width: 250px;">Acciones</th>
+                                            <th style="width: 120px;">Estado</th>
+                                            <th style="width: 140px; text-align: right; padding-right: 1rem;">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="efemerides-tbody" class="hide-past">
                                         {% for e in efemerides %}
-                                        <tr class="efemeride-row {% if e.is_past %}ef-past opacity-50{% endif %} {% if e.is_active %}table-primary{% elif e.is_today %}table-warning{% endif %}">
-                                            <td class="text-nowrap font-monospace">
+                                        <tr class="efemeride-row {% if e.is_past %}ef-past{% endif %} {% if e.is_active %}table-primary{% elif e.is_today %}table-warning{% endif %}">
+                                            <td class="text-nowrap font-mono" style="padding-left: 1rem;">
                                                 {{ e.dia_mes }}
                                                 {% if e.is_today %}<span class="badge bg-danger ms-1">HOY</span>{% endif %}
                                             </td>
-                                            <td style="font-size: 1.5rem; text-align: center;">{{ e.icono }}</td>
-                                            <td><strong>{{ e.titulo }}</strong></td>
-                                            <td class="text-muted" style="font-size: 0.9rem;">
+                                            <td style="font-size: 1.3rem; text-align: center;">{{ e.icono }}</td>
+                                            <td><strong class="font-display" style="letter-spacing: -0.01em;">{{ e.titulo }}</strong></td>
+                                            <td class="text-muted-dark" style="font-size: 0.8rem; line-height: 1.4;">
                                                 {{ e.descripcion }}
                                             </td>
                                             <td>
                                                 {% if e.is_active %}
-                                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> FORZADA</span>
+                                                    <span class="badge bg-primary"><i class="fas fa-check-circle"></i> FORZADA</span>
                                                 {% else %}
-                                                    <span class="badge bg-secondary opacity-50">Auto</span>
+                                                    <span class="badge" style="background: rgba(148, 163, 184, 0.2); color: var(--text-muted);">AUTO</span>
                                                 {% endif %}
                                             </td>
-                                            <td>
-                                                <div class="d-flex gap-1">
+                                            <td style="padding-right: 1rem;">
+                                                <div class="d-flex gap-1 justify-content-end">
                                                     {% if not e.is_active %}
                                                     <form action="{{ url_for('setup.toggle_efemeride', ef_id=e.id) }}" method="POST" class="m-0" target="_parent">
                                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                                        <button type="submit" class="btn btn-sm btn-primary" title="Forzar Activa">
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary" style="padding: 0.25rem 0.5rem;" title="Forzar Activa">
                                                             <i class="fas fa-play"></i>
                                                         </button>
                                                     </form>
                                                     {% else %}
-                                                    <button class="btn btn-sm btn-success disabled" disabled title="Actualmente Forzada">
+                                                    <button class="btn btn-sm btn-primary disabled" style="padding: 0.25rem 0.5rem;" disabled title="Actualmente Forzada">
                                                         <i class="fas fa-check"></i>
                                                     </button>
                                                     {% endif %}
                                                     
-                                                    <button type="button" class="btn btn-sm btn-outline-info" title="Editar"
+                                                    <button type="button" class="btn btn-sm btn-outline-info" style="padding: 0.25rem 0.5rem;" title="Editar"
                                                             data-bs-toggle="modal" data-bs-target="#modalEditEfemeride_{{ e.id }}">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
                                                     
                                                     <form action="{{ url_for('setup.delete_efemeride', ef_id=e.id) }}" method="POST" class="m-0" onsubmit="return confirm('¿Seguro que deseas eliminar esta efeméride?');">
                                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" style="padding: 0.25rem 0.5rem;" title="Eliminar">
                                                             <i class="fas fa-trash-alt"></i>
                                                         </button>
                                                     </form>
@@ -124,34 +249,34 @@
                                                 <!-- Modal Edit -->
                                                 <div class="modal fade" id="modalEditEfemeride_{{ e.id }}" tabindex="-1" aria-hidden="true">
                                                     <div class="modal-dialog">
-                                                        <div class="modal-content" style="background: #fff; color: #1e293b; border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                                                        <div class="modal-content modal-content-dark">
                                                             <form action="{{ url_for('setup.edit_efemeride', ef_id=e.id) }}" method="POST">
                                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                                                <div class="modal-header border-bottom" style="border-color: #e2e8f0 !important;">
-                                                                    <h5 class="modal-title">Editar Efeméride</h5>
-                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                <div class="modal-header modal-header-dark">
+                                                                    <h5 class="modal-title font-display fw-bold">Editar Efeméride</h5>
+                                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                                                 </div>
                                                                 <div class="modal-body text-start">
                                                                     <div class="mb-3">
-                                                                        <label class="form-label text-muted">Día y Mes (MM-DD)</label>
-                                                                        <input type="text" class="form-control" name="dia_mes" value="{{ e.dia_mes }}" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]" style="border-color: #cbd5e1;">
-                                                                        <div class="form-text text-secondary">Formato MM-DD. Ejemplo para 25 de Mayo: 05-25</div>
+                                                                        <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Día y Mes</label>
+                                                                        <input type="text" class="form-control form-control-dark font-mono" name="dia_mes" value="{{ e.dia_mes }}" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]">
+                                                                        <div class="form-text text-muted-dark mt-1" style="font-size: 0.75rem;">Formato MM-DD (Ej: 05-25)</div>
                                                                     </div>
                                                                     <div class="mb-3">
-                                                                        <label class="form-label text-muted">Título</label>
-                                                                        <input type="text" class="form-control" name="titulo" value="{{ e.titulo }}" required style="border-color: #cbd5e1;">
+                                                                        <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Título</label>
+                                                                        <input type="text" class="form-control form-control-dark" name="titulo" value="{{ e.titulo }}" required>
                                                                     </div>
                                                                     <div class="mb-3">
-                                                                        <label class="form-label text-muted">Descripción (Hover)</label>
-                                                                        <textarea class="form-control" name="descripcion" rows="2" style="border-color: #cbd5e1;">{{ e.descripcion }}</textarea>
+                                                                        <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Descripción (Hover)</label>
+                                                                        <textarea class="form-control form-control-dark" name="descripcion" rows="2">{{ e.descripcion }}</textarea>
                                                                     </div>
                                                                     <div class="mb-3">
-                                                                        <label class="form-label text-muted">Ícono (Emoji)</label>
-                                                                        <input type="text" class="form-control" name="icono" value="{{ e.icono }}" required style="border-color: #cbd5e1;">
+                                                                        <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Ícono (Emoji)</label>
+                                                                        <input type="text" class="form-control form-control-dark fs-5" name="icono" value="{{ e.icono }}" required>
                                                                     </div>
                                                                 </div>
-                                                                <div class="modal-footer border-top" style="border-color: #e2e8f0 !important;">
-                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                                <div class="modal-footer modal-footer-dark">
+                                                                    <button type="button" class="btn btn-outline-secondary text-white" style="border-color: var(--card-border);" data-bs-dismiss="modal">Cancelar</button>
                                                                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                                                                 </div>
                                                             </form>
@@ -164,9 +289,9 @@
                                     </tbody>
                                 </table>
                                 {% if not efemerides %}
-                                <div class="text-center py-5 text-muted">
-                                    <i class="fas fa-calendar-times fs-1 mb-3 opacity-50"></i>
-                                    <p>No hay efemérides configuradas en la base de datos.</p>
+                                <div class="text-center py-5 text-muted-dark" style="background: rgba(15, 23, 34, 0.3);">
+                                    <i class="fas fa-terminal fs-3 mb-3 opacity-50" style="color: var(--accent-color);"></i>
+                                    <p class="font-mono mb-0" style="font-size: 0.85rem;">[SISTEMA] No hay efemérides configuradas en la base de datos.</p>
                                 </div>
                                 {% endif %}
                             </div>
@@ -180,35 +305,35 @@
     <!-- Modal Add -->
     <div class="modal fade" id="modalAddEfemeride" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content" style="background: #fff; color: #1e293b; border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <div class="modal-content modal-content-dark">
                 <form action="{{ url_for('setup.add_efemeride') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <div class="modal-header border-bottom" style="border-color: #e2e8f0 !important;">
-                        <h5 class="modal-title">Nueva Efeméride</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-header modal-header-dark">
+                        <h5 class="modal-title font-display fw-bold">Nueva Efeméride</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body text-start">
                         <div class="mb-3">
-                            <label class="form-label text-muted">Día y Mes (MM-DD)</label>
-                            <input type="text" class="form-control" name="dia_mes" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]" style="border-color: #cbd5e1;">
-                            <div class="form-text text-secondary">Formato Mes-Día. Ejemplo para 25 de Mayo: 05-25</div>
+                            <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Día y Mes</label>
+                            <input type="text" class="form-control form-control-dark font-mono" name="dia_mes" required placeholder="05-25" pattern="[0-1][0-9]-[0-3][0-9]">
+                            <div class="form-text text-muted-dark mt-1" style="font-size: 0.75rem;">Formato MM-DD (Ej: 05-25)</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted">Título</label>
-                            <input type="text" class="form-control" name="titulo" required placeholder="Ej: Revolución de Mayo" style="border-color: #cbd5e1;">
+                            <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Título</label>
+                            <input type="text" class="form-control form-control-dark" name="titulo" required placeholder="Ej: Revolución de Mayo">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted">Descripción (Hover)</label>
-                            <textarea class="form-control" name="descripcion" rows="2" placeholder="Breve texto que aparecerá al pasar el mouse por encima..." style="border-color: #cbd5e1;"></textarea>
+                            <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Descripción (Hover)</label>
+                            <textarea class="form-control form-control-dark" name="descripcion" rows="2" placeholder="Breve texto informativo..."></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted">Ícono (Emoji)</label>
-                            <input type="text" class="form-control" name="icono" value="🇦🇷" required style="border-color: #cbd5e1;">
+                            <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Ícono (Emoji)</label>
+                            <input type="text" class="form-control form-control-dark fs-5" name="icono" value="🇦🇷" required>
                         </div>
                     </div>
-                    <div class="modal-footer border-top" style="border-color: #e2e8f0 !important;">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success">Crear Efeméride</button>
+                    <div class="modal-footer modal-footer-dark">
+                        <button type="button" class="btn btn-outline-secondary text-white" style="border-color: var(--card-border);" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Registrar</button>
                     </div>
                 </form>
             </div>
@@ -227,8 +352,37 @@
             }
         }
         
+        function updateGlobalMessage() {
+            const isActive = document.getElementById('toggleGlobalMessage').checked;
+            const text = document.getElementById('globalMessageText').value;
+            
+            fetch("{{ url_for('setup.update_custom_message') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    is_active: isActive,
+                    text: text
+                })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const btn = document.querySelector('button[onclick="updateGlobalMessage()"]');
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Guardado';
+                    btn.classList.add('btn-warning');
+                    btn.classList.remove('btn-outline-warning');
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('btn-warning');
+                        btn.classList.add('btn-outline-warning');
+                    }, 2000);
+                }
+            });
+        }
+        
         document.addEventListener("DOMContentLoaded", () => {
-            // Re-apply in case it gets stuck
             setTimeout(togglePastRows, 100);
         });
     </script>
