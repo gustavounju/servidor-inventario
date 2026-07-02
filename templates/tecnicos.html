@@ -888,10 +888,15 @@ function playPacmanSound() {
     if (!audioCtx) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
     if (wakaBuffer) {
-      const src = audioCtx.createBufferSource();
-      src.buffer = wakaBuffer;
-      src.connect(audioCtx.destination);
-      src.start(0);
+      const src1 = audioCtx.createBufferSource();
+      src1.buffer = wakaBuffer;
+      src1.connect(audioCtx.destination);
+      src1.start(0);
+      
+      const src2 = audioCtx.createBufferSource();
+      src2.buffer = wakaBuffer;
+      src2.connect(audioCtx.destination);
+      src2.start(audioCtx.currentTime + wakaBuffer.duration);
     }
   } catch(e) {}
 }
