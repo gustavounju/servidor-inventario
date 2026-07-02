@@ -106,7 +106,7 @@
 
     {% if efemeride_actual %}
     <div class="hide-mobile marquee-container" style="position: fixed; top: 40px; left: 0; width: 100%; z-index: 1040; color: var(--accent-color); cursor: default; display: flex; align-items: center; font-size: 0.75rem; white-space: nowrap; padding: 4px 16px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-color); box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <div class="marquee-content" style="padding-left: 100vw;">
+        <div class="marquee-content {% if efemeride_actual.is_alert %}marquee-fast{% endif %}" style="padding-left: 100vw;">
             <span style="font-size: 1.1em; margin-right: 6px;">{{ efemeride_actual.icono }}</span>
             {% if efemeride_actual.titulo %}<strong>{{ efemeride_actual.titulo }}</strong>{% endif %}
             {% if efemeride_actual.descripcion %}

@@ -269,7 +269,8 @@ def _load_kpis_from_db(user_auth):
         efemeride_actual = {
             'titulo': 'ATENCIÓN',
             'descripcion': custom_message,
-            'icono': '⚠️'
+            'icono': '⚠️',
+            'is_alert': True
         }
     else:
         partes = []
@@ -282,7 +283,8 @@ def _load_kpis_from_db(user_auth):
         efemeride_actual = {
             'titulo': '',
             'descripcion': "  |  ".join(partes),
-            'icono': '📡'
+            'icono': '📡',
+            'is_alert': False
         }
         
     extra_data['efemeride_actual'] = efemeride_actual

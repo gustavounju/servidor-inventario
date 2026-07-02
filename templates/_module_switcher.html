@@ -117,7 +117,7 @@
     {% if efemeride_actual %}
     <span class="op-divider-sub"></span>
     <div class="op-telemetry-item hide-mobile marquee-container" style="color: var(--accent-color); cursor: default; max-width: 45vw; border: none; background: transparent; padding: 0;">
-        <div class="marquee-content" style="font-size: 0.75rem;">
+        <div class="marquee-content {% if efemeride_actual.is_alert %}marquee-fast{% endif %}" style="font-size: 0.75rem;">
             <span style="font-size: 1.1em; margin-right: 4px;">{{ efemeride_actual.icono }}</span>
             {% if efemeride_actual.titulo %}<strong>{{ efemeride_actual.titulo }}</strong>{% endif %}
             {% if efemeride_actual.descripcion %}
