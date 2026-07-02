@@ -855,13 +855,43 @@ function postJSON(url, body) {
 }
 
 // ── Audio ──────────────────────────────────────────
+let wakaBuffer = null;
+let audioCtx = null;
+
+// Initialize audio context and load sound immediately
+try {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (AC) {
+    audioCtx = new AC();
+    fetch("{{ url_for('static', filename='audio/waka.wav') }}")
+      .then(r => r.arrayBuffer())
+      .then(buf => audioCtx.decodeAudioData(buf))
+      .then(decoded => { wakaBuffer = decoded; })
+      .catch(e => console.log("Waka load error:", e));
+  }
+} catch(e) {}
+
+// Unlock audio on first interaction
+function unlockAudio() {
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  document.removeEventListener('click', unlockAudio);
+  document.removeEventListener('keydown', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('keydown', unlockAudio);
+
 function playPacmanSound() {
   try {
     if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-    const audio = document.getElementById('sndNew');
-    if (audio) {
-      audio.currentTime = 0;
-      audio.play().catch(e => console.log('Audio play error:', e));
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (wakaBuffer) {
+      const src = audioCtx.createBufferSource();
+      src.buffer = wakaBuffer;
+      src.connect(audioCtx.destination);
+      src.start(0);
     }
   } catch(e) {}
 }

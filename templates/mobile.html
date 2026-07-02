@@ -597,17 +597,19 @@
         let audioCtx = null;
         let audioFallback = null;
 
+        let wakaBuffer = null;
         function initAudio() {
             try {
                 const AC = window.AudioContext || window.webkitAudioContext;
                 if (AC && !audioCtx) {
                     audioCtx = new AC();
                     console.log("AudioContext initialized (State: " + audioCtx.state + ")");
-                }
-                // Fallback: Tono de alerta corto (C4)
-                if (!audioFallback) {
-                    audioFallback = new Audio("{{ url_for('static', filename='audio/waka.wav') }}");
-                    audioFallback.load();
+                    
+                    fetch("{{ url_for('static', filename='audio/waka.wav') }}")
+                        .then(r => r.arrayBuffer())
+                        .then(buf => audioCtx.decodeAudioData(buf))
+                        .then(decoded => { wakaBuffer = decoded; console.log("Waka audio loaded"); })
+                        .catch(e => console.error("Error loading waka.wav", e));
                 }
             } catch (e) { console.error("Audio Init Error:", e); }
         }
@@ -1264,11 +1266,14 @@
             if (!soundEnabled) return;
             
             try {
-                if (audioFallback) {
-                    audioFallback.volume = 0.8;
-                    audioFallback.currentTime = 0;
-                    const p = audioFallback.play();
-                    if (p) p.catch(e => console.error("Fallback play prevented:", e));
+                if (!audioCtx) initAudio();
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                
+                if (wakaBuffer && audioCtx) {
+                    const src = audioCtx.createBufferSource();
+                    src.buffer = wakaBuffer;
+                    src.connect(audioCtx.destination);
+                    src.start(0);
                 }
             } catch (e) { console.error("All audio failed:", e); }
         }
