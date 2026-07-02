@@ -1263,50 +1263,8 @@
             
             if (!soundEnabled) return;
             
-            // 1. Intentar con Web Audio API (Pitido Sintético)
-            try {
-                if (!audioCtx) initAudio();
-                
-                // Forzar resume si está suspendido (debería llamarse desde evento)
-                if (audioCtx && audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-
-                if (audioCtx && audioCtx.state === 'running') {
-                    const pulse = (freq, start, duration, vol) => {
-                        const osc = audioCtx.createOscillator();
-                        const gain = audioCtx.createGain();
-                        osc.type = 'square';
-                        osc.frequency.setValueAtTime(freq, start);
-                        gain.gain.setValueAtTime(0, start);
-                        gain.gain.linearRampToValueAtTime(vol, start + 0.01);
-                        gain.gain.linearRampToValueAtTime(0, start + duration);
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
-                        osc.start(start);
-                        osc.stop(start + duration);
-                    };
-
-                    const now = audioCtx.currentTime;
-                    if (dur < 0.1) {
-                        pulse(880, now, 0.05, 0.2); // Bip corto
-                    } else {
-                        // Melodía Ascendente 'Premium' (Re-Fa#-La)
-                        pulse(587.33, now, 0.1, 0.3);        // D5
-                        pulse(739.99, now + 0.12, 0.1, 0.3);  // F#5
-                        pulse(880.00, now + 0.24, 0.2, 0.3);  // A5
-                    }
-                    console.log("AudioContext played successfully");
-                    return; 
-                } else {
-                    console.warn("AudioContext NOT running (state: " + (audioCtx ? audioCtx.state : 'null') + ")");
-                }
-            } catch (e) { console.warn("Web Audio fail:", e); }
-
-            // 2. Fallback: HTML5 Audio
             try {
                 if (audioFallback) {
-                    console.log("Attempting HTML5 Audio fallback...");
                     audioFallback.volume = 0.8;
                     audioFallback.currentTime = 0;
                     const p = audioFallback.play();
