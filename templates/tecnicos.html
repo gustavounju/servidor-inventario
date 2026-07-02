@@ -855,115 +855,27 @@ function postJSON(url, body) {
 }
 
 // ── Audio ──────────────────────────────────────────
-function playBeep(type = 'new') {
+function playPacmanSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    if (type === 'new') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.15);
-      gain.gain.setValueAtTime(0.25, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.4);
-    } else if (type === 'done') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(520, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(780, ctx.currentTime + 0.2);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.5);
-    } else if (type === 'start') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(600, ctx.currentTime);
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.25);
+    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+    const audio = document.getElementById('sndNew');
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play().catch(e => console.log('Audio play error:', e));
     }
   } catch(e) {}
 }
 
-function playMessageAlarm() {
-  try {
-    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    const start = ctx.currentTime;
-    // Doble beep suave
-    [0, 0.2].forEach((offset) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(800, start + offset);
-      gain.gain.setValueAtTime(0, start + offset);
-      gain.gain.linearRampToValueAtTime(0.3, start + offset + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + offset + 0.15);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(start + offset);
-      osc.stop(start + offset + 0.2);
-    });
-  } catch(e) {}
+function playBeep(type = 'new') {
+  playPacmanSound();
 }
 
 function playMessageAlarm() {
-  try {
-    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    const start = ctx.currentTime;
-    // Doble beep super suave (Cyberpunk UI style)
-    [0, 0.2].forEach((offset) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, start + offset);
-      gain.gain.setValueAtTime(0, start + offset);
-      gain.gain.linearRampToValueAtTime(0.1, start + offset + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + offset + 0.15);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(start + offset);
-      osc.stop(start + offset + 0.2);
-    });
-  } catch(e) {}
+  playPacmanSound();
 }
 
 function playTaskAlarm() {
-  try {
-    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    const start = ctx.currentTime;
-    const pattern = [0, 0.1, 0.2];
-    const freqs = [523.25, 659.25, 783.99]; // Acorde C mayor: C5, E5, G5
-    pattern.forEach((offset, idx) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freqs[idx], start + offset);
-      gain.gain.setValueAtTime(0, start + offset);
-      gain.gain.linearRampToValueAtTime(0.15, start + offset + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + offset + 0.15);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(start + offset);
-      osc.stop(start + offset + 0.2);
-    });
-    setTimeout(() => ctx.close?.(), 2400);
-  } catch(e) {
-    playBeep('new');
-  }
+  playPacmanSound();
 }
 
 // ── Tabs ──────────────────────────────────────────
