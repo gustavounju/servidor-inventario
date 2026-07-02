@@ -606,7 +606,7 @@
                 }
                 // Fallback: Tono de alerta corto (C4)
                 if (!audioFallback) {
-                    audioFallback = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVtvT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT19vT18=");
+                    audioFallback = new Audio("{{ url_for('static', filename='audio/waka.wav') }}");
                     audioFallback.load();
                 }
             } catch (e) { console.error("Audio Init Error:", e); }
