@@ -510,6 +510,9 @@ def create_loose_task():
     except Exception as e:
         print(f"Error notifying: {e}")
 
+    ref = request.referrer
+    if ref:
+        return redirect(ref)
     return redirect(url_for("dashboard.dashboard"))
 
 @bp_tasks.route("/tasks/assign", methods=["POST"])
@@ -904,6 +907,12 @@ def visor():
 
         with get_db_connection() as conn:
             technicians = list_technician_users()
+            ad_users_list = [dict(row) for row in conn.execute("SELECT username, real_name FROM ad_users ORDER BY real_name").fetchall()]
+            fueros_rows = conn.execute("SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido' ORDER BY fuero").fetchall()
+            known_fueros = {row['fuero']: row['fuero'] for row in fueros_rows}
+            known_fueros.setdefault("PC Generica", "PC Generica")
+            known_fueros.setdefault("Infraestructura", "Infraestructura")
+            fueros_dict = dict(sorted(known_fueros.items(), key=lambda item: item[0].lower()))
             
             if is_filtered:
                 base_sql = "SELECT t.*, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE 1=1"
@@ -926,6 +935,8 @@ def visor():
                                        tareas_anteriores=[],
                                        tareas_pendientes=[],
                                        technicians=technicians,
+                                       ad_users_list=ad_users_list,
+                                       fueros=fueros_dict,
                                        hoy=fecha_filtro,
                                        pc_filtro=pc_filtro,
                                        tech_filtro=tech_filtro,
@@ -954,6 +965,8 @@ def visor():
                                        tareas_anteriores=[_decorate_visor_task(t) for t in tareas_anteriores],
                                        tareas_pendientes=[_decorate_visor_task(t) for t in tareas_pendientes],
                                        technicians=technicians,
+                                       ad_users_list=ad_users_list,
+                                       fueros=fueros_dict,
                                        hoy=fecha_filtro,
                                        is_filtered=False)
     except Exception as e:

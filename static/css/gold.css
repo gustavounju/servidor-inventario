@@ -4134,7 +4134,7 @@ body.has-fixed-header {
     display: inline-block;
     white-space: nowrap;
     padding-left: 100%;
-    animation: marquee-scroll 25s linear infinite;
+    animation: marquee-scroll 60s linear infinite;
 }
 .marquee-content:hover {
     animation-play-state: paused;

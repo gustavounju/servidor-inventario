@@ -31,9 +31,15 @@
     <!-- LADO DERECHO: HERRAMIENTAS DIRECTAS (Scroll Horizontal) -->
     <div class="op-toolbar__tools-zone">
         
+        {% if current_user and current_user.get('role') == 'administrador' %}
         <button class="op-btn op-btn--accent" data-bs-toggle="modal" data-bs-target="#createTaskModal" title="Crear Tarea Rápidamente">
             [+ TAREA]
         </button>
+        {% else %}
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted);" onclick="window.location.href='{{ url_for('auth.login') }}'" title="Requiere ser Administrador. Clic para iniciar sesión.">
+            [+ TAREA]
+        </button>
+        {% endif %}
         
         <span class="op-divider"></span>
 
@@ -113,8 +119,10 @@
     <div class="op-telemetry-item hide-mobile marquee-container" style="color: var(--accent-color); cursor: default; max-width: 45vw; border: none; background: transparent; padding: 0;">
         <div class="marquee-content" style="font-size: 0.75rem;">
             <span style="font-size: 1.1em; margin-right: 4px;">{{ efemeride_actual.icono }}</span>
-            <strong>{{ efemeride_actual.titulo }}</strong> 
-            <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">- {{ efemeride_actual.descripcion }}</span>
+            {% if efemeride_actual.titulo %}<strong>{{ efemeride_actual.titulo }}</strong>{% endif %}
+            {% if efemeride_actual.descripcion %}
+            <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">{% if efemeride_actual.titulo %}- {% endif %}{{ efemeride_actual.descripcion }}</span>
+            {% endif %}
         </div>
     </div>
     {% endif %}

@@ -921,14 +921,14 @@ function playMessageAlarm() {
     if (!Ctx) return;
     const ctx = new Ctx();
     const start = ctx.currentTime;
-    // Doble beep suave
+    // Doble beep super suave (Cyberpunk UI style)
     [0, 0.2].forEach((offset) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(800, start + offset);
+      osc.frequency.setValueAtTime(600, start + offset);
       gain.gain.setValueAtTime(0, start + offset);
-      gain.gain.linearRampToValueAtTime(0.3, start + offset + 0.05);
+      gain.gain.linearRampToValueAtTime(0.1, start + offset + 0.05);
       gain.gain.exponentialRampToValueAtTime(0.001, start + offset + 0.15);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -940,24 +940,25 @@ function playMessageAlarm() {
 
 function playTaskAlarm() {
   try {
-    if (navigator.vibrate) navigator.vibrate([350, 120, 350, 120, 500]);
+    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return;
     const ctx = new Ctx();
     const start = ctx.currentTime;
-    const pattern = [0, .32, .64, 1.05, 1.37, 1.69];
+    const pattern = [0, 0.1, 0.2];
+    const freqs = [523.25, 659.25, 783.99]; // Acorde C mayor: C5, E5, G5
     pattern.forEach((offset, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = idx % 2 ? 'square' : 'sawtooth';
-      osc.frequency.setValueAtTime(idx % 2 ? 1320 : 980, start + offset);
-      gain.gain.setValueAtTime(0.0001, start + offset);
-      gain.gain.exponentialRampToValueAtTime(0.9, start + offset + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.22);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freqs[idx], start + offset);
+      gain.gain.setValueAtTime(0, start + offset);
+      gain.gain.linearRampToValueAtTime(0.15, start + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + offset + 0.15);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(start + offset);
-      osc.stop(start + offset + 0.24);
+      osc.stop(start + offset + 0.2);
     });
     setTimeout(() => ctx.close?.(), 2400);
   } catch(e) {

@@ -77,24 +77,23 @@
 </script>
 
 <!-- Modal Crear Tarea Suelta -->
-<!-- Modal Crear Tarea Suelta -->
 <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 950px;">
-        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25); max-height: calc(100vh - 2rem);">
+        <div class="modal-content console-panel" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15); background: #0f172a; max-height: calc(100vh - 2rem);">
             <form id="formCrearTarea" action="{{ url_for('tasks.create_loose_task') }}" method="POST" style="display: flex; flex-direction: column; min-height: 0; height: 100%;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
-                <!-- Header moderno con gradiente -->
-                <div style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 0;">
+                <!-- Header Cyberpunk/Midnight -->
+                <div style="background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-color); position: relative; z-index: 10;">
                     <div style="padding: 24px 28px; display: flex; align-items: center; justify-content: space-between;">
                         <div style="display: flex; align-items: center; gap: 16px;">
-                            <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.12); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.15);">
-                                <i class="bi bi-plus-circle-fill" style="color: #fff; font-size: 1.2rem;"></i>
+                            <div style="width: 46px; height: 46px; background: rgba(56, 189, 248, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(56, 189, 248, 0.2);">
+                                <i class="bi bi-terminal-plus" style="color: var(--neon-blue); font-size: 1.2rem;"></i>
                             </div>
                             <div>
-                                <h5 class="modal-title mb-0 fw-bold text-white" id="createTaskModalLabel" style="font-size: 1.1rem; letter-spacing: -0.02em;">Nueva Tarea General</h5>
-                                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 3px;">
-                                    Carga pedidos rápidos del día y asigna técnicos a la bolsa global.
+                                <h5 class="modal-title mb-0 fw-bold text-white" id="createTaskModalLabel" style="font-size: 1.1rem; letter-spacing: -0.02em; font-family: var(--font-display);">NUEVA TAREA GENERAL</h5>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; font-family: var(--font-mono);">
+                                    > INGRESO MANUAL _
                                 </div>
                             </div>
                         </div>
@@ -102,23 +101,23 @@
                     </div>
                 </div>
 
-                <div class="modal-body" style="padding: 30px; background: #f8fafc; overflow-y: auto; flex: 1 1 auto; min-height: 0;">
-                    <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                <div class="modal-body" style="padding: 30px; background: transparent; overflow-y: auto; flex: 1 1 auto; min-height: 0;">
+                    <div class="um-form-grid" style="grid-template-columns: 1fr; gap: 24px; padding: 0;">
                         <div class="row g-4">
                             <!-- Columna Izquierda: Información Principal -->
                             <div class="col-lg-7">
-                                <div class="mb-4">
+                                <div class="mb-4 um-field">
                                     <label class="um-label">Descripción del Problema</label>
-                                    <textarea name="descripcion" class="form-control" rows="6" 
-                                              style="border-radius: 12px; border-color: #e2e8f0; font-size: 0.9rem; padding: 14px;"
+                                    <textarea name="descripcion" class="form-control bg-dark text-white border-secondary" rows="6" 
+                                              style="font-size: 0.9rem; padding: 14px; resize: vertical;"
                                               placeholder="Ej: El usuario no puede imprimir en mesa de entradas. El equipo parece estar offline o el driver está corrupto." required></textarea>
                                 </div>
-                                <div class="mb-0">
+                                <div class="mb-0 um-field">
                                     <label class="um-label">Solicitante (Quién realiza el pedido)</label>
                                     <div class="input-group">
-                                        <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-person"></i></span>
-                                        <input type="text" name="solicitante" class="form-control"
-                                            style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;"
+                                        <span class="input-group-text" style="background: rgba(0,0,0,0.2); border-color: var(--border-color); color: var(--text-muted); border-right: none;"><i class="bi bi-person"></i></span>
+                                        <input type="text" name="solicitante" class="form-control bg-dark text-white"
+                                            style="border-color: var(--border-color); border-left: none; font-size: 0.9rem;"
                                             placeholder="Ej: Juan Pérez / Contabilidad" 
                                             list="usersDatalist" required autocomplete="off">
                                     </div>
@@ -127,28 +126,16 @@
                                         <option value="{{ user.real_name }}">{{ user.username }}</option>
                                         {% endfor %}
                                     </datalist>
-                                    <div style="font-size: 0.7rem; color: #94a3b8; mt-2 ms-1">Puedes escribir el nombre completo o el usuario de red.</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; font-family: var(--font-mono);"><i class="bi bi-info-circle me-1"></i>Puedes escribir el nombre completo o el usuario de red.</div>
                                 </div>
                             </div>
 
                             <!-- Columna Derecha: Categorización y Asignación -->
                             <div class="col-lg-5">
                                 <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="um-label">Tipo de Actividad</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-briefcase"></i></span>
-                                            <select name="tipo_actividad" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
-                                                <option value="tarea">📝 Tarea (Mantenimiento / Pedido)</option>
-                                                <option value="incidente">🔥 Incidente (Falla / Interrupción)</option>
-                                                <option value="riesgo">⚠️ Riesgo (Alerta Preventiva)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-6">
+                                    <div class="col-12 um-field">
                                         <label class="um-label">Prioridad</label>
-                                        <select name="prioridad" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
+                                        <select name="prioridad" class="form-select bg-dark text-white border-secondary" style="font-size: 0.9rem;">
                                             <option value="1">1 - Baja</option>
                                             <option value="2">2 - Media</option>
                                             <option value="3">3 - Alta</option>
@@ -156,19 +143,9 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-6">
-                                        <label class="um-label">Impacto (1-4)</label>
-                                        <select name="impacto_valor" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
-                                            <option value="1">1 - Mínimo</option>
-                                            <option value="2">2 - Parcial</option>
-                                            <option value="3">3 - Generalizado</option>
-                                            <option value="4">4 - Bloqueante</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-12">
+                                    <div class="col-12 um-field">
                                         <label class="um-label">Categoría Técnica</label>
-                                        <select name="categoria" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
+                                        <select name="categoria" class="form-select bg-dark text-white border-secondary" style="font-size: 0.9rem;">
                                             <option value="">-- Detección Automática --</option>
                                             <option value="Audiencias">🎥 Audiencias</option>
                                             <option value="Impresoras">🖨️ Impresoras</option>
@@ -180,11 +157,11 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-12">
+                                    <div class="col-12 um-field">
                                         <label class="um-label">Fuero / Ubicación</label>
                                         <div class="input-group">
-                                            <span class="input-group-text" style="background: #fff; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-geo-alt"></i></span>
-                                            <select name="fuero" class="form-select" style="border-left: none; border-color: #e2e8f0; font-size: 0.9rem;">
+                                            <span class="input-group-text" style="background: rgba(0,0,0,0.2); border-color: var(--border-color); color: var(--text-muted); border-right: none;"><i class="bi bi-geo-alt"></i></span>
+                                            <select name="fuero" class="form-select bg-dark text-white" style="border-color: var(--border-color); border-left: none; font-size: 0.9rem;">
                                                 <option value="">-- No Especificado --</option>
                                                 {% for name in fueros.values()|unique|sort %}
                                                 <option value="{{ name }}">{{ name }}</option>
@@ -193,9 +170,9 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-12">
+                                    <div class="col-12 um-field">
                                         <label class="um-label">Asignar a Técnico</label>
-                                        <select name="technician" class="form-select" style="border-color: #e2e8f0; font-size: 0.9rem;">
+                                        <select name="technician" class="form-select bg-dark text-white border-secondary" style="font-size: 0.9rem;">
                                             <option value="">-- Sin Asignar (Bolsa Global) --</option>
                                             {% for tech in technicians %}
                                             <option value="{{ tech.name }}">{{ tech.name }}</option>
@@ -203,43 +180,36 @@
                                         </select>
                                     </div>
                                     
-                                    <div class="col-12">
-                                        <div style="background: #eff6ff; color: #1e40af; padding: 10px; border-radius: 10px; font-size: 0.72rem; border: 1px solid #dbeafe;">
-                                            <i class="bi bi-info-circle-fill me-1"></i> El impacto y la prioridad definen el orden en el "Centro de Decisión".
-                                        </div>
-                                    </div>
+
                                     <div class="col-12 mt-2">
                                         <div class="form-check form-switch mb-2">
                                             <input class="form-check-input" type="checkbox" id="is_done_shared" name="is_done">
-                                            <label class="form-check-label um-label mb-0" for="is_done_shared" style="cursor:pointer; font-weight: 700; color: #1e40af;">Esta tarea ya está resuelta</label>
+                                            <label class="form-check-label um-label mb-0" for="is_done_shared" style="cursor:pointer; color: var(--neon-green);">[ MARCAR COMO RESUELTA ]</label>
                                         </div>
-                                        <div id="solucion_container_shared" style="display: none; background: #fff; border: 1px solid #dbeafe; border-radius: 12px; padding: 12px; margin-top: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
-                                            <label class="um-label" style="color: #1e40af;"><i class="bi bi-check2-all me-1"></i> Detalle de la Solución</label>
-                                            <textarea name="solucion" id="solucion_shared" class="form-control" rows="3" 
-                                                      style="border-radius: 8px; border-color: #dbeafe; font-size: 0.85rem; padding: 10px;"
-                                                      placeholder="Explica brevemente cómo se solucionó el pedido..."></textarea>
+                                        <div id="solucion_container_shared" style="display: none; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                            <label class="um-label" style="color: var(--neon-green);"><i class="bi bi-terminal-check me-1"></i> LOG DE SOLUCIÓN</label>
+                                            <textarea name="solucion" id="solucion_shared" class="form-control bg-dark text-white border-secondary" rows="3" 
+                                                      style="font-size: 0.85rem; padding: 10px; font-family: var(--font-mono);"
+                                                      placeholder="> Explica brevemente la resolución..."></textarea>
                                         </div>
                                     </div>
 
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-
-
-                <div class="modal-footer" style="padding: 16px 30px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; flex: 0 0 auto;">
-                    <button type="button" class="btn btn-link text-decoration-none text-muted fw-bold" data-bs-dismiss="modal" style="font-size: 0.85rem;">Cancelar</button>
-                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #1e293b, #334155); color: #fff; border: none; padding: 10px 32px; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s;">
-                        <i class="bi bi-send-fill me-2"></i> Crear Tarea
+                <div class="modal-footer" style="padding: 16px 30px; background: rgba(15, 23, 42, 0.95); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; flex: 0 0 auto;">
+                    <button type="button" class="btn btn-link text-decoration-none text-muted fw-bold" data-bs-dismiss="modal" style="font-size: 0.85rem; font-family: var(--font-mono);">[ CANCELAR ]</button>
+                    <button type="submit" class="btn" style="background: rgba(56, 189, 248, 0.1); color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 8px 24px; border-radius: 8px; font-weight: 700; font-family: var(--font-display); letter-spacing: 0.05em; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); transition: all 0.2s;">
+                        <i class="bi bi-send-fill me-2"></i> INICIAR TAREA
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
 <!-- Modal Gestión de Usuarios -->
 <div class="modal fade" id="usersModal" tabindex="-1" aria-labelledby="usersModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">

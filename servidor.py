@@ -196,20 +196,29 @@ def _load_kpis_from_db(user_auth):
         'app_users_list': [], 'all_pcs': [], 'kpi_usuarios_pendientes': 0
     }
     
-    efemeride_actual = None
-    
+    efemeride_bd = None
     try:
         with get_db_connection() as conn:
             efemeride_activa = conn.execute("SELECT * FROM efemerides WHERE is_active = 1 LIMIT 1").fetchone()
             if efemeride_activa:
-                efemeride_actual = dict(efemeride_activa)
+                efemeride_bd = dict(efemeride_activa)
             else:
                 today_mmdd = datetime.datetime.now().strftime("%m-%d")
                 efemeride_hoy = conn.execute("SELECT * FROM efemerides WHERE dia_mes = %s LIMIT 1", (today_mmdd,)).fetchone()
                 if efemeride_hoy:
-                    efemeride_actual = dict(efemeride_hoy)
+                    efemeride_bd = dict(efemeride_hoy)
     except Exception as e:
         logging.error(f"Error fetching efemerides: {e}")
+        
+    noticia_str = ""
+    try:
+        from services.tech_news import get_latest_tech_news
+        import random
+        news_list = get_latest_tech_news()
+        if news_list:
+            noticia_str = random.choice(news_list)
+    except Exception as e:
+        logging.error(f"Error fetching tech news: {e}")
         
     mensajes_motivacionales = [
         {'titulo': 'Trabajo en equipo', 'descripcion': 'El talento gana partidos, pero el trabajo en equipo gana campeonatos.', 'icono': '🤝'},
@@ -243,16 +252,21 @@ def _load_kpis_from_db(user_auth):
         {'titulo': 'Visión', 'descripcion': 'El buen diseño añade valor más rápido de lo que añade coste.', 'icono': '👁️'},
         {'titulo': 'Descanso', 'descripcion': 'A veces la mejor manera de resolver un problema es alejarse del teclado 5 minutos.', 'icono': '🛌'}
     ]
-    today_yday = datetime.datetime.now().timetuple().tm_yday
-    # Use modulo arithmetic to ensure a guaranteed different phrase every day
-    index = (today_yday * 7) % len(mensajes_motivacionales)
-    msg = mensajes_motivacionales[index]
+    import random
+    msg = random.choice(mensajes_motivacionales)
     
-    if efemeride_actual:
-        # Append motivational message to the end of the efemeride description
-        efemeride_actual['descripcion'] = f"{efemeride_actual['descripcion']}  |  {msg['icono']} {msg['titulo']}: {msg['descripcion']}"
-    else:
-        efemeride_actual = msg
+    partes = []
+    if efemeride_bd:
+        partes.append(f"{efemeride_bd['icono']} {efemeride_bd['titulo']}: {efemeride_bd['descripcion']}")
+    if noticia_str:
+        partes.append(f"🌐 {noticia_str}")
+    partes.append(f"{msg['icono']} {msg['descripcion']}")
+    
+    efemeride_actual = {
+        'titulo': '',
+        'descripcion': "  |  ".join(partes),
+        'icono': '📡'
+    }
         
     extra_data['efemeride_actual'] = efemeride_actual
     
