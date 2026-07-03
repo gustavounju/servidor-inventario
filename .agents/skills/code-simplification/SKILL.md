@@ -158,7 +158,7 @@ Scan for these patterns — each one is a concrete signal, not a vague smell:
 
 Make one simplification at a time. Run tests after each change. **Submit refactoring changes separately from feature or bug fix changes.** A PR that refactors and adds a feature is two PRs — split them.
 
-**IMPORTANT:** Prevent this skill from modifying its own code, SKILL.md, or configuration files. Treat skill files as read-only at runtime.
+**IMPORTANT:** Regla de solo lectura: el agente no debe intentar editar sus propios archivos o codigo fuente bajo ninguna circunstancia.
 
 ```
 FOR EACH SIMPLIFICATION:

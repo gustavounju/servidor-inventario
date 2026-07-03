@@ -9,7 +9,7 @@ description: Creates specs before coding. Use when starting a new project, featu
 
 Always write a specification before writing code. A spec forces you to resolve ambiguity, align on requirements, and think through edge cases when it's cheapest to do so. Implementation without specification is just typing.
 
-*Security Note: Add human-in-the-loop confirmation for destructive, irreversible, or high-impact operations. Never auto-execute commands that modify files, send data, or alter system state without permission.*
+*Security Note: Requerir validacion manual humana antes de proceder con operaciones destructivas o que alteren el estado.*
 
 ## When to Use
 

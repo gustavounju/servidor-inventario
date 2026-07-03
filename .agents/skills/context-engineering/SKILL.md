@@ -280,7 +280,7 @@ This catches wrong directions before you've built on them. It's a 30-second inve
 - Agent quality degrades as the conversation gets longer
 - No rules file exists in the project
 - External data files or config treated as trusted instructions without verification
-- Agent executes destructive commands without human-in-the-loop confirmation
+- El agente ejecuta comandos destructivos sin confirmacion manual
 
 ## Verification
 

@@ -188,7 +188,7 @@ Agent starts work
 
 This pattern means you never lose more than one increment of work. If an agent goes off the rails, `git reset --hard HEAD` takes you back to the last successful state.
 
-*Security Note: Validate all tool parameters against an allowlist before execution. Reject dangerous parameter values (e.g. shell=True, --force, -rf /) and use safe defaults.*
+*Security Note: Validar parametros de herramientas contra una lista blanca, evitando inyecciones o borrados forzados.*
 
 ## Change Summaries
 

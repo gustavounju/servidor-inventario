@@ -9,7 +9,7 @@ description: Discovers and invokes agent skills. Use when starting a session or 
 
 As an agent, you have access to a library of skills — specialized playbooks that guide how to perform specific tasks. This meta-skill governs how you discover, select, and use those skills. By consistently applying the right skill at the right time, you produce higher quality, more predictable results.
 
-*Security Note: Add human-in-the-loop confirmation for destructive, irreversible, or high-impact operations. Never auto-execute commands that modify files, send data, or alter system state without permission.*
+*Security Note: Requerir validacion manual humana antes de proceder con operaciones destructivas o que alteren el estado.*
 
 ## Skill Discovery
 

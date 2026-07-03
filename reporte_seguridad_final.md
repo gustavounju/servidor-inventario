@@ -2,7 +2,7 @@
 
 **Skill:** unknown  
 **Source:** `G:\unju2025\google gravity\ServidorInventario\.agents\skills`  
-**Scanned:** 2026-06-22 02:18:54 UTC  
+**Scanned:** 2026-07-03 00:09:38 UTC  
 
 ## Risk Assessment
 
@@ -16,12 +16,12 @@
 
 | File | Type | Lines | Executable |
 |------|------|-------|------------|
-| `api-and-interface-design\SKILL.md` | markdown | 294 | No |
+| `api-and-interface-design\SKILL.md` | markdown | 296 | No |
 | `browser-testing-with-devtools\SKILL.md` | markdown | 304 | No |
 | `ci-cd-and-automation\SKILL.md` | markdown | 390 | No |
 | `code-review-and-quality\SKILL.md` | markdown | 347 | No |
-| `code-simplification\SKILL.md` | markdown | 331 | No |
-| `context-engineering\SKILL.md` | markdown | 289 | No |
+| `code-simplification\SKILL.md` | markdown | 333 | No |
+| `context-engineering\SKILL.md` | markdown | 292 | No |
 | `cso\SKILL.md` | markdown | 78 | No |
 | `debugging-and-error-recovery\SKILL.md` | markdown | 300 | No |
 | `deploy\SKILL.md` | markdown | 79 | No |
@@ -32,8 +32,8 @@
 | `frontend-design\LICENSE.txt` | text | 177 | No |
 | `frontend-design\SKILL.md` | markdown | 67 | No |
 | `frontend-ui-engineering\SKILL.md` | markdown | 328 | No |
-| `git-workflow-and-versioning\SKILL.md` | markdown | 300 | No |
-| `guard\SKILL.md` | markdown | 74 | No |
+| `git-workflow-and-versioning\SKILL.md` | markdown | 302 | No |
+| `guard\SKILL.md` | markdown | 75 | No |
 | `idea-refine\SKILL.md` | markdown | 178 | No |
 | `idea-refine\examples.md` | markdown | 238 | No |
 | `idea-refine\frameworks.md` | markdown | 99 | No |
@@ -46,18 +46,18 @@
 | `performance-optimization\SKILL.md` | markdown | 350 | No |
 | `plan-ceo-review\SKILL.md` | markdown | 60 | No |
 | `plan-eng-review\SKILL.md` | markdown | 66 | No |
-| `planning-and-task-breakdown\SKILL.md` | markdown | 223 | No |
+| `planning-and-task-breakdown\SKILL.md` | markdown | 225 | No |
 | `qa\SKILL.md` | markdown | 51 | No |
 | `review\SKILL.md` | markdown | 61 | No |
-| `security-and-hardening\SKILL.md` | markdown | 461 | No |
+| `security-and-hardening\SKILL.md` | markdown | 462 | No |
 | `ship\SKILL.md` | markdown | 53 | No |
 | `shipping-and-launch\SKILL.md` | markdown | 309 | No |
 | `source-driven-development\SKILL.md` | markdown | 194 | No |
-| `spec-driven-development\SKILL.md` | markdown | 200 | No |
+| `spec-driven-development\SKILL.md` | markdown | 202 | No |
 | `test-driven-development\SKILL.md` | markdown | 383 | No |
-| `using-agent-skills\SKILL.md` | markdown | 189 | No |
+| `using-agent-skills\SKILL.md` | markdown | 191 | No |
 
-## Issues (23)
+## Issues (19)
 
 ### 🟢 LOW: EA3
 
@@ -72,7 +72,7 @@
 
 ### 🟡 MEDIUM: EA1
 
-**Location:** `context-engineering\SKILL.md:74`  
+**Location:** `context-engineering\SKILL.md:75`  
 **Confidence:** 85%  
 
 **Message:** Unrestricted Tool Access
@@ -83,7 +83,7 @@
 
 ### 🟡 MEDIUM: EA2
 
-**Location:** `context-engineering\SKILL.md:66`  
+**Location:** `context-engineering\SKILL.md:67`  
 **Confidence:** 75%  
 
 **Message:** Autonomous Decision Making
@@ -94,8 +94,19 @@
 
 ### 🟡 MEDIUM: EA2
 
-**Location:** `context-engineering\SKILL.md:280`  
+**Location:** `context-engineering\SKILL.md:282`  
 **Confidence:** 75%  
+
+**Message:** Autonomous Decision Making
+
+**Remediation:** Add human-in-the-loop confirmation for destructive, irreversible, or high-impact operations. Never auto-execute commands that modify files, send data, or alter system state.
+
+---
+
+### 🟡 MEDIUM: EA2
+
+**Location:** `context-engineering\SKILL.md:66`  
+**Confidence:** 85%  
 
 **Message:** Autonomous Decision Making
 
@@ -149,7 +160,7 @@
 
 ### 🟡 MEDIUM: EA2
 
-**Location:** `planning-and-task-breakdown\SKILL.md:209`  
+**Location:** `planning-and-task-breakdown\SKILL.md:211`  
 **Confidence:** 75%  
 
 **Message:** Autonomous Decision Making
@@ -171,7 +182,7 @@
 
 ### 🟡 MEDIUM: EA2
 
-**Location:** `spec-driven-development\SKILL.md:80`  
+**Location:** `spec-driven-development\SKILL.md:82`  
 **Confidence:** 75%  
 
 **Message:** Autonomous Decision Making
@@ -182,7 +193,7 @@
 
 ### 🟡 MEDIUM: EA2
 
-**Location:** `using-agent-skills\SKILL.md:117`  
+**Location:** `using-agent-skills\SKILL.md:119`  
 **Confidence:** 75%  
 
 **Message:** Autonomous Decision Making
@@ -193,67 +204,12 @@
 
 ### 🟡 MEDIUM: EA2
 
-**Location:** `using-agent-skills\SKILL.md:132`  
+**Location:** `using-agent-skills\SKILL.md:134`  
 **Confidence:** 85%  
 
 **Message:** Autonomous Decision Making
 
 **Remediation:** Add human-in-the-loop confirmation for destructive, irreversible, or high-impact operations. Never auto-execute commands that modify files, send data, or alter system state.
-
----
-
-### 🔴 HIGH: PE3
-
-**Location:** `context-engineering\SKILL.md:65`  
-**Confidence:** 60%  
-
-**Message:** Credential Access
-
-**Remediation:** Remove references to credential paths. Use environment variables or secrets managers. For docs, use placeholder paths (e.g., /path/to/config). Never load .env or token files in production code paths.
-
----
-
-### 🔴 HIGH: PE3
-
-**Location:** `security-and-hardening\SKILL.md:334`  
-**Confidence:** 60%  
-
-**Message:** Credential Access
-
-**Remediation:** Remove references to credential paths. Use environment variables or secrets managers. For docs, use placeholder paths (e.g., /path/to/config). Never load .env or token files in production code paths.
-
----
-
-### 🔴 HIGH: PE3
-
-**Location:** `security-and-hardening\SKILL.md:337`  
-**Confidence:** 60%  
-
-**Message:** Credential Access
-
-**Remediation:** Remove references to credential paths. Use environment variables or secrets managers. For docs, use placeholder paths (e.g., /path/to/config). Never load .env or token files in production code paths.
-
----
-
-### 🔴 HIGH: PE3
-
-**Location:** `security-and-hardening\SKILL.md:338`  
-**Confidence:** 60%  
-
-**Message:** Credential Access
-
-**Remediation:** Remove references to credential paths. Use environment variables or secrets managers. For docs, use placeholder paths (e.g., /path/to/config). Never load .env or token files in production code paths.
-
----
-
-### 🔴 HIGH: P1
-
-**Location:** `browser-testing-with-devtools\SKILL.md:65`  
-**Confidence:** 80%  
-
-**Message:** Instruction Override
-
-**Remediation:** Remove or rewrite any text that instructs the agent to ignore prompts, override safety rules, or trust unverified content. Ensure skill content cannot be injected to alter agent behavior.
 
 ---
 
@@ -270,7 +226,7 @@
 
 ### 🔴 HIGH: TM1
 
-**Location:** `api-and-interface-design\SKILL.md:165`  
+**Location:** `api-and-interface-design\SKILL.md:167`  
 **Confidence:** 80%  
 
 **Message:** Tool Parameter Abuse
