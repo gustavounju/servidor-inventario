@@ -9,7 +9,7 @@ def verify():
     connection = pymysql.connect(
         host=os.getenv('DB_HOST', '127.0.0.1'),
         user=os.getenv('DB_USER', 'root'),
-        password=os.getenv('DB_PASS', 'tdg729tdg'),
+        password=os.getenv('DB_PASS', '[CONTRASEÑA_OCULTA]'),
         database=os.getenv('DB_NAME', 'inventario_dev'),
         port=int(os.getenv('DB_PORT', 3306)),
         cursorclass=pymysql.cursors.DictCursor

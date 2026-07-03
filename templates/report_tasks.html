@@ -47,13 +47,13 @@
                         <div class="row g-2 mb-3" id="statsRow">
                             <div class="col-6">
                                 <div class="stat-card text-center">
-                                    <div class="count-badge" id="statHechas" style="color:#22c55e;">—</div>
+                                    <div class="count-badge text-success" id="statHechas">—</div>
                                     <div class="section-label">Completadas</div>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="stat-card text-center">
-                                    <div class="count-badge" id="statPend" style="color:#f59e0b;">—</div>
+                                    <div class="count-badge text-warning" id="statPend">—</div>
                                     <div class="section-label">Pendientes</div>
                                 </div>
                             </div>
@@ -131,24 +131,20 @@
 
                     <!-- Tareas Pendientes -->
                     <div class="card shadow-sm">
-                        <div class="card-header"
-                            style="background:rgba(220,53,69,0.08);border-bottom:1px solid rgba(220,53,69,0.15);">
-                            <span style="color:#dc3545;font-weight:700;font-size:0.88rem;"><i
-                                    class="bi bi-clock-history me-2"></i>Pendientes / Generadas ese día</span>
-                            <span class="badge rounded-pill ms-2"
-                                style="background:rgba(220,53,69,0.12);color:#dc3545;font-size:0.75rem;"
-                                id="badgePend">—</span>
+                        <div class="gold-card-header modal-danger d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-clock-history me-2"></i>Pendientes / Generadas ese día</span>
+                            <span class="badge rounded-pill" style="background:rgba(255,255,255,0.2);font-size:0.75rem;" id="badgePend">—</span>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table mb-0 preview-table">
-                                    <thead style="background:#dc3545 !important;">
+                                    <thead class="modal-danger">
                                         <tr>
-                                            <th style="background:#dc3545 !important;">PC</th>
-                                            <th style="background:#dc3545 !important;">Descripción</th>
-                                            <th style="background:#dc3545 !important;">Solicitante</th>
-                                            <th style="background:#dc3545 !important;">Estado</th>
-                                            <th style="background:#dc3545 !important;">Asignado</th>
+                                            <th>PC</th>
+                                            <th>Descripción</th>
+                                            <th>Solicitante</th>
+                                            <th>Estado</th>
+                                            <th>Asignado</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tbodyPend">
@@ -234,7 +230,7 @@
                             <td><span class="badge bg-secondary">${escHtml(t.pc_name)}</span></td>
                             <td>${escHtml(t.descripcion)}</td>
                             <td><small>${escHtml(t.solicitante)}</small></td>
-                            <td><span class="fw-600" style="color:#22c55e;">${escHtml(t.completed_by)}</span></td>
+                            <td><span class="fw-600 text-success">${escHtml(t.completed_by)}</span></td>
                             <td class="text-muted"><small>${fmtDatetime(t.completed_at)}</small></td>
                         </tr>
                     `).join('');
@@ -250,7 +246,7 @@
                             <td><span class="badge bg-secondary">${escHtml(t.pc_name)}</span></td>
                             <td>${escHtml(t.descripcion)}</td>
                             <td><small>${escHtml(t.solicitante)}</small></td>
-                            <td><span class="badge" style="background:rgba(220,53,69,0.12);color:#dc3545;">${escHtml(t.estado)}</span></td>
+                            <td><span class="badge bg-danger text-white">${escHtml(t.estado)}</span></td>
                             <td><small class="text-muted">${escHtml(t.assigned_to)}</small></td>
                         </tr>
                     `).join('');

@@ -79,7 +79,7 @@ INVENTARIO_PUBLIC_BASE_URL=https://10.15.2.251:5000
 INVENTARIO_PUBLIC_HTTP_FALLBACK_URL=http://10.15.2.251:8080
 
 BOOTSTRAP_ADMIN_USERNAME=administrador
-BOOTSTRAP_ADMIN_PASSWORD=tdg729tdg
+BOOTSTRAP_ADMIN_PASSWORD=[CONTRASEÑA_OCULTA]
 
 AUTH_MODE=local
 
@@ -167,7 +167,7 @@ sudo ufw allow 8080/tcp
 Al primer arranque, si la tabla `app_users` esta vacia, se crea automaticamente:
 
 - usuario: `administrador`
-- clave: `tdg729tdg`
+- clave: `[CONTRASEÑA_OCULTA]`
 
 Luego entra al sistema y haz esto:
 

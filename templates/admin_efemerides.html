@@ -149,7 +149,7 @@
                         </div>
                         <p class="text-muted-dark small mb-2">Si se activa, este mensaje reemplazará las efemérides y noticias regulares en todas las pantallas del sistema, incluyendo la vista móvil de los técnicos.</p>
                         <div class="d-flex gap-2">
-                            <input type="text" id="globalMessageText" class="form-control form-control-dark font-mono" placeholder="Ej: ALERTA: Servidor de base de datos en mantenimiento preventivo a las 14:00" value="{{ custom_message.text }}">
+                            <input type="text" id="globalMessageText" class="form-control form-control-dark font-mono" placeholder="Ej: ALERTA: Servidor de base de datos en mantenimiento preventivo a las 14:00" value="{{ custom_message.text }}" aria-label="Mensaje global">
                             <button class="btn btn-outline-warning text-warning" onclick="updateGlobalMessage()" style="border-color: rgba(250, 204, 21, 0.5);"><i class="fas fa-save"></i> Guardar</button>
                         </div>
                     </div>
@@ -259,20 +259,20 @@
                                                                 <div class="modal-body text-start">
                                                                     <div class="mb-3">
                                                                         <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Día y Mes</label>
-                                                                        <input type="text" class="form-control form-control-dark font-mono" name="dia_mes" value="{{ e.dia_mes }}" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]">
+                                                                        <input type="text" class="form-control form-control-dark font-mono" name="dia_mes" value="{{ e.dia_mes }}" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]" aria-label="Día y Mes">
                                                                         <div class="form-text text-muted-dark mt-1" style="font-size: 0.75rem;">Formato MM-DD (Ej: 05-25)</div>
                                                                     </div>
                                                                     <div class="mb-3">
                                                                         <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Título</label>
-                                                                        <input type="text" class="form-control form-control-dark" name="titulo" value="{{ e.titulo }}" required>
+                                                                        <input type="text" class="form-control form-control-dark" name="titulo" value="{{ e.titulo }}" required aria-label="Título">
                                                                     </div>
                                                                     <div class="mb-3">
                                                                         <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Descripción (Hover)</label>
-                                                                        <textarea class="form-control form-control-dark" name="descripcion" rows="2">{{ e.descripcion }}</textarea>
+                                                                        <textarea class="form-control form-control-dark" name="descripcion" rows="2" aria-label="Descripción">{{ e.descripcion }}</textarea>
                                                                     </div>
                                                                     <div class="mb-3">
                                                                         <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Ícono (Emoji)</label>
-                                                                        <input type="text" class="form-control form-control-dark fs-5" name="icono" value="{{ e.icono }}" required>
+                                                                        <input type="text" class="form-control form-control-dark fs-5" name="icono" value="{{ e.icono }}" required aria-label="Ícono">
                                                                     </div>
                                                                 </div>
                                                                 <div class="modal-footer modal-footer-dark">
@@ -315,20 +315,20 @@
                     <div class="modal-body text-start">
                         <div class="mb-3">
                             <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Día y Mes</label>
-                            <input type="text" class="form-control form-control-dark font-mono" name="dia_mes" required placeholder="05-25" pattern="[0-1][0-9]-[0-3][0-9]">
+                            <input type="text" class="form-control form-control-dark font-mono" name="dia_mes" required placeholder="05-25" pattern="[0-1][0-9]-[0-3][0-9]" aria-label="Día y Mes">
                             <div class="form-text text-muted-dark mt-1" style="font-size: 0.75rem;">Formato MM-DD (Ej: 05-25)</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Título</label>
-                            <input type="text" class="form-control form-control-dark" name="titulo" required placeholder="Ej: Revolución de Mayo">
+                            <input type="text" class="form-control form-control-dark" name="titulo" required placeholder="Ej: Revolución de Mayo" aria-label="Título">
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Descripción (Hover)</label>
-                            <textarea class="form-control form-control-dark" name="descripcion" rows="2" placeholder="Breve texto informativo..."></textarea>
+                            <textarea class="form-control form-control-dark" name="descripcion" rows="2" placeholder="Breve texto informativo..." aria-label="Descripción"></textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Ícono (Emoji)</label>
-                            <input type="text" class="form-control form-control-dark fs-5" name="icono" value="🇦🇷" required>
+                            <input type="text" class="form-control form-control-dark fs-5" name="icono" value="🇦🇷" required aria-label="Ícono">
                         </div>
                     </div>
                     <div class="modal-footer modal-footer-dark">

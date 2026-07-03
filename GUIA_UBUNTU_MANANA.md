@@ -16,7 +16,7 @@ En Windows:
 2. Lleva anotado que ahora el sistema crea el usuario inicial automaticamente si la tabla `app_users` esta vacia.
 3. Credencial inicial del sistema:
    - Usuario: `administrador`
-   - Clave: `tdg729tdg`
+   - Clave: `[CONTRASEÑA_OCULTA]`
 
 Notas:
 
@@ -58,8 +58,8 @@ INVENTARIO_PUBLIC_HTTP_FALLBACK_URL=http://10.15.2.251:8080
 # Autenticación Inicial
 AUTH_MODE=local
 BOOTSTRAP_ADMIN_USERNAME=administrador
-BOOTSTRAP_ADMIN_PASSWORD=[OCULTA]
-INVENTARIO_API_TOKEN=[OCULTA]
+BOOTSTRAP_ADMIN_PASSWORD=[CONTRASEÑA_OCULTA]
+INVENTARIO_API_TOKEN=[CONTRASEÑA_OCULTA]
 
 # Dejalo en false si todavia entras por HTTP interno.
 # Cuando consolides HTTPS con Nginx, cambialo a true.
@@ -125,7 +125,7 @@ Al arrancar, el sistema ahora hace esto solo:
 1. inicializa MySQL
 2. ejecuta migraciones
 3. crea la tabla `app_users` si no existe
-4. crea el usuario inicial `administrador / [OCULTA]` solo si no hay usuarios cargados
+4. crea el usuario inicial `administrador / [CONTRASEÑA_OCULTA]` solo si no hay usuarios cargados
 
 No deberias correr SQL manual para esta parte.
 
@@ -139,7 +139,7 @@ Desde tu PC Windows del trabajo:
    ssh administrador@10.15.3.20
    ```
    - Usuario: `administrador`
-   - Clave: `[OCULTA]`
+   - Clave: `[CONTRASEÑA_OCULTA]`
 3. abre el modal `Usuarios`
 4. en la parte `Usuarios del sistema`, crea tu usuario propio marcandolo como `Superusuario`
 5. cierra sesion

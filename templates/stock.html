@@ -279,7 +279,7 @@
                             statusHtml = `<span class="stock-badge status-retired">✕ Retirado</span>`;
                         }
 
-                        let deleteBtn = `<button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteComponent('${item.serial_number}')" title="Eliminar definitivamente"><i class="bi bi-trash"></i></button>`;
+                        let deleteBtn = `<button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteComponent('${item.serial_number}')" title="Eliminar definitivamente" aria-label="Eliminar definitivamente"><i class="bi bi-trash"></i></button>`;
                         actionBtn = actionBtn === '' ? deleteBtn : actionBtn + ' ' + deleteBtn;
 
                         let assignedLink = item.assigned_pc ? `<a href="/pc/${item.assigned_pc}">${item.assigned_pc}</a>` : '-';

@@ -93,7 +93,7 @@ if [[ -f "$APP_DIR/.env" ]]; then
     update_env "SESSION_COOKIE_SECURE"           "false"
     update_env "AUTH_MODE"                       "local"
     update_env "BOOTSTRAP_ADMIN_USERNAME"        "administrador"
-    update_env "BOOTSTRAP_ADMIN_PASSWORD"        "tdg729tdg"
+    update_env "BOOTSTRAP_ADMIN_PASSWORD"        "[CONTRASEÑA_OCULTA]"
 
     # Si FLASK_SECRET_KEY vacia o no existe, generar una
     if ! grep -q "^FLASK_SECRET_KEY=." "$APP_DIR/.env"; then
@@ -132,7 +132,7 @@ INVENTARIO_PUBLIC_BASE_URL=${KNOWN_INVENTARIO_HTTPS}
 INVENTARIO_PUBLIC_HTTP_FALLBACK_URL=${KNOWN_INVENTARIO_HTTP}
 
 BOOTSTRAP_ADMIN_USERNAME=administrador
-BOOTSTRAP_ADMIN_PASSWORD=tdg729tdg
+BOOTSTRAP_ADMIN_PASSWORD=[CONTRASEÑA_OCULTA]
 
 AUTH_MODE=local
 
@@ -194,6 +194,6 @@ echo "║  DB:       ${KNOWN_DB_HOST}:${KNOWN_DB_PORT}/${KNOWN_DB_NAME}         
 echo "╠══════════════════════════════════════════════════════╣"
 echo "║  Login inicial (si app_users vacia):                 ║"
 echo "║    Usuario: administrador                            ║"
-echo "║    Clave:   tdg729tdg                                ║"
+echo "║    Clave:   [CONTRASEÑA_OCULTA]                                ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""

@@ -45,5 +45,5 @@ El script hace **todo solo**:
 
 ## Primer login
 
-- Usuario: `administrador` / Clave: `[OCULTA]`
+- Usuario: `administrador` / Clave: `[CONTRASEÑA_OCULTA]`
 - Ir a `Usuarios` → crear tu superusuario → cerrar sesion → entrar con el tuyo → borrar `administrador`
