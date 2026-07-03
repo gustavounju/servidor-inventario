@@ -7,35 +7,35 @@
 /* ===== GOOGLE FONTS ===== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap');
 
-/* ===== VARIABLES DE TEMA — MIDNIGHT RADAR (Por Defecto / Dark Technical) ===== */
+/* ===== VARIABLES DE TEMA — INDUSTRIAL VOID (Por Defecto / High-Vis) ===== */
 :root {
-    --bg-color: #0B0E14;
-    --text-color: #E2E8F0;
-    --text-muted: #94A3B8;
-    --card-bg: #151A22;
-    --card-border: #2A3241;
-    --accent-color: #FACC15;
-    --accent-dark: #CA8A04;
+    --bg-color: #09090B;
+    --text-color: #FAFAFA;
+    --text-muted: #A1A1AA;
+    --card-bg: #18181B;
+    --card-border: #3F3F46;
+    --accent-color: #F59E0B;
+    --accent-dark: #D97706;
     --primary-gradient: none;
     --secondary-gradient: none;
     --hero-bg: transparent;
-    --table-header-bg: #151A22;
-    --glass-bg: rgba(21, 26, 34, 0.6);
-    --glass-border: rgba(42, 50, 65, 0.5);
+    --table-header-bg: #18181B;
+    --glass-bg: rgba(24, 24, 27, 0.8);
+    --glass-border: rgba(63, 63, 70, 0.5);
     --kpi-shadow: none;
-    --border-color: #2A3241;
-    --input-focus-shadow: rgba(250, 204, 21, 0.25);
-    --navbar-bg: #0B0E14;
-    --navbar-border: #2A3241;
-    --radius-xl: 4px;
-    --radius-lg: 4px;
+    --border-color: #3F3F46;
+    --input-focus-shadow: rgba(245, 158, 11, 0.25);
+    --navbar-bg: #111827;
+    --navbar-border: #3F3F46;
+    --radius-xl: 2px;
+    --radius-lg: 2px;
     --shadow-lg: none;
     --font-display: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
     --color-critical: #EF4444;
-    --color-warning: #F97316;
-    --color-stable: #34D399;
+    --color-warning: #F59E0B;
+    --color-stable: #10B981;
 }
 
 [data-theme="emerald"] {
@@ -60,24 +60,24 @@
 }
 
 [data-theme="midnight"] {
-    --bg-color: #0B0E14;
-    --text-color: #E2E8F0;
-    --text-muted: #94A3B8;
-    --card-bg: #151A22;
-    --card-border: #2A3241;
-    --accent-color: #FACC15;
-    --accent-dark: #CA8A04;
+    --bg-color: #09090B;
+    --text-color: #FAFAFA;
+    --text-muted: #A1A1AA;
+    --card-bg: #18181B;
+    --card-border: #3F3F46;
+    --accent-color: #F59E0B;
+    --accent-dark: #D97706;
     --primary-gradient: none;
     --secondary-gradient: none;
     --hero-bg: transparent;
-    --table-header-bg: #151A22;
-    --navbar-bg: #0B0E14;
+    --table-header-bg: #18181B;
+    --navbar-bg: #111827;
     --font-display: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
     --color-critical: #EF4444;
-    --color-warning: #F97316;
-    --color-stable: #34D399;
+    --color-warning: #F59E0B;
+    --color-stable: #10B981;
 }
 
 body.has-fixed-header {
@@ -2071,9 +2071,10 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.32rem;
-    border-radius: 999px;
+    border-radius: 2px;
     font-size: 0.64rem;
     font-weight: 800;
+    font-family: var(--font-mono);
     letter-spacing: 0.06em;
     padding: 0.2rem 0.45rem;
     text-transform: uppercase;
@@ -2081,17 +2082,26 @@ body {
 
 .inventory-priority--healthy {
     background: rgba(16, 185, 129, 0.12);
-    color: #047857;
+    color: var(--color-stable);
+    border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .inventory-priority--warning {
     background: rgba(245, 158, 11, 0.14);
-    color: #b45309;
+    color: var(--color-warning);
+    border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .inventory-priority--critical {
-    background: rgba(239, 68, 68, 0.14);
-    color: #b91c1c;
+    background: repeating-linear-gradient(
+        -45deg,
+        rgba(239, 68, 68, 0.15),
+        rgba(239, 68, 68, 0.15) 4px,
+        transparent 4px,
+        transparent 8px
+    );
+    color: #FCA5A5;
+    border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
 .inventory-pc-name {
@@ -3655,7 +3665,7 @@ button.kpi-mini-chip:hover {
 .health-radar__legend-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: 2px;
 }
 
 /* CONSOLE GRID LAYOUT */
@@ -3722,7 +3732,7 @@ button.kpi-mini-chip:hover {
     font-family: var(--font-mono);
     font-size: 0.7rem;
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 .priority-ticket__title {
@@ -3764,7 +3774,7 @@ button.kpi-mini-chip:hover {
 }
 
 .metric-box__value {
-    font-family: var(--font-display);
+    font-family: var(--font-mono);
     font-size: 2rem;
     font-weight: 700;
     color: var(--text-color);

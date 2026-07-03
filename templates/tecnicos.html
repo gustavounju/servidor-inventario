@@ -8,28 +8,29 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Técnicos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
   <style>
     :root {
-      --bg: var(--bg-color);
-      --bg2: var(--navbar-bg);
-      --bg3: var(--card-border);
-      --card: var(--card-bg);
-      --card-hover: rgba(255, 255, 255, 0.05);
-      --border: var(--border-color);
-      --accent: var(--accent-color);
-      --accent2: var(--accent-dark);
-      --green: #10b981;
-      --yellow: #f59e0b;
-      --red: #ef4444;
-      --text: var(--text-color);
-      --text-muted: var(--text-muted);
-      --input-bg: rgba(0, 0, 0, 0.2);
-      --radius: var(--radius-xl);
-      --radius-sm: var(--radius-lg);
-      --shadow: var(--shadow-lg);
+      --bg: #09090B;
+      --bg2: #111827;
+      --bg3: #27272A;
+      --card: #18181B;
+      --card-hover: #3F3F46;
+      --border: #3F3F46;
+      --accent: #F59E0B;
+      --accent2: #D97706;
+      --green: #10B981;
+      --yellow: #F59E0B;
+      --red: #EF4444;
+      --text: #FAFAFA;
+      --text-muted: #A1A1AA;
+      --input-bg: rgba(0, 0, 0, 0.4);
+      --radius: 2px;
+      --radius-sm: 0px;
+      --shadow: none;
+      --font-mono: 'JetBrains Mono', monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -82,12 +83,17 @@
     .bottom-nav-item.active i { transform: scale(1.15); }
     
     .bottom-nav-fab-container { position: relative; top: -20px; }
-    .bottom-nav-fab { width: 56px; height: 56px; border-radius: 16px; background: var(--accent); color: var(--bg); font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border); transition: transform 0.2s; }
-    .bottom-nav-fab:active { transform: scale(0.9); }
+    .bottom-nav-fab { width: 56px; height: 56px; border-radius: 4px; background: var(--accent); color: var(--bg); font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg2); transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); transform: rotate(45deg); }
+    .bottom-nav-fab i { transform: rotate(-45deg); }
+    .bottom-nav-fab:active { transform: rotate(45deg) scale(0.9); }
     .bottom-nav-fab.recording {
-      background: linear-gradient(135deg, #ef4444, #b91c1c);
-      box-shadow: 0 8px 20px rgba(239,68,68,0.5);
+      background: var(--red);
+      box-shadow: 0 0 15px var(--red);
       animation: rec-pulse 1s infinite;
+    }
+    @keyframes rec-pulse {
+      0%, 100% { box-shadow: 0 0 15px var(--red); }
+      50% { box-shadow: 0 0 30px var(--red); }
     }
 
     .bottom-badge {
@@ -102,18 +108,49 @@
     .panel.active { display: block; animation: fade-in 0.3s ease; }
     @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* --- Modern Task Cards --- */
-    .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; transition: transform 0.1s; position: relative; overflow: hidden; }
-    .task-card:active { transform: scale(0.99); background: var(--bg3); }
-    .task-card-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
-    .task-desc { font-size: 0.95rem; font-weight: 700; color: var(--text-color); margin-bottom: 8px; line-height: 1.3; }
+    /* --- Modern Task Cards (Industrial) --- */
+    .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 2px; padding: 16px; margin-bottom: 12px; transition: transform 0.1s; position: relative; overflow: hidden; }
+    .task-card:active { transform: scale(0.99); background: var(--card-hover); }
+    .task-card-accent { 
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px; 
+      background: var(--border);
+    }
+    .task-card-accent.active {
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: led-pulse 2s infinite;
+    }
+    .task-card-accent.done {
+      background: var(--green);
+    }
+    @keyframes led-pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--accent); }
+      50% { opacity: 0.5; box-shadow: 0 0 2px var(--accent); }
+    }
+    
+    .task-desc { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 8px; line-height: 1.3; }
     .task-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .meta-chip { background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-family: var(--font-mono, monospace); color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; letter-spacing: -0.02em; }
-    .card-actions { display: flex; gap: 10px; margin-top: 14px; }
-    .btn-act { flex: 1; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.2s; }
+    .meta-chip { background: var(--input-bg); border: 1px solid var(--border); border-radius: 2px; padding: 4px 8px; font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; }
+    
+    /* Hazard stripes for urgent items */
+    .meta-chip.urgent {
+      background: repeating-linear-gradient(
+        -45deg,
+        rgba(239, 68, 68, 0.1),
+        rgba(239, 68, 68, 0.1) 4px,
+        rgba(0, 0, 0, 0) 4px,
+        rgba(0, 0, 0, 0) 8px
+      );
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #FCA5A5;
+      font-weight: 700;
+    }
+    
+    .card-actions { display: flex; gap: 10px; margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 14px; }
+    .btn-act { flex: 1; padding: 12px; border-radius: 2px; font-family: var(--font-mono); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; }
     .btn-act:active { opacity: 0.7; }
-    .btn-claim { background: var(--bg3); color: #38bdf8; border: 1px solid #0ea5e9; }
-    .btn-done { background: #064e3b; color: #34d399; border: 1px solid #10b981; }
+    .btn-claim { background: var(--input-bg); color: var(--accent); border-color: var(--accent2); }
+    .btn-done { background: rgba(16, 185, 129, 0.1); color: var(--green); border-color: rgba(16, 185, 129, 0.3); }
 
     /* ── Empty State ── */
     .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
@@ -273,10 +310,29 @@
       line-height: 1.45;
       color: var(--text);
     }
-    .ops-focus i { color: #f8c14f; margin-top: 2px; }
-    .meta-chip-priority-high { color: var(--red); background: rgba(194,65,53,0.12); }
-    .meta-chip-priority-medium { color: var(--yellow); background: rgba(201,137,21,0.14); }
-    .meta-chip-priority-low { color: var(--accent); background: rgba(47,125,109,0.12); }
+    /* Status & Priority chips */
+    .status-pill {
+      font-size: 0.65rem; font-weight: 800; font-family: var(--font-mono); text-transform: uppercase;
+      padding: 3px 8px; border-radius: 2px; border: 1px solid currentColor;
+    }
+    .pill-pending { color: var(--yellow); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.05); }
+    .pill-mine { color: var(--accent); border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.1); }
+    .pill-done { color: var(--green); border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.05); }
+    
+    .meta-chip-priority-high {
+      background: repeating-linear-gradient(
+        -45deg,
+        rgba(239, 68, 68, 0.1),
+        rgba(239, 68, 68, 0.1) 4px,
+        rgba(0, 0, 0, 0) 4px,
+        rgba(0, 0, 0, 0) 8px
+      );
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #FCA5A5;
+      font-weight: 700;
+    }
+    .meta-chip-priority-medium { color: var(--yellow); background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
+    .meta-chip-priority-low { color: var(--green); background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
 
     /* Spinner */
     .spin { animation: spin .8s linear infinite; }
@@ -1095,7 +1151,7 @@ function renderDoneToday(tasks) {
   el.innerHTML = `<div class="section-title"><i class="bi bi-check2-circle"></i> Mi Historial Reciente (${tasks.length})</div>` +
     tasks.map(t => `
     <div class="task-card" style="opacity:.9;">
-      <div class="task-card-accent" style="background:var(--green)"></div>
+      <div class="task-card-accent done"></div>
       <div style="padding-left:10px; width:100%;">
         <div class="task-card-header">
            <div class="task-desc">${escHtml(t.descripcion)}${t.desc_edited ? ' <i class="bi bi-info-circle-fill" title="Descripción editada a posteriori" style="color:var(--text-muted); margin-left:4px; font-size:0.75rem;"></i>' : ''}</div>
@@ -1136,7 +1192,7 @@ function taskCard(t, mode) {
   const emoji = t.tipo_actividad === 'incidente' ? '🔥 ' : t.tipo_actividad === 'riesgo' ? '⚠️ ' : '';
 
   return `<div class="task-card" id="tc-${t.id}">
-    <div class="task-card-accent" style="background:${color}"></div>
+    <div class="task-card-accent ${mode === 'mine' ? 'active' : ''}"></div>
     <div style="padding-left:10px;">
       <div class="task-card-header">
         <div class="task-desc">${emoji}${escHtml(t.descripcion)}</div>
