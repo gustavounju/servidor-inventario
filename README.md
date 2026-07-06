@@ -8,7 +8,7 @@ Sistema de inventario interno para el Departamento de Informática del Centro Ju
 ## 🚀 Características Principales
 
 *   **Dashboard**: Estadísticas generales del parque informático.
-*   **Infraestructura**: Gestión visual y detallada de equipos, racks y red.
+*   **Infraestructura**: Gestión visual y detallada de equipos, racks y red. Sincronización automática de equipos y usuarios con **Active Directory**.
 *   **Gestión de Tareas**: Registro y seguimiento de intervenciones técnicas con soporte móvil.
 *   **Stock**: Inventario general de piezas y repuestos.
 *   **IA & OCR**: Asistente con IA (Gemini) y procesamiento de documentos por OCR.

@@ -139,13 +139,13 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 3. **Favicon.ico**: No existe, genera error 404
 
 ## 🔮 Próximas Mejoras
-1. Integración con Active Directory
-2. Mejora de interfaz móvil
-3. Optimización de consultas a base de datos
-4. Implementación de WebSockets para notificaciones en tiempo real
-5. Sistema de backup automático
+1. Mejora de interfaz móvil
+2. Optimización de consultas a base de datos
+3. Implementación de WebSockets para notificaciones en tiempo real
+4. Sistema de backup automático
 
 ## 🆕 Últimos Cambios (Changelog)
+- **Julio 2026 (Sincronización AD)**: Se implementó la sincronización de equipos desde Active Directory. La nueva herramienta (ubicada en Infraestructura) extrae la OU (Unidad Organizativa) del `distinguishedName` de cada computadora en el AD y mapea automáticamente el Fuero correspondiente en la tabla local de PCs. Además, el Dashboard ahora cruza correctamente el nombre de sesión (ej. GMURAD) con el nombre real (ej. Gustavo Murad) obtenido de los usuarios del AD, mejorando drásticamente la legibilidad del inventario.
 - **Junio 2026 (UI Mensajes Directos)**: Se unificó el sistema de comunicación directa entre administradores y técnicos en un nuevo *Buzón de Comunicaciones* modal (con diseño premium y protecciones XSS). Se eliminó el botón clásico "[ MSJS ]" y la tarjeta suelta en el visor de tareas, moviendo el acceso principal "[ COMUNICACIÓN ]" directamente al panel superior de navegación.
 - **Junio 2026**: Se implementó la **Auditoría Transparente de Racks**. Al cargar el estado de un Rack desde la vista móvil, el sistema agrupa automáticamente los registros de cada técnico en una única "Tarea Diaria" (Auditoría de Racks - [Fecha]) en estado "Hecha". Inyecta cada rack revisado como una nueva Acción dentro del historial de esa tarea, resolviendo la concurrencia y optimizando el tiempo del técnico en terreno al no requerir iniciar o finalizar sesiones manualmente.
 - **Hotfix (18 Junio 2026)**: Restauración del bloque de interfaz gráfica (carrusel de métricas) en la vista móvil de Técnicos (`tecnicos.html`). Esto soluciona un bug crítico de JavaScript que provocaba que las métricas personales del técnico no se actualizaran (quedaran en 0) y devuelve el reporte de visibilidad global a los usuarios en terreno.
