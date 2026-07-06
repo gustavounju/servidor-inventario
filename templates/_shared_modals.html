@@ -2419,30 +2419,32 @@
     function assignSuggestedTask(taskId, pcName) {
         if (!pcName) return;
 
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/tasks/assign';
+        const formData = new FormData();
+        formData.append('csrf_token', '{{ csrf_token() }}');
+        formData.append('task_id', taskId);
+        formData.append('pc_name', pcName);
 
-        const csrf = document.createElement('input');
-        csrf.type = 'hidden';
-        csrf.name = 'csrf_token';
-        csrf.value = '{{ csrf_token() }}';
-        form.appendChild(csrf);
-
-        const task = document.createElement('input');
-        task.type = 'hidden';
-        task.name = 'task_id';
-        task.value = taskId;
-        form.appendChild(task);
-
-        const pc = document.createElement('input');
-        pc.type = 'hidden';
-        pc.name = 'pc_name';
-        pc.value = pcName;
-        form.appendChild(pc);
-
-        document.body.appendChild(form);
-        form.submit();
+        fetch('/tasks/assign', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'success') {
+                // Tarea asignada exitosamente, recargar las tareas pendientes en el modal
+                loadPendingTasks();
+            } else {
+                console.error("Error asignando tarea:", data.message);
+                alert("Ocurrió un error al vincular la tarea.");
+            }
+        })
+        .catch(error => {
+            console.error("Fetch error:", error);
+            alert("Error de red al vincular la tarea.");
+        });
     }
 
     function renderTasks(tasks) {

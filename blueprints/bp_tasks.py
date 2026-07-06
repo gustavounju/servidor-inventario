@@ -563,6 +563,10 @@ def assign_task():
                 print(f"[DEBUG] Tarea {task_id} actualizada correctamente a {pc_name}")
             else:
                 print(f"[DEBUG] No se encontró la PC {pc_name} en la base de datos")
+                
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"status": "success"})
+        
     return redirect(url_for("dashboard.dashboard"))
 
 @bp_tasks.route("/tasks/reassign", methods=["POST"])
