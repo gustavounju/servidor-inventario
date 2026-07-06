@@ -748,3 +748,21 @@ def scan_qr(qr_code):
     else:
         flash("Código QR no reconocido o switch no encontrado.", "error")
         return redirect(url_for('dashboard.index'))
+@bp_infrastructure.route('/sync-ad-pcs', methods=['POST'])
+def sync_ad_pcs():
+    from utils.auth import has_permission
+    if not has_permission('manage_users'):
+        flash("No autorizado. Solo Administradores pueden sincronizar AD.", "error")
+        return redirect(request.referrer or url_for('infrastructure.index'))
+        
+    try:
+        from services.ad_sync_service import sync_computers_from_ad
+        result = sync_computers_from_ad()
+        if result.get("status") == "success":
+            flash(result.get("message"), "success")
+        else:
+            flash(result.get("message"), "error")
+    except Exception as e:
+        flash(f"Error en sincronización: {e}", "error")
+        
+    return redirect(request.referrer or url_for('infrastructure.index'))

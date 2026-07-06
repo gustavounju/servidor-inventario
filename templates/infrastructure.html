@@ -86,17 +86,25 @@
         </style>
 
         <!-- Tabs Nav -->
-        <ul class="nav custom-tabs mb-4 px-2" id="infraTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="ups-tab" data-bs-toggle="tab" data-bs-target="#ups" type="button" role="tab" aria-selected="true"><i class="bi bi-plug-fill me-2"></i> Equipos UPS y Asignaciones</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="components-tab" data-bs-toggle="tab" data-bs-target="#components" type="button" role="tab" aria-selected="false"><i class="bi bi-cpu me-2"></i> Periféricos y Hardware</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="printers-tab" data-bs-toggle="tab" data-bs-target="#printers" type="button" role="tab" aria-selected="false"><i class="bi bi-printer me-2"></i> Catálogo de Impresoras</button>
-            </li>
-        </ul>
+        <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+            <ul class="nav custom-tabs flex-grow-1" id="infraTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="ups-tab" data-bs-toggle="tab" data-bs-target="#ups" type="button" role="tab" aria-selected="true"><i class="bi bi-plug-fill me-2"></i> Equipos UPS y Asignaciones</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="components-tab" data-bs-toggle="tab" data-bs-target="#components" type="button" role="tab" aria-selected="false"><i class="bi bi-cpu me-2"></i> Periféricos y Hardware</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="printers-tab" data-bs-toggle="tab" data-bs-target="#printers" type="button" role="tab" aria-selected="false"><i class="bi bi-printer me-2"></i> Catálogo de Impresoras</button>
+                </li>
+            </ul>
+            <form action="{{ url_for('infrastructure.sync_ad_pcs') }}" method="POST" style="margin: 0;" onsubmit="var btn=this.querySelector('button'); btn.disabled=true; btn.innerHTML='<i class=\'spinner-border spinner-border-sm me-1\'></i>Sincronizando...'; return true;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-primary fw-bold" style="border-radius: 6px;">
+                    <i class="bi bi-arrow-repeat me-1"></i>Sincronizar PCs con AD
+                </button>
+            </form>
+        </div>
 
         <div class="tab-content" id="infraTabsContent">
             <!-- TAB: UPS -->
