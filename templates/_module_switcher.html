@@ -52,6 +52,7 @@
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Redes IP">[ SUBREDES ]</a>
         <a href="{{ url_for('maps.index') }}" class="op-btn">[ MAPAS ]</a>
         <a href="{{ url_for('infrastructure.switches_dashboard') }}" class="op-btn">[ SWITCHES ]</a>
+        <a href="{{ url_for('infrastructure.index') }}" class="op-btn {% if request.endpoint == 'infrastructure.index' %}op-btn--active{% endif %}" title="Gestión de Infraestructura (Impresoras, UPS, etc.)">[ INFRAESTRUCTURA ]</a>
 
         <!-- Administración / Extras -->
         <span class="op-divider"></span>
