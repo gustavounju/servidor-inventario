@@ -303,6 +303,7 @@ def delete_efemeride(ef_id):
     return redirect(url_for('setup.view_efemerides'))
 
 from utils.auth import is_superuser, current_user
+from utils.crypto import encrypt_secret, decrypt_secret
 
 @bp_setup.route("/config", methods=["GET"])
 def config_page():
@@ -311,7 +312,13 @@ def config_page():
     
     with get_db_connection() as conn:
         rows = conn.execute("SELECT setting_key, setting_value FROM app_settings").fetchall()
-        settings = {row["setting_key"]: row["setting_value"] for row in rows}
+        settings = {}
+        for row in rows:
+            key = row["setting_key"]
+            val = row["setting_value"]
+            if key.endswith("PASSWORD") and val:
+                val = decrypt_secret(val)
+            settings[key] = val
     
     return render_template("setup_config.html", settings=settings)
 
@@ -325,13 +332,19 @@ def save_config():
     with get_db_connection() as conn:
         for key, value in data.items():
             if value is not None:
+                str_value = str(value)
+                if key.endswith("PASSWORD") and str_value:
+                    # If it's already encrypted (should not happen from form, but just in case)
+                    if not str_value.startswith("ENC:"):
+                        str_value = encrypt_secret(str_value)
+                
                 conn.execute(
                     """
                     INSERT INTO app_settings (setting_key, setting_value, is_active)
                     VALUES (%s, %s, 1)
                     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), is_active = 1
                     """,
-                    (key, str(value))
+                    (key, str_value)
                 )
         conn.commit()
         

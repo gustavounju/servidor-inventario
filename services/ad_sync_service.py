@@ -8,8 +8,14 @@ def _get_setting(key, default_value=""):
     with get_db_connection() as conn:
         row = conn.execute("SELECT setting_value FROM app_settings WHERE setting_key = %s AND is_active = 1", (key,)).fetchone()
         if row and row["setting_value"]:
-            return str(row["setting_value"]).strip()
-    return os.environ.get(key, default_value).strip()
+            val = str(row["setting_value"]).strip()
+            if key.endswith("PASSWORD") and val.startswith("ENC:"):
+                from utils.crypto import decrypt_secret
+                val = decrypt_secret(val)
+            return val
+    
+    val = os.environ.get(key, default_value).strip()
+    return val
 
 def sync_ad_users():
     load_dotenv(override=True)
