@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Ajustes Globales | Inventario{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: var(--bg-color);
+        color: var(--color-text);
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .config-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    
+    .config-header {
+        margin-bottom: 30px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 15px;
+    }
+    
+    .config-header h1 {
+        font-weight: 300;
+        font-size: 2rem;
+        margin: 0;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .config-header h1 i {
+        color: var(--accent-color, #10b981);
+    }
+    
+    .glass-card {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #94a3b8;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .form-control {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+        padding: 10px 15px;
+        border-radius: 6px;
+        font-family: var(--font-mono, 'JetBrains Mono', monospace);
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--accent-color, #10b981);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+    
+    .btn-save {
+        background: var(--accent-color, #10b981);
+        color: #fff;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+    }
+    
+    .btn-save:hover {
+        background: #059669;
+        transform: translateY(-1px);
+    }
+    
+    .btn-save:active {
+        transform: translateY(0);
+    }
+
+    .toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="config-container">
+    <div class="config-header">
+        <h1><i class="bi bi-gear-fill"></i> Ajustes Globales</h1>
+        <p style="color: #94a3b8; margin-top: 10px;">Configuración avanzada del sistema (Solo Administradores).</p>
+    </div>
+
+    <form id="configForm" onsubmit="saveConfig(event)">
+        
+        <div class="glass-card">
+            <h2 class="card-title"><i class="bi bi-diagram-3"></i> Conexión Active Directory</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="AD_SERVER">Servidor AD (IP o Dominio)</label>
+                        <input type="text" class="form-control" id="AD_SERVER" name="AD_SERVER" value="{{ settings.get('AD_SERVER', '') }}" placeholder="ej. 10.15.0.41">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="AD_BASE_DN">Base DN</label>
+                        <input type="text" class="form-control" id="AD_BASE_DN" name="AD_BASE_DN" value="{{ settings.get('AD_BASE_DN', '') }}" placeholder="ej. DC=podjudsp,DC=local">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="AD_SYNC_USER">Usuario de Sincronización</label>
+                        <input type="text" class="form-control" id="AD_SYNC_USER" name="AD_SYNC_USER" value="{{ settings.get('AD_SYNC_USER', '') }}" placeholder="ej. gmurad">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="AD_SYNC_PASSWORD">Contraseña de Sincronización</label>
+                        <input type="password" class="form-control" id="AD_SYNC_PASSWORD" name="AD_SYNC_PASSWORD" value="{{ settings.get('AD_SYNC_PASSWORD', '') }}" placeholder="********">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aquí podemos agregar más tarjetas (ej. Notificaciones, Base de datos) en el futuro -->
+        
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn-save" id="btnSave">
+                <i class="bi bi-check-circle-fill"></i> Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Contenedor Toast para notificaciones -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="saveToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i> Configuración guardada correctamente.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+async function saveConfig(event) {
+    event.preventDefault();
+    
+    const btn = document.getElementById('btnSave');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Guardando...';
+    btn.disabled = true;
+    
+    const form = document.getElementById('configForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch("{{ url_for('setup.save_config') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if(response.ok) {
+            const result = await response.json();
+            if(result.status === 'success') {
+                const toast = new bootstrap.Toast(document.getElementById('saveToast'));
+                toast.show();
+            } else {
+                alert('Error al guardar: ' + result.message);
+            }
+        } else {
+            alert('Error en el servidor.');
+        }
+    } catch(err) {
+        console.error(err);
+        alert('Error de conexión.');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+</script>
+<style>
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.spin { display: inline-block; animation: spin 1s linear infinite; }
+</style>
+{% endblock %}

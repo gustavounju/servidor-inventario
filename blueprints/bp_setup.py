@@ -301,3 +301,38 @@ def delete_efemeride(ef_id):
         conn.execute("DELETE FROM efemerides WHERE id=%s", (ef_id,))
         conn.commit()
     return redirect(url_for('setup.view_efemerides'))
+
+from utils.auth import is_superuser, current_user
+
+@bp_setup.route("/config", methods=["GET"])
+def config_page():
+    if not is_superuser():
+        return redirect(url_for('dashboard.dashboard'))
+    
+    with get_db_connection() as conn:
+        rows = conn.execute("SELECT setting_key, setting_value FROM app_settings").fetchall()
+        settings = {row["setting_key"]: row["setting_value"] for row in rows}
+    
+    return render_template("setup_config.html", settings=settings)
+
+@bp_setup.route("/config/save", methods=["POST"])
+def save_config():
+    if not is_superuser():
+        return jsonify({"status": "error", "message": "Acceso denegado"}), 403
+        
+    data = request.json
+    
+    with get_db_connection() as conn:
+        for key, value in data.items():
+            if value is not None:
+                conn.execute(
+                    """
+                    INSERT INTO app_settings (setting_key, setting_value, is_active)
+                    VALUES (%s, %s, 1)
+                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), is_active = 1
+                    """,
+                    (key, str(value))
+                )
+        conn.commit()
+        
+    return jsonify({"status": "success"})
