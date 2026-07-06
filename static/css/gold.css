@@ -3980,7 +3980,7 @@ body.has-fixed-header {
 .op-toolbar__tools-zone {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 4px;
     height: 100%;
     overflow-x: auto;
     overflow-y: hidden;
@@ -4005,7 +4005,7 @@ body.has-fixed-header {
     text-decoration: none;
     background: transparent;
     border: none;
-    padding: 2px 6px;
+    padding: 2px 4px;
     white-space: nowrap;
     transition: all 0.2s;
     cursor: pointer;
