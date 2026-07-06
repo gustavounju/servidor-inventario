@@ -2,8 +2,8 @@ import os
 import sys
 from dotenv import load_dotenv
 
-# Asegurar que encuentre el .env del proyecto (cámbialo si lo mueves a otra carpeta)
-project_path = r"g:\unju2025\google gravity\ServidorInventario"
+# Asegurar que encuentre el .env del proyecto independientemente de la carpeta/OS
+project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, project_path)
 load_dotenv(os.path.join(project_path, ".env"))
 
