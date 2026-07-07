@@ -43,7 +43,17 @@
         
         <span class="op-divider"></span>
 
-        <!-- Modulos Primarios (Visor) -->
+        <!-- Modulos Primarios (Visor e Inventario) -->
+        <div class="dropdown d-inline-block">
+            <button class="op-btn dropdown-toggle {% if request.endpoint == 'dashboard.dashboard' or request.endpoint == 'dashboard.view_cementerio' %}op-btn--active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Inventario de Equipos">
+                [ EQUIPOS ]
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; font-family: var(--font-mono); font-size: 0.85rem;">
+                <li><a class="dropdown-item" href="{{ url_for('dashboard.dashboard') }}" style="color: #e2e8f0; padding: 8px 16px;"><i class="bi bi-pc-display me-2" style="color: #38bdf8;"></i> Flota Activa</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('dashboard.view_cementerio') }}" style="color: #f59e0b; padding: 8px 16px;"><i class="bi bi-trash3-fill me-2"></i> Cementerio (Bajas)</a></li>
+            </ul>
+        </div>
+
         <a href="{{ url_for('tasks.visor') }}" class="op-btn {% if request.endpoint == 'tasks.visor' %}op-btn--active{% endif %}" title="Visor Global">
             [ VISOR ]
         </a>
