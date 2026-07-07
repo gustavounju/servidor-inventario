@@ -375,10 +375,16 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                     WHEN UPPER(p.pc_name) LIKE 'PC-GENERICA%%' THEN 0
                     WHEN UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%' THEN 1
                     ELSE 2
-                END, {sort_col_sql} {sort_dir_sql} LIMIT %s OFFSET %s
+                END, {sort_col_sql} {sort_dir_sql}
             """
-            params_base = filter_params + [per_page, offset]
-            pcs_data = [dict(row) for row in conn.execute(base_sql, params_base).fetchall()]
+            
+            if estado != "False":
+                params_base = filter_params
+                pcs_data = [dict(row) for row in conn.execute(base_sql, params_base).fetchall()]
+            else:
+                base_sql += " LIMIT %s OFFSET %s"
+                params_base = filter_params + [per_page, offset]
+                pcs_data = [dict(row) for row in conn.execute(base_sql, params_base).fetchall()]
 
             if pcs_data:
                 pc_names = [pc["pc_name"] for pc in pcs_data]
@@ -651,7 +657,10 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
         print(f"Error cargando dashboard: {exc}")
         last_backup_info = "Error leyendo"
 
-    total_pages = (total_rows + per_page - 1) // per_page if per_page > 0 else 1
+    if estado != "False":
+        total_pages = 1
+    else:
+        total_pages = (total_rows + per_page - 1) // per_page if per_page > 0 else 1
 
     return {
         "pcs": pcs_data,
