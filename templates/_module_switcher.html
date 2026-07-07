@@ -58,8 +58,9 @@
         <span class="op-divider"></span>
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#efemeridesModal" title="Ver Efemérides del Día">[ EFEMÉRIDES ]</a>
         
-        {% if current_user.is_superuser %}
-        <a href="{{ url_for('setup.config_page') }}" class="op-btn {% if request.endpoint == 'setup.config_page' %}op-btn--active{% endif %}" title="Ajustes Globales del Sistema">[ CONFIG ]</a>
+        {% if current_user.get('is_superuser') %}
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#configModal" title="Ajustes Globales del Sistema">[ CONFIG ]</a>
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#maintenanceModal" title="Mantenimiento del Sistema">[ MANTENIMIENTO ]</a>
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#usersModal" title="Usuarios">
             [ USR{% if kpi_usuarios_pendientes and kpi_usuarios_pendientes > 0 %}:<span class="op-alert-text">{{ kpi_usuarios_pendientes }}</span>{% endif %} ]
         </a>

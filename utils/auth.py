@@ -1,5 +1,6 @@
 import hmac
 import os
+from utils.settings import get_app_setting
 import secrets
 import hashlib
 from functools import wraps
@@ -133,7 +134,7 @@ def configured_admin_password():
 
 
 def auth_mode():
-    mode = os.environ.get("AUTH_MODE", "local").strip().lower()
+    mode = get_app_setting("AUTH_MODE", "local").strip().lower()
     if mode not in {"local", "ad", "hybrid"}:
         return "local"
     return mode
@@ -328,12 +329,12 @@ def _normalize_username(username):
 
 
 def _ad_superusers():
-    raw = os.environ.get("AD_SUPERUSERS", "")
+    raw = get_app_setting("AD_SUPERUSERS", "")
     return {_normalize_username(item) for item in raw.split(",") if item.strip()}
 
 
 def _ad_default_domain():
-    return os.environ.get("AD_DOMAIN", "").strip()
+    return get_app_setting("AD_DOMAIN", "").strip()
 
 
 def _build_ad_login_variants(username):
@@ -355,7 +356,7 @@ def _authenticate_against_ad(username, password):
     if not ad_enabled():
         return None
 
-    ad_server = os.environ.get("AD_SERVER", "").strip()
+    ad_server = get_app_setting("AD_SERVER", "").strip()
     if not ad_server:
         return None
 
@@ -365,9 +366,9 @@ def _authenticate_against_ad(username, password):
         current_app.logger.warning("ldap3 no disponible para AD: %s", exc)
         return None
 
-    use_ssl = os.environ.get("AD_USE_SSL", "false").strip().lower() == "true"
-    connect_timeout = int(os.environ.get("AD_CONNECT_TIMEOUT", "5"))
-    base_dn = os.environ.get("AD_BASE_DN", "").strip()
+    use_ssl = get_app_setting("AD_USE_SSL", "false").strip().lower() == "true"
+    connect_timeout = int(get_app_setting("AD_CONNECT_TIMEOUT", "5"))
+    base_dn = get_app_setting("AD_BASE_DN", "").strip()
     server = Server(ad_server, use_ssl=use_ssl, get_info=ALL, connect_timeout=connect_timeout)
 
     domain = _ad_default_domain()
@@ -419,7 +420,7 @@ def _ensure_ad_shadow_user(ad_user):
     display_name = ad_user.get("display_name") or username
     superuser_flag = 1 if ad_user.get("is_superuser") else 0
     # Los AD_SUPERUSERS se activan siempre. Otros dependen de la configuración (por defecto requieren aprobación)
-    auto_activate = superuser_flag or os.environ.get("AD_AUTO_APPROVE", "false").lower() == "true"
+    auto_activate = superuser_flag or get_app_setting("AD_AUTO_APPROVE", "false").lower() == "true"
 
     with get_db_connection() as conn:
         existing = conn.execute(

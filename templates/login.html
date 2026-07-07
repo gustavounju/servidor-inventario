@@ -458,6 +458,11 @@
                 <span>Mobile</span>
             </div>
         </div>
+        {% if maintenance_mode %}
+        <div style="margin: 0 28px; margin-top: 22px; padding: 12px 14px; border-radius: 12px; background: #fffbeb; color: #b45309; font-size: 0.92rem; font-weight: 600; border: 1px solid #fde68a;">
+            <i class="bi bi-cone-striped"></i> El sistema está en mantenimiento. Solo administradores pueden ingresar.
+        </div>
+        {% endif %}
         {% if error %}
         <div class="error">{{ error }}</div>
         {% endif %}

@@ -31,7 +31,12 @@ def login():
         password = request.form.get("password", "")
         user = validate_login(username, password)
         if user:
-            if not user.get("is_active"):
+            from utils.settings import get_app_setting
+            maintenance = get_app_setting("MAINTENANCE_MODE", "0")
+            
+            if maintenance == "1" and not user.get("is_superuser"):
+                error = "El sistema está en mantenimiento. Solo los administradores pueden ingresar en este momento."
+            elif not user.get("is_active"):
                 error = "Tu usuario está pendiente de aprobación por un administrador."
                 is_pending = True
             else:
@@ -44,7 +49,15 @@ def login():
         else:
             error = "Usuario o clave incorrectos."
 
-    return render_template("login.html", error=error, is_pending=is_pending, next_url=next_url, auth_mode_label=auth_mode_label())
+    maintenance_mode = False
+    try:
+        from utils.settings import get_app_setting
+        if get_app_setting("MAINTENANCE_MODE", "0") == "1":
+            maintenance_mode = True
+    except:
+        pass
+
+    return render_template("login.html", error=error, is_pending=is_pending, next_url=next_url, auth_mode_label=auth_mode_label(), maintenance_mode=maintenance_mode)
 
 
 @bp_auth.route("/pdf-local", methods=["GET"])

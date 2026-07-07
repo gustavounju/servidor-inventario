@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mantenimiento Programado - Inventario</title>
+    <!-- Use direct CDN for robustness -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .maint-container { text-align: center; max-width: 600px; padding: 50px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .icon-huge { font-size: 5rem; color: #ffc107; margin-bottom: 20px; }
+        .btn-reload { margin-top: 30px; padding: 10px 30px; font-weight: bold; border-radius: 30px; }
+    </style>
+</head>
+<body>
+    <div class="maint-container">
+        <i class="bi bi-cone-striped icon-huge"></i>
+        <h1 class="display-5 fw-bold text-dark">Mantenimiento Programado</h1>
+        <p class="lead text-muted mt-3">
+            El sistema se encuentra temporalmente fuera de servicio por tareas de mantenimiento o actualización. Por favor, intenta ingresar nuevamente en unos minutos.
+        </p>
+        
+        <button onclick="window.location.reload()" class="btn btn-warning btn-reload text-dark">
+            <i class="bi bi-arrow-clockwise"></i> Recargar Página
+        </button>
+        <br><br>
+        <a href="{{ url_for('auth.logout') }}" class="text-muted small text-decoration-none" title="Si ya estás logueado como técnico, esto cerrará tu sesión para permitirte ingresar como admin">Soy administrador</a>
+    </div>
+</body>
+</html>

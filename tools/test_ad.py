@@ -1,4 +1,5 @@
 import os
+from utils.settings import get_app_setting
 import sys
 from dotenv import load_dotenv
 
@@ -15,9 +16,9 @@ except ImportError:
     sys.exit(1)
 
 def test_ad_connection():
-    ad_server = os.environ.get("AD_SERVER", "")
-    use_ssl = os.environ.get("AD_USE_SSL", "false").strip().lower() == "true"
-    base_dn = os.environ.get("AD_BASE_DN", "").strip()
+    ad_server = get_app_setting("AD_SERVER", "")
+    use_ssl = get_app_setting("AD_USE_SSL", "false").strip().lower() == "true"
+    base_dn = get_app_setting("AD_BASE_DN", "").strip()
     
     if not ad_server:
         print("ERROR: AD_SERVER no está configurado en tu archivo .env")
@@ -30,7 +31,7 @@ def test_ad_connection():
     username = input("Ingresa tu usuario de AD (ej. gmurad): ").strip()
     password = input("Ingresa tu contraseña de red: ").strip()
     
-    domain = os.environ.get("AD_DOMAIN", "podjudsp.local").strip()
+    domain = get_app_setting("AD_DOMAIN", "podjudsp.local").strip()
     bind_user = f"{username}@{domain}" if domain else username
     
     print(f"[*] Intentando bind con: {bind_user}")

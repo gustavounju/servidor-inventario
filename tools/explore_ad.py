@@ -1,4 +1,5 @@
 import os
+from utils.settings import get_app_setting
 import sys
 from dotenv import load_dotenv
 
@@ -13,11 +14,11 @@ except ImportError:
     sys.exit(1)
 
 def explore_ad():
-    ad_server = os.environ.get("AD_SERVER", "")
-    use_ssl = os.environ.get("AD_USE_SSL", "false").strip().lower() == "true"
+    ad_server = get_app_setting("AD_SERVER", "")
+    use_ssl = get_app_setting("AD_USE_SSL", "false").strip().lower() == "true"
     
     # Usaremos el dominio raíz en lugar del AD_BASE_DN restrictivo
-    domain = os.environ.get("AD_DOMAIN", "podjudsp.local").strip()
+    domain = get_app_setting("AD_DOMAIN", "podjudsp.local").strip()
     # Convertir "podjudsp.local" a "DC=podjudsp,DC=local"
     root_dn = ",".join([f"DC={part}" for part in domain.split(".")])
 

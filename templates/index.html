@@ -301,6 +301,9 @@
 
 
     {% include '_shared_modals.html' %}
+    {% if current_user.get('is_superuser') %}
+    {% include '_modal_config.html' %}
+    {% endif %}
 
     <!-- Modal Tareas Huérfanas -->
     {% if unassigned_tasks %}
@@ -491,6 +494,8 @@
         <option value="{{ pc.pc_name }}">{{ pc.last_user or '?' }} - {{ pc.fuero or '?' }}</option>
         {% endfor %}
     </datalist>
+
+    {% include '_modal_maintenance.html' %}
 </body>
 
 </html>

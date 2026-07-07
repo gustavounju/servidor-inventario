@@ -93,6 +93,7 @@ from blueprints.bp_auth import bp_auth
 from blueprints.bp_vault import bp_vault
 from blueprints.bp_users import bp_users
 from blueprints.bp_maps import bp_maps
+from blueprints.bp_maintenance import bp_maintenance
 from utils.auth import allowed_module_links, auth_guard, auth_mode_label, available_roles, csrf_guard, current_user, ensure_default_admin, generate_csrf_token, has_permission, is_authenticated, role_label
 from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
 from blueprints.bp_setup import _get_secure_launcher_command
@@ -135,6 +136,7 @@ app.register_blueprint(bp_auth)
 app.register_blueprint(bp_vault)
 app.register_blueprint(bp_users)
 app.register_blueprint(bp_maps)
+app.register_blueprint(bp_maintenance)
 
 # Filtros para Jinja (si queda alguno que estuviéramos usando, aunque los que se usaban ya están resueltos o no declarados como filters globales en servidor.py original excepto quizas datetime_es, pero lo importabamos donde hiciera falta).
 from services.reporting import format_datetime_es
@@ -430,28 +432,58 @@ def add_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    # response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:;"
     return response
+
+@app.before_request
+def check_maintenance_mode():
+    from flask import request, render_template
+    from utils.settings import get_app_setting
+    from utils.auth import is_superuser
+    
+    if request.path.startswith('/static/'):
+        return
+    
+    # Permitir siempre el login para que los administradores puedan entrar
+    if request.endpoint and request.endpoint.startswith('auth.'):
+        return
+    if request.path.startswith('/login') or request.path.startswith('/logout'):
+        return
+        
+    try:
+        maintenance = get_app_setting("MAINTENANCE_MODE", "0")
+        if maintenance == "1":
+            if not is_superuser():
+                return render_template("maintenance_mode.html"), 503
+    except Exception:
+        # If DB is down while checking maintenance mode, fail gracefully
+        pass
 
 @app.errorhandler(500)
 def handle_500_error(e):
-    from flask import jsonify, request
+    from flask import jsonify, request, render_template
+    import traceback
     app.logger.error(f"Server Error: {e}")
     if request.path.startswith('/api/'):
         return jsonify({"status": "error", "message": "Error interno del servidor. Contacte al administrador."}), 500
-    return "Error interno del servidor. Contacte al administrador.", 500
+    
+    tb = traceback.format_exc()
+    return render_template("500.html", error=e, traceback=tb), 500
 
 @app.errorhandler(Exception)
 def handle_unhandled_exception(e):
-    from flask import jsonify, request
-    # Ignorar HttpExceptions como 404
+    from flask import jsonify, request, render_template
+    import traceback
     from werkzeug.exceptions import HTTPException
+    
     if isinstance(e, HTTPException):
         return e
+        
     app.logger.error(f"Unhandled Exception: {e}")
     if request.path.startswith('/api/'):
         return jsonify({"status": "error", "message": "Ocurrió un problema inesperado."}), 500
-    return "Ocurrió un problema inesperado.", 500
+        
+    tb = traceback.format_exc()
+    return render_template("500.html", error=e, traceback=tb), 500
 
 if __name__ == "__main__":
     sistema = platform.system()

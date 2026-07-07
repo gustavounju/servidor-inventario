@@ -4,28 +4,16 @@ from database.db_core import get_db_connection
 from utils.auth import _ad_default_domain
 from dotenv import load_dotenv
 
-def _get_setting(key, default_value=""):
-    with get_db_connection() as conn:
-        row = conn.execute("SELECT setting_value FROM app_settings WHERE setting_key = %s AND is_active = 1", (key,)).fetchone()
-        if row and row["setting_value"]:
-            val = str(row["setting_value"]).strip()
-            if key.endswith("PASSWORD") and val.startswith("ENC:"):
-                from utils.crypto import decrypt_secret
-                val = decrypt_secret(val)
-            return val
-    
-    val = os.environ.get(key, default_value).strip()
-    return val
-
+from utils.settings import get_app_setting
 def sync_ad_users():
     load_dotenv(override=True)
     
-    ad_server = _get_setting("AD_SERVER")
+    ad_server = get_app_setting("AD_SERVER")
     if not ad_server:
         return {"status": "error", "message": "AD_SERVER no está configurado."}
 
-    sync_user = _get_setting("AD_SYNC_USER")
-    sync_password = _get_setting("AD_SYNC_PASSWORD")
+    sync_user = get_app_setting("AD_SYNC_USER")
+    sync_password = get_app_setting("AD_SYNC_PASSWORD")
     
     if not sync_user or not sync_password:
         return {"status": "error", "message": "Faltan credenciales de sincronización (AD_SYNC_USER / AD_SYNC_PASSWORD)."}
@@ -35,9 +23,9 @@ def sync_ad_users():
     except Exception as exc:
         return {"status": "error", "message": f"ldap3 no disponible: {exc}"}
 
-    use_ssl = _get_setting("AD_USE_SSL", "false").lower() == "true"
-    connect_timeout = int(_get_setting("AD_CONNECT_TIMEOUT", "5"))
-    base_dn = _get_setting("AD_BASE_DN")
+    use_ssl = get_app_setting("AD_USE_SSL", "false").lower() == "true"
+    connect_timeout = int(get_app_setting("AD_CONNECT_TIMEOUT", "5"))
+    base_dn = get_app_setting("AD_BASE_DN")
     domain = _ad_default_domain()
 
     if not base_dn:
@@ -105,12 +93,12 @@ def sync_ad_users():
 def sync_computers_from_ad():
     load_dotenv(override=True)
     
-    ad_server = _get_setting("AD_SERVER")
+    ad_server = get_app_setting("AD_SERVER")
     if not ad_server:
         return {"status": "error", "message": "AD_SERVER no está configurado."}
 
-    sync_user = _get_setting("AD_SYNC_USER")
-    sync_password = _get_setting("AD_SYNC_PASSWORD")
+    sync_user = get_app_setting("AD_SYNC_USER")
+    sync_password = get_app_setting("AD_SYNC_PASSWORD")
     
     if not sync_user or not sync_password:
         return {"status": "error", "message": "Faltan credenciales de sincronización (AD_SYNC_USER / AD_SYNC_PASSWORD)."}
@@ -120,9 +108,9 @@ def sync_computers_from_ad():
     except Exception as exc:
         return {"status": "error", "message": f"ldap3 no disponible: {exc}"}
 
-    use_ssl = _get_setting("AD_USE_SSL", "false").lower() == "true"
-    connect_timeout = int(_get_setting("AD_CONNECT_TIMEOUT", "5"))
-    domain = _get_setting("AD_DOMAIN", "podjudsp.local")
+    use_ssl = get_app_setting("AD_USE_SSL", "false").lower() == "true"
+    connect_timeout = int(get_app_setting("AD_CONNECT_TIMEOUT", "5"))
+    domain = get_app_setting("AD_DOMAIN", "podjudsp.local")
     root_dn = ",".join([f"DC={part}" for part in domain.split(".")])
 
     server = Server(ad_server, use_ssl=use_ssl, get_info=NONE, connect_timeout=connect_timeout)

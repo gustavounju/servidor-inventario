@@ -302,27 +302,48 @@ def delete_efemeride(ef_id):
         conn.commit()
     return redirect(url_for('setup.view_efemerides'))
 
-from utils.auth import is_superuser, current_user
+from utils.auth import is_superuser, current_user, login_required
 from utils.crypto import encrypt_secret, decrypt_secret
+from utils.settings import get_app_setting
 
 @bp_setup.route("/config", methods=["GET"])
+@login_required
 def config_page():
+    from flask import redirect, url_for
+    # Ya no usamos setup_config.html separado, es un modal
+    return redirect(url_for('dashboard.dashboard'))
+
+@bp_setup.route("/config/api/get", methods=["GET"])
+@login_required
+def config_api_get():
+    from flask import jsonify
     if not is_superuser():
-        return redirect(url_for('dashboard.dashboard'))
-    
-    with get_db_connection() as conn:
-        rows = conn.execute("SELECT setting_key, setting_value FROM app_settings").fetchall()
-        settings = {}
-        for row in rows:
-            key = row["setting_key"]
-            val = row["setting_value"]
-            if key.endswith("PASSWORD") and val:
-                val = decrypt_secret(val)
-            settings[key] = val
-    
-    return render_template("setup_config.html", settings=settings)
+        return jsonify({"status": "error", "message": "No autorizado"}), 403
+        
+    settings = {}
+    try:
+        with get_db_connection() as conn:
+            for row in conn.execute("SELECT setting_key, setting_value FROM app_settings").fetchall():
+                key = row['setting_key']
+                val = row['setting_value']
+                if key.endswith("PASSWORD") and val:
+                    val = "********"
+                settings[key] = val
+        
+        # Fallback para que los campos no se vean vacíos si sólo existen en el .env
+        for key in ["AD_SERVER", "AD_BASE_DN", "AD_SYNC_USER", "AD_SYNC_PASSWORD"]:
+            if not settings.get(key):
+                val = get_app_setting(key, "")
+                if key.endswith("PASSWORD") and val:
+                    val = "********"
+                settings[key] = val
+                
+        return jsonify({"status": "success", "data": settings})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @bp_setup.route("/config/save", methods=["POST"])
+@login_required
 def save_config():
     if not is_superuser():
         return jsonify({"status": "error", "message": "Acceso denegado"}), 403
@@ -333,7 +354,9 @@ def save_config():
         for key, value in data.items():
             if value is not None:
                 str_value = str(value)
-                if key.endswith("PASSWORD") and str_value:
+                if key.endswith("PASSWORD"):
+                    if not str_value or str_value == "********":
+                        continue
                     # If it's already encrypted (should not happen from form, but just in case)
                     if not str_value.startswith("ENC:"):
                         str_value = encrypt_secret(str_value)
@@ -349,3 +372,43 @@ def save_config():
         conn.commit()
         
     return jsonify({"status": "success"})
+
+
+@bp_setup.route("/config/test_ad", methods=["POST"])
+@login_required
+def test_ad_connection():
+    if not is_superuser():
+        return jsonify({"status": "error", "message": "Acceso denegado"}), 403
+        
+    data = request.json
+    ad_server = data.get("AD_SERVER", "").strip()
+    sync_user = data.get("AD_SYNC_USER", "").strip()
+    sync_password = data.get("AD_SYNC_PASSWORD", "")
+    base_dn = data.get("AD_BASE_DN", "").strip()
+
+    if not ad_server or not sync_user or not sync_password or not base_dn:
+        return jsonify({"status": "error", "message": "Todos los campos de AD (Servidor, Base DN, Usuario, Contraseña) son obligatorios para probar la conexión."})
+
+    if sync_password == "********":
+        sync_password = get_app_setting("AD_SYNC_PASSWORD", "")
+
+    try:
+        from ldap3 import Server, Connection, SIMPLE, NONE
+    except ImportError:
+        return jsonify({"status": "error", "message": "La librería ldap3 no está instalada."})
+
+    from utils.auth import _ad_default_domain
+    domain = _ad_default_domain()
+    use_ssl = get_app_setting("AD_USE_SSL", "false").lower() == "true"
+    connect_timeout = int(get_app_setting("AD_CONNECT_TIMEOUT", "5"))
+
+    server = Server(ad_server, use_ssl=use_ssl, get_info=NONE, connect_timeout=connect_timeout)
+    bind_user = f"{sync_user}@{domain}" if domain and "\\" not in sync_user and "@" not in sync_user else sync_user
+
+    try:
+        conn = Connection(server, user=bind_user, password=sync_password, authentication=SIMPLE, auto_bind=True)
+        conn.unbind()
+        return jsonify({"status": "success", "message": "Conexión y autenticación exitosas."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Fallo la conexión: {str(e)}"})
+

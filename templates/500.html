@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error 500 - Sistema en Mantenimiento</title>
+    <!-- Use direct CDN for robustness in case local static is broken -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .error-container { text-align: center; max-width: 800px; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .icon-huge { font-size: 5rem; color: #dc3545; margin-bottom: 20px; }
+        .btn-home { margin-top: 30px; padding: 10px 30px; font-weight: bold; border-radius: 30px; }
+        .debug-box { text-align: left; background: #212529; color: #00ff00; padding: 20px; border-radius: 8px; font-family: monospace; overflow-x: auto; font-size: 0.85rem; margin-top: 20px; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <i class="bi bi-exclamation-triangle-fill icon-huge"></i>
+        <h1 class="display-5 fw-bold text-dark">Servicio Interrumpido</h1>
+        <p class="lead text-muted mt-3">
+            Ocurrió un error inesperado al procesar tu solicitud. El equipo técnico ha sido notificado automáticamente y estamos trabajando para restaurar el servicio.
+        </p>
+        
+        <a href="/" class="btn btn-primary btn-home"><i class="bi bi-house-door"></i> Volver al Inicio</a>
+
+        <!-- Debug Info only for admins -->
+        {% if current_user and current_user.get('is_superuser') %}
+        <div class="mt-5 border-top pt-4">
+            <h4 class="text-danger mb-3"><i class="bi bi-bug"></i> Detalles Técnicos (Solo Administradores)</h4>
+            <div class="debug-box">
+                <strong>Excepción:</strong> {{ error }}<br><br>
+                <strong>Traceback:</strong><br>
+                <pre style="color: #00ff00; margin:0;">{{ traceback }}</pre>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

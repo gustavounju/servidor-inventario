@@ -1,0 +1,170 @@
+<!-- Modal para Configuración AD/DB -->
+<div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content glass-card">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <h5 class="modal-title" id="configModalLabel"><i class="bi bi-gear-fill text-accent me-2"></i> Ajustes Globales del Sistema</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body" style="color: #e2e8f0;">
+                <form id="configForm" onsubmit="saveConfig(event)">
+                    <!-- Token CSRF explícito para peticiones POST manuales en caso de usar form -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Active Directory Settings -->
+                    <div class="glass-card mb-4 p-4" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                        <h4 style="font-weight: 500; margin-bottom: 20px; font-size: 1.2rem; color: #e2e8f0;">
+                            <i class="bi bi-microsoft text-primary me-2"></i> Integración Active Directory
+                        </h4>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="AD_SERVER" style="color: #94a3b8; font-size: 0.9rem;">Servidor AD (IP o Hostname)</label>
+                                    <input type="text" class="form-control" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0;" id="AD_SERVER" name="AD_SERVER" placeholder="ej. 10.15.0.62 o ldap://10.15.0.62">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="AD_BASE_DN" style="color: #94a3b8; font-size: 0.9rem;">Base DN (Ruta de Búsqueda)</label>
+                                    <input type="text" class="form-control" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0;" id="AD_BASE_DN" name="AD_BASE_DN" placeholder="ej. DC=poderjudicial,DC=local">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="AD_SYNC_USER" style="color: #94a3b8; font-size: 0.9rem;">Usuario de Sincronización</label>
+                                    <input type="text" class="form-control" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0;" id="AD_SYNC_USER" name="AD_SYNC_USER" placeholder="ej. gmurad">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="AD_SYNC_PASSWORD" style="color: #94a3b8; font-size: 0.9rem;">Contraseña de Sincronización</label>
+                                    <input type="password" class="form-control" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0;" id="AD_SYNC_PASSWORD" name="AD_SYNC_PASSWORD" placeholder="********">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <div id="configErrorMsg" class="alert alert-danger d-none" style="background: rgba(220, 38, 38, 0.2); border: 1px solid #ef4444; color: #fca5a5;"></div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                <button type="button" class="btn btn-outline-primary" id="btnTestAd" onclick="testAdConnection()" style="border-radius: 8px;">
+                    <i class="bi bi-plug"></i> Probar Conexión
+                </button>
+                <button type="button" class="btn btn-primary" id="btnSave" onclick="saveConfig(event)" style="border-radius: 8px; background: var(--accent-color); border: none;">
+                    <i class="bi bi-check-circle-fill"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const configModalEl = document.getElementById('configModal');
+    if(configModalEl) {
+        configModalEl.addEventListener('show.bs.modal', async () => {
+            try {
+                const response = await fetch("{{ url_for('setup.config_api_get') }}");
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        const data = result.data;
+                        if(data.AD_SERVER) document.getElementById('AD_SERVER').value = data.AD_SERVER;
+                        if(data.AD_BASE_DN) document.getElementById('AD_BASE_DN').value = data.AD_BASE_DN;
+                        if(data.AD_SYNC_USER) document.getElementById('AD_SYNC_USER').value = data.AD_SYNC_USER;
+                        if(data.AD_SYNC_PASSWORD) document.getElementById('AD_SYNC_PASSWORD').value = data.AD_SYNC_PASSWORD;
+                    }
+                }
+            } catch (err) {
+                console.error("Error cargando config:", err);
+            }
+        });
+    }
+});
+
+async function testAdConnection() {
+    const btn = document.getElementById('btnTestAd');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Probando...';
+    btn.disabled = true;
+    
+    const form = document.getElementById('configForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch("{{ url_for('setup.test_ad_connection') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if(response.ok) {
+            const result = await response.json();
+            if(result.status === 'success') {
+                alert('✅ ÉXITO: ' + result.message);
+            } else {
+                alert('❌ ERROR: ' + result.message);
+            }
+        } else {
+            alert('❌ ERROR: Fallo en la comunicación con el servidor.');
+        }
+    } catch(err) {
+        console.error(err);
+        alert('❌ ERROR: Fallo de red.');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+async function saveConfig(event) {
+    event.preventDefault();
+    
+    const btn = document.getElementById('btnSave');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Guardando...';
+    btn.disabled = true;
+    
+    const form = document.getElementById('configForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch("{{ url_for('setup.save_config') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if(response.ok) {
+            const result = await response.json();
+            if(result.status === 'success') {
+                alert('✅ Configuración guardada correctamente.');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('configModal'));
+                if(modal) modal.hide();
+            } else {
+                alert('Error al guardar: ' + result.message);
+            }
+        } else {
+            alert('Error en el servidor.');
+        }
+    } catch(err) {
+        console.error(err);
+        alert('Error de conexión.');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+</script>
+<style>
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.spin { display: inline-block; animation: spin 1s linear infinite; }
+</style>
