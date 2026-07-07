@@ -49,11 +49,21 @@
                             
                             <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
                                 <div>
-                                    <strong class="d-block" style="color: #e2e8f0;">Sincronización AD Manual</strong>
-                                    <small style="color: #94a3b8;">Fuerza lectura contra Active Directory.</small>
+                                    <strong class="d-block" style="color: #e2e8f0;">Sincronización AD Manual (Usuarios)</strong>
+                                    <small style="color: #94a3b8;">Sincroniza usuarios desde el Directorio Activo.</small>
                                 </div>
                                 <button class="btn btn-outline-primary btn-sm" id="btnSyncAd" onclick="doSyncAd()">
-                                    <i class="bi bi-arrow-repeat"></i> Sync
+                                    <i class="bi bi-person-lines-fill"></i> Usuarios
+                                </button>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                                <div>
+                                    <strong class="d-block" style="color: #e2e8f0;">Sincronización AD Manual (PCs)</strong>
+                                    <small style="color: #94a3b8;">Asigna fueros a PCs basado en OUs del AD.</small>
+                                </div>
+                                <button class="btn btn-outline-info btn-sm" id="btnSyncAdPcs" onclick="doSyncAdPcs()">
+                                    <i class="bi bi-pc-display"></i> Equipos
                                 </button>
                             </div>
 
@@ -209,6 +219,28 @@ async function doSyncAd() {
         }
     } catch(err) {
         alert('Fallo de red al intentar sincronizar.');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+async function doSyncAdPcs() {
+    const btn = document.getElementById('btnSyncAdPcs');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Sync...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch("{{ url_for('maintenance.api_sync_ad_pcs') }}", { method: 'POST' });
+        const data = await response.json();
+        if(data.status === 'success') {
+            alert('Sincronización de PCs Completa:\n' + (data.message || ''));
+        } else {
+            alert('Error en sincronización de PCs: ' + data.message);
+        }
+    } catch(err) {
+        alert('Fallo de red al intentar sincronizar PCs.');
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;

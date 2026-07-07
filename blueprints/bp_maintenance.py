@@ -114,6 +114,19 @@ def api_sync_ad():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
+@bp_maintenance.route("/maintenance/api/sync_ad_pcs", methods=["POST"])
+@login_required
+def api_sync_ad_pcs():
+    if not is_superuser():
+        return jsonify({"status": "error", "message": "Acceso denegado"}), 403
+    
+    from services.ad_sync_service import sync_computers_from_ad
+    try:
+        result = sync_computers_from_ad()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
 @bp_maintenance.route("/maintenance/api/clear_cache", methods=["POST"])
 @login_required
 def api_clear_cache():
