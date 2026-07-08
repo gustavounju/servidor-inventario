@@ -5,9 +5,9 @@
     <!-- LADO IZQUIERDO: COMANDOS -->
     <div class="op-toolbar__search-zone" style="flex-grow: 1; display: flex; align-items: center;">
 
-        <div style="color: var(--text-color); font-weight: 700; font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 1px; margin-right: 16px; white-space: nowrap;">
+        <a href="{{ url_for('dashboard.dashboard') }}" style="color: var(--text-color); font-weight: 700; font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 1px; margin-right: 16px; white-space: nowrap; text-decoration: none; cursor: pointer;" title="Ir al Dashboard / Inventario Activo">
             CENTRO DE OPERACIONES
-        </div>
+        </a>
 
         {% if request.args.get('q') or request.args.get('alerta') or request.args.get('os') %}
             <span style="color: #34d399; font-weight: bold; font-family: var(--font-mono); font-size: 0.85rem; margin-right: 8px; white-space: nowrap;" id="resultsCountUI"></span>
@@ -43,10 +43,7 @@
         
         <span class="op-divider"></span>
 
-        <!-- Modulos Primarios (Inventario y Visor) -->
-        <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn {% if request.endpoint == 'dashboard.dashboard' %}op-btn--active{% endif %}" title="Flota Activa" style="color: #38bdf8; border-color: #38bdf8;">
-            [ INVENTARIO ]
-        </a>
+        <!-- Modulos Primarios (Visor) -->
         <a href="{{ url_for('dashboard.view_cementerio') }}" class="op-btn {% if request.endpoint == 'dashboard.view_cementerio' %}op-btn--active{% endif %}" title="Cementerio (Bajas)" style="color: #f59e0b; border-color: #f59e0b;">
             [ BAJAS ]
         </a>
