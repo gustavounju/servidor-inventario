@@ -12,7 +12,7 @@ CACHE_DURATION = 3600  # 1 hour
 
 def get_latest_tech_news():
     """
-    Fetches the latest tech news from a public RSS feed (Xataka).
+    Fetches the latest news from a public RSS feed (Infobae - Noticias Argentinas).
     Caches the result for 1 hour to prevent slow page loads and rate limiting.
     Returns a list of news titles (strings).
     """
@@ -23,7 +23,7 @@ def get_latest_tech_news():
         return CACHE['data']
         
     try:
-        url = "https://feeds.weblogssl.com/xataka2"
+        url = "https://www.infobae.com/arc/outboundfeeds/rss/"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
