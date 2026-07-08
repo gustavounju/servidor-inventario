@@ -3984,12 +3984,24 @@ body.has-fixed-header {
     height: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
     padding-right: 8px;
+    min-width: 0;
+    flex: 1;
 }
 .op-toolbar__tools-zone::-webkit-scrollbar {
-    display: none; /* Safari and Chrome */
+    height: 4px;
+}
+.op-toolbar__tools-zone::-webkit-scrollbar-track {
+    background: transparent;
+}
+.op-toolbar__tools-zone::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+.op-toolbar__tools-zone::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
 }
 
 .op-divider {
@@ -4083,9 +4095,22 @@ body.has-fixed-header {
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
-.op-telemetry-bar::-webkit-scrollbar { display: none; }
+.op-telemetry-bar::-webkit-scrollbar {
+    height: 4px;
+}
+.op-telemetry-bar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.op-telemetry-bar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+.op-telemetry-bar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
 
 .op-telemetry-item {
     color: #64748B; /* Slate 500 */
