@@ -3980,28 +3980,18 @@ body.has-fixed-header {
 .op-toolbar__tools-zone {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 1px;
     height: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     padding-right: 8px;
     min-width: 0;
     flex: 1;
 }
 .op-toolbar__tools-zone::-webkit-scrollbar {
-    height: 4px;
-}
-.op-toolbar__tools-zone::-webkit-scrollbar-track {
-    background: transparent;
-}
-.op-toolbar__tools-zone::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-}
-.op-toolbar__tools-zone::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.4);
+    display: none;
 }
 
 .op-divider {
@@ -4012,12 +4002,12 @@ body.has-fixed-header {
 
 .op-btn {
     color: #94A3B8; /* Slate 400 */
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.62rem;
+    font-weight: 700;
     text-decoration: none;
     background: transparent;
     border: none;
-    padding: 2px 4px;
+    padding: 1px 3px;
     white-space: nowrap;
     transition: all 0.2s;
     cursor: pointer;
@@ -4091,39 +4081,29 @@ body.has-fixed-header {
     display: flex;
     align-items: center;
     padding: 0 16px;
-    gap: 12px;
+    gap: 8px;
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 .op-telemetry-bar::-webkit-scrollbar {
-    height: 4px;
-}
-.op-telemetry-bar::-webkit-scrollbar-track {
-    background: transparent;
-}
-.op-telemetry-bar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-}
-.op-telemetry-bar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.4);
+    display: none;
 }
 
 .op-telemetry-item {
     color: #64748B; /* Slate 500 */
-    font-size: 0.65rem;
-    font-weight: 600;
+    font-size: 0.58rem;
+    font-weight: 700;
     text-decoration: none;
     background: transparent;
     border: none;
-    padding: 2px 6px;
+    padding: 1px 4px;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     cursor: pointer;
     border-radius: 4px;
     transition: all 0.2s ease;
