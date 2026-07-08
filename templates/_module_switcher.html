@@ -9,7 +9,7 @@
             CENTRO DE OPERACIONES
         </div>
 
-        {% if request.args.get('q') or request.args.get('alerta') or request.args.get('estado') or request.args.get('os') %}
+        {% if request.args.get('q') or request.args.get('alerta') or request.args.get('os') %}
             <span style="color: #34d399; font-weight: bold; font-family: var(--font-mono); font-size: 0.85rem; margin-right: 8px; white-space: nowrap;" id="resultsCountUI"></span>
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
