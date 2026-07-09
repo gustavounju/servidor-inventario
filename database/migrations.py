@@ -644,6 +644,7 @@ def run_all_migrations():
     migrate_db_v41()
     verify_migration_v42()
     migrate_db_v43()
+    migrate_db_v44()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1060,3 +1061,31 @@ def verify_migration_v42():
             conn.execute("CREATE INDEX idx_tasks_pc_name ON tasks(pc_name)")
             
     print("Migración V42 verificada.")
+
+def migrate_db_v44():
+    """Migración V44: Crear tabla asset_location_history."""
+    print("Verificando migración de DB v44...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "asset_location_history"):
+            print("Aplicando migración V44: creando tabla asset_location_history...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS asset_location_history (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    asset_type VARCHAR(50) NOT NULL,
+                    asset_id VARCHAR(255) NOT NULL,
+                    map_id INT,
+                    pos_x FLOAT,
+                    pos_y FLOAT,
+                    action VARCHAR(50) NOT NULL,
+                    changed_by VARCHAR(100),
+                    changed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (map_id) REFERENCES infrastructure_maps(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+            print("Aplicando V44: Índices para asset_location_history...")
+            conn.execute("CREATE INDEX idx_asset_history_asset ON asset_location_history(asset_type, asset_id(100))")
+            conn.execute("CREATE INDEX idx_asset_history_map ON asset_location_history(map_id)")
+
+    print("Migración V44 verificada.")

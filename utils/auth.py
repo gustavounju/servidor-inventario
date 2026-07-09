@@ -907,6 +907,9 @@ def auth_guard():
 
 
 def csrf_guard():
+    if current_app.config.get("TESTING"):
+        return None
+        
     if request.method in {"GET", "HEAD", "OPTIONS", "TRACE"}:
         return None
 

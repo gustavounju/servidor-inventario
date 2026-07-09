@@ -1,12 +1,14 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 import os
 from database.db_core import get_db_connection
 from werkzeug.utils import secure_filename
 from utils.constants import UPLOAD_FOLDER
+from utils.auth import permission_required
 
 bp_maps = Blueprint('maps', __name__, url_prefix='/planos')
 
 @bp_maps.route('/')
+@permission_required('infrastructure')
 def index():
     """Listado de planos disponibles."""
     try:
@@ -17,6 +19,7 @@ def index():
         return f"Error en Planos: {str(e)}", 500
 
 @bp_maps.route('/add', methods=['POST'])
+@permission_required('infrastructure')
 def add_map():
     """Sube un nuevo plano."""
     name = request.form.get('name')
@@ -29,6 +32,18 @@ def add_map():
         return redirect(url_for('maps.index'))
 
     filename = secure_filename(file.filename)
+
+    # Validacion de seguridad (extensiones y mimetype)
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp'}
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in allowed_extensions:
+        flash("Formato de archivo no permitido. Solo .jpg, .jpeg, .png, .webp.", "error")
+        return redirect(url_for('maps.index'))
+        
+    allowed_mimetypes = {'image/jpeg', 'image/png', 'image/webp'}
+    if file.mimetype not in allowed_mimetypes:
+        flash("Mimetype de archivo inválido.", "error")
+        return redirect(url_for('maps.index'))
     # Asegurar que el nombre de archivo sea único
     import time
     filename = f"{int(time.time())}_{filename}"
@@ -49,6 +64,7 @@ def add_map():
     return redirect(url_for('maps.index'))
 
 @bp_maps.route('/view/<int:map_id>')
+@permission_required('infrastructure')
 def view_map(map_id):
     """Visualización y editor de equipos sobre el plano."""
     try:
@@ -103,6 +119,7 @@ def view_map(map_id):
         return f"<h1>Error de Base de Datos</h1><p>Detalle: {str(e)}</p><p>Asegúrese de haber reiniciado el servicio para aplicar las migraciones.</p>", 500
 
 @bp_maps.route('/api/update_position', methods=['POST'])
+@permission_required('infrastructure')
 def update_position():
     """API para actualizar la posición de un activo (drag & drop)."""
     data = request.json
@@ -129,12 +146,21 @@ def update_position():
                     "UPDATE ad_users SET x_pos = %s, y_pos = %s, map_id = %s WHERE username = %s",
                     (x, y, map_id, asset_id)
                 )
+            
+            # Record history
+            current_user = session.get('user', {}).get('username', 'system')
+            conn.execute(
+                "INSERT INTO asset_location_history (asset_type, asset_id, map_id, pos_x, pos_y, action, changed_by) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (asset_type, asset_id, map_id, x, y, "update_position", current_user)
+            )
+
             conn.commit()
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @bp_maps.route('/api/remove_from_map', methods=['POST'])
+@permission_required('infrastructure')
 def remove_from_map():
     """API para quitar un activo del mapa."""
     data = request.json
@@ -149,12 +175,53 @@ def remove_from_map():
                 conn.execute("UPDATE network_printers SET map_id = NULL, x_pos = 0, y_pos = 0 WHERE id = %s", (asset_id,))
             elif asset_type == 'user':
                 conn.execute("UPDATE ad_users SET map_id = NULL, x_pos = 0, y_pos = 0 WHERE username = %s", (asset_id,))
+            
+            # Record history
+            current_user = session.get('user', {}).get('username', 'system')
+            conn.execute(
+                "INSERT INTO asset_location_history (asset_type, asset_id, map_id, pos_x, pos_y, action, changed_by) VALUES (%s, %s, NULL, 0, 0, %s, %s)",
+                (asset_type, asset_id, "remove_from_map", current_user)
+            )
+
             conn.commit()
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@bp_maps.route('/api/history/<asset_type>/<asset_id>', methods=['GET'])
+@permission_required('infrastructure')
+def get_history(asset_type, asset_id):
+    """Obtiene el historial de ubicación de un activo."""
+    try:
+        with get_db_connection() as conn:
+            history = conn.execute(
+                """
+                SELECT h.action, h.pos_x, h.pos_y, h.changed_by, h.changed_at, m.name as map_name
+                FROM asset_location_history h
+                LEFT JOIN infrastructure_maps m ON h.map_id = m.id
+                WHERE h.asset_type = %s AND h.asset_id = %s
+                ORDER BY h.changed_at DESC
+                LIMIT 10
+                """, (asset_type, asset_id)
+            ).fetchall()
+            
+            # Format dates to string
+            result = []
+            for row in history:
+                result.append({
+                    "action": row['action'],
+                    "pos_x": row['pos_x'],
+                    "pos_y": row['pos_y'],
+                    "changed_by": row['changed_by'],
+                    "changed_at": row['changed_at'].strftime("%Y-%m-%d %H:%M:%S") if row['changed_at'] else "",
+                    "map_name": row['map_name'] or "Ninguno"
+                })
+        return jsonify({"status": "success", "history": result})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @bp_maps.route('/delete/<int:map_id>', methods=['POST'])
+@permission_required('infrastructure')
 def delete_map(map_id):
     """Elimina un plano y desvincula los activos."""
     try:

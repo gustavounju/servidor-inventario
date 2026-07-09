@@ -9,33 +9,33 @@
 
 /* ===== VARIABLES DE TEMA — INDUSTRIAL VOID (Por Defecto / High-Vis) ===== */
 :root {
-    --bg-color: #09090B;
-    --text-color: #FAFAFA;
-    --text-muted: #A1A1AA;
-    --card-bg: #18181B;
-    --card-border: #3F3F46;
-    --accent-color: #F59E0B;
-    --accent-dark: #D97706;
+    --bg-color: #050505;
+    --text-color: #FFFFFF;
+    --text-muted: #888888;
+    --card-bg: #111111;
+    --card-border: #444444;
+    --accent-color: #FF4500;
+    --accent-dark: #CC3700;
     --primary-gradient: none;
     --secondary-gradient: none;
     --hero-bg: transparent;
-    --table-header-bg: #18181B;
-    --glass-bg: rgba(24, 24, 27, 0.8);
-    --glass-border: rgba(63, 63, 70, 0.5);
-    --kpi-shadow: none;
-    --border-color: #3F3F46;
-    --input-focus-shadow: rgba(245, 158, 11, 0.25);
-    --navbar-bg: #111827;
-    --navbar-border: #3F3F46;
-    --radius-xl: 2px;
-    --radius-lg: 2px;
-    --shadow-lg: none;
+    --table-header-bg: #111111;
+    --glass-bg: rgba(17, 17, 17, 0.9);
+    --glass-border: rgba(68, 68, 68, 1);
+    --kpi-shadow: 4px 4px 0px var(--accent-color);
+    --border-color: #444444;
+    --input-focus-shadow: 2px 2px 0px var(--accent-color);
+    --navbar-bg: #000000;
+    --navbar-border: #444444;
+    --radius-xl: 0px;
+    --radius-lg: 0px;
+    --shadow-lg: 4px 4px 0px rgba(255, 69, 0, 0.5);
     --font-display: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
-    --color-critical: #EF4444;
-    --color-warning: #F59E0B;
-    --color-stable: #10B981;
+    --color-critical: #FF0000;
+    --color-warning: #FFFF00;
+    --color-stable: #00FF00;
 }
 
 [data-theme="emerald"] {
@@ -60,24 +60,24 @@
 }
 
 [data-theme="midnight"] {
-    --bg-color: #09090B;
-    --text-color: #FAFAFA;
-    --text-muted: #A1A1AA;
-    --card-bg: #18181B;
-    --card-border: #3F3F46;
-    --accent-color: #F59E0B;
-    --accent-dark: #D97706;
+    --bg-color: #050505;
+    --text-color: #FFFFFF;
+    --text-muted: #888888;
+    --card-bg: #111111;
+    --card-border: #444444;
+    --accent-color: #FF4500;
+    --accent-dark: #CC3700;
     --primary-gradient: none;
     --secondary-gradient: none;
     --hero-bg: transparent;
-    --table-header-bg: #18181B;
-    --navbar-bg: #111827;
+    --table-header-bg: #111111;
+    --navbar-bg: #000000;
     --font-display: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
-    --color-critical: #EF4444;
-    --color-warning: #F59E0B;
-    --color-stable: #10B981;
+    --color-critical: #FF0000;
+    --color-warning: #FFFF00;
+    --color-stable: #00FF00;
 }
 
 body.has-fixed-header {
@@ -4155,3 +4155,16 @@ body.has-fixed-header {
 .marquee-content:hover {
     animation-play-state: paused;
 }
+
+
+/* ===== BRUTALIST OVERRIDES ===== */
+* { border-radius: 0px !important; }
+.card { box-shadow: 4px 4px 0px var(--accent-color) !important; border: 2px solid var(--border-color) !important; }
+.btn { border: 2px solid var(--text-color) !important; box-shadow: 2px 2px 0px var(--accent-color) !important; font-family: var(--font-mono) !important; font-weight: bold; text-transform: uppercase; transition: none !important; }
+.btn:hover { background: var(--text-color) !important; color: var(--bg-color) !important; box-shadow: 0px 0px 0px transparent !important; transform: translate(2px, 2px); }
+.table { font-family: var(--font-mono) !important; border: 2px solid var(--border-color) !important; }
+.table th, .table td { border: 1px solid var(--border-color) !important; }
+.navbar { border-bottom: 3px solid var(--accent-color) !important; }
+.badge { border: 1px solid var(--border-color); font-family: var(--font-mono) !important; }
+input, select, textarea { border: 2px solid var(--border-color) !important; background: var(--bg-color) !important; color: var(--text-color) !important; font-family: var(--font-mono) !important; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent-color) !important; box-shadow: 2px 2px 0px var(--accent-color) !important; outline: none; }

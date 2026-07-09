@@ -1,3 +1,5 @@
+> **Nota de Seguridad**: El valor real de [CONTRASEÑA_INICIAL_VER_ENV] viene de BOOTSTRAP_ADMIN_PASSWORD en el archivo .env
+
 # Checklist PuTTY - Deploy Automatico
 
 ## Primera vez (o si el directorio no existe)
@@ -45,5 +47,5 @@ El script hace **todo solo**:
 
 ## Primer login
 
-- Usuario: `administrador` / Clave: `[CONTRASEÑA_OCULTA]`
+- Usuario: `administrador` / Clave: `[CONTRASEÑA_INICIAL_VER_ENV]`
 - Ir a `Usuarios` → crear tu superusuario → cerrar sesion → entrar con el tuyo → borrar `administrador`

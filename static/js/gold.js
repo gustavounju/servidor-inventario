@@ -298,7 +298,7 @@ function toggleCompactMode() {
 
 // Initialize theme and compact mode on load
 (function() {
-    const savedTheme = localStorage.getItem('theme') || 'oceanic';
+    const savedTheme = localStorage.getItem('theme') || 'midnight';
     document.documentElement.setAttribute('data-theme', savedTheme);
     
     if (isCompactMode) {

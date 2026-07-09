@@ -8,6 +8,9 @@
         <h3 class="text-white"><i class="fas fa-edit me-2"></i>Editor: {{ map.name }}</h3>
         <div>
             <span class="badge bg-info me-3"><i class="fas fa-mouse-pointer me-1"></i> Arrastra los iconos para ubicarlos</span>
+            <button class="btn btn-outline-success btn-sm me-2" onclick="exportMap()">
+                <i class="fas fa-file-export me-1"></i> Exportar
+            </button>
             <a href="{{ url_for('maps.index') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-arrow-left me-1"></i> Volver
             </a>
@@ -85,6 +88,7 @@
                         <i class="fas fa-desktop"></i>
                     </div>
                     <span class="asset-label">{{ pc.pc_name }}</span>
+                    <button class="btn-history" onclick="showHistory('pc', '{{ pc.pc_name }}', event)"><i class="fas fa-history"></i></button>
                     <button class="btn-remove" onclick="removeAsset('pc', '{{ pc.pc_name }}', event)">&times;</button>
                 </div>
                 {% endfor %}
@@ -98,6 +102,7 @@
                         <i class="fas fa-print"></i>
                     </div>
                     <span class="asset-label">{{ prn.brand_model }}</span>
+                    <button class="btn-history" onclick="showHistory('printer', '{{ prn.id }}', event)"><i class="fas fa-history"></i></button>
                     <button class="btn-remove" onclick="removeAsset('printer', '{{ prn.id }}', event)">&times;</button>
                 </div>
                 {% endfor %}
@@ -111,6 +116,7 @@
                         <i class="fas fa-user"></i>
                     </div>
                     <span class="asset-label">{{ user.real_name }}</span>
+                    <button class="btn-history" onclick="showHistory('user', '{{ user.username }}', event)"><i class="fas fa-history"></i></button>
                     <button class="btn-remove" onclick="removeAsset('user', '{{ user.username }}', event)">&times;</button>
                 </div>
                 {% endfor %}
@@ -118,6 +124,34 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Modal de Historial -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title"><i class="fas fa-history me-2 text-info"></i>Historial de Ubicación <span id="historyAssetName" class="text-warning"></span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+        <table class="table table-dark table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Acción</th>
+                    <th>Plano</th>
+                    <th>Coords (X, Y)</th>
+                    <th>Usuario</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody">
+                <!-- Data will be injected here -->
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -195,6 +229,27 @@
         z-index: 110;
     }
     .map-asset:hover .btn-remove { display: flex; }
+
+    .btn-history {
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        width: 22px;
+        height: 22px;
+        background: #0d6efd;
+        color: white;
+        border: 2px solid white;
+        border-radius: 50%;
+        font-size: 10px;
+        font-weight: bold;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        z-index: 110;
+    }
+    .map-asset:hover .btn-history { display: flex; }
 
     .nav-pills .nav-link { color: #aaa; background: #333; margin: 0 2px; }
     .nav-pills .nav-link.active { background: #ffd700; color: #000; font-weight: bold; }
@@ -279,6 +334,7 @@
                 <i class="fas ${iconClass}"></i>
             </div>
             <span class="asset-label">${label}</span>
+            <button class="btn-history" onclick="showHistory('${type}', '${id}', event)"><i class="fas fa-history"></i></button>
             <button class="btn-remove" onclick="removeAsset('${type}', '${id}', event)">&times;</button>
         `;
         
@@ -296,19 +352,94 @@
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         fetch('/planos/api/remove_from_map', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken
-            },
-            body: JSON.stringify({ type, id })
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+            body: JSON.stringify({ type: type, id: id })
         })
-        .then(res => res.json())
+        .then(response => response.json())
         .then(data => {
-            if (data.status === 'success') {
-                document.getElementById(`${type}-${id}`).remove();
-                setTimeout(() => location.reload(), 500);
+            if(data.status === 'success') {
+                location.reload();
+            } else {
+                alert("Error al quitar: " + data.message);
             }
         });
     }
+
+    function showHistory(type, id, event) {
+        if (event) event.stopPropagation();
+        document.getElementById('historyAssetName').textContent = `- ${id}`;
+        document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="5" class="text-center">Cargando...</td></tr>';
+        var historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
+        historyModal.show();
+
+        fetch(`/planos/api/history/${type}/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const tbody = document.getElementById('historyTableBody');
+                    tbody.innerHTML = '';
+                    if (data.history.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay movimientos registrados.</td></tr>';
+                    } else {
+                        data.history.forEach(item => {
+                            let actionHtml = '';
+                            if (item.action === 'update_position') actionHtml = '<span class="badge bg-success">Posicionado</span>';
+                            else if (item.action === 'remove_from_map') actionHtml = '<span class="badge bg-danger">Removido</span>';
+                            else actionHtml = `<span class="badge bg-secondary">${item.action}</span>`;
+
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${item.changed_at}</td>
+                                    <td>${actionHtml}</td>
+                                    <td>${item.map_name}</td>
+                                    <td>${item.pos_x ? Math.round(item.pos_x) : 0}, ${item.pos_y ? Math.round(item.pos_y) : 0}</td>
+                                    <td>${item.changed_by}</td>
+                                </tr>
+                            `;
+                        });
+                    }
+                } else {
+                    alert('Error al cargar historial: ' + data.message);
+                }
+            })
+            .catch(err => {
+                alert('Error de red al cargar historial.');
+                console.error(err);
+            });
+    }
+
+    function exportMap() {
+        const container = document.getElementById('mapContainer');
+        
+        // Ocultar botones temporalmente para no capturarlos
+        const removeBtns = document.querySelectorAll('.btn-remove');
+        const historyBtns = document.querySelectorAll('.btn-history');
+        removeBtns.forEach(btn => btn.style.display = 'none');
+        historyBtns.forEach(btn => btn.style.display = 'none');
+
+        document.body.style.cursor = 'wait';
+
+        html2canvas(container, {
+            useCORS: true,
+            scale: 2
+        }).then(canvas => {
+            removeBtns.forEach(btn => btn.style.display = '');
+            historyBtns.forEach(btn => btn.style.display = '');
+            document.body.style.cursor = 'default';
+
+            const link = document.createElement('a');
+            link.download = `Mapa_{{ map.name|replace(' ', '_') }}_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }).catch(err => {
+            console.error("Error al exportar mapa:", err);
+            alert("Ocurrió un error al exportar el mapa.");
+            removeBtns.forEach(btn => btn.style.display = '');
+            historyBtns.forEach(btn => btn.style.display = '');
+            document.body.style.cursor = 'default';
+        });
+    }
+
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 {% endblock %}

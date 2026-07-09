@@ -21,3 +21,5 @@ DBUtils
 pytest
 pytest-flask
 Flask-Limiter
+pytest==8.0.0
+pytest-flask==1.3.0
