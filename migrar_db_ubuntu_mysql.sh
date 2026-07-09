@@ -42,5 +42,5 @@ sudo apt install -y python3-dev default-libmysqlclient-dev build-essential
 echo "Instalación completada. Por favor, asegúrate de haber actualizado el archivo .env en el servidor."
 echo "DB_HOST=localhost"
 echo "DB_USER=usuario_inventario"
-echo "DB_PASS=inventario_2025_seguro"
+echo "DB_PASS=[CONTRASEÑA_OCULTA]"
 echo "DB_NAME=inventario_prod"
