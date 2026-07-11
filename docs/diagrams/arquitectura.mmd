@@ -1,0 +1,55 @@
+graph TD
+    App[servidor.py<br/>Flask App]
+
+    subgraph Blueprints
+        API[bp_api]
+        Auth[bp_auth]
+        Dashboard[bp_dashboard]
+        Infra[bp_infrastructure]
+        Maint[bp_maintenance]
+        Maps[bp_maps]
+        Mobile[bp_mobile]
+        Operadores[bp_operadores]
+        Setup[bp_setup]
+        Stock[bp_stock]
+        Tasks[bp_tasks]
+        Tecnicos[bp_tecnicos]
+        Users[bp_users]
+        Vault[bp_vault]
+    end
+
+    %% App Registers Blueprints
+    App --> API
+    App --> Auth
+    App --> Dashboard
+    App --> Infra
+    App --> Maint
+    App --> Maps
+    App --> Mobile
+    App --> Operadores
+    App --> Setup
+    App --> Stock
+    App --> Tasks
+    App --> Tecnicos
+    App --> Users
+    App --> Vault
+
+    %% Relationships (Redirects / Flow)
+    Vault -.->|Auth Check/Login| Auth
+    Vault -.->|Redirect| Dashboard
+    Tecnicos -.->|Redirect| Operadores
+    Mobile -.->|Redirect| Tecnicos
+    Tasks -.->|Redirect| Dashboard
+    Setup -.->|Redirect| Dashboard
+    Operadores -.->|Auth Check/Login| Auth
+    Operadores -.->|Redirect| Dashboard
+    Maint -.->|Redirect| Dashboard
+    Auth -.->|Login Success| Dashboard
+    Users -.->|Redirect| Dashboard
+    
+    %% Styling
+    classDef app fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef blueprint fill:#bbf,stroke:#333,stroke-width:1px;
+    
+    class App app;
+    class API,Auth,Dashboard,Infra,Maint,Maps,Mobile,Operadores,Setup,Stock,Tasks,Tecnicos,Users,Vault blueprint;

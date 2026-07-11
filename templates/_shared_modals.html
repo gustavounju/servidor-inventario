@@ -3,7 +3,7 @@
 <!-- Modal de Topografía (Iframe) -->
 <div class="modal fade" id="topoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content" style="background: #0f172a; border: none;">
+        <div class="modal-content" style=" border: none;">
             <div class="modal-body p-0" style="overflow: hidden;">
                 <iframe id="topoIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
             </div>
@@ -23,9 +23,9 @@
 
 <div class="modal fade" id="fueroAdminModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1180px;">
-        <div class="modal-content" style="background: transparent; border: none; box-shadow: none;">
+        <div class="modal-content" style="background: transparent; border: none; ">
             <div class="modal-body p-0" style="overflow: hidden; border-radius: 24px;">
-                <iframe id="fueroAdminIframe" src="" style="width: 100%; height: 86vh; border: none; background: #f8fafc;"></iframe>
+                <iframe id="fueroAdminIframe" src="" style="width: 100%; height: 86vh; border: none; "></iframe>
             </div>
         </div>
     </div>
@@ -43,11 +43,11 @@
 <!-- Modal Efemérides (Iframe) -->
 <div class="modal fade" id="efemeridesModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
-        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; ">
             <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 0;">
                 <div style="padding: 20px 24px 20px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.12); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.15);">
+                        <div style="width: 42px; height: 42px;  border-radius: 12px; display: flex; align-items: center; justify-content: center; ">
                             <i class="bi bi-calendar-event" style="color: #fff; font-size: 1.1rem;"></i>
                         </div>
                         <div>
@@ -60,7 +60,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
                 </div>
             </div>
-            <div class="modal-body p-0" style="overflow: hidden; background: #f8fafc;">
+            <div class="modal-body p-0" style="overflow: hidden; ">
                 <iframe id="efemeridesIframe" src="" style="width: 100%; height: 75vh; border: none; background: transparent;"></iframe>
             </div>
         </div>
@@ -79,15 +79,15 @@
 <!-- Modal Crear Tarea Suelta -->
 <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 950px;">
-        <div class="modal-content console-panel" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15); background: #0f172a; max-height: calc(100vh - 2rem);">
+        <div class="modal-content console-panel" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color);   max-height: calc(100vh - 2rem);">
             <form id="formCrearTarea" action="{{ url_for('tasks.create_loose_task') }}" method="POST" style="display: flex; flex-direction: column; min-height: 0; height: 100%;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <!-- Header Cyberpunk/Midnight -->
-                <div style="background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-color); position: relative; z-index: 10;">
+                <div style=" border-bottom: 1px solid var(--border-color); position: relative; z-index: 10;">
                     <div style="padding: 24px 28px; display: flex; align-items: center; justify-content: space-between;">
                         <div style="display: flex; align-items: center; gap: 16px;">
-                            <div style="width: 46px; height: 46px; background: rgba(56, 189, 248, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(56, 189, 248, 0.2);">
+                            <div style="width: 46px; height: 46px;  border-radius: 14px; display: flex; align-items: center; justify-content: center; ">
                                 <i class="bi bi-terminal-plus" style="color: var(--neon-blue); font-size: 1.2rem;"></i>
                             </div>
                             <div>
@@ -115,7 +115,7 @@
                                 <div class="mb-0 um-field">
                                     <label class="um-label">Solicitante (Quién realiza el pedido)</label>
                                     <div class="input-group">
-                                        <span class="input-group-text" style="background: rgba(0,0,0,0.2); border-color: var(--border-color); color: var(--text-muted); border-right: none;"><i class="bi bi-person"></i></span>
+                                        <span class="input-group-text" style=" border-color: var(--border-color); color: var(--text-muted); border-right: none;"><i class="bi bi-person"></i></span>
                                         <input type="text" name="solicitante" class="form-control bg-dark text-white"
                                             style="border-color: var(--border-color); border-left: none; font-size: 0.9rem;"
                                             placeholder="Ej: Juan Pérez / Contabilidad" 
@@ -160,7 +160,7 @@
                                     <div class="col-12 um-field">
                                         <label class="um-label">Fuero / Ubicación</label>
                                         <div class="input-group">
-                                            <span class="input-group-text" style="background: rgba(0,0,0,0.2); border-color: var(--border-color); color: var(--text-muted); border-right: none;"><i class="bi bi-geo-alt"></i></span>
+                                            <span class="input-group-text" style=" border-color: var(--border-color); color: var(--text-muted); border-right: none;"><i class="bi bi-geo-alt"></i></span>
                                             <select name="fuero" class="form-select bg-dark text-white" style="border-color: var(--border-color); border-left: none; font-size: 0.9rem;">
                                                 <option value="">-- No Especificado --</option>
                                                 {% for name in fueros.values()|unique|sort %}
@@ -186,7 +186,7 @@
                                             <input class="form-check-input" type="checkbox" id="is_done_shared" name="is_done">
                                             <label class="form-check-label um-label mb-0" for="is_done_shared" style="cursor:pointer; color: var(--neon-green);">[ MARCAR COMO RESUELTA ]</label>
                                         </div>
-                                        <div id="solucion_container_shared" style="display: none; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                        <div id="solucion_container_shared" style="display: none;  border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-top: 10px;">
                                             <label class="um-label" style="color: var(--neon-green);"><i class="bi bi-terminal-check me-1"></i> LOG DE SOLUCIÓN</label>
                                             <textarea name="solucion" id="solucion_shared" class="form-control bg-dark text-white border-secondary" rows="3" 
                                                       style="font-size: 0.85rem; padding: 10px; font-family: var(--font-mono);"
@@ -200,9 +200,9 @@
                     </div>
                 </div>
 
-                <div class="modal-footer" style="padding: 16px 30px; background: rgba(15, 23, 42, 0.95); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; flex: 0 0 auto;">
+                <div class="modal-footer" style="padding: 16px 30px;  border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; flex: 0 0 auto;">
                     <button type="button" class="btn btn-link text-decoration-none text-muted fw-bold" data-bs-dismiss="modal" style="font-size: 0.85rem; font-family: var(--font-mono);">[ CANCELAR ]</button>
-                    <button type="submit" class="btn" style="background: rgba(56, 189, 248, 0.1); color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 8px 24px; border-radius: 8px; font-weight: 700; font-family: var(--font-display); letter-spacing: 0.05em; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); transition: all 0.2s;">
+                    <button type="submit" class="btn" style=" color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 8px 24px; border-radius: 8px; font-weight: 700; font-family: var(--font-display); letter-spacing: 0.05em;  transition: all 0.2s;">
                         <i class="bi bi-send-fill me-2"></i> INICIAR TAREA
                     </button>
                 </div>
@@ -213,12 +213,12 @@
 <!-- Modal Gestión de Usuarios -->
 <div class="modal fade" id="usersModal" tabindex="-1" aria-labelledby="usersModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
-        <div class="modal-content console-panel" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15); background: #0f172a;">
+        <div class="modal-content console-panel" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color);  ">
 
-            <div style="background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-color); position: relative; z-index: 10;">
+            <div style=" border-bottom: 1px solid var(--border-color); position: relative; z-index: 10;">
                 <div style="padding: 20px 24px 0; display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center;">
-                        <div style="width: 42px; height: 42px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); margin-right: 14px;">
+                        <div style="width: 42px; height: 42px;  border-radius: 12px; display: flex; align-items: center; justify-content: center;   margin-right: 14px;">
                             <i class="bi bi-people-fill text-info" style="font-size: 1.1rem;"></i>
                         </div>
                         <div>
@@ -257,7 +257,7 @@
             {% endif %}
             {% endwith %}
 
-            <div class="modal-body" style="padding: 20px; background: #0f172a;">
+            <div class="modal-body" style="padding: 20px; ">
 
                 <!-- ====== TAB: SISTEMA ====== -->
                 <div id="tab-sistema" class="um-tab-panel">
@@ -342,7 +342,7 @@
                                         <label class="um-flag-chip"><input type="checkbox" name="is_superuser" id="newIsSuperuser" onchange="applyRolePreset()"><span><i class="bi bi-lightning-fill text-warning"></i> Superusuario</span></label>
                                         <label class="um-flag-chip"><input type="checkbox" name="is_active" id="newIsActive" checked><span><i class="bi bi-check-circle-fill text-success"></i> Activo</span></label>
                                         <label class="um-flag-chip"><input type="checkbox" name="must_change_password" id="newMustChangePassword"><span><i class="bi bi-key text-secondary"></i> Cambio forzado</span></label>
-                                        <button type="submit" class="btn btn-sm ms-auto" id="btnSubmitAppUser" style="background: rgba(16, 185, 129, 0.2); color: var(--neon-green); border: 1px solid var(--neon-green); padding: 6px 20px; border-radius: 8px; font-weight: 700;">
+                                        <button type="submit" class="btn btn-sm ms-auto" id="btnSubmitAppUser" style=" color: var(--neon-green); border: 1px solid var(--neon-green); padding: 6px 20px; border-radius: 8px; font-weight: 700;">
                                             <i class="bi bi-floppy me-1"></i> Guardar
                                         </button>
                                     </div>
@@ -354,7 +354,7 @@
                     <!-- Buscador -->
                     <div style="display: flex; gap: 10px; margin-bottom: 16px;">
                         <div class="input-group input-group-sm" style="max-width: 340px;">
-                            <span class="input-group-text" style="background: rgba(0,0,0,0.2); border-color: var(--border-color); border-right: none;"><i class="bi bi-search text-info"></i></span>
+                            <span class="input-group-text" style=" border-color: var(--border-color); border-right: none;"><i class="bi bi-search text-info"></i></span>
                             <input type="text" id="sysUserSearchInput" class="form-control bg-dark text-white" placeholder="Buscar usuario..." onkeyup="filterSysUsersList()" style="border-color: var(--border-color); border-left: none;">
                         </div>
                         <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center; margin-left: 4px;">{{ app_users_list | length }} usuarios registrados</span>
@@ -464,7 +464,7 @@
                 <!-- ====== TAB: DIRECTORIO ====== -->
                 <div id="tab-directorio" class="um-tab-panel" style="display: none;">
                     <div class="um-form-panel" style="margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; color: var(--neon-blue);">
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 14px 18px;   border-radius: 12px; color: var(--neon-blue);">
                             <i class="bi bi-info-circle-fill"></i>
                             <span style="font-size: 0.82rem;">El directorio contiene los teléfonos y fueros de los usuarios de AD. Haz clic en una fila para pre-cargar sus datos en el formulario de acceso.</span>
                         </div>
@@ -472,7 +472,7 @@
 
                     <div style="display: flex; gap: 10px; margin-bottom: 16px; justify-content: space-between;">
                         <div class="input-group input-group-sm" style="max-width: 340px;">
-                            <span class="input-group-text" style="background: rgba(0,0,0,0.2); border-color: var(--border-color); border-right: none;"><i class="bi bi-search text-info"></i></span>
+                            <span class="input-group-text" style=" border-color: var(--border-color); border-right: none;"><i class="bi bi-search text-info"></i></span>
                             <input type="text" id="userSearchInput" class="form-control bg-dark text-white" placeholder="Buscar en directorio..." onkeyup="filterUsersList()" style="border-color: var(--border-color); border-left: none;">
                         </div>
                         <form action="{{ url_for('users.sync_ad_users_route') }}" method="POST" style="margin: 0;" onsubmit="var btn=this.querySelector('button'); btn.disabled=true; btn.innerHTML='<i class=\'spinner-border spinner-border-sm me-1\'></i>Sincronizando...'; return true;">
@@ -485,8 +485,8 @@
                     </div>
 
                     <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border-radius: 12px; border: 1px solid var(--border-color);">
-                        <table class="table table-sm table-dark table-hover align-middle mb-0" id="usersTableList" style="font-size: 0.85rem; background: rgba(15, 23, 42, 0.8);">
-                            <thead style="background: rgba(0, 0, 0, 0.5); position: sticky; top: 0; z-index: 2;">
+                        <table class="table table-sm table-dark table-hover align-middle mb-0" id="usersTableList" style="font-size: 0.85rem; ">
+                            <thead style=" position: sticky; top: 0; z-index: 2;">
                                 <tr>
                                     <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border-color);">Usuario AD</th>
                                     <th style="padding: 10px 14px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border-color);">Nombre Real</th>
@@ -498,12 +498,12 @@
                             <tbody>
                                 {% for user in directorio_filtrado %}
                                 <tr class="user-item" style="cursor: pointer; border-bottom: 1px solid var(--border-color);" onclick="prefillAppUser('{{ user.username|e }}', '{{ user.real_name|e }}')" title="Clic para usar en formulario de acceso">
-                                    <td class="username-cell" style="padding: 9px 14px;"><code style="background: rgba(56, 189, 248, 0.1); padding: 2px 7px; border-radius: 5px; color: var(--neon-blue); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.8rem;">{{ user.username }}</code></td>
+                                    <td class="username-cell" style="padding: 9px 14px;"><code style=" padding: 2px 7px; border-radius: 5px; color: var(--neon-blue);  font-size: 0.8rem;">{{ user.username }}</code></td>
                                     <td class="realname-cell" style="padding: 9px 14px; font-weight: 600; color: #fff;">{{ user.real_name }}</td>
                                     <td style="padding: 9px 14px; color: var(--text-muted);">{{ user.phone or '—' }}</td>
                                     <td style="padding: 9px 14px;">
                                         {% if user.fuero %}
-                                        <span style="background: rgba(16, 185, 129, 0.1); color: var(--neon-green); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600;">{{ user.fuero }}</span>
+                                        <span style=" color: var(--neon-green);  border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600;">{{ user.fuero }}</span>
                                         {% else %}<span style="color: var(--text-muted);">—</span>{% endif %}
                                     </td>
                                     <td style="padding: 9px 14px; text-align: right;">
@@ -523,8 +523,8 @@
                     </div>
 
                     <!-- Form de edición de teléfono inline -->
-                    <div id="userPhoneEditFormContainer" class="d-none" style="margin-top: 16px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.5);">
-                        <div style="background: rgba(255,255,255,0.05); padding: 10px 16px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
+                    <div id="userPhoneEditFormContainer" class="d-none" style="margin-top: 16px;  border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; ">
+                        <div style=" padding: 10px 16px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
                             <span class="fw-bold glow-text text-white" style="font-size: 0.88rem;"><i class="bi bi-pencil-square me-2 text-info"></i>Actualizar datos del usuario</span>
                             <button type="button" class="btn-close btn-close-white btn-sm" onclick="closeUserPhoneEdit()" style="position: relative; z-index: 1050; cursor: pointer;"></button>
                         </div>
@@ -571,13 +571,13 @@
 <!-- Modal Reportes Rápidos -->
 <div class="modal fade" id="reportsModal" tabindex="-1" aria-labelledby="reportsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 900px;">
-        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; ">
             
             <!-- Header moderno con gradiente (Esmeralda para Reportes) -->
             <div style="background: linear-gradient(135deg, #064e3b 0%, #10b981 100%); padding: 0;">
                 <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 16px;">
-                        <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2);">
+                        <div style="width: 46px; height: 46px;  border-radius: 14px; display: flex; align-items: center; justify-content: center; ">
                             <i class="bi bi-file-earmark-bar-graph-fill" style="color: #fff; font-size: 1.2rem;"></i>
                         </div>
                         <div>
@@ -591,13 +591,13 @@
                 </div>
             </div>
 
-            <div class="modal-body" style="padding: 30px; background: #f8fafc;">
+            <div class="modal-body" style="padding: 30px; ">
                 <div class="row g-4">
                     <!-- Card: Reporte de Tareas -->
                     <div class="col-md-6">
-                        <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; height: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                        <div style=" border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; height: 100%;  display: flex; flex-direction: column;">
                             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                                <div style="width: 32px; height: 32px; background: #ecfdf5; color: #10b981; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                <div style="width: 32px; height: 32px;  color: #10b981; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
                                     <i class="bi bi-calendar-check"></i>
                                 </div>
                                 <h6 class="fw-bold mb-0" style="color: #065f46; font-size: 0.95rem;">Registro de Actividad</h6>
@@ -611,16 +611,16 @@
                             <div class="mb-4">
                                 <label class="um-label">PC Específica (Opcional)</label>
                                 <div class="input-group">
-                                    <span class="input-group-text" style="background: #f8fafc; border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-pc-display"></i></span>
+                                    <span class="input-group-text" style=" border-color: #e2e8f0; color: #94a3b8;"><i class="bi bi-pc-display"></i></span>
                                     <input type="text" id="reportPcName" class="form-control" style="border-color: #e2e8f0; font-size: 0.85rem;" placeholder="Nombre de la PC...">
                                 </div>
                             </div>
                             
                             <div class="mt-auto d-grid gap-2">
-                                <button onclick="downloadReport('excel')" class="btn btn-success" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px; background: #10b981; border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                                <button onclick="downloadReport('excel')" class="btn btn-success" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px;  border: none; ">
                                     <i class="bi bi-file-earmark-excel me-2"></i>Descargar Excel
                                 </button>
-                                <button onclick="downloadReport('pdf')" class="btn btn-danger" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px; background: #ef4444; border: none; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                                <button onclick="downloadReport('pdf')" class="btn btn-danger" style="border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 10px;  border: none; ">
                                     <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF
                                 </button>
                             </div>
@@ -629,9 +629,9 @@
 
                     <!-- Card: Inventario General -->
                     <div class="col-md-6">
-                        <div style="background: #fff; border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; height: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                        <div style=" border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 24px; height: 100%;  display: flex; flex-direction: column;">
                             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                                <div style="width: 32px; height: 32px; background: #eff6ff; color: #3b82f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                <div style="width: 32px; height: 32px;  color: #3b82f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
                                     <i class="bi bi-box-seam"></i>
                                 </div>
                                 <h6 class="fw-bold mb-0" style="color: #1e40af; font-size: 0.95rem;">Estado de Inventario</h6>
@@ -641,7 +641,7 @@
                                 Descarga un resumen detallado de todo el hardware activo, especificaciones técnicas y estados de salud detectados.
                             </p>
                             
-                            <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px dashed #cbd5e1; margin-bottom: 20px; font-size: 0.72rem; color: #64748b;">
+                            <div style=" border-radius: 12px; padding: 12px; border: 1px dashed #cbd5e1; margin-bottom: 20px; font-size: 0.72rem; color: #64748b;">
                                 <i class="bi bi-info-circle me-1"></i> Este reporte incluye PCs activas, monitores e impresoras catalogadas.
                             </div>
                             
@@ -661,7 +661,7 @@
                 </div>
             </div>
 
-            <div class="modal-footer" style="padding: 16px 30px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+            <div class="modal-footer" style="padding: 16px 30px;  border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
                 <a href="{{ url_for('tasks.report_tasks_completed') }}" class="text-decoration-none fw-bold" style="font-size: 0.8rem; color: #065f46;">
                     <i class="bi bi-arrow-right-circle me-1"></i>Ir al Panel de Reportes
                 </a>
@@ -816,7 +816,7 @@
                 <h5 class="modal-title">Auditoría de Seguridad: <span id="securityPcName">...</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" style="background: #f8f9fa;">
+            <div class="modal-body" style="">
                 <div id="securityLoading" class="text-center py-5">
                     <div class="spinner-border text-warning"></div>
                     <p class="mt-2">Extrayendo conexiones y procesos...</p>
@@ -1122,40 +1122,40 @@
 .um-tab-btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 8px 16px; border-radius: 10px 10px 0 0; border: none;
-    background: rgba(255,255,255,0.05); color: var(--text-muted);
+     color: var(--text-muted);
     font-size: 0.82rem; font-weight: 700; cursor: pointer;
     transition: all 0.2s; font-family: inherit;
     border-bottom: 2px solid transparent;
 }
-.um-tab-btn:hover { background: rgba(56, 189, 248, 0.1); color: var(--neon-blue); }
-.um-tab-btn.active { background: rgba(16, 185, 129, 0.15); color: var(--neon-green); border-bottom-color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green); }
+.um-tab-btn:hover {  color: var(--neon-blue); }
+.um-tab-btn.active {  color: var(--neon-green); border-bottom-color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green); }
 
 /* ── Form Panel ── */
 .um-form-panel {
-    background: rgba(15, 23, 42, 0.6); border-radius: 14px; border: 1px solid var(--border-color);
+     border-radius: 14px; border: 1px solid var(--border-color);
     margin-bottom: 20px; overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    
 }
 .um-form-panel-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 14px 18px; cursor: pointer; transition: background 0.15s;
     user-select: none;
 }
-.um-form-panel-header:hover { background: rgba(255,255,255,0.05); }
+.um-form-panel-header:hover {  }
 .um-form-icon {
-    width: 36px; height: 36px; background: rgba(56, 189, 248, 0.1);
+    width: 36px; height: 36px; 
     border-radius: 9px; display: flex; align-items: center; justify-content: center;
-    color: var(--neon-blue); font-size: 1rem; flex-shrink: 0; border: 1px solid rgba(56,189,248,0.3);
+    color: var(--neon-blue); font-size: 1rem; flex-shrink: 0; 
 }
-.um-form-icon.editing { background: rgba(245, 158, 11, 0.1); color: var(--neon-orange); border-color: rgba(245, 158, 11, 0.3); }
+.um-form-icon.editing {  color: var(--neon-orange); border-color: rgba(245, 158, 11, 0.3); }
 .um-chevron { color: #94a3b8; transition: transform 0.25s; font-size: 0.9rem; }
 .um-chevron.open { transform: rotate(180deg); }
 .um-reset-btn {
     font-size: 0.75rem; color: #ef4444; cursor: pointer; padding: 3px 10px;
-    border-radius: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;  
     transition: all 0.15s; font-weight: 600;
 }
-.um-reset-btn:hover { background: rgba(239, 68, 68, 0.2); }
+.um-reset-btn:hover {  }
 
 .um-form-body { padding: 16px 18px; border-top: 1px solid var(--border-color); }
 .um-form-grid {
@@ -1164,7 +1164,7 @@
 }
 .um-field {}
 .um-label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-.um-form-footer { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px 14px; border: 1px solid var(--border-color); }
+.um-form-footer {  border-radius: 10px; padding: 12px 14px; border: 1px solid var(--border-color); }
 .um-perms-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
 .um-flags-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 
@@ -1172,24 +1172,24 @@
 .um-perm-chip span, .um-flag-chip span {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 4px 11px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
-    border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: #94a3b8;
+    border: 1px solid var(--border-color);  color: #94a3b8;
     cursor: pointer; transition: all 0.18s; user-select: none;
 }
-.um-perm-chip span:hover, .um-flag-chip span:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); }
-.um-perm-chip input:checked + span { background: rgba(16, 185, 129, 0.15); color: var(--neon-green); border-color: var(--neon-green); box-shadow: 0 0 10px rgba(16,185,129,0.2); }
-.um-flag-chip input:checked + span { background: rgba(245, 158, 11, 0.15); color: var(--neon-orange); border-color: var(--neon-orange); box-shadow: 0 0 10px rgba(245,158,11,0.2); }
+.um-perm-chip span:hover, .um-flag-chip span:hover { border-color: rgba(255,255,255,0.2);  }
+.um-perm-chip input:checked + span {  color: var(--neon-green); border-color: var(--neon-green);  }
+.um-flag-chip input:checked + span {  color: var(--neon-orange); border-color: var(--neon-orange);  }
 
 /* ── Grid de usuarios ── */
 .um-users-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px;
 }
 .um-user-card {
-    background: rgba(15, 23, 42, 0.6); border-radius: 14px; border: 1px solid var(--border-color);
+     border-radius: 14px; border: 1px solid var(--border-color);
     padding: 14px 16px; transition: all 0.2s; display: flex; flex-direction: column; gap: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+     backdrop-filter: blur(10px);
 }
-.um-user-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(56, 189, 248, 0.15); transform: translateY(-2px); }
-.um-user-card.um-user-pending { border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.05); }
+.um-user-card:hover { border-color: var(--neon-blue);  transform: translateY(-2px); }
+.um-user-card.um-user-pending { border-color: rgba(245, 158, 11, 0.5);  }
 
 .um-user-card-top { display: flex; align-items: center; gap: 10px; }
 .um-avatar {
@@ -1197,9 +1197,9 @@
     justify-content: center; font-size: 1rem; font-weight: 800; color: #fff;
     position: relative; flex-shrink: 0; letter-spacing: -0.02em;
 }
-.um-avatar-local { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--neon-green); color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
-.um-avatar-ad { background: rgba(56, 189, 248, 0.15); border: 1px solid var(--neon-blue); color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
-.um-avatar-super { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--neon-red); color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
+.um-avatar-local {  border: 1px solid var(--neon-green); color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
+.um-avatar-ad {  border: 1px solid var(--neon-blue); color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
+.um-avatar-super {  border: 1px solid var(--neon-red); color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
 .um-avatar-badge {
     position: absolute; bottom: -4px; right: -4px;
     width: 18px; height: 18px; border-radius: 6px; font-size: 0.55rem;
@@ -1210,15 +1210,15 @@
 .um-badge-local { background: var(--neon-green); }
 .um-user-info { min-width: 0; }
 .um-user-name { font-weight: 700; font-size: 0.88rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
-.um-user-code { font-size: 0.72rem; color: var(--neon-blue); background: rgba(56, 189, 248, 0.1); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3); }
+.um-user-code { font-size: 0.72rem; color: var(--neon-blue);  padding: 1px 5px; border-radius: 4px;  }
 
 .um-status-badge {
     font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
     display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
 }
-.um-status-active { background: rgba(16, 185, 129, 0.1); color: var(--neon-green); border: 1px solid rgba(16, 185, 129, 0.3); }
-.um-status-pending { background: rgba(245, 158, 11, 0.1); color: var(--neon-orange); border: 1px solid rgba(245, 158, 11, 0.3); }
-.um-status-inactive { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid var(--border-color); }
+.um-status-active {  color: var(--neon-green);  }
+.um-status-pending {  color: var(--neon-orange);  }
+.um-status-inactive {  color: var(--text-muted); border: 1px solid var(--border-color); }
 
 .um-user-card-mid { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .um-role-section {}
@@ -1228,39 +1228,39 @@
     transition: all 0.15s; background: transparent; white-space: nowrap;
 }
 .um-role-chip.dropdown-toggle::after { margin-left: 4px; }
-.um-role-tecnico { border-color: rgba(56, 189, 248, 0.5); color: var(--neon-blue); background: rgba(56, 189, 248, 0.1); }
-.um-role-tecnico:hover { background: rgba(56, 189, 248, 0.2); }
-.um-role-administrador { border-color: rgba(245, 158, 11, 0.5); color: var(--neon-orange); background: rgba(245, 158, 11, 0.1); }
-.um-role-administrador:hover { background: rgba(245, 158, 11, 0.2); }
-.um-role-operador { border-color: rgba(16, 185, 129, 0.5); color: var(--neon-green); background: rgba(16, 185, 129, 0.1); }
-.um-role-operador:hover { background: rgba(16, 185, 129, 0.2); }
-.um-role-infraestructura { border-color: rgba(168, 85, 247, 0.5); color: var(--neon-purple); background: rgba(168, 85, 247, 0.1); }
-.um-role-infraestructura:hover { background: rgba(168, 85, 247, 0.2); }
-.um-role-consulta { border-color: rgba(236, 72, 153, 0.5); color: var(--neon-pink); background: rgba(236, 72, 153, 0.1); }
-.um-role-consulta:hover { background: rgba(236, 72, 153, 0.2); }
-.um-role-super { border-color: rgba(239, 68, 68, 0.5); color: var(--neon-red); cursor: default; background: rgba(239, 68, 68, 0.1); }
+.um-role-tecnico { border-color: rgba(56, 189, 248, 0.5); color: var(--neon-blue);  }
+.um-role-tecnico:hover {  }
+.um-role-administrador { border-color: rgba(245, 158, 11, 0.5); color: var(--neon-orange);  }
+.um-role-administrador:hover {  }
+.um-role-operador { border-color: rgba(16, 185, 129, 0.5); color: var(--neon-green);  }
+.um-role-operador:hover {  }
+.um-role-infraestructura { border-color: rgba(168, 85, 247, 0.5); color: var(--neon-purple);  }
+.um-role-infraestructura:hover {  }
+.um-role-consulta { border-color: rgba(236, 72, 153, 0.5); color: var(--neon-pink);  }
+.um-role-consulta:hover {  }
+.um-role-super { border-color: rgba(239, 68, 68, 0.5); color: var(--neon-red); cursor: default;  }
 
 .um-access-pills { display: flex; gap: 4px; align-items: center; }
 .um-access-dot {
-    width: 26px; height: 26px; border-radius: 7px; background: rgba(255,255,255,0.05);
+    width: 26px; height: 26px; border-radius: 7px; 
     display: flex; align-items: center; justify-content: center;
     font-size: 0.72rem; color: var(--neon-blue); transition: all 0.15s; border: 1px solid var(--border-color);
 }
-.um-access-dot:hover { background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); }
+.um-access-dot:hover {  border-color: rgba(56, 189, 248, 0.3); }
 
 .um-user-card-actions { display: flex; gap: 6px; border-top: 1px solid var(--border-color); padding-top: 10px; }
 .um-action-btn {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 5px 11px; border-radius: 8px; font-size: 0.76rem; font-weight: 700;
-    border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: #cbd5e1;
+    border: 1px solid var(--border-color);  color: #cbd5e1;
     cursor: pointer; transition: all 0.15s; font-family: inherit;
 }
-.um-action-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff; }
-.um-action-edit:hover { border-color: rgba(56, 189, 248, 0.5); color: var(--neon-blue); background: rgba(56, 189, 248, 0.1); }
+.um-action-btn:hover {  border-color: rgba(255,255,255,0.2); color: #fff; }
+.um-action-edit:hover { border-color: rgba(56, 189, 248, 0.5); color: var(--neon-blue);  }
 .um-action-key { border-color: rgba(245, 158, 11, 0.3); color: var(--neon-orange); }
-.um-action-key:hover { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.5); }
+.um-action-key:hover {  border-color: rgba(245, 158, 11, 0.5); }
 .um-action-delete { border-color: rgba(239, 68, 68, 0.3); color: var(--neon-red); padding: 5px 10px; }
-.um-action-delete:hover { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.5); }
+.um-action-delete:hover {  border-color: rgba(239, 68, 68, 0.5); }
 </style>
 
 <!-- Scripts para Modales (Se incluirán una sola vez) -->
@@ -1818,13 +1818,13 @@
         padding: 10px 16px;
         cursor: pointer;
         list-style: none;
-        background: #fff;
+        
         user-select: none;
         transition: background 0.15s;
     }
     .prn-fuero-summary::-webkit-details-marker { display: none; }
-    .prn-fuero-summary:hover { background: #f8fafc; }
-    .prn-fuero-group[open] > .prn-fuero-summary { background: #f8fafc; }
+    .prn-fuero-summary:hover {  }
+    .prn-fuero-group[open] > .prn-fuero-summary {  }
     .prn-chevron {
         font-size: 0.65rem;
         color: #94a3b8;
@@ -1841,7 +1841,7 @@
     }
     .prn-fuero-body {
         padding-left: 24px;
-        background: #fcfcfd;
+        
         border-top: 1px solid #f1f5f9;
     }
     .prn-fuero-group {
@@ -2126,13 +2126,13 @@
     <!-- Modal Gestión de Tareas Pendientes -->
     <div class="modal fade" id="pendingTasksModal" tabindex="-1" aria-labelledby="pendingTasksModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
-            <div class="modal-content" style="border-radius: var(--radius-xl, 2px); overflow: hidden; border: 1px solid var(--card-border); background: var(--bg-color); box-shadow: none;">
+            <div class="modal-content" style="border-radius: var(--radius-xl, 2px); overflow: hidden; border: 1px solid var(--card-border); background: var(--bg-color); ">
 
                 <!-- Header Industrial -->
                 <div style="background: var(--card-bg); padding: 0; border-bottom: 2px solid var(--accent-color);">
                     <div style="padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;">
                         <div style="display: flex; align-items: center; gap: 14px;">
-                            <div style="width: 42px; height: 42px; background: rgba(245,158,11,0.1); border-radius: var(--radius-xl, 2px); display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent-color);">
+                            <div style="width: 42px; height: 42px;  border-radius: var(--radius-xl, 2px); display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent-color);">
                                 <i class="bi bi-bell-fill" style="color: var(--accent-color); font-size: 1.1rem;"></i>
                             </div>
                             <div>
@@ -2223,16 +2223,16 @@
         left: 0; top: 0; bottom: 0;
         width: 3px;
         background: var(--card-border);
-        box-shadow: 0 0 8px transparent;
+        
     }
     .pt-card:hover::before {
-        box-shadow: 0 0 12px currentColor;
+        
     }
-    .pt-card[data-cat="Impresoras"]::before { background: #3b82f6; color: #3b82f6; }
-    .pt-card[data-cat="Red/Conectividad"]::before { background: #8b5cf6; color: #8b5cf6; }
-    .pt-card[data-cat="Hardware"]::before { background: #f43f5e; color: #f43f5e; }
-    .pt-card[data-cat="Software"]::before { background: #10b981; color: #10b981; }
-    .pt-card[data-cat="Audiencias"]::before { background: #f59e0b; color: #f59e0b; }
+    .pt-card[data-cat="Impresoras"]::before {  color: #3b82f6; }
+    .pt-card[data-cat="Red/Conectividad"]::before {  color: #8b5cf6; }
+    .pt-card[data-cat="Hardware"]::before {  color: #f43f5e; }
+    .pt-card[data-cat="Software"]::before {  color: #10b981; }
+    .pt-card[data-cat="Audiencias"]::before {  color: #f59e0b; }
 
     .pt-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .pt-pc-info { min-width: 0; }
@@ -2243,7 +2243,7 @@
 
     .pt-cat-badge {
         font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-xl, 2px);
-        background: rgba(255,255,255,0.05); color: var(--text-color); border: 1px solid var(--card-border);
+         color: var(--text-color); border: 1px solid var(--card-border);
         text-transform: uppercase; letter-spacing: 0.05em;
     }
 
@@ -2255,7 +2255,7 @@
     }
 
     .pt-requester-box {
-        background: rgba(0,0,0,0.2); border-radius: var(--radius-xl, 2px); padding: 8px 10px;
+         border-radius: var(--radius-xl, 2px); padding: 8px 10px;
         display: flex; align-items: center; justify-content: space-between;
         border: 1px solid var(--card-border);
         margin-top: auto;
@@ -2276,10 +2276,10 @@
     }
     
     .btn-pt-confirm { border-color: var(--color-stable); background: transparent; color: var(--color-stable); }
-    .btn-pt-confirm:hover { background: var(--color-stable); color: #000; box-shadow: 0 0 12px rgba(16, 185, 129, 0.4); }
+    .btn-pt-confirm:hover { background: var(--color-stable); color: #000;  }
     
     .btn-pt-delete { border-color: var(--color-critical); background: transparent; color: var(--color-critical); flex: 0 0 38px; }
-    .btn-pt-delete:hover { background: var(--color-critical); color: #fff; box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); }
+    .btn-pt-delete:hover { background: var(--color-critical); color: #fff;  }
 
     .pt-assigned-chip {
         font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700; color: #000; background: var(--accent-color);
@@ -2290,8 +2290,8 @@
         margin-top: 10px;
         padding: 10px 12px;
         border-radius: var(--radius-xl, 2px);
-        background: rgba(59, 130, 246, 0.05);
-        border: 1px solid rgba(59, 130, 246, 0.3);
+        
+        
     }
 
     .pt-match-title {
@@ -2331,7 +2331,7 @@
     .pt-match-chip.pt-match-chip-current {
         border-color: var(--color-stable);
         color: var(--color-stable);
-        background: rgba(16, 185, 129, 0.1);
+        
     }
 
     @keyframes fadeInSlide {
@@ -2476,7 +2476,7 @@
                 <div class="pt-desc" title="${t.descripcion}">${t.descripcion}</div>
                 
                 ${t.acciones && t.acciones.length > 0 ? `
-                <div class="mt-1 mb-2" style="background: rgba(255, 255, 255, 0.03); border-left: 2px solid var(--accent-color); padding: 8px; border-radius: var(--radius-xl, 2px); overflow-y: auto; max-height: 120px;">
+                <div class="mt-1 mb-2" style=" border-left: 2px solid var(--accent-color); padding: 8px; border-radius: var(--radius-xl, 2px); overflow-y: auto; max-height: 120px;">
                     ${t.acciones.map(accion => {
                         const timeStr = accion.created_at_fmt ? `<span style="opacity:0.7; font-size:0.85em; margin-right:4px; font-family:var(--font-mono, monospace);">[${accion.created_at_fmt}]</span>` : '';
                         return `
@@ -2583,12 +2583,12 @@
 {% for pc in auxiliary_pcs %}
 <div class="modal fade" id="auxModal_{{ pc.pc_name | replace(' ', '_') | replace('-', '_') }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1120px;">
-        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 32px 80px rgba(0,0,0,0.25);">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none; ">
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 0;">
                 <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; gap: 18px;">
                     <div style="display: flex; align-items: center; gap: 16px; min-width: 0;">
-                        <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2);">
+                        <div style="width: 46px; height: 46px;  border-radius: 14px; display: flex; align-items: center; justify-content: center; ">
                             <i class="bi {% if 'GENERICA' in pc.pc_name.upper() %}bi-inbox{% else %}bi-diagram-3{% endif %}" style="color: #fff; font-size: 1.2rem;"></i>
                         </div>
                         <div style="min-width: 0;">
@@ -2602,14 +2602,14 @@
                 </div>
             </div>
 
-            <div class="modal-body" style="padding: 24px 28px; background: #f8fafc;">
+            <div class="modal-body" style="padding: 24px 28px; ">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold mb-0" style="color: #0f172a;"><i class="bi bi-list-task me-2 text-primary"></i> Tareas Pendientes</h6>
                 </div>
 
-                <div class="table-responsive" style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                <div class="table-responsive" style=" border-radius: 12px; border: 1px solid #e2e8f0; ">
                     <table class="table table-hover mb-0" style="font-size: 0.85rem; table-layout: fixed; min-width: 860px;">
-                        <thead style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+                        <thead style=" border-bottom: 2px solid #e2e8f0;">
                             <tr>
                                 <th style="width: 105px; color: #475569; font-weight: 600; padding: 12px 14px;">Fecha</th>
                                 <th style="width: 32%; color: #475569; font-weight: 600; padding: 12px 14px;">Descripción</th>
@@ -2631,7 +2631,7 @@
                                     <td style="padding: 12px 14px; vertical-align: middle; line-height: 1.35; overflow-wrap: anywhere;">{{ t.solicitante or '-' }}</td>
                                     <td style="padding: 12px 14px; vertical-align: middle;">
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge" style="background: #e0e7ff; color: #4338ca; border-radius: 6px; padding: 5px 8px; white-space: normal; text-align: left;">{{ t.assigned_to or '-' }}</span>
+                                            <span class="badge" style=" color: #4338ca; border-radius: 6px; padding: 5px 8px; white-space: normal; text-align: left;">{{ t.assigned_to or '-' }}</span>
                                             {% if t.estado != 'Hecha' %}
                                             <button type="button" class="btn btn-sm btn-outline-primary p-0 px-1" 
                                               style="font-size: 0.75rem; border-radius: 4px;" 
@@ -2645,22 +2645,22 @@
                                     <td style="padding: 12px 14px; vertical-align: middle; text-align: right;">
                                         <div class="d-flex justify-content-end gap-1">
                                             {% if t.estado == 'Hecha' %}
-                                            <span class="badge" style="background: #10b981; color: white; border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: center; height: 31px;" title="Completada">
+                                            <span class="badge" style=" color: white; border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: center; height: 31px;" title="Completada">
                                                 <i class="bi bi-check2-all me-1"></i> Lista
                                             </span>
                                             {% else %}
-                                            <button type="button" class="btn btn-sm" style="background: #10b981; color: white; border: none; border-radius: 6px;" title="Marcar Hecha" onclick="openCompleteTaskModal({{ t.id|tojson }}, {{ (t.assigned_to or '')|tojson }}, {{ pc.pc_name|tojson }})">
+                                            <button type="button" class="btn btn-sm" style=" color: white; border: none; border-radius: 6px;" title="Marcar Hecha" onclick="openCompleteTaskModal({{ t.id|tojson }}, {{ (t.assigned_to or '')|tojson }}, {{ pc.pc_name|tojson }})">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
                                             {% endif %}
                                             {% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}
-                                            <button type="button" class="btn btn-sm" style="background: #f59e0b; color: white; border: none; border-radius: 6px;" title="Asignar / Migrar" onclick="openMigrateModal('{{ t.id }}')">
+                                            <button type="button" class="btn btn-sm" style=" color: white; border: none; border-radius: 6px;" title="Asignar / Migrar" onclick="openMigrateModal('{{ t.id }}')">
                                                 <i class="bi bi-arrow-right"></i>
                                             </button>
                                             {% endif %}
                                             <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline" onsubmit="return confirm('¿Borrar esta tarea?');">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-sm" style="background: #ef4444; color: white; border: none; border-radius: 6px;" title="Borrar">
+                                                <button type="submit" class="btn btn-sm" style=" color: white; border: none; border-radius: 6px;" title="Borrar">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>
@@ -2680,7 +2680,7 @@
                     </table>
                 </div>
                 <div class="mt-3 text-end">
-                    <div style="background: #eff6ff; color: #1e40af; padding: 10px; border-radius: 10px; font-size: 0.72rem; border: 1px solid #dbeafe; display: inline-block; text-align: left;">
+                    <div style=" color: #1e40af; padding: 10px; border-radius: 10px; font-size: 0.72rem; border: 1px solid #dbeafe; display: inline-block; text-align: left;">
                         <i class="bi bi-info-circle-fill me-1"></i> El registro histórico de actividades ha sido movido al <strong>Panel de Reportes y Actividades Globales</strong>.
                     </div>
                 </div>
@@ -2948,7 +2948,7 @@ function loadTaskActions(taskId) {
                     listContainer.innerHTML = '<div class="text-center text-muted py-3" style="font-size: 0.9rem;">No hay acciones registradas aún.</div>';
                 } else {
                     listContainer.innerHTML = data.actions.map(action => `
-                        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <div style=" border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; ">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="fw-bold" style="color: #0f172a; font-size: 0.85rem;"><i class="bi bi-person-fill text-primary me-1"></i> ${action.user_name}</span>
                                 <span class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i> ${action.created_at_fmt}</span>
@@ -2995,12 +2995,12 @@ function submitTaskAction() {
 <!-- Modal Registro de Acciones de Tarea -->
 <div class="modal fade" id="taskActionsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; ">
             <div style="background: linear-gradient(135deg, #1e293b, #334155); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
                 <h5 class="mb-0 text-white fw-bold"><i class="bi bi-card-list me-2"></i> Registro de Acciones</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="background: #f8fafc; padding: 24px;">
+            <div class="modal-body" style=" padding: 24px;">
                 <input type="hidden" id="actionTaskId">
                 
                 <div class="mb-4">
@@ -3011,11 +3011,11 @@ function submitTaskAction() {
                     </div>
                 </div>
 
-                <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                <div style=" border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
                     <h6 class="fw-bold mb-2" style="font-size: 0.9rem; color: #0f172a;"><i class="bi bi-plus-circle me-1"></i> Agregar Nueva Acción</h6>
                     <textarea id="newTaskActionText" class="form-control mb-3" rows="3" placeholder="Describe la acción realizada (ej. 'Llevé la PC al taller para revisión')" style="border-radius: 8px; font-size: 0.9rem;"></textarea>
                     <div class="text-end">
-                        <button type="button" class="btn btn-sm" style="background: #1e293b; color: white; border-radius: 8px; padding: 6px 16px; font-weight: 600;" onclick="submitTaskAction()">
+                        <button type="button" class="btn btn-sm" style=" color: white; border-radius: 8px; padding: 6px 16px; font-weight: 600;" onclick="submitTaskAction()">
                             Guardar Acción
                         </button>
                     </div>
@@ -3028,12 +3028,12 @@ function submitTaskAction() {
 <!-- Modal Notificaciones de Técnicos (Mensajes Admin) -->
 <div class="modal fade" id="adminNotificationsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable">
-        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; ">
             <div style="background: linear-gradient(135deg, #1e293b, #334155); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
                 <h5 class="mb-0 text-white fw-bold"><i class="bi bi-chat-dots-fill me-2"></i> Mensajes de Técnicos</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="background: #f8fafc; padding: 20px;">
+            <div class="modal-body" style=" padding: 20px;">
                 <div id="adminNotificationsList" style="display: flex; flex-direction: column; gap: 12px;">
                     <!-- Lista inyectada por JS -->
                     <div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm"></div> Buscando mensajes...</div>
@@ -3086,15 +3086,15 @@ function submitTaskAction() {
                                 if (key === 'general') return;
                                 const tasks = groups[key];
                                 html += `
-                                <div class="task-group-card mb-3" style="background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(226, 232, 240, 0.8); border-radius: 16px; overflow: hidden; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom" style="background: rgba(248, 250, 252, 0.8);">
+                                <div class="task-group-card mb-3" style="  border-radius: 16px; overflow: hidden; backdrop-filter: blur(10px); ">
+                                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom" style="">
                                         <div class="d-flex align-items-center gap-2">
-                                            <div style="background: var(--accent-color, #0ea5e9); color: white; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 2px 5px rgba(14, 165, 233, 0.3);">
+                                            <div style="background: var(--accent-color, #0ea5e9); color: white; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: bold; ">
                                                 <i class="bi bi-briefcase-fill" style="font-size: 0.85rem;"></i>
                                             </div>
                                             <span style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">Tarea #${key}</span>
                                         </div>
-                                        <button class="btn btn-sm text-white" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; border-radius: 8px; font-weight: 600; padding: 4px 12px; font-size: 0.8rem; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.25); transition: transform 0.2s;" onclick="markAndScrollToTask(${tasks[0].id}, ${key})" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                                        <button class="btn btn-sm text-white" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; border-radius: 8px; font-weight: 600; padding: 4px 12px; font-size: 0.8rem;  transition: transform 0.2s;" onclick="markAndScrollToTask(${tasks[0].id}, ${key})" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
                                             Ir a la Tarea <i class="bi bi-arrow-right ms-1"></i>
                                         </button>
                                     </div>
@@ -3103,7 +3103,7 @@ function submitTaskAction() {
                                             <div class="p-3 ${i !== tasks.length - 1 ? 'border-bottom' : ''}" id="admin-notif-${n.id}" style="transition: all 0.3s; position: relative;">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <strong style="font-size: 0.85rem; color: #475569;">${n.title.replace(`(Tarea #${key})`, '').trim()}</strong>
-                                                    <span class="badge" style="background: #f1f5f9; color: #64748b; font-weight: 500; font-size: 0.7rem;">${n.created_at}</span>
+                                                    <span class="badge" style=" color: #64748b; font-weight: 500; font-size: 0.7rem;">${n.created_at}</span>
                                                 </div>
                                                 <div class="mb-2 text-dark" style="font-size: 0.9rem; line-height: 1.5; color: #334155;">${n.body}</div>
                                                 <div class="text-end mt-2">
@@ -3126,10 +3126,10 @@ function submitTaskAction() {
                                 </div>
                                 `;
                                 html += groups.general.map(n => `
-                                <div class="p-3 mb-2 rounded-3 border position-relative" id="admin-notif-${n.id}" style="background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.02); transition: all 0.3s;">
+                                <div class="p-3 mb-2 rounded-3 border position-relative" id="admin-notif-${n.id}" style="background: white;  transition: all 0.3s;">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <strong style="font-size: 0.9rem; color: #1e293b;"><i class="bi bi-person-fill text-muted me-1"></i> ${n.title}</strong>
-                                        <span class="badge" style="background: #f1f5f9; color: #64748b; font-weight: 500; font-size: 0.7rem;">${n.created_at}</span>
+                                        <span class="badge" style=" color: #64748b; font-weight: 500; font-size: 0.7rem;">${n.created_at}</span>
                                     </div>
                                     <p class="mb-2" style="font-size: 0.9rem; line-height: 1.5; color: #475569;">${n.body}</p>
                                     <div class="text-end">

@@ -450,8 +450,13 @@ function submitMobileTaskAction() {
 
   <!-- Minimal Header -->
   <div class="minimal-header">
-    <div class="minimal-brand">
-      <img src="{{ url_for('static', filename='img/trionda.jpg') }}" alt="Logo" style="height: 28px; width: 28px; border-radius: 50%;">
+    <div class="minimal-brand" style="display: flex; align-items: center; gap: 6px;">
+      <svg width="20" height="14" viewBox="0 0 24 16" xmlns="http://www.w3.org/2000/svg" style="border-radius: 2px;">
+        <rect width="24" height="5.33" y="0" fill="#75AADB"/>
+        <rect width="24" height="5.33" y="5.33" fill="#FFFFFF"/>
+        <rect width="24" height="5.33" y="10.66" fill="#75AADB"/>
+        <circle cx="12" cy="8" r="2" fill="#FDB813"/>
+      </svg>
       Técnicos
     </div>
     <div class="minimal-actions">
@@ -478,51 +483,20 @@ function submitMobileTaskAction() {
 
     <!-- Panel: Mis Tareas -->
     <div class="panel active" id="panel-mias">
-      <div class="ops-overview" id="opsOverview" style="margin-bottom: 16px;">
-        <div class="ops-title">Resumen de tareas</div>
-        <div class="ops-headline" id="opsHeadline">Cargando tareas asignadas...</div>
-        <div class="metrics-carousel" id="metricsCarousel" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 8px; scrollbar-width: none; margin-bottom: 8px;">
-          <!-- Slide 1: Mis Métricas -->
-          <div style="flex: 0 0 100%; scroll-snap-align: start;">
-            <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px;"><i class="bi bi-person-fill"></i> Mis Métricas (Hoy)</div>
-            <div class="ops-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsMineCount">0</div>
-                <div class="ops-label">En Curso</div>
-              </div>
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsMyDoneCount">0</div>
-                <div class="ops-label">Hechas</div>
-              </div>
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsMyTotalCount" style="color: var(--green);">0</div>
-                <div class="ops-label">Total</div>
-              </div>
-            </div>
-          </div>
-          <!-- Slide 2: Global -->
-          <div style="flex: 0 0 100%; scroll-snap-align: start;">
-            <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--yellow); margin-bottom: 6px;"><i class="bi bi-globe"></i> Vista Global (Hoy)</div>
-            <div class="ops-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsGlobalMine">0</div>
-                <div class="ops-label">Tomadas</div>
-              </div>
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsGlobalFree">0</div>
-                <div class="ops-label">Libres</div>
-              </div>
-              <div class="ops-card">
-                <div class="ops-kpi" id="opsGlobalDone" style="color: var(--green);">0</div>
-                <div class="ops-label">Hechas</div>
-              </div>
-            </div>
-          </div>
+      <div id="opsOverview" style="font-family: 'JetBrains Mono', monospace; border: 1px solid #333333; background: #000000; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="text-align: center;">
+          <div style="color: #666666; font-size: 0.55rem; letter-spacing: 0.1em; margin-bottom: 2px;">PENDIENTES</div>
+          <div id="opsMineCount" style="color: #4ADE80; font-size: 1.1rem; font-weight: bold;">0</div>
         </div>
-        <!-- Dots del carousel -->
-        <div id="carouselDots" style="display: flex; justify-content: center; gap: 6px;">
-          <div class="dot active" style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); transition: background 0.3s;"></div>
-          <div class="dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.3s;"></div>
+        <div style="width: 1px; height: 20px; background: #333333;"></div>
+        <div style="text-align: center;">
+          <div style="color: #666666; font-size: 0.55rem; letter-spacing: 0.1em; margin-bottom: 2px;">HOY</div>
+          <div id="opsMyDoneCount" style="color: #ffffff; font-size: 1.1rem; font-weight: bold;">0</div>
+        </div>
+        <div style="width: 1px; height: 20px; background: #333333;"></div>
+        <div style="text-align: center;">
+          <div style="color: #666666; font-size: 0.55rem; letter-spacing: 0.1em; margin-bottom: 2px;">TOTAL</div>
+          <div id="opsMyTotalCount" style="color: #22C55E; font-size: 1.1rem; font-weight: bold;">0</div>
         </div>
       </div>
       <div id="list-mias"><div class="empty-state"><i class="bi bi-arrow-repeat spin"></i><p>Cargando...</p></div></div>
@@ -552,7 +526,7 @@ function submitMobileTaskAction() {
     <a href="#" class="bottom-nav-item" id="tab-libres" onclick="switchTab('libres')">
       <i class="bi bi-inbox"></i>
       <span>Libres</span>
-      <span class="bottom-badge" id="badge-libres" style="display:none">0</span>
+      <span class="bottom-badge" id="badge-libres">0</span>
     </a>
     <div class="bottom-nav-fab-container">
       <button class="bottom-nav-fab" id="fabVoice" onclick="toggleVoice()">
@@ -1066,12 +1040,6 @@ function classifyTaskPriority(task, mode) {
 }
 
 function renderOpsOverview(myTasks, free, done, globalStats) {
-  const headline = techId
-    ? `${techId} tiene ${myTasks.length} tarea${myTasks.length === 1 ? '' : 's'} activa${myTasks.length === 1 ? '' : 's'} y ${free.length} por tomar.`
-    : `Hay ${free.length} tareas libres esperando asignación.`;
-
-  document.getElementById('opsHeadline').textContent = headline;
-  
   // Calculate "my done today"
   const isToday = (dateString) => {
     if (!dateString) return false;
@@ -1088,34 +1056,10 @@ function renderOpsOverview(myTasks, free, done, globalStats) {
   document.getElementById('opsMyDoneCount').textContent = myDoneToday;
   document.getElementById('opsMyTotalCount').textContent = allData.my_historical_total || 0;
   
-  // Global
-  if (globalStats) {
-    document.getElementById('opsGlobalMine').textContent = globalStats.tomadas || 0;
-    document.getElementById('opsGlobalFree').textContent = globalStats.libres || 0;
-    document.getElementById('opsGlobalDone').textContent = globalStats.hechas_hoy || 0;
-  }
+  // (Global stats removed from UI)
 }
 
-// Carousel scroll listener to update dots
-document.addEventListener('DOMContentLoaded', () => {
-  const carousel = document.getElementById('metricsCarousel');
-  const dots = document.querySelectorAll('#carouselDots .dot');
-  if (carousel && dots.length > 0) {
-    carousel.addEventListener('scroll', () => {
-      const index = Math.round(carousel.scrollLeft / carousel.clientWidth);
-      dots.forEach((dot, i) => {
-        if (i === index) {
-          dot.classList.add('active');
-          dot.style.background = 'var(--accent)';
-        } else {
-          dot.classList.remove('active');
-          dot.style.background = 'var(--border)';
-        }
-      });
-    });
-  }
-});
-
+// (Carousel scroll logic removed as there is only one slide now)
 // ── Render ────────────────────────────────────────
 function renderAll() {
   const tasks   = allData.active_tasks || [];
@@ -1132,8 +1076,19 @@ function renderAll() {
 
   // Badges
   const badgeL = document.getElementById('badge-libres');
-  if (free.length > 0) { badgeL.textContent = free.length; badgeL.style.display=''; }
-  else badgeL.style.display='none';
+  if (badgeL) {
+    badgeL.textContent = free.length;
+    badgeL.style.display = 'block';
+    if (free.length > 0) {
+      badgeL.style.background = 'var(--red, #ef4444)';
+      badgeL.style.color = 'white';
+      badgeL.style.borderColor = '#0f172a';
+    } else {
+      badgeL.style.background = '#333333';
+      badgeL.style.color = '#a3a3a3';
+      badgeL.style.borderColor = '#111111';
+    }
+  }
 }
 
 function renderTaskList(containerId, tasks, mode) {
@@ -1172,7 +1127,6 @@ function renderDoneToday(tasks) {
 function taskCard(t, mode) {
   const color = mode === 'free' ? 'var(--yellow)' : mode === 'mine' ? 'var(--accent)' : 'var(--green)';
   const pill  = mode === 'free' ? '<span class="status-pill pill-pending">Libre</span>'
-              : mode === 'mine' ? '<span class="status-pill pill-mine">Tomada</span>'
               : '';
   const priority = classifyTaskPriority(t, mode);
   const pcData = t.pc_name ? `'${t.pc_name}'` : 'null';
@@ -1233,8 +1187,8 @@ function taskCard(t, mode) {
       <div class="task-meta">
         <span class="meta-chip ${priority.css}"><i class="bi bi-flag"></i>${priority.label}</span>
         ${pcChip}
-        ${t.solicitante ? '<span class="meta-chip meta-chip-requester"><i class="bi bi-person-fill"></i>Solicita: '+escHtml(t.solicitante)+'</span>' : ''}
-        ${t.pc_fuero ? '<span class="meta-chip"><i class="bi bi-geo-alt"></i>'+escHtml(t.pc_fuero)+'</span>' : ''}
+        ${t.solicitante && t.solicitante !== 'Desconocido' ? '<span class="meta-chip meta-chip-requester"><i class="bi bi-person-fill"></i>Solicita: '+escHtml(t.solicitante)+'</span>' : ''}
+        ${t.pc_fuero && t.pc_fuero !== 'Desconocido' ? '<span class="meta-chip"><i class="bi bi-geo-alt"></i>'+escHtml(t.pc_fuero)+'</span>' : ''}
         <span class="meta-chip"><i class="bi bi-clock"></i>${fmtRelative(t.created_at)}</span>
       </div>
       ${actions ? `<div class="card-actions">${actions}</div>` : ''}

@@ -2,37 +2,37 @@
 <div class="modal fade" id="maintenanceModal" tabindex="-1" aria-labelledby="maintenanceModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content glass-card">
-            <div class="modal-header">
-                <h5 class="modal-title" id="maintenanceModalLabel">
-                    <i class="bi bi-tools text-accent me-2"></i> Mantenimiento del Sistema
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title" id="maintenanceModalLabel" style="font-family: var(--font-display); font-weight: 600;">
+                    <i class="bi bi-tools text-primary me-2"></i> Modo Mantenimiento
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" style="color: #e2e8f0;">
-                <p style="color: #94a3b8; margin-bottom: 24px;">Herramientas administrativas y diagnóstico en vivo.</p>
+            <div class="modal-body" >
+                <p style=" margin-bottom: 24px;">Herramientas administrativas y diagnóstico en vivo.</p>
 
                 <div class="row g-4">
                     <!-- Tarjeta de Salud del Sistema -->
                     <div class="col-md-6">
-                        <div class="glass-card h-100 p-4" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px;">
-                            <h4 style="font-weight: 500; margin-bottom: 20px; font-size: 1.2rem; color: #e2e8f0;">
+                        <div class="glass-card h-100 p-4" style="  border-radius: 10px;">
+                            <h4 style="font-weight: 500; margin-bottom: 20px; font-size: 1.2rem; ">
                                 <i class="bi bi-heart-pulse text-primary me-2"></i> Salud del Sistema
                             </h4>
                             <div id="healthIndicators">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span style="color: #94a3b8;">Base de Datos (MySQL)</span>
+                                    <span >Base de Datos (MySQL)</span>
                                     <span id="status-db" class="badge bg-secondary">Verificando...</span>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span style="color: #94a3b8;">Active Directory (LDAP)</span>
+                                    <span >Active Directory (LDAP)</span>
                                     <span id="status-ad" class="badge bg-secondary">Verificando...</span>
                                 </div>
                                 <div>
                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span style="color: #94a3b8;">Espacio en Disco (Servidor)</span>
-                                        <span id="status-disk-text" style="color: #64748b; font-size: 0.85rem;">Cargando...</span>
+                                        <span >Espacio en Disco (Servidor)</span>
+                                        <span id="status-disk-text" style=" font-size: 0.85rem;">Cargando...</span>
                                     </div>
-                                    <div class="progress" style="height: 10px; background-color: rgba(255,255,255,0.1);">
+                                    <div class="progress" style="height: 10px; background-">
                                         <div id="status-disk-bar" class="progress-bar bg-secondary" role="progressbar" style="width: 0%"></div>
                                     </div>
                                 </div>
@@ -42,58 +42,62 @@
 
                     <!-- Tarjeta de Operaciones Especiales -->
                     <div class="col-md-6">
-                        <div class="glass-card h-100 p-4" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px;">
-                            <h4 style="font-weight: 500; margin-bottom: 20px; font-size: 1.2rem; color: #e2e8f0;">
+                        <div class="glass-card h-100 p-4" style="  border-radius: 10px;">
+                            <h4 style="font-weight: 500; margin-bottom: 20px; font-size: 1.2rem; ">
                                 <i class="bi bi-lightning-charge text-warning me-2"></i> Operaciones Críticas
                             </h4>
                             
-                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" >
                                 <div>
-                                    <strong class="d-block" style="color: #e2e8f0;">Sincronización AD Manual (Usuarios)</strong>
-                                    <small style="color: #94a3b8;">Sincroniza usuarios desde el Directorio Activo.</small>
+                                    <strong class="d-block" >Sincronización AD Manual (Usuarios)</strong>
+                                    <small >Sincroniza usuarios desde el Directorio Activo.</small>
                                 </div>
                                 <button class="btn btn-outline-primary btn-sm" id="btnSyncAd" onclick="doSyncAd()">
                                     <i class="bi bi-person-lines-fill"></i> Usuarios
                                 </button>
                             </div>
 
-                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" >
                                 <div>
-                                    <strong class="d-block" style="color: #e2e8f0;">Sincronización AD Manual (PCs)</strong>
-                                    <small style="color: #94a3b8;">Asigna fueros a PCs basado en OUs del AD.</small>
+                                    <strong class="d-block" >Sincronización AD Manual (PCs)</strong>
+                                    <small >Asigna fueros a PCs basado en OUs del AD.</small>
                                 </div>
                                 <button class="btn btn-outline-info btn-sm" id="btnSyncAdPcs" onclick="doSyncAdPcs()">
                                     <i class="bi bi-pc-display"></i> Equipos
                                 </button>
                             </div>
 
-                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" >
                                 <div>
-                                    <strong class="d-block" style="color: #e2e8f0;">Respaldar Base de Datos</strong>
-                                    <small style="color: #94a3b8;">Descarga un archivo .sql.</small>
+                                    <strong class="d-block" >Respaldar Base de Datos</strong>
+                                    <small >Descarga un archivo .sql.</small>
                                 </div>
                                 <a href="{{ url_for('maintenance.backup_db') }}" class="btn btn-outline-success btn-sm">
                                     <i class="bi bi-download"></i> Backup
                                 </a>
                             </div>
                             
-                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" >
                                 <div>
-                                    <strong class="d-block" style="color: #e2e8f0;">Limpiar Caché Global</strong>
-                                    <small style="color: #94a3b8;">Invalida datos en RAM.</small>
+                                    <strong class="d-block" >Limpiar Caché Global</strong>
+                                    <small >Invalida datos en RAM.</small>
                                 </div>
                                 <button class="btn btn-outline-danger btn-sm" id="btnClearCache" onclick="doClearCache()">
                                     <i class="bi bi-trash"></i> Limpiar
                                 </button>
                             </div>
 
-                            <div class="d-flex align-items-center justify-content-between p-3 rounded" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
-                                <div>
-                                    <strong class="d-block text-warning">Modo Mantenimiento</strong>
-                                    <small style="color: #fcd34d; opacity: 0.8;">Bloquea acceso a técnicos.</small>
+                            <div class="p-3 rounded mt-3" >
+                                <div class="mb-3 text-center">
+                                    <strong class="d-block text-warning" style="font-size: 1.1rem;"><i class="bi bi-exclamation-triangle-fill"></i> Control de Acceso</strong>
+                                    <small style=" opacity: 0.8;">Bloquea el acceso al sistema para todos los técnicos.</small>
                                 </div>
-                                <div class="form-check form-switch" style="font-size: 1.5rem; margin: 0;">
-                                    <input class="form-check-input" type="checkbox" id="toggleMaintenance" onchange="toggleMaintenanceMode()" style="cursor: pointer;">
+                                <div class="btn-group w-100" role="group" aria-label="Control de Mantenimiento">
+                                    <input type="radio" class="btn-check" name="maintState" id="maintOff" autocomplete="off" onchange="setMaintenanceMode(false)">
+                                    <label class="btn btn-outline-secondary" for="maintOff"><i class="bi bi-unlock"></i> Abierto (Normal)</label>
+
+                                    <input type="radio" class="btn-check" name="maintState" id="maintOn" autocomplete="off" onchange="setMaintenanceMode(true)">
+                                    <label class="btn btn-outline-warning" for="maintOn"><i class="bi bi-lock-fill"></i> Bloqueado (Mantenimiento)</label>
                                 </div>
                             </div>
                         </div>
@@ -103,16 +107,16 @@
                 <!-- Tarjeta de Logs -->
                 <div class="row mt-4">
                     <div class="col-12">
-                        <div class="glass-card p-4" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                        <div class="glass-card p-4" style="  border-radius: 10px;">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h4 style="font-weight: 500; margin: 0; font-size: 1.2rem; color: #e2e8f0;">
+                                <h4 style="font-weight: 500; margin: 0; font-size: 1.2rem; ">
                                     <i class="bi bi-terminal text-info me-2"></i> Registro de Eventos (Logs)
                                 </h4>
-                                <button class="btn btn-sm btn-outline-secondary" style="border-color: rgba(255,255,255,0.2); color: #cbd5e1;" onclick="fetchLogs()">
+                                <button class="btn btn-sm btn-outline-secondary" style="border- " onclick="fetchLogs()">
                                     <i class="bi bi-arrow-clockwise"></i> Actualizar
                                 </button>
                             </div>
-                            <div class="p-3 rounded" style="background: #0f172a; border: 1px solid #1e293b; height: 350px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.85rem; color: #34d399;" id="logConsole">
+                            <div class="p-3 rounded" style=" border: 1px solid #1e293b; height: 350px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.85rem; " id="logConsole">
                                 Cargando logs...
                             </div>
                         </div>
@@ -120,7 +124,7 @@
                 </div>
             </div>
             <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                <button type="button" class="btn btn-secondary" style="background: rgba(255,255,255,0.1); border: none;" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" style=" border: none;" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -176,9 +180,9 @@ async function fetchHealth() {
 
         // Update maintenance toggle
         if(data.maintenance_mode === "1") {
-            document.getElementById('toggleMaintenance').checked = true;
+            document.getElementById('maintOn').checked = true;
         } else {
-            document.getElementById('toggleMaintenance').checked = false;
+            document.getElementById('maintOff').checked = true;
         }
     } catch(err) {
         console.error("Error fetching health:", err);
@@ -267,24 +271,26 @@ async function doClearCache() {
     }
 }
 
-async function toggleMaintenanceMode() {
-    const isChecked = document.getElementById('toggleMaintenance').checked;
+async function setMaintenanceMode(isActive) {
     try {
         const response = await fetch("{{ url_for('maintenance.api_toggle_maintenance') }}", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ active: isChecked })
+            body: JSON.stringify({ active: isActive })
         });
         const data = await response.json();
         if(data.status === 'success') {
             // ok
         } else {
             alert('Error: ' + data.message);
-            document.getElementById('toggleMaintenance').checked = !isChecked; // revert
+            // revert
+            if(isActive) document.getElementById('maintOff').checked = true;
+            else document.getElementById('maintOn').checked = true;
         }
     } catch(err) {
         alert('Fallo de red.');
-        document.getElementById('toggleMaintenance').checked = !isChecked; // revert
+        if(isActive) document.getElementById('maintOff').checked = true;
+        else document.getElementById('maintOn').checked = true;
     }
 }
 </script>

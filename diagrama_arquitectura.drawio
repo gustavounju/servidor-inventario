@@ -1,0 +1,62 @@
+{
+  "direction": "TB",
+  "nodes": [
+    {
+      "id": "bp_api",
+      "label": "bp_api"
+    },
+    {
+      "id": "bp_auth",
+      "label": "bp_auth"
+    },
+    {
+      "id": "bp_dashboard",
+      "label": "bp_dashboard"
+    },
+    {
+      "id": "bp_infrastructure",
+      "label": "bp_infrastructure"
+    },
+    {
+      "id": "bp_maintenance",
+      "label": "bp_maintenance"
+    },
+    {
+      "id": "bp_maps",
+      "label": "bp_maps"
+    },
+    {
+      "id": "bp_mobile",
+      "label": "bp_mobile"
+    },
+    {
+      "id": "bp_operadores",
+      "label": "bp_operadores"
+    },
+    {
+      "id": "bp_setup",
+      "label": "bp_setup"
+    },
+    {
+      "id": "bp_stock",
+      "label": "bp_stock"
+    },
+    {
+      "id": "bp_tasks",
+      "label": "bp_tasks"
+    },
+    {
+      "id": "bp_tecnicos",
+      "label": "bp_tecnicos"
+    },
+    {
+      "id": "bp_users",
+      "label": "bp_users"
+    },
+    {
+      "id": "bp_vault",
+      "label": "bp_vault"
+    }
+  ],
+  "edges": []
+}

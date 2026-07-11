@@ -5,79 +5,37 @@
  */
 
 /* ===== GOOGLE FONTS ===== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
-/* ===== VARIABLES DE TEMA — INDUSTRIAL VOID (Por Defecto / High-Vis) ===== */
+/* ===== VARIABLES DE TEMA — TERMINAL DE PRECISIÓN (Opción 2) ===== */
 :root {
-    --bg-color: #050505;
+    --bg-color: #000000;
     --text-color: #FFFFFF;
-    --text-muted: #888888;
-    --card-bg: #111111;
-    --card-border: #444444;
-    --accent-color: #FF4500;
-    --accent-dark: #CC3700;
+    --text-muted: #A3A3A3;
+    --card-bg: #09090B;
+    --card-border: #333333;
+    --accent-color: #4ADE80; /* Phosphor Green */
+    --accent-dark: #22C55E;
     --primary-gradient: none;
     --secondary-gradient: none;
-    --hero-bg: transparent;
-    --table-header-bg: #111111;
-    --glass-bg: rgba(17, 17, 17, 0.9);
-    --glass-border: rgba(68, 68, 68, 1);
-    --kpi-shadow: 4px 4px 0px var(--accent-color);
-    --border-color: #444444;
-    --input-focus-shadow: 2px 2px 0px var(--accent-color);
+    --hero-bg: #000000;
+    --table-header-bg: #09090B;
+    --glass-bg: #000000;
+    --glass-border: #333333;
+    --kpi-shadow: none;
+    --border-color: #333333;
+    --input-focus-shadow: 0 0 0 1px #4ADE80;
     --navbar-bg: #000000;
-    --navbar-border: #444444;
+    --navbar-border: #333333;
     --radius-xl: 0px;
     --radius-lg: 0px;
-    --shadow-lg: 4px 4px 0px rgba(255, 69, 0, 0.5);
-    --font-display: 'Space Grotesk', sans-serif;
-    --font-body: 'Inter', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-    --color-critical: #FF0000;
-    --color-warning: #FFFF00;
-    --color-stable: #00FF00;
-}
-
-[data-theme="emerald"] {
-    --bg-color: #ecfdf5;
-    --text-color: #064e3b;
-    --text-muted: #047857;
-    --card-bg: #ffffff;
-    --card-border: #d1fae5;
-    --accent-color: #10b981;
-    --accent-dark: #059669;
-    --primary-gradient: linear-gradient(135deg, #059669 0%, #34d399 100%);
-    --secondary-gradient: linear-gradient(135deg, #064e3b 0%, #059669 100%);
-    --hero-bg: linear-gradient(135deg, #064e3b 0%, #059669 60%, #34d399 100%);
-    --table-header-bg: linear-gradient(180deg, #059669 0%, #34d399 100%);
-    --navbar-bg: #022c22;
+    --shadow-lg: none;
     --font-display: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
     --color-critical: #EF4444;
-    --color-warning: #F97316;
-    --color-stable: #34D399;
-}
-
-[data-theme="midnight"] {
-    --bg-color: #050505;
-    --text-color: #FFFFFF;
-    --text-muted: #888888;
-    --card-bg: #111111;
-    --card-border: #444444;
-    --accent-color: #FF4500;
-    --accent-dark: #CC3700;
-    --primary-gradient: none;
-    --secondary-gradient: none;
-    --hero-bg: transparent;
-    --table-header-bg: #111111;
-    --navbar-bg: #000000;
-    --font-display: 'Space Grotesk', sans-serif;
-    --font-body: 'Inter', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-    --color-critical: #FF0000;
-    --color-warning: #FFFF00;
-    --color-stable: #00FF00;
+    --color-warning: #FACC15;
+    --color-stable: #4ADE80;
 }
 
 body.has-fixed-header {
@@ -97,6 +55,49 @@ body {
 /* Tipografías Utilitarias */
 .font-display { font-family: var(--font-display) !important; }
 .font-mono { font-family: var(--font-mono) !important; font-size: 0.9em; letter-spacing: -0.02em; }
+
+/* ===== CLASES DE DISEÑO (Terminal Estricta) ===== */
+.glass-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: all 0.2s ease;
+}
+
+/* Override Bootstrap Modal */
+.modal-content {
+    background: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+}
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+}
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+}
+
+/* Override Segmented Controls (Botones de Estado) */
+.btn-group[role="group"] .btn {
+    opacity: 0.4;
+    background: #000000;
+    transition: all 0.2s ease;
+    border-color: #333333;
+    color: #A3A3A3;
+    border-radius: 0px !important;
+}
+.btn-group[role="group"] .btn-check:checked + .btn {
+    opacity: 1;
+    font-weight: 600;
+    border-color: var(--accent-color);
+    background: rgba(74, 222, 128, 0.1); /* Suave verde de fondo */
+    color: var(--accent-color);
+}
 
 
 .ops-dashboard {

@@ -1,0 +1,181 @@
+{
+  "direction": "TB",
+  "nodes": [
+    {
+      "id": "pcs",
+      "label": "pcs\nPK pc_name: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 210,
+      "height": 50
+    },
+    {
+      "id": "tasks",
+      "label": "tasks\nPK id: INT\nPK pc_name: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 210,
+      "height": 70
+    },
+    {
+      "id": "pc_detected_printers",
+      "label": "pc_detected_printers\nPK id: INT\nPK pc_name: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 210,
+      "height": 70
+    },
+    {
+      "id": "technicians",
+      "label": "technicians\nPK id: INT\nPK name: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 190,
+      "height": 70
+    },
+    {
+      "id": "components",
+      "label": "components\nPK id: INT\nPK serial_number: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 250,
+      "height": 70
+    },
+    {
+      "id": "audit_logs",
+      "label": "audit_logs\nPK id: INT\nPK pc_name: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 210,
+      "height": 70
+    },
+    {
+      "id": "ups_inventory",
+      "label": "ups_inventory\nPK id: INT\nPK code: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 190,
+      "height": 70
+    },
+    {
+      "id": "ad_users",
+      "label": "ad_users\nPK username: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 220,
+      "height": 50
+    },
+    {
+      "id": "fuero_mappings",
+      "label": "fuero_mappings\nPK id: INT\nPK prefix_code: VARCHAR(100);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 240,
+      "height": 70
+    },
+    {
+      "id": "app_notifications",
+      "label": "app_notifications\nPK id: INT\ntitle: TEXT\nbody: TEXT\nurl: TEXT\ncreated_at: DATETIME\nread_at: DATETIME",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 170,
+      "height": 150
+    },
+    {
+      "id": "tech_messages",
+      "label": "tech_messages\nPK id: INT\nPK technician_name: VARCHAR(100);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 270,
+      "height": 70
+    },
+    {
+      "id": "app_users",
+      "label": "app_users\nPK id: INT\nPK username: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 220,
+      "height": 70
+    },
+    {
+      "id": "racks",
+      "label": "racks\nPK id: INT\nPK nombre: VARCHAR(100);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 200,
+      "height": 70
+    },
+    {
+      "id": "rack_audits",
+      "label": "rack_audits\nPK id: INT\nrack_id: INT\ntimestamp: DATETIME\nPK estado_luces_bool: TINYINT(1);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 270,
+      "height": 110
+    },
+    {
+      "id": "switches",
+      "label": "switches\nPK id: INT\nPK codigo_qr: VARCHAR(100);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 220,
+      "height": 70
+    },
+    {
+      "id": "switch_audits",
+      "label": "switch_audits\nPK id: INT\nswitch_id: INT\ntimestamp: DATETIME\nPK estado_general: VARCHAR(50);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 250,
+      "height": 110
+    },
+    {
+      "id": "network_printers",
+      "label": "network_printers\nPK id: INT\nPK ip_address: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 230,
+      "height": 70
+    },
+    {
+      "id": "pc_network_printers",
+      "label": "pc_network_printers\nPK id: INT\nPK pc_name: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 210,
+      "height": 70
+    },
+    {
+      "id": "fcm_tokens",
+      "label": "fcm_tokens\nPK id: INT\nPK technician_name: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 270,
+      "height": 70
+    },
+    {
+      "id": "admin_audit_logs",
+      "label": "admin_audit_logs\nPK id: INT\nPK action_type: VARCHAR(100);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 240,
+      "height": 70
+    },
+    {
+      "id": "app_settings",
+      "label": "app_settings\nPK setting_key: VARCHAR(100);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 240,
+      "height": 50
+    },
+    {
+      "id": "infrastructure_maps",
+      "label": "infrastructure_maps\nPK id: INT\nPK name: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 190,
+      "height": 70
+    },
+    {
+      "id": "task_actions",
+      "label": "task_actions\nPK id: INT\ntask_id: INT\nPK user_name: VARCHAR(255);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 220,
+      "height": 90
+    },
+    {
+      "id": "efemerides",
+      "label": "efemerides\nPK id: INT\nPK dia_mes: VARCHAR(5);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 200,
+      "height": 70
+    },
+    {
+      "id": "asset_location_history",
+      "label": "asset_location_history\nPK id: INT\nasset_type: VARCHAR(50);",
+      "style": "rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;",
+      "width": 200,
+      "height": 70
+    }
+  ],
+  "edges": []
+}
