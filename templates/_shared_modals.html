@@ -2826,23 +2826,47 @@
     select.value = ""; // Default
 
     if (solicitante && solicitante.trim().length > 0) {
-        var terms = solicitante.toLowerCase().replace(/[,.]/g, '').split(' ').filter(t => t.length > 2);
+        // Normalizar quitando acentos y eñes
+        var normalizeStr = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        var cleanSol = normalizeStr(solicitante).replace(/[,.]/g, '');
+        var terms = cleanSol.split(' ').filter(t => t.length > 1);
+        
+        // Generar posibles nombres de usuario AD (ej: "Patricia Ibañez" -> "pibanez")
+        var possibleUsernames = [];
+        if (terms.length >= 2) {
+            var firstInitial = terms[0].charAt(0);
+            var lastName = terms[terms.length - 1]; // Tomar el último término como apellido
+            possibleUsernames.push(firstInitial + lastName); // ej: pibanez
+            possibleUsernames.push(terms[0] + "." + lastName); // ej: patricia.ibanez
+        }
+
         var bestMatchIndex = 0;
-        var maxMatches = 0;
+        var maxScore = 0;
         
         for (var i = 1; i < select.options.length; i++) {
-            var optionText = select.options[i].text.toLowerCase();
-            var matches = 0;
+            var optionText = normalizeStr(select.options[i].text);
+            var score = 0;
+            
+            // Puntaje por coincidencia de palabras sueltas
             terms.forEach(term => {
-                if (optionText.includes(term)) matches++;
+                if (term.length > 2 && optionText.includes(term)) score += 1;
             });
-            if (matches > maxMatches) {
-                maxMatches = matches;
+
+            // Puntaje fuerte si coincide con el posible nombre de usuario (ej. gotero)
+            possibleUsernames.forEach(uname => {
+                // Buscamos si el username exacto está en el texto (con un padding o simplemente incluido)
+                if (optionText.includes(uname)) {
+                    score += 5; 
+                }
+            });
+
+            if (score > maxScore) {
+                maxScore = score;
                 bestMatchIndex = i;
             }
         }
         
-        if (maxMatches > 0) {
+        if (maxScore > 0) {
             select.selectedIndex = bestMatchIndex;
         }
     }
