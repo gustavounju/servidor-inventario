@@ -2605,7 +2605,7 @@
 
             <div class="modal-body" style="padding: 24px 28px; ">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold mb-0" style="color: #0f172a;"><i class="bi bi-list-task me-2 text-primary"></i> Tareas Pendientes</h6>
+                    <h6 class="fw-bold mb-0" style="color: #0f172a;"><i class="bi bi-list-task me-2 text-primary"></i> {% if pc.pc_name.upper() == 'PC GENERICA' or pc.pc_name.upper() == 'PC-GENERICA' %}Tareas (Pendientes e Historial){% else %}Tareas Pendientes{% endif %}</h6>
                     {% if pc.pc_name.upper() == 'PC GENERICA' or pc.pc_name.upper() == 'PC-GENERICA' %}
                     <form action="{{ url_for('tasks.auto_migrate_generic_tasks') }}" method="POST" class="m-0" onsubmit="return confirm('¿Auto-vincular todas las tareas posibles según el nombre del solicitante?');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -536,7 +536,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
 
             auxiliary_pcs_raw = conn.execute(
                 """SELECT p.pc_name, p.last_report,
-                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND t.estado != 'Hecha') AS tareas_pendientes
+                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%')) AS tareas_pendientes
                 FROM pcs p
                 WHERE p.is_active = 1
                 AND (UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%')
@@ -546,7 +546,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             auxiliary_pcs = []
             for row in auxiliary_pcs_raw:
                 pc_dict = dict(row)
-                pc_dict["tareas"] = [dict(t) for t in conn.execute("SELECT * FROM tasks WHERE pc_name = %s AND estado != 'Hecha' ORDER BY created_at DESC", (pc_dict["pc_name"],)).fetchall()]
+                pc_dict["tareas"] = [dict(t) for t in conn.execute("SELECT * FROM tasks WHERE pc_name = %s AND (estado != 'Hecha' OR pc_name LIKE 'PC%%GENERICA%%' OR pc_name LIKE 'INFRAESTRUCTURA%%') ORDER BY created_at DESC", (pc_dict["pc_name"],)).fetchall()]
                 auxiliary_pcs.append(pc_dict)
 
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND pc_name NOT LIKE 'PC-GENERICA%%' AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
