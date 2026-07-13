@@ -374,6 +374,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                     WHEN UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' THEN 0
                     WHEN UPPER(p.pc_name) LIKE 'PC-GENERICA%%' THEN 0
                     WHEN UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%' THEN 1
+                    WHEN UPPER(p.pc_name) LIKE 'SIGJ%%' THEN 2
                     ELSE 2
                 END, {sort_col_sql} {sort_dir_sql}
             """
@@ -536,24 +537,24 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
 
             auxiliary_pcs_raw = conn.execute(
                 """SELECT p.pc_name, p.last_report,
-                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%')) AS tareas_pendientes
+                    (SELECT COUNT(*) FROM tasks t WHERE t.pc_name = p.pc_name AND (t.estado != 'Hecha' OR UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%' OR UPPER(p.pc_name) LIKE 'SIGJ%%')) AS tareas_pendientes
                 FROM pcs p
                 WHERE p.is_active = 1
-                AND (UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%')
-                ORDER BY CASE WHEN UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%' THEN 0 ELSE 1 END, p.pc_name ASC"""
+                AND (UPPER(p.pc_name) LIKE 'PC%%GENERICA%%' OR UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%' OR UPPER(p.pc_name) LIKE 'SIGJ%%')
+                ORDER BY CASE WHEN UPPER(p.pc_name) LIKE 'INFRAESTRUCTURA%%' THEN 0 WHEN UPPER(p.pc_name) LIKE 'SIGJ%%' THEN 1 ELSE 2 END, p.pc_name ASC"""
             ).fetchall()
             
             auxiliary_pcs = []
             for row in auxiliary_pcs_raw:
                 pc_dict = dict(row)
-                pc_dict["tareas"] = [dict(t) for t in conn.execute("SELECT * FROM tasks WHERE pc_name = %s AND (estado != 'Hecha' OR pc_name LIKE 'PC%%GENERICA%%' OR pc_name LIKE 'INFRAESTRUCTURA%%') ORDER BY created_at DESC", (pc_dict["pc_name"],)).fetchall()]
+                pc_dict["tareas"] = [dict(t) for t in conn.execute("SELECT * FROM tasks WHERE pc_name = %s AND (estado != 'Hecha' OR pc_name LIKE 'PC%%GENERICA%%' OR pc_name LIKE 'INFRAESTRUCTURA%%' OR pc_name LIKE 'SIGJ%%') ORDER BY created_at DESC", (pc_dict["pc_name"],)).fetchall()]
                 auxiliary_pcs.append(pc_dict)
 
-            kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND pc_name NOT LIKE 'PC-GENERICA%%' AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
+            kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND pc_name NOT LIKE 'PC-GENERICA%%' AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'").fetchone()["c"]
             kpi_total_graveyard = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 0").fetchone()["c"]
-            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_ram_baja = 1 AND pc_name NOT LIKE 'PC-GENERICA%%' AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
-            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_sin_impresora = 1 AND pc_name NOT LIKE 'PC-GENERICA%%' AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
-            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_impresora_red = 1 AND pc_name NOT LIKE 'PC-GENERICA%%' AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%'").fetchone()["c"]
+            kpi_alerta_ram = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_ram_baja = 1 AND pc_name NOT LIKE 'PC-GENERICA%%' AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'").fetchone()["c"]
+            kpi_sin_impresora = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_sin_impresora = 1 AND pc_name NOT LIKE 'PC-GENERICA%%' AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'").fetchone()["c"]
+            kpi_impresora_red = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND alerta_impresora_red = 1 AND pc_name NOT LIKE 'PC-GENERICA%%' AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'").fetchone()["c"]
 
             count_network_catalog = conn.execute("SELECT COUNT(*) as c FROM network_printers").fetchone()["c"]
             count_local_printers = conn.execute("""
@@ -581,7 +582,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 SELECT COUNT(*) as c FROM pcs
                 WHERE is_active = 1
                 AND pc_name NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
-                AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%'
+                AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'
                 AND alerta_ram_baja = 0 AND IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) = 0
                 AND alerta_disco = 0 AND alerta_uptime = 0 AND alerta_nombre_duplicado = 0
             """).fetchone()["c"]
@@ -589,21 +590,21 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 SELECT COUNT(*) as c FROM pcs
                 WHERE is_active = 1
                 AND pc_name NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
-                AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%'
+                AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'
                 AND (alerta_ram_baja + IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + alerta_disco + alerta_uptime + alerta_nombre_duplicado) = 1
             """).fetchone()["c"]
             kpi_criticas = conn.execute("""
                 SELECT COUNT(*) as c FROM pcs
                 WHERE is_active = 1
                 AND pc_name NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
-                AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%'
+                AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'
                 AND (alerta_ram_baja + IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + alerta_disco + alerta_uptime + alerta_nombre_duplicado) >= 2
             """).fetchone()["c"]
             kpi_sin_impresora_inventario = conn.execute("""
                 SELECT COUNT(*) as c FROM pcs
                 WHERE is_active = 1
                 AND pc_name NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
-                AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%'
+                AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'
                 AND (printer_model IS NULL OR printer_model = '' OR printer_model = 'N/A' OR UPPER(printer_model) IN ('NONE', '-') OR UPPER(printer_model) LIKE '%%SIN IMPRESORA%%')
                 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
             """).fetchone()["c"]
@@ -613,7 +614,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                    FROM pcs p
                    LEFT JOIN ad_users a ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = a.username
                    WHERE (p.is_active = 1 OR p.pc_name IN ('PC Generica', 'Infraestructura', 'PC-GENERICA'))
-                   ORDER BY CASE WHEN p.pc_name LIKE 'PC%%GENERICA%%' THEN 0 WHEN p.pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1 ELSE 2 END, p.pc_name ASC"""
+                   ORDER BY CASE WHEN p.pc_name LIKE 'PC%%GENERICA%%' THEN 0 WHEN p.pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1 WHEN p.pc_name LIKE 'SIGJ%%' THEN 2 ELSE 3 END, p.pc_name ASC"""
             ).fetchall()]
 
             backup_dir = os.environ.get("BACKUP_DIR", "/opt/inventario/backups")

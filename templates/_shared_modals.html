@@ -2590,7 +2590,7 @@
                 <div style="padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; gap: 18px;">
                     <div style="display: flex; align-items: center; gap: 16px; min-width: 0;">
                         <div style="width: 46px; height: 46px;  border-radius: 14px; display: flex; align-items: center; justify-content: center; ">
-                            <i class="bi {% if 'GENERICA' in pc.pc_name.upper() %}bi-inbox{% else %}bi-diagram-3{% endif %}" style="color: #fff; font-size: 1.2rem;"></i>
+                            <i class="bi {% if 'GENERICA' in pc.pc_name.upper() %}bi-inbox{% elif pc.pc_name.upper().startswith('SIGJ') %}bi-cpu{% else %}bi-diagram-3{% endif %}" style="color: #fff; font-size: 1.2rem;"></i>
                         </div>
                         <div style="min-width: 0;">
                             <h5 class="modal-title mb-0 fw-bold text-white" style="font-size: 1.1rem; letter-spacing: -0.02em; line-height: 1.25; overflow-wrap: anywhere;">Panel de Tareas: {{ pc.pc_name }}</h5>
@@ -2605,7 +2605,7 @@
 
             <div class="modal-body" style="padding: 24px 28px; ">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold mb-0" style="color: #0f172a;"><i class="bi bi-list-task me-2 text-primary"></i> {% if pc.pc_name.upper() == 'PC GENERICA' or pc.pc_name.upper() == 'PC-GENERICA' %}Tareas (Pendientes e Historial){% else %}Tareas Pendientes{% endif %}</h6>
+                    <h6 class="fw-bold mb-0" style="color: #0f172a;"><i class="bi bi-list-task me-2 text-primary"></i> {% if pc.pc_name.upper() == 'PC GENERICA' or pc.pc_name.upper() == 'PC-GENERICA' or pc.pc_name.upper().startswith('SIGJ') or pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}Tareas (Pendientes e Historial){% else %}Tareas Pendientes{% endif %}</h6>
                     {% if pc.pc_name.upper() == 'PC GENERICA' or pc.pc_name.upper() == 'PC-GENERICA' %}
                     <form action="{{ url_for('tasks.auto_migrate_generic_tasks') }}" method="POST" class="m-0" onsubmit="return confirm('¿Auto-vincular todas las tareas posibles según el nombre del solicitante?');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

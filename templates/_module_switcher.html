@@ -108,8 +108,8 @@
     {% for pc in auxiliary_pcs %}
     {% set aux_name = pc.pc_name.upper() %}
     <button type="button" class="op-telemetry-item" data-bs-toggle="modal" data-bs-target="#auxModal_{{ pc.pc_name | replace(' ', '_') | replace('-', '_') }}" style="background: transparent; border: none; cursor: pointer;">
-        <i class="bi {% if 'GENERICA' in aux_name %}bi-inbox{% else %}bi-diagram-3{% endif %}"></i>
-        {% if aux_name.startswith('INFRAESTRUCTURA') %}INFRA{% elif 'GENERICA' in aux_name %}GENÉRICA{% else %}{{ pc.pc_name }}{% endif %}: <strong>{{ pc.tareas_pendientes or 0 }}</strong>
+        <i class="bi {% if 'GENERICA' in aux_name %}bi-inbox{% elif aux_name.startswith('SIGJ') %}bi-cpu{% else %}bi-diagram-3{% endif %}"></i>
+        {% if aux_name.startswith('INFRAESTRUCTURA') %}INFRA{% elif aux_name.startswith('SIGJ') %}SIGJ{% elif 'GENERICA' in aux_name %}GENÉRICA{% else %}{{ pc.pc_name }}{% endif %}: <strong>{{ pc.tareas_pendientes or 0 }}</strong>
     </button>
     {% endfor %}
     {% endif %}

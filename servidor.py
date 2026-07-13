@@ -352,8 +352,8 @@ def _load_kpis_from_db(user_auth):
                     """SELECT p.pc_name, p.fuero, p.last_user, a.real_name 
                        FROM pcs p
                        LEFT JOIN ad_users a ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = a.username
-                       WHERE p.is_active = 1 OR p.pc_name IN ('PC Generica', 'Infraestructura', 'PC-GENERICA')
-                       ORDER BY CASE WHEN p.pc_name LIKE 'PC%%GENERICA%%' THEN 0 WHEN p.pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1 ELSE 2 END, p.pc_name ASC"""
+                       WHERE (p.is_active = 1 OR p.pc_name IN ('PC Generica', 'Infraestructura', 'PC-GENERICA', 'SIGJ'))
+                       ORDER BY CASE WHEN p.pc_name LIKE 'PC%%GENERICA%%' THEN 0 WHEN p.pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1 WHEN p.pc_name LIKE 'SIGJ%%' THEN 2 ELSE 3 END, p.pc_name ASC"""
                 ).fetchall()]
                 
         except Exception as e:
