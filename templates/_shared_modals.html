@@ -2772,7 +2772,7 @@
               <option value="">-- Seleccionar --</option>
               {% for p in all_pcs %}
               {% if p.pc_name.upper() != 'PC GENERICA' and p.pc_name.upper() != 'PC-GENERICA' %}
-              <option value="{{ p.pc_name }}">{{ p.pc_name }} | {{ p.fuero or '-' }} | {{ p.last_user or '?' }}</option>
+              <option value="{{ p.pc_name }}">{{ p.pc_name }} | {{ p.fuero or '-' }} | {{ p.last_user or '?' }}{% if p.real_name %} ({{ p.real_name }}){% endif %}</option>
               {% endif %}
               {% endfor %}
             </select>

@@ -86,7 +86,13 @@ def get_pc_detail_context(pc_name):
         
         audit_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = %s ORDER BY changed_at DESC", (pc_name,)).fetchall()
         
-        all_pcs = conn.execute("SELECT pc_name, fuero, last_user FROM pcs WHERE is_active=1 ORDER BY pc_name").fetchall()
+        all_pcs = conn.execute("""
+            SELECT p.pc_name, p.fuero, p.last_user, a.real_name 
+            FROM pcs p 
+            LEFT JOIN ad_users a ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = a.username 
+            WHERE p.is_active=1 
+            ORDER BY p.pc_name
+        """).fetchall()
         
         pc_ups_list = conn.execute('''
             SELECT u.*, b.serial_number as battery_code FROM ups_inventory u

@@ -349,9 +349,11 @@ def _load_kpis_from_db(user_auth):
                 extra_data['ad_usernames'] = ad_usernames
                 
                 extra_data['all_pcs'] = [dict(row) for row in conn.execute(
-                    """SELECT pc_name, fuero, last_user FROM pcs 
-                       WHERE is_active = 1 OR pc_name IN ('PC Generica', 'Infraestructura', 'PC-GENERICA')
-                       ORDER BY CASE WHEN pc_name LIKE 'PC%%GENERICA%%' THEN 0 WHEN pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1 ELSE 2 END, pc_name ASC"""
+                    """SELECT p.pc_name, p.fuero, p.last_user, a.real_name 
+                       FROM pcs p
+                       LEFT JOIN ad_users a ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = a.username
+                       WHERE p.is_active = 1 OR p.pc_name IN ('PC Generica', 'Infraestructura', 'PC-GENERICA')
+                       ORDER BY CASE WHEN p.pc_name LIKE 'PC%%GENERICA%%' THEN 0 WHEN p.pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1 ELSE 2 END, p.pc_name ASC"""
                 ).fetchall()]
                 
         except Exception as e:
