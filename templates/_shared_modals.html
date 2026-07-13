@@ -2665,7 +2665,7 @@
                                             </button>
                                             {% endif %}
                                             {% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}
-                                            <button type="button" class="btn btn-sm" style=" color: white; border: none; border-radius: 6px;" title="Asignar / Migrar" onclick="openMigrateModal('{{ t.id }}')">
+                                            <button type="button" class="btn btn-sm" style=" color: white; border: none; border-radius: 6px;" title="Asignar / Migrar" onclick='openMigrateModal({{ t.id|tojson }}, {{ (t.solicitante or "")|tojson }})'>
                                                 <i class="bi bi-arrow-right"></i>
                                             </button>
                                             {% endif %}
@@ -2820,8 +2820,33 @@
 </div>
 
 <script>
-  function openMigrateModal(taskId) {
+  function openMigrateModal(taskId, solicitante) {
     document.getElementById('migration_task_id').value = taskId;
+    var select = document.getElementById('target_pc');
+    select.value = ""; // Default
+
+    if (solicitante && solicitante.trim().length > 0) {
+        var terms = solicitante.toLowerCase().replace(/[,.]/g, '').split(' ').filter(t => t.length > 2);
+        var bestMatchIndex = 0;
+        var maxMatches = 0;
+        
+        for (var i = 1; i < select.options.length; i++) {
+            var optionText = select.options[i].text.toLowerCase();
+            var matches = 0;
+            terms.forEach(term => {
+                if (optionText.includes(term)) matches++;
+            });
+            if (matches > maxMatches) {
+                maxMatches = matches;
+                bestMatchIndex = i;
+            }
+        }
+        
+        if (maxMatches > 0) {
+            select.selectedIndex = bestMatchIndex;
+        }
+    }
+
     var modal = new bootstrap.Modal(document.getElementById('modalMigrar'));
     modal.show();
   }
