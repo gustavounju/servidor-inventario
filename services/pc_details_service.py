@@ -63,10 +63,15 @@ def get_pc_detail_context(pc_name):
         if not pc:
             return None
 
-        tareas = conn.execute("""
+        tareas = [dict(row) for row in conn.execute("""
             SELECT id, pc_name, created_at, descripcion, estado, solicitante, assigned_to, completed_by
             FROM tasks WHERE pc_name = %s ORDER BY created_at DESC
-        """, (pc_name,)).fetchall()
+        """, (pc_name,)).fetchall()]
+        
+        # Attach AD matches if this is a generic PC
+        if 'generica' in pc_name.lower():
+            from blueprints.bp_tasks import _attach_task_user_matches
+            tareas = _attach_task_user_matches(tareas, conn)
         
         technicians = list_technician_users()
         

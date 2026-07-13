@@ -222,7 +222,7 @@ def api_pending_tasks():
         with get_db_connection() as conn:
             tasks = conn.execute("""
                 SELECT t.id, t.pc_name, t.descripcion, t.solicitante, t.categoria, 
-                       t.estado, t.assigned_to, t.created_at, t.fuero,
+                       t.estado, t.assigned_to, t.created_at, t.fuero, p.fuero AS pc_fuero,
                        p.last_user, u.phone
                 FROM tasks t
                 LEFT JOIN pcs p ON t.pc_name = p.pc_name
@@ -244,6 +244,9 @@ def api_pending_tasks():
                 # Asegurar que las acciones sean diccionarios para jsonify
                 if 'acciones' in d and d['acciones']:
                     d['acciones'] = [dict(a) for a in d['acciones']]
+                    
+                # Fix fuero overlap
+                d['fuero'] = d.get('pc_fuero') or d.get('fuero')
                     
                 result.append(d)
 

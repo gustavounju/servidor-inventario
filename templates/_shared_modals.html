@@ -2493,7 +2493,8 @@
                 <div class="pt-requester-box">
                     <div class="pt-req-info">
                         <span class="pt-req-name"><i class="bi bi-person me-1"></i>${t.solicitante || 'Sin nombre'}</span>
-                        <span class="pt-req-sub">${t.fuero || (isGeneric ? 'Solicitud abierta' : t.last_user || '')}</span>
+                        <span class="pt-req-sub">${t.last_user || (isGeneric ? 'Solicitud abierta' : '')}</span>
+                        ${t.fuero ? `<span class="pt-req-sub" style="margin-top: 2px; color: #94a3b8; text-transform: capitalize;"><i class="bi bi-building me-1"></i>${t.fuero}</span>` : ''}
                     </div>
                     ${t.phone ? `<a href="tel:${t.phone}" class="btn btn-xs btn-outline-secondary p-1" style="border-radius: 6px;" title="Llamar: ${t.phone}"><i class="bi bi-telephone-fill"></i></a>` : ''}
                 </div>
@@ -2611,11 +2612,11 @@
                     <table class="table table-hover mb-0" style="font-size: 0.85rem; table-layout: fixed; min-width: 860px;">
                         <thead style=" border-bottom: 2px solid #e2e8f0;">
                             <tr>
-                                <th style="width: 105px; color: #475569; font-weight: 600; padding: 12px 14px;">Fecha</th>
-                                <th style="width: 32%; color: #475569; font-weight: 600; padding: 12px 14px;">Descripción</th>
-                                <th style="width: 24%; color: #475569; font-weight: 600; padding: 12px 14px;">Solicitante</th>
-                                <th style="width: 190px; color: #475569; font-weight: 600; padding: 12px 14px;">Técnico</th>
-                                <th style="width: 132px; color: #475569; font-weight: 600; padding: 12px 14px; text-align: right;">Acciones</th>
+                                <th style="width: 105px; color: #94a3b8; font-weight: 600; padding: 12px 14px;">Fecha</th>
+                                <th style="width: 32%; color: #94a3b8; font-weight: 600; padding: 12px 14px;">Descripción</th>
+                                <th style="width: 24%; color: #94a3b8; font-weight: 600; padding: 12px 14px;">Solicitante</th>
+                                <th style="width: 190px; color: #94a3b8; font-weight: 600; padding: 12px 14px;">Técnico</th>
+                                <th style="width: 132px; color: #94a3b8; font-weight: 600; padding: 12px 14px; text-align: right;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2626,9 +2627,19 @@
                                         <span class="text-muted" style="font-size: 0.8rem;">{{ t.created_at | datetime_es }}</span>
                                     </td>
                                     <td style="padding: 12px 14px; vertical-align: middle;">
-                                        <div class="fw-medium" style="color: #1e293b; line-height: 1.35; overflow-wrap: anywhere;" title="{{ t.descripcion }}">{{ t.descripcion }}</div>
+                                        <div class="fw-medium" style="color: #f1f5f9; line-height: 1.35; overflow-wrap: anywhere;" title="{{ t.descripcion }}">{{ t.descripcion }}</div>
                                     </td>
-                                    <td style="padding: 12px 14px; vertical-align: middle; line-height: 1.35; overflow-wrap: anywhere;">{{ t.solicitante or '-' }}</td>
+                                    <td style="padding: 12px 14px; vertical-align: middle; line-height: 1.35; overflow-wrap: anywhere;">
+                                        <div class="fw-medium">{{ t.solicitante or '-' }}</div>
+                                        {% if t.has_user_match %}
+                                            {% for match in t.matched_pcs %}
+                                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px;">
+                                                <div style="font-weight: 500; color: #cbd5e1;"><i class="bi bi-pc-display me-1"></i>{{ match.pc_name }}</div>
+                                                <div style="text-transform: capitalize; margin-top: 1px;"><i class="bi bi-building me-1"></i>{{ match.fuero or 'Sin fuero' }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </td>
                                     <td style="padding: 12px 14px; vertical-align: middle;">
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="badge" style=" color: #4338ca; border-radius: 6px; padding: 5px 8px; white-space: normal; text-align: left;">{{ t.assigned_to or '-' }}</span>
