@@ -105,7 +105,10 @@
         <div class="console-grid">
             <!-- COLUMNA IZQUIERDA: PRIORIDADES Y ALERTAS -->
             <div class="console-panel">
-                <div class="console-panel__title">Acción Requerida</div>
+                <div class="console-panel__title" style="display: flex; justify-content: space-between;">
+                    <span>Acción Requerida</span>
+                    <span style="font-size: 0.9em; font-weight: normal; color: var(--text-muted, #94a3b8); text-transform: none; letter-spacing: normal;">Total Flota: {{ kpi_total_activas }}</span>
+                </div>
                 
                 {% if duplicates_count and duplicates_count > 0 %}
                 <div class="integrated-alert integrated-alert--danger">
@@ -169,24 +172,7 @@
             
             <!-- COLUMNA DERECHA: MÉTRICAS GLOBALES Y TABLA -->
             <div class="console-panel">
-                <div class="console-panel__title">Métricas de Sistema</div>
-                
-                <div class="metrics-row">
-                    <div class="metric-box">
-                        <div class="metric-box__label">Total Flota</div>
-                        <div class="metric-box__value">{{ kpi_total_activas }}</div>
-                    </div>
-                    <a href="{{ url_for('dashboard.view_cementerio') }}" class="metric-box" style="text-decoration: none; cursor: pointer; display: block;" title="Ver Cementerio de PCs">
-                        <div class="metric-box__label" style="color: #94a3b8; transition: color 0.2s;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">Sin Actividad / Bajas</div>
-                        <div class="metric-box__value" style="color: var(--color-warning);">{{ kpi_bajas }}</div>
-                    </a>
-                    <div class="metric-box">
-                        <div class="metric-box__label">Requieren Atención</div>
-                        <div class="metric-box__value" style="color: var(--color-critical);">{{ fleet_attention_pct }}<span style="font-size: 1rem;">%</span></div>
-                    </div>
-                </div>
-
-                <div class="mt-2">
+                <div>
                     {% block content %}{% endblock %}
 
                     {% block dashboard_content %}

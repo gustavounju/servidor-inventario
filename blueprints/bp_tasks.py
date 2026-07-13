@@ -149,6 +149,8 @@ def _format_duration(start, end):
 
 def _decorate_visor_task(row):
     task = dict(row)
+    if "pc_fuero" in task:
+        task["fuero"] = task.pop("pc_fuero") or task.get("fuero")
     created_at = _coerce_task_datetime_for_display(task.get("created_at"))
     completed_at = _coerce_task_datetime_for_display(task.get("completed_at"))
     task["created_at"] = created_at
@@ -919,7 +921,7 @@ def visor():
             fueros_dict = dict(sorted(known_fueros.items(), key=lambda item: item[0].lower()))
             
             if is_filtered:
-                base_sql = "SELECT t.*, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE 1=1"
+                base_sql = "SELECT t.*, p.last_user, p.fuero AS pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE 1=1"
                 params = []
                 if request.args.get("fecha"):
                     base_sql += " AND (DATE(t.created_at) = %s OR (t.estado = 'Hecha' AND DATE(t.completed_at) = %s))"
@@ -947,19 +949,19 @@ def visor():
                                        is_filtered=True)
             else:
                 tareas_hoy = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
-                    SELECT t.*, p.last_user FROM tasks t 
+                    SELECT t.*, p.last_user, p.fuero AS pc_fuero FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
                     ORDER BY t.created_at DESC
                 """).fetchall(), conn), conn)
                 tareas_anteriores = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
-                    SELECT t.*, p.last_user FROM tasks t 
+                    SELECT t.*, p.last_user, p.fuero AS pc_fuero FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE DATE(t.created_at) < CURDATE() AND DATE(t.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     ORDER BY t.created_at DESC LIMIT 50
                 """).fetchall(), conn), conn)
                 tareas_pendientes = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
-                    SELECT t.*, p.last_user FROM tasks t 
+                    SELECT t.*, p.last_user, p.fuero AS pc_fuero FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE t.estado != 'Hecha'
                     ORDER BY t.created_at DESC
@@ -990,7 +992,7 @@ def api_visor_data():
 
         with get_db_connection() as conn:
             if is_filtered:
-                base_sql = "SELECT t.*, p.last_user FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE 1=1"
+                base_sql = "SELECT t.*, p.last_user, p.fuero AS pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE 1=1"
                 params = []
                 if fecha_filtro:
                     base_sql += " AND (DATE(t.created_at) = %s OR (t.estado = 'Hecha' AND DATE(t.completed_at) = %s))"
@@ -1014,7 +1016,7 @@ def api_visor_data():
             else:
                 # Tareas de hoy
                 tareas_hoy_rows = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
-                    SELECT t.*, p.last_user 
+                    SELECT t.*, p.last_user, p.fuero AS pc_fuero
                     FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE DATE(t.created_at) = CURDATE() OR (t.estado = 'Hecha' AND DATE(t.completed_at) = CURDATE())
@@ -1023,7 +1025,7 @@ def api_visor_data():
                 
                 # Tareas anteriores (pendientes o recientes)
                 tareas_anteriores_rows = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
-                    SELECT t.*, p.last_user 
+                    SELECT t.*, p.last_user, p.fuero AS pc_fuero
                     FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE DATE(t.created_at) < CURDATE() 
@@ -1034,7 +1036,7 @@ def api_visor_data():
 
                 # Tareas pendientes
                 tareas_pendientes_rows = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
-                    SELECT t.*, p.last_user 
+                    SELECT t.*, p.last_user, p.fuero AS pc_fuero
                     FROM tasks t 
                     LEFT JOIN pcs p ON t.pc_name = p.pc_name 
                     WHERE t.estado != 'Hecha'

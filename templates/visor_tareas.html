@@ -108,20 +108,7 @@
         </div>
     </nav>
 
-    {% if efemeride_actual %}
-    <div class="hide-mobile marquee-container" style="position: fixed; top: 40px; left: 0; width: 100%; z-index: 1040; color: var(--accent-color); cursor: default; display: flex; align-items: center; font-size: 0.75rem; white-space: nowrap; padding: 4px 16px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-color); box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <div class="marquee-content {% if efemeride_actual.is_alert %}marquee-fast{% endif %}" style="padding-left: 100vw;">
-            <span style="font-size: 1.1em; margin-right: 6px;">{{ efemeride_actual.icono }}</span>
-            {% if efemeride_actual.titulo %}<strong>{{ efemeride_actual.titulo }}</strong>{% endif %}
-            {% if efemeride_actual.descripcion %}
-            <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">{% if efemeride_actual.titulo %}- {% endif %}{{ efemeride_actual.descripcion }}</span>
-            {% endif %}
-        </div>
-    </div>
-    <main style="padding-top: 30px; padding-bottom: 20px;">
-    {% else %}
     <main style="padding-top: 0; padding-bottom: 20px;">
-    {% endif %}
         
         {% set total_hoy = tareas_hoy | length %}
         {% set hechas_hoy = tareas_hoy | selectattr("estado", "equalto", "Hecha") | list | length %}
@@ -135,20 +122,30 @@
         {% set pct_pend = (pendientes_hoy * 100 / total_radar) | round(1) %}
         {% set pct_asig = 0 %}
 
-        <!-- MIDNIGHT RADAR MASTHEAD -->
-        <div class="radar-masthead">
-            <div class="health-radar">
-                <div class="health-radar__labels">
-                    <span>Estado de Trabajos (Hoy)</span>
-                    <span>{{ total_hoy }} Registros</span>
+        <!-- COMBINED MASTHEAD -->
+        <div class="radar-masthead" style="display: flex; flex-direction: row; align-items: center; gap: 2rem;">
+            {% if efemeride_actual %}
+            <!-- MARQUEE (MITAD IZQUIERDA) -->
+            <div class="hide-mobile" style="flex: 1; overflow: hidden; position: relative; color: var(--accent-color); font-size: 0.75rem; white-space: nowrap; padding-right: 1rem; border-right: 1px solid var(--border-color);">
+                <div class="marquee-content {% if efemeride_actual.is_alert %}marquee-fast{% endif %}" style="padding-left: 100%; display: inline-block;">
+                    <span style="font-size: 1.1em; margin-right: 6px;">{{ efemeride_actual.icono }}</span>
+                    {% if efemeride_actual.titulo %}<strong>{{ efemeride_actual.titulo }}</strong>{% endif %}
+                    {% if efemeride_actual.descripcion %}
+                    <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">{% if efemeride_actual.titulo %}- {% endif %}{{ efemeride_actual.descripcion }}</span>
+                    {% endif %}
                 </div>
-                <div class="health-radar__bar">
-                    <div class="health-radar__segment health-radar__segment--stable" style="width: {{ pct_hechas }}%;" title="Hechas: {{ hechas_hoy }}"></div>
-                    <div class="health-radar__segment health-radar__segment--warning" style="width: {{ pct_pend }}%;" title="Pendientes: {{ pendientes_hoy }}"></div>
-                </div>
-                <div class="health-radar__legend">
-                    <div class="health-radar__legend-item"><div class="health-radar__legend-dot" style="background: var(--color-stable);"></div> <span class="font-mono">{{ pct_hechas }}% Hechas</span></div>
-                    <div class="health-radar__legend-item"><div class="health-radar__legend-dot" style="background: var(--color-warning);"></div> <span class="font-mono">{{ pct_pend }}% Pendientes</span></div>
+            </div>
+            {% endif %}
+
+            <!-- HEALTH RADAR (MITAD DERECHA) -->
+            <div class="health-radar" style="flex: 1; margin: 0; padding: 0; border: none; background: transparent; display: flex; align-items: center;">
+                <div class="health-radar__bar" style="margin: 0; height: 24px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600;">
+                    <div class="health-radar__segment health-radar__segment--stable" style="width: {{ pct_hechas }}%; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);" title="Hechas: {{ hechas_hoy }}">
+                        {% if pct_hechas > 10 %}{{ pct_hechas }}% Hechas{% endif %}
+                    </div>
+                    <div class="health-radar__segment health-radar__segment--warning" style="width: {{ pct_pend }}%; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap; color: #000;" title="Pendientes: {{ pendientes_hoy }}">
+                        {% if pct_pend > 10 %}{{ pct_pend }}% Pendientes{% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -196,13 +193,6 @@
                     </form>
                 </div>
 
-
-                <div class="priority-ticket" style="border-left-color: var(--color-stable);">
-                    <div class="priority-ticket__header">
-                        <span class="priority-ticket__badge" style="background: rgba(34, 197, 94, 0.1); color: var(--color-stable);">COMPLETADAS</span>
-                    </div>
-                    <h3 class="priority-ticket__title" id="ticketHechas"><span data-countup>{{ hechas_hoy }}</span> Trabajos Resueltos Hoy</h3>
-                </div>
             </div>
             
             <!-- COLUMNA DERECHA: MÉTRICAS DE SISTEMA Y TABLAS -->
@@ -210,19 +200,24 @@
                 <div class="console-panel__title">Métricas de Trabajos <div class="spinner-border spinner-border-sm text-accent ms-2" id="refreshSpinner" style="display: none;" role="status"></div></div>
                 
                 <!-- KPIs (Reemplazando kpi-grid antiguo) -->
-                <div class="metrics-row mb-3">
+                <style>
+                    .metrics-row .metric-box { padding: 0.35rem 0.5rem !important; min-height: unset !important; }
+                    .metrics-row .metric-box__label { font-size: 0.65rem !important; margin-bottom: 2px !important; }
+                    .metrics-row .metric-box__value { font-size: 1rem !important; }
+                </style>
+                <div class="metrics-row mb-3" style="gap: 0.5rem;">
                     <div class="metric-box">
                         <div class="metric-box__label">Total Registros (Filtro)</div>
                         <div class="metric-box__value" id="statTotalHoy" data-countup>{{ total_hoy }}</div>
                     </div>
                     {% if total_pendientes_global > 0 %}
-                    <div class="priority-ticket" style="border-left-color: var(--color-warning); cursor: pointer; flex: 1; margin-bottom: 0;" onclick="scrollToPendientes()">
-                        <div class="priority-ticket__header">
-                            <span class="priority-ticket__badge" style="background: rgba(249, 115, 22, 0.1); color: var(--color-warning);">ATENCIÓN</span>
-                            <i class="bi bi-arrow-down text-muted"></i>
+                    <div class="metric-box" style="border-left: 3px solid var(--color-warning); cursor: pointer; flex: 1.5; justify-content: center; padding: 0.5rem;" onclick="scrollToPendientes()" title="Ir a la sección de pendientes para resolver o asignar">
+                        <div class="metric-box__label" style="color: var(--color-warning); font-weight: 700; font-size: 0.7rem; margin-bottom: 2px;">
+                            <span style="background: rgba(249,115,22,0.1); padding: 2px 4px; border-radius: 4px;">ATENCIÓN</span>
                         </div>
-                        <h3 class="priority-ticket__title" id="ticketPendientes" style="margin-bottom: 0;"><span data-countup>{{ total_pendientes_global }}</span> Tareas Pendientes</h3>
-                        <p class="priority-ticket__desc" style="font-size: 0.75rem; margin-top: 4px;">Ir a la sección de pendientes para resolver o asignar.</p>
+                        <div id="ticketPendientes" style="color: var(--color-warning); font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; text-align: center;">
+                            <span data-countup>{{ total_pendientes_global }}</span> Tareas Pendientes
+                        </div>
                     </div>
                     {% else %}
                     <div class="metric-box">
@@ -241,9 +236,8 @@
                     <table class="table table-dark table-hover m-0 align-middle">
                         <thead style="background: rgba(0,0,0,0.4);">
                             <tr>
-                                <th style="width: 80px; font-family: var(--font-mono); font-size: 0.75rem;">HORA</th>
-                                <th style="font-family: var(--font-mono); font-size: 0.75rem;">PC/EQUIPO</th>
-                                <th class="d-none d-md-table-cell" style="font-family: var(--font-mono); font-size: 0.75rem;">SOLICITANTE</th>
+                                <th style="width: 110px; font-family: var(--font-mono); font-size: 0.75rem;">HORA</th>
+                                <th style="width: 240px; font-family: var(--font-mono); font-size: 0.75rem;">EQUIPO/USUARIO/FUERO</th>
                                 <th style="font-family: var(--font-mono); font-size: 0.75rem;">TRABAJO</th>
                                 <th style="width: 140px; font-family: var(--font-mono); font-size: 0.75rem;">ESTADO</th>
                             </tr>
@@ -256,13 +250,18 @@
                                     <td class="text-muted small font-mono" style="border-left: 4px solid {% if task.estado == 'Hecha' %}var(--color-stable){% elif task.estado == 'En Curso' %}var(--color-warning){% else %}var(--border-color){% endif %}; position: relative;">
                                         {{ task.created_at_time or '--:--' }}
                                     </td>
-                                    <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
-                                    <td class="d-none d-md-table-cell">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <i class="bi bi-person text-muted"></i>
-                                            <span>{{ task.solicitante or 'N/A' }}</span>
+                                    <td>
+                                        <div><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></div>
+                                        {% if task.last_user %}
+                                        <div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">{{ task.last_user }}</div>
+                                        {% endif %}
+                                        {% if task.fuero %}
+                                        <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                                            <i class="bi bi-building me-1"></i>{{ task.fuero }}
                                         </div>
+                                        {% endif %}
                                     </td>
+
                                     <td>
                                         <div class="mb-1">{{ task.descripcion }}</div>
                                         
@@ -334,8 +333,7 @@
                         <thead style="background: rgba(0,0,0,0.4);">
                             <tr>
                                 <th style="width: 110px; font-family: var(--font-mono); font-size: 0.75rem;">FECHA</th>
-                                <th style="font-family: var(--font-mono); font-size: 0.75rem;">PC/EQUIPO</th>
-                                <th class="d-none d-md-table-cell" style="font-family: var(--font-mono); font-size: 0.75rem;">SOLICITANTE</th>
+                                <th style="width: 240px; font-family: var(--font-mono); font-size: 0.75rem;">EQUIPO/USUARIO/FUERO</th>
                                 <th style="font-family: var(--font-mono); font-size: 0.75rem;">TRABAJO</th>
                                 <th style="width: 140px; font-family: var(--font-mono); font-size: 0.75rem;">ESTADO</th>
                             </tr>
@@ -343,15 +341,20 @@
                         <tbody>
                             <!-- Injection -->
                             {% for task in tareas_pendientes %}
-                            <tr id="task-row-{{ task.id }}">
-                                <td class="text-muted small font-mono">{{ task.created_at_fmt or '--:--' }}</td>
-                                <td><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></td>
-                                <td class="d-none d-md-table-cell">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="bi bi-person text-muted"></i>
-                                        <span>{{ task.solicitante or 'N/A' }}</span>
+                            <tr id="task-row-{{ task.id }}" style="background: rgba(255,255,255,0.01);">
+                                <td class="text-muted small font-mono" style="border-left: 4px solid var(--color-warning); position: relative;">{{ task.created_at_fmt or '--:--' }}</td>
+                                <td>
+                                    <div><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></div>
+                                    {% if task.last_user %}
+                                    <div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">{{ task.last_user }}</div>
+                                    {% endif %}
+                                    {% if task.fuero %}
+                                    <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                                        <i class="bi bi-building me-1"></i>{{ task.fuero }}
                                     </div>
+                                    {% endif %}
                                 </td>
+
                                 <td>
                                     <div class="mb-1">{{ task.descripcion }}</div>
                                     {% if task.acciones %}
@@ -408,7 +411,17 @@
                             {% for task in tareas_anteriores %}
                             <tr id="task-row-{{ task.id }}">
                                 <td style="width: 110px;" class="text-muted small font-mono">{{ task.created_at_fmt or '--:--' }}</td>
-                                <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name }}</span></td>
+                                <td style="width: 180px;">
+                                    <div><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name or 'GENERICA' }}</span></div>
+                                    {% if task.last_user %}
+                                    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">{{ task.last_user }}</div>
+                                    {% endif %}
+                                    {% if task.fuero %}
+                                    <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                                        <i class="bi bi-building me-1"></i>{{ task.fuero }}
+                                    </div>
+                                    {% endif %}
+                                </td>
                                 <td class="text-muted">
                                     <div class="mb-1">{{ task.descripcion }}</div>
                                     {% if task.solucion %}
@@ -810,15 +823,18 @@
                 return;
             }
             tbody.innerHTML = tasks.map(task => `
-                <tr id="task-row-${task.id}">
-                    <td class="text-muted small font-mono">${task.created_at_time || '--:--'}</td>
-                    <td><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></td>
-                    <td class="d-none d-md-table-cell">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-person text-muted"></i>
-                            <span>${task.solicitante || 'N/A'}</span>
+                <tr id="task-row-${task.id}" style="background: rgba(255,255,255,0.01);">
+                    <td class="text-muted small font-mono" style="border-left: 4px solid ${task.estado === 'Hecha' ? 'var(--color-stable)' : (task.estado === 'En Curso' ? 'var(--color-warning)' : 'var(--border-color)')}; position: relative;">${task.created_at_time || '--:--'}</td>
+                    <td>
+                        <div><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></div>
+                        ${task.last_user ? `<div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">${task.last_user}</div>` : ''}
+                        ${task.fuero ? `
+                        <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                            <i class="bi bi-building me-1"></i>${task.fuero}
                         </div>
+                        ` : ''}
                     </td>
+
                     <td>
                         <div class="mb-1">${task.descripcion}${task.desc_edited ? ' <i class="bi bi-info-circle-fill" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>' : ''}</div>
                         ${task.acciones && task.acciones.length > 0 ? `
@@ -873,13 +889,16 @@
             tbody.innerHTML = tasks.map(task => `
                 <tr style="background: rgba(255,255,255,0.01);">
                     <td class="text-muted small font-mono" style="border-left: 4px solid var(--color-warning); position: relative;">${task.created_at_fmt || '--:--'}</td>
-                    <td><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></td>
-                    <td class="d-none d-md-table-cell">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-person text-muted"></i>
-                            <span>${task.solicitante || 'N/A'}</span>
+                    <td>
+                        <div><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></div>
+                        ${task.last_user ? `<div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">${task.last_user}</div>` : ''}
+                        ${task.fuero ? `
+                        <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                            <i class="bi bi-building me-1"></i>${task.fuero}
                         </div>
+                        ` : ''}
                     </td>
+
                     <td>
                         <div class="mb-1">${task.descripcion}</div>
                         ${task.acciones && task.acciones.length > 0 ? `
@@ -929,7 +948,15 @@
             tbody.innerHTML = tasks.map(task => `
                 <tr>
                     <td style="width: 110px;" class="text-muted small font-mono">${task.created_at_fmt || '--:--'}</td>
-                    <td style="width: 180px;"><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name}</span></td>
+                    <td style="width: 180px;">
+                        <div><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name || 'GENERICA'}</span></div>
+                        ${task.last_user ? `<div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">${task.last_user}</div>` : ''}
+                        ${task.fuero ? `
+                        <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                            <i class="bi bi-building me-1"></i>${task.fuero}
+                        </div>
+                        ` : ''}
+                    </td>
                     <td class="text-muted">
                         <div class="mb-1">${task.descripcion}</div>
                         ${task.solucion ? `<div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #94a3b8;"><strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}</div>` : ''}
