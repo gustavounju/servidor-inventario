@@ -258,6 +258,73 @@ def api_pending_tasks():
         print(f"Error en api_pending_tasks: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@bp_tasks.route("/pc/auto_migrate_generic", methods=["POST"])
+def auto_migrate_generic_tasks():
+    import unicodedata
+    def norm(s):
+        if not s: return ""
+        return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode("ascii").lower()
+        
+    migrated_count = 0
+    with get_db_connection() as conn:
+        unassigned = conn.execute("SELECT id, solicitante FROM tasks WHERE pc_name = 'PC Generica' AND estado != 'Hecha'").fetchall()
+        all_pcs = conn.execute("""
+            SELECT p.pc_name, p.fuero, p.last_user, a.real_name 
+            FROM pcs p 
+            LEFT JOIN ad_users a ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = a.username 
+            WHERE p.is_active=1
+        """).fetchall()
+        
+        for task in unassigned:
+            if not task['solicitante']: continue
+            
+            clean_sol = norm(task['solicitante']).replace(',', '').replace('.', '')
+            terms = [t for t in clean_sol.split() if len(t) > 1]
+            if len(terms) < 2: continue
+            
+            first_initial = terms[0][0]
+            last_name = terms[-1]
+            possible_usernames = [first_initial + last_name, terms[0] + '.' + last_name]
+            
+            best_pc = None
+            max_score = 0
+            
+            for pc in all_pcs:
+                score = 0
+                search_text = f"{pc['pc_name']} | {pc['fuero'] or ''} | {pc['last_user'] or ''}"
+                if pc['real_name']:
+                    search_text += f" ({pc['real_name']})"
+                search_text = norm(search_text)
+                
+                for term in terms:
+                    if len(term) > 2 and term in search_text:
+                        score += 1
+                for uname in possible_usernames:
+                    if uname in search_text:
+                        score += 5
+                        
+                if score > max_score:
+                    max_score = score
+                    best_pc = pc['pc_name']
+                    
+            if max_score > 0 and best_pc:
+                conn.execute("UPDATE tasks SET pc_name = %s WHERE id = %s", (best_pc, task['id']))
+                audit_msg = f"Se auto-vinculó la tarea #{task['id']} de PC Generica a {best_pc}"
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             ('PC Generica', f"Tarea #{task['id']} Auto-Transferida", "", f"Enviada a {best_pc}", current_username(), "MIGRACION_TAREAS", request.remote_addr))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             (best_pc, "AUTO-MIGRACION", "PC Generica", audit_msg, current_username(), "MIGRACION_TAREAS", request.remote_addr))
+                migrated_count += 1
+                
+        conn.commit()
+        if migrated_count > 0:
+            flash(f"¡Éxito! Se auto-vincularon {migrated_count} tareas a sus equipos correspondientes.", "success")
+        else:
+            flash("No se encontraron coincidencias automáticas para las tareas pendientes.", "warning")
+            
+    return redirect(url_for('dashboard.pc_detail', pc_name='PC Generica'))
+
+
 @bp_tasks.route("/pc/migrate_tasks", methods=["POST"])
 def migrate_generic_tasks():
     target_pc = request.form.get("target_pc")
