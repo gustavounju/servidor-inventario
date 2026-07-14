@@ -16,6 +16,9 @@ bp_dashboard = Blueprint('dashboard', __name__)
 
 @bp_dashboard.route("/cementerio")
 def view_cementerio():
+    from utils.auth import has_permission, forbidden_response
+    if not has_permission("reports"):
+        return forbidden_response("reports")
     return redirect(url_for("dashboard.dashboard", estado="False"))
 
 @bp_dashboard.route("/graficos")
@@ -74,6 +77,10 @@ def dashboard():
     """Lista todas las PCs (activas y en cementerio) + KPIs + filtros + paginado."""
     q = request.args.get("q", "").strip()
     estado = request.args.get("estado", "True").strip()
+    if estado == "False":
+        from utils.auth import has_permission, forbidden_response
+        if not has_permission("reports"):
+            return forbidden_response("reports")
     alerta = request.args.get("alerta", "").strip()
     os_param = request.args.get("os", "").strip()
     filter_tasks = request.args.get("filter_tasks", "").strip()

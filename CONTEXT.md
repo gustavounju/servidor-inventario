@@ -145,6 +145,7 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 4. Sistema de backup automático
 
 ## 🆕 Últimos Cambios (Changelog)
+- **Julio 2026 (Roles y Permisos Modulares - v3.1.0)**: Reestructuración y granulado del sistema de control de accesos. Se implementó una lógica de overrides de permisos a nivel de usuario en base de datos. Se protegieron rutas críticas de backend en `bp_tasks.py` y `bp_dashboard.py`. Se rediseñó el panel de usuarios para incluir edición directa de cuentas y permisos. Se resolvió la evasión del modo móvil en celulares agregando validaciones de dispositivo híbridas (User-Agent en backend y detección de Viewport/UA en cliente mediante script en `_module_switcher.html`).
 - **Julio 2026 (Sincronización AD)**: Se implementó la sincronización de equipos desde Active Directory. La nueva herramienta (ubicada en Infraestructura) extrae la OU (Unidad Organizativa) del `distinguishedName` de cada computadora en el AD y mapea automáticamente el Fuero correspondiente en la tabla local de PCs. Además, el Dashboard ahora cruza correctamente el nombre de sesión (ej. GMURAD) con el nombre real (ej. Gustavo Murad) obtenido de los usuarios del AD, mejorando drásticamente la legibilidad del inventario.
 - **Junio 2026 (UI Mensajes Directos)**: Se unificó el sistema de comunicación directa entre administradores y técnicos en un nuevo *Buzón de Comunicaciones* modal (con diseño premium y protecciones XSS). Se eliminó el botón clásico "[ MSJS ]" y la tarjeta suelta en el visor de tareas, moviendo el acceso principal "[ COMUNICACIÓN ]" directamente al panel superior de navegación.
 - **Junio 2026**: Se implementó la **Auditoría Transparente de Racks**. Al cargar el estado de un Rack desde la vista móvil, el sistema agrupa automáticamente los registros de cada técnico en una única "Tarea Diaria" (Auditoría de Racks - [Fecha]) en estado "Hecha". Inyecta cada rack revisado como una nueva Acción dentro del historial de esa tarea, resolviendo la concurrencia y optimizando el tiempo del técnico en terreno al no requerir iniciar o finalizar sesiones manualmente.
@@ -177,5 +178,5 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 
 ---
 
-**Última actualización**: 12 de Julio 2026  
+**Última actualización**: 14 de Julio 2026  
 **Versión del sistema**: Según APP_VERSION en utils/constants.py

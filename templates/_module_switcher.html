@@ -1,4 +1,14 @@
 {% if is_authenticated %}
+<script>
+    (function() {
+        var isMobileUA = /Mobi|Android|iPhone|iPad|Windows Phone/i.test(navigator.userAgent);
+        var isSmallScreen = window.innerWidth < 1024;
+        var isTecnico = {{ (current_user.get('role') == 'tecnico')|tojson }};
+        if (isTecnico && (isMobileUA || isSmallScreen)) {
+            window.location.replace("{{ url_for('tecnicos.tecnicos_view') }}");
+        }
+    })();
+</script>
 <!-- THE OPERATOR TOOLBAR (Midnight Radar Console Mode) -->
 <nav class="op-toolbar">
     
@@ -36,7 +46,7 @@
             [+ TAREA]
         </button>
         {% else %}
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted);" onclick="window.location.href='{{ url_for('auth.login') }}'" title="Requiere ser Administrador. Clic para iniciar sesión.">
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en [+ TAREA]')" title="Requiere ser Administrador.">
             [+ TAREA]
         </button>
         {% endif %}
@@ -44,23 +54,46 @@
         <span class="op-divider"></span>
 
         <!-- Modulos Primarios (Visor) -->
+        {% if has_access('reports') %}
         <a href="{{ url_for('dashboard.view_cementerio') }}" class="op-btn {% if request.endpoint == 'dashboard.view_cementerio' %}op-btn--active{% endif %}" title="Cementerio (Bajas)" style="color: #f59e0b; border-color: #f59e0b;">
             [ BAJAS ]
         </a>
+        {% else %}
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Bajas')" title="No tienes permiso para entrar en Bajas">
+            [ BAJAS ]
+        </button>
+        {% endif %}
 
+        {% if has_access('dashboard') %}
         <a href="{{ url_for('tasks.visor') }}" class="op-btn {% if request.endpoint == 'tasks.visor' %}op-btn--active{% endif %}" title="Visor Global">
             [ VISOR ]
         </a>
+        {% else %}
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Visor')" title="No tienes permiso para entrar en Visor">
+            [ VISOR ]
+        </button>
+        {% endif %}
 
         <!-- Redes y Mapas -->
+        {% if has_access('infrastructure') %}
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Redes IP">[ SUBREDES ]</a>
         <a href="{{ url_for('maps.index') }}" class="op-btn">[ MAPAS ]</a>
         <a href="{{ url_for('infrastructure.switches_dashboard') }}" class="op-btn">[ SWITCHES ]</a>
         <a href="{{ url_for('infrastructure.index') }}" class="op-btn {% if request.endpoint == 'infrastructure.index' %}op-btn--active{% endif %}" title="Gestión de Infraestructura (Impresoras, UPS, etc.)">[ INFRA ]</a>
+        {% else %}
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Subredes')" title="No tienes permiso para entrar en Subredes">[ SUBREDES ]</button>
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Mapas')" title="No tienes permiso para entrar en Mapas">[ MAPAS ]</button>
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Switches')" title="No tienes permiso para entrar en Switches">[ SWITCHES ]</button>
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Infra')" title="No tienes permiso para entrar en Infra">[ INFRA ]</button>
+        {% endif %}
 
         <!-- Administración / Extras -->
         <span class="op-divider"></span>
+        {% if has_access('reports') %}
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#efemeridesModal" title="Ver Efemérides del Día">[ EFEMÉRIDES ]</a>
+        {% else %}
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Efemérides')" title="No tienes permiso para entrar en Efemérides">[ EFEMÉRIDES ]</button>
+        {% endif %}
         
         {% if current_user.get('is_superuser') %}
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#configModal" title="Ajustes Globales del Sistema">[ CONFIG ]</a>
@@ -69,7 +102,12 @@
             [ USR{% if kpi_usuarios_pendientes and kpi_usuarios_pendientes > 0 %}:<span class="op-alert-text">{{ kpi_usuarios_pendientes }}</span>{% endif %} ]
         </a>
         {% endif %}
+        
+        {% if current_user.get('is_superuser') %}
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#fueroAdminModal" title="Administración de Fueros">[ FUEROS ]</a>
+        {% else %}
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Fueros')" title="No tienes permiso para entrar en Fueros">[ FUEROS ]</button>
+        {% endif %}
         {% if has_access('reports') %}
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#reportsModal">[ REPORTES ]</a>
         {% endif %}

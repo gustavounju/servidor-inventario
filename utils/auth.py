@@ -27,6 +27,7 @@ ROLE_PRESETS = {
         "mobile": True,
         "infrastructure": True,
         "reports": True,
+        "operadores": True,
         "audit_racks": True,
     },
     "operador": {
@@ -42,6 +43,7 @@ ROLE_PRESETS = {
         "mobile": True,
         "infrastructure": False,
         "reports": False,
+        "operadores": False,
         "audit_racks": False,
     },
     "infraestructura": {
@@ -49,6 +51,7 @@ ROLE_PRESETS = {
         "mobile": True,
         "infrastructure": True,
         "reports": True,
+        "operadores": True,
         "audit_racks": True,
     },
     "consulta": {
@@ -56,6 +59,7 @@ ROLE_PRESETS = {
         "mobile": False,
         "infrastructure": False,
         "reports": True,
+        "operadores": False,
         "audit_racks": False,
     },
 }
@@ -207,11 +211,11 @@ def has_permission(permission_name, user=None):
         return False
     if user.get("is_superuser"):
         return True
-    role_defaults = ROLE_PRESETS.get((user.get("role") or "").strip().lower(), {})
-    if role_defaults.get(permission_name):
-        return True
     permissions = user.get("permissions") or {}
-    return bool(permissions.get(permission_name))
+    if permission_name in permissions:
+        return bool(permissions[permission_name])
+    role_defaults = ROLE_PRESETS.get((user.get("role") or "").strip().lower(), {})
+    return bool(role_defaults.get(permission_name))
 
 
 def current_technician_identity(user=None):
@@ -245,7 +249,7 @@ def role_label(role_name=None):
 def allowed_module_links(user=None):
     user = user or current_user()
     endpoint = request.endpoint or ""
-    ua = (request.user_agent.string or "").lower()
+    ua = request.headers.get('User-Agent', '').lower()
     is_mobile_client = any(token in ua for token in ["android", "iphone", "ipad", "mobile"])
     links = []
     for module in MODULE_DEFINITIONS:
@@ -580,15 +584,8 @@ def list_technician_users():
         if row.get("username") == "administrador":
             continue
 
-        role = (row.get("role") or "").strip().lower()
-        if role in {"consulta", "operador"}:
-            continue
-
-        explicit_mobile_identity = bool((row.get("technician_name") or "").strip())
-        
-        # Permitir administradores y otros roles con acceso móvil
-        # Eliminamos la restricción que obligaba a tener technician_name para superusuarios
-        if not (row.get("can_access_mobile") or explicit_mobile_identity or role in {"tecnico", "infraestructura", "administrador"}):
+        user_obj = build_session_user(row, "local")
+        if not has_permission("mobile", user_obj):
             continue
 
         display = (row.get("technician_name") or row.get("display_name") or row.get("username") or "").strip()
@@ -778,8 +775,12 @@ def required_permission_for_endpoint(endpoint=None):
     if endpoint in mobile_allowed_stock_endpoints:
         return "mobile"
 
-    if endpoint.startswith("stock.") or endpoint.startswith("infrastructure."):
+    if endpoint.startswith("stock.") or endpoint.startswith("infrastructure.") or endpoint.startswith("maps."):
         return "infrastructure"
+    if "efemeride" in endpoint:
+        return "reports"
+    if endpoint == "dashboard.view_cementerio":
+        return "reports"
     if endpoint in {"tasks.report_tasks_completed", "tasks.report_tasks_completed_pdf", "tasks.report_preview"}:
         return "reports"
     if endpoint.startswith("tasks."):
@@ -801,7 +802,7 @@ def default_landing_url(user=None):
     user = user or current_user()
     if not user:
         return url_for("dashboard.dashboard")
-    ua = (request.user_agent.string or "").lower()
+    ua = request.headers.get('User-Agent', '').lower()
     is_mobile_client = any(token in ua for token in ["android", "iphone", "ipad", "mobile"])
 
     # Redirección específica para Operadores Telefónicos
@@ -874,7 +875,7 @@ def auth_guard():
         return redirect(url_for("auth.change_password"))
 
     # --- REGLA DE ACCESO MÓVIL (Fuerza /tecnicos en celulares) ---
-    ua = (request.user_agent.string or "").lower()
+    ua = request.headers.get('User-Agent', '').lower()
     is_mobile_client = any(token in ua for token in ["android", "iphone", "ipad", "mobile"])
     
     if is_mobile_client and not (request.path.startswith("/api/") or request.headers.get("X-Requested-With") == "XMLHttpRequest"):
@@ -885,7 +886,7 @@ def auth_guard():
             if refreshed_user.get("role") == "operador":
                 return redirect(url_for("operadores.operadores_view"))
             # Si tiene permiso de móvil, lo mandamos allá. Si no, login/logout manejarán el resto.
-            if refreshed_user.get("can_access_mobile") or refreshed_user.get("is_superuser"):
+            if has_permission("mobile", refreshed_user) or refreshed_user.get("is_superuser"):
                 return redirect(url_for("tecnicos.tecnicos_view"))
     # -------------------------------------------------------------
 

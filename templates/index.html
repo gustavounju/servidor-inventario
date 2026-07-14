@@ -319,7 +319,7 @@
                         <tr>
                             <td>
                                 {{ task.descripcion }}
-                                {% if task.has_user_match %}
+                                {% if task.has_user_match and (current_user.get('is_superuser') or current_user.get('role') == 'administrador') %}
                                 <div class="mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2);">
                                     <div class="small fw-bold text-success mb-1" style="font-size: 0.7rem; text-transform: uppercase;"><i class="bi bi-robot me-1"></i> Resolución Inteligente ({% if task.matched_pc_count == 1 %}1 coincidencia{% else %}{{ task.matched_pc_count }} coincidencias{% endif %})</div>
                                     <div class="d-flex flex-wrap gap-1">
@@ -336,6 +336,7 @@
                             <td>{{ task.assigned_to or '-' }}</td>
                             <td>{{ task.created_at }}</td>
                             <td class="text-end" style="min-width: 250px;">
+                                {% if current_user.get('is_superuser') or current_user.get('role') == 'administrador' %}
                                 <button id="btn-assign-{{ task.id }}" class="btn btn-sm btn-primary" type="button" onclick="toggleAssignForm('{{ task.id }}')">
                                     <i class="bi bi-person-check"></i> Asignar
                                 </button>
@@ -352,6 +353,9 @@
                                     <button type="submit" class="btn btn-sm btn-success" title="Guardar"><i class="bi bi-check-lg"></i></button>
                                     <button type="button" class="btn btn-sm btn-secondary" title="Cancelar" onclick="toggleAssignForm('{{ task.id }}')"><i class="bi bi-x-lg"></i></button>
                                 </form>
+                                {% else %}
+                                <span class="text-muted small">Sólo Lectura</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}

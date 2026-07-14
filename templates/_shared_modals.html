@@ -1118,6 +1118,15 @@
 
 <!-- Estilos del nuevo modal de usuarios -->
 <style>
+:root {
+    --neon-blue: #38bdf8;
+    --neon-green: var(--color-stable, #4ade80);
+    --neon-orange: #f97316;
+    --neon-red: var(--color-critical, #ef4444);
+    --neon-purple: #c084fc;
+    --neon-pink: #f472b6;
+}
+
 /* ── Tabs ── */
 .um-tab-btn {
     display: inline-flex; align-items: center; gap: 6px;
@@ -2606,7 +2615,7 @@
             <div class="modal-body" style="padding: 24px 28px; ">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold mb-0" style="color: #0f172a;"><i class="bi bi-list-task me-2 text-primary"></i> {% if pc.pc_name.upper() == 'PC GENERICA' or pc.pc_name.upper() == 'PC-GENERICA' or pc.pc_name.upper().startswith('SIGJ') or pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}Tareas (Pendientes e Historial){% else %}Tareas Pendientes{% endif %}</h6>
-                    {% if pc.pc_name.upper() == 'PC GENERICA' or pc.pc_name.upper() == 'PC-GENERICA' %}
+                    {% if (pc.pc_name.upper() == 'PC GENERICA' or pc.pc_name.upper() == 'PC-GENERICA') and (current_user.get('is_superuser') or current_user.get('role') == 'administrador') %}
                     <form action="{{ url_for('tasks.auto_migrate_generic_tasks') }}" method="POST" class="m-0" onsubmit="return confirm('¿Auto-vincular todas las tareas posibles según el nombre del solicitante?');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm" style="background: #8b5cf6; color: white; border: none; border-radius: 6px; font-weight: 500;">
@@ -2668,21 +2677,27 @@
                                                 <i class="bi bi-check2-all me-1"></i> Lista
                                             </span>
                                             {% else %}
-                                            <button type="button" class="btn btn-sm" style=" color: white; border: none; border-radius: 6px;" title="Marcar Hecha" onclick="openCompleteTaskModal({{ t.id|tojson }}, {{ (t.assigned_to or '')|tojson }}, {{ pc.pc_name|tojson }})">
-                                                <i class="bi bi-check-lg"></i>
-                                            </button>
+                                                {% if current_user.get('is_superuser') or current_user.get('role') == 'administrador' %}
+                                                <button type="button" class="btn btn-sm" style=" color: white; border: none; border-radius: 6px;" title="Marcar Hecha" onclick="openCompleteTaskModal({{ t.id|tojson }}, {{ (t.assigned_to or '')|tojson }}, {{ pc.pc_name|tojson }})">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                                {% endif %}
                                             {% endif %}
                                             {% if pc.pc_name.upper().startswith('PC-GENERICA') or pc.pc_name.upper().startswith('PC GENERICA') %}
-                                            <button type="button" class="btn btn-sm" style=" color: white; border: none; border-radius: 6px;" title="Asignar / Migrar" onclick='openMigrateModal({{ t.id|tojson }}, {{ (t.solicitante or "")|tojson }})'>
-                                                <i class="bi bi-arrow-right"></i>
-                                            </button>
+                                                {% if current_user.get('is_superuser') or current_user.get('role') == 'administrador' %}
+                                                <button type="button" class="btn btn-sm" style=" color: white; border: none; border-radius: 6px;" title="Asignar / Migrar" onclick='openMigrateModal({{ t.id|tojson }}, {{ (t.solicitante or "")|tojson }})'>
+                                                    <i class="bi bi-arrow-right"></i>
+                                                </button>
+                                                {% endif %}
                                             {% endif %}
+                                            {% if current_user.get('is_superuser') or current_user.get('role') == 'administrador' %}
                                             <form action="{{ url_for('tasks.delete_task', task_id=t.id) }}" method="post" class="d-inline" onsubmit="return confirm('¿Borrar esta tarea?');">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="btn btn-sm" style=" color: white; border: none; border-radius: 6px;" title="Borrar">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>

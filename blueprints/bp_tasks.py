@@ -260,6 +260,10 @@ def api_pending_tasks():
 
 @bp_tasks.route("/pc/auto_migrate_generic", methods=["POST"])
 def auto_migrate_generic_tasks():
+    from utils.auth import current_user, forbidden_response
+    user = current_user()
+    if not (user.get("is_superuser") or user.get("role") == "administrador"):
+        return forbidden_response("administrador")
     import unicodedata
     def norm(s):
         if not s: return ""
@@ -327,6 +331,10 @@ def auto_migrate_generic_tasks():
 
 @bp_tasks.route("/pc/migrate_tasks", methods=["POST"])
 def migrate_generic_tasks():
+    from utils.auth import current_user, forbidden_response
+    user = current_user()
+    if not (user.get("is_superuser") or user.get("role") == "administrador"):
+        return forbidden_response("administrador")
     target_pc = request.form.get("target_pc")
     task_id = request.form.get("migration_task_id")
     if not target_pc: return redirect(url_for("dashboard.pc_detail", pc_name="PC Generica"))
@@ -486,6 +494,10 @@ def mark_task_done(task_id):
 
 @bp_tasks.route("/tasks/<int:task_id>/delete", methods=["POST"])
 def delete_task(task_id):
+    from utils.auth import current_user, forbidden_response
+    user = current_user()
+    if not (user.get("is_superuser") or user.get("role") == "administrador"):
+        return forbidden_response("administrador")
     with get_db_connection() as conn:
         row = conn.execute("SELECT pc_name, descripcion FROM tasks WHERE id = %s", (task_id,)).fetchone()
         if row:
@@ -589,6 +601,10 @@ def create_loose_task():
 
 @bp_tasks.route("/tasks/assign", methods=["POST"])
 def assign_task():
+    from utils.auth import current_user, forbidden_response
+    user = current_user()
+    if not (user.get("is_superuser") or user.get("role") == "administrador"):
+        return forbidden_response("administrador")
     task_id = request.form.get("task_id")
     pc_name = request.form.get("pc_name", "").strip()
     technician = request.form.get("technician", "").strip()
@@ -643,6 +659,10 @@ def assign_task():
 
 @bp_tasks.route("/tasks/reassign", methods=["POST"])
 def reassign_task():
+    from utils.auth import current_user, forbidden_response
+    user = current_user()
+    if not (user.get("is_superuser") or user.get("role") == "administrador"):
+        return forbidden_response("administrador")
     task_id = request.form.get("task_id")
     technician = (request.form.get("technician") or "").strip()
     pc_name = request.form.get("pc_name")

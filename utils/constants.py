@@ -1,7 +1,7 @@
 import os
 import time
 
-APP_VERSION = "v3.0.0-dashboard-ux"
+APP_VERSION = "v3.1.0-modular-auth"
 DB_FILE = "inventario.db"
 LOG_FOLDER = "logs"
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

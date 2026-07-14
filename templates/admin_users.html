@@ -277,10 +277,13 @@
                                             <button class="btn btn-xs btn-outline-warning" style="font-size: 0.65rem;" type="submit" title="Resetear Clave"><i class="bi bi-key-fill"></i></button>
                                         </form>
                                         {% endif %}
-                                        <form method="post" action="{{ url_for('users.remove_app_user', user_id=user.id) }}" onsubmit="return confirm('¿Eliminar cuenta de {{ user.username }}?');">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button class="btn btn-xs btn-outline-danger" style="font-size: 0.65rem;" type="submit"><i class="bi bi-trash3"></i> ELIMINAR</button>
-                                        </form>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-xs btn-outline-info" style="font-size: 0.65rem;" type="button" onclick='editUser({{ user | tojson }})'><i class="bi bi-pencil"></i> EDITAR</button>
+                                            <form method="post" action="{{ url_for('users.remove_app_user', user_id=user.id) }}" onsubmit="return confirm('¿Eliminar cuenta de {{ user.username }}?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button class="btn btn-xs btn-outline-danger" style="font-size: 0.65rem;" type="submit"><i class="bi bi-trash3"></i> ELIMINAR</button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -313,10 +316,10 @@
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script>
         const standaloneRolePresets = {
-            administrador: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false, audit_racks: true },
+            administrador: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: true, audit_racks: true },
             operador: { dashboard: false, mobile: false, infrastructure: false, reports: false, operadores: true, audit_racks: false },
             tecnico: { dashboard: false, mobile: true, infrastructure: false, reports: false, operadores: false, audit_racks: false },
-            infraestructura: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: false, audit_racks: true },
+            infraestructura: { dashboard: true, mobile: true, infrastructure: true, reports: true, operadores: true, audit_racks: true },
             consulta: { dashboard: false, mobile: false, infrastructure: false, reports: true, operadores: false, audit_racks: false }
         };
 
@@ -342,6 +345,31 @@
             document.getElementById('password').placeholder = 'Clave local req.';
             applyStandaloneRolePreset();
             document.getElementById('username').focus();
+        }
+
+        function editUser(user) {
+            document.getElementById('username').value = user.username;
+            document.getElementById('display_name').value = user.display_name || '';
+            document.getElementById('role').value = user.role || 'tecnico';
+            document.getElementById('technician_name').value = user.technician_name || '';
+            document.getElementById('phone').value = user.phone || '';
+            document.getElementById('is_active').checked = !!user.is_active;
+            document.getElementById('is_superuser').checked = !!user.is_superuser;
+            document.getElementById('must_change_password').checked = !!user.must_change_password;
+            document.getElementById('is_edit_mode').checked = true;
+            
+            // Set checkboxes
+            document.getElementById('perm_dashboard').checked = !!user.can_access_dashboard;
+            document.getElementById('perm_mobile').checked = !!user.can_access_mobile;
+            document.getElementById('perm_infrastructure').checked = !!user.can_access_infrastructure;
+            document.getElementById('perm_reports').checked = !!user.can_access_reports;
+            document.getElementById('perm_operadores').checked = !!user.can_access_operadores;
+            document.getElementById('perm_audit_racks').checked = !!user.can_audit_racks;
+
+            document.getElementById('display_name').focus();
+            // Scroll a la terminal
+            const targetEl = document.getElementById('crear-usuario');
+            if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth' });
         }
 
         applyStandaloneRolePreset();
