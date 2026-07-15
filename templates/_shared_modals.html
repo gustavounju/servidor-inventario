@@ -2521,7 +2521,7 @@
                         <i class="bi bi-trash3"></i>
                     </button>
                     ${isGeneric ? `
-                        <button class="btn-pt-action" style="border-color:var(--card-border); background:transparent; color:var(--text-color); flex:0 0 38px;" onclick="openMigrateModal(${t.id})" title="Asignar a PC" onmouseover="this.style.borderColor='var(--accent-color)';this.style.color='var(--accent-color)'" onmouseout="this.style.borderColor='var(--card-border)';this.style.color='var(--text-color)'">
+                        <button class="btn-pt-action" style="border-color:var(--card-border); background:transparent; color:var(--text-color); flex:0 0 38px;" onclick="openMigrateModal(${t.id}, '${(t.solicitante || '').replace(/'/g, "\\'")}')" title="Asignar a PC" onmouseover="this.style.borderColor='var(--accent-color)';this.style.color='var(--accent-color)'" onmouseout="this.style.borderColor='var(--card-border)';this.style.color='var(--text-color)'">
                             <i class="bi bi-arrow-right-short" style="font-size: 1.4rem; line-height: 0;"></i>
                         </button>
                     ` : ''}
@@ -2844,6 +2844,12 @@
 
 <script>
   function openMigrateModal(taskId, solicitante) {
+    // Cerrar cualquier modal abierto para evitar problemas con el fondo gris (backdrop) de Bootstrap 5
+    document.querySelectorAll('.modal.show').forEach(function(el) {
+      var inst = bootstrap.Modal.getInstance(el);
+      if (inst) inst.hide();
+    });
+
     document.getElementById('migration_task_id').value = taskId;
     var select = document.getElementById('target_pc');
     select.value = ""; // Default

@@ -271,7 +271,7 @@ def auto_migrate_generic_tasks():
         
     migrated_count = 0
     with get_db_connection() as conn:
-        unassigned = conn.execute("SELECT id, solicitante FROM tasks WHERE pc_name = 'PC Generica' AND estado != 'Hecha'").fetchall()
+        unassigned = conn.execute("SELECT id, solicitante, fuero FROM tasks WHERE pc_name = 'PC Generica' AND estado != 'Hecha'").fetchall()
         all_pcs = conn.execute("""
             SELECT p.pc_name, p.fuero, p.last_user, a.real_name 
             FROM pcs p 
@@ -280,9 +280,32 @@ def auto_migrate_generic_tasks():
         """).fetchall()
         
         for task in unassigned:
+            # Caso especial 1: Si el fuero es directamente "Sistemas SIGJ", se va a SIGJ
+            if task.get('fuero') == 'Sistemas SIGJ':
+                conn.execute("UPDATE tasks SET pc_name = 'SIGJ' WHERE id = %s", (task['id'],))
+                audit_msg = f"Se auto-vinculó la tarea #{task['id']} de PC Generica a SIGJ por fuero Sistemas SIGJ"
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             ('PC Generica', f"Tarea #{task['id']} Auto-Transferida", "", "Enviada a SIGJ", current_username(), "MIGRACION_TAREAS", request.remote_addr))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             ('SIGJ', "AUTO-MIGRACION", "PC Generica", audit_msg, current_username(), "MIGRACION_TAREAS", request.remote_addr))
+                migrated_count += 1
+                continue
+
             if not task['solicitante']: continue
             
             clean_sol = norm(task['solicitante']).replace(',', '').replace('.', '')
+            
+            # Caso especial 2: Si el solicitante es "sistemas" o "sigj" (palabra única)
+            if clean_sol.strip() in ['sistemas', 'sigj']:
+                conn.execute("UPDATE tasks SET pc_name = 'SIGJ' WHERE id = %s", (task['id'],))
+                audit_msg = f"Se auto-vinculó la tarea #{task['id']} de PC Generica a SIGJ por solicitante Sistemas/SIGJ"
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             ('PC Generica', f"Tarea #{task['id']} Auto-Transferida", "", "Enviada a SIGJ", current_username(), "MIGRACION_TAREAS", request.remote_addr))
+                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                             ('SIGJ', "AUTO-MIGRACION", "PC Generica", audit_msg, current_username(), "MIGRACION_TAREAS", request.remote_addr))
+                migrated_count += 1
+                continue
+
             terms = [t for t in clean_sol.split() if len(t) > 1]
             if len(terms) < 2: continue
             
@@ -326,6 +349,14 @@ def auto_migrate_generic_tasks():
         else:
             flash("No se encontraron coincidencias automáticas para las tareas pendientes.", "warning")
             
+    ref = request.referrer
+    if ref and request.host in ref:
+        if "/pc/PC%20Generica" in ref or "/pc/PC Generica" in ref:
+            return redirect(url_for('dashboard.pc_detail', pc_name='PC Generica'))
+        if '#' in ref:
+            ref = ref.split('#')[0]
+        return redirect(f"{ref}#auxModal_PC_Generica")
+        
     return redirect(url_for('dashboard.pc_detail', pc_name='PC Generica'))
 
 
