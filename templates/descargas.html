@@ -190,7 +190,7 @@
             REPOSITORIO LOCAL DE <span>SOFTWARE Y DRIVERS</span>
         </h1>
         <div>
-            {% if current_user and current_user.is_authenticated %}
+            {% if is_authenticated %}
                 <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn op-btn--accent" style="font-size: 0.8rem; padding: 6px 12px;">
                     <i class="bi bi-arrow-left"></i> [ REGRESAR AL DASHBOARD ]
                 </a>
