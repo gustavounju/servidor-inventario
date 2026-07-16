@@ -12,7 +12,7 @@ chico de sistemas/técnicos para llevar el inventario de PCs, racks, switches, i
 stock y tareas. Corre en producción real, en infraestructura del Poder Judicial.
 
 - **Backend**: Python 3.13, Flask (arquitectura por Blueprints en `blueprints/`)
-- **Base de datos**: MySQL (local en dev, remoto en prod — `10.15.0.62`)
+- **Base de datos**: MySQL (local en dev, remoto en prod — `10.15.3.20`)
 - **Frontend**: Jinja2 + HTML/CSS/JS vanilla (sin framework, sin bundler)
 - **Servicios**: OCR de PDFs (pytesseract/pdf2image), asistente IA (google-genai / Gemini,
   ya integrado en `services/ai_assistant.py`), notificaciones push (firebase-admin,
@@ -30,8 +30,7 @@ stock y tareas. Corre en producción real, en infraestructura del Poder Judicial
    no como un detalle de estilo.
 2. **Esto es producción judicial real, no un proyecto de juguete.** Cualquier comando que
    pueda afectar la base de datos remota (host real confirmado: `10.15.3.20`, base
-   `inventario_prod` — el valor `10.15.0.62` que figura en `CONTEXT.md` está
-   desactualizado, corregirlo cuando se edite ese archivo), borrar backups, tocar
+   `inventario_prod`), borrar backups, tocar
    `deployment/`, `nginx_inventario.conf`, `inventario.service`, o los scripts de deploy
    (`deploy_ubuntu.sh`, `update_server.sh/.bat`) requiere confirmación explícita antes de
    ejecutarse. Ver los skills `/guard` y `/deploy`.
