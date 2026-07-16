@@ -176,8 +176,9 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 - **UI/UX & SQL (12 Julio 2026)**: Refactorización profunda del layout y las tablas del Visor de Tareas (`visor_tareas.html`). Se rediseñó el panel superior eliminando texto redundante (ej. "Control y Registro"), se compactaron las tarjetas de métricas para maximizar espacio, y se resolvieron superposiciones de datos de "Fuero" asegurando una carga correcta desde `pcs` o `tasks`. Además, se agregó la columna *Técnico Asignado* al listado de Historial.
 - **UI/UX & AD Integration (13 Julio 2026)**: Se integró la funcionalidad de coincidencias de Active Directory (`_attach_task_user_matches`) en el *Panel de Tareas de PC Genérica*, mostrando sugerencias automáticas de PC real y Fuero basadas en el usuario solicitante para facilitar la reasignación. También se mejoró el contraste de las descripciones en los modales oscuros.
 - **Hotfix (15 Julio 2026)**: Restauración del script cliente `inventario.ps1` al directorio raíz del servidor tras haber sido borrado incidentalmente en un commit previo. Se corrigió el botón de copia del script en la barra de herramientas del operador (`_module_switcher.html`) inyectando el atributo `data-command` faltante. Se corrigió además la función `copyScript` en `gold.js` y `login.html` eliminando el escapado redundante `\\r\\n` a favor de un salto de línea real (`\r\n`), permitiendo que el comando se autoejecute al ser pegado en PowerShell.
+- **Feature (16 Julio 2026)**: Implementación del Repositorio Público de Software y Drivers (`/descargas`). Se creó una interfaz web (`descargas.html`) que lee dinámicamente un catálogo local (`catalog.json`) y escanea el disco (`static/downloads/`) para servir ejecutables de instalación a velocidad LAN a los técnicos. Además, se implementó auditoría de descargas almacenando el historial (IP, categoría, archivo) en la tabla `software_download_logs` para su revisión por parte de Administradores.
 
 ---
 
-**Última actualización**: 15 de Julio 2026  
+**Última actualización**: 16 de Julio 2026  
 **Versión del sistema**: Según APP_VERSION en utils/constants.py
