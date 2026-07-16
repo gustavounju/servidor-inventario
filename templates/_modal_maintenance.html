@@ -229,25 +229,30 @@ async function doSyncAd() {
     }
 }
 
-async function doSyncAdPcs() {
-    const btn = document.getElementById('btnSyncAdPcs');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Sync...';
-    btn.disabled = true;
+async function doSyncAdPcs(btnEl) {
+    const btn = btnEl || document.getElementById('btnSyncAdPcs');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Sync...';
+        btn.disabled = true;
+    }
     
     try {
         const response = await fetch("{{ url_for('maintenance.api_sync_ad_pcs') }}", { method: 'POST' });
         const data = await response.json();
         if(data.status === 'success') {
             alert('Sincronización de PCs Completa:\n' + (data.message || ''));
+            window.location.reload();
         } else {
             alert('Error en sincronización de PCs: ' + data.message);
         }
     } catch(err) {
         alert('Fallo de red al intentar sincronizar PCs.');
     } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
 }
 

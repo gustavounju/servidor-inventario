@@ -4,6 +4,13 @@
             <option value="{{ name }}">
             {% endfor %}
         </datalist>
+        {% if current_user.get('is_superuser') %}
+        <div class="d-flex justify-content-end mb-2">
+            <button type="button" class="btn btn-sm btn-outline-info" onclick="doSyncAdPcs(this)" title="Sincronizar fueros de PCs basado en Active Directory" style="font-family: var(--font-mono); border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                <i class="bi bi-pc-display"></i> [ SYNC AD EQUIPOS ]
+            </button>
+        </div>
+        {% endif %}
         <section class="master-table-container">
         {% if estado == 'False' %}
         <div class="table-responsive" id="inventoryTableContainer">
