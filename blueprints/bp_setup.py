@@ -397,201 +397,6 @@ def test_ad_connection():
     except ImportError:
         return jsonify({"status": "error", "message": "La librería ldap3 no está instalada."})
 
-        return f"Error: {e}", 404
-
-@bp_setup.route("/efemerides", methods=["GET"])
-def view_efemerides():
-    from datetime import datetime
-    hoy_str = datetime.now().strftime("%m-%d")
-    with get_db_connection() as conn:
-        rows = conn.execute(
-            "SELECT * FROM efemerides ORDER BY (dia_mes >= %s) DESC, dia_mes ASC",
-            (hoy_str,)
-        ).fetchall()
-        
-        # Convert to dictionary to pre-evaluate is_past and is_today
-        efemerides = []
-        for r in rows:
-            e_dict = dict(r)
-            e_dict['is_past'] = e_dict['dia_mes'] < hoy_str
-            e_dict['is_today'] = e_dict['dia_mes'] == hoy_str
-            efemerides.append(e_dict)
-            
-        custom_msg_row = conn.execute("SELECT * FROM app_settings WHERE setting_key = 'custom_global_message'").fetchone()
-        custom_message = {
-            'active': bool(custom_msg_row['is_active']) if custom_msg_row else False,
-            'text': custom_msg_row['setting_value'] if custom_msg_row else ""
-        }
-            
-    return render_template("admin_efemerides.html", efemerides=efemerides, custom_message=custom_message)
-
-from flask import jsonify
-
-@bp_setup.route("/api/custom_message", methods=["POST"])
-def update_custom_message():
-    data = request.json
-    text = data.get("text", "")
-    is_active = 1 if data.get("is_active") else 0
-    
-    with get_db_connection() as conn:
-        conn.execute(
-            """
-            INSERT INTO app_settings (setting_key, setting_value, is_active)
-            VALUES ('custom_global_message', %s, %s)
-            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), is_active = VALUES(is_active)
-            """,
-            (text, is_active)
-        )
-        conn.commit()
-    return jsonify({"status": "success"})
-
-@bp_setup.route("/efemerides/<int:ef_id>/toggle", methods=["POST"])
-def toggle_efemeride(ef_id):
-    with get_db_connection() as conn:
-        conn.execute("UPDATE efemerides SET is_active = 0")
-        conn.execute("UPDATE efemerides SET is_active = 1 WHERE id = %s", (ef_id,))
-        conn.commit()
-    return redirect(url_for('setup.view_efemerides'))
-
-@bp_setup.route("/efemerides/turn_off", methods=["POST"])
-def turn_off_efemerides():
-    with get_db_connection() as conn:
-        conn.execute("UPDATE efemerides SET is_active = 0")
-        conn.commit()
-    return redirect(url_for('setup.view_efemerides'))
-
-@bp_setup.route("/efemerides/add", methods=["POST"])
-def add_efemeride():
-    dia_mes = request.form.get("dia_mes")
-    titulo = request.form.get("titulo")
-    descripcion = request.form.get("descripcion")
-    icono = request.form.get("icono", "📅")
-    if dia_mes and titulo:
-        with get_db_connection() as conn:
-            conn.execute(
-                "INSERT INTO efemerides (dia_mes, titulo, descripcion, icono) VALUES (%s, %s, %s, %s)",
-                (dia_mes, titulo, descripcion, icono)
-            )
-            conn.commit()
-    return redirect(url_for('setup.view_efemerides'))
-
-@bp_setup.route("/efemerides/<int:ef_id>/edit", methods=["POST"])
-def edit_efemeride(ef_id):
-    dia_mes = request.form.get("dia_mes")
-    titulo = request.form.get("titulo")
-    descripcion = request.form.get("descripcion")
-    icono = request.form.get("icono", "📅")
-    if dia_mes and titulo:
-        with get_db_connection() as conn:
-            conn.execute(
-                "UPDATE efemerides SET dia_mes=%s, titulo=%s, descripcion=%s, icono=%s WHERE id=%s",
-                (dia_mes, titulo, descripcion, icono, ef_id)
-            )
-            conn.commit()
-    return redirect(url_for('setup.view_efemerides'))
-
-@bp_setup.route("/efemerides/<int:ef_id>/delete", methods=["POST"])
-def delete_efemeride(ef_id):
-    with get_db_connection() as conn:
-        conn.execute("DELETE FROM efemerides WHERE id=%s", (ef_id,))
-        conn.commit()
-    return redirect(url_for('setup.view_efemerides'))
-
-from utils.auth import is_superuser, current_user, login_required
-from utils.crypto import encrypt_secret, decrypt_secret
-from utils.settings import get_app_setting
-
-@bp_setup.route("/config", methods=["GET"])
-@login_required
-def config_page():
-    from flask import redirect, url_for
-    # Ya no usamos setup_config.html separado, es un modal
-    return redirect(url_for('dashboard.dashboard'))
-
-@bp_setup.route("/config/api/get", methods=["GET"])
-@login_required
-def config_api_get():
-    from flask import jsonify
-    if not is_superuser():
-        return jsonify({"status": "error", "message": "No autorizado"}), 403
-        
-    settings = {}
-    try:
-        with get_db_connection() as conn:
-            for row in conn.execute("SELECT setting_key, setting_value FROM app_settings").fetchall():
-                key = row['setting_key']
-                val = row['setting_value']
-                if key.endswith("PASSWORD") and val:
-                    val = "********"
-                settings[key] = val
-        
-        # Fallback para que los campos no se vean vacíos si sólo existen en el .env
-        for key in ["AD_SERVER", "AD_BASE_DN", "AD_SYNC_USER", "AD_SYNC_PASSWORD"]:
-            if not settings.get(key):
-                val = get_app_setting(key, "")
-                if key.endswith("PASSWORD") and val:
-                    val = "********"
-                settings[key] = val
-                
-        return jsonify({"status": "success", "data": settings})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-@bp_setup.route("/config/save", methods=["POST"])
-@login_required
-def save_config():
-    if not is_superuser():
-        return jsonify({"status": "error", "message": "Acceso denegado"}), 403
-        
-    data = request.json
-    
-    with get_db_connection() as conn:
-        for key, value in data.items():
-            if value is not None:
-                str_value = str(value)
-                if key.endswith("PASSWORD"):
-                    if not str_value or str_value == "********":
-                        continue
-                    # If it's already encrypted (should not happen from form, but just in case)
-                    if not str_value.startswith("ENC:"):
-                        str_value = encrypt_secret(str_value)
-                
-                conn.execute(
-                    """
-                    INSERT INTO app_settings (setting_key, setting_value, is_active)
-                    VALUES (%s, %s, 1)
-                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), is_active = 1
-                    """,
-                    (key, str_value)
-                )
-        conn.commit()
-        
-    return jsonify({"status": "success"})
-
-
-@bp_setup.route("/config/test_ad", methods=["POST"])
-@login_required
-def test_ad_connection():
-    if not is_superuser():
-        return jsonify({"status": "error", "message": "Acceso denegado"}), 403
-        
-    data = request.json
-    ad_server = data.get("AD_SERVER", "").strip()
-    sync_user = data.get("AD_SYNC_USER", "").strip()
-    sync_password = data.get("AD_SYNC_PASSWORD", "")
-    base_dn = data.get("AD_BASE_DN", "").strip()
-
-    if not ad_server or not sync_user or not sync_password or not base_dn:
-        return jsonify({"status": "error", "message": "Todos los campos de AD (Servidor, Base DN, Usuario, Contraseña) son obligatorios para probar la conexión."})
-
-    if sync_password == "********":
-        sync_password = get_app_setting("AD_SYNC_PASSWORD", "")
-
-    try:
-        from ldap3 import Server, Connection, SIMPLE, NONE
-    except ImportError:
-        return jsonify({"status": "error", "message": "La librería ldap3 no está instalada."})
-
     from utils.auth import _ad_default_domain
     domain = _ad_default_domain()
     use_ssl = get_app_setting("AD_USE_SSL", "false").lower() == "true"
@@ -599,13 +404,14 @@ def test_ad_connection():
 
     server = Server(ad_server, use_ssl=use_ssl, get_info=NONE, connect_timeout=connect_timeout)
     bind_user = f"{sync_user}@{domain}" if domain and "\\" not in sync_user and "@" not in sync_user else sync_user
-    
+
     try:
         conn = Connection(server, user=bind_user, password=sync_password, authentication=SIMPLE, auto_bind=True)
         conn.unbind()
         return jsonify({"status": "success", "message": "Conexión y autenticación exitosas."})
     except Exception as e:
         return jsonify({"status": "error", "message": f"Fallo la conexión: {str(e)}"})
+
 
 @bp_setup.route("/descargas")
 def descargas():
@@ -628,7 +434,7 @@ def descargas():
     categories = ["red", "drivers", "ofimatica", "sistema"]
     downloads_dir = os.path.join(current_app.root_path, "static", "downloads")
     
-    # Creamos las carpetas físicas si no existen
+    # Creamos las carpetas físicas si no existen, ignorando errores de permisos
     for cat in categories:
         try:
             os.makedirs(os.path.join(downloads_dir, cat), exist_ok=True)
@@ -684,6 +490,7 @@ def descargas():
             
     return render_template("descargas.html", files=available_files, audit_logs=audit_logs)
 
+
 @bp_setup.route("/descargas/descargar/<category>/<filename>")
 def download_file(category, filename):
     import os
@@ -719,3 +526,4 @@ def download_file(category, filename):
         current_app.logger.error(f"Error al registrar descarga en DB: {e}")
         
     return send_from_directory(base_dir, filename, as_attachment=True)
+
