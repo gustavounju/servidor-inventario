@@ -1,0 +1,30 @@
+{
+  "red": [
+    {
+      "filename": "iperf3.zip",
+      "name": "iPerf 3.16 (Windows 64-bit)",
+      "description": "Herramienta para medir ancho de banda y velocidad de red local. Descomprimir y ejecutar en CMD/PowerShell usando '.\\iperf3.exe -c 10.15.2.251'."
+    }
+  ],
+  "drivers": [
+    {
+      "filename": "HP_Universal_Printer_Driver.exe",
+      "name": "Driver Universal HP PCL6",
+      "description": "Controlador universal de impresión de HP. Compatible con la mayoría de impresoras LaserJet en red o USB."
+    }
+  ],
+  "ofimatica": [
+    {
+      "filename": "AcroRdrDC_MUI.exe",
+      "name": "Adobe Acrobat Reader DC",
+      "description": "Lector oficial de archivos PDF de Adobe. Instalador autónomo (offline) sin publicidad."
+    }
+  ],
+  "sistema": [
+    {
+      "filename": "7z2301-x64.exe",
+      "name": "7-Zip 23.01 (64-bit)",
+      "description": "Compresor y descompresor de archivos open-source de alta velocidad. Soporta ZIP, 7Z, RAR, TAR, etc."
+    }
+  ]
+}

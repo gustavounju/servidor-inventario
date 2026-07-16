@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repositorio de Software | Centro Judicial San Pedro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
+    <style>
+        body {
+            background-color: #0b131a; /* Dark industrial void base */
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        .repo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .repo-header {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .repo-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: -0.5px;
+            margin: 0;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .repo-title span {
+            color: #06b6d4; /* Neon cyan */
+        }
+
+        .category-section {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .category-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .category-title i {
+            color: #06b6d4;
+        }
+
+        .software-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 20px;
+        }
+
+        .software-card {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .software-card:hover {
+            border-color: rgba(6, 182, 212, 0.3);
+            background: rgba(30, 41, 59, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .software-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .software-desc {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .software-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .audit-section {
+            margin-top: 60px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        .audit-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #ef4444; /* Soft red for admin/audit indicators */
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+        }
+
+        .audit-table {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .audit-table th {
+            color: #cbd5e1;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .audit-table td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 10px 8px;
+        }
+
+        /* Customize scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b131a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body>
+
+<div class="repo-container">
+    <!-- Header -->
+    <header class="repo-header">
+        <h1 class="repo-title">
+            <i class="bi bi-hdd-stack-fill text-cyan"></i>
+            REPOSITORIO LOCAL DE <span>SOFTWARE Y DRIVERS</span>
+        </h1>
+        <div>
+            {% if current_user and current_user.is_authenticated %}
+                <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn op-btn--accent" style="font-size: 0.8rem; padding: 6px 12px;">
+                    <i class="bi bi-arrow-left"></i> [ REGRESAR AL DASHBOARD ]
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="op-btn op-btn--accent" style="font-size: 0.8rem; padding: 6px 12px;">
+                    [ INICIAR SESIÓN ] <i class="bi bi-box-arrow-in-right"></i>
+                </a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="alert alert-info border-0 text-cyan bg-opacity-10 bg-info p-3 mb-4" style="border-radius: 6px; font-size: 0.9rem; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 12px;">
+        <i class="bi bi-info-circle-fill" style="font-size: 1.2rem;"></i>
+        <div>
+            <strong>INFORMACIÓN PARA TÉCNICOS:</strong> Este servidor está alojado dentro de la red del Poder Judicial local. Las descargas desde esta página se realizan de manera directa a velocidad LAN de alta velocidad, sin consumir ancho de banda de Internet.
+        </div>
+    </div>
+
+    <!-- Categoría: Red -->
+    <section class="category-section">
+        <h2 class="category-title">
+            <i class="bi bi-hdd-network"></i> Herramientas de Red
+        </h2>
+        <div class="software-grid">
+            {% if files.red %}
+                {% for item in files.red %}
+                <div class="software-card">
+                    <div>
+                        <h3 class="software-name">{{ item.name }}</h3>
+                        <p class="software-desc">{{ item.description }}</p>
+                    </div>
+                    <div class="software-meta">
+                        <span>{{ item.filename }}</span>
+                        <a href="{{ url_for('setup.download_file', category='red', filename=item.filename) }}" class="op-btn op-btn--accent">
+                            [ DESCARGAR ] <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-muted small">No hay herramientas de red disponibles en este momento.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Categoría: Drivers -->
+    <section class="category-section">
+        <h2 class="category-title">
+            <i class="bi bi-printer"></i> Drivers de Impresoras
+        </h2>
+        <div class="software-grid">
+            {% if files.drivers %}
+                {% for item in files.drivers %}
+                <div class="software-card">
+                    <div>
+                        <h3 class="software-name">{{ item.name }}</h3>
+                        <p class="software-desc">{{ item.description }}</p>
+                    </div>
+                    <div class="software-meta">
+                        <span>{{ item.filename }}</span>
+                        <a href="{{ url_for('setup.download_file', category='drivers', filename=item.filename) }}" class="op-btn op-btn--accent">
+                            [ DESCARGAR ] <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-muted small">No hay drivers de impresoras disponibles en este momento.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Categoría: Ofimática -->
+    <section class="category-section">
+        <h2 class="category-title">
+            <i class="bi bi-file-earmark-pdf"></i> Lectores PDF y Ofimática
+        </h2>
+        <div class="software-grid">
+            {% if files.ofimatica %}
+                {% for item in files.ofimatica %}
+                <div class="software-card">
+                    <div>
+                        <h3 class="software-name">{{ item.name }}</h3>
+                        <p class="software-desc">{{ item.description }}</p>
+                    </div>
+                    <div class="software-meta">
+                        <span>{{ item.filename }}</span>
+                        <a href="{{ url_for('setup.download_file', category='ofimatica', filename=item.filename) }}" class="op-btn op-btn--accent">
+                            [ DESCARGAR ] <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-muted small">No hay herramientas de ofimática disponibles en este momento.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Categoría: Sistema -->
+    <section class="category-section">
+        <h2 class="category-title">
+            <i class="bi bi-cpu"></i> Utilidades del Sistema
+        </h2>
+        <div class="software-grid">
+            {% if files.sistema %}
+                {% for item in files.sistema %}
+                <div class="software-card">
+                    <div>
+                        <h3 class="software-name">{{ item.name }}</h3>
+                        <p class="software-desc">{{ item.description }}</p>
+                    </div>
+                    <div class="software-meta">
+                        <span>{{ item.filename }}</span>
+                        <a href="{{ url_for('setup.download_file', category='sistema', filename=item.filename) }}" class="op-btn op-btn--accent">
+                            [ DESCARGAR ] <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-muted small">No hay utilidades del sistema disponibles en este momento.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Sección de Auditoría (Exclusiva Administradores) -->
+    {% if audit_logs %}
+    <section class="audit-section">
+        <h2 class="audit-title">
+            <i class="bi bi-shield-lock-fill"></i> Auditoría de Descargas (Últimas 100)
+        </h2>
+        <div class="table-responsive">
+            <table class="table table-dark table-striped mb-0 audit-table">
+                <thead>
+                    <tr>
+                        <th>Archivo</th>
+                        <th>Categoría</th>
+                        <th>IP del Cliente</th>
+                        <th>Fecha de Descarga</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in audit_logs %}
+                    <tr>
+                        <td class="text-white">{{ log.filename }}</td>
+                        <td>
+                            {% if log.category == 'red' %}Redes
+                            {% elif log.category == 'drivers' %}Drivers Impresora
+                            {% elif log.category == 'ofimatica' %}Ofimática / PDF
+                            {% else %}{{ log.category | capitalize }}
+                            {% endif %}
+                        </td>
+                        <td style="color: #06b6d4;">{{ log.ip_address }}</td>
+                        <td>{{ log.downloaded_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Footer -->
+    <footer class="mt-5 text-center text-muted small" style="font-family: 'JetBrains Mono', monospace; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 20px;">
+        Centro Judicial San Pedro, Jujuy - Dpto. de Informática &copy; 2026
+    </footer>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

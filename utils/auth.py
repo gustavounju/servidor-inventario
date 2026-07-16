@@ -116,6 +116,8 @@ PUBLIC_ENDPOINTS = {
     "setup.download_client_script",
     "setup.download_client_launcher",
     "setup.download_certificate",
+    "setup.descargas",
+    "setup.download_file",
     "auth.change_password",
     "sw.js",
     "manifest.json",

@@ -435,6 +435,9 @@
             <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local">
                 <i class="bi bi-file-earmark-pdf"></i> Editor PDF
             </button>
+            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.4);" onclick="window.location.href='{{ url_for('setup.descargas') }}'" title="Repositorio Local de Software y Drivers">
+                <i class="bi bi-hdd-stack"></i> Repositorio SW
+            </button>
         </div>
     </div>
 
@@ -505,6 +508,14 @@
             </button>
             <div class="hint" style="font-size: 0.75rem; text-align: center;">
                 Abre, reordena, gira, rasteriza y aplica OCR dentro de la intranet, sin servicios externos.
+            </div>
+            
+            <div class="divider"></div>
+            <button type="button" class="script-btn" onclick="window.location.href='{{ url_for('setup.descargas') }}'" title="Repositorio Local de Software y Drivers" style="border-color: #06b6d4; color: #06b6d4;">
+                <i class="bi bi-hdd-stack"></i> <span>Repositorio de Software</span>
+            </button>
+            <div class="hint" style="font-size: 0.75rem; text-align: center;">
+                Descarga de utilidades de red, drivers de impresora y lectores PDF a velocidad LAN.
             </div>
         </div>
     </div>

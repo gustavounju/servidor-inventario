@@ -404,7 +404,6 @@ def test_ad_connection():
 
     server = Server(ad_server, use_ssl=use_ssl, get_info=NONE, connect_timeout=connect_timeout)
     bind_user = f"{sync_user}@{domain}" if domain and "\\" not in sync_user and "@" not in sync_user else sync_user
-
     try:
         conn = Connection(server, user=bind_user, password=sync_password, authentication=SIMPLE, auto_bind=True)
         conn.unbind()
@@ -412,3 +411,117 @@ def test_ad_connection():
     except Exception as e:
         return jsonify({"status": "error", "message": f"Fallo la conexión: {str(e)}"})
 
+@bp_setup.route("/descargas")
+def descargas():
+    import os
+    import json
+    from flask import current_app, render_template
+    from database.db_core import get_db_connection
+    from utils.auth import is_superuser
+    
+    # 1. Cargar el catálogo descriptivo
+    catalog_path = os.path.join(current_app.root_path, "static", "downloads", "catalog.json")
+    catalog = {}
+    if os.path.exists(catalog_path):
+        try:
+            with open(catalog_path, "r", encoding="utf-8") as f:
+                catalog = json.load(f)
+        except Exception as e:
+            current_app.logger.error(f"Error cargando catalog.json: {e}")
+            
+    # 2. Escanear el directorio físico para detectar qué archivos realmente existen en el disco
+    categories = ["red", "drivers", "ofimatica", "sistema"]
+    downloads_dir = os.path.join(current_app.root_path, "static", "downloads")
+    
+    # Creamos las carpetas físicas si no existen
+    for cat in categories:
+        os.makedirs(os.path.join(downloads_dir, cat), exist_ok=True)
+        
+    available_files = {}
+    for cat in categories:
+        cat_dir = os.path.join(downloads_dir, cat)
+        files = []
+        if os.path.exists(cat_dir):
+            for fname in os.listdir(cat_dir):
+                if os.path.isfile(os.path.join(cat_dir, fname)) and fname != "catalog.json":
+                    meta = None
+                    if cat in catalog:
+                        for item in catalog[cat]:
+                            if item.get("filename") == fname:
+                                meta = item
+                                break
+                    
+                    if meta:
+                        files.append({
+                            "filename": fname,
+                            "name": meta.get("name", fname),
+                            "description": meta.get("description", "Sin descripción disponible.")
+                        })
+                    else:
+                        files.append({
+                            "filename": fname,
+                            "name": fname,
+                            "description": "Subido recientemente. Sin descripción de catálogo."
+                        })
+        available_files[cat] = files
+        
+    # 3. Si el usuario es administrador, cargamos los logs de auditoría
+    audit_logs = []
+    is_admin = False
+    try:
+        from flask_login import current_user
+        is_admin = current_user.is_authenticated and (current_user.get('role') == 'administrador' or current_user.get('is_superuser'))
+    except Exception:
+        pass
+        
+    if is_admin:
+        try:
+            with get_db_connection() as conn:
+                audit_logs = conn.execute(
+                    """
+                    SELECT filename, category, ip_address, downloaded_at 
+                    FROM software_download_logs 
+                    ORDER BY downloaded_at DESC 
+                    LIMIT 100
+                    """
+                ).fetchall()
+        except Exception as e:
+            current_app.logger.error(f"Error cargando logs de descargas: {e}")
+            
+    return render_template("descargas.html", files=available_files, audit_logs=audit_logs)
+
+@bp_setup.route("/descargas/descargar/<category>/<filename>")
+def download_file(category, filename):
+    import os
+    from flask import send_from_directory, request, current_app
+    from database.db_core import get_db_connection
+    
+    # Prevenir Directory Traversal
+    category = os.path.basename(category)
+    filename = os.path.basename(filename)
+    
+    if category not in ["red", "drivers", "ofimatica", "sistema"]:
+        return "Categoría inválida.", 400
+        
+    base_dir = os.path.join(current_app.root_path, "static", "downloads", category)
+    file_path = os.path.join(base_dir, filename)
+    if not os.path.exists(file_path):
+        return "El archivo solicitado no existe en el servidor local.", 404
+        
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_address and ',' in ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+        
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO software_download_logs (filename, category, ip_address)
+                VALUES (%s, %s, %s)
+                """,
+                (filename, category, ip_address)
+            )
+    except Exception as e:
+        current_app.logger.error(f"Error al registrar descarga en DB: {e}")
+        
+    return send_from_directory(base_dir, filename, as_attachment=True)

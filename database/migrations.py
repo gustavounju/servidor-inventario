@@ -645,6 +645,7 @@ def run_all_migrations():
     verify_migration_v42()
     migrate_db_v43()
     migrate_db_v44()
+    migrate_db_v45()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1089,3 +1090,25 @@ def migrate_db_v44():
             conn.execute("CREATE INDEX idx_asset_history_map ON asset_location_history(map_id)")
 
     print("Migración V44 verificada.")
+
+def migrate_db_v45():
+    """Migración V45: Crear tabla software_download_logs para auditar descargas."""
+    print("Verificando migración de DB v45...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "software_download_logs"):
+            print("Aplicando migración V45: creando tabla software_download_logs...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS software_download_logs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    filename VARCHAR(255) NOT NULL,
+                    category VARCHAR(100) NOT NULL,
+                    ip_address VARCHAR(45) NOT NULL,
+                    downloaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+            print("Aplicando V45: Índices para software_download_logs...")
+            conn.execute("CREATE INDEX idx_sw_logs_file ON software_download_logs(filename(100))")
+            conn.execute("CREATE INDEX idx_sw_logs_ip ON software_download_logs(ip_address)")
+    print("Migración V45 verificada.")
