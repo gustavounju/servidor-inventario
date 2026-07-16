@@ -63,7 +63,7 @@ function onFilterClick(type) {
 }
 
 function copyScript(btn) {
-    const command = btn.getAttribute('data-command') + "\\r\\n\\r\\n\\r\\n";
+    const command = btn.getAttribute('data-command') + "\r\n";
     
     function showSuccess() {
         const originalHtml = btn.innerHTML;
