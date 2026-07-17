@@ -12,7 +12,7 @@ chico de sistemas/técnicos para llevar el inventario de PCs, racks, switches, i
 stock y tareas. Corre en producción real, en infraestructura del Poder Judicial.
 
 - **Backend**: Python 3.13, Flask (arquitectura por Blueprints en `blueprints/`)
-- **Base de datos**: MySQL (local en dev, remoto en prod — `10.15.2.251`)
+- **Base de datos**: MySQL (local en dev, remoto en prod — `10.15.0.62`)
 - **Frontend**: Jinja2 + HTML/CSS/JS vanilla (sin framework, sin bundler)
 - **Servicios**: OCR de PDFs (pytesseract/pdf2image), asistente IA (google-genai / Gemini,
   ya integrado en `services/ai_assistant.py`), notificaciones push (firebase-admin,

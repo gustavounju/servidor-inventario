@@ -65,7 +65,7 @@ Valores minimos recomendados:
 ```env
 FLASK_SECRET_KEY=pon_una_clave_larga_y_privada
 
-DB_HOST=10.15.2.251
+DB_HOST=10.15.0.62
 DB_PORT=3306
 DB_USER=tu_usuario_mysql
 DB_PASS=tu_clave_mysql

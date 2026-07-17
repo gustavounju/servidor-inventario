@@ -74,7 +74,7 @@ ServidorInventario/
 1. **Desarrollo local** en Windows (casa/oficina)
 2. **Pruebas** con MySQL local
 3. **Subida** de cambios a GitLab
-4. **Despliegue** en servidor Ubuntu con MySQL remoto (10.15.2.251)
+4. **Despliegue** en servidor Ubuntu con MySQL remoto (10.15.0.62)
 5. **Configuración** de variables de entorno para producción
 
 ## ⚙️ Variables de Entorno (.env)

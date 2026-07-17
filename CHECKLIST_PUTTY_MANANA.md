@@ -32,7 +32,7 @@ El script hace **todo solo**:
 
 | Variable | Valor |
 |---|---|
-| DB_HOST | 10.15.2.251 |
+| DB_HOST | 10.15.0.62 |
 | DB_PORT | 3306 |
 | DB_NAME | inventario_prod |
 | INVENTARIO URL HTTPS | https://10.15.2.251:5000 |
