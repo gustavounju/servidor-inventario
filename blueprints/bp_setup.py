@@ -430,20 +430,40 @@ def descargas():
         except Exception as e:
             current_app.logger.error(f"Error cargando catalog.json: {e}")
             
-    # 2. Escanear el directorio físico para detectar qué archivos realmente existen en el disco
-    categories = ["red", "drivers", "ofimatica", "sistema"]
+    # 2. Escanear el directorio físico y combinar con el catálogo
     downloads_dir = os.path.join(current_app.root_path, "static", "downloads")
+    categories = list(catalog.keys())
     
-    # Creamos las carpetas físicas si no existen, ignorando errores de permisos
+    # Escanear el directorio físico (1 nivel de profundidad para subcarpetas)
+    if os.path.exists(downloads_dir):
+        for entry in os.scandir(downloads_dir):
+            if entry.is_dir():
+                if entry.name not in categories:
+                    categories.append(entry.name)
+                # Escanear subnivel
+                for subentry in os.scandir(entry.path):
+                    if subentry.is_dir():
+                        subcat = f"{entry.name}/{subentry.name}"
+                        if subcat not in categories:
+                            categories.append(subcat)
+
+    # Garantizar que existan las 4 básicas si no hay nada
+    for cat in ["red", "drivers", "ofimatica", "sistema"]:
+        if cat not in categories:
+            categories.append(cat)
+            
+    categories.sort()
+    
+    # Creamos las carpetas físicas si no existen
     for cat in categories:
         try:
-            os.makedirs(os.path.join(downloads_dir, cat), exist_ok=True)
+            os.makedirs(os.path.join(downloads_dir, cat.replace('/', os.sep)), exist_ok=True)
         except Exception as e:
             current_app.logger.warning(f"No se pudo crear la carpeta {cat}: {e}")
         
     available_files = {}
     for cat in categories:
-        cat_dir = os.path.join(downloads_dir, cat)
+        cat_dir = os.path.join(downloads_dir, cat.replace('/', os.sep))
         files = []
         if os.path.exists(cat_dir):
             for fname in os.listdir(cat_dir):
@@ -467,7 +487,8 @@ def descargas():
                             "name": fname,
                             "description": "Subido recientemente. Sin descripción de catálogo."
                         })
-        available_files[cat] = files
+        if files:
+            available_files[cat] = files
         
     # 3. Si el usuario es administrador, cargamos los logs de auditoría
     audit_logs = []
@@ -491,20 +512,17 @@ def descargas():
     return render_template("descargas.html", files=available_files, audit_logs=audit_logs)
 
 
-@bp_setup.route("/descargas/descargar/<category>/<filename>")
+@bp_setup.route("/descargas/descargar/<path:category>/<filename>")
 def download_file(category, filename):
     import os
     from flask import send_from_directory, request, current_app
     from database.db_core import get_db_connection
     
-    # Prevenir Directory Traversal
-    category = os.path.basename(category)
+    # Prevenir Directory Traversal escapando '..'
+    category = category.replace('..', '')
     filename = os.path.basename(filename)
     
-    if category not in ["red", "drivers", "ofimatica", "sistema"]:
-        return "Categoría inválida.", 400
-        
-    base_dir = os.path.join(current_app.root_path, "static", "downloads", category)
+    base_dir = os.path.join(current_app.root_path, "static", "downloads", category.replace('/', os.sep))
     file_path = os.path.join(base_dir, filename)
     if not os.path.exists(file_path):
         return "El archivo solicitado no existe en el servidor local.", 404
@@ -550,14 +568,17 @@ def upload_software():
     name = request.form.get('name', '').strip()
     description = request.form.get('description', '').strip()
 
-    if category not in ["red", "drivers", "ofimatica", "sistema"]:
+    if not category:
         return jsonify({"status": "error", "message": "Categoría inválida."}), 400
+        
+    # Sanitizar categoría permitiendo anidamiento con '/'
+    category = category.replace('..', '')
 
     filename = secure_filename(file.filename)
     if not filename:
         return jsonify({"status": "error", "message": "Nombre de archivo no válido."}), 400
 
-    base_dir = os.path.join(current_app.root_path, "static", "downloads", category)
+    base_dir = os.path.join(current_app.root_path, "static", "downloads", category.replace('/', os.sep))
     os.makedirs(base_dir, exist_ok=True)
     file_path = os.path.join(base_dir, filename)
 

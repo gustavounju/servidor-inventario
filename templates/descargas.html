@@ -209,14 +209,26 @@
         </div>
     </div>
 
-    <!-- Categoría: Red -->
+    <!-- Categorías Dinámicas -->
+    {% for category, items in files.items() %}
     <section class="category-section">
         <h2 class="category-title">
-            <i class="bi bi-hdd-network"></i> Herramientas de Red
+            {% if 'red' in category %}
+                <i class="bi bi-hdd-network"></i>
+            {% elif 'driver' in category %}
+                <i class="bi bi-printer"></i>
+            {% elif 'ofimatica' in category %}
+                <i class="bi bi-file-earmark-pdf"></i>
+            {% elif 'sistema' in category %}
+                <i class="bi bi-cpu"></i>
+            {% else %}
+                <i class="bi bi-folder-fill"></i>
+            {% endif %}
+            {{ category | replace('/', ' / ') | upper }}
         </h2>
         <div class="software-grid">
-            {% if files.red %}
-                {% for item in files.red %}
+            {% if items %}
+                {% for item in items %}
                 <div class="software-card">
                     <div>
                         <h3 class="software-name">{{ item.name }}</h3>
@@ -224,98 +236,18 @@
                     </div>
                     <div class="software-meta">
                         <span>{{ item.filename }}</span>
-                        <a href="{{ url_for('setup.download_file', category='red', filename=item.filename) }}" class="op-btn op-btn--accent">
+                        <a href="{{ url_for('setup.download_file', category=category, filename=item.filename) }}" class="op-btn op-btn--accent">
                             [ DESCARGAR ] <i class="bi bi-download"></i>
                         </a>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="text-muted small">No hay herramientas de red disponibles en este momento.</div>
+                <div class="text-muted small">No hay archivos en esta categoría por el momento.</div>
             {% endif %}
         </div>
     </section>
-
-    <!-- Categoría: Drivers -->
-    <section class="category-section">
-        <h2 class="category-title">
-            <i class="bi bi-printer"></i> Drivers de Impresoras
-        </h2>
-        <div class="software-grid">
-            {% if files.drivers %}
-                {% for item in files.drivers %}
-                <div class="software-card">
-                    <div>
-                        <h3 class="software-name">{{ item.name }}</h3>
-                        <p class="software-desc">{{ item.description }}</p>
-                    </div>
-                    <div class="software-meta">
-                        <span>{{ item.filename }}</span>
-                        <a href="{{ url_for('setup.download_file', category='drivers', filename=item.filename) }}" class="op-btn op-btn--accent">
-                            [ DESCARGAR ] <i class="bi bi-download"></i>
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-muted small">No hay drivers de impresoras disponibles en este momento.</div>
-            {% endif %}
-        </div>
-    </section>
-
-    <!-- Categoría: Ofimática -->
-    <section class="category-section">
-        <h2 class="category-title">
-            <i class="bi bi-file-earmark-pdf"></i> Lectores PDF y Ofimática
-        </h2>
-        <div class="software-grid">
-            {% if files.ofimatica %}
-                {% for item in files.ofimatica %}
-                <div class="software-card">
-                    <div>
-                        <h3 class="software-name">{{ item.name }}</h3>
-                        <p class="software-desc">{{ item.description }}</p>
-                    </div>
-                    <div class="software-meta">
-                        <span>{{ item.filename }}</span>
-                        <a href="{{ url_for('setup.download_file', category='ofimatica', filename=item.filename) }}" class="op-btn op-btn--accent">
-                            [ DESCARGAR ] <i class="bi bi-download"></i>
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-muted small">No hay herramientas de ofimática disponibles en este momento.</div>
-            {% endif %}
-        </div>
-    </section>
-
-    <!-- Categoría: Sistema -->
-    <section class="category-section">
-        <h2 class="category-title">
-            <i class="bi bi-cpu"></i> Utilidades del Sistema
-        </h2>
-        <div class="software-grid">
-            {% if files.sistema %}
-                {% for item in files.sistema %}
-                <div class="software-card">
-                    <div>
-                        <h3 class="software-name">{{ item.name }}</h3>
-                        <p class="software-desc">{{ item.description }}</p>
-                    </div>
-                    <div class="software-meta">
-                        <span>{{ item.filename }}</span>
-                        <a href="{{ url_for('setup.download_file', category='sistema', filename=item.filename) }}" class="op-btn op-btn--accent">
-                            [ DESCARGAR ] <i class="bi bi-download"></i>
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-muted small">No hay utilidades del sistema disponibles en este momento.</div>
-            {% endif %}
-        </div>
-    </section>
+    {% endfor %}
 
     <!-- Sección de Auditoría (Exclusiva Administradores) -->
     {% if audit_logs %}
