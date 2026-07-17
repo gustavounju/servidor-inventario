@@ -46,7 +46,7 @@ Minimo recomendado:
 
 ```env
 FLASK_SECRET_KEY=pon_aqui_una_clave_larga_y_privada
-DB_HOST=10.15.3.20
+DB_HOST=10.15.2.251
 DB_PORT=3306
 DB_USER=tu_usuario_mysql
 DB_PASS=tu_clave_mysql
@@ -138,7 +138,7 @@ Desde tu PC Windows del trabajo:
 1. **Conectate a la VPN** (WireGuard) para estar en la red judicial (10.15.x.x)
 2. **Abri CMD/PowerShell** (no hace falta PuTTY si usas terminal moderna) y corre:
    ```bash
-   ssh administrador@10.15.3.20
+   ssh administrador@10.15.2.251
    ```
    - Usuario: `administrador`
    - Clave: `[CONTRASEÑA_INICIAL_VER_ENV]`

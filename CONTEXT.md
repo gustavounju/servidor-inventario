@@ -18,7 +18,7 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 - **Puerto**: 3306
 
 ### Producción (Centro Judicial)
-- **Host**: 10.15.3.20
+- **Host**: 10.15.2.251
 - **Usuario/Contraseña**: Por configurar
 - **Puerto**: 3306
 
@@ -74,7 +74,7 @@ ServidorInventario/
 1. **Desarrollo local** en Windows (casa/oficina)
 2. **Pruebas** con MySQL local
 3. **Subida** de cambios a GitLab
-4. **Despliegue** en servidor Ubuntu con MySQL remoto (10.15.3.20)
+4. **Despliegue** en servidor Ubuntu con MySQL remoto (10.15.2.251)
 5. **Configuración** de variables de entorno para producción
 
 ## ⚙️ Variables de Entorno (.env)
