@@ -526,10 +526,16 @@
                         </label>
                         <input type="text" list="swCategoryOptions" class="form-control" id="swCategory" required placeholder="Escribir nueva o seleccionar..." style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); color: white;">
                         <datalist id="swCategoryOptions">
-                            <option value="drivers">Drivers</option>
-                            <option value="red">Herramientas de Red</option>
-                            <option value="ofimatica">Ofimática</option>
-                            <option value="sistema">Sistema / Utilidades</option>
+                            {% if sw_categories %}
+                                {% for cat in sw_categories %}
+                                    <option value="{{ cat }}">{{ cat|title }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="drivers">Drivers</option>
+                                <option value="red">Herramientas de Red</option>
+                                <option value="ofimatica">Ofimática</option>
+                                <option value="sistema">Sistema / Utilidades</option>
+                            {% endif %}
                         </datalist>
                     </div>
                     <div class="mb-3" id="swSubcategoryContainer" style="display: none;">

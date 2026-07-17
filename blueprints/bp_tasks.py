@@ -1041,6 +1041,19 @@ def visor():
             known_fueros.setdefault("Infraestructura", "Infraestructura")
             fueros_dict = dict(sorted(known_fueros.items(), key=lambda item: item[0].lower()))
             
+            sw_categories = []
+            try:
+                import os, json
+                from flask import current_app
+                catalog_path = os.path.join(current_app.root_path, "static", "downloads", "catalog.json")
+                if os.path.exists(catalog_path):
+                    with open(catalog_path, "r", encoding="utf-8") as f:
+                        catalog = json.load(f)
+                        sw_categories = list(catalog.keys())
+            except Exception as cat_e:
+                import traceback
+                print(f"Error loading catalog categories: {cat_e}")
+            
             if is_filtered:
                 base_sql = "SELECT t.*, p.last_user, p.fuero AS pc_fuero FROM tasks t LEFT JOIN pcs p ON t.pc_name = p.pc_name WHERE 1=1"
                 params = []
@@ -1067,7 +1080,8 @@ def visor():
                                        hoy=fecha_filtro,
                                        pc_filtro=pc_filtro,
                                        tech_filtro=tech_filtro,
-                                       is_filtered=True)
+                                       is_filtered=True,
+                                       sw_categories=sw_categories)
             else:
                 tareas_hoy = _attach_task_actions_bulk(_attach_task_user_matches(conn.execute("""
                     SELECT t.*, p.last_user, p.fuero AS pc_fuero FROM tasks t 
@@ -1095,7 +1109,8 @@ def visor():
                                        ad_users_list=ad_users_list,
                                        fueros=fueros_dict,
                                        hoy=fecha_filtro,
-                                       is_filtered=False)
+                                       is_filtered=False,
+                                       sw_categories=sw_categories)
     except Exception as e:
         import traceback
         traceback.print_exc()

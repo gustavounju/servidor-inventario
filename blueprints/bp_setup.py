@@ -509,7 +509,7 @@ def descargas():
         except Exception as e:
             current_app.logger.error(f"Error cargando logs de descargas: {e}")
             
-    return render_template("descargas.html", files=available_files, audit_logs=audit_logs)
+    return render_template("descargas.html", files=available_files, audit_logs=audit_logs, is_admin=is_admin)
 
 
 @bp_setup.route("/descargas/descargar/<path:category>/<filename>")
@@ -626,3 +626,53 @@ def upload_software():
         return jsonify({"status": "error", "message": "Archivo subido pero no se pudo actualizar el catálogo."}), 500
 
     return jsonify({"status": "success", "message": f"Archivo '{filename}' subido correctamente al repositorio."})
+
+@bp_setup.route("/api/delete_software", methods=["POST"])
+def delete_software():
+    from flask import request, jsonify, current_app
+    import os
+    import json
+    from utils.auth import is_authenticated, current_user
+
+    if not is_authenticated() or not (current_user().get('role') == 'administrador' or current_user().get('is_superuser')):
+        return jsonify({"status": "error", "message": "Acceso denegado. Se requieren permisos de administrador."}), 403
+
+    category = request.form.get('category', '').strip()
+    filename = request.form.get('filename', '').strip()
+
+    if not category or not filename:
+        return jsonify({"status": "error", "message": "Parámetros incompletos."}), 400
+
+    # 1. Borrar el archivo físico
+    base_dir = os.path.join(current_app.root_path, "static", "downloads", category.replace('/', os.sep))
+    file_path = os.path.join(base_dir, filename)
+    
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception as e:
+        current_app.logger.error(f"Error borrando archivo físico {file_path}: {e}")
+        return jsonify({"status": "error", "message": "No se pudo borrar el archivo físico."}), 500
+
+    # 2. Actualizar el catalog.json
+    catalog_path = os.path.join(current_app.root_path, "static", "downloads", "catalog.json")
+    if os.path.exists(catalog_path):
+        try:
+            with open(catalog_path, "r", encoding="utf-8") as f:
+                catalog = json.load(f)
+                
+            if category in catalog:
+                catalog[category] = [item for item in catalog[category] if item.get("filename") != filename]
+                
+                # Eliminar la categoría entera si queda vacía
+                if not catalog[category]:
+                    del catalog[category]
+                    
+            with open(catalog_path, "w", encoding="utf-8") as f:
+                json.dump(catalog, f, indent=2, ensure_ascii=False)
+                
+        except Exception as e:
+            current_app.logger.error(f"Error actualizando catalog.json tras borrado: {e}")
+            return jsonify({"status": "error", "message": "Archivo borrado pero falló la actualización del catálogo."}), 500
+
+    return jsonify({"status": "success", "message": f"Archivo '{filename}' borrado correctamente."})

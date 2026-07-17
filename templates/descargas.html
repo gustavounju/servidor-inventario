@@ -236,9 +236,16 @@
                     </div>
                     <div class="software-meta">
                         <span>{{ item.filename }}</span>
-                        <a href="{{ url_for('setup.download_file', category=category, filename=item.filename) }}" class="op-btn op-btn--accent">
-                            [ DESCARGAR ] <i class="bi bi-download"></i>
-                        </a>
+                        <div class="d-flex gap-2">
+                            {% if is_admin %}
+                            <button onclick="deleteSoftware('{{ category }}', '{{ item.filename }}')" class="op-btn op-btn--accent" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                            <a href="{{ url_for('setup.download_file', category=category, filename=item.filename) }}" class="op-btn op-btn--accent">
+                                [ DESCARGAR ] <i class="bi bi-download"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -293,5 +300,36 @@
 </div>
 
 <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+{% if is_admin %}
+<script>
+    async function deleteSoftware(category, filename) {
+        if(!confirm(`¿Estás seguro de que quieres borrar '${filename}' permanentemente?`)) return;
+        
+        const formData = new FormData();
+        formData.append('category', category);
+        formData.append('filename', filename);
+        formData.append('csrf_token', '{{ csrf_token() }}');
+        
+        try {
+            const response = await fetch("{{ url_for('setup.delete_software') }}", {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if(data.status === 'success') {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error al borrar.');
+            }
+        } catch (e) {
+            alert('Error de red al borrar.');
+            console.error(e);
+        }
+    }
+</script>
+{% endif %}
+
 </body>
 </html>
