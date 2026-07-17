@@ -524,12 +524,13 @@
                             <span>Categoría Principal</span>
                             <button type="button" class="btn btn-sm btn-outline-info" style="padding: 0 5px; font-size: 0.7rem;" onclick="toggleSubcategory()" title="Añadir subcategoría específica"><i class="bi bi-plus-lg"></i> Subcategoría</button>
                         </label>
-                        <select class="form-select" id="swCategory" required style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); color: white;">
+                        <input type="text" list="swCategoryOptions" class="form-control" id="swCategory" required placeholder="Escribir nueva o seleccionar..." style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); color: white;">
+                        <datalist id="swCategoryOptions">
                             <option value="drivers">Drivers</option>
                             <option value="red">Herramientas de Red</option>
                             <option value="ofimatica">Ofimática</option>
                             <option value="sistema">Sistema / Utilidades</option>
-                        </select>
+                        </datalist>
                     </div>
                     <div class="mb-3" id="swSubcategoryContainer" style="display: none;">
                         <label class="form-label text-light" style="font-size: 0.85rem; font-family: var(--font-mono);">Subcategoría (Opcional)</label>
