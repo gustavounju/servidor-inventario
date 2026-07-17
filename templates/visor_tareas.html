@@ -96,6 +96,7 @@
                 {% if current_user.get('role') == 'administrador' %}
                 <button type="button" class="op-btn" style="border: 1px solid var(--color-warning); color: var(--color-warning);" onclick="showMsgModal()">[ COMUNICAR ]</button>
                 <button type="button" class="op-btn op-btn--accent" data-bs-toggle="modal" data-bs-target="#createTaskModal" title="Crear Tarea Rápidamente">[+ TAREA]</button>
+                <button type="button" class="op-btn" style="border: 1px solid var(--color-stable); color: var(--color-stable);" onclick="showUploadSwModal()" title="Subir Software al Repositorio">[ SUBIR SW ]</button>
                 {% else %}
                 <button type="button" class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted);" onclick="window.location.href='{{ url_for('auth.login') }}'" title="Requiere ser Administrador">[+ TAREA]</button>
                 {% endif %}
@@ -505,6 +506,46 @@
         </div>
     </div>
 
+    <!-- Modal Subir Software (Admin) -->
+    <div class="modal-overlay" id="uploadSoftwareModalOverlay" style="display: none; align-items: center; justify-content: center; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 10000;">
+        <div class="glass-modal" style="max-width: 500px; width: 90%; background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.2rem; margin: 0; color: #fff;"><i class="bi bi-cloud-upload text-stable"></i> SUBIR SOFTWARE</h2>
+                <button type="button" class="btn-close btn-close-white" onclick="hideUploadSwModal()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadSwForm" onsubmit="submitSoftwareUpload(event)">
+                    <div class="mb-3">
+                        <label class="form-label text-light" style="font-size: 0.85rem; font-family: var(--font-mono);">Archivo (.exe, .zip)</label>
+                        <input type="file" class="form-control" id="swFile" required style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); color: white;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light" style="font-size: 0.85rem; font-family: var(--font-mono);">Categoría</label>
+                        <select class="form-select" id="swCategory" required style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); color: white;">
+                            <option value="drivers">Drivers</option>
+                            <option value="red">Herramientas de Red</option>
+                            <option value="ofimatica">Ofimática</option>
+                            <option value="sistema">Sistema / Utilidades</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light" style="font-size: 0.85rem; font-family: var(--font-mono);">Nombre Visible</label>
+                        <input type="text" class="form-control" id="swName" required placeholder="Ej: Impresora HP M402" style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); color: white;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light" style="font-size: 0.85rem; font-family: var(--font-mono);">Descripción</label>
+                        <textarea class="form-control" id="swDescription" required rows="3" placeholder="Breve descripción del software..." style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); color: white;"></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end align-items-center mt-4">
+                        <span id="uploadSwStatus" class="me-3 text-warning" style="font-size: 0.85rem; display: none;">Subiendo...</span>
+                        <button type="button" class="btn btn-outline-light me-2" onclick="hideUploadSwModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-success" id="uploadSwSubmitBtn"><i class="bi bi-upload"></i> Subir</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Enviar Mensaje (Admin) -->
     <div class="modal-overlay" id="msgModalOverlay" style="display: none; align-items: center; justify-content: center; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 10000;">
         <div class="glass-modal" style="max-width: 500px; width: 90%; background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
@@ -625,6 +666,70 @@
             const overlay = document.getElementById('msgModalOverlay');
             if(overlay) overlay.style.display = 'none';
         }
+
+        function showUploadSwModal() {
+            const overlay = document.getElementById('uploadSoftwareModalOverlay');
+            if(overlay) overlay.style.display = 'flex';
+        }
+
+        function hideUploadSwModal() {
+            const overlay = document.getElementById('uploadSoftwareModalOverlay');
+            if(overlay) overlay.style.display = 'none';
+            document.getElementById('uploadSwForm').reset();
+            document.getElementById('uploadSwStatus').style.display = 'none';
+            document.getElementById('uploadSwSubmitBtn').disabled = false;
+        }
+
+        async function submitSoftwareUpload(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('swFile');
+            if(!fileInput.files || fileInput.files.length === 0) return;
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('category', document.getElementById('swCategory').value);
+            formData.append('name', document.getElementById('swName').value);
+            formData.append('description', document.getElementById('swDescription').value);
+
+            const statusSpan = document.getElementById('uploadSwStatus');
+            const submitBtn = document.getElementById('uploadSwSubmitBtn');
+            
+            statusSpan.style.display = 'inline-block';
+            statusSpan.className = 'me-3 text-warning';
+            statusSpan.innerText = 'Subiendo, por favor espere...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch("{{ url_for('setup.upload_software') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if(data.status === 'success') {
+                    statusSpan.className = 'me-3 text-success';
+                    statusSpan.innerText = '¡Completado!';
+                    setTimeout(() => {
+                        hideUploadSwModal();
+                        alert('Software subido exitosamente. Ya está disponible en /descargas');
+                    }, 1000);
+                } else {
+                    statusSpan.className = 'me-3 text-danger';
+                    statusSpan.innerText = data.message || 'Error al subir.';
+                    submitBtn.disabled = false;
+                }
+            } catch(error) {
+                console.error("Error upload:", error);
+                statusSpan.className = 'me-3 text-danger';
+                statusSpan.innerText = 'Error de red.';
+                submitBtn.disabled = false;
+            }
+        }
+
 
         async function sendAdminMessage() {
             const btn = document.getElementById('btnSendMsg');
