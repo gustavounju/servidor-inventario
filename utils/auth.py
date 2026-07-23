@@ -118,6 +118,7 @@ PUBLIC_ENDPOINTS = {
     "setup.download_certificate",
     "setup.descargas",
     "setup.download_file",
+    "setup.descargas_tree",
     "auth.change_password",
     "sw.js",
     "manifest.json",

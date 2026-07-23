@@ -546,6 +546,83 @@ def download_file(category, filename):
     return send_from_directory(base_dir, filename, as_attachment=True)
 
 
+@bp_setup.route("/descargas/tree")
+def descargas_tree():
+    """Devuelve el árbol de archivos disponibles para descargar como JSON.
+    Público (no requiere login) — solo lista metadatos, no descarga nada.
+    """
+    import os
+    import json
+    from flask import current_app, jsonify
+
+    catalog_path = os.path.join(current_app.root_path, "static", "downloads", "catalog.json")
+    catalog = {}
+    if os.path.exists(catalog_path):
+        try:
+            with open(catalog_path, "r", encoding="utf-8") as f:
+                catalog = json.load(f)
+        except Exception:
+            pass
+
+    downloads_dir = os.path.join(current_app.root_path, "static", "downloads")
+    
+    # Construir árbol de categorías raíz
+    root_categories = ["drivers", "red", "ofimatica", "sistema"]
+    tree = {}
+
+    for root_cat in root_categories:
+        cat_dir = os.path.join(downloads_dir, root_cat)
+        node = {"type": "folder", "name": root_cat, "children": {}, "files": []}
+
+        if os.path.exists(cat_dir):
+            for entry in os.scandir(cat_dir):
+                if entry.is_dir():
+                    # Subcarpeta
+                    subcat_key = f"{root_cat}/{entry.name}"
+                    sub_node = {"type": "folder", "name": entry.name, "children": {}, "files": []}
+                    for fname in os.listdir(entry.path):
+                        fpath = os.path.join(entry.path, fname)
+                        if os.path.isfile(fpath) and fname != "catalog.json":
+                            size_bytes = os.path.getsize(fpath)
+                            meta_list = catalog.get(subcat_key, [])
+                            label = fname
+                            desc = ""
+                            for m in meta_list:
+                                if m.get("filename") == fname:
+                                    label = m.get("name", fname)
+                                    desc = m.get("description", "")
+                                    break
+                            sub_node["files"].append({
+                                "filename": fname,
+                                "label": label,
+                                "description": desc,
+                                "size": size_bytes,
+                                "download_url": f"/descargas/descargar/{subcat_key}/{fname}"
+                            })
+                    node["children"][entry.name] = sub_node
+                elif entry.is_file() and entry.name != "catalog.json":
+                    size_bytes = entry.stat().st_size
+                    meta_list = catalog.get(root_cat, [])
+                    label = entry.name
+                    desc = ""
+                    for m in meta_list:
+                        if m.get("filename") == entry.name:
+                            label = m.get("name", entry.name)
+                            desc = m.get("description", "")
+                            break
+                    node["files"].append({
+                        "filename": entry.name,
+                        "label": label,
+                        "description": desc,
+                        "size": size_bytes,
+                        "download_url": f"/descargas/descargar/{root_cat}/{entry.name}"
+                    })
+
+        tree[root_cat] = node
+
+    return jsonify(tree)
+
+
 @bp_setup.route("/api/upload_software", methods=["POST"])
 def upload_software():
     from flask import request, jsonify, current_app
