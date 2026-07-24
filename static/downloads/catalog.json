@@ -26,5 +26,12 @@
       "name": "7-Zip 23.01 (64-bit)",
       "description": "Compresor y descompresor de archivos open-source de alta velocidad. Soporta ZIP, 7Z, RAR, TAR, etc."
     }
+  ],
+  "drivers/impresoras": [
+    {
+      "filename": "hp_LJP1100_P1560_P1600_Full_Solution-v20180815-50157037_1.exe",
+      "name": "HP LaserJet pro serie P1102w",
+      "description": "﻿Hp LaserJet Pro P1100 (incluye P1106/P1108), P1560, P1600: Software y controlador de funciones completas"
+    }
   ]
 }
