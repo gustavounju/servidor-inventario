@@ -1526,7 +1526,7 @@
                 div.innerHTML =
                     `<i class="bi ${icon} repo-item-icon"></i>` +
                     `<span class="repo-item-name">${label}</span>` +
-                    `<span class="repo-item-size" style="margin-right: 4px;">${filesCount}</span>` +
+                    (filesCount > 0 ? `<span class="repo-item-size" style="margin-right: 4px;">${filesCount}</span>` : '') +
                     `<i class="bi bi-chevron-right repo-item-arrow"></i>`;
                 div.addEventListener('mouseenter', function (e) {
                     e.stopPropagation();

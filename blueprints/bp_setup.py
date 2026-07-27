@@ -582,7 +582,7 @@ def descargas_tree():
                     sub_node = {"type": "folder", "name": entry.name, "children": {}, "files": []}
                     for fname in os.listdir(entry.path):
                         fpath = os.path.join(entry.path, fname)
-                        if os.path.isfile(fpath) and fname != "catalog.json":
+                        if os.path.isfile(fpath) and not fname.startswith(".") and fname.lower() not in ["catalog.json", "desktop.ini", "thumbs.db"]:
                             size_bytes = os.path.getsize(fpath)
                             meta_list = catalog.get(subcat_key, [])
                             label = fname
@@ -600,7 +600,7 @@ def descargas_tree():
                                 "download_url": f"/descargas/descargar/{subcat_key}/{fname}"
                             })
                     node["children"][entry.name] = sub_node
-                elif entry.is_file() and entry.name != "catalog.json":
+                elif entry.is_file() and not entry.name.startswith(".") and entry.name.lower() not in ["catalog.json", "desktop.ini", "thumbs.db"]:
                     size_bytes = entry.stat().st_size
                     meta_list = catalog.get(root_cat, [])
                     label = entry.name
