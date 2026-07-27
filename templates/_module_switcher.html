@@ -9,45 +9,45 @@
         }
     })();
 </script>
-<!-- THE OPERATOR TOOLBAR -->
+<!-- THE OPERATOR TOOLBAR (Midnight Radar Console Mode) -->
 <nav class="op-toolbar">
     
     <!-- LADO IZQUIERDO: COMANDOS -->
     <div class="op-toolbar__search-zone" style="display: flex; align-items: center; padding-right: 16px;">
 
-        <a href="{{ url_for('dashboard.dashboard') }}" style="color: var(--text-color); font-weight: 600; font-family: var(--font-body); font-size: 1rem; letter-spacing: 0.5px; margin-right: 24px; white-space: nowrap; text-decoration: none; cursor: pointer;" title="Ir al Dashboard / Inventario Activo">
-            Centro de Operaciones
+        <a href="{{ url_for('dashboard.dashboard') }}" style="color: var(--text-color); font-weight: 700; font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 1px; margin-right: 16px; white-space: nowrap; text-decoration: none; cursor: pointer;" title="Ir al Dashboard / Inventario Activo">
+            CENTRO DE OPERACIONES
         </a>
 
         {% if request.args.get('q') or request.args.get('alerta') or request.args.get('os') %}
-            <span style="color: #64748b; font-weight: 500; font-family: var(--font-body); font-size: 0.9rem; margin-right: 12px; white-space: nowrap;" id="resultsCountUI"></span>
+            <span style="color: #34d399; font-weight: bold; font-family: var(--font-mono); font-size: 0.85rem; margin-right: 8px; white-space: nowrap;" id="resultsCountUI"></span>
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
                     const tableRows = document.querySelectorAll('#inventoryTable tbody tr:not(.skeleton-row)');
                     const countEl = document.getElementById('resultsCountUI');
                     if(countEl && tableRows) {
                         if(tableRows.length === 1 && tableRows[0].textContent.includes("Sin datos")) {
-                            countEl.textContent = "0 Resultados";
+                            countEl.textContent = "[0 RESULTADOS]";
                         } else {
-                            countEl.textContent = `${tableRows.length} Resultados`;
+                            countEl.textContent = `[${tableRows.length} RESULTADOS]`;
                         }
                     }
                 });
             </script>
-            <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn" style="color: #ef4444; white-space: nowrap; margin-right: 16px;" title="Ver todas las PC y quitar filtros">✕ Limpiar Filtros</a>
+            <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn" style="color: #ef4444; border-color: #ef4444; white-space: nowrap; margin-right: 16px;" title="Ver todas las PC y quitar filtros">[ X VER TODO ]</a>
         {% endif %}
     </div>
 
-    <!-- LADO DERECHO: HERRAMIENTAS DIRECTAS -->
+    <!-- LADO DERECHO: HERRAMIENTAS DIRECTAS (Scroll Horizontal) -->
     <div class="op-toolbar__tools-zone">
         
         {% if current_user and current_user.get('role') == 'administrador' %}
         <button class="op-btn op-btn--accent" data-bs-toggle="modal" data-bs-target="#createTaskModal" title="Crear Tarea Rápidamente">
-            <i class="bi bi-plus-lg"></i> Nueva Tarea
+            [+ TAREA]
         </button>
         {% else %}
-        <button class="op-btn" style="opacity: 0.4; cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para crear tareas')" title="Requiere ser Administrador.">
-            <i class="bi bi-plus-lg"></i> Nueva Tarea
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en [+ TAREA]')" title="Requiere ser Administrador.">
+            [+ TAREA]
         </button>
         {% endif %}
         
@@ -55,83 +55,72 @@
 
         <!-- Modulos Primarios (Visor) -->
         {% if has_access('reports') %}
-        <a href="{{ url_for('dashboard.view_cementerio') }}" class="op-btn {% if request.endpoint == 'dashboard.view_cementerio' %}op-btn--active{% endif %}" title="Cementerio (Bajas)">
-            Bajas
+        <a href="{{ url_for('dashboard.view_cementerio') }}" class="op-btn {% if request.endpoint == 'dashboard.view_cementerio' %}op-btn--active{% endif %}" title="Cementerio (Bajas)" style="color: #f59e0b; border-color: #f59e0b;">
+            [ BAJAS ]
         </a>
         {% else %}
-        <button class="op-btn" style="opacity: 0.4; cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Bajas')" title="No tienes permiso para entrar en Bajas">
-            Bajas
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Bajas')" title="No tienes permiso para entrar en Bajas">
+            [ BAJAS ]
         </button>
         {% endif %}
 
         {% if has_access('dashboard') %}
         <a href="{{ url_for('tasks.visor') }}" class="op-btn {% if request.endpoint == 'tasks.visor' %}op-btn--active{% endif %}" title="Visor Global">
-            Visor
+            [ VISOR ]
         </a>
         {% else %}
-        <button class="op-btn" style="opacity: 0.4; cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Visor')" title="No tienes permiso para entrar en Visor">
-            Visor
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Visor')" title="No tienes permiso para entrar en Visor">
+            [ VISOR ]
         </button>
         {% endif %}
 
         <!-- Redes y Mapas -->
         {% if has_access('infrastructure') %}
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Redes IP">Subredes</a>
-        <a href="{{ url_for('maps.index') }}" class="op-btn">Mapas</a>
-        <a href="{{ url_for('infrastructure.switches_dashboard') }}" class="op-btn">Switches</a>
-        <a href="{{ url_for('infrastructure.index') }}" class="op-btn {% if request.endpoint == 'infrastructure.index' %}op-btn--active{% endif %}" title="Gestión de Infraestructura (Impresoras, UPS, etc.)">Infraestructura</a>
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Redes IP">[ SUBREDES ]</a>
+        <a href="{{ url_for('maps.index') }}" class="op-btn">[ MAPAS ]</a>
+        <a href="{{ url_for('infrastructure.switches_dashboard') }}" class="op-btn">[ SWITCHES ]</a>
+        <a href="{{ url_for('infrastructure.index') }}" class="op-btn {% if request.endpoint == 'infrastructure.index' %}op-btn--active{% endif %}" title="Gestión de Infraestructura (Impresoras, UPS, etc.)">[ INFRA ]</a>
         {% else %}
-        <button class="op-btn" style="opacity: 0.4; cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso')">Subredes</button>
-        <button class="op-btn" style="opacity: 0.4; cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso')">Mapas</button>
-        <button class="op-btn" style="opacity: 0.4; cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso')">Switches</button>
-        <button class="op-btn" style="opacity: 0.4; cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso')">Infraestructura</button>
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Subredes')" title="No tienes permiso para entrar en Subredes">[ SUBREDES ]</button>
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Mapas')" title="No tienes permiso para entrar en Mapas">[ MAPAS ]</button>
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Switches')" title="No tienes permiso para entrar en Switches">[ SWITCHES ]</button>
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Infra')" title="No tienes permiso para entrar en Infra">[ INFRA ]</button>
         {% endif %}
-
-        <a href="{{ url_for('setup.descargas') }}" class="op-btn {% if request.endpoint == 'setup.descargas' %}op-btn--active{% endif %}">Repositorio</a>
 
         <!-- Administración / Extras -->
         <span class="op-divider"></span>
         {% if has_access('reports') %}
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#efemeridesModal" title="Ver Efemérides del Día">Efemérides</a>
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#efemeridesModal" title="Ver Efemérides del Día">[ EFEMÉRIDES ]</a>
         {% else %}
-        <button class="op-btn" style="opacity: 0.4; cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Efemérides')">Efemérides</button>
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Efemérides')" title="No tienes permiso para entrar en Efemérides">[ EFEMÉRIDES ]</button>
         {% endif %}
         
         {% if current_user.get('is_superuser') %}
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#configModal" title="Ajustes Globales del Sistema">Configuración</a>
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#maintenanceModal" title="Mantenimiento del Sistema">Mantenimiento</a>
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#configModal" title="Ajustes Globales del Sistema">[ CONFIG ]</a>
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#maintenanceModal" title="Mantenimiento del Sistema">[ MANTENIMIENTO ]</a>
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#usersModal" title="Usuarios">
-            Usuarios{% if kpi_usuarios_pendientes and kpi_usuarios_pendientes > 0 %} <span class="op-alert-text">({{ kpi_usuarios_pendientes }})</span>{% endif %}
+            [ USR{% if kpi_usuarios_pendientes and kpi_usuarios_pendientes > 0 %}:<span class="op-alert-text">{{ kpi_usuarios_pendientes }}</span>{% endif %} ]
         </a>
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#fueroAdminModal" title="Administración de Fueros">Fueros</a>
-        {% else %}
-        <button class="op-btn" style="opacity: 0.4; cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso')">Fueros</button>
         {% endif %}
         
+        {% if current_user.get('is_superuser') %}
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#fueroAdminModal" title="Administración de Fueros">[ FUEROS ]</a>
+        {% else %}
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Fueros')" title="No tienes permiso para entrar en Fueros">[ FUEROS ]</button>
+        {% endif %}
         {% if has_access('reports') %}
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#reportsModal">Reportes</a>
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#reportsModal">[ REPORTES ]</a>
         {% endif %}
         
         {% if current_user.username in ['gmurad', 'dquiros'] %}
-        <a href="{{ url_for('vault.vault_index') }}" class="op-btn op-btn--vault">Vault</a>
+        <a href="{{ url_for('vault.vault_index') }}" class="op-btn op-btn--vault">[ VAULT ]</a>
         {% endif %}
 
         <span class="op-divider"></span>
-        
-        <!-- Buscador -->
-        <form action="{{ url_for('dashboard.dashboard') }}" method="GET" class="op-cmd-form" style="display: flex; align-items: center; background: rgba(255,255,255,0.05); border-radius: 6px; padding: 4px 12px; border: 1px solid rgba(255,255,255,0.1); margin-right: 12px;">
-            <i class="bi bi-search" style="font-size: 0.8rem; color: #94a3b8; margin-right: 8px;"></i>
-            <input type="text" name="q" class="op-cmd-input" placeholder="Buscar..." value="{{ request.args.get('q', '') }}" autocomplete="off" spellcheck="false" id="searchInput" style="background: transparent; border: none; color: white; font-family: var(--font-body); font-size: 0.85rem; outline: none; width: 140px;">
-            {% if request.endpoint == 'dashboard.dashboard' %}
-                {% if request.args.get('estado') %}<input type="hidden" name="estado" value="{{ request.args.get('estado') }}">{% endif %}
-                {% if request.args.get('alerta') %}<input type="hidden" name="alerta" value="{{ request.args.get('alerta') }}">{% endif %}
-            {% endif %}
-        </form>
-
         <div class="op-user-label" title="Sesión activa">
-            <i class="bi bi-person-circle" style="margin-right: 6px; font-size: 1rem;"></i> {{ current_user.username }}
+            {{ current_user.username | upper }}
         </div>
-        <a href="{{ url_for('auth.logout') }}" class="op-btn op-btn--danger" title="Finalizar Sesión">Salir</a>
+        <a href="{{ url_for('auth.logout') }}" class="op-btn op-btn--danger" title="Finalizar Sesión">[ SALIR ]</a>
 
     </div>
 
@@ -139,14 +128,16 @@
 
 <!-- THE OPERATOR TELEMETRY BAR (Nivel 2) -->
 <div class="op-telemetry-bar">
+    
+
     <!-- Tareas Pendientes -->
-    <button type="button" class="op-telemetry-item op-telemetry-item--alert" onclick="showPendingTasksModal()" title="Tareas Pendientes">
-        <i class="bi bi-bell-fill"></i> Tareas: <strong>{{ kpi_total_pendientes | default(0) }}</strong>
+    <button type="button" class="op-telemetry-item op-telemetry-item--alert" onclick="showPendingTasksModal()" title="Tareas Pendientes" style="background: transparent; border: none; cursor: pointer;">
+        <i class="bi bi-bell-fill"></i> PEND: <strong>{{ kpi_total_pendientes | default(0) }}</strong>
     </button>
 
     <!-- Técnicos Móviles -->
-    <button type="button" class="op-telemetry-item" data-bs-toggle="modal" data-bs-target="#mobileTechsModal" title="Técnicos Online/Offline">
-        <i class="bi bi-phone"></i> Técnicos: <strong>{{ active_mobile_techs | length if active_mobile_techs else 0 }}</strong>
+    <button type="button" class="op-telemetry-item" data-bs-toggle="modal" data-bs-target="#mobileTechsModal" title="Técnicos Online/Offline" style="background: transparent; border: none; cursor: pointer;">
+        <i class="bi bi-phone"></i> TÉCNICOS: <strong>{{ active_mobile_techs | length if active_mobile_techs else 0 }}</strong>
     </button>
 
     <!-- Auxiliares / Infraestructura -->
@@ -154,9 +145,9 @@
     <span class="op-divider-sub"></span>
     {% for pc in auxiliary_pcs %}
     {% set aux_name = pc.pc_name.upper() %}
-    <button type="button" class="op-telemetry-item" data-bs-toggle="modal" data-bs-target="#auxModal_{{ pc.pc_name | replace(' ', '_') | replace('-', '_') }}">
+    <button type="button" class="op-telemetry-item" data-bs-toggle="modal" data-bs-target="#auxModal_{{ pc.pc_name | replace(' ', '_') | replace('-', '_') }}" style="background: transparent; border: none; cursor: pointer;">
         <i class="bi {% if 'GENERICA' in aux_name %}bi-inbox{% elif aux_name.startswith('SIGJ') %}bi-cpu{% else %}bi-diagram-3{% endif %}"></i>
-        {% if aux_name.startswith('INFRAESTRUCTURA') %}Infra{% elif aux_name.startswith('SIGJ') %}SIGJ{% elif 'GENERICA' in aux_name %}Genérica{% else %}{{ pc.pc_name }}{% endif %}: <strong>{{ pc.tareas_pendientes or 0 }}</strong>
+        {% if aux_name.startswith('INFRAESTRUCTURA') %}INFRA{% elif aux_name.startswith('SIGJ') %}SIGJ{% elif 'GENERICA' in aux_name %}GENÉRICA{% else %}{{ pc.pc_name }}{% endif %}: <strong>{{ pc.tareas_pendientes or 0 }}</strong>
     </button>
     {% endfor %}
     {% endif %}
@@ -164,18 +155,18 @@
     <span class="op-divider-sub"></span>
     
     <!-- Script Copy Button -->
-    <button type="button" data-command="{{ secure_launcher_command }}" onclick="copyScript(this); return false;" class="op-telemetry-item" style="color: #3b82f6;" title="Copiar Comando de Inventario">
-        <i class="bi bi-terminal"></i> Script Cliente
+    <button type="button" data-command="{{ secure_launcher_command }}" onclick="copyScript(this); return false;" class="op-telemetry-item" style="color: #fbbf24; border: none; background: transparent; cursor: pointer; font-weight: bold;" title="Copiar Comando de Inventario">
+        ⚡ SCRIPT
     </button>
     
     {% if efemeride_actual %}
     <span class="op-divider-sub"></span>
-    <div class="op-telemetry-item hide-mobile marquee-container" style="color: var(--text-muted); cursor: default; max-width: 45vw; padding: 0;">
-        <div class="marquee-content {% if efemeride_actual.is_alert %}marquee-fast{% endif %}" style="font-size: 0.8rem;">
+    <div class="op-telemetry-item hide-mobile marquee-container" style="color: var(--accent-color); cursor: default; max-width: 45vw; border: none; background: transparent; padding: 0;">
+        <div class="marquee-content {% if efemeride_actual.is_alert %}marquee-fast{% endif %}" style="font-size: 0.75rem;">
             <span style="font-size: 1.1em; margin-right: 4px;">{{ efemeride_actual.icono }}</span>
             {% if efemeride_actual.titulo %}<strong>{{ efemeride_actual.titulo }}</strong>{% endif %}
             {% if efemeride_actual.descripcion %}
-            <span style="margin-left: 5px;">{% if efemeride_actual.titulo %}- {% endif %}{{ efemeride_actual.descripcion }}</span>
+            <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">{% if efemeride_actual.titulo %}- {% endif %}{{ efemeride_actual.descripcion }}</span>
             {% endif %}
         </div>
     </div>
@@ -184,7 +175,17 @@
     <!-- Espaciador para empujar a la derecha -->
     <div style="flex-grow: 1;"></div>
     
+    <!-- Buscador / Comandos (Movido aquí para despejar el título) -->
+    <form action="{{ url_for('dashboard.dashboard') }}" method="GET" class="op-cmd-form" style="width: auto; flex-shrink: 0; margin-right: 16px; display: flex; align-items: center; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1);">
+        <span class="op-cmd-prompt" style="font-size: 0.8rem; margin-right: 4px;">&gt;_</span>
+        <input type="text" name="q" class="op-cmd-input" placeholder="BUSCAR / COMANDO..." value="{{ request.args.get('q', '') }}" autocomplete="off" spellcheck="false" id="searchInput" style="background: transparent; border: none; color: white; font-family: var(--font-mono); font-size: 0.8rem; outline: none; width: 180px;">
+        {% if request.endpoint == 'dashboard.dashboard' %}
+            {% if request.args.get('estado') %}<input type="hidden" name="estado" value="{{ request.args.get('estado') }}">{% endif %}
+            {% if request.args.get('alerta') %}<input type="hidden" name="alerta" value="{{ request.args.get('alerta') }}">{% endif %}
+        {% endif %}
+    </form>
+
     <!-- Reloj -->
-    <div id="heroDatetime" class="op-telemetry-item" style="color: #64748b; font-weight: 500; font-family: var(--font-body); font-size: 0.85rem; padding-right: 16px;"></div>
+    <div id="heroDatetime" class="op-telemetry-item" style="color: var(--color-stable); font-weight: bold; font-family: var(--font-mono); font-size: 0.85rem; padding-right: 16px;"></div>
 </div>
 {% endif %}

@@ -3946,16 +3946,15 @@ body.has-fixed-header {
     top: 0;
     left: 0;
     width: 100%;
-    height: 56px;
-    background: #0f172a; /* Slate 900 for a serious dark look */
+    height: 40px;
+    background: #0B0E14; /* Deep Void */
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     z-index: 1050;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
-    font-family: var(--font-body, 'Inter', sans-serif);
+    padding: 0 16px;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
 }
 
 /* Lado Izquierdo: CLI Search */
@@ -4022,39 +4021,34 @@ body.has-fixed-header {
 
 .op-btn {
     color: #94A3B8; /* Slate 400 */
-    font-size: 0.85rem;
-    font-weight: 500;
-    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 0.62rem;
+    font-weight: 700;
     text-decoration: none;
     background: transparent;
-    border: 1px solid transparent;
-    padding: 6px 12px;
+    border: none;
+    padding: 1px 3px;
     white-space: nowrap;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 2px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
 }
 .op-btn:hover {
     color: #fff;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .op-btn--active {
     color: #fff;
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .op-btn--accent {
     color: var(--accent-color, #10b981);
-    border-color: rgba(16, 185, 129, 0.3);
 }
 .op-btn--accent:hover {
     background: rgba(16, 185, 129, 0.15);
-    border-color: rgba(16, 185, 129, 0.6);
 }
 
 .op-btn--danger {
@@ -4066,11 +4060,11 @@ body.has-fixed-header {
 }
 
 .op-btn--vault {
-    color: #c4b5fd;
+    color: #8b5cf6;
 }
 .op-btn--vault:hover {
     background: rgba(139, 92, 246, 0.15);
-    color: #ddd6fe;
+    color: #a78bfa;
 }
 
 .op-alert-text {
@@ -4079,10 +4073,9 @@ body.has-fixed-header {
 }
 
 .op-user-label {
-    color: #94a3b8;
-    font-size: 0.85rem;
-    font-weight: 500;
-    font-family: var(--font-body, 'Inter', sans-serif);
+    color: var(--color-stable, #34d399);
+    font-size: 0.7rem;
+    font-weight: 700;
     white-space: nowrap;
     display: flex;
     align-items: center;
@@ -4091,24 +4084,24 @@ body.has-fixed-header {
 
 /* Operator Telemetry Bar (Nivel 2) */
 body.has-fixed-header {
-    padding-top: 94px !important; /* Toolbar (56) + Telemetry (38) */
+    padding-top: 70px !important; /* Toolbar (40) + Telemetry (30) */
 }
 
 .op-telemetry-bar {
     position: fixed;
-    top: 56px;
+    top: 40px;
     left: 0;
     width: 100%;
-    height: 38px;
-    background: rgba(15, 23, 42, 0.95);
+    height: 30px;
+    background: rgba(11, 14, 20, 0.95);
     backdrop-filter: blur(8px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     z-index: 1040;
     display: flex;
     align-items: center;
-    padding: 0 20px;
-    gap: 12px;
-    font-family: var(--font-body, 'Inter', sans-serif);
+    padding: 0 16px;
+    gap: 8px;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
@@ -4119,27 +4112,26 @@ body.has-fixed-header {
 }
 
 .op-telemetry-item {
-    color: #94A3B8; /* Slate 400 */
-    font-size: 0.8rem;
-    font-weight: 500;
+    color: #64748B; /* Slate 500 */
+    font-size: 0.58rem;
+    font-weight: 700;
     text-decoration: none;
     background: transparent;
     border: none;
-    padding: 4px 8px;
+    padding: 1px 4px;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
     cursor: pointer;
     border-radius: 4px;
     transition: all 0.2s ease;
 }
 .op-telemetry-item strong {
-    color: #e2e8f0;
-    font-weight: 600;
+    color: #94A3B8;
 }
 .op-telemetry-item:hover {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
     color: #fff;
 }
 .op-telemetry-item:hover strong {
