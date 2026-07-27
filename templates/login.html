@@ -1579,6 +1579,9 @@
 
                         // Build Column 1 for this category
                         const col1 = createColumn();
+                        const col1Margin = Math.max(0, clickedEl.offsetTop - 6);
+                        col1.style.marginTop = col1Margin + 'px';
+                        col1.dataset.margin = col1Margin;
                         
                         // First list subfolders
                         Object.entries(cat.children).forEach(([subName, sub]) => {
@@ -1589,6 +1592,9 @@
                                 
                                 // Build Column 2 for this subfolder
                                 const col2 = createColumn();
+                                const c1m = parseInt(col1.dataset.margin || '0');
+                                col2.style.marginTop = (c1m + Math.max(0, subClickedEl.offsetTop - 6)) + 'px';
+                                
                                 if (sub.files.length > 0) {
                                     sub.files.forEach(f => col2.appendChild(mkFile(f)));
                                 } else {
