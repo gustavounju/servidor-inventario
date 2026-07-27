@@ -609,6 +609,11 @@
 
         .repo-item-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
+        .repo-file-info { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+        .repo-file-title { white-space: normal; line-height: 1.3; font-weight: 500; color: rgba(255, 255, 255, 0.9); }
+        .repo-file-desc { font-size: 0.75rem; color: rgba(255,255,255,0.5); line-height: 1.3; margin-top: 3px; white-space: normal; }
+
+        
         .repo-item-arrow {
             font-size: 0.7rem;
             color: rgba(255,255,255,0.3);
@@ -1508,13 +1513,17 @@
             function mkFile(file) {
                 const a = document.createElement('a');
                 a.className = 'repo-item';
+                a.style.alignItems = 'flex-start';
                 a.href = file.download_url;
                 a.title = file.description || file.label;
                 a.innerHTML =
-                    `<i class="bi ${fileIcon(file.filename)} repo-item-icon"></i>` +
-                    `<span class="repo-item-name">${file.label}</span>` +
-                    `<span class="repo-item-size">${fmtBytes(file.size)}</span>` +
-                    `<i class="bi bi-download repo-item-dl"></i>`;
+                    `<i class="bi ${fileIcon(file.filename)} repo-item-icon" style="margin-top: 2px;"></i>` +
+                    `<div class="repo-file-info">` +
+                        `<span class="repo-file-title">${file.label}</span>` +
+                        (file.description ? `<span class="repo-file-desc">${file.description}</span>` : '') +
+                    `</div>` +
+                    `<span class="repo-item-size" style="margin-top: 2px;">${fmtBytes(file.size)}</span>` +
+                    `<i class="bi bi-download repo-item-dl" style="margin-top: 2px;"></i>`;
                 a.addEventListener('click', function (e) { e.stopPropagation(); });
                 return a;
             }
