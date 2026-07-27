@@ -539,9 +539,9 @@
                         </datalist>
                     </div>
                     <div class="mb-3" id="swSubcategoryContainer" style="display: none;">
-                        <label class="form-label text-light" style="font-size: 0.85rem; font-family: var(--font-mono);">Subcategoría (Opcional)</label>
-                        <input type="text" class="form-control" id="swSubcategory" placeholder="Ej: Impresoras, Scanners" style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); color: white;">
-                        <small class="text-muted" style="font-size: 0.7rem;">Creará una subcarpeta, ej: drivers/impresoras</small>
+                        <label class="form-label text-light" style="font-size: 0.85rem; font-family: var(--font-mono);">Ruta de Subcarpetas (Opcional)</label>
+                        <input type="text" class="form-control" id="swSubcategory" placeholder="Ej: placa-madre/lan o impresoras" style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); color: white;">
+                        <small class="text-muted" style="font-size: 0.7rem;">Puedes usar '/' para anidar niveles, ej: drivers/placa-madre/lan</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-light" style="font-size: 0.85rem; font-family: var(--font-mono);">Nombre Visible</label>
@@ -719,9 +719,11 @@
             let finalCategory = document.getElementById('swCategory').value;
             const subCategory = document.getElementById('swSubcategory').value.trim();
             if (subCategory) {
-                // Sanitizamos un poco la subcategoría para URLs amigables
-                const cleanSub = subCategory.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-                finalCategory = finalCategory + '/' + cleanSub;
+                // Sanitizamos permitiendo la barra '/' para crear múltiples niveles
+                const cleanSub = subCategory.toLowerCase().replace(/[^a-z0-9\/]/g, '-').replace(/-+/g, '-').replace(/\/+/g, '/').replace(/^\/|\/$/g, '');
+                if (cleanSub) {
+                    finalCategory = finalCategory + '/' + cleanSub;
+                }
             }
             
             formData.append('category', finalCategory);
