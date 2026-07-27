@@ -499,14 +499,14 @@
         /* ─── Tree Panel (Text only style) ─── */
         .repo-panel {
             position: absolute;
-            top: calc(100% + 10px);
-            right: 0;
+            top: 0;
+            left: calc(100% + 10px);
             width: 380px;
             background: transparent;
             border: none;
             box-shadow: none;
             opacity: 0;
-            transform: translateY(-8px) scale(0.98);
+            transform: translateX(-15px) scale(0.98);
             pointer-events: none;
             transition: opacity 0.2s ease 0.25s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s;
             z-index: 19;
@@ -520,16 +520,16 @@
             content: '';
             position: absolute;
             top: -20px;
+            bottom: -20px;
             left: -20px;
-            right: -20px;
-            height: 30px;
+            width: 30px;
             background: transparent;
         }
 
         .repo-wrap:hover .repo-panel,
         .repo-wrap.open .repo-panel {
             opacity: 1;
-            transform: translateY(0) scale(1);
+            transform: translateX(0) scale(1);
             pointer-events: auto;
             transition: opacity 0.3s ease 0s, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) 0s;
         }
@@ -713,8 +713,8 @@
     </style>
 </head>
 <body>
-    <!-- Menú Repositorio SW en la parte superior derecha -->
-    <div class="repo-wrap" id="repoWrap" style="position: absolute; top: 24px; right: 24px; z-index: 100;">
+    <!-- Menú Repositorio SW en la parte superior izquierda con despliegue horizontal -->
+    <div class="repo-wrap" id="repoWrap" style="position: absolute; top: 24px; left: 24px; z-index: 100;">
         <div class="repo-trigger" id="repoTrigger">
             <i class="bi bi-hdd-stack"></i>
             <div class="repo-trigger-scroll-wrap">
