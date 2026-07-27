@@ -437,35 +437,33 @@
             font-family: 'Segoe UI', Consolas, monospace;
         }
 
-        /* The trigger button (Modern Minimalist / macOS Style) */
+        /* The trigger button (Text only style with effects) */
         .repo-trigger {
-            height: 54px;
-            padding: 0 20px;
-            border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255, 255, 255, 0.03);
-            color: #f1f5f9;
+            height: 40px;
+            padding: 0 16px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.75);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             font-weight: 500;
-            font-size: 0.95rem;
+            font-size: 1rem;
             text-transform: none;
-            letter-spacing: 0.01em;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            letter-spacing: 0.02em;
             cursor: pointer;
             box-sizing: border-box;
             transition: all 0.3s ease;
             white-space: nowrap;
             overflow: hidden;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .repo-trigger:hover {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: rgba(255,255,255,0.15);
+            color: #ffffff;
+            text-shadow: 0 0 12px rgba(255,255,255,0.4);
+            transform: translateY(-1px);
         }
         .repo-trigger:active {
             transform: scale(0.98);
@@ -494,9 +492,8 @@
         /* Open state */
         .repo-wrap:hover .repo-trigger,
         .repo-wrap.open .repo-trigger {
-            border-color: rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.09);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255,255,255,0.6);
         }
 
         /* ─── Tree Panel (Modern Minimalist / macOS) ─── */
