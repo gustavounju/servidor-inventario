@@ -501,7 +501,7 @@
             position: absolute;
             top: 0;
             left: calc(100% + 10px);
-            width: 380px;
+            width: auto; /* Expands to fit columns */
             background: transparent;
             border: none;
             box-shadow: none;
@@ -553,15 +553,29 @@
         .repo-panel-header::before { display: none; }
         .repo-panel-header i { font-size: 0.9rem; }
 
-        /* Tree container */
+        /* Tree container (now a flex row for columns) */
         .repo-tree {
-            max-height: 380px;
-            overflow-y: auto;
-            padding: 6px 0 8px;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            height: 380px;
         }
-        .repo-tree::-webkit-scrollbar { width: 4px; }
-        .repo-tree::-webkit-scrollbar-track { background: transparent; }
-        .repo-tree::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+        /* Column style */
+        .repo-col {
+            width: 240px;
+            overflow-y: auto;
+            border-left: 1px solid rgba(255,255,255,0.08);
+            padding: 6px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .repo-col:first-child {
+            border-left: none;
+        }
+        .repo-col::-webkit-scrollbar { width: 4px; }
+        .repo-col::-webkit-scrollbar-track { background: transparent; }
+        .repo-col::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
 
         /* Loading / empty state */
         .repo-tree-msg {
@@ -574,142 +588,72 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        /* ─── Category row (root folder) ─── */
-        .repo-cat {
+        /* ─── Generic Row (for categories, subfolders, files) ─── */
+        .repo-item {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 10px;
+            padding: 8px 12px;
             cursor: pointer;
             color: rgba(255, 255, 255, 0.75);
-            font-size: 0.95rem;
-            font-weight: 500;
-            background: transparent;
-            border: none;
-            transition: all 0.3s ease;
-            margin-bottom: 4px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .repo-cat:hover {
-            color: #ffffff;
-            text-shadow: 0 0 12px rgba(255,255,255,0.4);
-            transform: translateX(4px);
-        }
-        .repo-cat.open {
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(255,255,255,0.5);
-        }
-
-        .repo-cat-arrow {
-            font-size: 0.7rem;
-            transition: transform 0.3s ease;
-            color: rgba(255,255,255,0.4);
-            margin-right: 2px;
-            flex-shrink: 0;
-            border: none;
-            background: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .repo-cat:hover .repo-cat-arrow { color: rgba(255,255,255,0.8); }
-        .repo-cat.open .repo-cat-arrow { transform: rotate(90deg); color: rgba(255,255,255,0.8); }
-
-        .repo-cat-icon {
-            font-size: 1.1rem;
-            flex-shrink: 0;
-            color: rgba(255,255,255,0.85);
-        }
-        .repo-cat-name { flex-grow: 1; }
-        .repo-cat-badge { display: none; }
-
-        /* ─── Subfolder row ─── */
-        .repo-subcat {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 10px 8px 30px;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.7);
             font-size: 0.9rem;
             font-weight: 500;
             background: transparent;
             border: none;
-            transition: all 0.3s ease;
-            margin-bottom: 4px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .repo-subcat:hover {
-            color: #ffffff;
-            text-shadow: 0 0 10px rgba(255,255,255,0.4);
-            transform: translateX(4px);
-        }
-        .repo-subcat.open { 
-            color: #ffffff; 
-            text-shadow: 0 0 12px rgba(255,255,255,0.5);
-        }
-        .repo-subcat .repo-cat-arrow { color: rgba(255,255,255,0.4); border: none; background: transparent; display: flex; align-items: center; justify-content: center; transition: transform 0.3s ease; }
-        .repo-subcat.open .repo-cat-arrow { transform: rotate(90deg); color: rgba(255,255,255,0.8); }
-
-        /* ─── File row ─── */
-        .repo-file {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 10px 8px 48px;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.65);
-            font-size: 0.85rem;
-            text-decoration: none;
-            background: transparent;
-            border: none;
-            transition: all 0.3s ease;
-            margin-bottom: 2px;
+            transition: all 0.2s ease;
+            margin: 0 6px 2px 6px;
             text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            text-decoration: none;
+            border-radius: 6px;
         }
-        .repo-file.indent-sub { padding-left: 64px; }
-        .repo-file:hover {
+        .repo-item:hover {
             color: #ffffff;
             text-shadow: 0 0 10px rgba(255,255,255,0.4);
             transform: translateX(4px);
         }
-        .repo-file-icon { font-size: 1rem; flex-shrink: 0; color: rgba(255,255,255,0.7); transition: color 0.3s; }
-        .repo-file:hover .repo-file-icon { color: #ffffff; }
-        .repo-file-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .repo-file-size {
+        .repo-item.active {
+            color: #ffffff;
+            text-shadow: 0 0 12px rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.06);
+            transform: none;
+        }
+
+        .repo-item-icon {
+            font-size: 1.05rem;
+            flex-shrink: 0;
+            color: rgba(255,255,255,0.7);
+            transition: color 0.3s;
+        }
+        .repo-item:hover .repo-item-icon, .repo-item.active .repo-item-icon { color: #ffffff; }
+
+        .repo-item-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .repo-item-arrow {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.3);
+            margin-right: 2px;
+            flex-shrink: 0;
+            transition: color 0.3s;
+        }
+        .repo-item:hover .repo-item-arrow, .repo-item.active .repo-item-arrow { color: rgba(255,255,255,0.7); }
+        
+        .repo-item-size {
             font-size: 0.75rem;
             color: rgba(255,255,255,0.3);
             transition: color 0.3s;
         }
-        .repo-file:hover .repo-file-size { color: rgba(255,255,255,0.6); }
+        .repo-item:hover .repo-item-size { color: rgba(255,255,255,0.6); }
 
-        /* Download icon on hover */
-        .repo-file-dl { font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, transform 0.2s; flex-shrink: 0; color: #ffffff; }
-        .repo-file:hover .repo-file-dl { opacity: 1; transform: scale(1.1); }
+        .repo-item-dl { font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, transform 0.2s; flex-shrink: 0; color: #ffffff; }
+        .repo-item:hover .repo-item-dl { opacity: 1; transform: scale(1.1); }
 
-        /* Tree connector lines (macOS / Modern style) */
-        .repo-subtree {
-            display: none;
-            border-left: 1px solid rgba(255,255,255,0.06);
-            margin-left: 14px;
-            padding-left: 4px;
-            margin-top: 2px;
-            margin-bottom: 4px;
-        }
-        .repo-subtree.open { display: block; }
-        .repo-filetree {
-            display: none;
-        }
-        .repo-filetree.open { display: block; }
-
-        /* Empty folder msg */
         .repo-empty {
-            padding: 6px 14px 6px 48px;
-            color: rgba(255,255,255,0.2);
-            font-size: 0.75rem;
+            padding: 12px 14px;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.8rem;
             font-style: italic;
+            text-align: center;
         }
-        .repo-empty.indent-sub { padding-left: 64px; }
     </style>
 </head>
 <body>
@@ -1577,102 +1521,121 @@
             };
 
             // ── Build file row ──
-            function mkFile(file, indent) {
+            function mkFile(file) {
                 const a = document.createElement('a');
-                a.className = 'repo-file' + (indent ? ' indent-sub' : '');
+                a.className = 'repo-item';
                 a.href = file.download_url;
                 a.title = file.description || file.label;
                 a.innerHTML =
-                    `<i class="bi ${fileIcon(file.filename)} repo-file-icon"></i>` +
-                    `<span class="repo-file-name">${file.label}</span>` +
-                    `<span class="repo-file-size">${fmtBytes(file.size)}</span>` +
-                    `<i class="bi bi-download repo-file-dl"></i>`;
+                    `<i class="bi ${fileIcon(file.filename)} repo-item-icon"></i>` +
+                    `<span class="repo-item-name">${file.label}</span>` +
+                    `<span class="repo-item-size">${fmtBytes(file.size)}</span>` +
+                    `<i class="bi bi-download repo-item-dl"></i>`;
                 a.addEventListener('click', function (e) { e.stopPropagation(); });
                 return a;
             }
 
-            // ── Build tree from API response ──
+            // ── Build folder row ──
+            function mkFolder(label, icon, filesCount, onClick) {
+                const div = document.createElement('div');
+                div.className = 'repo-item';
+                div.innerHTML =
+                    `<i class="bi ${icon} repo-item-icon"></i>` +
+                    `<span class="repo-item-name">${label}</span>` +
+                    `<span class="repo-item-size" style="margin-right: 4px;">${filesCount}</span>` +
+                    `<i class="bi bi-chevron-right repo-item-arrow"></i>`;
+                div.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    onClick(div);
+                });
+                return div;
+            }
+
+            function createColumn() {
+                const col = document.createElement('div');
+                col.className = 'repo-col';
+                return col;
+            }
+
+            function clearColumnsAfter(index) {
+                while (treeEl.children.length > index + 1) {
+                    treeEl.removeChild(treeEl.lastChild);
+                }
+            }
+
+            function clearActiveInColumn(colIndex) {
+                if(treeEl.children[colIndex]) {
+                    const items = treeEl.children[colIndex].querySelectorAll('.repo-item');
+                    items.forEach(i => i.classList.remove('active'));
+                }
+            }
+
+            // ── Build tree (Miller Columns) from API response ──
             function buildTree(data) {
                 treeEl.innerHTML = '';
+                
+                // Column 0: Root categories
+                const col0 = createColumn();
+                treeEl.appendChild(col0);
 
                 const ORDER = ['drivers', 'red', 'ofimatica', 'sistema'];
                 ORDER.forEach(catKey => {
-                    const cat  = data[catKey];
+                    const cat = data[catKey];
                     if (!cat) return;
-                    const meta = CAT_META[catKey] || { icon: 'bi-folder-fill', label: catKey, badge: '···' };
+                    const meta = CAT_META[catKey] || { icon: 'bi-folder-fill', label: catKey };
 
                     // Count total files in this category
                     let totalFiles = cat.files.length;
                     Object.values(cat.children).forEach(sub => totalFiles += sub.files.length);
 
-                    // ── Root folder row ──
-                    const catRow = document.createElement('div');
-                    catRow.className = 'repo-cat';
-                    catRow.innerHTML =
-                        `<i class="bi bi-chevron-right repo-cat-arrow"></i>` +
-                        `<i class="bi ${meta.icon} repo-cat-icon"></i>` +
-                        `<span class="repo-cat-name">${meta.label}</span>` +
-                        `<span class="repo-cat-badge">${meta.badge} · ${totalFiles}</span>`;
-                    treeEl.appendChild(catRow);
+                    const folderRow = mkFolder(meta.label, meta.icon, totalFiles, (clickedEl) => {
+                        clearColumnsAfter(0);
+                        clearActiveInColumn(0);
+                        clickedEl.classList.add('active');
 
-                    // ── Subtree container ──
-                    const subtree = document.createElement('div');
-                    subtree.className = 'repo-subtree';
-
-                    // Direct files under category (no subfolder)
-                    const directFiles = document.createElement('div');
-                    directFiles.className = 'repo-filetree open'; // Always open when parent is open
-                    if (cat.files.length > 0) {
-                        cat.files.forEach(f => directFiles.appendChild(mkFile(f, false)));
-                    } else if (Object.keys(cat.children).length === 0) {
-                        const empty = document.createElement('div');
-                        empty.className = 'repo-empty';
-                        empty.textContent = '(carpeta vacía)';
-                        directFiles.appendChild(empty);
-                    }
-                    subtree.appendChild(directFiles);
-
-                    // Sub-folders
-                    Object.entries(cat.children).forEach(([subName, sub]) => {
-                        // Sub-folder row
-                        const subRow = document.createElement('div');
-                        subRow.className = 'repo-subcat';
-                        subRow.innerHTML =
-                            `<i class="bi bi-chevron-right repo-cat-arrow"></i>` +
-                            `<i class="bi bi-folder-fill repo-cat-icon" style="color:#f59e0b;font-size:0.9rem;"></i>` +
-                            `<span class="repo-cat-name">${subName}</span>` +
-                            `<span class="repo-cat-badge">${sub.files.length}</span>`;
-                        subtree.appendChild(subRow);
-
-                        // Sub-file list
-                        const subFiles = document.createElement('div');
-                        subFiles.className = 'repo-filetree';
-                        if (sub.files.length > 0) {
-                            sub.files.forEach(f => subFiles.appendChild(mkFile(f, true)));
-                        } else {
-                            const empty = document.createElement('div');
-                            empty.className = 'repo-empty indent-sub';
-                            empty.textContent = '(sin archivos)';
-                            subFiles.appendChild(empty);
-                        }
-                        subtree.appendChild(subFiles);
-
-                        // Toggle sub-folder
-                        subRow.addEventListener('click', function (e) {
-                            e.stopPropagation();
-                            const open = subRow.classList.toggle('open');
-                            subFiles.classList.toggle('open', open);
+                        // Build Column 1 for this category
+                        const col1 = createColumn();
+                        
+                        // First list subfolders
+                        Object.entries(cat.children).forEach(([subName, sub]) => {
+                            const subRow = mkFolder(subName, 'bi-folder-fill', sub.files.length, (subClickedEl) => {
+                                clearColumnsAfter(1);
+                                clearActiveInColumn(1);
+                                subClickedEl.classList.add('active');
+                                
+                                // Build Column 2 for this subfolder
+                                const col2 = createColumn();
+                                if (sub.files.length > 0) {
+                                    sub.files.forEach(f => col2.appendChild(mkFile(f)));
+                                } else {
+                                    const empty = document.createElement('div');
+                                    empty.className = 'repo-empty';
+                                    empty.textContent = '(sin archivos)';
+                                    col2.appendChild(empty);
+                                }
+                                treeEl.appendChild(col2);
+                            });
+                            // Override icon color for subfolders to be distinct
+                            subRow.querySelector('.repo-item-icon').style.color = 'rgba(255,255,255,0.5)';
+                            col1.appendChild(subRow);
                         });
+
+                        // Then list direct files
+                        if (cat.files.length > 0) {
+                            cat.files.forEach(f => col1.appendChild(mkFile(f)));
+                        } else if (Object.keys(cat.children).length === 0) {
+                            const empty = document.createElement('div');
+                            empty.className = 'repo-empty';
+                            empty.textContent = '(carpeta vacía)';
+                            col1.appendChild(empty);
+                        }
+                        
+                        treeEl.appendChild(col1);
                     });
 
-                    treeEl.appendChild(subtree);
-
-                    // Toggle root category
-                    catRow.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        const open = catRow.classList.toggle('open');
-                        subtree.classList.toggle('open', open);
-                    });
+                    // Set distinct color for root categories
+                    folderRow.querySelector('.repo-item-icon').style.color = '#93c5fd';
+                    col0.appendChild(folderRow);
                 });
             }
 
