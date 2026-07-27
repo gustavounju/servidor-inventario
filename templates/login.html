@@ -635,9 +635,29 @@
             font-style: italic;
             text-align: center;
         }
+
+        .repo-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 90;
+        }
+        .repo-backdrop.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
+    <div class="repo-backdrop" id="repoBackdrop"></div>
+
     <!-- Menú Repositorio SW en la parte superior izquierda con despliegue horizontal -->
     <div class="repo-wrap" id="repoWrap" style="position: absolute; top: 24px; left: 24px; z-index: 100;">
         <div class="repo-trigger" id="repoTrigger">
@@ -646,10 +666,6 @@
         </div>
 
         <div class="repo-panel" id="repoPanel">
-            <div class="repo-panel-header">
-                <i class="bi bi-folder2-open"></i>
-                Repositorio Local · Intranet Judicial
-            </div>
             <div class="repo-tree" id="repoTree">
                 <div class="repo-tree-msg" id="repoLoading">
                     <i class="bi bi-arrow-repeat"></i> Cargando árbol...
@@ -1626,10 +1642,14 @@
             // ── Mouse interaction ──
             wrap.addEventListener('mouseenter', function () {
                 wrap.classList.add('open');
+                const bd = document.getElementById('repoBackdrop');
+                if (bd) bd.classList.add('show');
                 loadTree();
             });
             wrap.addEventListener('mouseleave', function () {
                 wrap.classList.remove('open');
+                const bd = document.getElementById('repoBackdrop');
+                if (bd) bd.classList.remove('show');
             });
 
             // Trigger click: solo abre/cierra el panel (ya se maneja por hover)
