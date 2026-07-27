@@ -731,16 +731,7 @@
         <h1 style="font-size: 3.5rem; margin-bottom: 8px;">Departamento de Informática</h1>
         <p style="font-size: 1.4rem; font-weight: 500; opacity: 1; margin-bottom: 40px;">Centro Judicial de San Pedro de Jujuy</p>
         
-        <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
-            <button class="btn-ingresar-desktop" onclick="document.getElementById('loginWrapper').classList.add('show')">
-                <i class="bi bi-box-arrow-in-right"></i> Ingresar
-            </button>
-            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="copyScript(this)" data-command="{{ secure_launcher_command }}" title="Copiar Script de Inventario">
-                <i class="bi bi-lightning-charge"></i> Copiar Script
-            </button>
-            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local">
-                <i class="bi bi-file-earmark-pdf"></i> Editor PDF
-            </button>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%;">
             <!-- Repositorio SW · Windows Tree Explorer -->
             <div class="repo-wrap" id="repoWrap">
                 <div class="repo-trigger" id="repoTrigger">
@@ -767,6 +758,19 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Botones Principales -->
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
+                <button class="btn-ingresar-desktop" onclick="document.getElementById('loginWrapper').classList.add('show')">
+                    <i class="bi bi-box-arrow-in-right"></i> Ingresar
+                </button>
+                <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="copyScript(this)" data-command="{{ secure_launcher_command }}" title="Copiar Script de Inventario">
+                    <i class="bi bi-lightning-charge"></i> Copiar Script
+                </button>
+                <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local">
+                    <i class="bi bi-file-earmark-pdf"></i> Editor PDF
+                </button>
             </div>
         </div>
     </div>
