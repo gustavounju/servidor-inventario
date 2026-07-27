@@ -469,25 +469,6 @@
             transform: scale(0.98);
         }
 
-        /* Scrolling text inside trigger */
-        .repo-trigger-scroll-wrap {
-            overflow: hidden;
-            height: 1.2em;
-            display: flex;
-            align-items: center;
-        }
-        .repo-trigger-scroll {
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.4s cubic-bezier(0.25,0.8,0.25,1);
-        }
-        .repo-trigger-slide {
-            height: 1.2em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-        }
 
         /* Open state */
         .repo-wrap:hover .repo-trigger,
@@ -661,15 +642,7 @@
     <div class="repo-wrap" id="repoWrap" style="position: absolute; top: 24px; left: 24px; z-index: 100;">
         <div class="repo-trigger" id="repoTrigger">
             <i class="bi bi-hdd-stack"></i>
-            <div class="repo-trigger-scroll-wrap">
-                <div class="repo-trigger-scroll" id="repoScroll">
-                    <div class="repo-trigger-slide">Repositorio SW</div>
-                    <div class="repo-trigger-slide"><i class="bi bi-cpu"></i> Drivers</div>
-                    <div class="repo-trigger-slide"><i class="bi bi-diagram-3"></i> Red</div>
-                    <div class="repo-trigger-slide"><i class="bi bi-file-earmark-text"></i> Ofimática</div>
-                    <div class="repo-trigger-slide"><i class="bi bi-gear"></i> Sistema</div>
-                </div>
-            </div>
+            Repositorio Local - Intranet Judicial
         </div>
 
         <div class="repo-panel" id="repoPanel">
@@ -1478,15 +1451,10 @@
         // ── Repositorio SW · Windows Tree Explorer Controller ──
         (function () {
             const wrap     = document.getElementById('repoWrap');
-            const scroll   = document.getElementById('repoScroll');
             const treeEl   = document.getElementById('repoTree');
             const loadMsg  = document.getElementById('repoLoading');
             if (!wrap) return;
 
-            const SLIDES      = 5;
-            const SLIDE_H_EM  = 1.2; // matches .repo-trigger-slide height
-            let cycleIdx      = 0;
-            let cycleTimer    = null;
             let treeLoaded    = false;
 
             // ── Helper: format bytes → human readable ──
@@ -1655,31 +1623,13 @@
                     });
             }
 
-            // ── Auto-cycle trigger text ──
-            function startCycle() {
-                if (cycleTimer) return;
-                cycleTimer = setInterval(() => {
-                    cycleIdx = (cycleIdx + 1) % SLIDES;
-                    scroll.style.transform = `translateY(-${cycleIdx * SLIDE_H_EM}em)`;
-                }, 2400);
-            }
-            function stopCycle() {
-                clearInterval(cycleTimer);
-                cycleTimer = null;
-                scroll.style.transform = 'translateY(0)';
-                cycleIdx = 0;
-            }
-            startCycle();
-
             // ── Mouse interaction ──
             wrap.addEventListener('mouseenter', function () {
-                stopCycle();
                 wrap.classList.add('open');
                 loadTree();
             });
             wrap.addEventListener('mouseleave', function () {
                 wrap.classList.remove('open');
-                startCycle();
             });
 
             // Trigger click: solo abre/cierra el panel (ya se maneja por hover)
