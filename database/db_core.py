@@ -276,6 +276,36 @@ def init_db():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
 
+        try:
+            cnt_row = conn.execute("SELECT COUNT(*) as cnt FROM stock_catalogs").fetchone()
+            if not cnt_row or cnt_row['cnt'] == 0:
+                defaults = [
+                    ('supplier', 'NOVA'), ('supplier', 'BGH'), ('supplier', 'Banghó'),
+                    ('supplier', 'EXO'), ('supplier', 'HP'), ('supplier', 'Dell'),
+                    ('supplier', 'Lenovo'), ('supplier', 'Kelyx'),
+                    ('type', 'Monitor'), ('type', 'Teclado'), ('type', 'Mouse'),
+                    ('type', 'CPU'), ('type', 'UPS'), ('type', 'Impresora'),
+                    ('type', 'Disco'), ('type', 'Memoria'), ('type', 'Fuente'),
+                    ('type', 'Gabinete'), ('type', 'Otro')
+                ]
+                for cat, val in defaults:
+                    conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES (%s, %s)", (cat, val))
+
+                conn.execute("""
+                    INSERT IGNORE INTO stock_catalogs (category, item_value)
+                    SELECT 'supplier', supplier FROM components WHERE supplier IS NOT NULL AND TRIM(supplier) != ''
+                """)
+                conn.execute("""
+                    INSERT IGNORE INTO stock_catalogs (category, item_value)
+                    SELECT 'model', brand_model FROM components WHERE brand_model IS NOT NULL AND TRIM(brand_model) != ''
+                """)
+                conn.execute("""
+                    INSERT IGNORE INTO stock_catalogs (category, item_value)
+                    SELECT 'type', component_type FROM components WHERE component_type IS NOT NULL AND TRIM(component_type) != ''
+                """)
+        except Exception as e:
+            logging.debug(f"Error sembrando stock_catalogs: {e}")
+
         conn.execute("""
             CREATE TABLE IF NOT EXISTS audit_logs (
                 id INT AUTO_INCREMENT PRIMARY KEY,

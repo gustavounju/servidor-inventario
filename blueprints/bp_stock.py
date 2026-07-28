@@ -58,10 +58,44 @@ def search_ad_users():
         return jsonify({"error": str(e)}), 500
 
 
+def _ensure_stock_catalog_seeded(conn):
+    try:
+        cnt_row = conn.execute("SELECT COUNT(*) as cnt FROM stock_catalogs").fetchone()
+        if not cnt_row or cnt_row['cnt'] == 0:
+            defaults = [
+                ('supplier', 'NOVA'), ('supplier', 'BGH'), ('supplier', 'Banghó'),
+                ('supplier', 'EXO'), ('supplier', 'HP'), ('supplier', 'Dell'),
+                ('supplier', 'Lenovo'), ('supplier', 'Kelyx'),
+                ('type', 'Monitor'), ('type', 'Teclado'), ('type', 'Mouse'),
+                ('type', 'CPU'), ('type', 'UPS'), ('type', 'Impresora'),
+                ('type', 'Disco'), ('type', 'Memoria'), ('type', 'Fuente'),
+                ('type', 'Gabinete'), ('type', 'Otro')
+            ]
+            for cat, val in defaults:
+                conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES (%s, %s)", (cat, val))
+
+            conn.execute("""
+                INSERT IGNORE INTO stock_catalogs (category, item_value)
+                SELECT 'supplier', supplier FROM components WHERE supplier IS NOT NULL AND TRIM(supplier) != ''
+            """)
+            conn.execute("""
+                INSERT IGNORE INTO stock_catalogs (category, item_value)
+                SELECT 'model', brand_model FROM components WHERE brand_model IS NOT NULL AND TRIM(brand_model) != ''
+            """)
+            conn.execute("""
+                INSERT IGNORE INTO stock_catalogs (category, item_value)
+                SELECT 'type', component_type FROM components WHERE component_type IS NOT NULL AND TRIM(component_type) != ''
+            """)
+    except Exception as e:
+        pass
+
+
 @bp_stock.route("/api/stock/catalog", methods=["GET"])
 def get_stock_catalog():
     try:
         with get_db_connection() as conn:
+            _ensure_stock_catalog_seeded(conn)
+
             cat_rows = conn.execute("SELECT category, item_value FROM stock_catalogs ORDER BY item_value ASC").fetchall()
             cat_suppliers = [r['item_value'] for r in cat_rows if r['category'] == 'supplier']
             cat_models = [r['item_value'] for r in cat_rows if r['category'] == 'model']
@@ -79,12 +113,9 @@ def get_stock_catalog():
                 "SELECT DISTINCT component_type FROM components WHERE component_type IS NOT NULL AND TRIM(component_type) != ''"
             ).fetchall() if r.get('component_type')]
 
-            default_suppliers = ["NOVA", "BGH", "Banghó", "EXO", "HP", "Dell", "Lenovo", "Kelyx"]
-            default_types = ["Monitor", "Teclado", "Mouse", "CPU", "UPS", "Impresora", "Disco", "Memoria", "Fuente", "Gabinete", "Otro"]
-
-            suppliers = sorted(list(set(cat_suppliers + comp_suppliers + default_suppliers)))
+            suppliers = sorted(list(set(cat_suppliers + comp_suppliers)))
             models = sorted(list(set(cat_models + comp_models)))
-            types = sorted(list(set(cat_types + comp_types + default_types)))
+            types = sorted(list(set(cat_types + comp_types)))
 
         return jsonify({
             "status": "success",
@@ -107,19 +138,15 @@ def get_stock_catalog_details():
 
     try:
         with get_db_connection() as conn:
+            _ensure_stock_catalog_seeded(conn)
+
             cat_rows = conn.execute("SELECT item_value FROM stock_catalogs WHERE category = %s ORDER BY item_value ASC", (category,)).fetchall()
             cat_items = [r['item_value'] for r in cat_rows]
 
             comp_rows = conn.execute(f"SELECT DISTINCT {comp_column} FROM components WHERE {comp_column} IS NOT NULL AND TRIM({comp_column}) != ''").fetchall()
             comp_items = [r[comp_column] for r in comp_rows if r.get(comp_column)]
 
-            defaults = []
-            if category == 'supplier':
-                defaults = ["NOVA", "BGH", "Banghó", "EXO", "HP", "Dell", "Lenovo", "Kelyx"]
-            elif category == 'type':
-                defaults = ["Monitor", "Teclado", "Mouse", "CPU", "UPS", "Impresora", "Disco", "Memoria", "Fuente", "Gabinete", "Otro"]
-
-            all_unique_values = sorted(list(set(cat_items + comp_items + defaults)))
+            all_unique_values = sorted(list(set(cat_items + comp_items)))
 
             result = []
             for val in all_unique_values:
