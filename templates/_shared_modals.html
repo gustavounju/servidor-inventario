@@ -3300,3 +3300,8 @@ function submitTaskAction() {
 
 
 </script>
+
+{% if current_user and current_user.get('is_superuser') %}
+{% include '_modal_config.html' %}
+{% include '_modal_maintenance.html' %}
+{% endif %}
