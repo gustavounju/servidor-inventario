@@ -20,6 +20,7 @@ PERMISSION_COLUMN_MAP = {
     "operadores": "can_access_operadores",
     "audit_racks": "can_audit_racks",
     "manage_stock": "can_manage_stock",
+    "funcionario": "can_manage_stock",
 }
 
 ROLE_PRESETS = {
@@ -31,15 +32,7 @@ ROLE_PRESETS = {
         "operadores": True,
         "audit_racks": True,
         "manage_stock": True,
-    },
-    "funcionario": {
-        "dashboard": False,
-        "mobile": False,
-        "infrastructure": False,
-        "reports": False,
-        "operadores": False,
-        "audit_racks": False,
-        "manage_stock": True,
+        "funcionario": True,
     },
     "operador": {
         "dashboard": False,
@@ -49,6 +42,7 @@ ROLE_PRESETS = {
         "operadores": True,
         "audit_racks": False,
         "manage_stock": False,
+        "funcionario": False,
     },
     "tecnico": {
         "dashboard": False,
@@ -58,6 +52,7 @@ ROLE_PRESETS = {
         "operadores": False,
         "audit_racks": False,
         "manage_stock": False,
+        "funcionario": False,
     },
     "infraestructura": {
         "dashboard": True,
@@ -67,6 +62,7 @@ ROLE_PRESETS = {
         "operadores": True,
         "audit_racks": True,
         "manage_stock": True,
+        "funcionario": True,
     },
     "consulta": {
         "dashboard": False,
@@ -76,6 +72,7 @@ ROLE_PRESETS = {
         "operadores": False,
         "audit_racks": False,
         "manage_stock": False,
+        "funcionario": False,
     },
 }
 
@@ -95,8 +92,8 @@ MODULE_DEFINITIONS = [
         "active_prefixes": ["infrastructure."],
     },
     {
-        "key": "manage_stock",
-        "label": "Carga de Stock",
+        "key": "funcionario",
+        "label": "Funcionario (Stock)",
         "endpoint": "stock.stock_view",
         "icon": "bi-box-seam-fill",
         "active_prefixes": ["stock."],
@@ -262,7 +259,6 @@ def auth_mode_label():
 def role_label(role_name=None):
     labels = {
         "administrador": "Administrador",
-        "funcionario": "Funcionario",
         "operador": "Operador",
         "tecnico": "Tecnico",
         "infraestructura": "Infraestructura",
@@ -802,7 +798,7 @@ def required_permission_for_endpoint(endpoint=None):
         return "mobile"
 
     if endpoint == "stock.stock_view" or endpoint.startswith("stock."):
-        return "manage_stock"
+        return "funcionario"
 
     if endpoint.startswith("infrastructure.") or endpoint.startswith("maps."):
         return "infrastructure"

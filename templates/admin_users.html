@@ -201,7 +201,8 @@
                                 <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_dashboard" id="perm_dashboard"> <label class="form-check-label text-white small">Dashboard</label></div>
                                 <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_mobile" id="perm_mobile"> <label class="form-check-label text-white small">Técnicos</label></div>
                                 <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_infrastructure" id="perm_infrastructure"> <label class="form-check-label text-white small">Infraestructura</label></div>
-                                <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_manage_stock" id="perm_manage_stock"> <label class="form-check-label text-white small">Carga de Stock</label></div>
+                                <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_funcionario" id="perm_funcionario"> <label class="form-check-label text-white small">Funcionario (Stock)</label></div>
+                                <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_manage_stock" id="perm_manage_stock" style="display:none;"></div>
                                 <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_reports" id="perm_reports"> <label class="form-check-label text-white small">Reportes</label></div>
                                 <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_operadores" id="perm_operadores"> <label class="form-check-label text-white small">Operadores</label></div>
                                 <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_audit_racks" id="perm_audit_racks"> <label class="form-check-label text-white small">Audit Racks</label></div>
@@ -326,9 +327,9 @@
         };
 
         function setStandalonePermissions(values) {
-            ['dashboard', 'mobile', 'infrastructure', 'reports', 'operadores', 'audit_racks', 'manage_stock'].forEach(key => {
+            ['dashboard', 'mobile', 'infrastructure', 'reports', 'operadores', 'audit_racks', 'manage_stock', 'funcionario'].forEach(key => {
                 const el = document.getElementById('perm_' + key);
-                if (el) el.checked = !!values[key];
+                if (el) el.checked = !!(values[key] || values.funcionario || values.manage_stock);
             });
         }
 
@@ -364,7 +365,8 @@
             document.getElementById('perm_dashboard').checked = !!user.can_access_dashboard;
             document.getElementById('perm_mobile').checked = !!user.can_access_mobile;
             document.getElementById('perm_infrastructure').checked = !!user.can_access_infrastructure;
-            document.getElementById('perm_manage_stock').checked = !!user.can_manage_stock;
+            document.getElementById('perm_funcionario').checked = !!(user.can_manage_stock || user.is_superuser);
+            if (document.getElementById('perm_manage_stock')) document.getElementById('perm_manage_stock').checked = !!(user.can_manage_stock || user.is_superuser);
             document.getElementById('perm_reports').checked = !!user.can_access_reports;
             document.getElementById('perm_operadores').checked = !!user.can_access_operadores;
             document.getElementById('perm_audit_racks').checked = !!user.can_audit_racks;
