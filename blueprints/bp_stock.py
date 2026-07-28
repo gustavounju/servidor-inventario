@@ -97,6 +97,48 @@ def get_stock_catalog():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@bp_stock.route("/api/stock/catalog/details", methods=["GET"])
+def get_stock_catalog_details():
+    category = request.args.get("category", "").strip().lower()
+    if category not in ['supplier', 'model', 'type']:
+        return jsonify({"status": "error", "message": "Categoría no válida"}), 400
+
+    comp_column = 'supplier' if category == 'supplier' else 'brand_model' if category == 'model' else 'component_type'
+
+    try:
+        with get_db_connection() as conn:
+            cat_rows = conn.execute("SELECT item_value FROM stock_catalogs WHERE category = %s ORDER BY item_value ASC", (category,)).fetchall()
+            cat_items = [r['item_value'] for r in cat_rows]
+
+            comp_rows = conn.execute(f"SELECT DISTINCT {comp_column} FROM components WHERE {comp_column} IS NOT NULL AND TRIM({comp_column}) != ''").fetchall()
+            comp_items = [r[comp_column] for r in comp_rows if r.get(comp_column)]
+
+            defaults = []
+            if category == 'supplier':
+                defaults = ["NOVA", "BGH", "Banghó", "EXO", "HP", "Dell", "Lenovo", "Kelyx"]
+            elif category == 'type':
+                defaults = ["Monitor", "Teclado", "Mouse", "CPU", "UPS", "Impresora", "Disco", "Memoria", "Fuente", "Gabinete", "Otro"]
+
+            all_unique_values = sorted(list(set(cat_items + comp_items + defaults)))
+
+            result = []
+            for val in all_unique_values:
+                count_row = conn.execute(f"SELECT COUNT(*) as cnt FROM components WHERE {comp_column} = %s", (val,)).fetchone()
+                usage_cnt = count_row['cnt'] if count_row else 0
+                result.append({
+                    "value": val,
+                    "usage_count": usage_cnt
+                })
+
+        return jsonify({
+            "status": "success",
+            "category": category,
+            "items": result
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @bp_stock.route("/api/stock/catalog/add", methods=["POST"])
 def add_stock_catalog_item():
     data = request.json or {}
@@ -115,6 +157,29 @@ def add_stock_catalog_item():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@bp_stock.route("/api/stock/catalog/update", methods=["POST"])
+def update_stock_catalog_item():
+    data = request.json or {}
+    category = data.get("category", "").strip().lower()
+    old_value = data.get("old_value", "").strip()
+    new_value = data.get("new_value", "").strip()
+
+    if not category or not old_value or not new_value:
+        return jsonify({"status": "error", "message": "Datos incompletos"}), 400
+
+    comp_column = 'supplier' if category == 'supplier' else 'brand_model' if category == 'model' else 'component_type'
+
+    try:
+        with get_db_connection() as conn:
+            conn.execute("UPDATE stock_catalogs SET item_value = %s WHERE category = %s AND item_value = %s", (new_value, category, old_value))
+            conn.execute("INSERT INTO stock_catalogs (category, item_value) VALUES (%s, %s) ON DUPLICATE KEY UPDATE item_value = VALUES(item_value)", (category, new_value))
+            conn.execute(f"UPDATE components SET {comp_column} = %s WHERE {comp_column} = %s", (new_value, old_value))
+
+        return jsonify({"status": "success", "message": f"'{old_value}' fue renombrado a '{new_value}'."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @bp_stock.route("/api/stock/catalog/delete", methods=["POST"])
 def delete_stock_catalog_item():
     data = request.json or {}
@@ -122,9 +187,22 @@ def delete_stock_catalog_item():
     value = data.get("value", "").strip()
     if not category or not value:
         return jsonify({"status": "error", "message": "Datos incompletos"}), 400
+
+    comp_column = 'supplier' if category == 'supplier' else 'brand_model' if category == 'model' else 'component_type'
+
     try:
         with get_db_connection() as conn:
+            count_row = conn.execute(f"SELECT COUNT(*) as cnt FROM components WHERE {comp_column} = %s", (value,)).fetchone()
+            usage_cnt = count_row['cnt'] if count_row else 0
+
+            if usage_cnt > 0:
+                return jsonify({
+                    "status": "error",
+                    "message": f"No se puede eliminar '{value}' porque está en uso por {usage_cnt} componente(s) en inventario."
+                }), 400
+
             conn.execute("DELETE FROM stock_catalogs WHERE category = %s AND item_value = %s", (category, value))
+
         return jsonify({"status": "success", "message": f"'{value}' eliminado del catálogo."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

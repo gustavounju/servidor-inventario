@@ -139,7 +139,10 @@
                                     <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Proveedor / Empresa</label>
                                     <div class="input-group input-group-sm">
                                         <input type="text" class="form-control bg-dark text-white border-secondary" id="inputSupplier" list="supplierList" placeholder="Ej: NOVA, BGH, Banghó..." required autocomplete="off">
-                                        <button class="btn btn-outline-info text-info border-secondary" type="button" onclick="promptAddCatalog('supplier')" title="Añadir nuevo proveedor al catálogo">
+                                        <button class="btn btn-outline-secondary border-secondary text-info" type="button" onclick="openCatalogManager('supplier')" title="Gestionar proveedores (Modificar / Eliminar / Ver uso)">
+                                            <i class="bi bi-gear-fill"></i>
+                                        </button>
+                                        <button class="btn btn-outline-info text-info border-secondary" type="button" onclick="promptAddCatalog('supplier')" title="Añadir rápido">
                                             <i class="bi bi-plus-lg"></i>
                                         </button>
                                     </div>
@@ -175,7 +178,10 @@
                                         <option value="Gabinete">Gabinete</option>
                                         <option value="Otro">Otro Periférico</option>
                                     </select>
-                                    <button class="btn btn-outline-info text-info border-secondary" type="button" onclick="promptAddCatalog('type')" title="Añadir nuevo tipo al catálogo">
+                                    <button class="btn btn-outline-secondary border-secondary text-info" type="button" onclick="openCatalogManager('type')" title="Gestionar tipos (Modificar / Eliminar / Ver uso)">
+                                        <i class="bi bi-gear-fill"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info text-info border-secondary" type="button" onclick="promptAddCatalog('type')" title="Añadir rápido">
                                         <i class="bi bi-plus-lg"></i>
                                     </button>
                                 </div>
@@ -184,7 +190,10 @@
                                 <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Marca y Modelo</label>
                                 <div class="input-group input-group-sm">
                                     <input type="text" class="form-control bg-dark text-white border-secondary" id="inputModel" list="modelList" placeholder="Ej: Philips 22 FHD 1920x1080" required autocomplete="off">
-                                    <button class="btn btn-outline-info text-info border-secondary" type="button" onclick="promptAddCatalog('model')" title="Añadir nueva marca/modelo al catálogo">
+                                    <button class="btn btn-outline-secondary border-secondary text-info" type="button" onclick="openCatalogManager('model')" title="Gestionar modelos (Modificar / Eliminar / Ver uso)">
+                                        <i class="bi bi-gear-fill"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info text-info border-secondary" type="button" onclick="promptAddCatalog('model')" title="Añadir rápido">
                                         <i class="bi bi-plus-lg"></i>
                                     </button>
                                 </div>
@@ -285,6 +294,29 @@
                     <button type="button" class="btn btn-outline-secondary btn-sm text-white" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-info btn-sm text-dark fw-bold" onclick="confirmAssign()"><i class="bi bi-check-circle me-1"></i>Confirmar Asignación</button>
                 </div>
+    <!-- Modal: ABM / Gestión de Catálogo de Campo -->
+    <div class="modal fade" id="catalogManagerModal" tabindex="-1" style="z-index: 1065;">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; color: #f8fafc;">
+                <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <h5 class="modal-title font-monospace fw-bold text-info" id="catalogManagerTitle"><i class="bi bi-sliders me-2"></i>Gestionar Catálogo</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Alta rápida -->
+                    <div class="input-group input-group-sm mb-3">
+                        <input type="text" id="catalogNewInput" class="form-control bg-dark text-white border-secondary" placeholder="Agregar nuevo a este catálogo...">
+                        <button class="btn btn-info text-dark fw-bold" onclick="addCatalogItemFromModal()"><i class="bi bi-plus-lg me-1"></i>Agregar</button>
+                    </div>
+
+                    <h6 class="small fw-bold text-slate-300 mb-2">Elementos Registrados y N° de Usos en Inventario:</h6>
+                    <div id="catalogManagerList" class="list-group" style="max-height: 280px; overflow-y: auto;">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button type="button" class="btn btn-secondary btn-sm text-white" data-bs-dismiss="modal">Listo / Cerrar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -358,6 +390,131 @@
                 }
             })
             .catch(err => alert("Error de red: " + err));
+        }
+
+        let currentManagerCategory = 'supplier';
+        let catalogManagerModal = null;
+
+        function openCatalogManager(category) {
+            currentManagerCategory = category;
+            if (!catalogManagerModal) {
+                catalogManagerModal = new bootstrap.Modal(document.getElementById('catalogManagerModal'));
+            }
+            const titleMap = {
+                'supplier': '🏢 Catálogo de Proveedores / Empresas',
+                'type': '📦 Catálogo de Tipos de Componentes',
+                'model': '🏷️ Catálogo de Marcas y Modelos'
+            };
+            document.getElementById('catalogManagerTitle').innerHTML = `<i class="bi bi-sliders me-2"></i>${titleMap[category] || 'Gestionar Catálogo'}`;
+            document.getElementById('catalogNewInput').value = '';
+            loadCatalogManagerItems();
+            catalogManagerModal.show();
+        }
+
+        function loadCatalogManagerItems() {
+            fetch('/api/stock/catalog/details?category=' + currentManagerCategory)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const listDiv = document.getElementById('catalogManagerList');
+                        if (!data.items || data.items.length === 0) {
+                            listDiv.innerHTML = '<div class="p-3 text-muted text-center small">No hay ítems registrados en este catálogo.</div>';
+                            return;
+                        }
+                        listDiv.innerHTML = data.items.map(item => {
+                            const safeVal = item.value.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                            const inUse = item.usage_count > 0;
+                            const badgeHtml = inUse 
+                                ? `<span class="badge bg-primary text-white ms-2" title="En uso por ${item.usage_count} componentes">${item.usage_count} en inventario</span>`
+                                : `<span class="badge bg-secondary text-light ms-2">Sin uso</span>`;
+
+                            const deleteBtnHtml = inUse
+                                ? `<button class="btn btn-outline-secondary btn-sm py-0 px-2 opacity-50" onclick="alert('No se puede eliminar \\'${safeVal}\\' porque está en uso por ${item.usage_count} componente(s) en inventario.')" title="Bloqueado: En uso por ${item.usage_count} componente(s)">
+                                    <i class="bi bi-lock-fill text-warning"></i>
+                                   </button>`
+                                : `<button class="btn btn-outline-danger btn-sm py-0 px-2" onclick="deleteCatalogItem('${safeVal}')" title="Eliminar del catálogo">
+                                    <i class="bi bi-trash"></i>
+                                   </button>`;
+
+                            return `
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3 border-secondary mb-1 rounded" style="background: #1e293b; color: #f8fafc;">
+                                    <div>
+                                        <strong style="color: #38bdf8;">${item.value}</strong>
+                                        ${badgeHtml}
+                                    </div>
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-outline-info btn-sm py-0 px-2" onclick="editCatalogItem('${safeVal}')" title="Renombrar o modificar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        ${deleteBtnHtml}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                });
+        }
+
+        function addCatalogItemFromModal() {
+            const val = (document.getElementById('catalogNewInput').value || '').trim();
+            if (!val) {
+                alert("Escriba un nombre válido.");
+                return;
+            }
+            fetch('/api/stock/catalog/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: currentManagerCategory, value: val })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('catalogNewInput').value = '';
+                    loadCatalogManagerItems();
+                    loadStockCatalog();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            });
+        }
+
+        function editCatalogItem(oldVal) {
+            const newVal = prompt(`Modificar / Renombrar '${oldVal}':`, oldVal);
+            if (!newVal || !newVal.trim() || newVal.trim() === oldVal) return;
+
+            fetch('/api/stock/catalog/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: currentManagerCategory, old_value: oldVal, new_value: newVal.trim() })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    loadCatalogManagerItems();
+                    loadStockCatalog();
+                    loadComponents();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            });
+        }
+
+        function deleteCatalogItem(val) {
+            if (!confirm(`¿Eliminar '${val}' del catálogo?`)) return;
+            fetch('/api/stock/catalog/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: currentManagerCategory, value: val })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    loadCatalogManagerItems();
+                    loadStockCatalog();
+                } else {
+                    alert("Atención: " + data.message);
+                }
+            });
         }
 
         let currentAssignUser = "";
