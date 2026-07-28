@@ -124,40 +124,38 @@
     <!-- Modal: Cargar Remito / Nuevo Stock -->
     <div class="modal fade" id="addStockModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Carga de Remito y Recepción de Lotes</h5>
+            <div class="modal-content" style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; color: #f8fafc;">
+                <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1); color: #f8fafc;">
+                    <h5 class="modal-title font-monospace fw-bold text-info"><i class="bi bi-receipt me-2"></i>Carga de Remito y Recepción de Lotes</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="addStockForm">
-                    <div class="modal-body">
+                    <div class="modal-body p-4">
                         <!-- Remito Header -->
-                        <div class="card bg-light mb-3">
-                            <div class="card-body py-2">
-                                <h6 class="fw-bold text-primary mb-2"><i class="bi bi-building me-1"></i>Datos del Remito / Licitación</h6>
-                                <div class="row g-2">
-                                    <div class="col-md-4">
-                                        <label class="form-label small fw-bold">Proveedor / Empresa</label>
-                                        <input type="text" class="form-control form-control-sm" id="inputSupplier" placeholder="Ej: NOVA, BGH, Banghó..." required>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label small fw-bold">N° de Remito / Factura</label>
-                                        <input type="text" class="form-control form-control-sm" id="inputRemito" placeholder="Ej: R0005400001550" required>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label small fw-bold">N° Orden de Compra (OC)</label>
-                                        <input type="text" class="form-control form-control-sm" id="inputOc" placeholder="Ej: OC 185-2026">
-                                    </div>
+                        <div class="p-3 mb-3" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
+                            <h6 class="fw-bold text-info mb-3"><i class="bi bi-building me-1"></i>Datos del Remito / Licitación</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Proveedor / Empresa</label>
+                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputSupplier" placeholder="Ej: NOVA, BGH, Banghó..." required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">N° de Remito / Factura</label>
+                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputRemito" placeholder="Ej: R0005400001550" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">N° Orden de Compra (OC)</label>
+                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputOc" placeholder="Ej: OC 185-2026">
                                 </div>
                             </div>
                         </div>
 
                         <!-- Item Detail -->
-                        <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-box-seam me-1"></i>Detalle del Componente / Periférico</h6>
-                        <div class="row g-2 mb-3">
+                        <h6 class="fw-bold text-warning mb-2"><i class="bi bi-box-seam me-1"></i>Detalle del Componente / Periférico</h6>
+                        <div class="row g-3 mb-3">
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold">Tipo de Componente</label>
-                                <select class="form-select form-control-sm" id="inputType" required>
+                                <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Tipo de Componente</label>
+                                <select class="form-select form-select-sm bg-dark text-white border-secondary" id="inputType" required>
                                     <option value="Monitor">Monitor</option>
                                     <option value="Teclado">Teclado</option>
                                     <option value="Mouse">Mouse</option>
@@ -172,50 +170,48 @@
                                 </select>
                             </div>
                             <div class="col-md-5">
-                                <label class="form-label small fw-bold">Marca y Modelo</label>
-                                <input type="text" class="form-control form-control-sm" id="inputModel" placeholder="Ej: Philips 22 FHD 1920x1080" required>
+                                <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Marca y Modelo</label>
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputModel" placeholder="Ej: Philips 22 FHD 1920x1080" required>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small fw-bold">Cantidad</label>
-                                <input type="number" class="form-control form-control-sm" id="inputQuantity" value="1" min="1" max="100">
+                                <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Cantidad</label>
+                                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputQuantity" value="1" min="1" max="100">
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Número de Serie / Código de Barras</label>
-                            <input type="text" class="form-control form-control-sm font-monospace" id="inputSerial" placeholder="Escanear o ingresar S/N de fábrica (ej: ZA12606000514)...">
-                            <div class="form-check mt-1">
-                                <input class="form-check-input" type="checkbox" id="chkAutoId">
-                                <label class="form-check-label small text-muted" for="chkAutoId">
+                            <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Número de Serie / Código de Barras</label>
+                            <input type="text" class="form-control form-control-sm font-monospace bg-dark text-white border-secondary" id="inputSerial" placeholder="Escanear o ingresar S/N de fábrica (ej: ZA12606000514)...">
+                            <div class="form-check mt-2">
+                                <input class="form-check-input bg-dark border-secondary" type="checkbox" id="chkAutoId">
+                                <label class="form-check-label small" for="chkAutoId" style="color: #94a3b8;">
                                     No tiene código de barras (generar ID interno automáticamente)
                                 </label>
                             </div>
                         </div>
 
                         <!-- Optional direct AD Assignment -->
-                        <div class="card border-info mb-2">
-                            <div class="card-body py-2">
-                                <h6 class="fw-bold text-info mb-1"><i class="bi bi-person-check me-1"></i>Asignación Inmediata a Persona / Fuero (Opcional)</h6>
-                                <p class="small text-muted mb-2">Si el ítem se entrega inmediatamente a un empleado, seleccione la persona de Active Directory. El Fuero se resolverá automáticamente.</p>
-                                <div class="row g-2">
-                                    <div class="col-md-6">
-                                        <label class="form-label small">Buscar Persona (Active Directory)</label>
-                                        <input type="text" class="form-control form-control-sm" id="addAdSearch" placeholder="Nombre o legajo..." onkeyup="searchAdForAdd(this.value)">
-                                        <div id="addAdResults" class="list-group position-absolute shadow mt-1" style="z-index: 1050; max-height: 150px; overflow-y: auto; width: 90%;"></div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label small">Fuero Asignado (Auto-resuelto de AD)</label>
-                                        <input type="text" class="form-control form-control-sm bg-light" id="addResolvedFuero" placeholder="Se completará automáticamente..." readonly>
-                                        <input type="hidden" id="addSelectedUser">
-                                    </div>
+                        <div class="p-3 mb-2" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px;">
+                            <h6 class="fw-bold text-info mb-1"><i class="bi bi-person-check me-1"></i>Asignación Inmediata a Persona / Fuero (Opcional)</h6>
+                            <p class="small mb-2" style="color: #94a3b8;">Si el ítem se entrega inmediatamente a un empleado, seleccione la persona de Active Directory. El Fuero se resolverá automáticamente.</p>
+                            <div class="row g-2">
+                                <div class="col-md-6 position-relative">
+                                    <label class="form-label small text-slate-300" style="color: #cbd5e1;">Buscar Persona (Active Directory)</label>
+                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="addAdSearch" placeholder="Nombre o legajo..." onkeyup="searchAdForAdd(this.value)">
+                                    <div id="addAdResults" class="list-group position-absolute shadow mt-1" style="z-index: 1050; max-height: 150px; overflow-y: auto; width: 95%;"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-slate-300" style="color: #cbd5e1;">Fuero Asignado (Auto-resuelto de AD)</label>
+                                    <input type="text" class="form-control form-control-sm" id="addResolvedFuero" placeholder="Se completará automáticamente..." readonly style="background: #1e293b; color: #38bdf8; border: 1px solid #475569; font-weight: bold;">
+                                    <input type="hidden" id="addSelectedUser">
                                 </div>
                             </div>
                         </div>
 
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-save me-1"></i>Guardar en Stock</button>
+                    <div class="modal-footer" style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <button type="button" class="btn btn-outline-secondary btn-sm text-white" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-info btn-sm text-dark fw-bold"><i class="bi bi-save me-1"></i>Guardar en Stock</button>
                     </div>
                 </form>
             </div>
@@ -225,52 +221,52 @@
     <!-- Modal: Asignar Componente -->
     <div class="modal fade" id="assignModal" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title"><i class="bi bi-person-lines-fill me-2"></i>Asignar Componente / Periférico</h5>
+            <div class="modal-content" style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; color: #f8fafc;">
+                <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1); color: #f8fafc;">
+                    <h5 class="modal-title font-monospace fw-bold text-info"><i class="bi bi-person-lines-fill me-2"></i>Asignar Componente / Periférico</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <p>Asignando: <strong id="modalSerial"></strong> (<span id="modalType"></span>)</p>
+                <div class="modal-body p-4">
+                    <p class="mb-3" style="color: #e2e8f0;">Asignando: <strong id="modalSerial" class="text-info font-monospace"></strong> (<span id="modalType" class="text-warning"></span>)</p>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Tipo de Asignación:</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="assignTargetType" id="assignTypePerson" value="person" checked onchange="toggleAssignMode()">
-                            <label class="form-check-label fw-600" for="assignTypePerson">
+                    <div class="p-3 mb-3" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
+                        <label class="form-label fw-bold text-slate-300 mb-2" style="color: #cbd5e1;">Tipo de Asignación:</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input bg-dark border-secondary" type="radio" name="assignTargetType" id="assignTypePerson" value="person" checked onchange="toggleAssignMode()">
+                            <label class="form-check-label text-white small" for="assignTypePerson">
                                 Asignar a Persona / Empleado (Resuelve Fuero de AD)
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="assignTargetType" id="assignTypePc" value="pc" onchange="toggleAssignMode()">
-                            <label class="form-check-label fw-600" for="assignTypePc">
+                            <input class="form-check-input bg-dark border-secondary" type="radio" name="assignTargetType" id="assignTypePc" value="pc" onchange="toggleAssignMode()">
+                            <label class="form-check-label text-white small" for="assignTypePc">
                                 Asignar a Estación de Trabajo (PC)
                             </label>
                         </div>
                     </div>
 
                     <!-- Person AD Section -->
-                    <div id="assignPersonSection" class="mb-3">
-                        <label class="form-label fw-bold small">Buscar Persona (Active Directory):</label>
-                        <input type="text" class="form-control form-control-sm" id="assignAdSearch" placeholder="Escriba nombre de la persona..." onkeyup="searchAdForAssign(this.value)">
-                        <div id="assignAdResults" class="list-group position-absolute shadow mt-1" style="z-index: 1050; max-height: 150px; overflow-y: auto; width: 90%;"></div>
-                        <div class="mt-2">
-                            <small class="text-muted">Persona seleccionada: <strong id="selectedPersonLabel">Ninguna</strong></small><br>
-                            <small class="text-muted">Fuero autocompletado: <strong id="selectedFueroLabel" class="text-primary">-</strong></small>
+                    <div id="assignPersonSection" class="mb-3 position-relative">
+                        <label class="form-label fw-bold small text-slate-300" style="color: #cbd5e1;">Buscar Persona (Active Directory):</label>
+                        <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="assignAdSearch" placeholder="Escriba nombre de la persona..." onkeyup="searchAdForAssign(this.value)">
+                        <div id="assignAdResults" class="list-group position-absolute shadow mt-1" style="z-index: 1050; max-height: 150px; overflow-y: auto; width: 95%;"></div>
+                        <div class="mt-2 p-2" style="background: #1e293b; border-radius: 8px; border: 1px solid #334155;">
+                            <small style="color: #94a3b8;">Persona seleccionada: <strong id="selectedPersonLabel" class="text-white">Ninguna</strong></small><br>
+                            <small style="color: #94a3b8;">Fuero autocompletado: <strong id="selectedFueroLabel" class="text-info">-</strong></small>
                         </div>
                     </div>
 
                     <!-- PC Section -->
                     <div id="assignPcSection" class="mb-3 d-none">
-                        <label class="form-label fw-bold small">Seleccione PC Destino:</label>
-                        <select id="modalPcSelect" class="form-select form-select-sm">
+                        <label class="form-label fw-bold small text-slate-300" style="color: #cbd5e1;">Seleccione PC Destino:</label>
+                        <select id="modalPcSelect" class="form-select form-select-sm bg-dark text-white border-secondary">
                             <option value="">Cargando PCs...</option>
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="confirmAssign()"><i class="bi bi-check-circle me-1"></i>Confirmar Asignación</button>
+                <div class="modal-footer" style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-white" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-info btn-sm text-dark fw-bold" onclick="confirmAssign()"><i class="bi bi-check-circle me-1"></i>Confirmar Asignación</button>
                 </div>
             </div>
         </div>
@@ -322,8 +318,9 @@
                     resDiv.innerHTML = '';
                     users.forEach(u => {
                         const item = document.createElement('a');
-                        item.className = 'list-group-item list-group-item-action ad-user-result py-1 px-2 small';
-                        item.innerHTML = `<strong>${u.real_name || u.username}</strong> <span class="badge bg-light text-dark float-end">${u.fuero || 'Sin Fuero'}</span>`;
+                        item.className = 'list-group-item list-group-item-action py-2 px-3 small border-secondary';
+                        item.style.cssText = 'background: #1e293b; color: #f8fafc; cursor: pointer; border: 1px solid #334155;';
+                        item.innerHTML = `<strong style="color: #38bdf8;">${u.real_name || u.username}</strong> <span class="badge bg-dark text-info float-end border border-secondary">${u.fuero || 'Sin Fuero'}</span>`;
                         item.onclick = () => {
                             document.getElementById('addAdSearch').value = u.real_name || u.username;
                             document.getElementById('addSelectedUser').value = u.real_name || u.username;
@@ -347,8 +344,9 @@
                     resDiv.innerHTML = '';
                     users.forEach(u => {
                         const item = document.createElement('a');
-                        item.className = 'list-group-item list-group-item-action ad-user-result py-1 px-2 small';
-                        item.innerHTML = `<strong>${u.real_name || u.username}</strong> <span class="badge bg-light text-dark float-end">${u.fuero || 'Sin Fuero'}</span>`;
+                        item.className = 'list-group-item list-group-item-action py-2 px-3 small border-secondary';
+                        item.style.cssText = 'background: #1e293b; color: #f8fafc; cursor: pointer; border: 1px solid #334155;';
+                        item.innerHTML = `<strong style="color: #38bdf8;">${u.real_name || u.username}</strong> <span class="badge bg-dark text-info float-end border border-secondary">${u.fuero || 'Sin Fuero'}</span>`;
                         item.onclick = () => {
                             currentAssignUser = u.real_name || u.username;
                             currentAssignFuero = u.fuero || '';
