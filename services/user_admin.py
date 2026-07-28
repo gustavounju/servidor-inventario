@@ -26,6 +26,7 @@ def normalize_managed_user_form(form):
             "reports": form.get("perm_reports") == "on",
             "operadores": form.get("perm_operadores") == "on",
             "audit_racks": form.get("perm_audit_racks") == "on",
+            "manage_stock": form.get("perm_manage_stock") == "on",
         },
     }
 

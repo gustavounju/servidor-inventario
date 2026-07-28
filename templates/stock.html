@@ -4,19 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock de Componentes — Inventario GOLD</title>
+    <title>Stock de Componentes y Remitos — Inventario GOLD</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
     <style>
-
-
         .status-stock {
             background: rgba(34, 197, 94, 0.12);
             color: #15803d;
             border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .status-assigned {
+            background: rgba(59, 130, 246, 0.12);
+            color: #1d4ed8;
+            border: 1px solid rgba(59, 130, 246, 0.2);
         }
 
         .status-installed {
@@ -38,6 +42,13 @@
             font-weight: 700;
             display: inline-block;
         }
+
+        .ad-user-result {
+            cursor: pointer;
+        }
+        .ad-user-result:hover {
+            background-color: #f1f5f9;
+        }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
@@ -49,9 +60,16 @@
 
     <div class="container-fluid px-3" style="margin-top: 110px;">
         <!-- Hero mini -->
-        <div class="hero-header mb-3">
-            <h1 class="hero-title">📦 Gestión de Stock</h1>
-            <p class="hero-subtitle">Componentes, periféricos y equipamiento en inventario</p>
+        <div class="hero-header mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h1 class="hero-title">📦 Gestión de Stock y Remitos</h1>
+                <p class="hero-subtitle">Recepción por remitos, asignación a personas (AD) y componentes en inventario</p>
+            </div>
+            <div>
+                <button class="btn btn-gold shadow-sm" data-bs-toggle="modal" data-bs-target="#addStockModal">
+                    <i class="bi bi-file-earmark-plus-fill me-1"></i> Cargar Remito / Nuevo Stock
+                </button>
+            </div>
         </div>
 
         <!-- Filters -->
@@ -63,13 +81,14 @@
                         <select id="filterStatus" class="form-select" onchange="loadComponents()">
                             <option value="">Todos</option>
                             <option value="Stock" selected>En Stock</option>
-                            <option value="Installed">Instalados</option>
+                            <option value="Asignado">Asignados (Persona/Fuero)</option>
+                            <option value="Installed">Instalados en PC</option>
                             <option value="Retirado">Retirados</option>
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Buscar (Serial / Modelo)</label>
-                        <input type="text" id="stockSearchInput" class="form-control" placeholder="Buscar..."
+                        <label class="form-label">Buscar (Serial / Remito / Usuario / Fuero)</label>
+                        <input type="text" id="stockSearchInput" class="form-control" placeholder="Buscar por remito, S/N, persona, fuero..."
                             onkeyup="loadComponents()">
                     </div>
                 </div>
@@ -83,11 +102,12 @@
                     <table class="table table-hover mb-0 table-gold" id="stockTable">
                         <thead>
                             <tr>
-                                <th>Serial</th>
+                                <th>Serial / ID</th>
                                 <th>Tipo</th>
                                 <th>Marca / Modelo</th>
+                                <th>Remito / Proveedor / OC</th>
                                 <th>Estado</th>
-                                <th>Asignado a</th>
+                                <th>Asignado a (Persona / Fuero / PC)</th>
                                 <th>Fecha Alta</th>
                                 <th>Acciones</th>
                             </tr>
@@ -101,26 +121,156 @@
         </div>
     </div>
 
-    <!-- Assign Modal -->
+    <!-- Modal: Cargar Remito / Nuevo Stock -->
+    <div class="modal fade" id="addStockModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Carga de Remito y Recepción de Lotes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addStockForm">
+                    <div class="modal-body">
+                        <!-- Remito Header -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-body py-2">
+                                <h6 class="fw-bold text-primary mb-2"><i class="bi bi-building me-1"></i>Datos del Remito / Licitación</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">Proveedor / Empresa</label>
+                                        <input type="text" class="form-control form-control-sm" id="inputSupplier" placeholder="Ej: NOVA, BGH, Banghó..." required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">N° de Remito / Factura</label>
+                                        <input type="text" class="form-control form-control-sm" id="inputRemito" placeholder="Ej: R0005400001550" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">N° Orden de Compra (OC)</label>
+                                        <input type="text" class="form-control form-control-sm" id="inputOc" placeholder="Ej: OC 185-2026">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Item Detail -->
+                        <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-box-seam me-1"></i>Detalle del Componente / Periférico</h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Tipo de Componente</label>
+                                <select class="form-select form-control-sm" id="inputType" required>
+                                    <option value="Monitor">Monitor</option>
+                                    <option value="Teclado">Teclado</option>
+                                    <option value="Mouse">Mouse</option>
+                                    <option value="CPU">CPU / Equipo Completo</option>
+                                    <option value="UPS">UPS / Batería</option>
+                                    <option value="Impresora">Impresora</option>
+                                    <option value="Disco">Disco Rígido / SSD</option>
+                                    <option value="Memoria">Memoria RAM</option>
+                                    <option value="Fuente">Fuente de Poder</option>
+                                    <option value="Gabinete">Gabinete</option>
+                                    <option value="Otro">Otro Periférico</option>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold">Marca y Modelo</label>
+                                <input type="text" class="form-control form-control-sm" id="inputModel" placeholder="Ej: Philips 22 FHD 1920x1080" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Cantidad</label>
+                                <input type="number" class="form-control form-control-sm" id="inputQuantity" value="1" min="1" max="100">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Número de Serie / Código de Barras</label>
+                            <input type="text" class="form-control form-control-sm font-monospace" id="inputSerial" placeholder="Escanear o ingresar S/N de fábrica (ej: ZA12606000514)...">
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="checkbox" id="chkAutoId">
+                                <label class="form-check-label small text-muted" for="chkAutoId">
+                                    No tiene código de barras (generar ID interno automáticamente)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Optional direct AD Assignment -->
+                        <div class="card border-info mb-2">
+                            <div class="card-body py-2">
+                                <h6 class="fw-bold text-info mb-1"><i class="bi bi-person-check me-1"></i>Asignación Inmediata a Persona / Fuero (Opcional)</h6>
+                                <p class="small text-muted mb-2">Si el ítem se entrega inmediatamente a un empleado, seleccione la persona de Active Directory. El Fuero se resolverá automáticamente.</p>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Buscar Persona (Active Directory)</label>
+                                        <input type="text" class="form-control form-control-sm" id="addAdSearch" placeholder="Nombre o legajo..." onkeyup="searchAdForAdd(this.value)">
+                                        <div id="addAdResults" class="list-group position-absolute shadow mt-1" style="z-index: 1050; max-height: 150px; overflow-y: auto; width: 90%;"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Fuero Asignado (Auto-resuelto de AD)</label>
+                                        <input type="text" class="form-control form-control-sm bg-light" id="addResolvedFuero" placeholder="Se completará automáticamente..." readonly>
+                                        <input type="hidden" id="addSelectedUser">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-save me-1"></i>Guardar en Stock</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Asignar Componente -->
     <div class="modal fade" id="assignModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Asignar Componente</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-person-lines-fill me-2"></i>Asignar Componente / Periférico</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <p>Asignando: <strong id="modalSerial"></strong> (<span id="modalType"></span>)</p>
+
                     <div class="mb-3">
-                        <label class="form-label">Seleccione PC Destino:</label>
-                        <select id="modalPcSelect" class="form-select">
+                        <label class="form-label fw-bold">Tipo de Asignación:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="assignTargetType" id="assignTypePerson" value="person" checked onchange="toggleAssignMode()">
+                            <label class="form-check-label fw-600" for="assignTypePerson">
+                                Asignar a Persona / Empleado (Resuelve Fuero de AD)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="assignTargetType" id="assignTypePc" value="pc" onchange="toggleAssignMode()">
+                            <label class="form-check-label fw-600" for="assignTypePc">
+                                Asignar a Estación de Trabajo (PC)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Person AD Section -->
+                    <div id="assignPersonSection" class="mb-3">
+                        <label class="form-label fw-bold small">Buscar Persona (Active Directory):</label>
+                        <input type="text" class="form-control form-control-sm" id="assignAdSearch" placeholder="Escriba nombre de la persona..." onkeyup="searchAdForAssign(this.value)">
+                        <div id="assignAdResults" class="list-group position-absolute shadow mt-1" style="z-index: 1050; max-height: 150px; overflow-y: auto; width: 90%;"></div>
+                        <div class="mt-2">
+                            <small class="text-muted">Persona seleccionada: <strong id="selectedPersonLabel">Ninguna</strong></small><br>
+                            <small class="text-muted">Fuero autocompletado: <strong id="selectedFueroLabel" class="text-primary">-</strong></small>
+                        </div>
+                    </div>
+
+                    <!-- PC Section -->
+                    <div id="assignPcSection" class="mb-3 d-none">
+                        <label class="form-label fw-bold small">Seleccione PC Destino:</label>
+                        <select id="modalPcSelect" class="form-select form-select-sm">
                             <option value="">Cargando PCs...</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="confirmAssign()">Asignar</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="confirmAssign()"><i class="bi bi-check-circle me-1"></i>Confirmar Asignación</button>
                 </div>
             </div>
         </div>
@@ -130,98 +280,168 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             loadComponents();
-            loadPcsForModal(); // Preload PCs
-            if (isCompactMode) {
-                applyCompactMode();
-            }
-            updateBtnInfo();
+            loadPcsForModal();
         });
 
-        // Compact Mode Logic
-        // ... (lines 115-141 unchanged) ...
-        let storedCompact = localStorage.getItem('compactMode');
-        let isCompactMode = storedCompact === null ? true : storedCompact === 'true';
-
-        function toggleCompactMode() {
-            isCompactMode = !isCompactMode;
-            localStorage.setItem('compactMode', isCompactMode);
-            applyCompactMode();
-            updateBtnInfo();
-        }
-
-        function applyCompactMode() {
-            const table = document.querySelector('table');
-            if (isCompactMode) {
-                table.classList.add('table-sm');
-                table.style.fontSize = '0.85rem';
-            } else {
-                table.classList.remove('table-sm');
-                table.style.fontSize = '';
-            }
-        }
-
-        function updateBtnInfo() {
-            const btn = document.getElementById('toggleCompactBtn');
-            if (btn) {
-                btn.innerHTML = isCompactMode ? '<i class="bi bi-list-ul"></i> Expandir' : '<i class="bi bi-list-ul"></i> Compactar';
-            }
-        }
-
-        let allPcs = [];
+        let currentAssignUser = "";
+        let currentAssignFuero = "";
+        let currentSerialToAssign = null;
+        const assignModal = new bootstrap.Modal(document.getElementById('assignModal'));
+        const addStockModal = new bootstrap.Modal(document.getElementById('addStockModal'));
 
         function loadPcsForModal() {
             fetch('/api/mobile/data')
                 .then(res => res.json())
                 .then(data => {
-                    allPcs = data.pcs || [];
                     const sel = document.getElementById('modalPcSelect');
                     sel.innerHTML = '<option value="">Seleccione PC...</option>';
-                    allPcs.forEach(pc => {
+                    (data.pcs || []).forEach(pc => {
                         const opt = document.createElement('option');
                         opt.value = pc.name;
                         opt.textContent = `${pc.name} | ${pc.user} (${pc.area})`;
                         sel.appendChild(opt);
                     });
-                })
-                .catch(err => console.error("Error loading PCs:", err));
+                });
         }
 
-        let currentSerialToAssign = null;
-        const assignModal = new bootstrap.Modal(document.getElementById('assignModal'));
+        function toggleAssignMode() {
+            const isPerson = document.getElementById('assignTypePerson').checked;
+            document.getElementById('assignPersonSection').classList.toggle('d-none', !isPerson);
+            document.getElementById('assignPcSection').classList.toggle('d-none', isPerson);
+        }
+
+        function searchAdForAdd(q) {
+            if (!q || q.length < 2) {
+                document.getElementById('addAdResults').innerHTML = '';
+                return;
+            }
+            fetch('/api/ad_users/search?q=' + encodeURIComponent(q))
+                .then(res => res.json())
+                .then(users => {
+                    const resDiv = document.getElementById('addAdResults');
+                    resDiv.innerHTML = '';
+                    users.forEach(u => {
+                        const item = document.createElement('a');
+                        item.className = 'list-group-item list-group-item-action ad-user-result py-1 px-2 small';
+                        item.innerHTML = `<strong>${u.real_name || u.username}</strong> <span class="badge bg-light text-dark float-end">${u.fuero || 'Sin Fuero'}</span>`;
+                        item.onclick = () => {
+                            document.getElementById('addAdSearch').value = u.real_name || u.username;
+                            document.getElementById('addSelectedUser').value = u.real_name || u.username;
+                            document.getElementById('addResolvedFuero').value = u.fuero || 'No especificado en AD';
+                            resDiv.innerHTML = '';
+                        };
+                        resDiv.appendChild(item);
+                    });
+                });
+        }
+
+        function searchAdForAssign(q) {
+            if (!q || q.length < 2) {
+                document.getElementById('assignAdResults').innerHTML = '';
+                return;
+            }
+            fetch('/api/ad_users/search?q=' + encodeURIComponent(q))
+                .then(res => res.json())
+                .then(users => {
+                    const resDiv = document.getElementById('assignAdResults');
+                    resDiv.innerHTML = '';
+                    users.forEach(u => {
+                        const item = document.createElement('a');
+                        item.className = 'list-group-item list-group-item-action ad-user-result py-1 px-2 small';
+                        item.innerHTML = `<strong>${u.real_name || u.username}</strong> <span class="badge bg-light text-dark float-end">${u.fuero || 'Sin Fuero'}</span>`;
+                        item.onclick = () => {
+                            currentAssignUser = u.real_name || u.username;
+                            currentAssignFuero = u.fuero || '';
+                            document.getElementById('assignAdSearch').value = currentAssignUser;
+                            document.getElementById('selectedPersonLabel').textContent = currentAssignUser;
+                            document.getElementById('selectedFueroLabel').textContent = currentAssignFuero || 'No especificado en AD';
+                            resDiv.innerHTML = '';
+                        };
+                        resDiv.appendChild(item);
+                    });
+                });
+        }
+
+        document.getElementById('addStockForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const payload = {
+                supplier_name: document.getElementById('inputSupplier').value,
+                remito_number: document.getElementById('inputRemito').value,
+                oc_number: document.getElementById('inputOc').value,
+                component_type: document.getElementById('inputType').value,
+                brand_model: document.getElementById('inputModel').value,
+                quantity: document.getElementById('inputQuantity').value,
+                serial_number: document.getElementById('chkAutoId').checked ? '' : document.getElementById('inputSerial').value,
+                assigned_user: document.getElementById('addSelectedUser').value,
+                assigned_fuero: document.getElementById('addResolvedFuero').value
+            };
+
+            fetch('/api/components/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    addStockModal.hide();
+                    document.getElementById('addStockForm').reset();
+                    loadComponents();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(err => alert("Error de red: " + err));
+        });
 
         function openAssignModal(serial, type) {
             currentSerialToAssign = serial;
+            currentAssignUser = "";
+            currentAssignFuero = "";
             document.getElementById('modalSerial').textContent = serial;
             document.getElementById('modalType').textContent = type;
+            document.getElementById('assignAdSearch').value = "";
+            document.getElementById('selectedPersonLabel').textContent = "Ninguna";
+            document.getElementById('selectedFueroLabel').textContent = "-";
             assignModal.show();
         }
 
         function confirmAssign() {
+            const isPerson = document.getElementById('assignTypePerson').checked;
             const pc = document.getElementById('modalPcSelect').value;
-            if (!pc) {
-                alert("Seleccione una PC");
+
+            if (isPerson && !currentAssignUser) {
+                alert("Busque y seleccione una persona de Active Directory.");
                 return;
             }
+            if (!isPerson && !pc) {
+                alert("Seleccione una PC destino.");
+                return;
+            }
+
+            const payload = {
+                serial_number: currentSerialToAssign,
+                pc_name: isPerson ? "" : pc,
+                assigned_user: isPerson ? currentAssignUser : "",
+                assigned_fuero: isPerson ? currentAssignFuero : ""
+            };
 
             fetch('/api/components/assign', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    serial_number: currentSerialToAssign,
-                    pc_name: pc,
-                    technician: "WebUser" // Could prompt for user, or default
-                })
+                body: JSON.stringify(payload)
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        assignModal.hide();
-                        loadComponents(); // Refresh table
-                    } else {
-                        alert("Error: " + data.message);
-                    }
-                })
-                .catch(err => alert("Error de red: " + err));
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    assignModal.hide();
+                    loadComponents();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(err => alert("Error de red: " + err));
         }
 
         function deleteComponent(serial) {
@@ -232,15 +452,15 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ serial_number: serial })
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        loadComponents();
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(err => alert("Error de red: " + err));
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    loadComponents();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => alert("Error de red: " + err));
         }
 
         function loadComponents() {
@@ -255,50 +475,71 @@
 
                     const filtered = data.filter(item => {
                         const matchesStatus = !statusFilter || item.status === statusFilter;
-                        const searchStr = (item.serial_number + ' ' + item.brand_model + ' ' + item.component_type).toLowerCase();
+                        const searchStr = [
+                            item.serial_number,
+                            item.brand_model,
+                            item.component_type,
+                            item.invoice_number,
+                            item.supplier,
+                            item.oc_number,
+                            item.assigned_user,
+                            item.assigned_fuero,
+                            item.assigned_pc
+                        ].join(' ').toLowerCase();
+
                         const matchesSearch = !searchFilter || searchStr.includes(searchFilter);
                         return matchesStatus && matchesSearch;
                     });
 
                     if (filtered.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">No se encontraron componentes</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-3 text-muted">No se encontraron componentes</td></tr>';
                         return;
                     }
 
                     filtered.forEach(item => {
-                        let badgeClass = 'bg-secondary';
                         let statusHtml = '';
                         let actionBtn = '';
 
                         if (item.status === 'Stock') {
                             statusHtml = `<span class="stock-badge status-stock">✓ En Stock</span>`;
-                            actionBtn = `<button class="btn btn-sm btn-primary" onclick="openAssignModal('${item.serial_number}', '${item.component_type}')"><i class="bi bi-link-45deg me-1"></i>Asignar</button>`;
+                            actionBtn = `<button class="btn btn-sm btn-primary py-0 px-2" onclick="openAssignModal('${item.serial_number}', '${item.component_type}')"><i class="bi bi-person-plus me-1"></i>Asignar</button>`;
+                        } else if (item.status === 'Asignado') {
+                            statusHtml = `<span class="stock-badge status-assigned">👤 Asignado</span>`;
+                            actionBtn = `<button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="openAssignModal('${item.serial_number}', '${item.component_type}')">Reasignar</button>`;
                         } else if (item.status === 'Installed') {
                             statusHtml = `<span class="stock-badge status-installed">⚙ Instalado</span>`;
                         } else if (item.status === 'Retirado') {
                             statusHtml = `<span class="stock-badge status-retired">✕ Retirado</span>`;
                         }
 
-                        let deleteBtn = `<button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteComponent('${item.serial_number}')" title="Eliminar definitivamente" aria-label="Eliminar definitivamente"><i class="bi bi-trash"></i></button>`;
+                        let deleteBtn = `<button class="btn btn-sm btn-outline-danger py-0 px-1 ms-1" onclick="deleteComponent('${item.serial_number}')" title="Eliminar definitivamente"><i class="bi bi-trash"></i></button>`;
                         actionBtn = actionBtn === '' ? deleteBtn : actionBtn + ' ' + deleteBtn;
 
-                        let assignedLink = item.assigned_pc ? `<a href="/pc/${item.assigned_pc}">${item.assigned_pc}</a>` : '-';
+                        let assignedInfo = '-';
+                        if (item.assigned_pc) {
+                            assignedInfo = `<a href="/pc/${item.assigned_pc}" class="fw-bold">🖥 ${item.assigned_pc}</a>`;
+                        } else if (item.assigned_user || item.assigned_fuero) {
+                            assignedInfo = `<div><strong>👤 ${item.assigned_user || 'Sin Usuario'}</strong></div><div class="small text-muted">🏛 ${item.assigned_fuero || ''}</div>`;
+                        }
 
                         let subText = [];
-                        if (item.supplier) subText.push(`Prov: ${item.supplier}`);
                         if (item.invoice_number) subText.push(`Remito: ${item.invoice_number}`);
+                        if (item.supplier) subText.push(`Prov: ${item.supplier}`);
+                        if (item.oc_number) subText.push(`OC: ${item.oc_number}`);
                         let extraHtml = subText.length > 0 ? `<div class="small text-muted" style="font-size: 0.75rem;">${subText.join(' | ')}</div>` : '';
+
+                        let serialBadge = item.is_autogenerated_id ? 
+                            `<span class="badge bg-light text-dark border font-monospace">${item.serial_number}</span> <span class="badge bg-secondary" style="font-size:0.65rem;">Auto ID</span>` :
+                            `<span class="font-monospace fw-bold" style="font-size:0.85rem;">${item.serial_number}</span>`;
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td><span class="font-monospace" style="font-size:0.82rem;">${item.serial_number}</span></td>
+                            <td>${serialBadge}</td>
                             <td><span class="fw-600" style="font-size:0.85rem;">${item.component_type}</span></td>
-                            <td>
-                                <div style="font-size:0.85rem;">${item.brand_model || '-'}</div>
-                                ${extraHtml}
-                            </td>
+                            <td><div style="font-size:0.85rem;">${item.brand_model || '-'}</div></td>
+                            <td>${extraHtml || '-'}</td>
                             <td>${statusHtml}</td>
-                            <td>${assignedLink}</td>
+                            <td>${assignedInfo}</td>
                             <td class="small text-muted">${item.created_at || '-'}</td>
                             <td>${actionBtn}</td>
                         `;

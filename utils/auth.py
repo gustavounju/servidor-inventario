@@ -19,6 +19,7 @@ PERMISSION_COLUMN_MAP = {
     "reports": "can_access_reports",
     "operadores": "can_access_operadores",
     "audit_racks": "can_audit_racks",
+    "manage_stock": "can_manage_stock",
 }
 
 ROLE_PRESETS = {
@@ -29,6 +30,16 @@ ROLE_PRESETS = {
         "reports": True,
         "operadores": True,
         "audit_racks": True,
+        "manage_stock": True,
+    },
+    "funcionario": {
+        "dashboard": False,
+        "mobile": False,
+        "infrastructure": False,
+        "reports": False,
+        "operadores": False,
+        "audit_racks": False,
+        "manage_stock": True,
     },
     "operador": {
         "dashboard": False,
@@ -37,6 +48,7 @@ ROLE_PRESETS = {
         "reports": False,
         "operadores": True,
         "audit_racks": False,
+        "manage_stock": False,
     },
     "tecnico": {
         "dashboard": False,
@@ -45,6 +57,7 @@ ROLE_PRESETS = {
         "reports": False,
         "operadores": False,
         "audit_racks": False,
+        "manage_stock": False,
     },
     "infraestructura": {
         "dashboard": True,
@@ -53,6 +66,7 @@ ROLE_PRESETS = {
         "reports": True,
         "operadores": True,
         "audit_racks": True,
+        "manage_stock": True,
     },
     "consulta": {
         "dashboard": False,
@@ -61,6 +75,7 @@ ROLE_PRESETS = {
         "reports": True,
         "operadores": False,
         "audit_racks": False,
+        "manage_stock": False,
     },
 }
 
@@ -77,7 +92,14 @@ MODULE_DEFINITIONS = [
         "label": "Infra",
         "endpoint": "infrastructure.index",
         "icon": "bi-hdd-network-fill",
-        "active_prefixes": ["infrastructure.", "stock."],
+        "active_prefixes": ["infrastructure."],
+    },
+    {
+        "key": "manage_stock",
+        "label": "Carga de Stock",
+        "endpoint": "stock.stock_view",
+        "icon": "bi-box-seam-fill",
+        "active_prefixes": ["stock."],
     },
     {
         "key": "reports",
@@ -240,6 +262,7 @@ def auth_mode_label():
 def role_label(role_name=None):
     labels = {
         "administrador": "Administrador",
+        "funcionario": "Funcionario",
         "operador": "Operador",
         "tecnico": "Tecnico",
         "infraestructura": "Infraestructura",
@@ -317,7 +340,7 @@ def _fetch_auth_user(username):
             """
             SELECT id, username, display_name, role, technician_name, password_hash,
                    is_superuser, is_active, must_change_password, phone,
-                   can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores, can_audit_racks
+                   can_access_dashboard, can_access_mobile, can_access_infrastructure, can_access_reports, can_access_operadores, can_audit_racks, can_manage_stock
             FROM app_users
             WHERE username = %s
             LIMIT 1
@@ -566,7 +589,7 @@ def list_app_users():
             """
             SELECT au.id, au.username, au.display_name, au.role, au.technician_name, au.is_superuser, au.is_active,
                    au.must_change_password, au.phone, au.can_access_dashboard, au.can_access_mobile,
-                   au.can_access_infrastructure, au.can_access_reports, au.can_access_operadores, au.can_audit_racks, au.created_at, au.updated_at,
+                   au.can_access_infrastructure, au.can_access_reports, au.can_access_operadores, au.can_audit_racks, au.can_manage_stock, au.created_at, au.updated_at,
                    CASE WHEN ad.username IS NULL THEN 0 ELSE 1 END AS is_ad_user
             FROM app_users au
             LEFT JOIN ad_users ad ON LOWER(ad.username) = LOWER(au.username)
@@ -778,7 +801,10 @@ def required_permission_for_endpoint(endpoint=None):
     if endpoint in mobile_allowed_stock_endpoints:
         return "mobile"
 
-    if endpoint.startswith("stock.") or endpoint.startswith("infrastructure.") or endpoint.startswith("maps."):
+    if endpoint == "stock.stock_view" or endpoint.startswith("stock."):
+        return "manage_stock"
+
+    if endpoint.startswith("infrastructure.") or endpoint.startswith("maps."):
         return "infrastructure"
     if "efemeride" in endpoint:
         return "reports"

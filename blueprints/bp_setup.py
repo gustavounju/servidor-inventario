@@ -700,7 +700,7 @@ def upload_software():
             json.dump(catalog, f, indent=2, ensure_ascii=False)
     except Exception as e:
         current_app.logger.error(f"Error escribiendo catalog.json: {e}")
-        return jsonify({"status": "error", "message": "Archivo subido pero no se pudo actualizar el catálogo."}), 500
+        return jsonify({"status": "error", "message": f"Archivo subido pero no se pudo actualizar el catálogo. Error: {str(e)}"}), 500
 
     return jsonify({"status": "success", "message": f"Archivo '{filename}' subido correctamente al repositorio."})
 

@@ -51,10 +51,12 @@ ServidorInventario/
 
 ## 👥 Sistema de Autenticación y Roles
 ### Roles Disponibles
-- **Administrador**: Acceso completo a todos los módulos
-- **Sistemas**: Dashboard, Infra, Reportes, Mobile
-- **Técnico**: Dashboard, Reportes, Mobile
-- **Usuario**: Solo lectura básica
+- **Administrador**: Acceso completo a todos los módulos.
+- **Funcionario (Nuevo)**: Carga y gestión de Remitos/Stock y Visor de Tareas en modo lectura únicamente.
+- **Sistemas / Infraestructura**: Dashboard, Infra, Reportes, Mobile, Audit Racks.
+- **Técnico**: Dashboard, Reportes, Mobile. Permiso de `manage_stock` configurable en panel de usuarios.
+- **Operador**: Módulo simplificado de operadores.
+- **Consulta**: Acceso únicamente a reportes.
 
 ### Usuario por Defecto
 - **Usuario**: administrador
@@ -64,10 +66,10 @@ ServidorInventario/
 ## 📊 Módulos Disponibles
 1. **Dashboard** (`/`): Vista principal con estadísticas
 2. **Infraestructura** (`/infra/`): Gestión de equipos y red
-3. **Reportes** (`/reportes/`): Generación de informes
-4. **Mobile** (`/mobile/`): Soporte para dispositivos móviles
-5. **Stock** (`/stock/`): Gestión de inventario
-6. **Tareas** (`/tasks/`): Gestión de tareas técnicas
+3. **Carga de Stock** (`/stock/`): Recepción por Remito (ej: NOVA, OC 185-2026), auto-generación de IDs internos y asignación por Active Directory (Persona + Fuero autocompletado).
+4. **Reportes** (`/reportes/`): Generación de informes
+5. **Mobile** (`/mobile/`): Soporte para dispositivos móviles
+6. **Tareas** (`/tasks/`): Visor y gestión de tareas técnicas
 7. **Setup** (`/setup/`): Configuración del sistema
 
 ## 🔄 Flujo de Despliegue (Workflow)

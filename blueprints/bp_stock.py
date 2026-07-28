@@ -1,7 +1,50 @@
+import datetime
+import random
 from flask import Blueprint, jsonify, request, render_template
 from database.db_core import get_db_connection
 
 bp_stock = Blueprint('stock', __name__)
+
+def generate_internal_serial(component_type):
+    type_map = {
+        'TECLADO': 'TEC',
+        'MOUSE': 'MOU',
+        'MONITOR': 'MON',
+        'DISCO': 'DSK',
+        'MEMORIA': 'RAM',
+        'FUENTE': 'FNT',
+        'GABINETE': 'GAB',
+        'UPS': 'UPS',
+        'IMPRESORA': 'IMP',
+    }
+    ctype_upper = (component_type or "OTR").strip().upper()
+    code = type_map.get(ctype_upper, ctype_upper[:3])
+    date_str = datetime.datetime.now().strftime("%Y%m%d")
+    rand_seq = f"{random.randint(1000, 9999)}"
+    return f"INT-{code}-{date_str}-{rand_seq}"
+
+@bp_stock.route("/api/ad_users/search", methods=["GET"])
+def search_ad_users():
+    query = request.args.get("q", "").strip()
+    try:
+        with get_db_connection() as conn:
+            if query:
+                rows = conn.execute(
+                    """
+                    SELECT username, real_name, fuero, phone
+                    FROM ad_users
+                    WHERE LOWER(username) LIKE %s OR LOWER(real_name) LIKE %s OR LOWER(fuero) LIKE %s
+                    ORDER BY real_name ASC LIMIT 30
+                    """,
+                    (f"%{query.lower()}%", f"%{query.lower()}%", f"%{query.lower()}%")
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT username, real_name, fuero, phone FROM ad_users ORDER BY real_name ASC LIMIT 30"
+                ).fetchall()
+        return jsonify([dict(r) for r in rows])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @bp_stock.route("/api/components/<path:serial_number>", methods=["GET"])
 def get_component(serial_number):
@@ -19,7 +62,6 @@ def get_component(serial_number):
                 data = dict(ups)
                 if data.get('created_at'):
                     data['created_at'] = data['created_at'].strftime("%Y-%m-%d %H:%M:%S")
-                # Format to match components schema for scanner compatibility
                 data['serial_number'] = data['code']
                 data['component_type'] = 'UPS'
                 data['brand_model'] = data['model']
@@ -61,93 +103,146 @@ def list_suppliers():
 @bp_stock.route("/api/components/add", methods=["POST"])
 def add_component():
     try:
-        data = request.json
-        serial = data.get("serial_number")
-        ctype = data.get("component_type")
-        model = data.get("brand_model")
-        supplier = data.get("supplier_name", "")
-        invoice = data.get("remito_number", "")
-        
-        if not serial or not ctype:
-            return jsonify({"status": "error", "message": "Faltan datos"}), 400
-            
+        data = request.json or {}
+        serial = (data.get("serial_number") or "").strip()
+        ctype = (data.get("component_type") or "").strip()
+        model = (data.get("brand_model") or "").strip()
+        supplier = (data.get("supplier_name") or data.get("supplier") or "").strip()
+        invoice = (data.get("remito_number") or data.get("invoice_number") or "").strip()
+        oc_num = (data.get("oc_number") or "").strip()
+        assigned_user = (data.get("assigned_user") or "").strip()
+        assigned_fuero = (data.get("assigned_fuero") or "").strip()
+        quantity = int(data.get("quantity", 1))
+
+        if not ctype:
+            return jsonify({"status": "error", "message": "Falta indicar el tipo de componente"}), 400
+
         with get_db_connection() as conn:
-            if ctype.upper() == 'UPS' or ctype.upper() == 'EQUIPO UPS':
-                # Las UPS van a su tabla específica
-                conn.execute("INSERT INTO ups_inventory (code, model, supplier, invoice_number) VALUES (%s, %s, %s, %s)", (serial, model, supplier, invoice))
-            else:
-                conn.execute("INSERT INTO components (serial_number, component_type, brand_model, status, supplier, invoice_number) VALUES (%s, %s, %s, 'Stock', %s, %s)", (serial, ctype, model, supplier, invoice))
-            
+            # Si se dio usuario pero no fuero, resolverlo desde AD
+            if assigned_user and not assigned_fuero:
+                ad_row = conn.execute(
+                    "SELECT fuero FROM ad_users WHERE LOWER(username) = %s OR LOWER(real_name) = %s LIMIT 1",
+                    (assigned_user.lower(), assigned_user.lower())
+                ).fetchone()
+                if ad_row and ad_row.get("fuero"):
+                    assigned_fuero = ad_row["fuero"]
+
+            status = 'Asignado' if (assigned_user or assigned_fuero) else 'Stock'
+            added_serials = []
+
+            for _ in range(max(1, quantity)):
+                curr_serial = serial
+                is_auto = 0
+                if not curr_serial or quantity > 1:
+                    curr_serial = generate_internal_serial(ctype)
+                    is_auto = 1
+
+                if ctype.upper() in ('UPS', 'EQUIPO UPS'):
+                    conn.execute(
+                        "INSERT INTO ups_inventory (code, model, supplier, invoice_number) VALUES (%s, %s, %s, %s)",
+                        (curr_serial, model, supplier, invoice)
+                    )
+                else:
+                    conn.execute(
+                        """
+                        INSERT INTO components (
+                            serial_number, component_type, brand_model, status,
+                            supplier, invoice_number, oc_number, assigned_user, assigned_fuero, is_autogenerated_id
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (curr_serial, ctype, model, status, supplier, invoice, oc_num, assigned_user or None, assigned_fuero or None, is_auto)
+                    )
+                added_serials.append(curr_serial)
+
             from utils.auth import current_technician_identity
             tech = current_technician_identity()
             if tech:
                 from datetime import datetime
                 now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                desc = f"Escáner: Registró nuevo componente en Stock: {ctype} {model} (S/N: {serial})"
+                desc = f"Alta de Stock: {len(added_serials)}x {ctype} {model} (Remito: {invoice or 'N/A'}, Proveedor: {supplier or 'N/A'})"
                 conn.execute(
-                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    ('Stock (Escáner)', desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
+                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, fuero) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    ('Stock (Ingreso)', desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, assigned_fuero or None)
                 )
-                
             conn.commit()
-        return jsonify({"status": "success"})
+        return jsonify({"status": "success", "serials": added_serials})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @bp_stock.route("/api/components/assign", methods=["POST"])
 def assign_component():
     try:
-        data = request.json
-        serial = data.get("serial_number")
-        pc_name = data.get("pc_name")
-        
-        if not serial or not pc_name: return jsonify({"status": "error", "message": "Faltan datos"}), 400
-            
+        data = request.json or {}
+        serial = (data.get("serial_number") or "").strip()
+        pc_name = (data.get("pc_name") or "").strip()
+        assigned_user = (data.get("assigned_user") or "").strip()
+        assigned_fuero = (data.get("assigned_fuero") or "").strip()
+
+        if not serial:
+            return jsonify({"status": "error", "message": "Falta serial del componente"}), 400
+
         with get_db_connection() as conn:
+            # Resolver fuero de AD si hay usuario y no fuero
+            if assigned_user and not assigned_fuero:
+                ad_row = conn.execute(
+                    "SELECT fuero FROM ad_users WHERE LOWER(username) = %s OR LOWER(real_name) = %s LIMIT 1",
+                    (assigned_user.lower(), assigned_user.lower())
+                ).fetchone()
+                if ad_row and ad_row.get("fuero"):
+                    assigned_fuero = ad_row["fuero"]
+
             comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial,)).fetchone()
-            if not comp: 
-                # Check ups_inventory
+            if not comp:
                 ups = conn.execute("SELECT * FROM ups_inventory WHERE code = %s", (serial,)).fetchone()
                 if not ups:
                     return jsonify({"status": "error", "message": "Componente no existe"}), 404
                 else:
-                    # Logic for UPS assignment
-                    conn.execute("UPDATE ups_inventory SET assigned_pc = %s WHERE code = %s", (pc_name, serial))
+                    conn.execute("UPDATE ups_inventory SET assigned_pc = %s WHERE code = %s", (pc_name or None, serial))
                     detalles = f"UPS {ups['model']} (S/N: {serial})"
                     from utils.auth import current_username, current_technician_identity
                     tech = current_technician_identity()
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                                 (pc_name, 'UPS Asignada', 'Stock', detalles, current_username() or tech, "GESTION_INFRAESTRUCTURA", request.remote_addr))
-                    if tech:
-                        from datetime import datetime
-                        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        desc = f"Escáner: Instaló componente (UPS {ups['model']})"
-                        conn.execute(
-                            "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                            (pc_name, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
-                        )
+                    target_dest = pc_name or assigned_user or assigned_fuero or "Desconocido"
+                    conn.execute(
+                        "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                        (target_dest, 'UPS Asignada', 'Stock', detalles, current_username() or tech, "GESTION_STOCK", request.remote_addr)
+                    )
                     conn.commit()
-                    return jsonify({"status": "success"})
-                    
-            conn.execute("UPDATE components SET status = 'Installed', assigned_pc = %s WHERE serial_number = %s", (pc_name, serial))
-            detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial})"
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                         (pc_name, 'COMPONENT_ASSIGN', 'Stock', detalles, current_username() or tech, "GESTION_STOCK", request.remote_addr))
-            
-            from utils.auth import current_technician_identity
+                    return jsonify({"status": "success", "resolved_fuero": assigned_fuero})
+
+            new_status = 'Installed' if pc_name else 'Asignado'
+            conn.execute(
+                """
+                UPDATE components
+                SET status = %s, assigned_pc = %s, assigned_user = %s, assigned_fuero = %s
+                WHERE serial_number = %s
+                """,
+                (new_status, pc_name or None, assigned_user or None, assigned_fuero or None, serial)
+            )
+
+            detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Usuario: {assigned_user or 'N/A'}, Fuero: {assigned_fuero or 'N/A'}, PC: {pc_name or 'N/A'}"
+            from utils.auth import current_username, current_technician_identity
             tech = current_technician_identity()
+            target_dest = pc_name or assigned_user or assigned_fuero or "Desconocido"
+            conn.execute(
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (target_dest, 'COMPONENT_ASSIGN', comp.get('status') or 'Stock', detalles, current_username() or tech, "GESTION_STOCK", request.remote_addr)
+            )
+
             if tech:
                 from datetime import datetime
                 now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                desc = f"Escáner: Instaló componente ({comp['component_type']} {comp['brand_model']})"
+                desc = f"Asignó componente ({comp['component_type']} {comp['brand_model']}) a {assigned_user or pc_name or 'Fuero'} ({assigned_fuero or ''})"
                 conn.execute(
-                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    (pc_name, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
+                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, fuero) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (pc_name or target_dest, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, assigned_fuero or None)
                 )
 
             conn.commit()
-            
-        return jsonify({"status": "success"})
+
+        return jsonify({"status": "success", "resolved_fuero": assigned_fuero})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
