@@ -74,6 +74,16 @@
         </button>
         {% endif %}
 
+        {% if has_access('manage_stock') or has_access('infrastructure') %}
+        <a href="{{ url_for('stock.stock_view') }}" class="op-btn {% if request.endpoint == 'stock.stock_view' %}op-btn--active{% endif %}" title="Carga y Gestión de Stock y Remitos" style="color: #38bdf8; border-color: #38bdf8;">
+            [ STOCK ]
+        </a>
+        {% else %}
+        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Stock')" title="No tienes permiso para entrar en Stock">
+            [ STOCK ]
+        </button>
+        {% endif %}
+
         <!-- Redes y Mapas -->
         {% if has_access('infrastructure') %}
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Redes IP">[ SUBREDES ]</a>

@@ -11,6 +11,7 @@ from services.user_admin import (
 from utils.constants import invalidate_fuero_mapping_cache
 from utils.auth import (
     _fetch_auth_user,
+    available_roles,
     current_username,
     delete_app_user,
     list_app_users,
@@ -54,6 +55,7 @@ def _users_page_context():
         "ad_usernames": ad_usernames,
         "fuero_mappings": [dict(row) for row in fuero_mappings],
         "admin_audit_logs": [dict(row) for row in admin_audit_logs],
+        "available_roles": available_roles(),
     }
 
 
