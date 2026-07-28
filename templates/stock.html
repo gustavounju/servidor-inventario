@@ -137,7 +137,8 @@
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Proveedor / Empresa</label>
-                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputSupplier" placeholder="Ej: NOVA, BGH, Banghó..." required>
+                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputSupplier" list="supplierList" placeholder="Ej: NOVA, BGH, Banghó..." required autocomplete="off">
+                                    <datalist id="supplierList"></datalist>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">N° de Remito / Factura</label>
@@ -171,7 +172,8 @@
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Marca y Modelo</label>
-                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputModel" placeholder="Ej: Philips 22 FHD 1920x1080" required>
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputModel" list="modelList" placeholder="Ej: Philips 22 FHD 1920x1080" required autocomplete="off">
+                                <datalist id="modelList"></datalist>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Cantidad</label>
@@ -277,7 +279,26 @@
         document.addEventListener("DOMContentLoaded", () => {
             loadComponents();
             loadPcsForModal();
+            loadStockCatalog();
         });
+
+        function loadStockCatalog() {
+            fetch('/api/stock/catalog')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const sList = document.getElementById('supplierList');
+                        const mList = document.getElementById('modelList');
+                        if (sList && data.suppliers) {
+                            sList.innerHTML = data.suppliers.map(s => `<option value="${s}">`).join('');
+                        }
+                        if (mList && data.models) {
+                            mList.innerHTML = data.models.map(m => `<option value="${m}">`).join('');
+                        }
+                    }
+                })
+                .catch(err => console.error("Error cargando catálogo de stock:", err));
+        }
 
         let currentAssignUser = "";
         let currentAssignFuero = "";
@@ -386,6 +407,7 @@
                     addStockModal.hide();
                     document.getElementById('addStockForm').reset();
                     loadComponents();
+                    loadStockCatalog();
                 } else {
                     alert("Error: " + data.message);
                 }

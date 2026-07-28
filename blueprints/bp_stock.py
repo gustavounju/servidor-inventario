@@ -25,26 +25,59 @@ def generate_internal_serial(component_type):
 
 @bp_stock.route("/api/ad_users/search", methods=["GET"])
 def search_ad_users():
-    query = request.args.get("q", "").strip()
+    query = request.args.get("q", "").strip().lower()
     try:
         with get_db_connection() as conn:
+            sql = """
+                SELECT 
+                    u.username,
+                    COALESCE(NULLIF(TRIM(u.real_name), ''), u.username) AS real_name,
+                    COALESCE(NULLIF(TRIM(u.fuero), ''), NULLIF(TRIM(p.fuero), ''), 'Sin Fuero') AS fuero,
+                    u.phone
+                FROM ad_users u
+                LEFT JOIN (
+                    SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as clean_user, fuero 
+                    FROM pcs 
+                    WHERE last_user IS NOT NULL AND last_user != '' AND fuero IS NOT NULL AND fuero != ''
+                ) p ON LOWER(u.username) = p.clean_user
+            """
             if query:
-                rows = conn.execute(
-                    """
-                    SELECT username, real_name, fuero, phone
-                    FROM ad_users
-                    WHERE LOWER(username) LIKE %s OR LOWER(real_name) LIKE %s OR LOWER(fuero) LIKE %s
-                    ORDER BY real_name ASC LIMIT 30
-                    """,
-                    (f"%{query.lower()}%", f"%{query.lower()}%", f"%{query.lower()}%")
-                ).fetchall()
+                sql += " WHERE LOWER(u.username) LIKE %s OR LOWER(u.real_name) LIKE %s OR LOWER(u.fuero) LIKE %s OR LOWER(p.fuero) LIKE %s"
+                sql += " ORDER BY u.real_name ASC LIMIT 30"
+                rows = conn.execute(sql, (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%")).fetchall()
             else:
-                rows = conn.execute(
-                    "SELECT username, real_name, fuero, phone FROM ad_users ORDER BY real_name ASC LIMIT 30"
-                ).fetchall()
+                sql += " ORDER BY u.real_name ASC LIMIT 30"
+                rows = conn.execute(sql).fetchall()
+
         return jsonify([dict(r) for r in rows])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@bp_stock.route("/api/stock/catalog", methods=["GET"])
+def get_stock_catalog():
+    try:
+        with get_db_connection() as conn:
+            suppliers = [r['supplier'] for r in conn.execute(
+                "SELECT DISTINCT supplier FROM components WHERE supplier IS NOT NULL AND TRIM(supplier) != '' ORDER BY supplier ASC"
+            ).fetchall() if r.get('supplier')]
+
+            models = [r['brand_model'] for r in conn.execute(
+                "SELECT DISTINCT brand_model FROM components WHERE brand_model IS NOT NULL AND TRIM(brand_model) != '' ORDER BY brand_model ASC"
+            ).fetchall() if r.get('brand_model')]
+
+            default_suppliers = ["NOVA", "BGH", "Banghó", "EXO", "HP", "Dell", "Lenovo", "Kelyx"]
+            for ds in default_suppliers:
+                if ds not in suppliers:
+                    suppliers.append(ds)
+
+        return jsonify({
+            "status": "success",
+            "suppliers": sorted(suppliers),
+            "models": models
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @bp_stock.route("/api/components/<path:serial_number>", methods=["GET"])
 def get_component(serial_number):
