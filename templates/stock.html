@@ -294,8 +294,12 @@
                     <button type="button" class="btn btn-outline-secondary btn-sm text-white" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-info btn-sm text-dark fw-bold" onclick="confirmAssign()"><i class="bi bi-check-circle me-1"></i>Confirmar Asignación</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: ABM / Gestión de Catálogo de Campo -->
-    <div class="modal fade" id="catalogManagerModal" tabindex="-1" style="z-index: 1065;">
+    <div class="modal fade" id="catalogManagerModal" tabindex="-1" style="z-index: 1080;">
         <div class="modal-dialog">
             <div class="modal-content" style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; color: #f8fafc;">
                 <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1);">
@@ -329,6 +333,18 @@
             loadComponents();
             loadPcsForModal();
             loadStockCatalog();
+
+            const catModalEl = document.getElementById('catalogManagerModal');
+            if (catModalEl) {
+                catModalEl.addEventListener('show.bs.modal', function () {
+                    setTimeout(() => {
+                        const backdrops = document.querySelectorAll('.modal-backdrop');
+                        if (backdrops.length > 1) {
+                            backdrops[backdrops.length - 1].style.zIndex = '1075';
+                        }
+                    }, 10);
+                });
+            }
         });
 
         function loadStockCatalog() {
