@@ -65,7 +65,10 @@
                 <h1 class="hero-title">📦 Gestión de Stock y Remitos</h1>
                 <p class="hero-subtitle">Recepción por remitos, asignación a personas (AD) y componentes en inventario</p>
             </div>
-            <div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-info shadow-sm fw-bold" onclick="openCatalogModal()">
+                    <i class="bi bi-sliders me-1"></i> ABM de Catálogos
+                </button>
                 <button class="btn btn-gold shadow-sm" data-bs-toggle="modal" data-bs-target="#addStockModal">
                     <i class="bi bi-file-earmark-plus-fill me-1"></i> Cargar Remito / Nuevo Stock
                 </button>
@@ -274,6 +277,60 @@
         </div>
     </div>
 
+    <!-- Modal: Gestionar Catálogos ABM -->
+    <div class="modal fade" id="catalogManageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; color: #f8fafc;">
+                <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1); color: #f8fafc;">
+                    <h5 class="modal-title font-monospace fw-bold text-info"><i class="bi bi-sliders me-2"></i>Gestión de Catálogos (ABM de Proveedores, Modelos y Tipos)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <ul class="nav nav-tabs border-secondary mb-3" id="catalogTabs">
+                        <li class="nav-item">
+                            <button class="nav-link active text-info fw-bold" id="suppliers-tab" data-bs-toggle="tab" data-bs-target="#suppliers-pane">🏢 Proveedores / Empresas</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link text-warning fw-bold" id="models-tab" data-bs-toggle="tab" data-bs-target="#models-pane">🏷️ Marcas y Modelos</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link text-success fw-bold" id="types-tab" data-bs-toggle="tab" data-bs-target="#types-pane">📦 Tipos de Componentes</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <!-- Proveedores Pane -->
+                        <div class="tab-pane fade show active" id="suppliers-pane">
+                            <div class="input-group mb-3">
+                                <input type="text" id="newSupplierInput" class="form-control bg-dark text-white border-secondary" placeholder="Nombre de nuevo proveedor / empresa (Ej: BGH, NOVA, EXO...)">
+                                <button class="btn btn-info text-dark fw-bold" onclick="addCatalogItem('supplier', 'newSupplierInput')"><i class="bi bi-plus-lg me-1"></i>Agregar Proveedor</button>
+                            </div>
+                            <div id="supplierCatalogList" class="list-group" style="max-height: 250px; overflow-y: auto;"></div>
+                        </div>
+                        <!-- Modelos Pane -->
+                        <div class="tab-pane fade" id="models-pane">
+                            <div class="input-group mb-3">
+                                <input type="text" id="newModelInput" class="form-control bg-dark text-white border-secondary" placeholder="Marca y modelo (Ej: Philips 22 FHD 1920x1080...)">
+                                <button class="btn btn-warning text-dark fw-bold" onclick="addCatalogItem('model', 'newModelInput')"><i class="bi bi-plus-lg me-1"></i>Agregar Modelo</button>
+                            </div>
+                            <div id="modelCatalogList" class="list-group" style="max-height: 250px; overflow-y: auto;"></div>
+                        </div>
+                        <!-- Tipos Pane -->
+                        <div class="tab-pane fade" id="types-pane">
+                            <div class="input-group mb-3">
+                                <input type="text" id="newTypeInput" class="form-control bg-dark text-white border-secondary" placeholder="Nuevo tipo de componente (Ej: Escáner, Switch, Router...)">
+                                <button class="btn btn-success text-dark fw-bold" onclick="addCatalogItem('type', 'newTypeInput')"><i class="bi bi-plus-lg me-1"></i>Agregar Tipo</button>
+                            </div>
+                            <div id="typeCatalogList" class="list-group" style="max-height: 250px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button type="button" class="btn btn-secondary btn-sm text-white" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -289,15 +346,102 @@
                     if (data.status === 'success') {
                         const sList = document.getElementById('supplierList');
                         const mList = document.getElementById('modelList');
+                        const typeSel = document.getElementById('inputType');
+
                         if (sList && data.suppliers) {
                             sList.innerHTML = data.suppliers.map(s => `<option value="${s}">`).join('');
                         }
                         if (mList && data.models) {
                             mList.innerHTML = data.models.map(m => `<option value="${m}">`).join('');
                         }
+                        if (typeSel && data.types) {
+                            const currVal = typeSel.value;
+                            typeSel.innerHTML = data.types.map(t => `<option value="${t}" ${t === currVal ? 'selected' : ''}>${t}</option>`).join('');
+                        }
                     }
                 })
                 .catch(err => console.error("Error cargando catálogo de stock:", err));
+        }
+
+        let catalogManageModal = null;
+        function openCatalogModal() {
+            if (!catalogManageModal) {
+                catalogManageModal = new bootstrap.Modal(document.getElementById('catalogManageModal'));
+            }
+            renderCatalogLists();
+            catalogManageModal.show();
+        }
+
+        function renderCatalogLists() {
+            fetch('/api/stock/catalog')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderCategoryList('supplierCatalogList', 'supplier', data.suppliers);
+                        renderCategoryList('modelCatalogList', 'model', data.models);
+                        renderCategoryList('typeCatalogList', 'type', data.types);
+                        loadStockCatalog();
+                    }
+                });
+        }
+
+        function renderCategoryList(containerId, category, items) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            if (!items || items.length === 0) {
+                container.innerHTML = '<div class="p-3 text-muted text-center small">No hay ítems registrados.</div>';
+                return;
+            }
+            container.innerHTML = items.map(item => `
+                <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3 border-secondary mb-1 rounded" style="background: #1e293b; color: #f8fafc;">
+                    <span class="fw-500">${item}</span>
+                    <button class="btn btn-outline-danger btn-sm py-0 px-2" onclick="deleteCatalogItem('${category}', '${item.replace(/'/g, "\\'")}')" title="Eliminar del catálogo">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addCatalogItem(category, inputId) {
+            const input = document.getElementById(inputId);
+            const val = (input.value || '').trim();
+            if (!val) {
+                alert("Escriba un nombre válido.");
+                return;
+            }
+            fetch('/api/stock/catalog/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: category, value: val })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    input.value = '';
+                    renderCatalogLists();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(err => alert("Error de red: " + err));
+        }
+
+        function deleteCatalogItem(category, value) {
+            if (!confirm(`¿Eliminar '${value}' del catálogo?`)) return;
+            fetch('/api/stock/catalog/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: category, value: value })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    renderCatalogLists();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(err => alert("Error de red: " + err));
         }
 
         let currentAssignUser = "";

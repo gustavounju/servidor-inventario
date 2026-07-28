@@ -263,8 +263,18 @@ def init_db():
         for idx_name, idx_sql in indices_comp:
             try:
                 conn.execute(idx_sql)
-            except Exception:
-                pass
+            except Exception as e:
+                logging.debug(f"Índice {idx_name} ya existe o error menor: {e}")
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS stock_catalogs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                category VARCHAR(50) NOT NULL,
+                item_value VARCHAR(255) NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uk_cat_val (category, item_value)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS audit_logs (

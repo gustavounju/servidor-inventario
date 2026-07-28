@@ -32,13 +32,17 @@ def search_ad_users():
                 SELECT 
                     u.username,
                     COALESCE(NULLIF(TRIM(u.real_name), ''), u.username) AS real_name,
-                    COALESCE(NULLIF(TRIM(u.fuero), ''), NULLIF(TRIM(p.fuero), ''), 'Sin Fuero') AS fuero,
+                    COALESCE(
+                        NULLIF(NULLIF(NULLIF(TRIM(u.fuero), ''), 'Sin Fuero'), 'Desconocido'),
+                        NULLIF(NULLIF(NULLIF(TRIM(p.fuero), ''), 'Sin Fuero'), 'Desconocido'),
+                        'Sin Fuero'
+                    ) AS fuero,
                     u.phone
                 FROM ad_users u
                 LEFT JOIN (
                     SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as clean_user, fuero 
                     FROM pcs 
-                    WHERE last_user IS NOT NULL AND last_user != '' AND fuero IS NOT NULL AND fuero != ''
+                    WHERE last_user IS NOT NULL AND last_user != '' AND fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido' AND fuero != 'Sin Fuero'
                 ) p ON LOWER(u.username) = p.clean_user
             """
             if query:
@@ -58,24 +62,70 @@ def search_ad_users():
 def get_stock_catalog():
     try:
         with get_db_connection() as conn:
-            suppliers = [r['supplier'] for r in conn.execute(
-                "SELECT DISTINCT supplier FROM components WHERE supplier IS NOT NULL AND TRIM(supplier) != '' ORDER BY supplier ASC"
+            cat_rows = conn.execute("SELECT category, item_value FROM stock_catalogs ORDER BY item_value ASC").fetchall()
+            cat_suppliers = [r['item_value'] for r in cat_rows if r['category'] == 'supplier']
+            cat_models = [r['item_value'] for r in cat_rows if r['category'] == 'model']
+            cat_types = [r['item_value'] for r in cat_rows if r['category'] == 'type']
+
+            comp_suppliers = [r['supplier'] for r in conn.execute(
+                "SELECT DISTINCT supplier FROM components WHERE supplier IS NOT NULL AND TRIM(supplier) != ''"
             ).fetchall() if r.get('supplier')]
 
-            models = [r['brand_model'] for r in conn.execute(
-                "SELECT DISTINCT brand_model FROM components WHERE brand_model IS NOT NULL AND TRIM(brand_model) != '' ORDER BY brand_model ASC"
+            comp_models = [r['brand_model'] for r in conn.execute(
+                "SELECT DISTINCT brand_model FROM components WHERE brand_model IS NOT NULL AND TRIM(brand_model) != ''"
             ).fetchall() if r.get('brand_model')]
 
+            comp_types = [r['component_type'] for r in conn.execute(
+                "SELECT DISTINCT component_type FROM components WHERE component_type IS NOT NULL AND TRIM(component_type) != ''"
+            ).fetchall() if r.get('component_type')]
+
             default_suppliers = ["NOVA", "BGH", "Banghó", "EXO", "HP", "Dell", "Lenovo", "Kelyx"]
-            for ds in default_suppliers:
-                if ds not in suppliers:
-                    suppliers.append(ds)
+            default_types = ["Monitor", "Teclado", "Mouse", "CPU", "UPS", "Impresora", "Disco", "Memoria", "Fuente", "Gabinete", "Otro"]
+
+            suppliers = sorted(list(set(cat_suppliers + comp_suppliers + default_suppliers)))
+            models = sorted(list(set(cat_models + comp_models)))
+            types = sorted(list(set(cat_types + comp_types + default_types)))
 
         return jsonify({
             "status": "success",
-            "suppliers": sorted(suppliers),
-            "models": models
+            "suppliers": suppliers,
+            "models": models,
+            "types": types,
+            "custom_catalog": [dict(r) for r in cat_rows]
         })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/api/stock/catalog/add", methods=["POST"])
+def add_stock_catalog_item():
+    data = request.json or {}
+    category = data.get("category", "").strip().lower()
+    value = data.get("value", "").strip()
+    if not category or not value:
+        return jsonify({"status": "error", "message": "Categoría y valor requeridos"}), 400
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO stock_catalogs (category, item_value) VALUES (%s, %s) ON DUPLICATE KEY UPDATE item_value = VALUES(item_value)",
+                (category, value)
+            )
+        return jsonify({"status": "success", "message": f"'{value}' añadido al catálogo."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/api/stock/catalog/delete", methods=["POST"])
+def delete_stock_catalog_item():
+    data = request.json or {}
+    category = data.get("category", "").strip().lower()
+    value = data.get("value", "").strip()
+    if not category or not value:
+        return jsonify({"status": "error", "message": "Datos incompletos"}), 400
+    try:
+        with get_db_connection() as conn:
+            conn.execute("DELETE FROM stock_catalogs WHERE category = %s AND item_value = %s", (category, value))
+        return jsonify({"status": "success", "message": f"'{value}' eliminado del catálogo."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
