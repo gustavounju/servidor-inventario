@@ -116,15 +116,19 @@
                                     <label class="um-label">Solicitante (Quién realiza el pedido)</label>
                                     <div class="input-group">
                                         <span class="input-group-text" style=" border-color: var(--border-color); color: var(--text-muted); border-right: none;"><i class="bi bi-person"></i></span>
-                                        <input type="text" name="solicitante" class="form-control bg-dark text-white"
+                                        <input type="text" name="solicitante" id="taskSolicitanteInput" class="form-control bg-dark text-white"
                                             style="border-color: var(--border-color); border-left: none; font-size: 0.9rem;"
                                             placeholder="Ej: Juan Pérez / Contabilidad" 
-                                            list="usersDatalist" required autocomplete="off">
+                                            list="usersDatalist" required autocomplete="off"
+                                            oninput="searchAdUsersForTaskModal(this.value)"
+                                            onfocus="searchAdUsersForTaskModal(this.value)">
                                     </div>
                                     <datalist id="usersDatalist">
+                                        {% if ad_users_list %}
                                         {% for user in ad_users_list %}
-                                        <option value="{{ user.real_name }}">{{ user.username }}</option>
+                                        <option value="{{ user.real_name or user.username or '' }}">{{ user.username or '' }}{% if user.fuero and user.fuero != 'Sin Fuero' %} ({{ user.fuero }}){% endif %}</option>
                                         {% endfor %}
+                                        {% endif %}
                                     </datalist>
                                     <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; font-family: var(--font-mono);"><i class="bi bi-info-circle me-1"></i>Puedes escribir el nombre completo o el usuario de red.</div>
                                 </div>
@@ -3285,7 +3289,32 @@ function submitTaskAction() {
         });
     }
 
-    // Inicializar polling si existe el botón en la UI
+    function loadAdUsersForTaskModal(query = '') {
+        const datalist = document.getElementById('usersDatalist');
+        if (!datalist) return;
+        fetch('/api/ad_users/search?q=' + encodeURIComponent(query))
+            .then(res => res.json())
+            .then(users => {
+                if (users && Array.isArray(users)) {
+                    datalist.innerHTML = users.map(u => {
+                        const name = u.real_name || u.username;
+                        const label = u.username ? `${u.username}${u.fuero && u.fuero !== 'Sin Fuero' ? ' (' + u.fuero + ')' : ''}` : name;
+                        return `<option value="${name}">${label}</option>`;
+                    }).join('');
+                }
+            })
+            .catch(err => console.error("Error cargando usuarios AD para modal de tarea:", err));
+    }
+
+    let adSearchTimeout = null;
+    function searchAdUsersForTaskModal(val) {
+        clearTimeout(adSearchTimeout);
+        adSearchTimeout = setTimeout(() => {
+            loadAdUsersForTaskModal(val);
+        }, 200);
+    }
+
+    // Inicializar polling y autocompletado de usuarios AD
     document.addEventListener('DOMContentLoaded', () => {
         if(document.getElementById('adminNotifBtn')) {
             fetchAdminNotifications();
@@ -3296,6 +3325,14 @@ function submitTaskAction() {
                 fetchAdminNotifications();
             });
         }
+
+        const taskModal = document.getElementById('modalNuevaTareaGeneral');
+        if (taskModal) {
+            taskModal.addEventListener('show.bs.modal', () => {
+                loadAdUsersForTaskModal('');
+            });
+        }
+        loadAdUsersForTaskModal('');
     });
 
 
