@@ -4,7 +4,10 @@ import os
 import logging
 from dotenv import load_dotenv
 from utils.constants import DEFAULT_FUERO_MAPPING
-from dbutils.pooled_db import PooledDB
+try:
+    from dbutils.pooled_db import PooledDB
+except ImportError:
+    from DBUtils.PooledDB import PooledDB
 
 load_dotenv()
 
