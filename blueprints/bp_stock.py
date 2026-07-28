@@ -536,3 +536,37 @@ def delete_component():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+@bp_stock.route("/api/components/delete_bulk", methods=["POST"])
+def delete_components_bulk():
+    try:
+        data = request.json or {}
+        serials = data.get("serials", [])
+        if not serials or not isinstance(serials, list):
+            return jsonify({"status": "error", "message": "Seleccione al menos un componente para eliminar."}), 400
+
+        from utils.auth import current_username
+        deleted_count = 0
+        with get_db_connection() as conn:
+            for serial in serials:
+                comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial,)).fetchone()
+                if comp:
+                    old_pc = comp["assigned_pc"]
+                    conn.execute("DELETE FROM components WHERE serial_number = %s", (serial,))
+                    deleted_count += 1
+                    if old_pc is not None and old_pc != "Unknown":
+                        detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial})"
+                        conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                     (old_pc, 'COMPONENT_DELETED', detalles, 'DELETED', current_username(), "BORRADO_PERMANENTE", request.remote_addr))
+                else:
+                    ups = conn.execute("SELECT * FROM ups_inventory WHERE code = %s", (serial,)).fetchone()
+                    if ups:
+                        if ups.get('assigned_battery_id'):
+                            conn.execute("UPDATE components SET status = 'Stock' WHERE id = %s", (ups['assigned_battery_id'],))
+                        conn.execute("DELETE FROM ups_inventory WHERE code = %s", (serial,))
+                        deleted_count += 1
+
+        return jsonify({"status": "success", "message": f"{deleted_count} componente(s) eliminado(s) correctamente."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+

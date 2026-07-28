@@ -72,6 +72,21 @@
             </div>
         </div>
 
+        <!-- Bulk Action Bar -->
+        <div id="bulkActionBar" class="alert alert-danger py-2 px-3 mb-3 d-none d-flex justify-content-between align-items-center shadow-sm" style="background: rgba(225, 29, 72, 0.15); border: 1px solid rgba(225, 29, 72, 0.3); border-radius: 10px; color: #fda4af;">
+            <div>
+                <i class="bi bi-check2-square me-2"></i><strong id="bulkSelectedCount">0</strong> componente(s) seleccionado(s)
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-danger btn-sm fw-bold" onclick="deleteSelectedComponents()">
+                    <i class="bi bi-trash-fill me-1"></i>Eliminar Seleccionados
+                </button>
+                <button type="button" class="btn btn-outline-light btn-sm" onclick="clearComponentSelections()">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+
         <!-- Filters -->
         <div class="card shadow-sm mb-3">
             <div class="card-body py-3">
@@ -102,6 +117,9 @@
                     <table class="table table-hover mb-0 table-gold" id="stockTable">
                         <thead>
                             <tr>
+                                <th style="width: 40px;" class="text-center">
+                                    <input type="checkbox" id="selectAllComponentsCheck" class="form-check-input bg-dark border-secondary" onclick="toggleSelectAllComponents(this)">
+                                </th>
                                 <th>Serial / ID</th>
                                 <th>Tipo</th>
                                 <th>Marca / Modelo</th>
@@ -709,6 +727,60 @@
             .then(data => {
                 if (data.status === 'success') {
                     loadComponents();
+                    loadStockCatalog();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => alert("Error de red: " + err));
+        }
+
+        function toggleSelectAllComponents(masterCheck) {
+            const checkboxes = document.querySelectorAll('.comp-checkbox');
+            checkboxes.forEach(cb => cb.checked = masterCheck.checked);
+            updateBulkSelectionUI();
+        }
+
+        function clearComponentSelections() {
+            const master = document.getElementById('selectAllComponentsCheck');
+            if (master) master.checked = false;
+            const checkboxes = document.querySelectorAll('.comp-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            updateBulkSelectionUI();
+        }
+
+        function updateBulkSelectionUI() {
+            const checked = document.querySelectorAll('.comp-checkbox:checked');
+            const bar = document.getElementById('bulkActionBar');
+            const countSpan = document.getElementById('bulkSelectedCount');
+            if (bar && countSpan) {
+                countSpan.textContent = checked.length;
+                if (checked.length > 0) {
+                    bar.classList.remove('d-none');
+                } else {
+                    bar.classList.add('d-none');
+                }
+            }
+        }
+
+        function deleteSelectedComponents() {
+            const checked = document.querySelectorAll('.comp-checkbox:checked');
+            const serials = Array.from(checked).map(cb => cb.value);
+            if (serials.length === 0) return;
+
+            if (!confirm(`¿Está seguro de eliminar definitivamente los ${serials.length} componentes seleccionados?`)) return;
+
+            fetch('/api/components/delete_bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serials: serials })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    clearComponentSelections();
+                    loadComponents();
+                    loadStockCatalog();
                 } else {
                     alert('Error: ' + data.message);
                 }
@@ -722,6 +794,7 @@
                 .then(data => {
                     const tbody = document.getElementById('stockTableBody');
                     tbody.innerHTML = '';
+                    clearComponentSelections();
 
                     const statusFilter = document.getElementById('filterStatus').value;
                     const searchFilter = document.getElementById('stockSearchInput').value.toLowerCase();
@@ -745,7 +818,7 @@
                     });
 
                     if (filtered.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-3 text-muted">No se encontraron componentes</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-3 text-muted">No se encontraron componentes</td></tr>';
                         return;
                     }
 
@@ -786,7 +859,11 @@
                             `<span class="font-monospace fw-bold" style="font-size:0.85rem;">${item.serial_number}</span>`;
 
                         const tr = document.createElement('tr');
+                        const safeSerial = item.serial_number.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                         tr.innerHTML = `
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input comp-checkbox bg-dark border-secondary" value="${safeSerial}" onchange="updateBulkSelectionUI()">
+                            </td>
                             <td>${serialBadge}</td>
                             <td><span class="fw-600" style="font-size:0.85rem;">${item.component_type}</span></td>
                             <td><div style="font-size:0.85rem;">${item.brand_model || '-'}</div></td>
