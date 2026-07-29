@@ -680,25 +680,34 @@ def assign_component_bundle():
                     if ups:
                         conn.execute("UPDATE ups_inventory SET assigned_pc = %s WHERE code = %s", (pc_name or None, serial))
                         detalles = f"UPS {ups['model']} (S/N: {serial}) -> {target_dest}"
-                        conn.execute(
-                            "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                            (target_dest, 'UPS Asignada', 'Stock', detalles, current_usr, "GESTION_STOCK", request.remote_addr)
-                        )
-                        assigned_count += 1
-                        assigned_types.append("UPS")
+                    assigned_types.append("UPS")
 
             if tech and assigned_count > 0:
                 from datetime import datetime
                 now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 types_str = ", ".join(set(assigned_types))
                 desc = f"Asignó {assigned_count} componente(s) [{types_str}] a {target_dest}"
-                valid_task_pc = None
-                if pc_name:
-                    chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
-                    if chk_pc: valid_task_pc = chk_pc['pc_name']
+                
+                valid_task_pc = pc_name or None
+                if not valid_task_pc and assigned_user:
+                    user_pc = conn.execute(
+                        """
+                        SELECT pc_name, fuero FROM pcs 
+                        WHERE (LOWER(last_user) LIKE %s OR LOWER(last_user) LIKE %s)
+                          AND is_active = 1 
+                          AND pc_name NOT IN ('PC Generica', 'Infraestructura', 'PC-Generica')
+                        ORDER BY updated_at DESC LIMIT 1
+                        """,
+                        (f"%{assigned_user.lower()}%", f"%\\{assigned_user.lower()}")
+                    ).fetchone()
+                    if user_pc:
+                        valid_task_pc = user_pc["pc_name"]
+                        if not assigned_fuero and user_pc.get("fuero"):
+                            assigned_fuero = user_pc["fuero"]
+
                 conn.execute(
                     "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, fuero) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    (valid_task_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, assigned_fuero or None)
+                    (valid_task_pc or "PC Generica", desc, assigned_user or tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, assigned_fuero or None)
                 )
 
             conn.commit()
@@ -724,19 +733,23 @@ def swap_failing_component():
             tech = current_technician_identity()
             current_usr = current_username() or tech
 
-            # 1. Dar de baja el componente averiado
             old_comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (old_serial,)).fetchone()
             if not old_comp:
-                return jsonify({"status": "error", "message": "El componente averiado no existe."}), 404
-
-            conn.execute(
-                "UPDATE components SET status = 'Retirado', assigned_pc = NULL WHERE serial_number = %s",
-                (old_serial,)
-            )
+                return jsonify({"status": "error", "message": f"Componente {old_serial} no encontrado."}), 404
 
             target_pc = pc_name or old_comp.get("assigned_pc") or "Desconocido"
-            user_target = old_comp.get("assigned_user")
-            fuero_target = old_comp.get("assigned_fuero")
+            user_target = old_comp.get("assigned_user") or ""
+            fuero_target = old_comp.get("assigned_fuero") or ""
+
+            # 1. Dar de baja el componente averiado (Scrap)
+            conn.execute(
+                """
+                UPDATE components
+                SET status = 'Retirado', assigned_pc = NULL, updated_at = NOW()
+                WHERE serial_number = %s
+                """,
+                (old_serial,)
+            )
 
             detalles_baja = f"Retirado por falla: {old_comp['component_type']} {old_comp['brand_model']} (S/N: {old_serial}). Motivo: {retire_reason}"
             conn.execute(
@@ -773,13 +786,27 @@ def swap_failing_component():
                 from datetime import datetime
                 now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 desc = f"Reemplazo por Falla: Se retiró {old_comp['component_type']} (S/N: {old_serial}) [{retire_reason}]{new_comp_desc}"
-                valid_task_pc = None
-                if target_pc and target_pc != 'Desconocido':
-                    chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (target_pc,)).fetchone()
-                    if chk_pc: valid_task_pc = chk_pc['pc_name']
+                
+                valid_task_pc = target_pc if target_pc and target_pc != 'Desconocido' else None
+                if not valid_task_pc and user_target:
+                    user_pc = conn.execute(
+                        """
+                        SELECT pc_name, fuero FROM pcs 
+                        WHERE (LOWER(last_user) LIKE %s OR LOWER(last_user) LIKE %s)
+                          AND is_active = 1 
+                          AND pc_name NOT IN ('PC Generica', 'Infraestructura', 'PC-Generica')
+                        ORDER BY updated_at DESC LIMIT 1
+                        """,
+                        (f"%{user_target.lower()}%", f"%\\{user_target.lower()}")
+                    ).fetchone()
+                    if user_pc:
+                        valid_task_pc = user_pc["pc_name"]
+                        if not fuero_target and user_pc.get("fuero"):
+                            fuero_target = user_pc["fuero"]
+
                 conn.execute(
                     "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, fuero) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    (valid_task_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, fuero_target)
+                    (valid_task_pc or "PC Generica", desc, user_target or tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, fuero_target or None)
                 )
 
             conn.commit()

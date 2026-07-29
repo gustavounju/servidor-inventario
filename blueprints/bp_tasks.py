@@ -151,6 +151,27 @@ def _decorate_visor_task(row):
     task = dict(row)
     if "pc_fuero" in task:
         task["fuero"] = task.pop("pc_fuero") or task.get("fuero")
+
+    # Fallback de usuario a solicitar si last_user no vino de la tabla pcs
+    if not task.get("last_user"):
+        task["last_user"] = task.get("solicitante") or ""
+
+    # Si pc_name es vacía o genérica pero tenemos coincidencia de PC por usuario solicitante
+    matched_pcs = task.get("matched_pcs") or []
+    if (not task.get("pc_name") or _is_generic_pc_name(task.get("pc_name"))) and matched_pcs:
+        first_match = matched_pcs[0]
+        task["display_pc_name"] = first_match.get("pc_name")
+        if not task.get("fuero") or task.get("fuero") in ("Desconocido", "Sin Fuero"):
+            task["fuero"] = first_match.get("fuero")
+        if not task.get("last_user") or task.get("last_user") == task.get("solicitante"):
+            task["last_user"] = first_match.get("last_user") or task.get("solicitante")
+    else:
+        task["display_pc_name"] = task.get("pc_name") or "PC GENERICA"
+
+    # Limpiar fuero ambiguo
+    if task.get("fuero") in ("Desconocido", "Sin Fuero"):
+        task["fuero"] = ""
+
     created_at = _coerce_task_datetime_for_display(task.get("created_at"))
     completed_at = _coerce_task_datetime_for_display(task.get("completed_at"))
     task["created_at"] = created_at

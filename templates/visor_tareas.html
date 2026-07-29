@@ -252,11 +252,11 @@
                                         {{ task.created_at_time or '--:--' }}
                                     </td>
                                     <td>
-                                        <div><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></div>
-                                        {% if task.last_user %}
-                                        <div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">{{ task.last_user }}</div>
+                                        <div><span class="pc-badge">{{ task.display_pc_name or task.pc_name or 'GENERICA' }}</span></div>
+                                        {% if task.last_user or task.solicitante %}
+                                        <div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">{{ task.last_user or task.solicitante }}</div>
                                         {% endif %}
-                                        {% if task.fuero %}
+                                        {% if task.fuero and task.fuero not in ('Desconocido', 'Sin Fuero') %}
                                         <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                                             <i class="bi bi-building me-1"></i>{{ task.fuero }}
                                         </div>
@@ -345,11 +345,11 @@
                             <tr id="task-row-{{ task.id }}" style="background: rgba(255,255,255,0.01);">
                                 <td class="text-muted small font-mono" style="border-left: 4px solid var(--color-warning); position: relative;">{{ task.created_at_fmt or '--:--' }}</td>
                                 <td>
-                                    <div><span class="pc-badge">{{ task.pc_name or 'GENERICA' }}</span></div>
-                                    {% if task.last_user %}
-                                    <div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">{{ task.last_user }}</div>
+                                    <div><span class="pc-badge">{{ task.display_pc_name or task.pc_name or 'GENERICA' }}</span></div>
+                                    {% if task.last_user or task.solicitante %}
+                                    <div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">{{ task.last_user or task.solicitante }}</div>
                                     {% endif %}
-                                    {% if task.fuero %}
+                                    {% if task.fuero and task.fuero not in ('Desconocido', 'Sin Fuero') %}
                                     <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                                         <i class="bi bi-building me-1"></i>{{ task.fuero }}
                                     </div>
@@ -413,11 +413,11 @@
                             <tr id="task-row-{{ task.id }}">
                                 <td style="width: 110px;" class="text-muted small font-mono">{{ task.created_at_fmt or '--:--' }}</td>
                                 <td style="width: 180px;">
-                                    <div><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.pc_name or 'GENERICA' }}</span></div>
-                                    {% if task.last_user %}
-                                    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">{{ task.last_user }}</div>
+                                    <div><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.display_pc_name or task.pc_name or 'GENERICA' }}</span></div>
+                                    {% if task.last_user or task.solicitante %}
+                                    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">{{ task.last_user or task.solicitante }}</div>
                                     {% endif %}
-                                    {% if task.fuero %}
+                                    {% if task.fuero and task.fuero not in ('Desconocido', 'Sin Fuero') %}
                                     <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                                         <i class="bi bi-building me-1"></i>{{ task.fuero }}
                                     </div>
@@ -969,9 +969,9 @@
                 <tr id="task-row-${task.id}" style="background: rgba(255,255,255,0.01);">
                     <td class="text-muted small font-mono" style="border-left: 4px solid ${task.estado === 'Hecha' ? 'var(--color-stable)' : (task.estado === 'En Curso' ? 'var(--color-warning)' : 'var(--border-color)')}; position: relative;">${task.created_at_time || '--:--'}</td>
                     <td>
-                        <div><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></div>
-                        ${task.last_user ? `<div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">${task.last_user}</div>` : ''}
-                        ${task.fuero ? `
+                        <div><span class="pc-badge">${task.display_pc_name || task.pc_name || 'GENERICA'}</span></div>
+                        ${(task.last_user || task.solicitante) ? `<div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">${task.last_user || task.solicitante}</div>` : ''}
+                        ${(task.fuero && task.fuero !== 'Desconocido' && task.fuero !== 'Sin Fuero') ? `
                         <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                             <i class="bi bi-building me-1"></i>${task.fuero}
                         </div>
@@ -1033,9 +1033,9 @@
                 <tr style="background: rgba(255,255,255,0.01);">
                     <td class="text-muted small font-mono" style="border-left: 4px solid var(--color-warning); position: relative;">${task.created_at_fmt || '--:--'}</td>
                     <td>
-                        <div><span class="pc-badge">${task.pc_name || 'GENERICA'}</span></div>
-                        ${task.last_user ? `<div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">${task.last_user}</div>` : ''}
-                        ${task.fuero ? `
+                        <div><span class="pc-badge">${task.display_pc_name || task.pc_name || 'GENERICA'}</span></div>
+                        ${(task.last_user || task.solicitante) ? `<div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">${task.last_user || task.solicitante}</div>` : ''}
+                        ${(task.fuero && task.fuero !== 'Desconocido' && task.fuero !== 'Sin Fuero') ? `
                         <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                             <i class="bi bi-building me-1"></i>${task.fuero}
                         </div>
@@ -1092,9 +1092,9 @@
                 <tr>
                     <td style="width: 110px;" class="text-muted small font-mono">${task.created_at_fmt || '--:--'}</td>
                     <td style="width: 180px;">
-                        <div><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.pc_name || 'GENERICA'}</span></div>
-                        ${task.last_user ? `<div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">${task.last_user}</div>` : ''}
-                        ${task.fuero ? `
+                        <div><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.display_pc_name || task.pc_name || 'GENERICA'}</span></div>
+                        ${(task.last_user || task.solicitante) ? `<div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">${task.last_user || task.solicitante}</div>` : ''}
+                        ${(task.fuero && task.fuero !== 'Desconocido' && task.fuero !== 'Sin Fuero') ? `
                         <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                             <i class="bi bi-building me-1"></i>${task.fuero}
                         </div>
