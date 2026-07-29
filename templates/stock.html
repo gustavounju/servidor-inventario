@@ -347,8 +347,8 @@
                                 <label class="form-label small text-muted mb-1" style="font-size:0.75rem;">Fuero / Área (Autocompletado de AD o editable):</label>
                                 <input type="text" id="selectedFueroInput" list="fueroAutocompleteList" class="form-control form-control-sm bg-dark text-info border-secondary font-monospace" placeholder="Seleccionar o escribir Fuero..." autocomplete="off">
                                 <datalist id="fueroAutocompleteList">
-                                    {% if fueros %}
-                                    {% for f in fueros %}
+                                    {% if stock_fueros %}
+                                    {% for f in stock_fueros %}
                                     <option value="{{ f }}"></option>
                                     {% endfor %}
                                     {% endif %}

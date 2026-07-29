@@ -333,7 +333,7 @@ def stock_view():
         stock_components = []
         fueros = []
 
-    return render_template("stock.html", pcs=pcs, ad_users=ad_users, stock_components=stock_components, fueros=fueros)
+    return render_template("stock.html", pcs=pcs, ad_users=ad_users, stock_components=stock_components, stock_fueros=fueros)
 
 @bp_stock.route("/api/components/stock_available", methods=["GET"])
 def get_available_stock_components():

@@ -1,6 +1,6 @@
 <div id="dashboardTableRegion">
         <datalist id="fueroOptions">
-            {% for name in fueros.values()|unique|sort %}
+            {% for name in (fueros.values() if fueros is mapping else fueros)|unique|sort %}
             <option value="{{ name }}">
             {% endfor %}
         </datalist>

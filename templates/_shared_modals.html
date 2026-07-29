@@ -167,7 +167,7 @@
                                             <span class="input-group-text" style=" border-color: var(--border-color); color: var(--text-muted); border-right: none;"><i class="bi bi-geo-alt"></i></span>
                                             <select name="fuero" class="form-select bg-dark text-white" style="border-color: var(--border-color); border-left: none; font-size: 0.9rem;">
                                                 <option value="">-- No Especificado --</option>
-                                                {% for name in fueros.values()|unique|sort %}
+                                                {% for name in (fueros.values() if fueros is mapping else fueros)|unique|sort %}
                                                 <option value="{{ name }}">{{ name }}</option>
                                                 {% endfor %}
                                             </select>
@@ -554,7 +554,7 @@
                                     <label class="um-label">Fuero / Área</label>
                                     <select name="fuero" id="editFuero" class="form-select form-select-sm bg-dark text-white border-secondary">
                                         <option value="">-- Sin Fuero --</option>
-                                        {% for name in fueros.values()|unique|sort %}
+                                        {% for name in (fueros.values() if fueros is mapping else fueros)|unique|sort %}
                                         <option value="{{ name }}">{{ name }}</option>
                                         {% endfor %}
                                     </select>
@@ -1687,7 +1687,7 @@
                             <label class="form-label fw-bold">Fuero / Ubicación</label>
                             <select name="fuero" id="printer_fuero" class="form-select shadow-sm">
                                 <option value="">-- Sin Fuero Oculto --</option>
-                                {% for name in fueros.values()|unique|sort %}
+                                {% for name in (fueros.values() if fueros is mapping else fueros)|unique|sort %}
                                 <option value="{{ name }}">{{ name }}</option>
                                 {% endfor %}
                             </select>
