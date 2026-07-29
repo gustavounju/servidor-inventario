@@ -93,7 +93,7 @@ MODULE_DEFINITIONS = [
     },
     {
         "key": "funcionario",
-        "label": "Funcionario (Stock)",
+        "label": "Gestión Stock",
         "endpoint": "stock.stock_view",
         "icon": "bi-box-seam-fill",
         "active_prefixes": ["stock."],
@@ -787,10 +787,12 @@ def required_permission_for_endpoint(endpoint=None):
 
     mobile_allowed_stock_endpoints = {
         "stock.get_component", 
-        "stock.add_component", 
         "stock.assign_component", 
         "stock.return_component",
         "stock.list_suppliers",
+        "stock.create_scan_session",
+        "stock.push_scan_session_barcode",
+        "stock.poll_scan_session",
         "tasks.get_task_actions",
         "tasks.add_task_action"
     }

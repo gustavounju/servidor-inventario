@@ -291,8 +291,23 @@ def list_suppliers():
 @bp_stock.route("/api/components/add", methods=["POST"])
 def add_component():
     try:
+        from utils.auth import current_user, has_permission
+        user = current_user()
+        if not (user.get("is_superuser") or user.get("role") in ["administrador", "funcionario"] or has_permission("funcionario") or has_permission("can_manage_stock")):
+            return jsonify({"status": "error", "message": "Acceso denegado: Solo los usuarios con el permiso 'Gestión Stock' pueden cargar nuevos remitos."}), 403
+
         data = request.json or {}
-        serial = (data.get("serial_number") or "").strip()
+        single_serial = (data.get("serial_number") or "").strip()
+        serials_input = data.get("serials") or data.get("serial_numbers") or []
+
+        if isinstance(serials_input, str):
+            serials_input = [s.strip() for s in serials_input.replace(',', '\n').split('\n') if s.strip()]
+        elif not isinstance(serials_input, list):
+            serials_input = []
+
+        if not serials_input and single_serial:
+            serials_input = [single_serial]
+
         ctype = (data.get("component_type") or "").strip()
         model = (data.get("brand_model") or "").strip()
         supplier = (data.get("supplier_name") or data.get("supplier") or "").strip()
@@ -300,7 +315,7 @@ def add_component():
         oc_num = (data.get("oc_number") or "").strip()
         assigned_user = (data.get("assigned_user") or "").strip()
         assigned_fuero = (data.get("assigned_fuero") or "").strip()
-        quantity = int(data.get("quantity", 1))
+        quantity = max(1, int(data.get("quantity", 1)))
 
         if not ctype:
             return jsonify({"status": "error", "message": "Falta indicar el tipo de componente"}), 400
@@ -318,11 +333,28 @@ def add_component():
             status = 'Asignado' if (assigned_user or assigned_fuero) else 'Stock'
             added_serials = []
 
-            for _ in range(max(1, quantity)):
-                curr_serial = serial
+            # Filtrar y validar códigos de serie recibidos (limitado a la cantidad indicada)
+            provided_serials = [s.strip() for s in serials_input[:quantity] if s and s.strip()]
+
+            # Verificar duplicados dentro del mismo envío
+            if len(provided_serials) != len(set(provided_serials)):
+                return jsonify({"status": "error", "message": "Existen códigos de barras / N° de serie duplicados en la lista ingresada."}), 400
+
+            # Verificar duplicados contra la base de datos
+            for s in provided_serials:
+                existing = conn.execute("SELECT id FROM components WHERE serial_number = %s", (s,)).fetchone()
+                if existing:
+                    return jsonify({"status": "error", "message": f"El código de barras / N° de Serie '{s}' ya existe registrado en la base de datos."}), 400
+
+            for i in range(quantity):
+                curr_serial = provided_serials[i] if i < len(provided_serials) else ""
                 is_auto = 0
-                if not curr_serial or quantity > 1:
-                    curr_serial = generate_internal_serial(ctype)
+                if not curr_serial:
+                    while True:
+                        curr_serial = generate_internal_serial(ctype)
+                        chk = conn.execute("SELECT id FROM components WHERE serial_number = %s", (curr_serial,)).fetchone()
+                        if not chk and curr_serial not in added_serials:
+                            break
                     is_auto = 1
 
                 if ctype.upper() in ('UPS', 'EQUIPO UPS'):
@@ -351,10 +383,135 @@ def add_component():
                 desc = f"Alta de Stock: {len(added_serials)}x {ctype} {model} (Remito: {invoice or 'N/A'}, Proveedor: {supplier or 'N/A'})"
                 conn.execute(
                     "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, fuero) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    ('Stock (Ingreso)', desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, assigned_fuero or None)
+                    (None, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, assigned_fuero or None)
                 )
             conn.commit()
         return jsonify({"status": "success", "serials": added_serials})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_stock.route("/api/components/retire", methods=["POST"])
+def retire_component():
+    try:
+        data = request.json or {}
+        serial = data.get("serial_number")
+        reason = (data.get("reason") or "Baja / Retirado de servicio").strip()
+        if not serial: return jsonify({"status": "error", "message": "Falta serial"}), 400
+            
+        with get_db_connection() as conn:
+            comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial,)).fetchone()
+            if not comp: 
+                ups = conn.execute("SELECT * FROM ups_inventory WHERE code = %s", (serial,)).fetchone()
+                if not ups:
+                    return jsonify({"status": "error", "message": "Componente no existe"}), 404
+                else:
+                    old_pc = ups["assigned_pc"]
+                    conn.execute("UPDATE ups_inventory SET assigned_pc = NULL WHERE code = %s", (serial,))
+                    from utils.auth import current_username, current_technician_identity
+                    tech = current_technician_identity()
+                    detalles = f"UPS {ups['model']} (S/N: {serial}) -> Motivo: {reason}"
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                 (old_pc or 'Stock', 'UPS Retirada', detalles, 'Retirado', current_username() or tech, "BAJA_COMPONENTE", request.remote_addr))
+                    conn.commit()
+                    return jsonify({"status": "success"})
+                    
+            old_status = comp.get("status") or "Stock"
+            old_pc = comp.get("assigned_pc")
+            conn.execute(
+                "UPDATE components SET status = 'Retirado', assigned_pc = NULL, assigned_user = NULL, assigned_fuero = NULL WHERE serial_number = %s",
+                (serial,)
+            )
+            from utils.auth import current_username, current_technician_identity
+            tech = current_technician_identity()
+            detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Motivo: {reason}"
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         (old_pc or 'Stock', 'COMPONENT_RETIRED', old_status, detalles, current_username() or tech, "BAJA_COMPONENTE", request.remote_addr))
+            
+            if tech:
+                from datetime import datetime
+                now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                desc = f"Baja / Retiro de servicio: {comp['component_type']} {comp['brand_model']} (S/N: {serial})"
+                valid_task_pc = None
+                if old_pc and old_pc != "Unknown":
+                    chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (old_pc,)).fetchone()
+                    if chk_pc: valid_task_pc = chk_pc['pc_name']
+                conn.execute(
+                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (valid_task_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
+                )
+
+            conn.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_stock.route("/api/components/retire_bulk", methods=["POST"])
+def retire_components_bulk():
+    try:
+        data = request.json or {}
+        serials = data.get("serials", [])
+        reason = (data.get("reason") or "Baja en bloque / Retirado de servicio").strip()
+        if not serials or not isinstance(serials, list):
+            return jsonify({"status": "error", "message": "Seleccione al menos un componente para dar de baja."}), 400
+
+        from utils.auth import current_username, current_technician_identity
+        tech = current_technician_identity()
+        retired_count = 0
+
+        with get_db_connection() as conn:
+            for serial in serials:
+                comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial,)).fetchone()
+                if comp:
+                    old_status = comp.get("status") or "Stock"
+                    old_pc = comp.get("assigned_pc")
+                    conn.execute(
+                        "UPDATE components SET status = 'Retirado', assigned_pc = NULL, assigned_user = NULL, assigned_fuero = NULL WHERE serial_number = %s",
+                        (serial,)
+                    )
+                    retired_count += 1
+                    detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Motivo: {reason}"
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                 (old_pc or 'Stock', 'COMPONENT_RETIRED', old_status, detalles, current_username() or tech, "BAJA_COMPONENTE", request.remote_addr))
+            
+            if tech and retired_count > 0:
+                from datetime import datetime
+                now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                desc = f"Baja de componentes en bloque: {retired_count} ítem(s) retirados"
+                conn.execute(
+                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (None, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
+                )
+
+            conn.commit()
+        return jsonify({"status": "success", "count": retired_count})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_stock.route("/api/components/restore_stock", methods=["POST"])
+def restore_component():
+    try:
+        data = request.json or {}
+        serial = data.get("serial_number")
+        if not serial: return jsonify({"status": "error", "message": "Falta serial"}), 400
+
+        with get_db_connection() as conn:
+            comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial,)).fetchone()
+            if not comp:
+                return jsonify({"status": "error", "message": "Componente no existe"}), 404
+
+            conn.execute(
+                "UPDATE components SET status = 'Stock', assigned_pc = NULL, assigned_user = NULL, assigned_fuero = NULL WHERE serial_number = %s",
+                (serial,)
+            )
+
+            from utils.auth import current_username, current_technician_identity
+            tech = current_technician_identity()
+            detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Reactivado a Stock"
+            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                         ('Stock', 'COMPONENT_RESTORED', 'Retirado', detalles, current_username() or tech, "REACTIVACION_STOCK", request.remote_addr))
+
+            conn.commit()
+        return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -421,16 +578,18 @@ def assign_component():
                 from datetime import datetime
                 now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 desc = f"Asignó componente ({comp['component_type']} {comp['brand_model']}) a {assigned_user or pc_name or 'Fuero'} ({assigned_fuero or ''})"
+                valid_task_pc = None
+                if pc_name:
+                    chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+                    if chk_pc: valid_task_pc = chk_pc['pc_name']
                 conn.execute(
                     "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, fuero) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    (pc_name or target_dest, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, assigned_fuero or None)
+                    (valid_task_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, assigned_fuero or None)
                 )
 
             conn.commit()
 
         return jsonify({"status": "success", "resolved_fuero": assigned_fuero})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -463,9 +622,13 @@ def return_component():
                         from datetime import datetime
                         now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         desc = f"Escáner: Retiró componente y devolvió a Stock (UPS {ups['model']})"
+                        valid_task_pc = None
+                        if old_pc and old_pc != "Unknown":
+                            chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (old_pc,)).fetchone()
+                            if chk_pc: valid_task_pc = chk_pc['pc_name']
                         conn.execute(
                             "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                            (old_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
+                            (valid_task_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
                         )
                     conn.commit()
                     return jsonify({"status": "success"})
@@ -484,9 +647,13 @@ def return_component():
                 from datetime import datetime
                 now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 desc = f"Escáner: Retiró componente y devolvió a Stock ({comp['component_type']} {comp['brand_model']})"
+                valid_task_pc = None
+                if old_pc and old_pc != "Unknown":
+                    chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (old_pc,)).fetchone()
+                    if chk_pc: valid_task_pc = chk_pc['pc_name']
                 conn.execute(
                     "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    (old_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
+                    (valid_task_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech)
                 )
 
             conn.commit()
@@ -567,6 +734,74 @@ def delete_components_bulk():
                         deleted_count += 1
 
         return jsonify({"status": "success", "message": f"{deleted_count} componente(s) eliminado(s) correctamente."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# Direct Mobile Scan Session Storage
+ACTIVE_SCAN_SESSIONS = {}
+
+@bp_stock.route("/api/scan_session/create", methods=["POST"])
+def create_scan_session():
+    try:
+        import random, time
+        session_id = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=6))
+        ACTIVE_SCAN_SESSIONS[session_id] = {
+            "created_at": time.time(),
+            "barcodes": []
+        }
+        now = time.time()
+        for k in list(ACTIVE_SCAN_SESSIONS.keys()):
+            if now - ACTIVE_SCAN_SESSIONS[k]["created_at"] > 3600:
+                ACTIVE_SCAN_SESSIONS.pop(k, None)
+
+        server_host = request.host
+        mobile_url = f"http://{server_host}/mobile/live_scan?session={session_id}"
+        return jsonify({
+            "status": "success",
+            "session_id": session_id,
+            "mobile_url": mobile_url
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_stock.route("/api/scan_session/push", methods=["POST"])
+def push_scan_session_barcode():
+    try:
+        data = request.json or {}
+        session_id = (data.get("session_id") or "").strip().upper()
+        barcode = (data.get("barcode") or "").strip()
+
+        if not session_id or session_id not in ACTIVE_SCAN_SESSIONS:
+            return jsonify({"status": "error", "message": "La sesión no existe o expiró. Inicie una nueva desde la PC."}), 404
+
+        if not barcode:
+            return jsonify({"status": "error", "message": "Código vacío."}), 400
+
+        ACTIVE_SCAN_SESSIONS[session_id]["barcodes"].append(barcode)
+        return jsonify({
+            "status": "success",
+            "barcode": barcode,
+            "total": len(ACTIVE_SCAN_SESSIONS[session_id]["barcodes"])
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_stock.route("/api/scan_session/poll/<session_id>", methods=["GET"])
+def poll_scan_session(session_id):
+    try:
+        session_id = session_id.strip().upper()
+        if session_id not in ACTIVE_SCAN_SESSIONS:
+            return jsonify({"status": "expired", "barcodes": []})
+
+        last_index = int(request.args.get("last_index", 0))
+        all_barcodes = ACTIVE_SCAN_SESSIONS[session_id]["barcodes"]
+        new_barcodes = all_barcodes[last_index:]
+        return jsonify({
+            "status": "active",
+            "new_barcodes": new_barcodes,
+            "total": len(all_barcodes)
+        })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 

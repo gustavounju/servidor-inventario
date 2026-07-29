@@ -22,6 +22,11 @@ def mobile_scanner_view():
         abort(403)
     return render_template("mobile_scanner.html")
 
+@bp_mobile.route("/mobile/live_scan")
+def mobile_live_scan_view():
+    session_id = request.args.get("session", "").strip().upper()
+    return render_template("mobile_live_scan.html", session_id=session_id)
+
 def _json_serializable(data):
     """Auxiliar para convertir objetos no serializables (como datetime) a string."""
     if isinstance(data, list):

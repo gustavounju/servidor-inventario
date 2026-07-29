@@ -78,8 +78,11 @@
                 <i class="bi bi-check2-square me-2"></i><strong id="bulkSelectedCount">0</strong> componente(s) seleccionado(s)
             </div>
             <div class="d-flex gap-2">
+                <button type="button" class="btn btn-warning btn-sm text-dark fw-bold" onclick="retireSelectedComponents()">
+                    <i class="bi bi-archive-fill me-1"></i>Dar de baja Seleccionados
+                </button>
                 <button type="button" class="btn btn-danger btn-sm fw-bold" onclick="deleteSelectedComponents()">
-                    <i class="bi bi-trash-fill me-1"></i>Eliminar Seleccionados
+                    <i class="bi bi-trash-fill me-1"></i>Eliminar Definitivamente
                 </button>
                 <button type="button" class="btn btn-outline-light btn-sm" onclick="clearComponentSelections()">
                     Cancelar
@@ -219,17 +222,19 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Cantidad</label>
-                                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputQuantity" value="1" min="1" max="100">
+                                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputQuantity" value="1" min="1" max="100" oninput="onQuantityChange()" onchange="onQuantityChange()">
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Número de Serie / Código de Barras</label>
-                            <input type="text" class="form-control form-control-sm font-monospace bg-dark text-white border-secondary" id="inputSerial" placeholder="Escanear o ingresar S/N de fábrica (ej: ZA12606000514)...">
+                            <div id="serialsContainer">
+                                <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Número de Serie / Código de Barras</label>
+                                <input type="text" class="form-control form-control-sm font-monospace bg-dark text-white border-secondary serial-item-input" id="inputSerial" placeholder="Escanear o ingresar S/N de fábrica (ej: ZA12606000514)..." autocomplete="off">
+                            </div>
                             <div class="form-check mt-2">
-                                <input class="form-check-input bg-dark border-secondary" type="checkbox" id="chkAutoId">
+                                <input class="form-check-input bg-dark border-secondary" type="checkbox" id="chkAutoId" onchange="toggleSerialAutoId()">
                                 <label class="form-check-label small" for="chkAutoId" style="color: #94a3b8;">
-                                    No tiene código de barras (generar ID interno automáticamente)
+                                    No tienen código de barras (generar IDs internos automáticamente)
                                 </label>
                             </div>
                         </div>
@@ -258,6 +263,43 @@
                         <button type="submit" class="btn btn-info btn-sm text-dark fw-bold"><i class="bi bi-save me-1"></i>Guardar en Stock</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Escanear desde el Celular (Mobile Scan Session) -->
+    <div class="modal fade" id="mobileScanModal" tabindex="-1" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; color: #f8fafc; box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);">
+                <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <h5 class="modal-title font-monospace fw-bold text-info"><i class="bi bi-phone-vibrate me-2"></i>Escanear desde el Celular</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeMobileScanSession()"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <p class="small text-slate-300 mb-3" style="color: #cbd5e1;">Escanee este código QR desde la cámara de su teléfono móvil para transmitir los códigos de barras en tiempo real a esta pantalla.</p>
+
+                    <div class="p-3 mb-3 d-inline-block rounded shadow" style="background: #ffffff; border: 2px solid #38bdf8;">
+                        <img id="mobileQrImg" src="" alt="QR Sesión" style="width: 180px; height: 180px; display: block;">
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="small mb-1" style="color: #94a3b8;">Código PIN de Sesión:</div>
+                        <span class="badge bg-info text-dark font-monospace fs-5 px-3 py-2" id="mobileSessionPin">------</span>
+                    </div>
+
+                    <div class="small text-truncate p-2 rounded mb-3 font-monospace" style="background: #1e293b; color: #38bdf8; border: 1px solid #334155;">
+                        <span id="mobileSessionUrl">-</span>
+                    </div>
+
+                    <div class="p-2 rounded" style="background: rgba(30, 41, 59, 0.8); border: 1px solid #334155;">
+                        <div id="mobileScanLiveStatus" class="small text-warning fw-bold">
+                            <span class="spinner-grow spinner-grow-sm text-warning me-1"></span>Esperando lecturas de código de barras desde el celular...
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" onclick="closeMobileScanSession()">Listo / Cerrar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -632,8 +674,242 @@
                 });
         }
 
+        let isMassScanMode = false;
+
+        function onQuantityChange() {
+            renderSerialInputs();
+        }
+
+        function toggleSerialAutoId() {
+            renderSerialInputs();
+        }
+
+        function toggleMassScanMode() {
+            isMassScanMode = !isMassScanMode;
+            renderSerialInputs();
+        }
+
+        function handleSerialKeyDown(e, currentIndex, totalItems) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const inputs = document.querySelectorAll('.serial-item-input');
+                if (currentIndex + 1 < inputs.length) {
+                    inputs[currentIndex + 1].focus();
+                    inputs[currentIndex + 1].select();
+                } else {
+                    const submitBtn = document.querySelector('#addStockForm button[type="submit"]');
+                    if (submitBtn) submitBtn.focus();
+                }
+            }
+        }
+
+        function syncMassScanToInputs() {
+            const textarea = document.getElementById('inputSerialsBlock');
+            if (!textarea) return;
+            const lines = textarea.value.split(/\r?\n/).map(s => s.trim());
+            const inputs = document.querySelectorAll('.serial-item-input');
+            inputs.forEach((inp, idx) => {
+                if (idx < lines.length && lines[idx]) {
+                    inp.value = lines[idx];
+                }
+            });
+        }
+
+        function syncInputsToMassScan() {
+            const textarea = document.getElementById('inputSerialsBlock');
+            if (!textarea) return;
+            const inputs = document.querySelectorAll('.serial-item-input');
+            const vals = Array.from(inputs).map(i => i.value.trim());
+            textarea.value = vals.join('\n');
+        }
+
+        function makeInternalSerialCode(typeStr, offset = 0) {
+            const typeMap = {
+                'TECLADO': 'TEC',
+                'MOUSE': 'MOU',
+                'MONITOR': 'MON',
+                'DISCO': 'DSK',
+                'MEMORIA': 'RAM',
+                'FUENTE': 'FNT',
+                'GABINETE': 'GAB',
+                'UPS': 'UPS',
+                'IMPRESORA': 'IMP',
+            };
+            const ctypeUpper = (typeStr || "OTR").trim().toUpperCase();
+            const code = typeMap[ctypeUpper] || ctypeUpper.substring(0, 3);
+            const now = new Date();
+            const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
+            const randSeq = Math.floor(1000 + Math.random() * 8999 + offset);
+            return `INT-${code}-${dateStr}-${randSeq}`;
+        }
+
+        function generateSingleAutoId(index) {
+            const compTypeEl = document.getElementById('inputType') || document.getElementById('addType');
+            const compType = compTypeEl ? compTypeEl.value : 'OTR';
+            const autoCode = makeInternalSerialCode(compType, index);
+            
+            const chkAuto = document.getElementById('chkAutoId');
+            if (chkAuto && chkAuto.checked) {
+                chkAuto.checked = false;
+                renderSerialInputs();
+            }
+
+            const qty = parseInt(document.getElementById('inputQuantity').value || 1);
+            if (qty === 1) {
+                const singleInput = document.getElementById('inputSerial');
+                if (singleInput) singleInput.value = autoCode;
+            } else {
+                if (isMassScanMode) {
+                    const blockInput = document.getElementById('inputSerialsBlock');
+                    if (blockInput) {
+                        const currentVals = blockInput.value.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
+                        if (index < currentVals.length) {
+                            currentVals[index] = autoCode;
+                        } else {
+                            currentVals.push(autoCode);
+                        }
+                        blockInput.value = currentVals.join('\n');
+                        syncMassScanToInputs();
+                    }
+                } else {
+                    const inputs = document.querySelectorAll('.serial-item-input');
+                    if (inputs && inputs[index]) {
+                        inputs[index].value = autoCode;
+                        syncInputsToMassScan();
+                    }
+                }
+            }
+        }
+
+        function generateAllEmptyAutoIds() {
+            const compTypeEl = document.getElementById('inputType') || document.getElementById('addType');
+            const compType = compTypeEl ? compTypeEl.value : 'OTR';
+            const qty = parseInt(document.getElementById('inputQuantity').value || 1);
+            
+            const chkAuto = document.getElementById('chkAutoId');
+            if (chkAuto && chkAuto.checked) {
+                chkAuto.checked = false;
+                renderSerialInputs();
+            }
+
+            if (qty === 1) {
+                const singleInput = document.getElementById('inputSerial');
+                if (singleInput && !singleInput.value.trim()) {
+                    singleInput.value = makeInternalSerialCode(compType);
+                }
+            } else {
+                const inputs = document.querySelectorAll('.serial-item-input');
+                inputs.forEach((inp, idx) => {
+                    if (!inp.value.trim()) {
+                        inp.value = makeInternalSerialCode(compType, idx);
+                    }
+                });
+                syncInputsToMassScan();
+            }
+        }
+
+        function renderSerialInputs() {
+            const qtyInput = document.getElementById('inputQuantity');
+            let qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
+            if (qty < 1) qty = 1;
+            if (qty > 100) qty = 100;
+
+            const container = document.getElementById('serialsContainer');
+            if (!container) return;
+            const isAutoId = document.getElementById('chkAutoId').checked;
+
+            if (isAutoId) {
+                container.innerHTML = `
+                    <div class="alert alert-info py-2 px-3 small mb-0 mt-1 border-secondary" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Se generará automáticamente un ID interno único para cada uno de los <strong>${qty}</strong> ítem(s) al guardar (ej: <code>MON-20260728-1234</code>).
+                    </div>
+                `;
+                return;
+            }
+
+            if (qty === 1) {
+                container.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label small fw-bold text-slate-300 mb-0" style="color: #cbd5e1;">Número de Serie / Código de Barras</label>
+                        <div class="d-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-success py-0 px-2 small" onclick="generateSingleAutoId(0)" title="Generar ID interno para este ítem"><i class="bi bi-magic me-1"></i>Auto ID</button>
+                            <button type="button" class="btn btn-sm btn-outline-warning py-0 px-2 small" onclick="openMobileScanSession()"><i class="bi bi-qr-code-scan me-1"></i>📱 Escanear con Celular</button>
+                        </div>
+                    </div>
+                    <input type="text" class="form-control form-control-sm font-monospace bg-dark text-white border-secondary serial-item-input" id="inputSerial" placeholder="Escanear, ingresar S/N o hacer clic en Auto ID..." autocomplete="off">
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-2 mt-1">
+                    <label class="form-label small fw-bold text-info mb-0">
+                        <i class="bi bi-upc-scan me-1"></i>Códigos de Barras / N° de Serie (${qty} ítems)
+                    </label>
+                    <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-sm btn-outline-success py-0 px-2 small" onclick="generateAllEmptyAutoIds()" title="Generar IDs internos automáticos en todos los renglones vacíos"><i class="bi bi-magic me-1"></i>Auto ID en Vacíos</button>
+                        <button type="button" class="btn btn-sm btn-outline-warning py-0 px-2 small" onclick="openMobileScanSession()"><i class="bi bi-qr-code-scan me-1"></i>📱 Escanear con Celular</button>
+                        <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 small" onclick="toggleMassScanMode()">
+                            <i class="bi ${isMassScanMode ? 'bi-list-ol' : 'bi-card-text'} me-1"></i>
+                            ${isMassScanMode ? 'Campos Individuales' : 'Modo Pegar en Bloque'}
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            if (isMassScanMode) {
+                html += `
+                    <textarea id="inputSerialsBlock" class="form-control form-control-sm font-monospace bg-dark text-white border-secondary mb-1" rows="4" placeholder="Escanee o pegue un código por línea...\nEj:\nZA12606000514\nZA12606000515\nZA12606000516" oninput="syncMassScanToInputs()"></textarea>
+                    <div class="form-text small text-muted" style="font-size: 0.75rem;">
+                        Escanee o pegue una lista de códigos de barras (1 por línea). Los renglones vacíos usarán ID interno automático.
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div id="serialInputsGrid" class="pe-1" style="max-height: 180px; overflow-y: auto;">
+                `;
+                for (let i = 1; i <= qty; i++) {
+                    html += `
+                        <div class="input-group input-group-sm mb-1">
+                            <span class="input-group-text bg-dark border-secondary font-monospace small" style="min-width: 75px; color: #94a3b8;">Ítem #${i}</span>
+                            <input type="text" class="form-control form-control-sm font-monospace bg-dark text-white border-secondary serial-item-input" placeholder="Escanear, escribir o Auto ID para ítem ${i}..." autocomplete="off" onkeydown="handleSerialKeyDown(event, ${i - 1}, ${qty})" oninput="syncInputsToMassScan()">
+                            <button type="button" class="btn btn-outline-secondary text-info px-2" onclick="generateSingleAutoId(${i - 1})" title="Generar ID interno para Ítem #${i}"><i class="bi bi-magic"></i> Auto ID</button>
+                        </div>
+                    `;
+                }
+                html += `
+                    </div>
+                    <div class="form-text small text-muted mt-1" style="font-size: 0.75rem;">
+                        💡 <strong>Tip:</strong> Puedes escanear algunos ítems, hacer clic en <strong>Auto ID</strong> en los que no tengan código, o usar <strong>Auto ID en Vacíos</strong>.
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
         document.getElementById('addStockForm').addEventListener('submit', (e) => {
             e.preventDefault();
+
+            let serialsList = [];
+            const isAutoId = document.getElementById('chkAutoId').checked;
+
+            if (!isAutoId) {
+                const qty = parseInt(document.getElementById('inputQuantity').value || 1);
+                if (qty > 1) {
+                    if (isMassScanMode) {
+                        const blockVal = document.getElementById('inputSerialsBlock')?.value || '';
+                        serialsList = blockVal.split(/\r?\n/).map(s => s.trim());
+                    } else {
+                        const inputs = document.querySelectorAll('.serial-item-input');
+                        serialsList = Array.from(inputs).map(inp => inp.value.trim());
+                    }
+                } else {
+                    const singleVal = document.getElementById('inputSerial')?.value.trim() || '';
+                    if (singleVal) serialsList = [singleVal];
+                }
+            }
 
             const payload = {
                 supplier_name: document.getElementById('inputSupplier').value,
@@ -642,7 +918,8 @@
                 component_type: document.getElementById('inputType').value,
                 brand_model: document.getElementById('inputModel').value,
                 quantity: document.getElementById('inputQuantity').value,
-                serial_number: document.getElementById('chkAutoId').checked ? '' : document.getElementById('inputSerial').value,
+                serials: serialsList,
+                serial_number: serialsList.length > 0 ? serialsList[0] : '',
                 assigned_user: document.getElementById('addSelectedUser').value,
                 assigned_fuero: document.getElementById('addResolvedFuero').value
             };
@@ -657,6 +934,8 @@
                 if (data.status === 'success') {
                     addStockModal.hide();
                     document.getElementById('addStockForm').reset();
+                    isMassScanMode = false;
+                    renderSerialInputs();
                     loadComponents();
                     loadStockCatalog();
                 } else {
@@ -665,6 +944,117 @@
             })
             .catch(err => alert("Error de red: " + err));
         });
+
+        // Mobile Scan Session Live Sync
+        let currentScanSessionId = null;
+        let pollScanTimer = null;
+        let lastPolledIndex = 0;
+        let mobileScanModalObj = null;
+
+        function openMobileScanSession() {
+            if (!mobileScanModalObj) {
+                mobileScanModalObj = new bootstrap.Modal(document.getElementById('mobileScanModal'));
+            }
+
+            fetch('/api/scan_session/create', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        currentScanSessionId = data.session_id;
+                        lastPolledIndex = 0;
+
+                        document.getElementById('mobileSessionPin').textContent = data.session_id;
+                        document.getElementById('mobileSessionUrl').textContent = data.mobile_url;
+                        
+                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(data.mobile_url)}`;
+                        document.getElementById('mobileQrImg').src = qrUrl;
+
+                        document.getElementById('mobileScanLiveStatus').innerHTML = `
+                            <span class="spinner-grow spinner-grow-sm text-warning me-1"></span>
+                            Esperando lecturas desde el celular (Sesión #${data.session_id})...
+                        `;
+
+                        mobileScanModalObj.show();
+                        startPollingMobileScan();
+                    } else {
+                        alert("Error al iniciar sesión móvil: " + data.message);
+                    }
+                })
+                .catch(err => alert("Error de red: " + err));
+        }
+
+        function startPollingMobileScan() {
+            stopPollingMobileScan();
+            pollScanTimer = setInterval(() => {
+                if (!currentScanSessionId) return;
+                fetch(`/api/scan_session/poll/${currentScanSessionId}?last_index=${lastPolledIndex}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'active' && data.new_barcodes && data.new_barcodes.length > 0) {
+                            data.new_barcodes.forEach(code => {
+                                populateScannedBarcodeFromMobile(code);
+                            });
+                            lastPolledIndex += data.new_barcodes.length;
+                            document.getElementById('mobileScanLiveStatus').innerHTML = `
+                                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                ¡Recibidos <strong>${data.total}</strong> código(s) de barras desde el celular!
+                            `;
+                        }
+                    })
+                    .catch(err => console.error("Error polling scan session:", err));
+            }, 1200);
+        }
+
+        function stopPollingMobileScan() {
+            if (pollScanTimer) {
+                clearInterval(pollScanTimer);
+                pollScanTimer = null;
+            }
+        }
+
+        function closeMobileScanSession() {
+            stopPollingMobileScan();
+        }
+
+        function populateScannedBarcodeFromMobile(code) {
+            const qty = parseInt(document.getElementById('inputQuantity').value || 1);
+            
+            const chkAuto = document.getElementById('chkAutoId');
+            if (chkAuto && chkAuto.checked) {
+                chkAuto.checked = false;
+                renderSerialInputs();
+            }
+
+            if (qty === 1) {
+                const singleInput = document.getElementById('inputSerial');
+                if (singleInput) singleInput.value = code;
+            } else {
+                if (isMassScanMode) {
+                    const blockInput = document.getElementById('inputSerialsBlock');
+                    if (blockInput) {
+                        const currentVals = blockInput.value.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
+                        currentVals.push(code);
+                        blockInput.value = currentVals.join('\n');
+                        syncMassScanToInputs();
+                    }
+                } else {
+                    const inputs = document.querySelectorAll('.serial-item-input');
+                    let filled = false;
+                    for (let inp of inputs) {
+                        if (!inp.value.trim()) {
+                            inp.value = code;
+                            syncInputsToMassScan();
+                            filled = true;
+                            break;
+                        }
+                    }
+                    if (!filled && inputs.length > 0) {
+                        inputs[inputs.length - 1].value = code;
+                        syncInputsToMassScan();
+                    }
+                }
+            }
+        }
 
         function openAssignModal(serial, type) {
             currentSerialToAssign = serial;
@@ -715,8 +1105,81 @@
             .catch(err => alert("Error de red: " + err));
         }
 
+        function retireComponent(serial) {
+            const reason = prompt(`Dar de baja / Retirar componente (${serial}):\nIngrese el motivo (ej: Falla técnica, Rezago, Obsoleto, Scrap...):`, "Falla técnica / Retirado de servicio");
+            if (reason === null) return;
+
+            fetch('/api/components/retire', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serial_number: serial, reason: reason })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('filterStatus').value = 'Retirado';
+                    loadComponents();
+                    loadStockCatalog();
+                    alert(`Componente (${serial}) dado de baja con éxito.\n\nSe cambió la vista a 'Retirados' para visualizarlo.`);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => alert("Error de red: " + err));
+        }
+
+        function restoreComponent(serial) {
+            if (!confirm(`¿Reactivar componente (${serial}) y regresarlo a 'En Stock'?`)) return;
+
+            fetch('/api/components/restore_stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serial_number: serial })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('filterStatus').value = 'Stock';
+                    loadComponents();
+                    loadStockCatalog();
+                    alert(`¡Componente (${serial}) reactivado con éxito!\n\nSe ha cambiado automáticamente la vista a 'En Stock' para que puedas visualizarlo.`);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => alert("Error de red: " + err));
+        }
+
+        function retireSelectedComponents() {
+            const checked = document.querySelectorAll('.comp-checkbox:checked');
+            const serials = Array.from(checked).map(cb => cb.value);
+            if (serials.length === 0) return;
+
+            const reason = prompt(`Dar de baja los ${serials.length} componentes seleccionados:\nIngrese motivo o destino (ej: Rezago, Falla técnica...):`, "Baja en bloque / Retirado de servicio");
+            if (reason === null) return;
+
+            fetch('/api/components/retire_bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serials: serials, reason: reason })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    clearComponentSelections();
+                    document.getElementById('filterStatus').value = 'Retirado';
+                    loadComponents();
+                    loadStockCatalog();
+                    alert(`Se dieron de baja los ${serials.length} componentes seleccionados.\n\nSe cambió la vista a 'Retirados' para visualizarlos.`);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => alert("Error de red: " + err));
+        }
+
         function deleteComponent(serial) {
-            if (!confirm('¿Eliminar definitivamente este componente (' + serial + ')?')) return;
+            if (!confirm('¿Eliminar DEFINITIVAMENTE este componente (' + serial + ') de la base de datos?\n\n(Tip: Si solo desea sacarlo de uso, use "Dar de baja")')) return;
 
             fetch('/api/components/delete', {
                 method: 'POST',
@@ -768,7 +1231,7 @@
             const serials = Array.from(checked).map(cb => cb.value);
             if (serials.length === 0) return;
 
-            if (!confirm(`¿Está seguro de eliminar definitivamente los ${serials.length} componentes seleccionados?`)) return;
+            if (!confirm(`¿Está seguro de ELIMINAR DEFINITIVAMENTE los ${serials.length} componentes seleccionados de la base de datos?`)) return;
 
             fetch('/api/components/delete_bulk', {
                 method: 'POST',
@@ -825,21 +1288,25 @@
                     filtered.forEach(item => {
                         let statusHtml = '';
                         let actionBtn = '';
+                        const safeSerial = item.serial_number.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        const safeType = item.component_type.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+                        let retireBtn = `<button class="btn btn-sm btn-outline-warning py-0 px-1 ms-1" onclick="retireComponent('${safeSerial}')" title="Dar de baja / Retirar de servicio"><i class="bi bi-archive"></i></button>`;
+                        let deleteBtn = `<button class="btn btn-sm btn-outline-danger py-0 px-1 ms-1" onclick="deleteComponent('${safeSerial}')" title="Eliminar definitivamente de la Base de Datos"><i class="bi bi-trash"></i></button>`;
 
                         if (item.status === 'Stock') {
                             statusHtml = `<span class="stock-badge status-stock">✓ En Stock</span>`;
-                            actionBtn = `<button class="btn btn-sm btn-primary py-0 px-2" onclick="openAssignModal('${item.serial_number}', '${item.component_type}')"><i class="bi bi-person-plus me-1"></i>Asignar</button>`;
+                            actionBtn = `<button class="btn btn-sm btn-primary py-0 px-2" onclick="openAssignModal('${safeSerial}', '${safeType}')"><i class="bi bi-person-plus me-1"></i>Asignar</button> ${retireBtn} ${deleteBtn}`;
                         } else if (item.status === 'Asignado') {
                             statusHtml = `<span class="stock-badge status-assigned">👤 Asignado</span>`;
-                            actionBtn = `<button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="openAssignModal('${item.serial_number}', '${item.component_type}')">Reasignar</button>`;
+                            actionBtn = `<button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="openAssignModal('${safeSerial}', '${safeType}')">Reasignar</button> ${retireBtn} ${deleteBtn}`;
                         } else if (item.status === 'Installed') {
                             statusHtml = `<span class="stock-badge status-installed">⚙ Instalado</span>`;
+                            actionBtn = `${retireBtn} ${deleteBtn}`;
                         } else if (item.status === 'Retirado') {
                             statusHtml = `<span class="stock-badge status-retired">✕ Retirado</span>`;
+                            actionBtn = `<button class="btn btn-sm btn-outline-success py-0 px-2" onclick="restoreComponent('${safeSerial}')" title="Reactivar y volver a Stock"><i class="bi bi-arrow-counterclockwise me-1"></i>Volver a Stock</button> ${deleteBtn}`;
                         }
-
-                        let deleteBtn = `<button class="btn btn-sm btn-outline-danger py-0 px-1 ms-1" onclick="deleteComponent('${item.serial_number}')" title="Eliminar definitivamente"><i class="bi bi-trash"></i></button>`;
-                        actionBtn = actionBtn === '' ? deleteBtn : actionBtn + ' ' + deleteBtn;
 
                         let assignedInfo = '-';
                         if (item.assigned_pc) {
@@ -859,7 +1326,6 @@
                             `<span class="font-monospace fw-bold" style="font-size:0.85rem;">${item.serial_number}</span>`;
 
                         const tr = document.createElement('tr');
-                        const safeSerial = item.serial_number.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                         tr.innerHTML = `
                             <td class="text-center">
                                 <input type="checkbox" class="form-check-input comp-checkbox bg-dark border-secondary" value="${safeSerial}" onchange="updateBulkSelectionUI()">

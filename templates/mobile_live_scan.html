@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner Móvil - Poder Judicial</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        .card-dark { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+        #videoContainer { position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #000; min-height: 250px; }
+        #video { width: 100%; height: 100%; object-fit: cover; }
+        .scan-laser { position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: #38bdf8; box-shadow: 0 0 12px #38bdf8; }
+    </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
+</head>
+<body class="p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-info mb-0"><i class="bi bi-phone-vibrate me-2"></i>Escáner de Remitos</h5>
+        <span class="badge bg-success" id="sessionBadge">Sesión #{{ session_id }}</span>
+    </div>
+
+    <!-- Active Status Card -->
+    <div class="card card-dark p-3 mb-3 text-center">
+        <div class="small text-muted mb-1">Vinculado con la pantalla de Carga de Remitos (PC)</div>
+        <div class="fw-bold text-info" id="statusText">🟢 Listo para escanear componentes</div>
+    </div>
+
+    <!-- Camera Viewport -->
+    <div id="videoContainer" class="mb-3">
+        <video id="video" playsinline></video>
+        <div class="scan-laser"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="d-grid gap-2 mb-3">
+        <button class="btn btn-warning btn-lg text-dark fw-bold shadow-sm" onclick="openExternalScanner()">
+            <i class="bi bi-phone-vibrate me-2"></i>Usar App Externa (Recomendada)
+        </button>
+
+        <button id="btnStartCamera" class="btn btn-outline-info text-white font-weight-bold" onclick="startCamera()">
+            <i class="bi bi-camera-fill me-2"></i>Tomar Foto / Cámara Web
+        </button>
+        <button id="btnStopCamera" class="btn btn-outline-danger d-none" onclick="stopCamera()">
+            <i class="bi bi-stop-circle me-1"></i>Detener Cámara en Vivo
+        </button>
+        
+        <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" onchange="scanFromFile(this)">
+    </div>
+
+    <!-- Manual Barcode Input -->
+    <div class="card card-dark p-3 mb-3">
+        <label class="form-label small fw-bold text-slate-300">Escribir / Pegar Código de Barras:</label>
+        <div class="input-group mb-2">
+            <input type="text" id="manualCode" class="form-control bg-dark text-white border-secondary font-monospace" placeholder="ZA12606000514...">
+            <button class="btn btn-info text-dark fw-bold" type="button" onclick="sendManualCode()">
+                <i class="bi bi-send-fill me-1"></i>Enviar a PC
+            </button>
+        </div>
+        <button type="button" class="btn btn-outline-success btn-sm w-100 fw-bold" onclick="sendAutoIdFromMobile()">
+            <i class="bi bi-magic me-1"></i>Generar Auto ID para este Ítem (Sin Código)
+        </button>
+    </div>
+
+    <!-- Scanned History List -->
+    <div class="card card-dark p-3">
+        <h6 class="fw-bold text-warning mb-2"><i class="bi bi-clock-history me-1"></i>Enviados a la PC (<span id="sentCount">0</span>)</h6>
+        <div id="sentList" class="list-group list-group-flush small" style="max-height: 180px; overflow-y: auto;">
+            <div class="text-muted text-center py-2" id="emptyNotice">Aún no has enviado códigos a la PC.</div>
+        </div>
+    </div>
+
+    <script>
+        const sessionId = "{{ session_id }}";
+        let codeReader = null;
+        let selectedDeviceId = null;
+        let sentCodes = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if (code) {
+                const cleanUrl = window.location.pathname + (sessionId ? "?session=" + sessionId : "");
+                window.history.replaceState({}, document.title, cleanUrl);
+                sendCodeToPc(code);
+            }
+        });
+
+        function openExternalScanner() {
+            const retUrl = encodeURIComponent(window.location.href.split('?')[0] + "?session=" + sessionId + "&code={CODE}");
+            // Usando Binary Eye (com.teacapps.barcodescanner) - 100% compatible con Callback Intent
+            window.location.href = `intent://scan/?ret=${retUrl}#Intent;scheme=zxing;package=com.teacapps.barcodescanner;end`;
+        }
+
+        function playBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = "sine";
+                osc.frequency.value = 880;
+                gain.gain.value = 0.1;
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
+            } catch(e) {}
+        }
+
+        function startCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                handleHttpCameraFallback();
+                return;
+            }
+            if (!codeReader) {
+                codeReader = new ZXing.BrowserMultiFormatReader();
+            }
+            codeReader.listVideoInputDevices()
+                .then(videoInputDevices => {
+                    if (videoInputDevices && videoInputDevices.length > 0) {
+                        const backCamera = videoInputDevices.find(d => (d.label || '').toLowerCase().includes('back') || (d.label || '').toLowerCase().includes('trasera')) || videoInputDevices[videoInputDevices.length - 1];
+                        selectedDeviceId = backCamera.deviceId;
+                        
+                        document.getElementById('btnStartCamera').classList.add('d-none');
+                        document.getElementById('btnStopCamera').classList.remove('d-none');
+                        
+                        codeReader.decodeFromVideoDevice(selectedDeviceId, 'video', (result, err) => {
+                            if (result) {
+                                sendCodeToPc(result.text);
+                            }
+                        });
+                    } else {
+                        handleHttpCameraFallback();
+                    }
+                })
+                .catch(err => {
+                    console.warn("Camera enumeration error (HTTP mode fallback):", err);
+                    handleHttpCameraFallback();
+                });
+        }
+
+        function handleHttpCameraFallback() {
+            document.getElementById('statusText').innerHTML = `
+                <span class="text-warning"><i class="bi bi-camera-fill me-1"></i>Modo Cámara Directa</span>
+                <div class="small text-muted font-normal mt-1" style="font-size:0.75rem;">Abriendo la cámara para tomar la foto del código...</div>
+            `;
+            document.getElementById('fileInput').click();
+        }
+
+        function stopCamera() {
+            if (codeReader) {
+                codeReader.reset();
+            }
+            document.getElementById('btnStartCamera').classList.remove('d-none');
+            document.getElementById('btnStopCamera').classList.add('d-none');
+        }
+
+        let lastScannedCode = "";
+        let lastScanTime = 0;
+
+        function sendCodeToPc(code) {
+            code = (code || "").trim();
+            if (!code) return;
+            
+            // Prevent duplicate rapid scans within 2.5 seconds
+            const now = Date.now();
+            if (code === lastScannedCode && (now - lastScanTime) < 2500) {
+                return;
+            }
+            lastScannedCode = code;
+            lastScanTime = now;
+
+            playBeep();
+            if (navigator.vibrate) navigator.vibrate(100);
+
+            fetch('/api/scan_session/push', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId, barcode: code })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    sentCodes.unshift(code);
+                    renderSentList();
+                    document.getElementById('statusText').innerHTML = `✅ Código enviado: <code class="text-white font-monospace">${code}</code>`;
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(err => alert("Error de envío: " + err));
+        }
+
+        function sendManualCode() {
+            const inp = document.getElementById('manualCode');
+            const code = inp.value.trim();
+            if (!code) return;
+            sendCodeToPc(code);
+            inp.value = '';
+        }
+
+        function sendAutoIdFromMobile() {
+            const now = new Date();
+            const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
+            const randSeq = Math.floor(1000 + Math.random() * 8999);
+            const autoCode = `INT-ITEM-${dateStr}-${randSeq}`;
+            sendCodeToPc(autoCode);
+        }
+
+        function scanFromFile(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                if (!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
+                const imgUrl = URL.createObjectURL(file);
+                codeReader.decodeFromImageUrl(imgUrl)
+                    .then(result => {
+                        sendCodeToPc(result.text);
+                    })
+                    .catch(err => alert("No se pudo detectar un código en la foto. Intente escribirlo manualmente."));
+            }
+        }
+
+        function renderSentList() {
+            const countSpan = document.getElementById('sentCount');
+            const listDiv = document.getElementById('sentList');
+            countSpan.textContent = sentCodes.length;
+            
+            if (sentCodes.length === 0) {
+                listDiv.innerHTML = '<div class="text-muted text-center py-2">Aún no has enviado códigos a la PC.</div>';
+                return;
+            }
+            
+            listDiv.innerHTML = sentCodes.map((c, i) => `
+                <div class="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center py-2 px-0 border-secondary">
+                    <span class="font-monospace fw-bold text-info"><i class="bi bi-upc me-2 text-warning"></i>${c}</span>
+                    <span class="badge bg-success rounded-pill">Enviado</span>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

@@ -30,3 +30,7 @@ firebase-credentials.json
 tmp/
 
 .venv/
+
+# Instaladores y Drivers locales
+static/downloads/drivers/
+*.exe
