@@ -1373,6 +1373,64 @@
                 .catch(err => console.error("Error loading stock:", err));
         }
 
+        function extractSerialFromOption(val) {
+            if (!val) return "";
+            let s = val.trim();
+            if (s.includes(" | ")) {
+                s = s.split(" | ")[0].trim();
+            }
+            return s;
+        }
+
+        function populateStockDatalists(components) {
+            if (!components) return;
+            const listCpu = document.getElementById('listStockCpu');
+            const listMonitor = document.getElementById('listStockMonitor');
+            const listKeyboard = document.getElementById('listStockKeyboard');
+            const listMouse = document.getElementById('listStockMouse');
+            const listPrinter = document.getElementById('listStockPrinter');
+
+            if (listCpu) listCpu.innerHTML = '';
+            if (listMonitor) listMonitor.innerHTML = '';
+            if (listKeyboard) listKeyboard.innerHTML = '';
+            if (listMouse) listMouse.innerHTML = '';
+            if (listPrinter) listPrinter.innerHTML = '';
+
+            components.forEach(c => {
+                const serial = c.serial_number;
+                const type = (c.component_type || '').toUpperCase();
+                const model = c.brand_model || '';
+                const supplier = c.supplier ? ` (${c.supplier})` : '';
+                const displayLabel = `${serial} | ${c.component_type || 'Stock'} ${model}${supplier}`.trim();
+
+                const opt = document.createElement('option');
+                opt.value = displayLabel;
+
+                if (type.includes('CPU') || type.includes('GABINETE') || type.includes('GAB')) {
+                    if (listCpu) listCpu.appendChild(opt);
+                } else if (type.includes('MONITOR') || type.includes('MON')) {
+                    if (listMonitor) listMonitor.appendChild(opt);
+                } else if (type.includes('TECLADO') || type.includes('TEC')) {
+                    if (listKeyboard) listKeyboard.appendChild(opt);
+                } else if (type.includes('MOUSE') || type.includes('MOU')) {
+                    if (listMouse) listMouse.appendChild(opt);
+                } else {
+                    if (listPrinter) listPrinter.appendChild(opt);
+                }
+            });
+        }
+
+        function loadStockDatalists() {
+            fetch('/api/components/stock_available')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.components) {
+                        populateStockDatalists(data.components);
+                    }
+                })
+                .catch(err => console.error("Error loading stock datalists:", err));
+        }
+
         function openAssignBundleModal() {
             document.getElementById('bundlePcName').value = '';
             document.getElementById('bundleAssignedUser').value = '';
@@ -1382,6 +1440,9 @@
             document.getElementById('bundleSerialKeyboard').value = '';
             document.getElementById('bundleSerialMouse').value = '';
             document.getElementById('bundleSerialPrinter').value = '';
+            
+            loadStockDatalists();
+            
             const modal = new bootstrap.Modal(document.getElementById('assignBundleModal'));
             modal.show();
         }
@@ -1397,11 +1458,11 @@
             }
 
             const serials = [
-                document.getElementById('bundleSerialCpu').value.trim(),
-                document.getElementById('bundleSerialMonitor').value.trim(),
-                document.getElementById('bundleSerialKeyboard').value.trim(),
-                document.getElementById('bundleSerialMouse').value.trim(),
-                document.getElementById('bundleSerialPrinter').value.trim()
+                extractSerialFromOption(document.getElementById('bundleSerialCpu').value),
+                extractSerialFromOption(document.getElementById('bundleSerialMonitor').value),
+                extractSerialFromOption(document.getElementById('bundleSerialKeyboard').value),
+                extractSerialFromOption(document.getElementById('bundleSerialMouse').value),
+                extractSerialFromOption(document.getElementById('bundleSerialPrinter').value)
             ].filter(s => s.length > 0);
 
             if (serials.length === 0) {
@@ -1447,7 +1508,7 @@
                 <div class="modal-body">
                     <div class="alert alert-info py-2 px-3 small mb-3 border-secondary" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">
                         <i class="bi bi-info-circle-fill me-1"></i>
-                        Podés asignar <strong>1 solo periférico suelto</strong> (ej: solo mouse) o <strong>el combo completo de 5 elementos</strong>. Todos los componentes se asignan al Usuario de AD o PC seleccionada.
+                        Podés desplegar la lista de stock disponible para cada categoría o escanear directamente con la cámara/lector.
                     </div>
 
                     <!-- Destino (PC / Usuario / Fuero Oculto) -->
@@ -1478,28 +1539,63 @@
                     </div>
 
                     <!-- Selección de Componentes (Todos Opcionales) -->
-                    <h6 class="fw-bold text-warning mb-2" style="font-size:0.85rem;"><i class="bi bi-cpu me-1"></i>Selección o Escaneo de Componentes (del Stock):</h6>
+                    <h6 class="fw-bold text-warning mb-2" style="font-size:0.85rem;"><i class="bi bi-cpu me-1"></i>Selección o Escaneo de Componentes (del Stock Disponible):</h6>
                     
                     <div class="row g-2">
                         <div class="col-md-6">
-                            <label class="form-label small text-muted mb-1">🖥️ CPU / Gabinete (S/N):</label>
-                            <input type="text" id="bundleSerialCpu" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="S/N Gabinete...">
+                            <label class="form-label small text-muted mb-1">🖥️ CPU / Gabinete en Stock (S/N):</label>
+                            <input type="text" id="bundleSerialCpu" list="listStockCpu" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="Desplegar del Stock o escanear S/N..." autocomplete="off">
+                            <datalist id="listStockCpu">
+                                {% if stock_components %}
+                                {% for c in stock_components if 'CPU' in (c.component_type or '').upper() or 'GAB' in (c.component_type or '').upper() %}
+                                <option value="{{ c.serial_number }} | {{ c.component_type }} {{ c.brand_model or '' }}{% if c.supplier %} ({{ c.supplier }}){% endif %}"></option>
+                                {% endfor %}
+                                {% endif %}
+                            </datalist>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-muted mb-1">📺 Monitor (S/N):</label>
-                            <input type="text" id="bundleSerialMonitor" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="S/N Monitor...">
+                            <label class="form-label small text-muted mb-1">📺 Monitor en Stock (S/N):</label>
+                            <input type="text" id="bundleSerialMonitor" list="listStockMonitor" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="Desplegar del Stock o escanear S/N..." autocomplete="off">
+                            <datalist id="listStockMonitor">
+                                {% if stock_components %}
+                                {% for c in stock_components if 'MONITOR' in (c.component_type or '').upper() or 'MON' in (c.component_type or '').upper() %}
+                                <option value="{{ c.serial_number }} | {{ c.component_type }} {{ c.brand_model or '' }}{% if c.supplier %} ({{ c.supplier }}){% endif %}"></option>
+                                {% endfor %}
+                                {% endif %}
+                            </datalist>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-muted mb-1">⌨️ Teclado (S/N):</label>
-                            <input type="text" id="bundleSerialKeyboard" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="S/N Teclado...">
+                            <label class="form-label small text-muted mb-1">⌨️ Teclado en Stock (S/N):</label>
+                            <input type="text" id="bundleSerialKeyboard" list="listStockKeyboard" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="Desplegar del Stock o escanear S/N..." autocomplete="off">
+                            <datalist id="listStockKeyboard">
+                                {% if stock_components %}
+                                {% for c in stock_components if 'TECLADO' in (c.component_type or '').upper() or 'TEC' in (c.component_type or '').upper() %}
+                                <option value="{{ c.serial_number }} | {{ c.component_type }} {{ c.brand_model or '' }}{% if c.supplier %} ({{ c.supplier }}){% endif %}"></option>
+                                {% endfor %}
+                                {% endif %}
+                            </datalist>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-muted mb-1">🖱️ Mouse (S/N):</label>
-                            <input type="text" id="bundleSerialMouse" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="S/N Mouse...">
+                            <label class="form-label small text-muted mb-1">🖱️ Mouse en Stock (S/N):</label>
+                            <input type="text" id="bundleSerialMouse" list="listStockMouse" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="Desplegar del Stock o escanear S/N..." autocomplete="off">
+                            <datalist id="listStockMouse">
+                                {% if stock_components %}
+                                {% for c in stock_components if 'MOUSE' in (c.component_type or '').upper() or 'MOU' in (c.component_type or '').upper() %}
+                                <option value="{{ c.serial_number }} | {{ c.component_type }} {{ c.brand_model or '' }}{% if c.supplier %} ({{ c.supplier }}){% endif %}"></option>
+                                {% endfor %}
+                                {% endif %}
+                            </datalist>
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label small text-muted mb-1">🖨️ Impresora / Periférico Extra (S/N):</label>
-                            <input type="text" id="bundleSerialPrinter" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="S/N Impresora / Periférico...">
+                            <label class="form-label small text-muted mb-1">🖨️ Impresora / Periférico Extra en Stock (S/N):</label>
+                            <input type="text" id="bundleSerialPrinter" list="listStockPrinter" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="Desplegar del Stock o escanear S/N..." autocomplete="off">
+                            <datalist id="listStockPrinter">
+                                {% if stock_components %}
+                                {% for c in stock_components if 'MONITOR' not in (c.component_type or '').upper() and 'CPU' not in (c.component_type or '').upper() and 'GAB' not in (c.component_type or '').upper() and 'TECLADO' not in (c.component_type or '').upper() and 'TEC' not in (c.component_type or '').upper() and 'MOUSE' not in (c.component_type or '').upper() and 'MOU' not in (c.component_type or '').upper() %}
+                                <option value="{{ c.serial_number }} | {{ c.component_type }} {{ c.brand_model or '' }}{% if c.supplier %} ({{ c.supplier }}){% endif %}"></option>
+                                {% endfor %}
+                                {% endif %}
+                            </datalist>
                         </div>
                     </div>
                 </div>
