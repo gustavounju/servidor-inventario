@@ -510,6 +510,14 @@ def init_db():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS scan_sessions (
+                session_id VARCHAR(32) PRIMARY KEY,
+                created_at DATETIME NOT NULL,
+                barcodes LONGTEXT
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+
         # Migración de is_active VARCHAR('True'/'False') -> TINYINT(1)
         try:
             # Primero convertir los valores string que venían del sistema anterior

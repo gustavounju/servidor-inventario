@@ -738,22 +738,22 @@ def delete_components_bulk():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# Direct Mobile Scan Session Storage
-ACTIVE_SCAN_SESSIONS = {}
-
+# DB-backed Mobile Scan Session Storage (Gunicorn multi-worker compatible)
 @bp_stock.route("/api/scan_session/create", methods=["POST"])
 def create_scan_session():
     try:
-        import random, time
+        import random, json
         session_id = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=6))
-        ACTIVE_SCAN_SESSIONS[session_id] = {
-            "created_at": time.time(),
-            "barcodes": []
-        }
-        now = time.time()
-        for k in list(ACTIVE_SCAN_SESSIONS.keys()):
-            if now - ACTIVE_SCAN_SESSIONS[k]["created_at"] > 3600:
-                ACTIVE_SCAN_SESSIONS.pop(k, None)
+        with get_db_connection() as conn:
+            try:
+                conn.execute("DELETE FROM scan_sessions WHERE created_at < NOW() - INTERVAL 1 HOUR")
+            except Exception:
+                pass
+            conn.execute(
+                "INSERT INTO scan_sessions (session_id, created_at, barcodes) VALUES (%s, NOW(), %s)",
+                (session_id, json.dumps([]))
+            )
+            conn.commit()
 
         server_host = request.host
         mobile_url = f"http://{server_host}/mobile/live_scan?session={session_id}"
@@ -768,40 +768,64 @@ def create_scan_session():
 @bp_stock.route("/api/scan_session/push", methods=["POST"])
 def push_scan_session_barcode():
     try:
+        import json
         data = request.json or {}
         session_id = (data.get("session_id") or "").strip().upper()
         barcode = (data.get("barcode") or "").strip()
 
-        if not session_id or session_id not in ACTIVE_SCAN_SESSIONS:
-            return jsonify({"status": "error", "message": "La sesión no existe o expiró. Inicie una nueva desde la PC."}), 404
+        if not session_id:
+            return jsonify({"status": "error", "message": "Sesión no especificada."}), 400
 
         if not barcode:
             return jsonify({"status": "error", "message": "Código vacío."}), 400
 
-        ACTIVE_SCAN_SESSIONS[session_id]["barcodes"].append(barcode)
-        return jsonify({
-            "status": "success",
-            "barcode": barcode,
-            "total": len(ACTIVE_SCAN_SESSIONS[session_id]["barcodes"])
-        })
+        with get_db_connection() as conn:
+            row = conn.execute(
+                "SELECT barcodes FROM scan_sessions WHERE session_id = %s AND created_at >= NOW() - INTERVAL 1 HOUR",
+                (session_id,)
+            ).fetchone()
+
+            if not row:
+                return jsonify({"status": "error", "message": "La sesión no existe o expiró. Inicie una nueva desde la PC."}), 404
+
+            barcodes = json.loads(row["barcodes"] or "[]")
+            barcodes.append(barcode)
+            conn.execute(
+                "UPDATE scan_sessions SET barcodes = %s WHERE session_id = %s",
+                (json.dumps(barcodes), session_id)
+            )
+            conn.commit()
+
+            return jsonify({
+                "status": "success",
+                "barcode": barcode,
+                "total": len(barcodes)
+            })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @bp_stock.route("/api/scan_session/poll/<session_id>", methods=["GET"])
 def poll_scan_session(session_id):
     try:
+        import json
         session_id = session_id.strip().upper()
-        if session_id not in ACTIVE_SCAN_SESSIONS:
-            return jsonify({"status": "expired", "barcodes": []})
+        with get_db_connection() as conn:
+            row = conn.execute(
+                "SELECT barcodes FROM scan_sessions WHERE session_id = %s AND created_at >= NOW() - INTERVAL 1 HOUR",
+                (session_id,)
+            ).fetchone()
 
-        last_index = int(request.args.get("last_index", 0))
-        all_barcodes = ACTIVE_SCAN_SESSIONS[session_id]["barcodes"]
-        new_barcodes = all_barcodes[last_index:]
-        return jsonify({
-            "status": "active",
-            "new_barcodes": new_barcodes,
-            "total": len(all_barcodes)
-        })
+            if not row:
+                return jsonify({"status": "expired", "barcodes": []})
+
+            all_barcodes = json.loads(row["barcodes"] or "[]")
+            last_index = int(request.args.get("last_index", 0))
+            new_barcodes = all_barcodes[last_index:]
+            return jsonify({
+                "status": "active",
+                "new_barcodes": new_barcodes,
+                "total": len(all_barcodes)
+            })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 

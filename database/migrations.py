@@ -646,6 +646,7 @@ def run_all_migrations():
     migrate_db_v43()
     migrate_db_v44()
     migrate_db_v45()
+    migrate_db_v46()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1112,3 +1113,22 @@ def migrate_db_v45():
             conn.execute("CREATE INDEX idx_sw_logs_file ON software_download_logs(filename(100))")
             conn.execute("CREATE INDEX idx_sw_logs_ip ON software_download_logs(ip_address)")
     print("Migración V45 verificada.")
+
+
+def migrate_db_v46():
+    """Migración V46: Crear tabla scan_sessions para soporte multi-worker de Gunicorn."""
+    print("Verificando migración de DB v46...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "scan_sessions"):
+            print("Aplicando migración V46: creando tabla scan_sessions...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS scan_sessions (
+                    session_id VARCHAR(32) PRIMARY KEY,
+                    created_at DATETIME NOT NULL,
+                    barcodes LONGTEXT
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+    print("Migración V46 verificada.")
+
