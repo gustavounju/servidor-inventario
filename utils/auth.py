@@ -596,18 +596,15 @@ def list_app_users():
 
 
 def list_technician_users():
+    from database.db_core import get_db_connection
     users = []
     seen = set()
     for row in list_app_users():
         if not row.get("is_active"):
             continue
         
-        # Omitir específicamente el usuario genérico 'administrador'
-        if row.get("username") == "administrador":
-            continue
-
-        user_obj = build_session_user(row, "local")
-        if not has_permission("mobile", user_obj):
+        # Omitir específicamente la cuenta genérica 'administrador'
+        if (row.get("username") or "").strip().lower() == "administrador":
             continue
 
         display = (row.get("technician_name") or row.get("display_name") or row.get("username") or "").strip()
@@ -623,6 +620,23 @@ def list_technician_users():
             "display_name": row.get("display_name") or display,
             "role": row.get("role") or "tecnico",
         })
+
+    # Consultar también la tabla legacy 'technicians' por compatibilidad
+    try:
+        with get_db_connection() as conn:
+            legacy_rows = conn.execute("SELECT name FROM technicians ORDER BY name ASC").fetchall()
+            for r in legacy_rows:
+                tname = (r.get("name") or "").strip()
+                if tname and tname.lower() not in seen and tname.lower() != "administrador":
+                    seen.add(tname.lower())
+                    users.append({
+                        "name": tname,
+                        "username": tname.lower().replace(" ", "."),
+                        "display_name": tname,
+                        "role": "tecnico",
+                    })
+    except Exception:
+        pass
 
     users.sort(key=lambda item: item["name"].lower())
     return users

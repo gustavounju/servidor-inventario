@@ -3326,13 +3326,39 @@ function submitTaskAction() {
             });
         }
 
+        function autoLoadTechniciansIfEmpty() {
+            const techSelects = document.querySelectorAll('select[name="technician"], select[name="technician_name"]');
+            techSelects.forEach(select => {
+                if (select.options.length <= 1) {
+                    fetch('/api/technicians')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success' && data.technicians && data.technicians.length > 0) {
+                                const currentVal = select.value;
+                                select.innerHTML = '<option value="">-- Sin Asignar (Bolsa Global) --</option>';
+                                data.technicians.forEach(t => {
+                                    const opt = document.createElement('option');
+                                    opt.value = t.name;
+                                    opt.textContent = t.name;
+                                    select.appendChild(opt);
+                                });
+                                select.value = currentVal;
+                            }
+                        })
+                        .catch(err => console.error("Error auto-loading technicians:", err));
+                }
+            });
+        }
+
         const taskModal = document.getElementById('modalNuevaTareaGeneral');
         if (taskModal) {
             taskModal.addEventListener('show.bs.modal', () => {
                 loadAdUsersForTaskModal('');
+                autoLoadTechniciansIfEmpty();
             });
         }
         loadAdUsersForTaskModal('');
+        autoLoadTechniciansIfEmpty();
     });
 
 

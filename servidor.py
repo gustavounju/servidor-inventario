@@ -313,6 +313,9 @@ def _load_kpis_from_db(user_auth):
                 known_fueros.setdefault("Infraestructura", "Infraestructura")
                 extra_data['fueros'] = dict(sorted(known_fueros.items(), key=lambda item: item[0].lower()))
 
+                from utils.auth import list_technician_users
+                extra_data['technicians'] = list_technician_users()
+
                 sys_users = list_app_users()
                 extra_data['app_users_list'] = sys_users
                 sys_usernames = {str(u['username']).strip().lower() for u in sys_users}

@@ -469,7 +469,14 @@ def add_task(pc_name):
     except Exception as e:
         print(f"Error notifying: {e}")
 
-    return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
+@bp_tasks.route("/api/technicians", methods=["GET"])
+def api_get_technicians():
+    try:
+        from utils.auth import list_technician_users
+        techs = list_technician_users()
+        return jsonify({"status": "success", "technicians": techs})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @bp_tasks.route("/technicians/add", methods=["POST"])
 @superuser_required
