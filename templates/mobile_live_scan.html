@@ -78,6 +78,8 @@
         let codeReader = null;
         let selectedDeviceId = null;
         let sentCodes = [];
+        let statusPollInterval = null;
+        let isSessionClosed = false;
 
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -87,7 +89,53 @@
                 window.history.replaceState({}, document.title, cleanUrl);
                 sendCodeToPc(code);
             }
+            startSessionStatusChecker();
         });
+
+        function startSessionStatusChecker() {
+            if (!sessionId) return;
+            statusPollInterval = setInterval(() => {
+                if (isSessionClosed) return;
+                fetch(`/api/scan_session/status/${sessionId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'closed') {
+                            showSessionClosedScreen();
+                        }
+                    })
+                    .catch(err => {});
+            }, 2500);
+        }
+
+        function showSessionClosedScreen() {
+            if (isSessionClosed) return;
+            isSessionClosed = true;
+            if (statusPollInterval) clearInterval(statusPollInterval);
+            stopCamera();
+
+            const statusBadge = document.getElementById('sessionBadge');
+            if (statusBadge) {
+                statusBadge.className = "badge bg-secondary";
+                statusBadge.textContent = "Sesión Finalizada";
+            }
+
+            const statusText = document.getElementById('statusText');
+            if (statusText && statusText.parentElement) {
+                statusText.parentElement.innerHTML = `
+                    <div class="py-3 text-center">
+                        <div class="display-4 text-success mb-2"><i class="bi bi-check-circle-fill"></i></div>
+                        <h5 class="fw-bold text-white mb-1">¡Carga Finalizada en la PC!</h5>
+                        <p class="small text-slate-300 mb-0">Los datos fueron procesados y guardados correctamente.</p>
+                    </div>
+                `;
+            }
+
+            const videoContainer = document.getElementById('videoContainer');
+            if (videoContainer) videoContainer.style.display = 'none';
+
+            const controls = document.querySelector('.d-grid.gap-2.mb-3');
+            if (controls) controls.style.display = 'none';
+        }
 
         function openExternalScanner() {
             const retUrl = encodeURIComponent(window.location.href.split('?')[0] + "?session=" + sessionId + "&code={CODE}");
@@ -154,14 +202,17 @@
             if (codeReader) {
                 codeReader.reset();
             }
-            document.getElementById('btnStartCamera').classList.remove('d-none');
-            document.getElementById('btnStopCamera').classList.add('d-none');
+            const bStart = document.getElementById('btnStartCamera');
+            if (bStart) bStart.classList.remove('d-none');
+            const bStop = document.getElementById('btnStopCamera');
+            if (bStop) bStop.classList.add('d-none');
         }
 
         let lastScannedCode = "";
         let lastScanTime = 0;
 
         function sendCodeToPc(code) {
+            if (isSessionClosed) return;
             code = (code || "").trim();
             if (!code) return;
             
@@ -187,6 +238,8 @@
                     sentCodes.unshift(code);
                     renderSentList();
                     document.getElementById('statusText').innerHTML = `✅ Código enviado: <code class="text-white font-monospace">${code}</code>`;
+                } else if (data.status === 'closed') {
+                    showSessionClosedScreen();
                 } else {
                     alert("Error: " + data.message);
                 }

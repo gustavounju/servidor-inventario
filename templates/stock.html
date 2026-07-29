@@ -932,6 +932,7 @@
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
+                    closeMobileScanSession();
                     addStockModal.hide();
                     document.getElementById('addStockForm').reset();
                     isMassScanMode = false;
@@ -1014,7 +1015,31 @@
 
         function closeMobileScanSession() {
             stopPollingMobileScan();
+            if (currentScanSessionId) {
+                const sId = currentScanSessionId;
+                currentScanSessionId = null;
+                fetch('/api/scan_session/close', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sId })
+                }).catch(err => console.error("Error closing scan session:", err));
+            }
         }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const mModal = document.getElementById('mobileScanModal');
+            if (mModal) {
+                mModal.addEventListener('hidden.bs.modal', () => {
+                    closeMobileScanSession();
+                });
+            }
+            const aModal = document.getElementById('addStockModal');
+            if (aModal) {
+                aModal.addEventListener('hidden.bs.modal', () => {
+                    closeMobileScanSession();
+                });
+            }
+        });
 
         function populateScannedBarcodeFromMobile(code) {
             const qty = parseInt(document.getElementById('inputQuantity').value || 1);

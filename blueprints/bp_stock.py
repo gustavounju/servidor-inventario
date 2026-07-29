@@ -750,7 +750,7 @@ def create_scan_session():
             except Exception:
                 pass
             conn.execute(
-                "INSERT INTO scan_sessions (session_id, created_at, barcodes) VALUES (%s, NOW(), %s)",
+                "INSERT INTO scan_sessions (session_id, created_at, status, barcodes) VALUES (%s, NOW(), 'active', %s)",
                 (session_id, json.dumps([]))
             )
             conn.commit()
@@ -762,6 +762,34 @@ def create_scan_session():
             "session_id": session_id,
             "mobile_url": mobile_url
         })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_stock.route("/api/scan_session/close", methods=["POST"])
+def close_scan_session():
+    try:
+        data = request.json or {}
+        session_id = (data.get("session_id") or "").strip().upper()
+        if session_id:
+            with get_db_connection() as conn:
+                conn.execute("UPDATE scan_sessions SET status = 'closed' WHERE session_id = %s", (session_id,))
+                conn.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_stock.route("/api/scan_session/status/<session_id>", methods=["GET"])
+def check_scan_session_status(session_id):
+    try:
+        session_id = session_id.strip().upper()
+        with get_db_connection() as conn:
+            row = conn.execute(
+                "SELECT status FROM scan_sessions WHERE session_id = %s AND created_at >= NOW() - INTERVAL 1 HOUR",
+                (session_id,)
+            ).fetchone()
+            if not row or row.get("status") == 'closed':
+                return jsonify({"status": "closed"})
+            return jsonify({"status": "active"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -781,12 +809,12 @@ def push_scan_session_barcode():
 
         with get_db_connection() as conn:
             row = conn.execute(
-                "SELECT barcodes FROM scan_sessions WHERE session_id = %s AND created_at >= NOW() - INTERVAL 1 HOUR",
+                "SELECT barcodes, status FROM scan_sessions WHERE session_id = %s AND created_at >= NOW() - INTERVAL 1 HOUR",
                 (session_id,)
             ).fetchone()
 
-            if not row:
-                return jsonify({"status": "error", "message": "La sesión no existe o expiró. Inicie una nueva desde la PC."}), 404
+            if not row or row.get("status") == 'closed':
+                return jsonify({"status": "closed", "message": "La sesión fue finalizada desde la PC."}), 404
 
             barcodes = json.loads(row["barcodes"] or "[]")
             barcodes.append(barcode)
@@ -811,11 +839,11 @@ def poll_scan_session(session_id):
         session_id = session_id.strip().upper()
         with get_db_connection() as conn:
             row = conn.execute(
-                "SELECT barcodes FROM scan_sessions WHERE session_id = %s AND created_at >= NOW() - INTERVAL 1 HOUR",
+                "SELECT barcodes, status FROM scan_sessions WHERE session_id = %s AND created_at >= NOW() - INTERVAL 1 HOUR",
                 (session_id,)
             ).fetchone()
 
-            if not row:
+            if not row or row.get("status") == 'closed':
                 return jsonify({"status": "expired", "barcodes": []})
 
             all_barcodes = json.loads(row["barcodes"] or "[]")

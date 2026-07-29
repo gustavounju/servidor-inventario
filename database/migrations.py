@@ -1116,7 +1116,7 @@ def migrate_db_v45():
 
 
 def migrate_db_v46():
-    """Migración V46: Crear tabla scan_sessions para soporte multi-worker de Gunicorn."""
+    """Migración V46: Crear tabla scan_sessions con soporte de cierre de sesión para soporte multi-worker de Gunicorn."""
     print("Verificando migración de DB v46...")
     with get_db_connection() as conn:
         if not _table_exists(conn, "scan_sessions"):
@@ -1126,9 +1126,14 @@ def migrate_db_v46():
                 CREATE TABLE IF NOT EXISTS scan_sessions (
                     session_id VARCHAR(32) PRIMARY KEY,
                     created_at DATETIME NOT NULL,
+                    status VARCHAR(20) NOT NULL DEFAULT 'active',
                     barcodes LONGTEXT
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
                 """
             )
+        else:
+            if not _column_exists(conn, "scan_sessions", "status"):
+                print("Aplicando V46: agregando columna status a scan_sessions...")
+                conn.execute("ALTER TABLE scan_sessions ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active'")
     print("Migración V46 verificada.")
 

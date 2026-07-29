@@ -514,6 +514,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS scan_sessions (
                 session_id VARCHAR(32) PRIMARY KEY,
                 created_at DATETIME NOT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'active',
                 barcodes LONGTEXT
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
