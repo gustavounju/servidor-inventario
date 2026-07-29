@@ -1391,6 +1391,11 @@
             const assignedUser = document.getElementById('bundleAssignedUser').value.trim();
             const assignedFuero = document.getElementById('bundleAssignedFuero').value.trim();
 
+            if (!assignedUser && !pcName) {
+                alert("Por regla de negocio, debés seleccionar un Usuario Asignado (AD) o una PC / Equipo de destino.");
+                return;
+            }
+
             const serials = [
                 document.getElementById('bundleSerialCpu').value.trim(),
                 document.getElementById('bundleSerialMonitor').value.trim(),
@@ -1442,20 +1447,31 @@
                 <div class="modal-body">
                     <div class="alert alert-info py-2 px-3 small mb-3 border-secondary" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">
                         <i class="bi bi-info-circle-fill me-1"></i>
-                        Podés asignar <strong>1 solo periférico suelto</strong> (ej: solo mouse) o <strong>el combo completo de 5 elementos</strong>. Todos los campos de componentes son opcionales.
+                        Podés asignar <strong>1 solo periférico suelto</strong> (ej: solo mouse) o <strong>el combo completo de 5 elementos</strong>. Todos los componentes se asignan al Usuario de AD o PC seleccionada.
                     </div>
 
-                    <!-- Destino (PC / Usuario / Fuero) -->
+                    <!-- Destino (PC / Usuario / Fuero Oculto) -->
                     <div class="row g-2 mb-3 bg-secondary bg-opacity-10 p-2 rounded border border-secondary">
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-slate-300">PC / Equipo (Opcional):</label>
-                            <input type="text" id="bundlePcName" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace" placeholder="Ej: PC-OFICINA-01">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-slate-300">PC / Equipo en Dominio (Opcional):</label>
+                            <input type="text" id="bundlePcName" list="bundlePcList" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace" placeholder="Buscar o desplegar PC..." autocomplete="off">
+                            <datalist id="bundlePcList">
+                                {% for p in pcs %}
+                                <option value="{{ p.pc_name }}">{{ p.pc_name }} - {{ p.last_user or 'Sin usuario' }} ({{ p.fuero or 'Sin fuero' }})</option>
+                                {% endfor %}
+                            </datalist>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label small fw-bold text-slate-300">Usuario Asignado (AD):</label>
-                            <input type="text" id="bundleAssignedUser" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Ej: jgarcia">
+                            <input type="text" id="bundleAssignedUser" list="bundleAdUserList" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Buscar o desplegar Usuario AD..." autocomplete="off">
+                            <datalist id="bundleAdUserList">
+                                {% for u in ad_users %}
+                                <option value="{{ u.real_name }}">{{ u.real_name }} ({{ u.username }}) - {{ u.fuero or 'Sin fuero' }}</option>
+                                {% endfor %}
+                            </datalist>
                         </div>
-                        <div class="col-md-4">
+                        <!-- Fuero / Área (Oculto a pedido del usuario, preservado para compatibilidad) -->
+                        <div class="col-md-4" style="display: none;">
                             <label class="form-label small fw-bold text-slate-300">Fuero / Área:</label>
                             <input type="text" id="bundleAssignedFuero" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Auto-resuelto de AD...">
                         </div>

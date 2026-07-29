@@ -262,7 +262,26 @@ def get_component(serial_number):
 
 @bp_stock.route("/stock")
 def stock_view():
-    return render_template("stock.html")
+    try:
+        with get_db_connection() as conn:
+            pcs_rows = conn.execute(
+                "SELECT pc_name, last_user, fuero FROM pcs WHERE is_active = 1 ORDER BY pc_name ASC"
+            ).fetchall()
+            pcs = [dict(r) for r in pcs_rows]
+
+            ad_rows = conn.execute(
+                """
+                SELECT username, COALESCE(NULLIF(TRIM(real_name), ''), username) as real_name, fuero
+                FROM ad_users
+                ORDER BY real_name ASC
+                """
+            ).fetchall()
+            ad_users = [dict(r) for r in ad_rows]
+    except Exception:
+        pcs = []
+        ad_users = []
+
+    return render_template("stock.html", pcs=pcs, ad_users=ad_users)
 
 @bp_stock.route("/api/components/list")
 def list_components():
@@ -610,14 +629,24 @@ def assign_component_bundle():
             return jsonify({"status": "error", "message": "Seleccioná o escaneá al menos un componente."}), 400
 
         with get_db_connection() as conn:
-            # Auto-resolver fuero de AD si falta
-            if assigned_user and not assigned_fuero:
+            # Auto-resolver usuario y fuero de AD
+            if assigned_user:
                 ad_row = conn.execute(
-                    "SELECT fuero FROM ad_users WHERE LOWER(username) = %s OR LOWER(real_name) = %s LIMIT 1",
-                    (assigned_user.lower(), assigned_user.lower())
+                    """
+                    SELECT username, real_name, fuero FROM ad_users 
+                    WHERE LOWER(username) = %s 
+                       OR LOWER(real_name) = %s 
+                       OR %s LIKE CONCAT('%%(', LOWER(username), ')%%')
+                       OR %s LIKE CONCAT(LOWER(real_name), '%%')
+                    LIMIT 1
+                    """,
+                    (assigned_user.lower(), assigned_user.lower(), assigned_user.lower(), assigned_user.lower())
                 ).fetchone()
-                if ad_row and ad_row.get("fuero"):
-                    assigned_fuero = ad_row["fuero"]
+                if ad_row:
+                    if not assigned_fuero and ad_row.get("fuero"):
+                        assigned_fuero = ad_row["fuero"]
+                    if ad_row.get("real_name"):
+                        assigned_user = ad_row["real_name"]
 
             from utils.auth import current_username, current_technician_identity
             tech = current_technician_identity()
