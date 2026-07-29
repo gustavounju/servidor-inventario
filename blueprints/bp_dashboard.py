@@ -432,6 +432,36 @@ def pc_detail(pc_name):
         abort(404)
     return render_template("pc_detail.html", **ctx, fuero_colors=FUERO_COLORS)
 
+@bp_dashboard.route("/pc/<pc_name>/qr_label")
+def pc_qr_label_view(pc_name):
+    """Renderiza la plantilla de doble etiqueta QR (Gabinete CPU + Monitor)."""
+    ctx = get_pc_detail_context(pc_name)
+    if not ctx:
+        from flask import abort
+        abort(404)
+    
+    server_host = request.host
+    qr_url = f"http://{server_host}/pc/{pc_name}"
+    
+    components = ctx.get("components", [])
+    monitor_comp = next((c for c in components if (c.get("component_type") or "").upper() == "MONITOR"), None)
+    cpu_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["GABINETE", "CPU"]), None)
+    keyboard_comp = next((c for c in components if (c.get("component_type") or "").upper() == "TECLADO"), None)
+    mouse_comp = next((c for c in components if (c.get("component_type") or "").upper() == "MOUSE"), None)
+    
+    return render_template(
+        "qr_double_label.html",
+        pc_name=pc_name,
+        pc_info=ctx.get("pc", {}),
+        components=components,
+        monitor_comp=monitor_comp,
+        cpu_comp=cpu_comp,
+        keyboard_comp=keyboard_comp,
+        mouse_comp=mouse_comp,
+        qr_url=qr_url,
+        server_host=server_host
+    )
+
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
 def update_pc_infrastructure(pc_name):
     """Actualiza los datos de infraestructura de una PC."""

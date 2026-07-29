@@ -593,6 +593,172 @@ def assign_component():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@bp_stock.route("/api/components/assign_bundle", methods=["POST"])
+def assign_component_bundle():
+    try:
+        data = request.json or {}
+        serials = data.get("serials") or []
+        pc_name = (data.get("pc_name") or "").strip()
+        assigned_user = (data.get("assigned_user") or "").strip()
+        assigned_fuero = (data.get("assigned_fuero") or "").strip()
+
+        if isinstance(serials, str):
+            serials = [serials]
+
+        clean_serials = [s.strip() for s in serials if s and s.strip()]
+        if not clean_serials:
+            return jsonify({"status": "error", "message": "Seleccioná o escaneá al menos un componente."}), 400
+
+        with get_db_connection() as conn:
+            # Auto-resolver fuero de AD si falta
+            if assigned_user and not assigned_fuero:
+                ad_row = conn.execute(
+                    "SELECT fuero FROM ad_users WHERE LOWER(username) = %s OR LOWER(real_name) = %s LIMIT 1",
+                    (assigned_user.lower(), assigned_user.lower())
+                ).fetchone()
+                if ad_row and ad_row.get("fuero"):
+                    assigned_fuero = ad_row["fuero"]
+
+            from utils.auth import current_username, current_technician_identity
+            tech = current_technician_identity()
+            current_usr = current_username() or tech
+            target_dest = pc_name or assigned_user or assigned_fuero or "Desconocido"
+
+            assigned_count = 0
+            assigned_types = []
+
+            for serial in clean_serials:
+                comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial,)).fetchone()
+                if comp:
+                    new_status = 'Installed' if pc_name else 'Asignado'
+                    conn.execute(
+                        """
+                        UPDATE components
+                        SET status = %s, assigned_pc = %s, assigned_user = %s, assigned_fuero = %s
+                        WHERE serial_number = %s
+                        """,
+                        (new_status, pc_name or None, assigned_user or None, assigned_fuero or None, serial)
+                    )
+                    detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> {target_dest}"
+                    conn.execute(
+                        "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                        (target_dest, 'BUNDLE_ASSIGN', comp.get('status') or 'Stock', detalles, current_usr, "GESTION_STOCK", request.remote_addr)
+                    )
+                    assigned_count += 1
+                    assigned_types.append(comp['component_type'])
+                else:
+                    ups = conn.execute("SELECT * FROM ups_inventory WHERE code = %s", (serial,)).fetchone()
+                    if ups:
+                        conn.execute("UPDATE ups_inventory SET assigned_pc = %s WHERE code = %s", (pc_name or None, serial))
+                        detalles = f"UPS {ups['model']} (S/N: {serial}) -> {target_dest}"
+                        conn.execute(
+                            "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                            (target_dest, 'UPS Asignada', 'Stock', detalles, current_usr, "GESTION_STOCK", request.remote_addr)
+                        )
+                        assigned_count += 1
+                        assigned_types.append("UPS")
+
+            if tech and assigned_count > 0:
+                from datetime import datetime
+                now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                types_str = ", ".join(set(assigned_types))
+                desc = f"Asignó {assigned_count} componente(s) [{types_str}] a {target_dest}"
+                valid_task_pc = None
+                if pc_name:
+                    chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+                    if chk_pc: valid_task_pc = chk_pc['pc_name']
+                conn.execute(
+                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, fuero) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (valid_task_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, assigned_fuero or None)
+                )
+
+            conn.commit()
+
+        return jsonify({"status": "success", "count": assigned_count, "resolved_fuero": assigned_fuero})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_stock.route("/api/components/swap_failing_component", methods=["POST"])
+def swap_failing_component():
+    try:
+        data = request.json or {}
+        old_serial = (data.get("old_serial") or "").strip()
+        new_serial = (data.get("new_serial") or "").strip()
+        retire_reason = (data.get("retire_reason") or "Falla técnica - Scrap").strip()
+        pc_name = (data.get("pc_name") or "").strip()
+
+        if not old_serial:
+            return jsonify({"status": "error", "message": "Falta especificar el componente averiado."}), 400
+
+        with get_db_connection() as conn:
+            from utils.auth import current_username, current_technician_identity
+            tech = current_technician_identity()
+            current_usr = current_username() or tech
+
+            # 1. Dar de baja el componente averiado
+            old_comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (old_serial,)).fetchone()
+            if not old_comp:
+                return jsonify({"status": "error", "message": "El componente averiado no existe."}), 404
+
+            conn.execute(
+                "UPDATE components SET status = 'Retirado', assigned_pc = NULL WHERE serial_number = %s",
+                (old_serial,)
+            )
+
+            target_pc = pc_name or old_comp.get("assigned_pc") or "Desconocido"
+            user_target = old_comp.get("assigned_user")
+            fuero_target = old_comp.get("assigned_fuero")
+
+            detalles_baja = f"Retirado por falla: {old_comp['component_type']} {old_comp['brand_model']} (S/N: {old_serial}). Motivo: {retire_reason}"
+            conn.execute(
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (target_pc, 'REEMPLAZO_FALLA_BAJA', f"Installed ({old_comp['component_type']})", detalles_baja, current_usr, "GESTION_STOCK", request.remote_addr)
+            )
+
+            # 2. Asignar el nuevo componente repuesto (si se especificó)
+            new_comp_desc = ""
+            if new_serial:
+                new_comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (new_serial,)).fetchone()
+                if not new_comp:
+                    return jsonify({"status": "error", "message": f"El nuevo componente repuesto (S/N: {new_serial}) no se encuentra en el stock."}), 404
+
+                new_status = 'Installed' if target_pc and target_pc != 'Desconocido' else 'Asignado'
+                conn.execute(
+                    """
+                    UPDATE components
+                    SET status = %s, assigned_pc = %s, assigned_user = %s, assigned_fuero = %s
+                    WHERE serial_number = %s
+                    """,
+                    (new_status, target_pc if target_pc != 'Desconocido' else None, user_target, fuero_target, new_serial)
+                )
+
+                detalles_alta = f"Repuesto instalado por falla: {new_comp['component_type']} {new_comp['brand_model']} (S/N: {new_serial})"
+                conn.execute(
+                    "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (target_pc, 'REEMPLAZO_FALLA_ALTA', 'Stock', detalles_alta, current_usr, "GESTION_STOCK", request.remote_addr)
+                )
+                new_comp_desc = f" -> Instalado repuesto {new_comp['brand_model']} (S/N: {new_serial})"
+
+            # 3. Registrar tarea técnica realizada
+            if tech:
+                from datetime import datetime
+                now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                desc = f"Reemplazo por Falla: Se retiró {old_comp['component_type']} (S/N: {old_serial}) [{retire_reason}]{new_comp_desc}"
+                valid_task_pc = None
+                if target_pc and target_pc != 'Desconocido':
+                    chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (target_pc,)).fetchone()
+                    if chk_pc: valid_task_pc = chk_pc['pc_name']
+                conn.execute(
+                    "INSERT INTO tasks (pc_name, descripcion, solicitante, estado, created_at, completed_by, completed_at, categoria, assigned_to, fuero) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (valid_task_pc, desc, tech, 'Hecha', now_str, tech, now_str, 'Hardware', tech, fuero_target)
+                )
+
+            conn.commit()
+
+        return jsonify({"status": "success", "message": "Sustitución por falla registrada con éxito."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @bp_stock.route("/api/components/return", methods=["POST"])
 def return_component():
     try:

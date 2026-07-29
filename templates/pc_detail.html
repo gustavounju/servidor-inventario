@@ -420,7 +420,11 @@
 
       </p>
 
-      <div class="d-flex gap-2 flex-wrap">
+      <div class="d-flex gap-2 flex-wrap align-items-center">
+
+        <a href="{{ url_for('dashboard.pc_qr_label_view', pc_name=pc.pc_name) }}" target="_blank" class="badge bg-primary text-white text-decoration-none py-2 px-3 fw-bold" style="border-radius:8px;" title="Imprimir etiquetas QR para Gabinete y Monitor">
+          <i class="bi bi-qr-code me-1"></i>🖨️ Imprimir Par de QR (CPU + Monitor)
+        </a>
 
         {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
 
@@ -1209,6 +1213,12 @@
                 </button>
 
                 {% endif %}
+
+                <button type="button" class="btn btn-sm btn-outline-warning me-1 py-0 px-2 small"
+                  onclick="openSwapFailingModal('{{ comp.serial_number }}', '{{ comp.component_type }}', '{{ comp.brand_model }}', '{{ pc.pc_name }}')"
+                  title="Sustituir por falla (Scrap repuesto)">
+                  <i class="bi bi-lightning-charge-fill me-1"></i>Sustituir por Falla
+                </button>
 
                 <form action="{{ url_for('infrastructure.assign_component_to_pc', component_id=comp.id) }}"
 
@@ -3399,26 +3409,91 @@
       document.getElementById('parentComponentId').value = parentId;
 
       document.getElementById('lblParentComponent').innerText = parentName;
-
       document.getElementById('formAssignSubcomponent').action = ""; // Will be set by select onchange
-
       document.getElementById('selectSubcomponent').value = "";
-
       var modal = new bootstrap.Modal(document.getElementById('modalAssignSubcomponent'));
-
       modal.show();
-
     }
 
+    function openSwapFailingModal(serial, type, model, pcName) {
+      document.getElementById('swapOldSerial').value = serial;
+      document.getElementById('swapOldCompDesc').textContent = `${type} ${model} (S/N: ${serial})`;
+      document.getElementById('swapPcName').value = pcName;
+      document.getElementById('swapNewSerial').value = '';
+      var modal = new bootstrap.Modal(document.getElementById('swapFailingModal'));
+      modal.show();
+    }
 
+    function submitSwapFailingComponent() {
+      const oldSerial = document.getElementById('swapOldSerial').value;
+      const newSerial = document.getElementById('swapNewSerial').value.trim();
+      const retireReason = document.getElementById('swapRetireReason').value.trim();
+      const pcName = document.getElementById('swapPcName').value;
 
+      fetch('/api/components/swap_failing_component', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          old_serial: oldSerial,
+          new_serial: newSerial,
+          retire_reason: retireReason,
+          pc_name: pcName
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          location.reload();
+        } else {
+          alert("Error: " + data.message);
+        }
+      })
+      .catch(err => alert("Error de red: " + err));
+    }
   </script>
 
+  <!-- Modal Sustituir por Falla -->
+  <div class="modal fade" id="swapFailingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border-warning">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title text-warning"><i class="bi bi-lightning-charge-fill me-2"></i>Sustituir Componente por Falla</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger py-2 px-3 small mb-3 border-danger" style="background: rgba(239, 68, 68, 0.1); color: #f87171;">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            El componente averiado pasará a estado <strong>Retirado (Scrap)</strong> y se desvinculará del equipo.
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label small text-muted">Componente Averiado:</label>
+            <div class="fw-bold font-monospace text-info" id="swapOldCompDesc">-</div>
+            <input type="hidden" id="swapOldSerial">
+            <input type="hidden" id="swapPcName">
+          </div>
 
+          <div class="mb-3">
+            <label class="form-label small text-muted">Motivo de la Falla / Retiro:</label>
+            <input type="text" id="swapRetireReason" class="form-control form-control-sm bg-dark text-white border-secondary" value="Falla técnica - Scrap" placeholder="Ej: Falla de lectura, no enciende...">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small text-muted">Nuevo Componente Repuesto (del Stock):</label>
+            <input type="text" id="swapNewSerial" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace" placeholder="Escanear o ingresar S/N del repuesto...">
+            <div class="form-text small text-muted" style="font-size:0.75rem;">Si dejas este campo vacío, solo se retirará el averiado sin instalar repuesto.</div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-warning btn-sm text-dark fw-bold" onclick="submitSwapFailingComponent()">
+            <i class="bi bi-check-circle-fill me-1"></i>Confirmar Sustitución
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </body>
-
-
-
 </html>
 

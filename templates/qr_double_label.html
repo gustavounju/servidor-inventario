@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etiquetas QR Par - {{ pc_name }}</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .label-card {
+            border: 2px solid #0284c7;
+            border-radius: 10px;
+            background: #ffffff;
+            padding: 16px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .label-header {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        .qr-img {
+            width: 130px;
+            height: 130px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 4px;
+            background: #fff;
+        }
+        .font-mono {
+            font-family: monospace;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff !important;
+            }
+            .label-card {
+                box-shadow: none !important;
+                border: 2px solid #000 !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- Action Toolbar (Hidden when printing) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print container" style="max-width: 980px;">
+        <div>
+            <a href="{{ url_for('dashboard.pc_detail', pc_name=pc_name) }}" class="btn btn-outline-secondary btn-sm me-2">
+                <i class="bi bi-arrow-left me-1"></i>Volver a Ficha PC
+            </a>
+            <span class="fw-bold text-dark fs-5">Impresión de Etiquetas QR Par (CPU + Monitor)</span>
+        </div>
+        <button onclick="window.print()" class="btn btn-primary btn-sm fw-bold shadow-sm">
+            <i class="bi bi-printer-fill me-1"></i>Imprimir Etiquetas
+        </button>
+    </div>
+
+    <div class="container d-flex flex-wrap justify-content-center gap-4" style="max-width: 1000px;">
+
+        <!-- STICKER 1: GABINETE CPU -->
+        <div class="label-card">
+            <div class="label-header d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary text-uppercase px-2 py-1" style="font-size: 0.7rem;">Sticker 1 / 2 • CPU</span>
+                    <h5 class="fw-bold text-dark mb-0 mt-1"><i class="bi bi-pc-display me-2 text-primary"></i>{{ pc_name }}</h5>
+                </div>
+                <div class="text-end text-muted small">
+                    <div>Poder Judicial</div>
+                    <div class="fw-bold" style="font-size: 0.75rem;">San Pedro - Jujuy</div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 align-items-center">
+                <div>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code">
+                </div>
+                <div class="flex-grow-1 small">
+                    <div class="mb-1"><strong>Usuario:</strong> <span class="text-dark">{{ pc_info.last_user or 'No asignado' }}</span></div>
+                    <div class="mb-1"><strong>Fuero / Área:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
+                    
+                    <div class="border-top pt-2 mt-2" style="font-size: 0.75rem;">
+                        <div class="fw-bold text-muted mb-1"><i class="bi bi-diagram-3 me-1"></i>Periféricos Vinculados:</div>
+                        <div>• Monitor: <span class="font-mono fw-bold">{{ monitor_comp.serial_number if monitor_comp else 'Sin asignar' }}</span></div>
+                        <div>• Teclado: <span class="font-mono">{{ keyboard_comp.serial_number if keyboard_comp else 'N/A' }}</span></div>
+                        <div>• Mouse: <span class="font-mono">{{ mouse_comp.serial_number if mouse_comp else 'N/A' }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3 text-center border-top pt-2 text-muted font-mono" style="font-size: 0.7rem;">
+                <i class="bi bi-qr-code me-1"></i>Escanear para acceder a la ficha técnica completa del equipo
+            </div>
+        </div>
+
+        <!-- STICKER 2: MONITOR -->
+        <div class="label-card">
+            <div class="label-header d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-info text-dark text-uppercase px-2 py-1" style="font-size: 0.7rem;">Sticker 2 / 2 • Monitor</span>
+                    <h5 class="fw-bold text-dark mb-0 mt-1"><i class="bi bi-display me-2 text-info"></i>{{ pc_name }}</h5>
+                </div>
+                <div class="text-end text-muted small">
+                    <div>Poder Judicial</div>
+                    <div class="fw-bold" style="font-size: 0.75rem;">San Pedro - Jujuy</div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 align-items-center">
+                <div>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code">
+                </div>
+                <div class="flex-grow-1 small">
+                    <div class="mb-1"><strong>S/N Monitor:</strong> <span class="font-mono fw-bold text-primary">{{ monitor_comp.serial_number if monitor_comp else 'Sin S/N' }}</span></div>
+                    <div class="mb-1"><strong>Modelo:</strong> {{ monitor_comp.brand_model if monitor_comp else 'N/A' }}</div>
+                    <div class="mb-1"><strong>Asignado a:</strong> {{ pc_info.last_user or 'No asignado' }}</div>
+                    <div class="mb-1"><strong>Fuero / Área:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
+                </div>
+            </div>
+
+            <div class="mt-3 text-center border-top pt-2 text-muted font-mono" style="font-size: 0.7rem;">
+                <i class="bi bi-qr-code me-1"></i>Escanear para verificar la CPU y oficina correspondiente
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
