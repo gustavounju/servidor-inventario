@@ -181,7 +181,14 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 - **Feature (16 Julio 2026)**: Implementación del Repositorio Público de Software y Drivers (`/descargas`). Se creó una interfaz web (`descargas.html`) que lee dinámicamente un catálogo local (`catalog.json`) y escanea el disco (`static/downloads/`) para servir ejecutables de instalación a velocidad LAN a los técnicos. Además, se implementó auditoría de descargas almacenando el historial (IP, categoría, archivo) en la tabla `software_download_logs` para su revisión por parte de Administradores.
 - **UI/UX & Interactive 3D (22 Julio 2026)**: Rediseño completo de la navegación del Repositorio de Software. Se reemplazó el botón estático de "Repositorio SW" en la página de inicio/login por un **carrusel de cilindro giratorio 3D** interactivo (prisma pentagonal) que auto-rota lentamente al estar inactivo, responde al desplazamiento horizontal del mouse al pasar por encima y redirige a la sección/categoría correspondiente en un clic. Adicionalmente, se implementó un dial de cilindro 2D vertical en la barra superior de operadores (evitando el aplanamiento CSS en menús overflow-hidden), y se corrigió el diseño de tarjetas en `/descargas` agregando truncamiento de nombres largos (`text-overflow: ellipsis`) con tooltips al pasar el mouse.
 
+- **Julio 2026 (Gestión de Stock & Escáner Móvil en Vivo - v3.2.0)**:
+  1. **Carga de Remito y Recepción de Lotes**: Recepción masiva de stock (1 a 100 ítems) con inputs individuales, navegación fluida con `Enter` para lectores de código de barras, modo pegado en bloque por `textarea` y validación de duplicados.
+  2. **Generación de IDs Internos Flexibles**: Botones de `Auto ID` por ítem individual, botón `Auto ID en Vacíos` para lotes sin seriales (ej. 5 mouses), y auto-generación transparente en backend si quedan renglones en blanco.
+  3. **Escáner Remoto en Vivo desde el Celular**: Sincronización en vivo PC ↔ Celular (`/mobile/live_scan`). Genera código QR dinámico y PIN de sesión. Admite transmisión continua por cámara, captura por foto nativa en conexiones HTTP, ingreso manual y atajo directo para lanzar apps externas de lectura veloz (Binary Eye / ZXing Intent `intent://scan/`).
+  4. **Bajas y Reactivaciones de Stock (Retirados)**: Función de "Dar de baja" (estado `Retirado` con motivo de falla/rezago/scrap) manteniendo el historial de inventario. Filtro de "Retirados" con botón "Volver a Stock" que reactiva el ítem y conmuta la vista a *En Stock* automáticamente.
+  5. **Renombrado y Granulación de Permisos**: Renombrado del permiso a `Gestión Stock`. Configuración de reglas de negocio: escaneo y transmisión móvil habilitado para permisos `Móvil` y `Gestión Stock` (técnicos), mientras que la subida/confirmación oficial de remitos (`add_component`) queda estrictamente reservada para el rol/permiso `Gestión Stock`.
+
 ---
 
-**Última actualización**: 22 de Julio 2026  
+**Última actualización**: 29 de Julio 2026  
 **Versión del sistema**: Según APP_VERSION en utils/constants.py
