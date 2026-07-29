@@ -340,8 +340,20 @@
                         <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="assignAdSearch" placeholder="Escriba nombre de la persona..." onkeyup="searchAdForAssign(this.value)">
                         <div id="assignAdResults" class="list-group position-absolute shadow mt-1" style="z-index: 1050; max-height: 150px; overflow-y: auto; width: 95%;"></div>
                         <div class="mt-2 p-2" style="background: #1e293b; border-radius: 8px; border: 1px solid #334155;">
-                            <small style="color: #94a3b8;">Persona seleccionada: <strong id="selectedPersonLabel" class="text-white">Ninguna</strong></small><br>
-                            <small style="color: #94a3b8;">Fuero autocompletado: <strong id="selectedFueroLabel" class="text-info">-</strong></small>
+                            <div class="mb-2">
+                                <small style="color: #94a3b8;">Persona seleccionada: <strong id="selectedPersonLabel" class="text-white">Ninguna</strong></small>
+                            </div>
+                            <div>
+                                <label class="form-label small text-muted mb-1" style="font-size:0.75rem;">Fuero / Área (Autocompletado de AD o editable):</label>
+                                <input type="text" id="selectedFueroInput" list="fueroAutocompleteList" class="form-control form-control-sm bg-dark text-info border-secondary font-monospace" placeholder="Seleccionar o escribir Fuero..." autocomplete="off">
+                                <datalist id="fueroAutocompleteList">
+                                    {% if fueros %}
+                                    {% for f in fueros %}
+                                    <option value="{{ f }}"></option>
+                                    {% endfor %}
+                                    {% endif %}
+                                </datalist>
+                            </div>
                         </div>
                     </div>
 
@@ -663,13 +675,19 @@
                         const item = document.createElement('a');
                         item.className = 'list-group-item list-group-item-action py-2 px-3 small border-secondary';
                         item.style.cssText = 'background: #1e293b; color: #f8fafc; cursor: pointer; border: 1px solid #334155;';
-                        item.innerHTML = `<strong style="color: #38bdf8;">${u.real_name || u.username}</strong> <span class="badge bg-dark text-info float-end border border-secondary">${u.fuero || 'Sin Fuero'}</span>`;
+                        item.innerHTML = `<strong style="color: #38bdf8;">${u.real_name || u.username}</strong> <span class="badge bg-dark text-info float-end border border-secondary">${(u.fuero && u.fuero !== 'Sin Fuero') ? u.fuero : 'Sin Fuero (Elegir)'}</span>`;
                         item.onclick = () => {
                             currentAssignUser = u.real_name || u.username;
-                            currentAssignFuero = u.fuero || '';
+                            currentAssignFuero = (u.fuero && u.fuero !== 'Sin Fuero') ? u.fuero : '';
                             document.getElementById('assignAdSearch').value = currentAssignUser;
                             document.getElementById('selectedPersonLabel').textContent = currentAssignUser;
-                            document.getElementById('selectedFueroLabel').textContent = currentAssignFuero || 'No especificado en AD';
+                            const fueroInp = document.getElementById('selectedFueroInput');
+                            if (fueroInp) {
+                                fueroInp.value = currentAssignFuero;
+                                if (!currentAssignFuero) {
+                                    fueroInp.focus();
+                                }
+                            }
                             resDiv.innerHTML = '';
                         };
                         resDiv.appendChild(item);
@@ -1092,13 +1110,15 @@
             document.getElementById('modalType').textContent = type;
             document.getElementById('assignAdSearch').value = "";
             document.getElementById('selectedPersonLabel').textContent = "Ninguna";
-            document.getElementById('selectedFueroLabel').textContent = "-";
+            const fueroInp = document.getElementById('selectedFueroInput');
+            if (fueroInp) fueroInp.value = "";
             assignModal.show();
         }
 
         function confirmAssign() {
             const isPerson = document.getElementById('assignTypePerson').checked;
             const pc = document.getElementById('modalPcSelect').value;
+            const chosenFuero = document.getElementById('selectedFueroInput') ? document.getElementById('selectedFueroInput').value.trim() : "";
 
             if (isPerson && !currentAssignUser) {
                 alert("Busque y seleccione una persona de Active Directory.");
@@ -1113,7 +1133,7 @@
                 serial_number: currentSerialToAssign,
                 pc_name: isPerson ? "" : pc,
                 assigned_user: isPerson ? currentAssignUser : "",
-                assigned_fuero: isPerson ? currentAssignFuero : ""
+                assigned_fuero: isPerson ? (chosenFuero || currentAssignFuero) : ""
             };
 
             fetch('/api/components/assign', {
