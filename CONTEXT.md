@@ -145,6 +145,7 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 2. Optimización de consultas a base de datos
 3. Implementación de WebSockets para notificaciones en tiempo real
 4. Sistema de backup automático
+5. **Módulo de Armado de Puestos Completos (Combos), QR Par (CPU+Monitor) y Reemplazo por Falla** (ver detalles completos en [PLAN_GESTION_PUESTOS_Y_REEMPLAZOS.md](file:///g:/unju2025/google%20gravity/ServidorInventario/PLAN_GESTION_PUESTOS_Y_REEMPLAZOS.md)).
 
 ## 🆕 Últimos Cambios (Changelog)
 - **Julio 2026 (Roles y Permisos Modulares - v3.1.0)**: Reestructuración y granulado del sistema de control de accesos. Se implementó una lógica de overrides de permisos a nivel de usuario en base de datos. Se protegieron rutas críticas de backend en `bp_tasks.py` y `bp_dashboard.py`. Se rediseñó el panel de usuarios para incluir edición directa de cuentas y permisos. Se resolvió la evasión del modo móvil en celulares agregando validaciones de dispositivo híbridas (User-Agent en backend y detección de Viewport/UA en cliente mediante script en `_module_switcher.html`).
