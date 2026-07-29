@@ -744,6 +744,18 @@ def assign_component_bundle():
                     if ad_row.get("real_name"):
                         assigned_user = ad_row["real_name"]
 
+            # Si se especificó una PC y no existe en pcs, registrarla como equipo activo en el inventario
+            if pc_name and pc_name != 'PC Generica':
+                chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+                if not chk_pc:
+                    conn.execute(
+                        """
+                        INSERT INTO pcs (pc_name, last_user, fuero, is_active, notes)
+                        VALUES (%s, %s, %s, 1, 'Equipo registrado desde Armado / Asignación de Stock')
+                        """,
+                        (pc_name, assigned_user or None, assigned_fuero or 'Stock')
+                    )
+
             from utils.auth import current_username, current_technician_identity
             tech = current_technician_identity()
             current_usr = current_username() or tech

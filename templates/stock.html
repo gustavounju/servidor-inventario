@@ -1468,26 +1468,46 @@
         }
 
         function submitAssignBundle() {
-            const pcName = document.getElementById('bundlePcName').value.trim();
-            const assignedUser = document.getElementById('bundleAssignedUser').value.trim();
+            let pcName = document.getElementById('bundlePcName').value.trim();
+            let assignedUser = document.getElementById('bundleAssignedUser').value.trim();
             const assignedFuero = document.getElementById('bundleAssignedFuero').value.trim();
 
-            if (!assignedUser && !pcName) {
-                alert("Por regla de negocio, debés seleccionar un Usuario Asignado (AD) o una PC / Equipo de destino.");
-                return;
-            }
+            const serialCpu = extractSerialFromOption(document.getElementById('bundleSerialCpu').value);
+            const serialMonitor = extractSerialFromOption(document.getElementById('bundleSerialMonitor').value);
+            const serialKeyboard = extractSerialFromOption(document.getElementById('bundleSerialKeyboard').value);
+            const serialMouse = extractSerialFromOption(document.getElementById('bundleSerialMouse').value);
+            const serialPrinter = extractSerialFromOption(document.getElementById('bundleSerialPrinter').value);
 
-            const serials = [
-                extractSerialFromOption(document.getElementById('bundleSerialCpu').value),
-                extractSerialFromOption(document.getElementById('bundleSerialMonitor').value),
-                extractSerialFromOption(document.getElementById('bundleSerialKeyboard').value),
-                extractSerialFromOption(document.getElementById('bundleSerialMouse').value),
-                extractSerialFromOption(document.getElementById('bundleSerialPrinter').value)
-            ].filter(s => s.length > 0);
+            const serials = [serialCpu, serialMonitor, serialKeyboard, serialMouse, serialPrinter].filter(s => s.length > 0);
 
             if (serials.length === 0) {
                 alert("Seleccioná o escaneá al menos 1 componente para asignar.");
                 return;
+            }
+
+            if (!assignedUser && !pcName) {
+                let suggestedPcName = "";
+                if (serialCpu) {
+                    let cleanCpuCode = serialCpu.split(' ')[0].replace(/[^a-zA-Z0-9-]/g, '');
+                    suggestedPcName = `PC-${cleanCpuCode}`;
+                } else {
+                    let cleanFirstCode = serials[0].split(' ')[0].replace(/[^a-zA-Z0-9-]/g, '');
+                    suggestedPcName = `COMBO-STOCK-${cleanFirstCode}`;
+                }
+
+                const confirmAutoPc = confirm(
+                    `No especificaste Usuario ni PC de destino.\n\n` +
+                    `¿Deseás armar y registrar este conjunto como un Nuevo Equipo en Stock (${suggestedPcName})?\n\n` +
+                    `• Presioná "Aceptar" para crear el Equipo '${suggestedPcName}' en Stock y vincular todos sus componentes.\n` +
+                    `• Presioná "Cancelar" para regresar y ingresar una PC o Usuario manualmente.`
+                );
+
+                if (confirmAutoPc) {
+                    pcName = suggestedPcName;
+                    document.getElementById('bundlePcName').value = pcName;
+                } else {
+                    return;
+                }
             }
 
             fetch('/api/components/assign_bundle', {
@@ -1508,7 +1528,7 @@
                     if (modalObj) modalObj.hide();
                     loadComponents();
                     loadStockCatalog();
-                    alert(`¡Éxito! Se asignaron ${data.count} componente(s) correctamente.`);
+                    alert(`¡Éxito! Se registraron y vincularon ${data.count} componente(s) correctamente en '${pcName || assignedUser}'.`);
                 } else {
                     alert("Error: " + data.message);
                 }
