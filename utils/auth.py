@@ -21,6 +21,7 @@ PERMISSION_COLUMN_MAP = {
     "audit_racks": "can_audit_racks",
     "manage_stock": "can_manage_stock",
     "funcionario": "can_manage_stock",
+    "can_manage_stock": "can_manage_stock",
 }
 
 ROLE_PRESETS = {
@@ -33,6 +34,7 @@ ROLE_PRESETS = {
         "audit_racks": True,
         "manage_stock": True,
         "funcionario": True,
+        "can_manage_stock": True,
     },
     "operador": {
         "dashboard": False,
@@ -43,6 +45,7 @@ ROLE_PRESETS = {
         "audit_racks": False,
         "manage_stock": False,
         "funcionario": False,
+        "can_manage_stock": False,
     },
     "tecnico": {
         "dashboard": False,
@@ -53,6 +56,7 @@ ROLE_PRESETS = {
         "audit_racks": False,
         "manage_stock": False,
         "funcionario": False,
+        "can_manage_stock": False,
     },
     "infraestructura": {
         "dashboard": True,
