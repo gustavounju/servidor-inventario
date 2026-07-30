@@ -756,6 +756,8 @@ def assign_component_bundle():
         pc_name = (data.get("pc_name") or "").strip()
         assigned_user = (data.get("assigned_user") or "").strip()
         assigned_fuero = (data.get("assigned_fuero") or "").strip()
+        is_stock_kit = bool(data.get("is_stock_kit"))
+        kit_name = (data.get("kit_name") or "").strip()
 
         if isinstance(serials, str):
             serials = [serials]
@@ -765,6 +767,42 @@ def assign_component_bundle():
             return jsonify({"status": "error", "message": "Seleccioná o escaneá al menos un componente."}), 400
 
         with get_db_connection() as conn:
+            from utils.auth import current_username, current_technician_identity
+            tech = current_technician_identity()
+            current_usr = current_username() or tech
+
+            # Si es armado de Kit para Stock (no crea fila en pcs)
+            if is_stock_kit or (kit_name and not pc_name and not assigned_user):
+                final_kit_name = kit_name or pc_name or f"KIT-STOCK-{datetime.datetime.now().strftime('%m%d%H%M')}"
+                assigned_count = 0
+                for serial in clean_serials:
+                    comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial,)).fetchone()
+                    if comp:
+                        conn.execute(
+                            """
+                            UPDATE components
+                            SET status = 'Stock (Combo)', kit_name = %s, assigned_pc = NULL, assigned_user = NULL, assigned_fuero = NULL
+                            WHERE serial_number = %s
+                            """,
+                            (final_kit_name, serial)
+                        )
+                        assigned_count += 1
+                        detalles = f"Agregado a Kit '{final_kit_name}' (S/N: {serial})"
+                        conn.execute(
+                            "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                            ("Stock", 'STOCK_KIT_CREATE', comp.get('status') or 'Stock', detalles, current_usr, "GESTION_STOCK", request.remote_addr)
+                        )
+
+                conn.commit()
+                return jsonify({
+                    "status": "success",
+                    "is_stock_kit": True,
+                    "kit_name": final_kit_name,
+                    "count": assigned_count,
+                    "message": f"Kit '{final_kit_name}' guardado exitosamente en Stock."
+                })
+
+            # Asignación / Despliegue directo a PC o Usuario de red
             # Auto-resolver usuario y fuero de AD
             if assigned_user:
                 ad_row = conn.execute(
@@ -796,9 +834,6 @@ def assign_component_bundle():
                         (pc_name, assigned_user or None, assigned_fuero or 'Stock')
                     )
 
-            from utils.auth import current_username, current_technician_identity
-            tech = current_technician_identity()
-            current_usr = current_username() or tech
             target_dest = pc_name or assigned_user or assigned_fuero or "Desconocido"
 
             assigned_count = 0
@@ -811,7 +846,7 @@ def assign_component_bundle():
                     conn.execute(
                         """
                         UPDATE components
-                        SET status = %s, assigned_pc = %s, assigned_user = %s, assigned_fuero = %s
+                        SET status = %s, assigned_pc = %s, assigned_user = %s, assigned_fuero = %s, kit_name = NULL
                         WHERE serial_number = %s
                         """,
                         (new_status, pc_name or None, assigned_user or None, assigned_fuero or None, serial)
@@ -861,6 +896,150 @@ def assign_component_bundle():
             conn.commit()
 
         return jsonify({"status": "success", "count": assigned_count, "resolved_fuero": assigned_fuero})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/api/stock/kits", methods=["GET"])
+def get_stock_kits():
+    try:
+        with get_db_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, serial_number, component_type, brand_model, status, kit_name, supplier, created_at
+                FROM components
+                WHERE kit_name IS NOT NULL AND TRIM(kit_name) != '' AND status LIKE 'Stock%'
+                ORDER BY kit_name ASC, component_type ASC
+                """
+            ).fetchall()
+
+            kits = {}
+            for r in rows:
+                kname = r["kit_name"]
+                if kname not in kits:
+                    created_str = r["created_at"].strftime("%Y-%m-%d %H:%M") if r.get("created_at") and hasattr(r["created_at"], "strftime") else str(r.get("created_at") or "")
+                    kits[kname] = {
+                        "kit_name": kname,
+                        "created_at": created_str,
+                        "components": []
+                    }
+                item = dict(r)
+                if item.get("created_at") and hasattr(item["created_at"], "strftime"):
+                    item["created_at"] = item["created_at"].strftime("%Y-%m-%d %H:%M")
+                kits[kname]["components"].append(item)
+
+            return jsonify({
+                "status": "success",
+                "kits": list(kits.values())
+            })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/api/stock/kits/deploy", methods=["POST"])
+def deploy_stock_kit():
+    try:
+        if not check_stock_permission():
+            return jsonify({"status": "error", "message": "Acceso denegado: Se requiere permiso de Gestión Stock."}), 403
+
+        data = request.json or {}
+        kit_name = (data.get("kit_name") or "").strip()
+        pc_name = (data.get("pc_name") or "").strip()
+        assigned_user = (data.get("assigned_user") or "").strip()
+        assigned_fuero = (data.get("assigned_fuero") or "").strip()
+
+        if not kit_name:
+            return jsonify({"status": "error", "message": "Nombre de Kit requerido."}), 400
+
+        if not pc_name and not assigned_user and not assigned_fuero:
+            return jsonify({"status": "error", "message": "Ingresá un nombre de PC o un Usuario/Fuero de destino."}), 400
+
+        with get_db_connection() as conn:
+            # Resolver usuario y fuero de AD
+            if assigned_user:
+                ad_row = conn.execute(
+                    """
+                    SELECT username, real_name, fuero FROM ad_users 
+                    WHERE LOWER(username) = %s OR LOWER(real_name) = %s 
+                    LIMIT 1
+                    """,
+                    (assigned_user.lower(), assigned_user.lower())
+                ).fetchone()
+                if ad_row:
+                    if not assigned_fuero and ad_row.get("fuero"):
+                        assigned_fuero = ad_row["fuero"]
+                    if ad_row.get("real_name"):
+                        assigned_user = ad_row["real_name"]
+
+            # Si se especificó una PC y no existe en pcs, registrarla como equipo activo en el inventario
+            if pc_name and pc_name != 'PC Generica':
+                chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+                if not chk_pc:
+                    conn.execute(
+                        """
+                        INSERT INTO pcs (pc_name, last_user, fuero, is_active, os_name)
+                        VALUES (%s, %s, %s, 1, 'Equipo desplegado desde Kit de Stock')
+                        """,
+                        (pc_name, assigned_user or None, assigned_fuero or 'Stock')
+                    )
+
+            from utils.auth import current_username, current_technician_identity
+            tech = current_technician_identity()
+            current_usr = current_username() or tech
+            target_dest = pc_name or assigned_user or assigned_fuero or "Desconocido"
+
+            new_status = 'Installed' if pc_name else 'Asignado'
+
+            conn.execute(
+                """
+                UPDATE components
+                SET status = %s, assigned_pc = %s, assigned_user = %s, assigned_fuero = %s, kit_name = NULL
+                WHERE kit_name = %s
+                """,
+                (new_status, pc_name or None, assigned_user or None, assigned_fuero or None, kit_name)
+            )
+
+            detalles = f"Kit '{kit_name}' desplegado -> {target_dest}"
+            conn.execute(
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (target_dest, 'KIT_DEPLOY', f"Kit {kit_name}", detalles, current_usr, "GESTION_STOCK", request.remote_addr)
+            )
+
+        return jsonify({"status": "success", "message": f"Kit '{kit_name}' desplegado exitosamente a {target_dest}."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/api/stock/kits/disassemble", methods=["POST"])
+def disassemble_stock_kit():
+    try:
+        if not check_stock_permission():
+            return jsonify({"status": "error", "message": "Acceso denegado: Se requiere permiso de Gestión Stock."}), 403
+
+        data = request.json or {}
+        kit_name = (data.get("kit_name") or "").strip()
+
+        if not kit_name:
+            return jsonify({"status": "error", "message": "Nombre de Kit requerido."}), 400
+
+        with get_db_connection() as conn:
+            conn.execute(
+                """
+                UPDATE components
+                SET status = 'Stock', kit_name = NULL
+                WHERE kit_name = %s
+                """,
+                (kit_name,)
+            )
+
+            from utils.auth import current_username, current_technician_identity
+            current_usr = current_username() or current_technician_identity()
+            conn.execute(
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                ("Stock", 'KIT_DISASSEMBLE', f"Kit {kit_name}", f"Kit '{kit_name}' desarmado (piezas devueltas a Stock)", current_usr, "GESTION_STOCK", request.remote_addr)
+            )
+
+        return jsonify({"status": "success", "message": f"Kit '{kit_name}' desarmado y piezas devueltas al stock."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
