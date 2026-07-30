@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etiqueta QR Kit - {{ kit_name }}</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .label-card {
+            border: 2px solid #0284c7;
+            border-radius: 12px;
+            background: #ffffff;
+            padding: 18px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .label-header {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        .qr-img {
+            width: 140px;
+            height: 140px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 4px;
+            background: #fff;
+        }
+        .font-mono {
+            font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+        .spec-item {
+            font-size: 0.8rem;
+            line-height: 1.35;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff !important;
+                padding: 0 !important;
+            }
+            .label-card {
+                box-shadow: none !important;
+                border: 2px solid #000 !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- Action Toolbar (Hidden when printing) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print container" style="max-width: 520px;">
+        <div>
+            <a href="{{ url_for('stock.stock_view') }}" class="btn btn-outline-secondary btn-sm me-2">
+                <i class="bi bi-arrow-left me-1"></i>Volver a Stock
+            </a>
+        </div>
+        <button onclick="window.print()" class="btn btn-primary btn-sm fw-bold shadow-sm">
+            <i class="bi bi-printer-fill me-1"></i>Imprimir Sticker QR
+        </button>
+    </div>
+
+    <div class="container d-flex justify-content-center" style="max-width: 600px;">
+
+        <!-- STICKER DE GABINETE CPU -->
+        <div class="label-card">
+            <div class="label-header d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-info text-dark text-uppercase px-2 py-1 font-mono fw-bold" style="font-size: 0.7rem;">DEPÓSITO INFORMÁTICA • KIT CPU ARMADO</span>
+                    <h4 class="fw-bold text-dark mb-0 mt-1 font-mono"><i class="bi bi-box-seam me-1 text-primary"></i>{{ kit_name }}</h4>
+                </div>
+                <div class="text-end text-muted small">
+                    <div class="fw-bold text-dark">Poder Judicial</div>
+                    <div style="font-size: 0.75rem;">San Pedro - Jujuy</div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 align-items-start">
+                <div class="text-center">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img mb-1" alt="QR Code">
+                    <div class="text-muted font-mono" style="font-size: 0.65rem;">ESCANEAR CON CELULAR</div>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-bold text-primary mb-2 border-bottom pb-1" style="font-size: 0.82rem;">
+                        <i class="bi bi-cpu-fill me-1"></i>Especificaciones Técnicas en Vivo:
+                    </div>
+
+                    <div class="spec-item mb-1">
+                        <strong>🖥️ CPU / Gabinete:</strong> <span class="font-mono text-dark">{{ cpu_comp.brand_model or cpu_comp.serial_number if cpu_comp else 'Gabinete ATX' }}</span>
+                    </div>
+
+                    {% if processor_comp %}
+                    <div class="spec-item mb-1">
+                        <strong>⚙️ Procesador:</strong> <span class="font-mono text-dark">{{ processor_comp.brand_model or processor_comp.serial_number }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if ram_comp %}
+                    <div class="spec-item mb-1">
+                        <strong>🧠 Memoria RAM:</strong> <span class="font-mono text-dark">{{ ram_comp.brand_model or ram_comp.serial_number }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if disk_comp %}
+                    <div class="spec-item mb-1">
+                        <strong>💾 Disco / SSD:</strong> <span class="font-mono text-dark">{{ disk_comp.brand_model or disk_comp.serial_number }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if power_comp %}
+                    <div class="spec-item mb-1">
+                        <strong>🔌 Fuente:</strong> <span class="font-mono text-dark">{{ power_comp.brand_model or power_comp.serial_number }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if monitor_comp %}
+                    <div class="spec-item mb-1">
+                        <strong>📺 Monitor Incluido:</strong> <span class="font-mono text-dark">{{ monitor_comp.brand_model or monitor_comp.serial_number }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if other_comps %}
+                    <div class="spec-item mb-1 text-muted" style="font-size: 0.75rem;">
+                        <strong>Periféricos adicionales:</strong> {{ other_comps | map(attribute='component_type') | join(', ') }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-3 text-center border-top pt-2 text-muted font-mono" style="font-size: 0.7rem; background: #f1f5f9; border-radius: 6px; padding: 4px;">
+                <i class="bi bi-lightning-charge-fill text-warning me-1"></i>QR Dinámico: Refleja automáticamente cambios de hardware o despliegue a PC.
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1043,6 +1043,95 @@ def disassemble_stock_kit():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+@bp_stock.route("/stock/kit/<kit_name>/qr_label", methods=["GET"])
+def kit_qr_label_view(kit_name):
+    """Renderiza la plantilla de impresión de sticker QR para un Kit en Depósito."""
+    try:
+        with get_db_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, serial_number, component_type, brand_model, status, kit_name, supplier, created_at
+                FROM components
+                WHERE kit_name = %s AND status LIKE %s
+                ORDER BY component_type ASC
+                """,
+                (kit_name, "Stock%")
+            ).fetchall()
+            
+            if not rows:
+                from flask import abort
+                abort(404)
+            
+            components = [dict(r) for r in rows]
+            
+            cpu_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["CPU", "GABINETE", "GAB"]), None)
+            processor_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["MICRO", "PROCESADOR", "PROC"]), None)
+            ram_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["MEMORIA", "RAM"]), None)
+            disk_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["DISCO", "SSD", "HDD", "NVME"]), None)
+            power_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["FUENTE", "POWER", "FNT"]), None)
+            monitor_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["MONITOR", "MON"]), None)
+            
+            used_ids = {c['id'] for c in [cpu_comp, processor_comp, ram_comp, disk_comp, power_comp, monitor_comp] if c}
+            other_comps = [c for c in components if c['id'] not in used_ids]
+            
+            server_host = request.host
+            qr_url = f"http://{server_host}/stock/kit/{kit_name}"
+            
+            return render_template(
+                "kit_qr_label.html",
+                kit_name=kit_name,
+                components=components,
+                cpu_comp=cpu_comp,
+                processor_comp=processor_comp,
+                ram_comp=ram_comp,
+                disk_comp=disk_comp,
+                power_comp=power_comp,
+                monitor_comp=monitor_comp,
+                other_comps=other_comps,
+                qr_url=qr_url,
+                server_host=server_host
+            )
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/stock/kit/<kit_name>", methods=["GET"])
+def view_stock_kit_detail(kit_name):
+    """Ficha móvil en vivo cuando un técnico escanea el QR del kit en la estantería del depósito."""
+    try:
+        with get_db_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, serial_number, component_type, brand_model, status, kit_name, supplier, created_at, assigned_pc
+                FROM components
+                WHERE kit_name = %s
+                ORDER BY component_type ASC
+                """,
+                (kit_name,)
+            ).fetchall()
+            
+            # Si el kit fue desplegado a una PC, redirigir a esa PC
+            if not rows:
+                chk_pc = conn.execute("SELECT pc_name FROM pcs WHERE pc_name = %s", (kit_name,)).fetchone()
+                if chk_pc:
+                    from flask import redirect, url_for
+                    return redirect(url_for("dashboard.pc_detail", pc_name=kit_name))
+                
+                return render_template("kit_detail_view.html", kit_name=kit_name, components=[], created_at=None)
+
+            components = [dict(r) for r in rows]
+            created_str = components[0]["created_at"].strftime("%Y-%m-%d %H:%M") if components[0].get("created_at") and hasattr(components[0]["created_at"], "strftime") else str(components[0].get("created_at") or "")
+
+            return render_template(
+                "kit_detail_view.html",
+                kit_name=kit_name,
+                components=components,
+                created_at=created_str
+            )
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @bp_stock.route("/api/components/swap_failing_component", methods=["POST"])
 def swap_failing_component():
     try:

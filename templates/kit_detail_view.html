@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kit {{ kit_name }} - Ficha de Stock</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+        }
+        .card-custom {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .font-mono {
+            font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+        .comp-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="p-3 p-md-4">
+
+    <div class="container" style="max-width: 680px;">
+        <!-- Header info -->
+        <div class="text-center mb-4">
+            <span class="badge bg-info text-dark font-mono px-3 py-1 fw-bold fs-6 mb-2">
+                <i class="bi bi-box-seam-fill me-1"></i>COMBO / CPU ARMADA EN DEPÓSITO
+            </span>
+            <h2 class="fw-bold font-mono text-white mb-1"><i class="bi bi-cpu text-info me-2"></i>{{ kit_name }}</h2>
+            <p class="text-slate-400 small mb-0">Departamento de Informática • Centro Judicial San Pedro</p>
+        </div>
+
+        <div class="card-custom p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary">
+                <div>
+                    <span class="text-muted small">Estado de Inventario:</span>
+                    <div class="badge bg-success text-white px-2 py-1 mt-1">
+                        <i class="bi bi-check-circle-fill me-1"></i>Listo en Depósito
+                    </div>
+                </div>
+                {% if created_at %}
+                <div class="text-end">
+                    <span class="text-muted small">Fecha de Armado:</span>
+                    <div class="font-mono text-slate-300 small">{{ created_at }}</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Dynamic Specs Alert -->
+            <div class="alert alert-info py-2 px-3 mb-4 small border-secondary" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">
+                <i class="bi bi-lightning-charge-fill text-warning me-1"></i>
+                <strong>QR Dinámico en Vivo:</strong> Los componentes listados abajo reflejan en tiempo real la configuración física del gabinete en el taller.
+            </div>
+
+            <h5 class="fw-bold text-info mb-3"><i class="bi bi-diagram-3-fill me-2"></i>Componentes Instalados en el Combo:</h5>
+
+            <div class="row g-2">
+                {% for c in components %}
+                <div class="col-12">
+                    <div class="comp-card p-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold text-white mb-1">
+                                {% if 'CPU' in (c.component_type or '').upper() or 'GAB' in (c.component_type or '').upper() %}
+                                    <i class="bi bi-pc-display text-info me-2 fs-5"></i>
+                                {% elif 'MICRO' in (c.component_type or '').upper() or 'PROC' in (c.component_type or '').upper() %}
+                                    <i class="bi bi-cpu text-info me-2 fs-5"></i>
+                                {% elif 'RAM' in (c.component_type or '').upper() or 'MEMORIA' in (c.component_type or '').upper() %}
+                                    <i class="bi bi-memory text-info me-2 fs-5"></i>
+                                {% elif 'DISCO' in (c.component_type or '').upper() or 'SSD' in (c.component_type or '').upper() or 'HDD' in (c.component_type or '').upper() %}
+                                    <i class="bi bi-hdd-fill text-info me-2 fs-5"></i>
+                                {% elif 'MONITOR' in (c.component_type or '').upper() %}
+                                    <i class="bi bi-display text-info me-2 fs-5"></i>
+                                {% elif 'TECLADO' in (c.component_type or '').upper() %}
+                                    <i class="bi bi-keyboard text-info me-2 fs-5"></i>
+                                {% elif 'MOUSE' in (c.component_type or '').upper() %}
+                                    <i class="bi bi-mouse text-info me-2 fs-5"></i>
+                                {% else %}
+                                    <i class="bi bi-gear-fill text-info me-2 fs-5"></i>
+                                {% endif %}
+                                {{ c.component_type }}
+                            </div>
+                            <div class="text-slate-300 small">{{ c.brand_model or 'Sin modelo' }}</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-dark border border-secondary text-light font-mono" title="Número de Serie">
+                                S/N: {{ c.serial_number }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12 text-center text-muted py-3">
+                    No hay componentes vinculados actualmente a este kit.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex justify-content-center gap-2">
+            <a href="{{ url_for('stock.stock_view') }}" class="btn btn-outline-light btn-sm fw-bold">
+                <i class="bi bi-box-seam me-1"></i>Ir al Módulo de Stock
+            </a>
+            <a href="{{ url_for('stock.kit_qr_label_view', kit_name=kit_name) }}" class="btn btn-primary btn-sm fw-bold" target="_blank">
+                <i class="bi bi-printer-fill me-1"></i>Imprimir Sticker QR
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
