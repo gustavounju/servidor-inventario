@@ -790,7 +790,7 @@ def assign_component_bundle():
                 if not chk_pc:
                     conn.execute(
                         """
-                        INSERT INTO pcs (pc_name, last_user, fuero, is_active, notes)
+                        INSERT INTO pcs (pc_name, last_user, fuero, is_active, os_name)
                         VALUES (%s, %s, %s, 1, 'Equipo registrado desde Armado / Asignación de Stock')
                         """,
                         (pc_name, assigned_user or None, assigned_fuero or 'Stock')
