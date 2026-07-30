@@ -106,15 +106,21 @@
                     </div>
                     {% endif %}
 
-                    {% if ram_comp %}
+                    {% if ram_comps %}
                     <div class="spec-item mb-1">
-                        <strong>🧠 Memoria RAM:</strong> <span class="font-mono text-dark">{{ ram_comp.brand_model or ram_comp.serial_number }}</span>
+                        <strong>🧠 Memoria RAM:</strong> 
+                        {% for r in ram_comps %}
+                            <span class="font-mono text-dark">{{ r.brand_model or r.serial_number }}</span>{% if not loop.last %}, {% endif %}
+                        {% endfor %}
                     </div>
                     {% endif %}
 
-                    {% if disk_comp %}
+                    {% if disk_comps %}
                     <div class="spec-item mb-1">
-                        <strong>💾 Disco / SSD:</strong> <span class="font-mono text-dark">{{ disk_comp.brand_model or disk_comp.serial_number }}</span>
+                        <strong>💾 Disco / SSD:</strong> 
+                        {% for d in disk_comps %}
+                            <span class="font-mono text-dark">{{ d.brand_model or d.serial_number }}</span>{% if not loop.last %}, {% endif %}
+                        {% endfor %}
                     </div>
                     {% endif %}
 
@@ -124,15 +130,33 @@
                     </div>
                     {% endif %}
 
-                    {% if monitor_comp %}
+                    {% if monitor_comps %}
                     <div class="spec-item mb-1">
-                        <strong>📺 Monitor Incluido:</strong> <span class="font-mono text-dark">{{ monitor_comp.brand_model or monitor_comp.serial_number }}</span>
+                        <strong>📺 Monitor:</strong> 
+                        {% for m in monitor_comps %}
+                            <span class="font-mono text-dark">{{ m.brand_model or m.serial_number }}</span>{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if keyboard_comp %}
+                    <div class="spec-item mb-1">
+                        <strong>⌨️ Teclado:</strong> <span class="font-mono text-dark">{{ keyboard_comp.brand_model or keyboard_comp.serial_number }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if mouse_comp %}
+                    <div class="spec-item mb-1">
+                        <strong>🖱️ Mouse:</strong> <span class="font-mono text-dark">{{ mouse_comp.brand_model or mouse_comp.serial_number }}</span>
                     </div>
                     {% endif %}
 
                     {% if other_comps %}
                     <div class="spec-item mb-1 text-muted" style="font-size: 0.75rem;">
-                        <strong>Periféricos adicionales:</strong> {{ other_comps | map(attribute='component_type') | join(', ') }}
+                        <strong>Periféricos adicionales:</strong> 
+                        {% for o in other_comps %}
+                            <span>{{ o.component_type }}: {{ o.brand_model or o.serial_number }}</span>{% if not loop.last %}, {% endif %}
+                        {% endfor %}
                     </div>
                     {% endif %}
                 </div>

@@ -1143,14 +1143,19 @@ def kit_qr_label_view(kit_name):
             
             components = [dict(r) for r in rows]
             
-            cpu_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["CPU", "GABINETE", "GAB"]), None)
-            processor_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["MICRO", "PROCESADOR", "PROC"]), None)
-            ram_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["MEMORIA", "RAM"]), None)
-            disk_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["DISCO", "SSD", "HDD", "NVME"]), None)
-            power_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["FUENTE", "POWER", "FNT"]), None)
-            monitor_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["MONITOR", "MON"]), None)
-            
-            used_ids = {c['id'] for c in [cpu_comp, processor_comp, ram_comp, disk_comp, power_comp, monitor_comp] if c}
+            def match_comp(types_list):
+                return [c for c in components if any(k in (c.get("component_type") or "").upper() for k in types_list)]
+
+            cpu_comps = match_comp(["CPU", "GABINETE", "GAB"])
+            processor_comps = match_comp(["MICRO", "PROCESADOR", "PROC"])
+            ram_comps = match_comp(["MEMORIA", "RAM"])
+            disk_comps = match_comp(["DISCO", "SSD", "HDD", "NVME", "ALMACENAMIENTO"])
+            power_comps = match_comp(["FUENTE", "POWER", "FNT"])
+            monitor_comps = match_comp(["MONITOR", "MON"])
+            keyboard_comps = match_comp(["TECLADO", "TEC"])
+            mouse_comps = match_comp(["MOUSE", "MOU"])
+
+            used_ids = {c['id'] for group in [cpu_comps, processor_comps, ram_comps, disk_comps, power_comps, monitor_comps, keyboard_comps, mouse_comps] for c in group}
             other_comps = [c for c in components if c['id'] not in used_ids]
             
             server_host = request.host
@@ -1160,12 +1165,17 @@ def kit_qr_label_view(kit_name):
                 "kit_qr_label.html",
                 kit_name=kit_name,
                 components=components,
-                cpu_comp=cpu_comp,
-                processor_comp=processor_comp,
-                ram_comp=ram_comp,
-                disk_comp=disk_comp,
-                power_comp=power_comp,
-                monitor_comp=monitor_comp,
+                cpu_comp=cpu_comps[0] if cpu_comps else None,
+                processor_comp=processor_comps[0] if processor_comps else None,
+                ram_comps=ram_comps,
+                ram_comp=ram_comps[0] if ram_comps else None,
+                disk_comps=disk_comps,
+                disk_comp=disk_comps[0] if disk_comps else None,
+                power_comp=power_comps[0] if power_comps else None,
+                monitor_comps=monitor_comps,
+                monitor_comp=monitor_comps[0] if monitor_comps else None,
+                keyboard_comp=keyboard_comps[0] if keyboard_comps else None,
+                mouse_comp=mouse_comps[0] if mouse_comps else None,
                 other_comps=other_comps,
                 qr_url=qr_url,
                 server_host=server_host
