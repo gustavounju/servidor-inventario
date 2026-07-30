@@ -1536,9 +1536,12 @@
                                         <div class="d-flex flex-wrap">${compBadges}</div>
                                     </div>
                                     <div class="card-footer py-2 px-3 border-secondary d-flex justify-content-between align-items-center flex-wrap gap-1" style="background: rgba(15, 23, 42, 0.4);">
-                                        <div class="d-flex gap-1">
+                                        <div class="d-flex gap-1 flex-wrap">
                                             <button class="btn btn-success btn-sm fw-bold px-2 py-1" onclick="openDeployKitModal('${safeKitName}')">
                                                 <i class="bi bi-send-check me-1"></i>Asignar / Desplegar
+                                            </button>
+                                            <button class="btn btn-warning btn-sm fw-bold px-2 py-1 text-dark" onclick="openEditKitModal('${safeKitName}')" title="Sumar o modificar componentes de este kit en depósito">
+                                                <i class="bi bi-pencil-square me-1"></i>Editar Kit
                                             </button>
                                             <a href="/stock/kit/${encodeURIComponent(kit.kit_name)}/qr_label" target="_blank" class="btn btn-outline-info btn-sm fw-bold px-2 py-1" title="Imprimir Sticker QR para pegar al costado de la CPU">
                                                 <i class="bi bi-qr-code me-1"></i>Sticker QR
@@ -1737,6 +1740,138 @@
             .then(data => {
                 if (data.status === 'success') {
                     loadComponents();
+                    loadStockKits();
+                    alert(data.message);
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(err => alert("Error de red: " + err));
+        }
+
+        let currentEditKitName = '';
+        let currentEditKitComponents = [];
+        let pendingAddSerials = [];
+        let pendingRemoveSerials = [];
+
+        function openEditKitModal(kitName) {
+            currentEditKitName = kitName;
+            pendingAddSerials = [];
+            pendingRemoveSerials = [];
+            
+            const elName = document.getElementById('editKitName');
+            if (elName) elName.value = kitName;
+            const inputNew = document.getElementById('editKitNewSerial');
+            if (inputNew) inputNew.value = '';
+            
+            fetch('/api/stock/kits')
+                .then(res => res.json())
+                .then(data => {
+                    const kit = (data.kits || []).find(k => k.kit_name === kitName);
+                    currentEditKitComponents = kit ? (kit.components || []) : [];
+                    renderEditKitCurrentList();
+                });
+
+            const modalEl = document.getElementById('editKitModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        }
+
+        function renderEditKitCurrentList() {
+            const container = document.getElementById('editKitCurrentList');
+            if (!container) return;
+
+            let activeComps = currentEditKitComponents.filter(c => !pendingRemoveSerials.includes(c.serial_number));
+            
+            let html = activeComps.map(c => `
+                <div class="badge bg-dark border border-secondary text-light font-monospace p-2 d-flex align-items-center gap-2">
+                    <span><i class="bi bi-gear text-info me-1"></i>${c.component_type}: <strong>${c.brand_model || c.serial_number}</strong> (S/N: ${c.serial_number})</span>
+                    <button type="button" class="btn btn-outline-danger btn-sm p-0 px-1 border-0" onclick="removeCompFromKitEdit('${c.serial_number}')" title="Retirar del kit">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            pendingAddSerials.forEach(s => {
+                html += `
+                    <div class="badge bg-warning text-dark border border-warning font-monospace p-2 d-flex align-items-center gap-2">
+                        <span><i class="bi bi-plus-circle-fill me-1"></i>SUMAR: <strong>${s}</strong></span>
+                        <button type="button" class="btn btn-outline-dark btn-sm p-0 px-1 border-0" onclick="cancelAddCompToKitEdit('${s}')" title="Cancelar adición">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
+                    </div>
+                `;
+            });
+
+            if (!html) html = '<span class="text-muted small">El kit no tiene componentes.</span>';
+            container.innerHTML = html;
+
+            const alertEl = document.getElementById('editKitStagingAlert');
+            const textEl = document.getElementById('editKitStagingText');
+            if (pendingAddSerials.length > 0 || pendingRemoveSerials.length > 0) {
+                if (alertEl) alertEl.classList.remove('d-none');
+                if (textEl) textEl.textContent = `+${pendingAddSerials.length} pieza(s) a sumar, -${pendingRemoveSerials.length} pieza(s) a retirar.`;
+            } else {
+                if (alertEl) alertEl.classList.add('d-none');
+            }
+        }
+
+        function removeCompFromKitEdit(serial) {
+            if (!pendingRemoveSerials.includes(serial)) {
+                pendingRemoveSerials.push(serial);
+                renderEditKitCurrentList();
+            }
+        }
+
+        function cancelAddCompToKitEdit(serial) {
+            pendingAddSerials = pendingAddSerials.filter(s => s !== serial);
+            renderEditKitCurrentList();
+        }
+
+        function addCompToKitEdit() {
+            const input = document.getElementById('editKitNewSerial');
+            const rawVal = input ? input.value.trim() : '';
+            const serial = extractSerialFromOption(rawVal);
+            if (!serial) {
+                alert("Seleccioná o escaneá un número de serie válido.");
+                return;
+            }
+            if (pendingAddSerials.includes(serial)) {
+                alert("Ese componente ya está agregado en la lista.");
+                return;
+            }
+            pendingAddSerials.push(serial);
+            input.value = '';
+            renderEditKitCurrentList();
+        }
+
+        function submitEditKit() {
+            if (pendingAddSerials.length === 0 && pendingRemoveSerials.length === 0) {
+                alert("No hiciste ningún cambio en el kit.");
+                return;
+            }
+
+            fetch('/api/stock/kits/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    kit_name: currentEditKitName,
+                    add_serials: pendingAddSerials,
+                    remove_serials: pendingRemoveSerials
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const modalEl = document.getElementById('editKitModal');
+                    if (modalEl) {
+                        const modalObj = bootstrap.Modal.getInstance(modalEl);
+                        if (modalObj) modalObj.hide();
+                    }
+                    loadComponents();
+                    loadStockDatalists();
                     loadStockKits();
                     alert(data.message);
                 } else {
@@ -1976,6 +2111,56 @@
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-success btn-sm fw-bold" onclick="submitDeployKit()">
                         <i class="bi bi-check-lg me-1"></i>Confirmar Despliegue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar / Modificar / Sumar Componentes a Kit de Stock -->
+    <div class="modal fade" id="editKitModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-warning">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-warning"><i class="bi bi-pencil-square me-2"></i>Modificar / Sumar Componentes al Kit</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small text-slate-300 fw-bold">Kit en Depósito:</label>
+                        <input type="text" id="editKitName" class="form-control form-control-sm bg-dark text-info border-secondary font-monospace fw-bold" readonly>
+                    </div>
+
+                    <div class="mb-3 border-bottom border-secondary pb-3">
+                        <label class="form-label small text-slate-300 fw-bold mb-2">Piezas Actuales del Kit:</label>
+                        <div id="editKitCurrentList" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-warning fw-bold"><i class="bi bi-plus-circle-fill me-1"></i>Sumar Pieza del Stock al Kit (Teclado, Mouse, Monitor, Disco, RAM, etc.):</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="editKitNewSerial" list="listStockAllAvailable" class="form-control bg-dark text-white border-secondary font-monospace" placeholder="Seleccionar del Stock o escanear S/N (ej: Teclado, Mouse, etc.)..." autocomplete="off">
+                            <button class="btn btn-warning fw-bold text-dark" type="button" onclick="addCompToKitEdit()">
+                                <i class="bi bi-plus-lg me-1"></i>Sumar Pieza
+                            </button>
+                        </div>
+                        <datalist id="listStockAllAvailable">
+                            {% if stock_components %}
+                            {% for c in stock_components %}
+                            <option value="{{ c.serial_number }} | {{ c.component_type }} {{ c.brand_model or '' }}"></option>
+                            {% endfor %}
+                            {% endif %}
+                        </datalist>
+                    </div>
+
+                    <div id="editKitStagingAlert" class="alert alert-secondary py-2 px-3 small d-none border-secondary">
+                        <strong>Cambios Pendientes:</strong> <span id="editKitStagingText"></span>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning btn-sm fw-bold text-dark" onclick="submitEditKit()">
+                        <i class="bi bi-save-fill me-1"></i>Guardar Cambios del Kit
                     </button>
                 </div>
             </div>

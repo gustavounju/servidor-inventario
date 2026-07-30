@@ -936,6 +936,84 @@ def get_stock_kits():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@bp_stock.route("/api/stock/kits/update", methods=["POST"])
+def update_stock_kit():
+    """Suma nuevos componentes del stock o retira componentes de un kit armado en depósito."""
+    try:
+        if not check_stock_permission():
+            return jsonify({"status": "error", "message": "Acceso denegado: Se requiere permiso de Gestión Stock."}), 403
+
+        data = request.json or {}
+        kit_name = (data.get("kit_name") or "").strip()
+        add_serials = data.get("add_serials") or []
+        remove_serials = data.get("remove_serials") or []
+
+        if not kit_name:
+            return jsonify({"status": "error", "message": "Nombre de Kit requerido."}), 400
+
+        from utils.auth import current_username, current_technician_identity
+        current_usr = current_username() or current_technician_identity()
+
+        added_count = 0
+        removed_count = 0
+
+        with get_db_connection() as conn:
+            # 1. Sumar nuevos componentes al kit
+            for serial in add_serials:
+                serial_clean = str(serial).strip()
+                if not serial_clean:
+                    continue
+                comp = conn.execute("SELECT * FROM components WHERE serial_number = %s", (serial_clean,)).fetchone()
+                if comp:
+                    conn.execute(
+                        """
+                        UPDATE components
+                        SET status = 'Stock (Combo)', kit_name = %s, assigned_pc = NULL, assigned_user = NULL, assigned_fuero = NULL
+                        WHERE serial_number = %s
+                        """,
+                        (kit_name, serial_clean)
+                    )
+                    added_count += 1
+                    detalles = f"Componente {comp['component_type']} (S/N: {serial_clean}) sumado al Kit '{kit_name}'"
+                    conn.execute(
+                        "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                        ("Stock", 'KIT_ADD_COMP', comp.get('status') or 'Stock', detalles, current_usr, "GESTION_STOCK", request.remote_addr)
+                    )
+
+            # 2. Retirar/Desvincular componentes del kit
+            for serial in remove_serials:
+                serial_clean = str(serial).strip()
+                if not serial_clean:
+                    continue
+                comp = conn.execute("SELECT * FROM components WHERE serial_number = %s AND kit_name = %s", (serial_clean, kit_name)).fetchone()
+                if comp:
+                    conn.execute(
+                        """
+                        UPDATE components
+                        SET status = 'Stock', kit_name = NULL
+                        WHERE serial_number = %s AND kit_name = %s
+                        """,
+                        (serial_clean, kit_name)
+                    )
+                    removed_count += 1
+                    detalles = f"Componente {comp['component_type']} (S/N: {serial_clean}) desvinculado del Kit '{kit_name}'"
+                    conn.execute(
+                        "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                        ("Stock", 'KIT_REMOVE_COMP', kit_name, detalles, current_usr, "GESTION_STOCK", request.remote_addr)
+                    )
+
+            conn.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": f"Kit '{kit_name}' actualizado: {added_count} pieza(s) sumada(s), {removed_count} retirada(s).",
+            "added_count": added_count,
+            "removed_count": removed_count
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @bp_stock.route("/api/stock/kits/deploy", methods=["POST"])
 def deploy_stock_kit():
     try:
