@@ -1148,6 +1148,7 @@ def kit_qr_label_view(kit_name):
 
             cpu_comps = match_comp(["CPU", "GABINETE", "GAB"])
             processor_comps = match_comp(["MICRO", "PROCESADOR", "PROC"])
+            motherboard_comps = match_comp(["MOTHER", "PLACA", "MOBO"])
             ram_comps = match_comp(["MEMORIA", "RAM"])
             disk_comps = match_comp(["DISCO", "SSD", "HDD", "NVME", "ALMACENAMIENTO"])
             power_comps = match_comp(["FUENTE", "POWER", "FNT"])
@@ -1155,7 +1156,7 @@ def kit_qr_label_view(kit_name):
             keyboard_comps = match_comp(["TECLADO", "TEC"])
             mouse_comps = match_comp(["MOUSE", "MOU"])
 
-            used_ids = {c['id'] for group in [cpu_comps, processor_comps, ram_comps, disk_comps, power_comps, monitor_comps, keyboard_comps, mouse_comps] for c in group}
+            used_ids = {c['id'] for group in [cpu_comps, processor_comps, motherboard_comps, ram_comps, disk_comps, power_comps, monitor_comps, keyboard_comps, mouse_comps] for c in group}
             other_comps = [c for c in components if c['id'] not in used_ids]
             
             server_host = request.host
@@ -1167,6 +1168,7 @@ def kit_qr_label_view(kit_name):
                 components=components,
                 cpu_comp=cpu_comps[0] if cpu_comps else None,
                 processor_comp=processor_comps[0] if processor_comps else None,
+                motherboard_comp=motherboard_comps[0] if motherboard_comps else None,
                 ram_comps=ram_comps,
                 ram_comp=ram_comps[0] if ram_comps else None,
                 disk_comps=disk_comps,

@@ -1510,6 +1510,7 @@
                             let typeUpper = (c.component_type || '').toUpperCase();
                             if (typeUpper.includes('CPU') || typeUpper.includes('GABINETE')) icon = 'bi-pc-display';
                             else if (typeUpper.includes('MICRO') || typeUpper.includes('PROCESADOR')) icon = 'bi-cpu';
+                            else if (typeUpper.includes('MOTHER') || typeUpper.includes('PLACA') || typeUpper.includes('MOBO')) icon = 'bi-cpu';
                             else if (typeUpper.includes('MEMORIA') || typeUpper.includes('RAM')) icon = 'bi-memory';
                             else if (typeUpper.includes('DISCO') || typeUpper.includes('SSD') || typeUpper.includes('HDD')) icon = 'bi-hdd-fill';
                             else if (typeUpper.includes('MONITOR')) icon = 'bi-display';
@@ -1560,6 +1561,42 @@
                 .catch(err => console.error("Error cargando kits de stock:", err));
         }
 
+        function loadStockDatalists() {
+            fetch('/api/components/stock_available')
+                .then(res => res.json())
+                .then(comps => {
+                    if (!Array.isArray(comps)) return;
+
+                    const filterOptions = (typesList) => {
+                        return comps.filter(c => {
+                            let t = (c.component_type || '').toUpperCase();
+                            return typesList.some(k => t.includes(k));
+                        }).map(c => `<option value="${c.serial_number} | ${c.component_type} ${c.brand_model || ''}${c.supplier ? ' (' + c.supplier + ')' : ''}"></option>`).join('');
+                    };
+
+                    const setOptions = (id, html) => {
+                        const el = document.getElementById(id);
+                        if (el) el.innerHTML = html;
+                    };
+
+                    setOptions('listStockCpu', filterOptions(['CPU', 'GABINETE', 'GAB']));
+                    setOptions('listStockProcessor', filterOptions(['MICRO', 'PROCESADOR', 'PROC']));
+                    setOptions('listStockMotherboard', filterOptions(['MOTHER', 'PLACA', 'MOBO']));
+                    setOptions('listStockDisk', filterOptions(['DISCO', 'SSD', 'HDD', 'NVME', 'ALMACENAMIENTO']));
+                    setOptions('listStockRam', filterOptions(['MEMORIA', 'RAM']));
+                    setOptions('listStockPower', filterOptions(['FUENTE', 'POWER', 'FNT']));
+                    setOptions('listStockMonitor', filterOptions(['MONITOR', 'MON']));
+                    setOptions('listStockKeyboard', filterOptions(['TECLADO', 'TEC']));
+                    setOptions('listStockMouse', filterOptions(['MOUSE', 'MOU']));
+                    setOptions('listStockUps', filterOptions(['UPS', 'BAT']));
+                    setOptions('listStockPrinter', filterOptions(['IMPRESORA', 'PRINTER', 'IMP']));
+                    
+                    const allHtml = comps.map(c => `<option value="${c.serial_number} | ${c.component_type} ${c.brand_model || ''}"></option>`).join('');
+                    setOptions('listStockAllAvailable', allHtml);
+                })
+                .catch(err => console.error("Error cargando datalists de stock:", err));
+        }
+
         function toggleBundleMode() {
             const chkKit = document.getElementById('chkSaveAsStockKit');
             const isKit = chkKit ? chkKit.checked : false;
@@ -1588,7 +1625,7 @@
             toggleBundleMode();
 
             const fieldIds = [
-                'bundleSerialCpu', 'bundleSerialProcessor', 'bundleSerialDisk',
+                'bundleSerialCpu', 'bundleSerialProcessor', 'bundleSerialMotherboard', 'bundleSerialDisk',
                 'bundleSerialRam', 'bundleSerialPower', 'bundleSerialMonitor',
                 'bundleSerialKeyboard', 'bundleSerialMouse', 'bundleSerialUps', 'bundleSerialPrinter'
             ];
@@ -1613,7 +1650,7 @@
             const isStockKit = document.getElementById('chkSaveAsStockKit') ? document.getElementById('chkSaveAsStockKit').checked : false;
 
             const fieldIds = [
-                'bundleSerialCpu', 'bundleSerialProcessor', 'bundleSerialDisk',
+                'bundleSerialCpu', 'bundleSerialProcessor', 'bundleSerialMotherboard', 'bundleSerialDisk',
                 'bundleSerialRam', 'bundleSerialPower', 'bundleSerialMonitor',
                 'bundleSerialKeyboard', 'bundleSerialMouse', 'bundleSerialUps', 'bundleSerialPrinter'
             ];
@@ -1954,6 +1991,18 @@
                             <datalist id="listStockProcessor">
                                 {% if stock_components %}
                                 {% for c in stock_components if 'MICRO' in (c.component_type or '').upper() or 'PROCESADOR' in (c.component_type or '').upper() or 'PROC' in (c.component_type or '').upper() %}
+                                <option value="{{ c.serial_number }} | {{ c.component_type }} {{ c.brand_model or '' }}{% if c.supplier %} ({{ c.supplier }}){% endif %}"></option>
+                                {% endfor %}
+                                {% endif %}
+                            </datalist>
+                        </div>
+                        <!-- Placa Madre / Motherboard -->
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">🧩 Placa Madre / Motherboard (S/N):</label>
+                            <input type="text" id="bundleSerialMotherboard" list="listStockMotherboard" class="form-control form-control-sm bg-dark text-white border-secondary font-monospace bundle-item-input" placeholder="Desplegar del Stock o escanear S/N..." autocomplete="off">
+                            <datalist id="listStockMotherboard">
+                                {% if stock_components %}
+                                {% for c in stock_components if 'MOTHER' in (c.component_type or '').upper() or 'PLACA' in (c.component_type or '').upper() or 'MOBO' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }} | {{ c.component_type }} {{ c.brand_model or '' }}{% if c.supplier %} ({{ c.supplier }}){% endif %}"></option>
                                 {% endfor %}
                                 {% endif %}

@@ -106,6 +106,12 @@
                     </div>
                     {% endif %}
 
+                    {% if motherboard_comp %}
+                    <div class="spec-item mb-1">
+                        <strong>🧩 Placa Madre:</strong> <span class="font-mono text-dark">{{ motherboard_comp.brand_model or motherboard_comp.serial_number }}</span>
+                    </div>
+                    {% endif %}
+
                     {% if ram_comps %}
                     <div class="spec-item mb-1">
                         <strong>🧠 Memoria RAM:</strong> 
