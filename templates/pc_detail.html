@@ -416,7 +416,9 @@
 
         <span><i class="bi bi-building me-1"></i><strong>{{ pc.fuero or '-' }}</strong></span>
 
-        <span><i class="bi bi-wifi me-1"></i><strong>{{ pc.ip_address or '-' }}</strong></span>
+        <span><i class="bi bi-file-earmark-text me-1"></i>Remito: <strong>{{ invoice_list | join(', ') if invoice_list else 'N/A' }}</strong></span>
+
+        <span><i class="bi bi-file-earmark-check me-1"></i>O/C: <strong>{{ oc_list | join(', ') if oc_list else 'N/A' }}</strong></span>
 
       </p>
 

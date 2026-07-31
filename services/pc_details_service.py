@@ -221,10 +221,14 @@ def get_pc_detail_context(pc_name):
         
         available_ups = conn.execute("SELECT id, code, model FROM ups_inventory WHERE assigned_pc IS NULL").fetchall()
         pc_components = conn.execute('''
-            SELECT id, serial_number, component_type, brand_model, status, assigned_to_component_id 
+            SELECT id, serial_number, component_type, brand_model, status, assigned_to_component_id, oc_number, invoice_number, supplier, assigned_user, assigned_fuero 
             FROM components WHERE assigned_pc = %s ORDER BY assigned_to_component_id ASC, component_type
         ''', (pc_name,)).fetchall()
         
+        comp_dicts = [dict(c) for c in pc_components]
+        oc_list = sorted(list({c["oc_number"].strip() for c in comp_dicts if c.get("oc_number") and c["oc_number"].strip()}))
+        invoice_list = sorted(list({c["invoice_number"].strip() for c in comp_dicts if c.get("invoice_number") and c["invoice_number"].strip()}))
+
         available_components = conn.execute('''
             SELECT id, serial_number, component_type, brand_model FROM components 
             WHERE status = 'Stock' AND component_type NOT LIKE 'Bat%'
@@ -275,4 +279,6 @@ def get_pc_detail_context(pc_name):
             "hardware_components": hardware_components,
             "preferred_printer_serial": preferred_printer_serial,
             "preferred_printer_serial_source": preferred_printer_serial_source,
+            "oc_list": oc_list,
+            "invoice_list": invoice_list
         }

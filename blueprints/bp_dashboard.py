@@ -460,7 +460,9 @@ def pc_qr_label_view(pc_name):
         keyboard_comp=keyboard_comp,
         mouse_comp=mouse_comp,
         qr_url=qr_url,
-        server_host=server_host
+        server_host=server_host,
+        oc_list=ctx.get("oc_list", []),
+        invoice_list=ctx.get("invoice_list", [])
     )
 
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])

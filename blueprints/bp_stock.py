@@ -1129,7 +1129,7 @@ def kit_qr_label_view(kit_name):
         with get_db_connection() as conn:
             rows = conn.execute(
                 """
-                SELECT id, serial_number, component_type, brand_model, status, kit_name, supplier, created_at
+                SELECT id, serial_number, component_type, brand_model, status, kit_name, supplier, created_at, assigned_pc, assigned_user, assigned_fuero, oc_number, invoice_number
                 FROM components
                 WHERE kit_name = %s AND status LIKE %s
                 ORDER BY component_type ASC
@@ -1163,6 +1163,12 @@ def kit_qr_label_view(kit_name):
             server_host = request.host
             qr_url = f"{scheme}://{server_host}/stock/kit/{kit_name}"
             
+            oc_list = sorted(list({c["oc_number"].strip() for c in components if c.get("oc_number") and c["oc_number"].strip()}))
+            invoice_list = sorted(list({c["invoice_number"].strip() for c in components if c.get("invoice_number") and c["invoice_number"].strip()}))
+            assigned_user = next((c["assigned_user"].strip() for c in components if c.get("assigned_user") and c["assigned_user"].strip()), None)
+            assigned_fuero = next((c["assigned_fuero"].strip() for c in components if c.get("assigned_fuero") and c["assigned_fuero"].strip()), None)
+            assigned_pc = next((c["assigned_pc"].strip() for c in components if c.get("assigned_pc") and c["assigned_pc"].strip()), None)
+
             return render_template(
                 "kit_qr_label.html",
                 kit_name=kit_name,
@@ -1181,7 +1187,12 @@ def kit_qr_label_view(kit_name):
                 mouse_comp=mouse_comps[0] if mouse_comps else None,
                 other_comps=other_comps,
                 qr_url=qr_url,
-                server_host=server_host
+                server_host=server_host,
+                oc_list=oc_list,
+                invoice_list=invoice_list,
+                assigned_user=assigned_user,
+                assigned_fuero=assigned_fuero,
+                assigned_pc=assigned_pc
             )
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -1194,7 +1205,7 @@ def view_stock_kit_detail(kit_name):
         with get_db_connection() as conn:
             rows = conn.execute(
                 """
-                SELECT id, serial_number, component_type, brand_model, status, kit_name, supplier, created_at, assigned_pc
+                SELECT id, serial_number, component_type, brand_model, status, kit_name, supplier, created_at, assigned_pc, assigned_user, assigned_fuero, oc_number, invoice_number
                 FROM components
                 WHERE kit_name = %s
                 ORDER BY component_type ASC
@@ -1209,16 +1220,27 @@ def view_stock_kit_detail(kit_name):
                     from flask import redirect, url_for
                     return redirect(url_for("dashboard.pc_detail", pc_name=kit_name))
                 
-                return render_template("kit_detail_view.html", kit_name=kit_name, components=[], created_at=None)
+                return render_template("kit_detail_view.html", kit_name=kit_name, components=[], created_at=None, oc_list=[], invoice_list=[], assigned_user=None, assigned_fuero=None, assigned_pc=None)
 
             components = [dict(r) for r in rows]
             created_str = components[0]["created_at"].strftime("%Y-%m-%d %H:%M") if components[0].get("created_at") and hasattr(components[0]["created_at"], "strftime") else str(components[0].get("created_at") or "")
+
+            oc_list = sorted(list({c["oc_number"].strip() for c in components if c.get("oc_number") and c["oc_number"].strip()}))
+            invoice_list = sorted(list({c["invoice_number"].strip() for c in components if c.get("invoice_number") and c["invoice_number"].strip()}))
+            assigned_user = next((c["assigned_user"].strip() for c in components if c.get("assigned_user") and c["assigned_user"].strip()), None)
+            assigned_fuero = next((c["assigned_fuero"].strip() for c in components if c.get("assigned_fuero") and c["assigned_fuero"].strip()), None)
+            assigned_pc = next((c["assigned_pc"].strip() for c in components if c.get("assigned_pc") and c["assigned_pc"].strip()), None)
 
             return render_template(
                 "kit_detail_view.html",
                 kit_name=kit_name,
                 components=components,
-                created_at=created_str
+                created_at=created_str,
+                oc_list=oc_list,
+                invoice_list=invoice_list,
+                assigned_user=assigned_user,
+                assigned_fuero=assigned_fuero,
+                assigned_pc=assigned_pc
             )
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

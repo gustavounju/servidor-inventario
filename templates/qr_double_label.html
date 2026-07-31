@@ -89,6 +89,7 @@
                 <div class="flex-grow-1 small">
                     <div class="mb-1"><strong>Usuario:</strong> <span class="text-dark">{{ pc_info.last_user or 'No asignado' }}</span></div>
                     <div class="mb-1"><strong>Fuero / Área:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
+                    <div class="mb-1" style="font-size:0.75rem;"><strong>Remito:</strong> <span class="font-mono text-primary">{{ invoice_list | join(', ') if invoice_list else 'N/A' }}</span> | <strong>O/C:</strong> <span class="font-mono text-dark">{{ oc_list | join(', ') if oc_list else 'N/A' }}</span></div>
                     
                     <div class="border-top pt-2 mt-2" style="font-size: 0.75rem;">
                         <div class="fw-bold text-muted mb-1"><i class="bi bi-diagram-3 me-1"></i>Periféricos Vinculados:</div>
@@ -126,6 +127,7 @@
                     <div class="mb-1"><strong>Modelo:</strong> {{ monitor_comp.brand_model if monitor_comp else 'N/A' }}</div>
                     <div class="mb-1"><strong>Asignado a:</strong> {{ pc_info.last_user or 'No asignado' }}</div>
                     <div class="mb-1"><strong>Fuero / Área:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
+                    <div class="mb-1" style="font-size:0.75rem;"><strong>Remito:</strong> <span class="font-mono">{{ invoice_list | join(', ') if invoice_list else 'N/A' }}</span></div>
                 </div>
             </div>
 
