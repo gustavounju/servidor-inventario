@@ -123,6 +123,13 @@ def _parse_hardware_components(pc):
     keyboard_model = full_json.get("Keyboard_Model") or "Teclado PnP Estándar"
     mouse_model = full_json.get("Mouse_Model") or "Mouse PnP Estándar"
 
+    # Printer
+    printer_info = {
+        "model": pc.get("printer_model") or "N/A",
+        "port": pc.get("printer_port") or "N/A",
+        "serial": pc.get("printer_sn") or "N/A"
+    }
+
     return {
         "motherboard": mb_info,
         "ram_modules": ram_list,
@@ -130,6 +137,7 @@ def _parse_hardware_components(pc):
         "monitors": mon_list,
         "keyboard": keyboard_model,
         "mouse": mouse_model,
+        "printer": printer_info,
         "processor": proc_raw
     }
 
