@@ -30,15 +30,17 @@ El sistema de inventario almacena el detalle de componentes físicos recibidos e
 
 ### 2. Autenticación y Seguridad
 
-Todas las peticiones deben incluir la cabecera HTTP `Authorization` con el esquema `Bearer`:
+Todas las peticiones deben incluir la cabecera HTTP `Authorization` utilizando el esquema `Bearer`:
 
 ```http
 Authorization: Bearer <TOKEN_PRIVADO_CONTABLE>
 ```
 
-- Las peticiones sin token o con token incorrecto recibirán una respuesta `401 Unauthorized`.
-- El token es exclusivo para esta integración y se configura en las variables de entorno del servidor.
-- La API cuenta con limitador de tasa de peticiones (Rate Limit: 60 peticiones/minuto).
+#### ¿Cómo funciona este mecanismo de seguridad?
+- **Cabecera `Authorization`:** Es el campo estándar HTTP que usa la aplicación cliente (ej. Postman o el Sistema Contable) para identificarse ante el servidor en cada consulta.
+- **Esquema `Bearer`:** Significa *"Token al portador"* (quien posee la clave tiene la autorización). Es el estándar de la industria (RFC 6750) para proteger APIs REST de forma limpia sin usar contraseñas ni sesiones de usuario.
+- **`CONTABLE_API_TOKEN`:** Es la **llave privada secreta**. En el servidor de inventario se configura en el archivo `.env`. Cuando llega una petición, el servidor valida de forma segura si la clave presentada en la cabecera coincide exactamente con la guardada. Si no coincide o falta, el servidor rechaza el acceso con un código **`401 Unauthorized`**.
+- **Limitación de Tasa (Rate Limit):** La API limita las peticiones a un máximo de 60 por minuto para proteger la disponibilidad del servidor de inventario.
 
 ---
 
