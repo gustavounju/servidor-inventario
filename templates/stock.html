@@ -2062,7 +2062,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">🖥️ CPU / Gabinete en Stock:</label>
                             <select id="bundleSerialCpu" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar Gabinete / CPU (Opcional) --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components if 'CPU' in (c.component_type or '').upper() or 'GAB' in (c.component_type or '').upper() or 'GABINETE' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
@@ -2074,7 +2074,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">🧠 Microprocesador / CPU:</label>
                             <select id="bundleSerialProcessor" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar Microprocesador (Opcional) --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components if 'MICRO' in (c.component_type or '').upper() or 'PROCESADOR' in (c.component_type or '').upper() or 'PROC' in (c.component_type or '').upper() or 'INTEL' in (c.component_type or '').upper() or 'AMD' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
@@ -2086,7 +2086,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">🧩 Placa Madre / Motherboard:</label>
                             <select id="bundleSerialMotherboard" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar Placa Madre (Opcional) --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components if 'MOTHER' in (c.component_type or '').upper() or 'PLACA' in (c.component_type or '').upper() or 'MOBO' in (c.component_type or '').upper() or 'BASE' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
@@ -2098,7 +2098,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">💾 Disco Rígido / SSD en Stock:</label>
                             <select id="bundleSerialDisk" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar Disco / SSD (Opcional) --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components if 'DISCO' in (c.component_type or '').upper() or 'SSD' in (c.component_type or '').upper() or 'HDD' in (c.component_type or '').upper() or 'NVME' in (c.component_type or '').upper() or 'ALMACENAMIENTO' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
@@ -2110,7 +2110,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">⚡ Memoria RAM en Stock:</label>
                             <select id="bundleSerialRam" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar Memoria RAM (Opcional) --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components if 'MEMORIA' in (c.component_type or '').upper() or 'RAM' in (c.component_type or '').upper() or 'DDR' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
@@ -2122,7 +2122,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">🔌 Fuente de Alimentación:</label>
                             <select id="bundleSerialPower" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar Fuente (Opcional) --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components if 'FUENTE' in (c.component_type or '').upper() or 'POWER' in (c.component_type or '').upper() or 'FNT' in (c.component_type or '').upper() or 'ATX' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
@@ -2134,7 +2134,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">📺 Monitor en Stock:</label>
                             <select id="bundleSerialMonitor" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar Monitor (Opcional) --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components if 'MONITOR' in (c.component_type or '').upper() or 'MON' in (c.component_type or '').upper() or 'PANTALLA' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
@@ -2146,7 +2146,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">⌨️ Teclado en Stock:</label>
                             <select id="bundleSerialKeyboard" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar Teclado (Opcional) --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components if 'TECLADO' in (c.component_type or '').upper() or 'TEC' in (c.component_type or '').upper() or 'KEYBOARD' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
@@ -2158,7 +2158,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">🖱️ Mouse en Stock:</label>
                             <select id="bundleSerialMouse" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar Mouse (Opcional) --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components if 'MOUSE' in (c.component_type or '').upper() or 'MOU' in (c.component_type or '').upper() or 'RATON' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
@@ -2170,7 +2170,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">🔋 UPS / Batería en Stock:</label>
                             <select id="bundleSerialUps" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar UPS (Opcional) --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components if 'UPS' in (c.component_type or '').upper() or 'BAT' in (c.component_type or '').upper() %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
@@ -2182,7 +2182,7 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted mb-1">📦 Otra Pieza en Stock (Cualquier componente):</label>
                             <select id="bundleSerialPrinter" class="form-select form-select-sm bg-dark text-white border-secondary font-monospace bundle-item-input">
-                                <option value="">-- Seleccionar otra pieza disponible --</option>
+                                <option value="">-- Seleccionar --</option>
                                 {% if stock_components %}
                                 {% for c in stock_components %}
                                 <option value="{{ c.serial_number }}">{{ c.component_type }} {{ c.brand_model or '' }} (S/N: {{ c.serial_number }}){% if c.supplier %} - {{ c.supplier }}{% endif %}</option>
