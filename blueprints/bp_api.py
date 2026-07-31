@@ -389,18 +389,6 @@ def process_inventory_data(data):
                     (pc_name, pm_extra, pp_extra, psn_extra, 1 if is_virtual_extra else 0)
                 )
 
-        # --- VINCULACIÓN AUTOMÁTICA DE KITS / COMPONENTES ASIGNADOS AL USUARIO ---
-        if last_user and last_user != "N/A" and last_user != "Desconocido":
-            conn.execute(
-                """
-                UPDATE components
-                SET assigned_pc = %s, status = 'Installed', kit_name = NULL
-                WHERE (LOWER(assigned_user) = %s OR LOWER(assigned_user) LIKE %s)
-                  AND (assigned_pc IS NULL OR assigned_pc = '' OR assigned_pc = 'PC Generica')
-                """,
-                (pc_name, last_user.lower(), f"%{last_user.lower()}%")
-            )
-
         conn.commit()
 
 
