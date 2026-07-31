@@ -332,19 +332,42 @@ try {
         }
     }
     catch {}
-    # 5) Motherboard y Serial
+    # 5) Motherboard y Serial (con Fallback por BIOS y UUID)
     $motherboardModel = "N/A"
     $motherboardSN = "N/A"
     try {
         $mb = Get-WmiObject -Class Win32_BaseBoard | Select-Object -First 1
         if ($mb) {
-            $motherboardModel = "$($mb.Manufacturer) $($mb.Product)"
+            $motherboardModel = "$($mb.Manufacturer) $($mb.Product)".Trim()
+            $dummyStrings = "To be filled by O.E.M.|Default string|System Serial Number|123456789|00000000|N/A"
+            
+            # 1. Chequeo BaseBoard Serial
             if ($mb.SerialNumber) {
                 $cleanMBSN = [string]($mb.SerialNumber).Trim()
-                if ($cleanMBSN -and $cleanMBSN -ne "To be filled by O.E.M." -and $cleanMBSN -ne "Default string" -and $cleanMBSN -ne "N/A") {
+                if ($cleanMBSN -and $cleanMBSN -notmatch $dummyStrings -and $cleanMBSN.Length -gt 3) {
                     $motherboardSN = $cleanMBSN
-                    $motherboardModel += " (SN: $cleanMBSN)"
                 }
+            }
+            # 2. Fallback Win32_BIOS
+            if ($motherboardSN -eq "N/A") {
+                $bios = Get-WmiObject Win32_BIOS -ErrorAction SilentlyContinue | Select-Object -First 1
+                if ($bios -and $bios.SerialNumber) {
+                    $cleanBiosSN = [string]($bios.SerialNumber).Trim()
+                    if ($cleanBiosSN -and $cleanBiosSN -notmatch $dummyStrings -and $cleanBiosSN.Length -gt 3) {
+                        $motherboardSN = $cleanBiosSN
+                    }
+                }
+            }
+            # 3. Fallback UUID de sistema (Identificador único de hardware)
+            if ($motherboardSN -eq "N/A") {
+                $csp = Get-WmiObject Win32_ComputerSystemProduct -ErrorAction SilentlyContinue | Select-Object -First 1
+                if ($csp -and $csp.UUID -and $csp.UUID -notmatch "^0+$|^F+$" -and $csp.UUID -ne "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF") {
+                    $motherboardSN = "UUID:" + $csp.UUID.Trim()
+                }
+            }
+
+            if ($motherboardSN -ne "N/A") {
+                $motherboardModel += " (SN: $motherboardSN)"
             }
         }
     }
