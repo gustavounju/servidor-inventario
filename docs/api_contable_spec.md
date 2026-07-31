@@ -57,7 +57,7 @@ Recupera todos los remitos, productos agrupados por modelo, cantidad total recib
 ```http
 GET /api/external/purchase-orders/OC-2026-0451 HTTP/1.1
 Host: inventario.pjju.gob.ar
-Authorization: Bearer test-contable-secret-token-2026
+Authorization: Bearer <SOLICITAR_TOKEN_AL_PROGRAMADOR_DEL_SERVIDOR_DE_INVENTARIO>
 ```
 
 ##### Ejemplo de Respuesta (200 OK):
@@ -123,7 +123,7 @@ Permite obtener un listado paginado de Órdenes de Compra registradas en el inve
 ```http
 GET /api/external/purchase-orders?since=2026-07-01&until=2026-07-31&page=1&per_page=50 HTTP/1.1
 Host: inventario.pjju.gob.ar
-Authorization: Bearer test-contable-secret-token-2026
+Authorization: Bearer <SOLICITAR_TOKEN_AL_PROGRAMADOR_DEL_SERVIDOR_DE_INVENTARIO>
 ```
 
 ##### Ejemplo de Respuesta (200 OK):
@@ -164,7 +164,7 @@ Permite al sistema contable consultar los ítems correspondientes a un número d
 ```http
 GET /api/external/remitos/REM-00871 HTTP/1.1
 Host: inventario.pjju.gob.ar
-Authorization: Bearer test-contable-secret-token-2026
+Authorization: Bearer <SOLICITAR_TOKEN_AL_PROGRAMADOR_DEL_SERVIDOR_DE_INVENTARIO>
 ```
 
 ##### Ejemplo de Respuesta (200 OK):
@@ -227,9 +227,10 @@ Para realizar pruebas directamente desde la red de trabajo conectándose al serv
 3. **Configurar la Autenticación:**
    - Diríjase a la pestaña **Authorization**.
    - En el menú desplegable **Type**, seleccione **`Bearer Token`**.
-   - En el campo **Token**, ingrese la clave privada (`CONTABLE_API_TOKEN`).
+   - En el campo **Token**, ingrese la clave privada provista (*Solicitar token al programador del servidor de inventario*).
 
 4. **Enviar la Petición:**
    - Haga clic en el botón **Send**.
    - Verifique que la respuesta retorne código **`200 OK`** con los datos estructurados en formato JSON.
+
 
