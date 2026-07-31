@@ -94,6 +94,7 @@ from blueprints.bp_vault import bp_vault
 from blueprints.bp_users import bp_users
 from blueprints.bp_maps import bp_maps
 from blueprints.bp_maintenance import bp_maintenance
+from blueprints.bp_external_api import bp_external_api
 from utils.auth import allowed_module_links, auth_guard, auth_mode_label, available_roles, csrf_guard, current_user, ensure_default_admin, generate_csrf_token, has_permission, is_authenticated, role_label
 from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
 from blueprints.bp_setup import _get_secure_launcher_command
@@ -125,6 +126,7 @@ os.makedirs(LOG_FOLDER, exist_ok=True)
 # Registrar Blueprints
 app.register_blueprint(bp_dashboard)
 app.register_blueprint(bp_api)
+app.register_blueprint(bp_external_api)
 app.register_blueprint(bp_stock)
 app.register_blueprint(bp_setup)
 app.register_blueprint(bp_tasks)

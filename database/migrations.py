@@ -647,6 +647,7 @@ def run_all_migrations():
     migrate_db_v44()
     migrate_db_v45()
     migrate_db_v46()
+    migrate_db_v47()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1136,4 +1137,19 @@ def migrate_db_v46():
                 print("Aplicando V46: agregando columna status a scan_sessions...")
                 conn.execute("ALTER TABLE scan_sessions ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active'")
     print("Migración V46 verificada.")
+
+
+def migrate_db_v47():
+    """Migración V47: Crear índices en components(oc_number) e components(invoice_number) para la API Contable."""
+    print("Verificando migración de DB v47 (Índices API Contable)...")
+    with get_db_connection() as conn:
+        if _table_exists(conn, "components"):
+            if not _index_exists(conn, "components", "idx_comp_oc_number"):
+                print("Aplicando V47: Creando índice idx_comp_oc_number...")
+                conn.execute("CREATE INDEX idx_comp_oc_number ON components(oc_number(50))")
+            if not _index_exists(conn, "components", "idx_comp_invoice_number"):
+                print("Aplicando V47: Creando índice idx_comp_invoice_number...")
+                conn.execute("CREATE INDEX idx_comp_invoice_number ON components(invoice_number(50))")
+    print("Migración V47 verificada.")
+
 
