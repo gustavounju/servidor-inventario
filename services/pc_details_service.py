@@ -49,6 +49,61 @@ def _build_disk_summary_lines(disk_models, disk_speeds):
 
     return lines
 
+def _parse_hardware_components(pc):
+    """
+    Formatea y estructura los componentes internos (Motherboard, RAM, Discos, CPU) 
+    extrayendo marcas, modelos y números de serie físicos.
+    """
+    mb_raw = pc.get("motherboard_model") or "N/A"
+    ram_raw = pc.get("ram_detalles") or "N/A"
+    disk_raw = pc.get("disk_models") or "N/A"
+    proc_raw = pc.get("processor") or "N/A"
+
+    # Motherboard
+    mb_info = {"model": mb_raw, "serial": "N/A"}
+    if " (SN: " in mb_raw:
+        parts = mb_raw.split(" (SN: ")
+        mb_info["model"] = parts[0].strip()
+        mb_info["serial"] = parts[1].replace(")", "").strip()
+
+    # RAM Modules
+    ram_list = []
+    if ram_raw and ram_raw != "N/A":
+        for module in ram_raw.split("|"):
+            mod_str = module.strip()
+            if not mod_str: continue
+            sn = "N/A"
+            if " (SN: " in mod_str:
+                m_parts = mod_str.split(" (SN: ")
+                spec = m_parts[0].strip()
+                sn = m_parts[1].replace(")", "").strip()
+            else:
+                spec = mod_str
+            ram_list.append({"spec": spec, "serial": sn})
+
+    # Disks
+    disk_list = []
+    if disk_raw and disk_raw != "N/A":
+        for disk in disk_raw.split("|"):
+            d_str = disk.strip()
+            if not d_str: continue
+            sn = "N/A"
+            if " [SN: " in d_str:
+                d_parts = d_str.split(" [SN: ")
+                model = d_parts[0].strip()
+                sn = d_parts[1].replace("]", "").strip()
+            else:
+                model = d_str
+            disk_list.append({"model": model, "serial": sn})
+
+    return {
+        "motherboard": mb_info,
+        "ram_modules": ram_list,
+        "disks": disk_list,
+        "processor": proc_raw
+    }
+
+
 def get_pc_detail_context(pc_name):
     """Obtiene todo el contexto necesario para renderizar pc_detail.html."""
     with get_db_connection() as conn:
@@ -154,6 +209,8 @@ def get_pc_detail_context(pc_name):
         available_network_printers = conn.execute("SELECT id, ip_address, brand_model FROM network_printers ORDER BY ip_address").fetchall()
 
         disk_summary_lines = _build_disk_summary_lines(pc.get("disk_models"), pc.get("disk_speeds_rpm"))
+        hardware_components = _parse_hardware_components(pc)
+
         preferred_printer_serial = pc.get("printer_sn")
         preferred_printer_serial_source = "pc"
         if (not preferred_printer_serial or preferred_printer_serial == "N/A") and assigned_network_printers:
@@ -172,6 +229,7 @@ def get_pc_detail_context(pc_name):
             "detected_printers": detected_printers,
             "available_network_printers": available_network_printers,
             "disk_summary_lines": disk_summary_lines,
+            "hardware_components": hardware_components,
             "preferred_printer_serial": preferred_printer_serial,
             "preferred_printer_serial_source": preferred_printer_serial_source,
         }

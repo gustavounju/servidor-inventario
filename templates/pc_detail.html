@@ -617,6 +617,75 @@
 
             </div>
 
+            <!-- TARJETA: Componentes Internos Detectados y Seriales -->
+            {% if hardware_components %}
+            <div class="pc-detail-card" style="grid-column: 1 / -1; background: #f8fafc; border-left: 4px solid #6366f1;">
+              <div class="pc-detail-card__title text-primary d-flex align-items-center gap-1" style="font-size:0.75rem;">
+                <i class="bi bi-cpu-fill"></i> Componentes Internos y Seriales de Fábrica (Detectados en Vivo)
+              </div>
+              <div class="row g-2 mt-1">
+                <!-- Motherboard -->
+                <div class="col-md-6 col-lg-3">
+                  <div class="p-2 border rounded bg-white h-100">
+                    <small class="text-muted d-block fw-bold" style="font-size:0.7rem;">🔌 PLACA MADRE</small>
+                    <span class="fw-semibold d-block text-dark small">{{ hardware_components.motherboard.model }}</span>
+                    {% if hardware_components.motherboard.serial != 'N/A' %}
+                    <span class="badge bg-dark font-monospace mt-1"><i class="bi bi-barcode me-1"></i>SN: {{ hardware_components.motherboard.serial }}</span>
+                    {% else %}
+                    <span class="badge bg-secondary font-monospace mt-1">SN: No detectado en BIOS</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <!-- RAM -->
+                <div class="col-md-6 col-lg-3">
+                  <div class="p-2 border rounded bg-white h-100">
+                    <small class="text-muted d-block fw-bold" style="font-size:0.7rem;">🧠 MEMORIA RAM ({{ pc.ram_gb }} GB)</small>
+                    {% if hardware_components.ram_modules %}
+                      {% for ram in hardware_components.ram_modules %}
+                      <div class="small mb-1">
+                        <span class="fw-semibold text-dark">{{ ram.spec }}</span>
+                        {% if ram.serial != 'N/A' %}
+                        <br><span class="badge bg-secondary font-monospace" style="font-size:0.68rem;"><i class="bi bi-barcode me-1"></i>SN: {{ ram.serial }}</span>
+                        {% endif %}
+                      </div>
+                      {% endfor %}
+                    {% else %}
+                    <span class="small text-muted">{{ pc.ram_detalles or '-' }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <!-- Discos -->
+                <div class="col-md-6 col-lg-3">
+                  <div class="p-2 border rounded bg-white h-100">
+                    <small class="text-muted d-block fw-bold" style="font-size:0.7rem;">💾 ALMACENAMIENTO (DISCOS)</small>
+                    {% if hardware_components.disks %}
+                      {% for disk in hardware_components.disks %}
+                      <div class="small mb-1">
+                        <span class="fw-semibold text-dark">{{ disk.model }}</span>
+                        {% if disk.serial != 'N/A' %}
+                        <br><span class="badge bg-secondary font-monospace" style="font-size:0.68rem;"><i class="bi bi-barcode me-1"></i>SN: {{ disk.serial }}</span>
+                        {% endif %}
+                      </div>
+                      {% endfor %}
+                    {% else %}
+                    <span class="small text-muted">{{ pc.disk_models or '-' }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <!-- Procesador -->
+                <div class="col-md-6 col-lg-3">
+                  <div class="p-2 border rounded bg-white h-100">
+                    <small class="text-muted d-block fw-bold" style="font-size:0.7rem;">⚙️ PROCESADOR (CPU)</small>
+                    <span class="fw-semibold d-block text-dark small">{{ pc.processor or 'Procesador no detectado' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
 
 
             <div class="pc-detail-card pc-detail-printer {% if printer_pending %}pc-detail-printer--pending{% elif printer_missing %}pc-detail-printer--missing{% endif %}">
