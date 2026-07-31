@@ -3633,10 +3633,15 @@
 
             <!-- Motherboard Serial -->
             <div class="mb-3">
-              <label class="form-label fw-semibold mb-1 small"><i class="bi bi-cpu me-1 text-primary"></i> Serial de Placa Madre (Motherboard):</label>
+              <label class="form-label fw-semibold mb-1 small"><i class="bi bi-cpu me-1 text-primary"></i> Serial impreso de Placa Madre (Motherboard):</label>
               <input type="text" class="form-control form-control-sm font-monospace" name="motherboard_sn" 
-                     value="{{ hardware_components.motherboard.serial if hardware_components.motherboard.serial != 'N/A' else '' }}" 
-                     placeholder="Ej: SN-GIG520M987654">
+                     value="{{ '' if 'UUID:' in hardware_components.motherboard.serial else (hardware_components.motherboard.serial if hardware_components.motherboard.serial != 'N/A' else '') }}" 
+                     placeholder="{% if 'UUID:' in hardware_components.motherboard.serial %}UUID autodetectado: {{ hardware_components.motherboard.serial }} (Escanear o ingresar serial impreso){% else %}Ej: SN-GIG520M987654{% endif %}">
+              {% if 'UUID:' in hardware_components.motherboard.serial %}
+              <div class="form-text text-warning small" style="font-size:0.72rem;">
+                <i class="bi bi-info-circle-fill me-1"></i> Gigabyte asignó un UUID por software. Ingresa aquí el serial físico de la etiqueta de la placa madre.
+              </div>
+              {% endif %}
             </div>
 
             <!-- Monitores (Soporta Múltiples Monitores) -->
