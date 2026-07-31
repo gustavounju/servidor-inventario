@@ -96,10 +96,40 @@ def _parse_hardware_components(pc):
                 model = d_str
             disk_list.append({"model": model, "serial": sn})
 
+    # Monitors
+    mon_raw = pc.get("monitors") or "N/A"
+    mon_list = []
+    if mon_raw and mon_raw != "N/A":
+        for mon in mon_raw.split("|"):
+            m_str = mon.strip()
+            if not m_str: continue
+            sn = "N/A"
+            if " (SN: " in m_str:
+                m_parts = m_str.split(" (SN: ")
+                model = m_parts[0].strip()
+                sn = m_parts[1].replace(")", "").strip()
+            else:
+                model = m_str
+            mon_list.append({"model": model, "serial": sn})
+
+    # Keyboard & Mouse (from full_json_data or pc dict if present)
+    full_json = {}
+    if pc.get("full_json_data"):
+        try:
+            import json
+            full_json = json.loads(pc["full_json_data"])
+        except Exception: pass
+    
+    keyboard_model = full_json.get("Keyboard_Model") or "Teclado PnP Estándar"
+    mouse_model = full_json.get("Mouse_Model") or "Mouse PnP Estándar"
+
     return {
         "motherboard": mb_info,
         "ram_modules": ram_list,
         "disks": disk_list,
+        "monitors": mon_list,
+        "keyboard": keyboard_model,
+        "mouse": mouse_model,
         "processor": proc_raw
     }
 

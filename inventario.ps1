@@ -698,19 +698,35 @@ try {
     } catch {
         Write-Host "Error detectando impresora: $($_.Exception.Message)" -ForegroundColor Yellow
     }
-    # 7) Monitores (WmiMonitorID a veces falla en Win7 si no hay permisos, try-catch)
+    # 7) Monitores con Serial Real de Fábrica (EDID)
     $monitorsStr = "N/A"
     try {
         $monItems = Get-WmiObject -Namespace root\WMI -Class WmiMonitorID -ErrorAction SilentlyContinue
         if ($monItems) {
             $mList = @()
+            $edidMap = @{ "PHL"="Philips"; "SAM"="Samsung"; "GSM"="LG"; "DEL"="Dell"; "ACR"="Acer"; "VSC"="ViewSonic"; "HPQ"="HP"; "HPN"="HP"; "LEN"="Lenovo"; "BNQ"="BenQ"; "ASU"="Asus"; "SNY"="Sony" }
             foreach ($m in $monItems) {
-                # Convertir array de ints a string chars manual
                 $mn = ""
                 if ($m -and $m.ManufacturerName) {
                     foreach ($c in $m.ManufacturerName) { if ($c -ne 0) { $mn += [char]$c } }
                 }
-                $mList += $mn
+                $uf = ""
+                if ($m -and $m.UserFriendlyName) {
+                    foreach ($c in $m.UserFriendlyName) { if ($c -ne 0) { $uf += [char]$c } }
+                }
+                $sn = ""
+                if ($m -and $m.SerialNumberID) {
+                    foreach ($c in $m.SerialNumberID) { if ($c -ne 0) { $sn += [char]$c } }
+                }
+
+                $cleanMN = $mn.Trim()
+                if ($edidMap.ContainsKey($cleanMN)) { $cleanMN = $edidMap[$cleanMN] }
+                $entry = "$cleanMN $uf".Trim()
+                if (-not $entry) { $entry = "Monitor Reconocido" }
+                if ($sn -and $sn -ne "0" -and $sn -ne "000000" -and $sn -ne "0000000000000") {
+                    $entry += " (SN: $($sn.Trim()))"
+                }
+                $mList += $entry
             }
             if ($mList.Count -gt 0) {
                 $monitorsStr = [string]::Join(" | ", $mList)
@@ -743,6 +759,35 @@ try {
         }
         catch {}
     }
+
+    # 7.1) Teclado y Mouse
+    $keyboardModel = "N/A"
+    $mouseModel = "N/A"
+    try {
+        $kb = Get-WmiObject Win32_Keyboard -ErrorAction SilentlyContinue
+        if ($kb) {
+            $kbList = @()
+            foreach ($k in $kb) {
+                $desc = $k.Description
+                if ($k.PNPDeviceID -match "^USB\\") { $desc += " (USB)" }
+                $kbList += $desc
+            }
+            if ($kbList.Count -gt 0) { $keyboardModel = [string]::Join(" | ", $kbList) }
+        }
+    } catch {}
+
+    try {
+        $ms = Get-WmiObject Win32_PointingDevice -ErrorAction SilentlyContinue
+        if ($ms) {
+            $msList = @()
+            foreach ($m in $ms) {
+                $desc = $m.Description
+                if ($m.PNPDeviceID -match "^USB\\") { $desc += " (USB)" }
+                $msList += $desc
+            }
+            if ($msList.Count -gt 0) { $mouseModel = [string]::Join(" | ", $msList) }
+        }
+    } catch {}
     # 8) Seguridad (Conexiones Activas)
     $activeConns = @()
     try {
@@ -818,6 +863,8 @@ try {
     $jsonObj += [string]::Join(",", $peArr)
     $jsonObj += "],"
     $jsonObj += """Monitors"": ""$(e $monitorsStr)"","
+    $jsonObj += """Keyboard_Model"": ""$(e $keyboardModel)"","
+    $jsonObj += """Mouse_Model"": ""$(e $mouseModel)"","
     # Armamos array Conexiones
     $jsonObj += """Conexiones"": ["
     $connArr = @()

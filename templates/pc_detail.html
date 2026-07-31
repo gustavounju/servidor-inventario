@@ -682,6 +682,38 @@
                     <span class="fw-semibold d-block text-dark small">{{ pc.processor or 'Procesador no detectado' }}</span>
                   </div>
                 </div>
+
+                <!-- Monitores -->
+                <div class="col-md-6 col-lg-3">
+                  <div class="p-2 border rounded bg-white h-100">
+                    <small class="text-muted d-block fw-bold" style="font-size:0.7rem;">🖥️ MONITORES DETECTADOS</small>
+                    {% if hardware_components.monitors %}
+                      {% for mon in hardware_components.monitors %}
+                      <div class="small mb-1">
+                        <span class="fw-semibold text-dark">{{ mon.model }}</span>
+                        {% if mon.serial != 'N/A' %}
+                        <br><span class="badge bg-primary font-monospace" style="font-size:0.68rem;"><i class="bi bi-barcode me-1"></i>SN: {{ mon.serial }}</span>
+                        {% endif %}
+                      </div>
+                      {% endfor %}
+                    {% else %}
+                    <span class="small text-muted">{{ pc.monitors or 'Sin monitor detectado' }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <!-- Teclado y Mouse -->
+                <div class="col-md-6 col-lg-3">
+                  <div class="p-2 border rounded bg-white h-100">
+                    <small class="text-muted d-block fw-bold" style="font-size:0.7rem;">⌨️ PERIFÉRICOS (TECLADO & MOUSE)</small>
+                    <div class="small mb-1">
+                      <span class="fw-semibold text-dark">⌨️ Teclado:</span> {{ hardware_components.keyboard }}
+                    </div>
+                    <div class="small">
+                      <span class="fw-semibold text-dark">🖱️ Mouse:</span> {{ hardware_components.mouse }}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             {% endif %}
