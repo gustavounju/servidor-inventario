@@ -503,6 +503,87 @@ def update_pc_infrastructure(pc_name):
     except Exception as e:
         return f"Error actualizando infraestructura: {e}", 500
 
+
+@bp_dashboard.route("/pc/<pc_name>/update_serials", methods=["POST"])
+def update_pc_serials(pc_name):
+    """Permite cargar o corregir manualmente los números de serie de componentes de una PC."""
+    mb_sn = request.form.get("motherboard_sn", "").strip()
+    monitor_sn = request.form.get("monitor_sn", "").strip()
+    printer_sn = request.form.get("printer_sn", "").strip()
+    disk_sn = request.form.get("disk_sn", "").strip()
+    ram_sn = request.form.get("ram_sn", "").strip()
+
+    try:
+        with get_db_connection() as conn:
+            pc = conn.execute("SELECT * FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+            if not pc:
+                return f"PC {pc_name} no encontrada", 404
+
+            # 1. Motherboard Serial
+            new_mb_model = pc["motherboard_model"] or ""
+            if mb_sn:
+                if " (SN: " in new_mb_model:
+                    base = new_mb_model.split(" (SN: ")[0].strip()
+                    new_mb_model = f"{base} (SN: {mb_sn})"
+                else:
+                    new_mb_model = f"{new_mb_model} (SN: {mb_sn})".strip()
+
+            # 2. Monitor Serial
+            new_monitors = pc["monitors"] or ""
+            if monitor_sn:
+                if " (SN: " in new_monitors:
+                    base = new_monitors.split(" (SN: ")[0].strip()
+                    new_monitors = f"{base} (SN: {monitor_sn})"
+                else:
+                    new_monitors = f"{new_monitors} (SN: {monitor_sn})".strip()
+
+            # 3. Printer Serial
+            new_printer_sn = pc["printer_sn"] or ""
+            if printer_sn:
+                new_printer_sn = printer_sn
+
+            # 4. Disk Serial
+            new_disk_models = pc["disk_models"] or ""
+            if disk_sn:
+                if " [SN: " in new_disk_models:
+                    base = new_disk_models.split(" [SN: ")[0].strip()
+                    new_disk_models = f"{base} [SN: {disk_sn}]"
+                else:
+                    new_disk_models = f"{new_disk_models} [SN: {disk_sn}]".strip()
+
+            # 5. RAM Serial
+            new_ram_detalles = pc["ram_detalles"] or ""
+            if ram_sn:
+                if " (SN: " in new_ram_detalles:
+                    base = new_ram_detalles.split(" (SN: ")[0].strip()
+                    new_ram_detalles = f"{base} (SN: {ram_sn})"
+                else:
+                    new_ram_detalles = f"{new_ram_detalles} (SN: {ram_sn})".strip()
+
+            conn.execute(
+                """
+                UPDATE pcs 
+                SET motherboard_model = %s, monitors = %s, printer_sn = %s, disk_models = %s, ram_detalles = %s 
+                WHERE pc_name = %s
+                """,
+                (new_mb_model, new_monitors, new_printer_sn, new_disk_models, new_ram_detalles, pc_name)
+            )
+
+            log_audit_event(
+                conn,
+                pc_name=pc_name,
+                field="SERIALES_COMPONENTES",
+                old_value="Detección Automática WMI",
+                new_value=f"MB: {mb_sn} | Mon: {monitor_sn} | Prn: {printer_sn} | Disk: {disk_sn} | RAM: {ram_sn}",
+                action_type="CARGA_MANUAL_SERIALES",
+                request_ip=request.remote_addr,
+            )
+            conn.commit()
+
+        return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
+    except Exception as e:
+        return f"Error actualizando números de serie: {e}", 500
+
 @bp_dashboard.route("/actividad")
 def global_activity():
     """Muestra el historial global de actividad de todas las PCs e Infraestructura."""
