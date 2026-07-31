@@ -1159,8 +1159,9 @@ def kit_qr_label_view(kit_name):
             used_ids = {c['id'] for group in [cpu_comps, processor_comps, motherboard_comps, ram_comps, disk_comps, power_comps, monitor_comps, keyboard_comps, mouse_comps] for c in group}
             other_comps = [c for c in components if c['id'] not in used_ids]
             
+            scheme = request.headers.get("X-Forwarded-Proto", request.scheme)
             server_host = request.host
-            qr_url = f"http://{server_host}/stock/kit/{kit_name}"
+            qr_url = f"{scheme}://{server_host}/stock/kit/{kit_name}"
             
             return render_template(
                 "kit_qr_label.html",

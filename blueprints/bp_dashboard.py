@@ -440,8 +440,9 @@ def pc_qr_label_view(pc_name):
         from flask import abort
         abort(404)
     
+    scheme = request.headers.get("X-Forwarded-Proto", request.scheme)
     server_host = request.host
-    qr_url = f"http://{server_host}/pc/{pc_name}"
+    qr_url = f"{scheme}://{server_host}/pc/{pc_name}"
     
     components = ctx.get("components", [])
     monitor_comp = next((c for c in components if (c.get("component_type") or "").upper() == "MONITOR"), None)

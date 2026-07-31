@@ -151,7 +151,11 @@ PUBLIC_ENDPOINTS = {
     "tasks.visor",
     "tasks.api_visor_data",
     "api.api_get_racks_status",
-    "infrastructure.rack_audits_history"
+    "infrastructure.rack_audits_history",
+    "stock.view_stock_kit_detail",
+    "stock.kit_qr_label_view",
+    "dashboard.pc_detail",
+    "dashboard.pc_qr_label_view"
 }
 
 
@@ -927,6 +931,8 @@ def auth_guard():
     is_mobile_client = any(token in ua for token in ["android", "iphone", "ipad", "mobile"])
     
     if is_mobile_client and not (request.path.startswith("/api/") or request.headers.get("X-Requested-With") == "XMLHttpRequest"):
+        if request.endpoint in {"stock.view_stock_kit_detail", "stock.kit_qr_label_view", "dashboard.pc_detail", "dashboard.pc_qr_label_view"}:
+            return None
         permission_name = required_permission_for_endpoint()
         # Si estamos en móvil, permitimos las experiencias diseñadas para celular.
         # o endpoints públicos (que ya pasaron el primer filtro de should_enforce_auth).
