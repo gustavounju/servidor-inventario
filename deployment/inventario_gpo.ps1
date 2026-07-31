@@ -41,6 +41,10 @@ try {
     $cpu = Get-WmiObject Win32_Processor | Select-Object -First 1
     $mb = Get-WmiObject Win32_BaseBoard | Select-Object -First 1
     
+    $mbModel = if ($mb) { "$($mb.Manufacturer) $($mb.Product)" } else { "N/A" }
+    $mbSN = if ($mb -and $mb.SerialNumber -and $mb.SerialNumber.Trim() -ne "To be filled by O.E.M.") { $mb.SerialNumber.Trim() } else { "N/A" }
+    if ($mbSN -ne "N/A") { $mbModel += " (SN: $mbSN)" }
+    
     # Red
     $netCfg = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled = True" | Select-Object -First 1
     $ip = if ($netCfg.IPAddress -is [array]) { $netCfg.IPAddress[0] } else { $netCfg.IPAddress }
@@ -53,7 +57,8 @@ try {
     $diskDrives = Get-WmiObject Win32_DiskDrive
     foreach ($d in $diskDrives) {
         $size = [math]::Round($d.Size / 1GB, 0)
-        $diskModels += "$($d.Model) ($($size)GB)"
+        $dSNTag = if ($d.SerialNumber -and $d.SerialNumber.Trim() -ne "N/A") { " [SN: $($d.SerialNumber.Trim())]" } else { "" }
+        $diskModels += "$($d.Model) ($($size)GB)$dSNTag"
     }
     $diskModelsStr = [string]::Join(" | ", $diskModels)
 
@@ -142,7 +147,7 @@ try {
         ""Fecha_Reporte"": ""$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"",
         ""Sistema"": { ""OsName"": ""$(e $os.Caption)"", ""Procesador"": ""$(e $cpu.Name)"", ""RAM (GB)"": $ramGB, ""Office"": ""$(e $officeVersion)"" },
         ""Red"": [{""IPAddress"": ""$ip"", ""MACAddress"": ""$($netCfg.MACAddress)""}],
-        ""Motherboard_Model"": ""$(e $mb.Manufacturer) $(e $mb.Product)"",
+        ""Motherboard_Model"": ""$(e $mbModel)"",
         ""Disk_Models"": ""$(e $diskModelsStr)"",
         ""Monitors"": ""$(e $monitorsStr)"",
         ""Printer_Model"": ""$(e $printerModel)"",

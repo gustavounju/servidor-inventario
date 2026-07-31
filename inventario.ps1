@@ -226,8 +226,9 @@ try {
         }
     }
     catch {}
-    # 3) RAM Detalles
+    # 3) RAM Detalles y Seriales
     $ramDetalles = "N/A"
+    $ramSerialsStr = "N/A"
     try {
         $ramModulos = Get-WmiObject -Class Win32_PhysicalMemory
         if ($ramModulos) {
@@ -239,6 +240,7 @@ try {
                 34 = "DDR5"
             }
             $detalles = @()
+            $ramSerials = @()
             foreach ($r in $ramModulos) {
                 $cap = [math]::Round($r.Capacity / 1GB, 0)
                 $speed = $r.ConfiguredClockSpeed
@@ -252,26 +254,39 @@ try {
                     $ramType = $ramTypeMap[[int]$r.MemoryType]
                 }
 
+                $snTag = ""
+                if ($r.SerialNumber) {
+                    $cleanSN = [string]($r.SerialNumber).Trim()
+                    if ($cleanSN -and $cleanSN -ne "00000000" -and $cleanSN -ne "None" -and $cleanSN -ne "N/A") {
+                        $snTag = " (SN: $cleanSN)"
+                        $ramSerials += $cleanSN
+                    }
+                }
+
                 if ($ramType -and $speed) {
-                    $detalles += "$($cap)GB $ramType @ $($speed)MHz"
+                    $detalles += "$($cap)GB $ramType @ $($speed)MHz$snTag"
                 }
                 elseif ($ramType) {
-                    $detalles += "$($cap)GB $ramType"
+                    $detalles += "$($cap)GB $ramType$snTag"
                 }
                 elseif ($speed) {
-                    $detalles += "$($cap)GB @ $($speed)MHz"
+                    $detalles += "$($cap)GB @ $($speed)MHz$snTag"
                 }
                 else {
-                    $detalles += "$($cap)GB"
+                    $detalles += "$($cap)GB$snTag"
                 }
             }
             $ramDetalles = [string]::Join(" | ", $detalles)
+            if ($ramSerials.Count -gt 0) {
+                $ramSerialsStr = [string]::Join(" | ", $ramSerials)
+            }
         }
     }
     catch {}
-    # 4) Discos
+    # 4) Discos y Seriales
     $diskModelsStr = "N/A"
     $diskSpeedsStr = "N/A"
+    $diskSerialsStr = "N/A"
     try {
         function Get-DiskKindLabel($disk) {
             $model = [string]($disk.Model)
@@ -295,21 +310,43 @@ try {
         if ($diskDrives) {
             $models = @()
             $speeds = @()
+            $dSerials = @()
             foreach ($d in $diskDrives) {
                 $size = [math]::Round($d.Size / 1GB, 0)
-                $models += "$($d.Model) ($($size)GB)"
+                $dSNTag = ""
+                if ($d.SerialNumber) {
+                    $cleanDSN = [string]($d.SerialNumber).Trim()
+                    if ($cleanDSN -and $cleanDSN -ne "N/A") {
+                        $dSNTag = " [SN: $cleanDSN]"
+                        $dSerials += "$($d.Model): $cleanDSN"
+                    }
+                }
+                $models += "$($d.Model) ($($size)GB)$dSNTag"
                 $speeds += "$($d.Model): $(Get-DiskKindLabel $d)"
             }
             $diskModelsStr = [string]::Join(" | ", $models)
             $diskSpeedsStr = [string]::Join(" | ", $speeds)
+            if ($dSerials.Count -gt 0) {
+                $diskSerialsStr = [string]::Join(" | ", $dSerials)
+            }
         }
     }
     catch {}
-    # 5) Motherboard
+    # 5) Motherboard y Serial
     $motherboardModel = "N/A"
+    $motherboardSN = "N/A"
     try {
         $mb = Get-WmiObject -Class Win32_BaseBoard | Select-Object -First 1
-        if ($mb) { $motherboardModel = "$($mb.Manufacturer) $($mb.Product)" }
+        if ($mb) {
+            $motherboardModel = "$($mb.Manufacturer) $($mb.Product)"
+            if ($mb.SerialNumber) {
+                $cleanMBSN = [string]($mb.SerialNumber).Trim()
+                if ($cleanMBSN -and $cleanMBSN -ne "To be filled by O.E.M." -and $cleanMBSN -ne "Default string" -and $cleanMBSN -ne "N/A") {
+                    $motherboardSN = $cleanMBSN
+                    $motherboardModel += " (SN: $cleanMBSN)"
+                }
+            }
+        }
     }
     catch {}
     
@@ -762,9 +799,12 @@ try {
     $jsonObj += "},"
     $jsonObj += """Red"": [{""IPAddress"": ""$ipAddress"", ""MACAddress"": ""$macAddress""}],"
     $jsonObj += """RAM_Detalles"": ""$(e $ramDetalles)"","
+    $jsonObj += """RAM_Serials"": ""$(e $ramSerialsStr)"","
     $jsonObj += """Disk_Models"": ""$(e $diskModelsStr)"","
     $jsonObj += """Disk_Speeds_RPM"": ""$(e $diskSpeedsStr)"","
+    $jsonObj += """Disk_Serials"": ""$(e $diskSerialsStr)"","
     $jsonObj += """Motherboard_Model"": ""$(e $motherboardModel)"","
+    $jsonObj += """Motherboard_SN"": ""$(e $motherboardSN)"","
     $jsonObj += """Printer_Model"": ""$(e $printerModel)"","
     $jsonObj += """Printer_Port"": ""$(e $printerPort)"","
     $jsonObj += """Printer_SN"": ""$(e $printerSN)"","
