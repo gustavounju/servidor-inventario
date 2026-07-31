@@ -506,12 +506,9 @@ def update_pc_infrastructure(pc_name):
 
 @bp_dashboard.route("/pc/<pc_name>/update_serials", methods=["POST"])
 def update_pc_serials(pc_name):
-    """Permite cargar o corregir manualmente los números de serie de componentes de una PC."""
+    """Permite cargar o corregir manualmente los números de serie de componentes de una PC (soportando múltiples monitores, discos y memorias)."""
     mb_sn = request.form.get("motherboard_sn", "").strip()
-    monitor_sn = request.form.get("monitor_sn", "").strip()
     printer_sn = request.form.get("printer_sn", "").strip()
-    disk_sn = request.form.get("disk_sn", "").strip()
-    ram_sn = request.form.get("ram_sn", "").strip()
 
     try:
         with get_db_connection() as conn:
@@ -528,37 +525,100 @@ def update_pc_serials(pc_name):
                 else:
                     new_mb_model = f"{new_mb_model} (SN: {mb_sn})".strip()
 
-            # 2. Monitor Serial
-            new_monitors = pc["monitors"] or ""
-            if monitor_sn:
-                if " (SN: " in new_monitors:
-                    base = new_monitors.split(" (SN: ")[0].strip()
-                    new_monitors = f"{base} (SN: {monitor_sn})"
+            # 2. Monitors (Soporte Múltiple)
+            old_mon_raw = pc["monitors"] or ""
+            if old_mon_raw and old_mon_raw != "N/A":
+                mon_parts = [m.strip() for m in old_mon_raw.split("|") if m.strip()]
+                new_mon_parts = []
+                for idx, part in enumerate(mon_parts):
+                    sn_val = request.form.get(f"monitor_sn_{idx}", "").strip()
+                    if not sn_val and idx == 0:
+                        sn_val = request.form.get("monitor_sn", "").strip()
+                    
+                    if " (SN: " in part:
+                        base_model = part.split(" (SN: ")[0].strip()
+                        old_sn = part.split(" (SN: ")[1].replace(")", "").strip()
+                    else:
+                        base_model = part.strip()
+                        old_sn = ""
+                    
+                    final_sn = sn_val if sn_val else old_sn
+                    if final_sn:
+                        new_mon_parts.append(f"{base_model} (SN: {final_sn})")
+                    else:
+                        new_mon_parts.append(base_model)
+                new_monitors = " | ".join(new_mon_parts)
+            else:
+                single_sn = request.form.get("monitor_sn_0", "").strip() or request.form.get("monitor_sn", "").strip()
+                if single_sn:
+                    new_monitors = f"Monitor Detectado (SN: {single_sn})"
                 else:
-                    new_monitors = f"{new_monitors} (SN: {monitor_sn})".strip()
+                    new_monitors = old_mon_raw
 
             # 3. Printer Serial
             new_printer_sn = pc["printer_sn"] or ""
             if printer_sn:
                 new_printer_sn = printer_sn
 
-            # 4. Disk Serial
-            new_disk_models = pc["disk_models"] or ""
-            if disk_sn:
-                if " [SN: " in new_disk_models:
-                    base = new_disk_models.split(" [SN: ")[0].strip()
-                    new_disk_models = f"{base} [SN: {disk_sn}]"
+            # 4. Disks (Soporte Múltiple)
+            old_disk_raw = pc["disk_models"] or ""
+            if old_disk_raw and old_disk_raw != "N/A":
+                disk_parts = [d.strip() for d in old_disk_raw.split("|") if d.strip()]
+                new_disk_parts = []
+                for idx, part in enumerate(disk_parts):
+                    sn_val = request.form.get(f"disk_sn_{idx}", "").strip()
+                    if not sn_val and idx == 0:
+                        sn_val = request.form.get("disk_sn", "").strip()
+                    
+                    if " [SN: " in part:
+                        base_model = part.split(" [SN: ")[0].strip()
+                        old_sn = part.split(" [SN: ")[1].replace("]", "").strip()
+                    else:
+                        base_model = part.strip()
+                        old_sn = ""
+                    
+                    final_sn = sn_val if sn_val else old_sn
+                    if final_sn:
+                        new_disk_parts.append(f"{base_model} [SN: {final_sn}]")
+                    else:
+                        new_disk_parts.append(base_model)
+                new_disk_models = " | ".join(new_disk_parts)
+            else:
+                single_disk_sn = request.form.get("disk_sn_0", "").strip() or request.form.get("disk_sn", "").strip()
+                if single_disk_sn:
+                    new_disk_models = f"Disco Detectado [SN: {single_disk_sn}]"
                 else:
-                    new_disk_models = f"{new_disk_models} [SN: {disk_sn}]".strip()
+                    new_disk_models = old_disk_raw
 
-            # 5. RAM Serial
-            new_ram_detalles = pc["ram_detalles"] or ""
-            if ram_sn:
-                if " (SN: " in new_ram_detalles:
-                    base = new_ram_detalles.split(" (SN: ")[0].strip()
-                    new_ram_detalles = f"{base} (SN: {ram_sn})"
+            # 5. RAM Modules (Soporte Múltiple)
+            old_ram_raw = pc["ram_detalles"] or ""
+            if old_ram_raw and old_ram_raw != "N/A":
+                ram_parts = [r.strip() for r in old_ram_raw.split("|") if r.strip()]
+                new_ram_parts = []
+                for idx, part in enumerate(ram_parts):
+                    sn_val = request.form.get(f"ram_sn_{idx}", "").strip()
+                    if not sn_val and idx == 0:
+                        sn_val = request.form.get("ram_sn", "").strip()
+                    
+                    if " (SN: " in part:
+                        base_model = part.split(" (SN: ")[0].strip()
+                        old_sn = part.split(" (SN: ")[1].replace(")", "").strip()
+                    else:
+                        base_model = part.strip()
+                        old_sn = ""
+                    
+                    final_sn = sn_val if sn_val else old_sn
+                    if final_sn:
+                        new_ram_parts.append(f"{base_model} (SN: {final_sn})")
+                    else:
+                        new_ram_parts.append(base_model)
+                new_ram_detalles = " | ".join(new_ram_parts)
+            else:
+                single_ram_sn = request.form.get("ram_sn_0", "").strip() or request.form.get("ram_sn", "").strip()
+                if single_ram_sn:
+                    new_ram_detalles = f"RAM Detectada (SN: {single_ram_sn})"
                 else:
-                    new_ram_detalles = f"{new_ram_detalles} (SN: {ram_sn})".strip()
+                    new_ram_detalles = old_ram_raw
 
             conn.execute(
                 """
@@ -573,8 +633,8 @@ def update_pc_serials(pc_name):
                 conn,
                 pc_name=pc_name,
                 field="SERIALES_COMPONENTES",
-                old_value="Detección Automática WMI",
-                new_value=f"MB: {mb_sn} | Mon: {monitor_sn} | Prn: {printer_sn} | Disk: {disk_sn} | RAM: {ram_sn}",
+                old_value="Actualización Manual de Seriales",
+                new_value=f"MB: {mb_sn} | Monitores: {new_monitors} | Prn: {printer_sn}",
                 action_type="CARGA_MANUAL_SERIALES",
                 request_ip=request.remote_addr,
             )

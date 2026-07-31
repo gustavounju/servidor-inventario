@@ -3639,13 +3639,27 @@
                      placeholder="Ej: SN-GIG520M987654">
             </div>
 
-            <!-- Monitor Serial -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold mb-1 small"><i class="bi bi-display me-1 text-primary"></i> Serial de Monitor:</label>
-              <input type="text" class="form-control form-control-sm font-monospace" name="monitor_sn" 
-                     value="{{ hardware_components.monitors[0].serial if hardware_components.monitors and hardware_components.monitors[0].serial != 'N/A' else '' }}" 
-                     placeholder="Ej: kd1805cx21083809">
-              <div class="form-text small">Útil para monitores genéricos (KDM, Noga, CX) cuyo serial físico está en el sticker.</div>
+            <!-- Monitores (Soporta Múltiples Monitores) -->
+            <div class="mb-3 p-2 border rounded bg-light">
+              <label class="form-label fw-semibold mb-1 small text-primary">
+                <i class="bi bi-display me-1"></i> Monitores ({{ hardware_components.monitors | length }} detectado/s):
+              </label>
+              {% if hardware_components.monitors %}
+                {% for mon in hardware_components.monitors %}
+                <div class="mb-2">
+                  <small class="text-dark d-block fw-bold" style="font-size:0.78rem;">
+                    Monitor #{{ loop.index }}: {{ mon.model }}
+                  </small>
+                  <input type="text" class="form-control form-control-sm font-monospace mt-1" 
+                         name="monitor_sn_{{ loop.index0 }}" 
+                         value="{{ mon.serial if mon.serial != 'N/A' else '' }}" 
+                         placeholder="Ingresar serial físico para {{ mon.model }} (ej: kd1805cx21083809)">
+                </div>
+                {% endfor %}
+              {% else %}
+                <input type="text" class="form-control form-control-sm font-monospace" name="monitor_sn_0" placeholder="Ej: kd1805cx21083809">
+              {% endif %}
+              <div class="form-text small" style="font-size:0.72rem;">Útil para monitores genéricos (KDM, Noga, CX) cuyo serial físico está en la etiqueta de papel.</div>
             </div>
 
             <!-- Impresora Serial -->
@@ -3656,20 +3670,48 @@
                      placeholder="Ej: VND3B12345">
             </div>
 
-            <!-- Disco Serial -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold mb-1 small"><i class="bi bi-hdd-fill me-1 text-primary"></i> Serial de Disco / SSD:</label>
-              <input type="text" class="form-control form-control-sm font-monospace" name="disk_sn" 
-                     value="{{ hardware_components.disks[0].serial if hardware_components.disks and hardware_components.disks[0].serial != 'N/A' else '' }}" 
-                     placeholder="Ej: 50026B7784A12345">
+            <!-- Discos (Soporta Múltiples Discos) -->
+            <div class="mb-3 p-2 border rounded bg-light">
+              <label class="form-label fw-semibold mb-1 small text-primary">
+                <i class="bi bi-hdd-fill me-1"></i> Almacenamiento / Discos ({{ hardware_components.disks | length }} detectado/s):
+              </label>
+              {% if hardware_components.disks %}
+                {% for disk in hardware_components.disks %}
+                <div class="mb-2">
+                  <small class="text-dark d-block fw-bold" style="font-size:0.78rem;">
+                    Disco #{{ loop.index }}: {{ disk.model }}
+                  </small>
+                  <input type="text" class="form-control form-control-sm font-monospace mt-1" 
+                         name="disk_sn_{{ loop.index0 }}" 
+                         value="{{ disk.serial if disk.serial != 'N/A' else '' }}" 
+                         placeholder="Serial para {{ disk.model }}">
+                </div>
+                {% endfor %}
+              {% else %}
+                <input type="text" class="form-control form-control-sm font-monospace" name="disk_sn_0" placeholder="Ej: 50026B7784A12345">
+              {% endif %}
             </div>
 
-            <!-- Memoria RAM Serial -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold mb-1 small"><i class="bi bi-memory me-1 text-primary"></i> Serial de Memoria RAM:</label>
-              <input type="text" class="form-control form-control-sm font-monospace" name="ram_sn" 
-                     value="{{ hardware_components.ram_modules[0].serial if hardware_components.ram_modules and hardware_components.ram_modules[0].serial != 'N/A' else '' }}" 
-                     placeholder="Ej: 802C451F">
+            <!-- Memorias RAM (Soporta Múltiples Módulos) -->
+            <div class="mb-3 p-2 border rounded bg-light">
+              <label class="form-label fw-semibold mb-1 small text-primary">
+                <i class="bi bi-memory me-1"></i> Memorias RAM ({{ hardware_components.ram_modules | length }} módulo/s):
+              </label>
+              {% if hardware_components.ram_modules %}
+                {% for ram in hardware_components.ram_modules %}
+                <div class="mb-2">
+                  <small class="text-dark d-block fw-bold" style="font-size:0.78rem;">
+                    Módulo #{{ loop.index }}: {{ ram.spec }}
+                  </small>
+                  <input type="text" class="form-control form-control-sm font-monospace mt-1" 
+                         name="ram_sn_{{ loop.index0 }}" 
+                         value="{{ ram.serial if ram.serial != 'N/A' else '' }}" 
+                         placeholder="Serial para {{ ram.spec }}">
+                </div>
+                {% endfor %}
+              {% else %}
+                <input type="text" class="form-control form-control-sm font-monospace" name="ram_sn_0" placeholder="Ej: 802C451F">
+              {% endif %}
             </div>
           </div>
           <div class="modal-footer bg-light">
