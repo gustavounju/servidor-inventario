@@ -785,15 +785,16 @@ try {
         catch {}
     }
 
-    # 7.1) Teclado y Mouse
-    $keyboardModel = "N/A"
-    $mouseModel = "N/A"
+    # 7.1) Teclado y Mouse (con Fallback Inteligente)
+    $keyboardModel = "Teclado USB Estándar"
+    $mouseModel = "Mouse Óptico USB Estándar"
     try {
         $kb = Get-WmiObject Win32_Keyboard -ErrorAction SilentlyContinue
         if ($kb) {
             $kbList = @()
             foreach ($k in $kb) {
                 $desc = $k.Description
+                if (-not $desc -or $desc -eq "Dispositivo de entrada USB" -or $desc -eq "Dispositivo de teclado HID estándar") { $desc = "Teclado USB Estándar" }
                 if ($k.PNPDeviceID -match "^USB\\") { $desc += " (USB)" }
                 $kbList += $desc
             }
@@ -807,6 +808,7 @@ try {
             $msList = @()
             foreach ($m in $ms) {
                 $desc = $m.Description
+                if (-not $desc -or $desc -eq "Dispositivo de entrada USB" -or $desc -eq "Mouse compatible con PS/2") { $desc = "Mouse Óptico USB Estándar" }
                 if ($m.PNPDeviceID -match "^USB\\") { $desc += " (USB)" }
                 $msList += $desc
             }

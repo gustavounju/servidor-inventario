@@ -620,13 +620,32 @@ def update_pc_serials(pc_name):
                 else:
                     new_ram_detalles = old_ram_raw
 
+            # 6. Keyboard & Mouse Custom Input
+            kb_custom = request.form.get("keyboard_model", "").strip()
+            ms_custom = request.form.get("mouse_model", "").strip()
+            
+            full_json = {}
+            if pc.get("full_json_data"):
+                try:
+                    import json
+                    full_json = json.loads(pc["full_json_data"])
+                except Exception: pass
+            
+            if kb_custom:
+                full_json["Keyboard_Model"] = kb_custom
+            if ms_custom:
+                full_json["Mouse_Model"] = ms_custom
+                
+            import json
+            updated_full_json = json.dumps(full_json)
+
             conn.execute(
                 """
                 UPDATE pcs 
-                SET motherboard_model = %s, monitors = %s, printer_sn = %s, disk_models = %s, ram_detalles = %s 
+                SET motherboard_model = %s, monitors = %s, printer_sn = %s, disk_models = %s, ram_detalles = %s, full_json_data = %s
                 WHERE pc_name = %s
                 """,
-                (new_mb_model, new_monitors, new_printer_sn, new_disk_models, new_ram_detalles, pc_name)
+                (new_mb_model, new_monitors, new_printer_sn, new_disk_models, new_ram_detalles, updated_full_json, pc_name)
             )
 
             log_audit_event(

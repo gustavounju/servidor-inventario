@@ -3713,6 +3713,27 @@
                 <input type="text" class="form-control form-control-sm font-monospace" name="ram_sn_0" placeholder="Ej: 802C451F">
               {% endif %}
             </div>
+
+            <!-- Periféricos: Teclado y Mouse -->
+            <div class="mb-3 p-2 border rounded bg-light">
+              <label class="form-label fw-semibold mb-1 small text-primary">
+                <i class="bi bi-keyboard me-1"></i> Periféricos (Teclado & Mouse):
+              </label>
+              <div class="mb-2">
+                <small class="text-dark d-block fw-bold" style="font-size:0.78rem;">⌨️ Modelo / Marca de Teclado:</small>
+                <input type="text" class="form-control form-control-sm font-monospace mt-1" 
+                       name="keyboard_model" 
+                       value="{{ hardware_components.keyboard }}" 
+                       placeholder="Ej: Teclado USB Logitech K120">
+              </div>
+              <div class="mb-1">
+                <small class="text-dark d-block fw-bold" style="font-size:0.78rem;">🖱️ Modelo / Marca de Mouse:</small>
+                <input type="text" class="form-control form-control-sm font-monospace mt-1" 
+                       name="mouse_model" 
+                       value="{{ hardware_components.mouse }}" 
+                       placeholder="Ej: Mouse Óptico USB Genius B100">
+              </div>
+            </div>
           </div>
           <div class="modal-footer bg-light">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>

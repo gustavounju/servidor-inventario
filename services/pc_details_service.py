@@ -120,8 +120,13 @@ def _parse_hardware_components(pc):
             full_json = json.loads(pc["full_json_data"])
         except Exception: pass
     
-    keyboard_model = full_json.get("Keyboard_Model") or "Teclado PnP Estándar"
-    mouse_model = full_json.get("Mouse_Model") or "Mouse PnP Estándar"
+    keyboard_model = full_json.get("Keyboard_Model") or "Teclado USB Estándar"
+    if not keyboard_model or keyboard_model in ("N/A", "None", ""):
+        keyboard_model = "Teclado USB Estándar"
+
+    mouse_model = full_json.get("Mouse_Model") or "Mouse Óptico USB Estándar"
+    if not mouse_model or mouse_model in ("N/A", "None", ""):
+        mouse_model = "Mouse Óptico USB Estándar"
 
     # Printer
     printer_info = {
