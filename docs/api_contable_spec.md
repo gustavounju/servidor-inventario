@@ -197,3 +197,37 @@ Authorization: Bearer test-contable-secret-token-2026
 | **`404 Not Found`** | Orden de compra o remito no encontrado. |
 | **`429 Too Many Requests`** | Se excedió el límite de peticiones (máx 60 por minuto). |
 | **`500 Internal Server Error`** | Error interno no controlado en el servidor. |
+
+---
+
+### 5. Guía de Pruebas con Postman (Servidor de Trabajo)
+
+Para realizar pruebas directamente desde la red de trabajo conectándose al servidor de producción:
+
+- **Base URL HTTPS (Puerto 5000):** `https://10.15.2.251:5000`
+- **Base URL HTTP (Puerto 8080 - Fallback):** `http://10.15.2.251:8080`
+
+> ⚠️ **Configuración SSL Requerida en Postman:**  
+> Al conectarse a la IP `https://10.15.2.251:5000` utilizando certificado de red interna / autofirmado, se debe desactivar la verificación de certificado SSL en Postman:  
+> 1. En Postman, abra **Settings** (ícono de engranaje ⚙️ en la esquina superior derecha).  
+> 2. En la pestaña **General**, cambie la opción **SSL certificate verification** a **OFF**.  
+
+#### Pasos para ejecutar la prueba:
+
+1. **Crear una nueva Petición (Request):**
+   - Establezca el método HTTP en **`GET`**.
+
+2. **Ingresar la URL del Endpoint:**
+   - **Consulta de OC:** `https://10.15.2.251:5000/api/external/purchase-orders/OC-2026-0451`
+   - **Listado / Barrido:** `https://10.15.2.251:5000/api/external/purchase-orders?since=2026-07-01&until=2026-07-31`
+   - **Consulta de Remito:** `https://10.15.2.251:5000/api/external/remitos/REM-00871`
+
+3. **Configurar la Autenticación:**
+   - Diríjase a la pestaña **Authorization**.
+   - En el menú desplegable **Type**, seleccione **`Bearer Token`**.
+   - En el campo **Token**, ingrese la clave privada (`CONTABLE_API_TOKEN`).
+
+4. **Enviar la Petición:**
+   - Haga clic en el botón **Send**.
+   - Verifique que la respuesta retorne código **`200 OK`** con los datos estructurados en formato JSON.
+
