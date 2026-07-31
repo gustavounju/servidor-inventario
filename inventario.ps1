@@ -723,8 +723,10 @@ try {
                 if ($edidMap.ContainsKey($cleanMN)) { $cleanMN = $edidMap[$cleanMN] }
                 $entry = "$cleanMN $uf".Trim()
                 if (-not $entry) { $entry = "Monitor Reconocido" }
-                if ($sn -and $sn -ne "0" -and $sn -ne "000000" -and $sn -ne "0000000000000") {
-                    $entry += " (SN: $($sn.Trim()))"
+                $cleanSN = if ($sn) { $sn.Trim() } else { "" }
+                $isDummySN = ($cleanSN -eq "" -or $cleanSN -eq "0" -or $cleanSN -eq "000001" -or $cleanSN -eq "000000" -or $cleanSN -eq "123456" -or $cleanSN -match "^0+$" -or $cleanSN -match "^1+$")
+                if (-not $isDummySN) {
+                    $entry += " (SN: $cleanSN)"
                 }
                 $mList += $entry
             }
