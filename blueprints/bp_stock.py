@@ -280,6 +280,97 @@ def get_component(serial_number):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+@bp_stock.route("/api/components/<path:serial_number>/patrimony", methods=["PATCH"])
+def update_component_patrimony(serial_number):
+    """
+    PATCH /api/components/<serial>/patrimony
+
+    Actualiza los campos patrimoniales de un activo (Fase 3).
+    Solo acepta los campos patrimoniales nuevos; no toca status ni assigned_*.
+
+    Campos editables:
+      lifecycle_status : stock | en_armado | desplegado | en_reparacion | retirado | scrap
+      purchase_date    : DATE (YYYY-MM-DD) — fecha de compra
+      warranty_until   : DATE (YYYY-MM-DD) — vencimiento de garantia
+      asset_notes      : Texto libre con observaciones del tecnico
+      build_order_id   : INT — ID de la Build Order asociada (opcional)
+    """
+    if not check_stock_permission():
+        return jsonify({"status": "error", "message": "Acceso denegado."}), 403
+
+    try:
+        from utils.auth import current_username, current_technician_identity
+        tech = current_technician_identity() or current_username()
+        data = request.json or {}
+
+        VALID_LIFECYCLE = {"stock", "en_armado", "desplegado", "en_reparacion", "retirado", "scrap"}
+
+        updates = {}
+        if "lifecycle_status" in data:
+            ls = (data["lifecycle_status"] or "").strip().lower()
+            if ls not in VALID_LIFECYCLE:
+                return jsonify({
+                    "status": "error",
+                    "message": f"lifecycle_status inválido. Valores: {', '.join(sorted(VALID_LIFECYCLE))}"
+                }), 400
+            updates["lifecycle_status"] = ls
+
+        if "purchase_date" in data:
+            pd_val = data["purchase_date"]
+            updates["purchase_date"] = pd_val if pd_val else None
+
+        if "warranty_until" in data:
+            wu_val = data["warranty_until"]
+            updates["warranty_until"] = wu_val if wu_val else None
+
+        if "asset_notes" in data:
+            updates["asset_notes"] = (data["asset_notes"] or "").strip() or None
+
+        if "build_order_id" in data:
+            bo_id = data["build_order_id"]
+            updates["build_order_id"] = int(bo_id) if bo_id else None
+
+        if not updates:
+            return jsonify({"status": "error", "message": "No se enviaron campos a actualizar."}), 400
+
+        set_clauses = ", ".join(f"{col} = %s" for col in updates)
+        values = list(updates.values()) + [serial_number]
+
+        with get_db_connection() as conn:
+            comp = conn.execute(
+                "SELECT id, component_type, brand_model FROM components WHERE serial_number = %s",
+                (serial_number,)
+            ).fetchone()
+            if not comp:
+                return jsonify({"status": "error", "message": "Componente no encontrado."}), 404
+
+            conn.execute(
+                f"UPDATE components SET {set_clauses} WHERE serial_number = %s",
+                values
+            )
+
+            # Registrar en audit_logs
+            changes_str = ", ".join(f"{k}={v}" for k, v in updates.items())
+            conn.execute(
+                """
+                INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    serial_number,
+                    "PATRIMONY_UPDATE",
+                    comp.get("component_type", ""),
+                    changes_str,
+                    tech, "GESTION_STOCK", request.remote_addr
+                )
+            )
+
+        return jsonify({"status": "success", "serial_number": serial_number, "updated": updates})
+    except Exception as e:
+        logging.error("Error en update_component_patrimony(%s): %s", serial_number, e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @bp_stock.route("/stock")
 def stock_view():
     try:

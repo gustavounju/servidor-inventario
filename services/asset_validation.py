@@ -67,6 +67,8 @@ def compute_validation_status(pc_name: str, conn) -> str:
     """
     try:
         # 1. ¿Hay algún activo de tipo CPU asignado a esta PC?
+        #    Filtra por lifecycle_status (Fase 3) con fallback a status original
+        #    para compatibilidad con instalaciones que aún no corrieron V52.
         cpu_asset = conn.execute(
             """
             SELECT brand_model, serial_number
@@ -74,6 +76,7 @@ def compute_validation_status(pc_name: str, conn) -> str:
             WHERE LOWER(TRIM(assigned_pc)) = LOWER(TRIM(%s))
               AND LOWER(TRIM(component_type)) IN ('cpu', 'gabinete', 'computadora', 'pc')
               AND status NOT IN ('Retirado', 'Scrap')
+              AND (lifecycle_status IS NULL OR lifecycle_status NOT IN ('retirado', 'scrap'))
             LIMIT 1
             """,
             (pc_name,)

@@ -654,6 +654,8 @@ def run_all_migrations():
     # Fase 2 — Build Orders
     migrate_db_v50()
     migrate_db_v51()
+    # Fase 3 — Columnas patrimoniales en components
+    migrate_db_v52()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1275,3 +1277,83 @@ def migrate_db_v51():
         else:
             print("Migración V51 verificada.")
 
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FASE 3 — Sistema Patrimonial: columnas de ciclo de vida en components
+# ─────────────────────────────────────────────────────────────────────────────
+
+def migrate_db_v52():
+    """
+    Migración V52: Agregar columnas patrimoniales a la tabla components.
+
+    Estrategia conservadora (sin RENAME TABLE):
+      Agrega las columnas del modelo patrimonial directamente sobre components,
+      sin renombrarla, para no romper db_core.py ni blueprints existentes.
+      El rename a assets quedará para una Fase posterior.
+
+    Columnas nuevas:
+      lifecycle_status  : Estado de ciclo de vida del activo.
+                          Valores: stock | en_armado | desplegado | en_reparacion | retirado | scrap
+                          Se inicializa mapeando el campo status existente.
+      purchase_date     : Fecha de compra (de OC o remito). Opcional.
+      warranty_until    : Fecha de vencimiento de garantia. Opcional.
+      build_order_id    : FK a build_orders.id. NULL para activos pre-migracion.
+      asset_notes       : Notas libres del activo (observaciones del tecnico).
+    """
+    print("Verificando migracion de DB v52 (columnas patrimoniales en components)...")
+
+    STATUS_MAP = {
+        "Stock":         "stock",
+        "Stock (Combo)": "stock",
+        "Installed":     "desplegado",
+        "Asignado":      "desplegado",
+        "Retirado":      "retirado",
+        "Scrap":         "scrap",
+    }
+
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "components"):
+            print("Migracion V52: tabla components no encontrada. Skip.")
+            return
+
+        applied = False
+
+        if not _column_exists(conn, "components", "lifecycle_status"):
+            print("Aplicando V52: agregando lifecycle_status...")
+            conn.execute(
+                "ALTER TABLE components ADD COLUMN lifecycle_status VARCHAR(50) NOT NULL DEFAULT 'stock'"
+            )
+            for old_status, new_status in STATUS_MAP.items():
+                conn.execute(
+                    "UPDATE components SET lifecycle_status = %s WHERE TRIM(status) = %s",
+                    (new_status, old_status)
+                )
+            applied = True
+
+        if not _column_exists(conn, "components", "purchase_date"):
+            print("Aplicando V52: agregando purchase_date...")
+            conn.execute("ALTER TABLE components ADD COLUMN purchase_date DATE DEFAULT NULL")
+            applied = True
+
+        if not _column_exists(conn, "components", "warranty_until"):
+            print("Aplicando V52: agregando warranty_until...")
+            conn.execute("ALTER TABLE components ADD COLUMN warranty_until DATE DEFAULT NULL")
+            applied = True
+
+        if not _column_exists(conn, "components", "build_order_id"):
+            print("Aplicando V52: agregando build_order_id...")
+            conn.execute("ALTER TABLE components ADD COLUMN build_order_id INT DEFAULT NULL")
+            if not _index_exists(conn, "components", "idx_comp_build_order_id"):
+                conn.execute("CREATE INDEX idx_comp_build_order_id ON components(build_order_id)")
+            applied = True
+
+        if not _column_exists(conn, "components", "asset_notes"):
+            print("Aplicando V52: agregando asset_notes...")
+            conn.execute("ALTER TABLE components ADD COLUMN asset_notes TEXT DEFAULT NULL")
+            applied = True
+
+        if applied:
+            print("Migracion V52 aplicada: columnas patrimoniales agregadas a components.")
+        else:
+            print("Migracion V52 verificada.")
