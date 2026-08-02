@@ -99,7 +99,7 @@
             margin-bottom: 24px;
         }
     </style>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined and csrf_token else '' }}">
     <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
 </head>
 
@@ -228,7 +228,7 @@
                                 <!-- Formulario agregar serial -->
                                 <div class="col-md-7">
                                     <form onsubmit="addItemToBO(event, {{ bo.id }})" class="d-flex gap-2">
-                                        <input type="text" id="bo_serial_{{ bo.id }}" class="form-control form-control-sm font-mono" placeholder="Escaneá N° Serie o usá Auto-ID..." required style="background: rgba(30, 41, 59, 0.8); color: white; border-color: rgba(148, 163, 184, 0.3);">
+                                        <input type="text" id="bo_serial_{{ bo.id }}" class="form-control form-control-sm font-mono" list="availableStockCompsList" placeholder="Escaneá o seleccioná N° Serie..." required style="background: rgba(30, 41, 59, 0.8); color: white; border-color: rgba(148, 163, 184, 0.3);">
                                         <button type="button" class="btn btn-sm btn-outline-warning text-nowrap" onclick="generateAutoIdForBO({{ bo.id }})" title="Generar ID interno (para Fuente o Gabinete sin serial impreso)">
                                             <i class="bi bi-upc-scan me-1"></i> Auto-ID
                                         </button>
@@ -280,7 +280,12 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label text-muted" style="font-size: 0.82rem;">PC Destino Provisoria (AD / Red)</label>
-                            <input type="text" id="bo_target_pc_name" class="form-control font-mono" list="pcsList" placeholder="Ej: PC0006, JCC1-PC01...">
+                            <input type="text" id="bo_target_pc_name" class="form-control font-mono" list="pcsList" placeholder="Seleccioná o escribí PC (Ej: PC0006, JCC1-PC01...)">
+                            <datalist id="pcsList">
+                                {% for p in pcs %}
+                                <option value="{{ p.pc_name }}">{{ p.fuero or 'Sin Fuero' }} - {{ p.last_user or '' }}</option>
+                                {% endfor %}
+                            </datalist>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted" style="font-size: 0.82rem;">Fuero / Oficina Destino</label>
@@ -303,11 +308,21 @@
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label text-muted" style="font-size: 0.82rem;">Remito (Opcional)</label>
-                                <input type="text" id="bo_invoice" class="form-control" placeholder="REM-00123">
+                                <input type="text" id="bo_invoice" class="form-control" list="remitosList" placeholder="Seleccioná Remito (Ej: REM-8849-2026)">
+                                <datalist id="remitosList">
+                                    {% for r in remitos %}
+                                    <option value="{{ r }}">
+                                    {% endfor %}
+                                </datalist>
                             </div>
                             <div class="col-6">
                                 <label class="form-label text-muted" style="font-size: 0.82rem;">Orden de Compra (Opcional)</label>
-                                <input type="text" id="bo_oc" class="form-control" placeholder="OC-2026-44">
+                                <input type="text" id="bo_oc" class="form-control" list="ocsList" placeholder="Seleccioná OC (Ej: OC-2026-012)">
+                                <datalist id="ocsList">
+                                    {% for o in ocs %}
+                                    <option value="{{ o }}">
+                                    {% endfor %}
+                                </datalist>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -366,6 +381,13 @@
     </div>
 
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <!-- DATALIST DE COMPONENTES DISPONIBLES EN STOCK -->
+    <datalist id="availableStockCompsList">
+        {% for sc in stock_components %}
+        <option value="{{ sc.serial_number }}">{{ sc.component_type }} - {{ sc.brand_model }} {% if sc.supplier %}({{ sc.supplier }}){% endif %}</option>
+        {% endfor %}
+    </datalist>
+
     <script>
         async function handleCreateBO(e) {
             e.preventDefault();

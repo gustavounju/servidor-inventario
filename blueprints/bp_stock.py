@@ -528,9 +528,20 @@ def build_orders_view():
             ).fetchall()
             fueros = [r['fuero'] for r in fueros_rows if r.get('fuero')]
 
+            # Remitos y OCs disponibles
+            remitos_rows = conn.execute(
+                "SELECT DISTINCT invoice_number FROM components WHERE invoice_number IS NOT NULL AND invoice_number != '' ORDER BY invoice_number ASC"
+            ).fetchall()
+            remitos = [r['invoice_number'] for r in remitos_rows]
+
+            ocs_rows = conn.execute(
+                "SELECT DISTINCT oc_number FROM components WHERE oc_number IS NOT NULL AND oc_number != '' ORDER BY oc_number ASC"
+            ).fetchall()
+            ocs = [r['oc_number'] for r in ocs_rows]
+
     except Exception as exc:
         logging.error("Error en build_orders_view: %s", exc)
-        pcs, ad_users, stock_components, build_orders_list, fueros = [], [], [], [], []
+        pcs, ad_users, stock_components, build_orders_list, fueros, remitos, ocs = [], [], [], [], [], [], []
 
     return render_template(
         "build_orders.html",
@@ -538,7 +549,9 @@ def build_orders_view():
         ad_users=ad_users,
         stock_components=stock_components,
         build_orders=build_orders_list,
-        fueros=fueros
+        fueros=fueros,
+        remitos=remitos,
+        ocs=ocs
     )
 
 
