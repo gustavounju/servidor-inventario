@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock de Componentes y Remitos — Inventario GOLD</title>
+    <script>
+      (function() {
+        var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme');
+        if (pref === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -62,18 +69,20 @@
         <!-- Hero mini -->
         <div class="hero-header mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
-                <h1 class="hero-title">📦 Gestión de Stock y Remitos</h1>
-                <p class="hero-subtitle">Recepción por remitos, asignación a personas (AD) y componentes en inventario</p>
+                <h1 class="hero-title">📦 Gestión de Patrimonio y Remitos</h1>
+                <p class="hero-subtitle">Recepción por remitos, control de existencias y componentes en inventario</p>
             </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-info text-white fw-bold shadow-sm" onclick="openAssignBundleModal()">
-                    <i class="bi bi-box-seam me-1"></i> Asignar Componentes / Combo
-                </button>
-                <button class="btn btn-gold shadow-sm" data-bs-toggle="modal" data-bs-target="#addStockModal">
-                    <i class="bi bi-file-earmark-plus-fill me-1"></i> Cargar Remito / Nuevo Stock
+            <div class="d-flex gap-2 align-items-center">
+                <a href="{{ url_for('stock.build_orders_view') }}" class="op-btn op-btn--armado">
+                    <i class="bi bi-cpu me-1"></i>[ ARMADO ]
+                </a>
+                <button type="button" class="op-btn op-btn--accent" data-bs-toggle="modal" data-bs-target="#addStockModal">
+                    <i class="bi bi-file-earmark-plus-fill me-1"></i>[ + CARGAR REMITO ]
                 </button>
             </div>
+
         </div>
+
 
         <!-- Bulk Action Bar -->
         <div id="bulkActionBar" class="alert alert-danger py-2 px-3 mb-3 d-none d-flex justify-content-between align-items-center shadow-sm" style="background: rgba(225, 29, 72, 0.15); border: 1px solid rgba(225, 29, 72, 0.3); border-radius: 10px; color: #fda4af;">

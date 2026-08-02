@@ -1,18 +1,51 @@
-/**
- * gold.js — Shared logic for Inventario GOLD
- * Includes Theme Management and common UI actions.
- */
+(function initTheme() {
+    var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme') || 'light';
+    if (pref === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+})();
+
+function toggleTheme() {
+    var current = document.documentElement.getAttribute('data-theme') || 'light';
+    var next = (current === 'dark') ? 'light' : 'dark';
+    setTheme(next);
+}
 
 function setTheme(themeName) {
-    document.documentElement.setAttribute('data-theme', themeName);
+    if (themeName === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+    localStorage.setItem('theme_preference', themeName);
     localStorage.setItem('theme', themeName);
-    
-    // Update SIGJ dots if they exist
-    const dots = document.querySelectorAll('.sigj-dot');
-    dots.forEach(dot => {
-        // Theme specific tweaks can go here if needed
+    updateThemeToggleIcons(themeName);
+}
+
+function updateThemeToggleIcons(themeName) {
+    var btns = document.querySelectorAll('.theme-toggle-btn');
+    btns.forEach(function(btn) {
+        if (themeName === 'dark') {
+            btn.innerHTML = '<i class="bi bi-sun-fill me-1" style="color:#f59e0b;"></i> [ ☀️ CLARO ]';
+            btn.title = "Cambiar a Modo Claro";
+        } else {
+            btn.innerHTML = '<i class="bi bi-moon-stars-fill me-1" style="color:#3b82f6;"></i> [ 🌙 OSCURO ]';
+            btn.title = "Cambiar a Modo Oscuro";
+        }
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme') || 'light';
+    if (pref === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+    updateThemeToggleIcons(pref);
+});
+
+
 
 function onFilterClick(type) {
     let url;

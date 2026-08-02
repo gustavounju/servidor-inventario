@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Órdenes de Armado (Build Orders) — Inventario GOLD</title>
+    <script>
+      (function() {
+        var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme');
+        if (pref === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -129,14 +136,15 @@
                     Armado y entrega de puestos de trabajo completos. Vinculación de periféricos, Gemelos Digitales y doble etiqueta QR.
                 </p>
             </div>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-primary" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); border: none; font-weight: 600;" data-bs-toggle="modal" data-bs-target="#newBuildOrderModal">
-                    <i class="bi bi-plus-lg me-1"></i> Nueva Orden de Armado
+            <div class="d-flex gap-2 align-items-center">
+                <button type="button" class="op-btn op-btn--armado" data-bs-toggle="modal" data-bs-target="#newBuildOrderModal">
+                    <i class="bi bi-plus-lg me-1"></i>[ + NUEVA ORDEN ]
                 </button>
-                <a href="{{ url_for('stock.stock_view') }}" class="btn btn-outline-light" style="border-color: rgba(148, 163, 184, 0.4); font-size: 0.88rem;">
-                    <i class="bi bi-boxes me-1"></i> Ver Stock
+                <a href="{{ url_for('stock.stock_view') }}" class="op-btn op-btn--patrimonio">
+                    <i class="bi bi-boxes me-1"></i>[ PATRIMONIO ]
                 </a>
             </div>
+
         </div>
 
         <!-- LISTA DE ÓRDENES DE ARMADO -->

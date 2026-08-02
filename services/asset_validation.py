@@ -88,7 +88,7 @@ def compute_validation_status(pc_name: str, conn) -> str:
 
         # 2. ¿La PC ya reportó desde el script?
         pc_data = conn.execute(
-            "SELECT processor, motherboard_model, last_report FROM pcs WHERE pc_name = %s",
+            "SELECT processor, motherboard_model, ram_gb, disk_models, last_report, telemetry_snapshot, full_json_data FROM pcs WHERE pc_name = %s",
             (pc_name,)
         ).fetchone()
 
@@ -96,31 +96,49 @@ def compute_validation_status(pc_name: str, conn) -> str:
             # Activo asignado pero el script no corrió aún
             return "pendiente"
 
-        # 3. Comparar hardware del activo vs. lo que reportó el script
-        #    Usamos la misma lógica ya existente en bp_api.py:246-254
-        asset_model = cpu_asset.get("brand_model") or ""
+        # 3. Obtener telemetría del script desde telemetry_snapshot o full_json_data
+        telemetry_raw = pc_data.get("telemetry_snapshot") or pc_data.get("full_json_data")
         script_processor = pc_data.get("processor") or ""
         script_motherboard = pc_data.get("motherboard_model") or ""
+        script_ram = pc_data.get("ram_gb") or 0.0
+        script_disks = pc_data.get("disk_models") or ""
+
+        if telemetry_raw:
+            try:
+                import json
+                t_data = json.loads(telemetry_raw)
+                sistema = t_data.get("Sistema", {})
+                script_processor = sistema.get("Procesador") or script_processor
+                script_ram = sistema.get("RAM (GB)") or script_ram
+                script_disks = t_data.get("Disk_Models") or script_disks
+                script_motherboard = t_data.get("Motherboard_Model") or script_motherboard
+            except Exception:
+                pass
+
+        asset_model = cpu_asset.get("brand_model") or ""
 
         # Si el modelo del activo coincide con procesador O motherboard reportados,
-        # consideramos que el hardware es el mismo.
+        # consideramos que el hardware de CPU es compatible.
         processor_match = _hw_tokens_match(asset_model, script_processor)
         motherboard_match = _hw_tokens_match(asset_model, script_motherboard)
 
-        # Consideramos "validado" si hay coincidencia en al menos uno de los dos campos
-        # (el brand_model del activo puede ser el modelo del gabinete o del CPU indistintamente).
-        if processor_match or motherboard_match:
-            return "validado"
+        # Si ninguno coincide pero el activo existe y hay telemetría limpia
+        if not (processor_match or motherboard_match):
+            if (script_processor and script_processor not in ("N/A", "") and
+                    script_motherboard and script_motherboard not in ("N/A", "")):
+                return "discrepancia"
 
-        # Si ninguno coincide pero el activo existe, puede ser una discrepancia real
-        # o simplemente que el brand_model del activo es el nombre comercial del gabinete
-        # y no el modelo del CPU. Para evitar falsos positivos, solo marcamos discrepancia
-        # si AMBOS campos del script son no-vacíos y no-genéricos.
-        if (script_processor and script_processor not in ("N/A", "") and
-                script_motherboard and script_motherboard not in ("N/A", "")):
-            return "discrepancia"
+        # 4. Verificar RAM registrada vs telemetría si existe registro previo
+        reg_ram = pc_data.get("ram_gb")
+        if reg_ram and reg_ram > 0 and script_ram and float(script_ram) > 0:
+            try:
+                diff = abs(float(reg_ram) - float(script_ram))
+                # Si la diferencia de RAM es superior a 1 GB sin intervención registrada
+                if diff > 1.0:
+                    return "discrepancia"
+            except Exception:
+                pass
 
-        # Datos de script insuficientes para comparar → considerar validado con reserva
         return "validado"
 
     except Exception as exc:
@@ -128,7 +146,6 @@ def compute_validation_status(pc_name: str, conn) -> str:
             "compute_validation_status(%s): error calculando estado — %s",
             pc_name, exc
         )
-        # En caso de error no bloqueamos el flujo principal; retornamos estado conservador
         return "sin_gemelo"
 
 

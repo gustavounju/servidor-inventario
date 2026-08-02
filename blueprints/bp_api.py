@@ -1,7 +1,7 @@
 import json
 import traceback
 import os
-from flask import Blueprint, request, jsonify, redirect, url_for
+from flask import Blueprint, request, jsonify, redirect, url_for, has_request_context
 import json
 import datetime
 import os
@@ -59,7 +59,9 @@ def _build_printer_match_key(model, port):
 
 def process_inventory_data(data):
     from utils.constants import clean_hex_string
+    client_ip = request.remote_addr if has_request_context() else '127.0.0.1'
     debug_logs = []
+
     pc_name = data.get("PC_Nombre")
     if not pc_name: raise ValueError("Falta PC_Nombre en el JSON")
 
@@ -241,7 +243,8 @@ def process_inventory_data(data):
             if current_pc.get("is_active") == 0 or current_pc.get("is_active") == False or str(current_pc.get("is_active")) == "False":
                 reactivado = True
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                             (pc_name, "Estado de PC", "Cementerio (Baja)", "Reactivado (Activo)", "SISTEMA", "INVENTARIO_AUTOMATICO", request.remote_addr))
+                             (pc_name, "Estado de PC", "Cementerio (Baja)", "Reactivado (Activo)", "SISTEMA", "INVENTARIO_AUTOMATICO", client_ip))
+
 
             # Deduplicate check: if hardware (motherboard & processor) drastically changed, it's likely another physical machine
             old_mb = str(current_pc.get("motherboard_model", "")).strip()
@@ -265,7 +268,8 @@ def process_inventory_data(data):
                 new_val = new_values_map.get(field, "N/A")
                 if old_val.strip() != new_val.strip():
                     conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                                 (pc_name, field, old_val, new_val, "SISTEMA", "INVENTARIO_AUTOMATICO", request.remote_addr))
+                                 (pc_name, field, old_val, new_val, "SISTEMA", "INVENTARIO_AUTOMATICO", client_ip))
+
 
 
     # --- OBTENER VALORES ANTIGUOS PARA LIMPIEZA ---
@@ -275,14 +279,18 @@ def process_inventory_data(data):
         if old_pc: old_printer_sn = old_pc["printer_sn"] or "N/A"
 
     sql = """
-    INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, mac_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, office_version, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, is_active, full_json_data)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, %s)
+    INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, mac_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, office_version, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, is_active, full_json_data, telemetry_snapshot)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, %s, %s)
     ON DUPLICATE KEY UPDATE
-        fuero=VALUES(fuero), os_name=VALUES(os_name), processor=VALUES(processor), ram_gb=VALUES(ram_gb), ip_address=VALUES(ip_address), mac_address=VALUES(mac_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_models=VALUES(disk_models), disk_speeds_rpm=VALUES(disk_speeds_rpm), motherboard_model=VALUES(motherboard_model), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), printer_sn=VALUES(printer_sn), office_version=VALUES(office_version), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), alerta_nombre_duplicado=VALUES(alerta_nombre_duplicado), is_active=1, full_json_data=VALUES(full_json_data)
+        fuero=VALUES(fuero), os_name=VALUES(os_name), ip_address=VALUES(ip_address), mac_address=VALUES(mac_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_speeds_rpm=VALUES(disk_speeds_rpm), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), printer_sn=VALUES(printer_sn), office_version=VALUES(office_version), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), alerta_nombre_duplicado=VALUES(alerta_nombre_duplicado), is_active=1, full_json_data=VALUES(full_json_data), telemetry_snapshot=VALUES(telemetry_snapshot),
+        processor = IF(validation_status = 'sin_gemelo' OR processor IS NULL OR processor = '' OR processor = 'N/A', VALUES(processor), processor),
+        ram_gb = IF(validation_status = 'sin_gemelo' OR ram_gb IS NULL OR ram_gb = 0, VALUES(ram_gb), ram_gb),
+        disk_models = IF(validation_status = 'sin_gemelo' OR disk_models IS NULL OR disk_models = '' OR disk_models = 'N/A', VALUES(disk_models), disk_models),
+        motherboard_model = IF(validation_status = 'sin_gemelo' OR motherboard_model IS NULL OR motherboard_model = '' OR motherboard_model = 'N/A', VALUES(motherboard_model), motherboard_model)
     """
     
     with get_db_connection() as conn:
-        conn.execute(sql, (pc_name, fuero_detectado, os_name, processor, ram_gb, ip_address, mac_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, office_version, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, full_json))
+        conn.execute(sql, (pc_name, fuero_detectado, os_name, processor, ram_gb, ip_address, mac_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, office_version, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, full_json, full_json))
         
         # Sincronización Total: El servidor es un reflejo del script de la PC
         # 1. Limpiamos todas las asignaciones previas para este equipo
@@ -314,7 +322,8 @@ def process_inventory_data(data):
                 # 3. Vincular la actual
                 conn.execute("INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)", (pc_name, printer_id))
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                             (pc_name, 'AUTO_SYNC_PRINTER', 'Catalog', printer_sn if printer_sn != 'N/A' else clean_ip, "SISTEMA", "AUTO_SYNC", request.remote_addr))
+                             (pc_name, 'AUTO_SYNC_PRINTER', 'Catalog', printer_sn if printer_sn != 'N/A' else clean_ip, "SISTEMA", "AUTO_SYNC", client_ip))
+
         
         elif alerta_sin_impresora == 1:
             # 1. LIMPIEZA DEL CATÁLOGO (Stock de infraestructura)
@@ -325,7 +334,7 @@ def process_inventory_data(data):
 
             # 2. Limpieza de Asignaciones Internas
             conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                         (pc_name, 'AUTO_CLEAN_PRINTER', 'Assigned', 'None', "SISTEMA", "AUTO_SYNC", request.remote_addr))
+                         (pc_name, 'AUTO_CLEAN_PRINTER', 'Assigned', 'None', "SISTEMA", "AUTO_SYNC", client_ip))
                 
             # 3. LIMPIEZA EN CASCADA (Misión: Clientes huérfanos)
             host_pattern = f"%\\\\\\\\{pc_name.upper()}\\\\%"
@@ -335,7 +344,8 @@ def process_inventory_data(data):
                     client_name = c["pc_name"]
                     conn.execute("DELETE FROM pc_network_printers WHERE pc_name = %s", (client_name,))
                     conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                                 (client_name, 'CASCADE_UNASSIGN', 'Host Offline', pc_name, "SISTEMA", "CASCADE_ACTION", request.remote_addr))
+                                 (client_name, 'CASCADE_UNASSIGN', 'Host Offline', pc_name, "SISTEMA", "CASCADE_ACTION", client_ip))
+
 
         # --- PROPAGACIÓN EN CASCADA (SI SOY HOST) ---
         # Si esta PC tiene un serial de impresora USB/Local válido, buscar clientes que impriman aquí

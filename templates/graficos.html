@@ -4,6 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Gráficos e Indicadores</title>
+    <script>
+      (function() {
+        var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme');
+        if (pref === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      })();
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
     <script src="{{ url_for('static', filename='vendor/chartjs/chart.js') }}"></script>
 
@@ -11,7 +17,7 @@
     <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/gold.js') }}"></script>
 </head>
-</head>
+
 
 <body class="has-fixed-header">
     {% include '_module_switcher.html' %}

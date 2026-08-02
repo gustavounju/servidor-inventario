@@ -1352,3 +1352,126 @@ def send_admin_message():
     except Exception as e:
         print(f"Error sending admin message: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MÓDULO DE INTERVENCIONES TÉCNICAS (Gemelo Digital Patrimonial)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@bp_tasks.route("/api/intervenciones/crear", methods=["POST"])
+def crear_intervencion():
+    """Crea una nueva Intervención Técnica para un activo / PC."""
+    data = request.get_json() or {}
+    pc_name = (data.get("pc_name") or "").strip()
+    asset_serial = (data.get("asset_serial") or "").strip()
+    tipo = (data.get("tipo") or "mantenimiento").strip()
+    motivo = (data.get("ingreso_motivo") or "").strip()
+    tecnico = (data.get("tecnico_responsable") or current_username() or "Taller").strip()
+
+    if not pc_name and not asset_serial:
+        return jsonify({"status": "error", "message": "Se requiere pc_name o asset_serial"}), 400
+
+    import random
+    ticket_num = f"INT-{datetime.datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
+
+    try:
+        with get_db_connection() as conn:
+            script_telemetry = None
+            if pc_name:
+                row = conn.execute("SELECT full_json_data, telemetry_snapshot FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+                if row:
+                    script_telemetry = row.get("telemetry_snapshot") or row.get("full_json_data")
+
+            conn.execute(
+                """
+                INSERT INTO intervenciones (
+                    ticket_number, pc_name, asset_serial, tipo, ingreso_motivo,
+                    script_telemetry_before, tecnico_responsable, estado
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, 'abierta')
+                """,
+                (ticket_num, pc_name, asset_serial, tipo, motivo, script_telemetry, tecnico)
+            )
+
+            conn.execute(
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (pc_name or asset_serial, "Intervención Técnica", "N/A", f"Ticket {ticket_num} ({tipo})", tecnico, "CREAR_INTERVENCION", request.remote_addr)
+            )
+            conn.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": f"Intervención {ticket_num} creada correctamente",
+            "ticket_number": ticket_num
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_tasks.route("/api/intervenciones/homologar_telemetria", methods=["POST"])
+def homologar_telemetria():
+    """
+    Homologar Telemetría: Acepta los valores reportados por la telemetría pasiva del script
+    y los consolida en el gemelo digital patrimonial (actualizando pcs y cambiando status a 'validado').
+    """
+    data = request.get_json() or {}
+    pc_name = (data.get("pc_name") or "").strip()
+    if not pc_name:
+        return jsonify({"status": "error", "message": "Falta pc_name"}), 400
+
+    try:
+        with get_db_connection() as conn:
+            pc_row = conn.execute(
+                "SELECT telemetry_snapshot, full_json_data, processor, ram_gb, motherboard_model, disk_models FROM pcs WHERE pc_name = %s",
+                (pc_name,)
+            ).fetchone()
+
+            if not pc_row:
+                return jsonify({"status": "error", "message": "PC no encontrada"}), 404
+
+            raw_tel = pc_row.get("telemetry_snapshot") or pc_row.get("full_json_data")
+            if not raw_tel:
+                return jsonify({"status": "error", "message": "No hay telemetría capturada para esta PC"}), 400
+
+            import json
+            tel_json = json.loads(raw_tel)
+            sistema = tel_json.get("Sistema", {})
+
+            new_proc = sistema.get("Procesador") or pc_row.get("processor")
+            new_ram = sistema.get("RAM (GB)") or pc_row.get("ram_gb")
+            new_mb = tel_json.get("Motherboard_Model") or pc_row.get("motherboard_model")
+            new_disks = tel_json.get("Disk_Models") or pc_row.get("disk_models")
+
+            conn.execute(
+                """
+                UPDATE pcs
+                SET processor = %s, ram_gb = %s, motherboard_model = %s, disk_models = %s, validation_status = 'validado'
+                WHERE pc_name = %s
+                """,
+                (new_proc, new_ram, new_mb, new_disks, pc_name)
+            )
+
+            user = current_username() or "Taller"
+            conn.execute(
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (pc_name, "Homologación Patrimonial", "Telemetría no alineada", f"Procesador: {new_proc}, RAM: {new_ram} GB", user, "HOMOLOGAR_TELEMETRIA", request.remote_addr)
+            )
+            conn.commit()
+
+        return jsonify({"status": "success", "message": f"Telemetría homologada con éxito para {pc_name}"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_tasks.route("/api/intervenciones/<string:pc_name>", methods=["GET"])
+def obtener_intervenciones(pc_name):
+    """Devuelve las intervenciones técnicas asociadas a una PC."""
+    try:
+        with get_db_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM intervenciones WHERE pc_name = %s ORDER BY created_at DESC",
+                (pc_name,)
+            ).fetchall()
+            return jsonify({"status": "success", "intervenciones": [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+

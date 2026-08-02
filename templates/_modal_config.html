@@ -1,33 +1,33 @@
 <!-- Modal para Configuración AD/DB -->
 <div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content glass-card">
-            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                <h5 class="modal-title" id="configModalLabel"><i class="bi bi-gear-fill text-accent me-2"></i> Ajustes Globales del Sistema</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content console-panel" style="border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); background: var(--table-header-bg);">
+                <h5 class="modal-title font-display fw-bold" id="configModalLabel" style="font-size: 1.05rem; color: var(--text-color);"><i class="bi bi-gear-fill text-primary me-2"></i> Ajustes Globales del Sistema</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body" style="color: #e2e8f0;">
+            <div class="modal-body p-4" style="color: var(--text-color);">
                 <form id="configForm" onsubmit="saveConfig(event)">
                     <!-- Token CSRF explícito para peticiones POST manuales en caso de usar form -->
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <!-- Active Directory Settings -->
-                    <div class="glass-card mb-4 p-4" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px;">
-                        <h4 style="font-weight: 500; margin-bottom: 20px; font-size: 1.2rem; color: #e2e8f0;">
+                    <div class="p-4 mb-4" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px;">
+                        <h4 style="font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; color: var(--text-color); font-family: var(--font-display);">
                             <i class="bi bi-microsoft text-primary me-2"></i> Integración Active Directory
                         </h4>
                         
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="AD_SERVER" style="color: #94a3b8; font-size: 0.9rem;">Servidor AD (IP o Hostname)</label>
-                                    <input type="text" class="form-control" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0;" id="AD_SERVER" name="AD_SERVER" placeholder="ej. 10.15.0.62 o ldap://10.15.0.62">
+                                    <label for="AD_SERVER" style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Servidor AD (IP o Hostname)</label>
+                                    <input type="text" class="form-control" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;" id="AD_SERVER" name="AD_SERVER" placeholder="ej. 10.15.0.62 o ldap://10.15.0.62">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="AD_BASE_DN" style="color: #94a3b8; font-size: 0.9rem;">Base DN (Ruta de Búsqueda)</label>
-                                    <input type="text" class="form-control" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0;" id="AD_BASE_DN" name="AD_BASE_DN" placeholder="ej. DC=poderjudicial,DC=local">
+                                    <label for="AD_BASE_DN" style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Base DN (Ruta de Búsqueda)</label>
+                                    <input type="text" class="form-control" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;" id="AD_BASE_DN" name="AD_BASE_DN" placeholder="ej. DC=poderjudicial,DC=local">
                                 </div>
                             </div>
                         </div>
@@ -35,32 +35,80 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="AD_SYNC_USER" style="color: #94a3b8; font-size: 0.9rem;">Usuario de Sincronización</label>
-                                    <input type="text" class="form-control" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0;" id="AD_SYNC_USER" name="AD_SYNC_USER" placeholder="ej. gmurad">
+                                    <label for="AD_SYNC_USER" style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Usuario de Sincronización</label>
+                                    <input type="text" class="form-control" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;" id="AD_SYNC_USER" name="AD_SYNC_USER" placeholder="ej. gmurad">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="AD_SYNC_PASSWORD" style="color: #94a3b8; font-size: 0.9rem;">Contraseña de Sincronización</label>
-                                    <input type="password" class="form-control" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0;" id="AD_SYNC_PASSWORD" name="AD_SYNC_PASSWORD" placeholder="********">
+                                    <label for="AD_SYNC_PASSWORD" style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Contraseña de Sincronización</label>
+                                    <input type="password" class="form-control" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;" id="AD_SYNC_PASSWORD" name="AD_SYNC_PASSWORD" placeholder="********">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MySQL Database Settings -->
+                    <div class="p-4 mb-3" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px;">
+                        <h4 style="font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; color: var(--text-color); font-family: var(--font-display);">
+                            <i class="bi bi-database text-success me-2"></i> Conexión a Base de Datos (MySQL)
+                        </h4>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <div class="form-group mb-3">
+                                    <label for="DB_HOST" style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Host de Base de Datos</label>
+                                    <input type="text" class="form-control" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;" id="DB_HOST" name="DB_HOST" placeholder="ej. 127.0.0.1 o 10.15.2.251">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="DB_PORT" style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Puerto</label>
+                                    <input type="text" class="form-control" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;" id="DB_PORT" name="DB_PORT" placeholder="3306">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-group mb-3">
+                                    <label for="DB_NAME" style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Nombre de la Base de Datos</label>
+                                    <input type="text" class="form-control" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;" id="DB_NAME" name="DB_NAME" placeholder="ej. inventario_prod">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="DB_USER" style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Usuario de Base de Datos</label>
+                                    <input type="text" class="form-control" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;" id="DB_USER" name="DB_USER" placeholder="ej. root">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="DB_PASSWORD" style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Contraseña de Base de Datos</label>
+                                    <input type="password" class="form-control" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;" id="DB_PASSWORD" name="DB_PASSWORD" placeholder="********">
                                 </div>
                             </div>
                         </div>
                     </div>
                 </form>
-                <div id="configErrorMsg" class="alert alert-danger d-none" style="background: rgba(220, 38, 38, 0.2); border: 1px solid #ef4444; color: #fca5a5;"></div>
+                <div id="configErrorMsg" class="alert alert-danger d-none" style="background: rgba(220, 38, 38, 0.15); border: 1px solid #ef4444; color: #f87171;"></div>
             </div>
-            <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                <button type="button" class="btn btn-outline-primary" id="btnTestAd" onclick="testAdConnection()" style="border-radius: 8px;">
-                    <i class="bi bi-plug"></i> Probar Conexión
+            <div class="modal-footer" style="border-top: 1px solid var(--border-color); background: var(--table-header-bg);">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="font-family: var(--font-mono); font-size: 0.85rem;">[ CANCELAR ]</button>
+                <button type="button" class="btn btn-outline-primary" id="btnTestAd" onclick="testAdConnection()" style="border-radius: 8px; font-weight: 600;">
+                    <i class="bi bi-plug"></i> Probar Conexión AD
                 </button>
-                <button type="button" class="btn btn-primary" id="btnSave" onclick="saveConfig(event)" style="border-radius: 8px; background: var(--accent-color); border: none;">
+                <button type="button" class="btn btn-primary" id="btnSave" onclick="saveConfig(event)" style="border-radius: 8px; font-weight: 600;">
                     <i class="bi bi-check-circle-fill"></i> Guardar Cambios
                 </button>
             </div>
         </div>
     </div>
 </div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -77,6 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if(data.AD_BASE_DN) document.getElementById('AD_BASE_DN').value = data.AD_BASE_DN;
                         if(data.AD_SYNC_USER) document.getElementById('AD_SYNC_USER').value = data.AD_SYNC_USER;
                         if(data.AD_SYNC_PASSWORD) document.getElementById('AD_SYNC_PASSWORD').value = data.AD_SYNC_PASSWORD;
+
+                        if(data.DB_HOST) document.getElementById('DB_HOST').value = data.DB_HOST;
+                        if(data.DB_PORT) document.getElementById('DB_PORT').value = data.DB_PORT;
+                        if(data.DB_NAME) document.getElementById('DB_NAME').value = data.DB_NAME;
+                        if(data.DB_USER) document.getElementById('DB_USER').value = data.DB_USER;
+                        if(data.DB_PASSWORD) document.getElementById('DB_PASSWORD').value = data.DB_PASSWORD;
                     }
                 }
             } catch (err) {
@@ -85,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
 
 async function testAdConnection() {
     const btn = document.getElementById('btnTestAd');

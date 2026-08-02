@@ -1,23 +1,31 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso | Taller Movil SP</title>
+    <script>
+      (function() {
+        var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme');
+        if (pref === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      })();
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
+    <script defer src="{{ url_for('static', filename='js/gold.js') }}"></script>
     <style>
         :root {
-            --bg-1: #0f172a; /* Slate 900 */
-            --bg-2: #1e293b; /* Slate 800 */
-            --card: #1e293b; /* Slate 800 */
-            --border: #334155; /* Slate 700 */
-            --text: #f8fafc; /* Slate 50 */
-            --muted: #94a3b8; /* Slate 400 */
-            --accent: #3b82f6; /* Blue 500 */
-            --danger: #ef4444;
-            --warning: #f59e0b;
+            --bg-1: var(--bg-color);
+            --bg-2: var(--card-bg);
+            --card: var(--card-bg);
+            --border: var(--border-color);
+            --text: var(--text-color);
+            --muted: var(--text-muted);
+            --accent: var(--accent-color);
+            --danger: var(--color-critical);
+            --warning: var(--color-warning);
         }
+
 
         * { box-sizing: border-box; }
 
@@ -50,37 +58,37 @@
                 flex-direction: column;
                 align-items: center;
                 text-align: center;
-                color: white;
+                color: var(--text-color);
                 animation: fadeIn 0.8s ease-out;
             }
-            .landing-container h1 { font-size: 4.5rem; margin: 0 0 16px; font-weight: 800; text-shadow: 0 4px 20px rgba(0,0,0,0.3); letter-spacing: -1px; }
-            .landing-container p { font-size: 1.25rem; max-width: 600px; margin: 0 0 40px; opacity: 0.9; line-height: 1.6; }
+            .landing-container h1 { font-size: 3.5rem; margin: 0 0 16px; font-weight: 800; color: var(--text-color); letter-spacing: -1px; }
+            .landing-container p { font-size: 1.25rem; max-width: 600px; margin: 0 0 40px; color: var(--text-muted); opacity: 0.95; line-height: 1.6; }
             .btn-ingresar-desktop {
-                background: rgba(255, 255, 255, 0.03);
-                color: #f1f5f9;
+                background: var(--card-bg);
+                color: var(--text-color);
                 font-size: 1.15rem;
-                padding: 16px 40px;
+                padding: 16px 36px;
                 border-radius: 14px;
-                font-weight: 500;
-                border: 1px solid rgba(255,255,255,0.08);
+                font-weight: 600;
+                border: 1px solid var(--border-color);
                 cursor: pointer;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                box-shadow: var(--shadow-lg);
                 transition: all 0.3s ease;
                 display: flex;
                 align-items: center;
                 gap: 12px;
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-family: var(--font-body);
             }
             .btn-ingresar-desktop:hover { 
-                background: rgba(255, 255, 255, 0.07);
-                border-color: rgba(255,255,255,0.15);
+                background: var(--accent-color);
+                color: #ffffff;
+                border-color: var(--accent-color);
                 transform: translateY(-2px); 
             }
             .btn-ingresar-desktop:active {
                 transform: scale(0.98);
             }
+
             
             .login-modal-wrapper {
                 position: fixed;
@@ -704,13 +712,14 @@
             <button class="btn-ingresar-desktop" onclick="document.getElementById('loginWrapper').classList.add('show')">
                 <i class="bi bi-box-arrow-in-right"></i> Ingresar
             </button>
-            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="copyScript(this)" data-command="{{ secure_launcher_command }}" title="Copiar Script de Inventario">
+            <button class="btn-ingresar-desktop" onclick="copyScript(this)" data-command="{{ secure_launcher_command }}" title="Copiar Script de Inventario">
                 <i class="bi bi-lightning-charge"></i> Copiar Script
             </button>
-            <button class="btn-ingresar-desktop" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local">
+            <button class="btn-ingresar-desktop" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local">
                 <i class="bi bi-file-earmark-pdf"></i> Editor PDF
             </button>
         </div>
+
     </div>
 
     <div class="login-modal-wrapper" id="loginWrapper">

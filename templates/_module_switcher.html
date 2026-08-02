@@ -38,100 +38,93 @@
         {% endif %}
     </div>
 
-    <!-- LADO DERECHO: HERRAMIENTAS DIRECTAS (Scroll Horizontal) -->
+    <!-- LADO DERECHO: HERRAMIENTAS DIRECTAS (Organizadas por Procesos) -->
     <div class="op-toolbar__tools-zone">
         
-        {% if current_user and current_user.get('role') == 'administrador' %}
-        <button class="op-btn op-btn--accent" data-bs-toggle="modal" data-bs-target="#createTaskModal" title="Crear Tarea Rápidamente">
-            [+ TAREA]
-        </button>
-        {% else %}
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en [+ TAREA]')" title="Requiere ser Administrador.">
-            [+ TAREA]
-        </button>
-        {% endif %}
-        
-        <span class="op-divider"></span>
-
-        <!-- Modulos Primarios (Visor) -->
-        {% if has_access('reports') %}
-        <a href="{{ url_for('dashboard.view_cementerio') }}" class="op-btn {% if request.endpoint == 'dashboard.view_cementerio' %}op-btn--active{% endif %}" title="Cementerio (Bajas)" style="color: #f59e0b; border-color: #f59e0b;">
-            [ BAJAS ]
+        <!-- PROCESO 1: DASHBOARD (Solo visible si no estamos ya en el dashboard) -->
+        {% if request.endpoint != 'dashboard.dashboard' %}
+        <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn" title="Dashboard Principal">
+            <i class="bi bi-speedometer2 me-1"></i>[ DASHBOARD ]
         </a>
-        {% else %}
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Bajas')" title="No tienes permiso para entrar en Bajas">
-            [ BAJAS ]
-        </button>
         {% endif %}
 
-        {% if has_access('dashboard') %}
-        <a href="{{ url_for('tasks.visor') }}" class="op-btn {% if request.endpoint == 'tasks.visor' %}op-btn--active{% endif %}" title="Visor Global">
-            [ VISOR ]
-        </a>
-        {% else %}
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Visor')" title="No tienes permiso para entrar en Visor">
-            [ VISOR ]
-        </button>
-        {% endif %}
-
+        <!-- PROCESO 2: PATRIMONIO Y STOCK -->
         {% if has_access('manage_stock') or has_access('infrastructure') %}
-        <a href="{{ url_for('stock.stock_view') }}" class="op-btn {% if request.endpoint == 'stock.stock_view' %}op-btn--active{% endif %}" title="Carga y Gestión de Stock y Remitos" style="color: #38bdf8; border-color: #38bdf8;">
-            [ STOCK ]
+        <a href="{{ url_for('stock.stock_view') }}" class="op-btn op-btn--patrimonio {% if request.endpoint == 'stock.stock_view' %}op-btn--active{% endif %}" title="Gestión de Activos, Stock y Remitos">
+            <i class="bi bi-box-seam me-1"></i>[ PATRIMONIO ]
         </a>
-        <a href="{{ url_for('stock.build_orders_view') }}" class="op-btn {% if request.endpoint == 'stock.build_orders_view' %}op-btn--active{% endif %}" title="Órdenes de Armado de Puestos Completos (Build Orders)" style="color: #a855f7; border-color: #a855f7;">
-            [ ARMADO ]
+        {% endif %}
+
+        <!-- PROCESO 3: EQUIPOS BORRADOS (BAJAS / CEMENTERIO) -->
+        <a href="{{ url_for('dashboard.view_cementerio') }}" class="op-btn {% if request.args.get('estado') == 'False' %}op-btn--active{% endif %}" style="color: #f59e0b;" title="Ver Equipos Borrados y Dados de Baja (Cementerio)">
+            <i class="bi bi-archive me-1"></i>[ BAJAS / CEMENTERIO ]
         </a>
-        {% else %}
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Stock')" title="No tienes permiso para entrar en Stock">
-            [ STOCK ]
+
+
+
+        <!-- PROCESO 4: VISOR DE TAREAS & TALLER -->
+        {% if has_access('dashboard') %}
+        <a href="{{ url_for('tasks.visor') }}" class="op-btn op-btn--visor {% if request.endpoint == 'tasks.visor' %}op-btn--active{% endif %}" title="Visor Global de Tareas de Técnicos">
+            <i class="bi bi-eye-fill me-1"></i>[ VISOR ]
+        </a>
+        <a href="{{ url_for('stock.build_orders_view') }}" class="op-btn op-btn--armado {% if request.endpoint == 'stock.build_orders_view' %}op-btn--active{% endif %}" title="Órdenes de Armado de Puestos">
+            <i class="bi bi-cpu me-1"></i>[ ARMADO ]
+        </a>
+        {% endif %}
+
+
+        {% if current_user and current_user.get('role') == 'administrador' %}
+        <button class="op-btn op-btn--accent" data-bs-toggle="modal" data-bs-target="#createTaskModal" title="Crear Tarea / Intervención Rápidamente">
+            [+ TAREA]
         </button>
         {% endif %}
 
-        <!-- MÓDULOS EN REVISIÓN / INFRA (Dropdown) -->
-        <div class="dropdown d-inline-block">
-            <button class="op-btn dropdown-toggle" type="button" id="dropdownRevision" data-bs-toggle="dropdown" aria-expanded="false" style="color: #94a3b8; border-color: rgba(148,163,184,0.3);">
-                [ MÓDULOS EN REVISIÓN ]
-            </button>
-            <ul class="dropdown-menu dropdown-menu-dark shadow" aria-labelledby="dropdownRevision" style="background: #1e293b; border: 1px solid rgba(148, 163, 184, 0.2); font-size: 0.82rem;">
-                <li><h6 class="dropdown-header text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Redes e Infraestructura (Legacy)</h6></li>
-                {% if has_access('infrastructure') %}
-                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#topoModal"><i class="bi bi-diagram-2 me-2 text-info"></i>Subredes IP</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('maps.index') }}"><i class="bi bi-geo-alt me-2 text-warning"></i>Mapas de Edificio</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('infrastructure.switches_dashboard') }}"><i class="bi bi-ethernet me-2 text-success"></i>Switches y Racks</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('infrastructure.index') }}"><i class="bi bi-hdd-network me-2 text-primary"></i>Catálogo Infra (Impresoras/UPS)</a></li>
-                {% else %}
-                <li><span class="dropdown-item text-muted disabled"><i class="bi bi-lock me-2"></i>Acceso restringido</span></li>
-                {% endif %}
-                {% if current_user.get('is_superuser') %}
-                <li><hr class="dropdown-divider border-secondary"></li>
-                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#fueroAdminModal"><i class="bi bi-building me-2 text-secondary"></i>Gestión de Fueros</a></li>
-                {% endif %}
-            </ul>
-        </div>
-
-        <!-- Administración / Extras -->
         <span class="op-divider"></span>
-        {% if has_access('reports') %}
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#efemeridesModal" title="Ver Efemérides del Día">[ EFEMÉRIDES ]</a>
-        {% else %}
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Efemérides')" title="No tienes permiso para entrar en Efemérides">[ EFEMÉRIDES ]</button>
-        {% endif %}
-        
-        {% if current_user.get('is_superuser') %}
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#configModal" title="Ajustes Globales del Sistema">[ CONFIG ]</a>
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#maintenanceModal" title="Mantenimiento del Sistema">[ MANTENIMIENTO ]</a>
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#usersModal" title="Usuarios">
-            [ USR{% if kpi_usuarios_pendientes and kpi_usuarios_pendientes > 0 %}:<span class="op-alert-text">{{ kpi_usuarios_pendientes }}</span>{% endif %} ]
+
+        <!-- PROCESO 5: AUDITORÍA GLOBAL DE ACTIVIDAD -->
+        <a href="{{ url_for('dashboard.global_activity') }}" class="op-btn {% if request.endpoint == 'dashboard.global_activity' %}op-btn--active{% endif %}" title="Historial Global de Auditoría y Registro de Eventos">
+            <i class="bi bi-shield-check me-1"></i>[ AUDITORÍA ]
         </a>
-        {% endif %}
-        
+
+        <!-- PROCESO 6: INFRAESTRUCTURA GENERAL -->
+        <a href="{{ url_for('infrastructure.index') }}" class="op-btn {% if request.endpoint and ('infrastructure' in request.endpoint or 'maps' in request.endpoint) %}op-btn--active{% endif %}" title="Gestión de Infraestructura, Switches, Racks y Redes">
+            <i class="bi bi-diagram-3 me-1"></i>[ INFRAESTRUCTURA ]
+        </a>
+
+
+
+
+        <!-- PROCESO 6: REPORTES -->
         {% if has_access('reports') %}
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#reportsModal">[ REPORTES ]</a>
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#reportsModal" title="Informes y Estadísticas"><i class="bi bi-graph-up me-1"></i>[ REPORTES ]</a>
+        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#efemeridesModal" title="Ver Efemérides">[ EFEMÉRIDES ]</a>
         {% endif %}
-        
+
+        <!-- PROCESO 7: MANTENIMIENTO & CONFIGURACIÓN -->
+        {% if current_user and (current_user.get('is_superuser') or current_user.get('role') == 'administrador') %}
+        <button type="button" class="op-btn op-btn--mantenimiento" data-bs-toggle="modal" data-bs-target="#maintenanceModal" title="Modo Mantenimiento y Salud del Sistema">
+            <i class="bi bi-tools me-1"></i>[ MANTENIMIENTO ]
+        </button>
+
+        <button type="button" class="op-btn op-btn--config" data-bs-toggle="modal" data-bs-target="#configModal" title="Ajustes Globales del Sistema (Conexión BD y Active Directory)">
+            <i class="bi bi-gear me-1"></i>[ CONFIGURACIÓN ]
+        </button>
+        {% endif %}
+
+
+
+
         {% if current_user.username in ['gmurad', 'dquiros'] %}
         <a href="{{ url_for('vault.vault_index') }}" class="op-btn op-btn--vault">[ VAULT ]</a>
         {% endif %}
+
+        <span class="op-divider"></span>
+
+        <!-- TOGGLE DE TEMA (MODO CLARO / OSCURO) -->
+        <button type="button" onclick="toggleTheme()" class="op-btn theme-toggle-btn">
+            [ ☀️ CLARO ]
+        </button>
+
 
         <span class="op-divider"></span>
         <div class="op-user-label" title="Sesión activa">
@@ -140,8 +133,8 @@
         <a href="{{ url_for('auth.logout') }}" class="op-btn op-btn--danger" title="Finalizar Sesión">[ SALIR ]</a>
 
     </div>
-
 </nav>
+
 
 <!-- THE OPERATOR TELEMETRY BAR (Nivel 2) -->
 <div class="op-telemetry-bar">
@@ -193,14 +186,15 @@
     <div style="flex-grow: 1;"></div>
     
     <!-- Buscador / Comandos (Movido aquí para despejar el título) -->
-    <form action="{{ url_for('dashboard.dashboard') }}" method="GET" class="op-cmd-form" style="width: auto; flex-shrink: 0; margin-right: 16px; display: flex; align-items: center; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1);">
+    <form action="{{ url_for('dashboard.dashboard') }}" method="GET" class="op-cmd-form" style="width: auto; flex-shrink: 0; margin-right: 16px; display: flex; align-items: center; background: var(--bg-color); border-radius: 4px; padding: 2px 8px; border: 1px solid var(--border-color);">
         <span class="op-cmd-prompt" style="font-size: 0.8rem; margin-right: 4px;">&gt;_</span>
-        <input type="text" name="q" class="op-cmd-input" placeholder="BUSCAR / COMANDO..." value="{{ request.args.get('q', '') }}" autocomplete="off" spellcheck="false" id="searchInput" style="background: transparent; border: none; color: white; font-family: var(--font-mono); font-size: 0.8rem; outline: none; width: 180px;">
+        <input type="text" name="q" class="op-cmd-input" placeholder="BUSCAR / COMANDO..." value="{{ request.args.get('q', '') }}" autocomplete="off" spellcheck="false" id="searchInput" style="background: transparent; border: none; color: var(--text-color); font-family: var(--font-mono); font-size: 0.8rem; outline: none; width: 180px;">
         {% if request.endpoint == 'dashboard.dashboard' %}
             {% if request.args.get('estado') %}<input type="hidden" name="estado" value="{{ request.args.get('estado') }}">{% endif %}
             {% if request.args.get('alerta') %}<input type="hidden" name="alerta" value="{{ request.args.get('alerta') }}">{% endif %}
         {% endif %}
     </form>
+
 
     <!-- Reloj -->
     <div id="heroDatetime" class="op-telemetry-item" style="color: var(--color-stable); font-weight: bold; font-family: var(--font-mono); font-size: 0.85rem; padding-right: 16px;"></div>

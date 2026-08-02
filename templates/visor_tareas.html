@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Visor de Trabajos | Inventario GOLD</title>
+    <script>
+      (function() {
+        var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme');
+        if (pref === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
@@ -30,11 +36,11 @@
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         .pc-badge {
-            background: rgba(245, 158, 11, 0.1); /* Amber */
+            background: rgba(59, 130, 246, 0.1);
             color: var(--accent-color);
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.3);
             padding: 0.25rem 0.5rem;
-            border-radius: 2px;
+            border-radius: 4px;
             font-weight: 700;
             font-family: var(--font-mono);
             font-size: 0.8rem;
@@ -42,10 +48,11 @@
         }
 
         .tech-pill {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--table-header-bg);
+            color: var(--text-color);
             border: 1px solid var(--border-color);
             padding: 0.2rem 0.6rem;
-            border-radius: 2px;
+            border-radius: 4px;
             font-size: 0.75rem;
             display: inline-flex;
             align-items: center;
@@ -58,10 +65,10 @@
             align-items: center;
             gap: 0.35rem;
             padding: 0.22rem 0.55rem;
-            border-radius: 2px;
-            background: rgba(245, 158, 11, 0.08);
-            border: 1px solid rgba(245, 158, 11, 0.18);
-            color: var(--accent-color);
+            border-radius: 4px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--color-warning);
             font-size: 0.75rem;
             font-weight: 700;
             font-family: var(--font-mono);
@@ -70,10 +77,11 @@
 
         /* Rack grid preservada para el top (esconde racks viejos) */
         .rack-grid { display: flex; gap: 0.5rem; flex-wrap: nowrap; padding: 4px; overflow-x: auto; margin-bottom: 1rem;}
-        .rack-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.5rem; display: flex; align-items: center; gap: 0.4rem; min-width: 90px; flex: 1; }
+        .rack-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.5rem; display: flex; align-items: center; gap: 0.4rem; min-width: 90px; flex: 1; color: var(--text-color); }
         .rack-icon { width: 26px; height: 26px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
-        .rack-info h3 { font-size: 0.72rem; font-weight: 800; margin: 0 0 1px 0; white-space: nowrap; }
-        .rack-info p { font-size: 0.6rem; color: #94a3b8; margin: 0; white-space: nowrap; }
+        .rack-info h3 { font-size: 0.72rem; font-weight: 800; margin: 0 0 1px 0; white-space: nowrap; color: var(--text-color); }
+        .rack-info p { font-size: 0.6rem; color: var(--text-muted); margin: 0; white-space: nowrap; }
+
     </style>
 </head>
 
@@ -90,6 +98,12 @@
         <div class="d-flex align-items-center gap-3">
             <div id="visorClock" class="fw-bold text-accent hide-mobile" style="font-family: monospace; font-size: 1.1rem; color: var(--accent-color); flex-shrink: 0;">00:00:00</div>
             
+            <!-- TOGGLE DE TEMA (MODO CLARO / OSCURO) -->
+            <button type="button" onclick="toggleTheme()" class="op-btn theme-toggle-btn" style="border-color: var(--accent-color); font-weight: bold;">
+                [ ☀️ CLARO ]
+            </button>
+
+            
             {% if is_authenticated %}
                 <span class="op-divider"></span>
                 <div class="op-user-label">{{ current_user.username | upper }}</div>
@@ -97,7 +111,9 @@
                 <button type="button" class="op-btn" style="border: 1px solid var(--color-warning); color: var(--color-warning);" onclick="showMsgModal()">[ COMUNICAR ]</button>
                 <button type="button" class="op-btn op-btn--accent" data-bs-toggle="modal" data-bs-target="#createTaskModal" title="Crear Tarea Rápidamente">[+ TAREA]</button>
                 <button type="button" class="op-btn" style="border: 1px solid var(--color-stable); color: var(--color-stable);" onclick="showUploadSwModal()" title="Subir Software al Repositorio">[ SUBIR SW ]</button>
+
                 {% else %}
+
                 <button type="button" class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted);" onclick="window.location.href='{{ url_for('auth.login') }}'" title="Requiere ser Administrador">[+ TAREA]</button>
                 {% endif %}
                 <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn">[ DASHBOARD ]</a>
@@ -164,19 +180,19 @@
             <div class="console-panel">
                 <div class="console-panel__title">Acción Requerida</div>
                 
-                <div class="integrated-alert mb-3" style="background: rgba(30, 41, 59, 0.5); padding: 1rem;">
+                <div class="integrated-alert mb-3" style="background: var(--card-bg); border: 1px solid var(--border-color); border-left: 4px solid var(--accent-color); border-radius: 8px; padding: 1rem; box-shadow: var(--kpi-shadow);">
                     <form id="filterForm" class="row g-2 align-items-center m-0">
                         <div class="col-12">
                             <label class="small text-muted mb-1 font-mono">FECHA</label>
-                            <input type="date" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterFecha" value="{{ hoy }}">
+                            <input type="date" class="form-control form-control-sm" id="filterFecha" value="{{ hoy }}" style="background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color);">
                         </div>
                         <div class="col-12 mt-2">
                             <label class="small text-muted mb-1 font-mono">EQUIPO / PC</label>
-                            <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="filterPc" placeholder="Ej: MESA-ENTRADAS" value="{{ pc_filtro or '' }}">
+                            <input type="text" class="form-control form-control-sm" id="filterPc" placeholder="Ej: MESA-ENTRADAS" value="{{ pc_filtro or '' }}" style="background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color);">
                         </div>
                         <div class="col-12 mt-2">
                             <label class="small text-muted mb-1 font-mono">TÉCNICO</label>
-                            <select class="form-select form-select-sm bg-dark text-white border-secondary" id="filterTech">
+                            <select class="form-select form-select-sm" id="filterTech" style="background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color);">
                                 <option value="">[ TODOS ]</option>
                                 {% for tech in technicians %}
                                 <option value="{{ tech.name }}" {% if tech_filtro == tech.name %}selected{% endif %}>{{ tech.name }}</option>
@@ -184,7 +200,7 @@
                             </select>
                         </div>
                         <div class="col-12 mt-3 d-flex gap-2">
-                            <button type="button" class="btn btn-sm w-100 fw-bold" onclick="applyFilters()" style="background: var(--accent-color); color: #000; border: none; font-family: var(--font-mono);">
+                            <button type="button" class="btn btn-sm w-100 fw-bold" onclick="applyFilters()" style="background: var(--accent-color); color: #ffffff; border: none; font-family: var(--font-mono);">
                                 <i class="bi bi-search me-1"></i> FILTRAR
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetFilters()" title="Limpiar Filtros">
@@ -193,6 +209,7 @@
                         </div>
                     </form>
                 </div>
+
 
             </div>
             
@@ -234,8 +251,8 @@
 
                 <!-- TABLAS DE TRABAJO (Usando table base de gold.css) -->
                 <div class="table-responsive mb-4" style="border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; background: var(--card-bg);">
-                    <table class="table table-dark table-hover m-0 align-middle">
-                        <thead style="background: rgba(0,0,0,0.4);">
+                    <table class="table table-hover m-0 align-middle" style="color: var(--text-color); background: var(--card-bg);">
+                        <thead style="background: var(--table-header-bg); color: var(--text-muted); border-bottom: 1px solid var(--border-color);">
                             <tr>
                                 <th style="width: 110px; font-family: var(--font-mono); font-size: 0.75rem;">HORA</th>
                                 <th style="width: 240px; font-family: var(--font-mono); font-size: 0.75rem;">EQUIPO/USUARIO/FUERO</th>
@@ -247,49 +264,49 @@
                             <!-- JS Injection o Server Side Injection here -->
                             {% if tareas_hoy %}
                                 {% for task in tareas_hoy %}
-                                <tr id="task-row-{{ task.id }}" style="background: rgba(255,255,255,0.01);">
+                                <tr id="task-row-{{ task.id }}">
                                     <td class="text-muted small font-mono" style="border-left: 4px solid {% if task.estado == 'Hecha' %}var(--color-stable){% elif task.estado == 'En Curso' %}var(--color-warning){% else %}var(--border-color){% endif %}; position: relative;">
                                         {{ task.created_at_time or '--:--' }}
                                     </td>
                                     <td>
                                         <div><span class="pc-badge">{{ task.display_pc_name or task.pc_name or 'GENERICA' }}</span></div>
                                         {% if task.last_user or task.solicitante %}
-                                        <div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">{{ task.last_user or task.solicitante }}</div>
+                                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">{{ task.last_user or task.solicitante }}</div>
                                         {% endif %}
                                         {% if task.fuero and task.fuero not in ('Desconocido', 'Sin Fuero') %}
-                                        <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                                        <div style="font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                                             <i class="bi bi-building me-1"></i>{{ task.fuero }}
                                         </div>
                                         {% endif %}
                                     </td>
 
                                     <td>
-                                        <div class="mb-1">{{ task.descripcion }}</div>
+                                        <div class="mb-1" style="color: var(--text-color);">{{ task.descripcion }}</div>
                                         
                                         {% if task.acciones %}
-                                        <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
+                                        <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.08); border-left: 2px solid #0ea5e9;">
                                             {% if task.acciones|length > 1 %}
                                             <div id="hidden-actions-{{ task.id }}" style="display: none; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed rgba(14, 165, 233, 0.2);">
                                                 {% for accion in task.acciones[:-1] %}
-                                                <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                                    <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ accion.created_at_fmt }}]</span>
+                                                <div class="small" style="color: var(--text-muted); margin-bottom: 2px;">
+                                                    <span style="font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ accion.created_at_fmt }}]</span>
                                                     <i class="bi bi-chat-text me-1"></i>
-                                                    <strong style="color: #e2e8f0;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
+                                                    <strong style="color: var(--text-color);">{{ accion.user_name }}:</strong> {{ accion.action_text }}
                                                 </div>
                                                 {% endfor %}
                                             </div>
                                             {% endif %}
                                             {% set last_action = task.acciones[-1] %}
-                                            <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                                <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ last_action.created_at_fmt }}]</span>
+                                            <div class="small" style="color: var(--text-muted); margin-bottom: 2px;">
+                                                <span style="font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ last_action.created_at_fmt }}]</span>
                                                 <i class="bi bi-chat-text me-1"></i>
-                                                <strong style="color: #e2e8f0;">{{ last_action.user_name }}:</strong> {{ last_action.action_text }}
+                                                <strong style="color: var(--text-color);">{{ last_action.user_name }}:</strong> {{ last_action.action_text }}
                                             </div>
                                         </div>
                                         {% endif %}
 
                                         {% if task.solucion %}
-                                        <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #cbd5e1;">
+                                        <div class="small mt-2 p-2 rounded" style="background: rgba(16, 185, 129, 0.08); border-left: 2px solid var(--color-stable); color: var(--text-color);">
                                             <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
                                         </div>
                                         {% endif %}
@@ -299,14 +316,14 @@
                                             <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Acciones</button>
                                             {% endif %}
                                             {% if task.acciones and task.acciones|length > 1 %}
-                                            <button id="btn-toggle-actions-{{ task.id }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px; color: #94a3b8;" onclick="toggleHiddenActions({{ task.id }})"><i class="bi bi-eye me-1"></i>VER+</button>
+                                            <button id="btn-toggle-actions-{{ task.id }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px;" onclick="toggleHiddenActions({{ task.id }})"><i class="bi bi-eye me-1"></i>VER+</button>
                                             {% endif %}
                                         </div>
                                     </td>
                                     <td>
                                         <div class="mb-1">
                                             <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
-                                            <span class="fw-bold small">{{ task.estado }}</span>
+                                            <span class="fw-bold small" style="color: var(--text-color);">{{ task.estado }}</span>
                                         </div>
                                         {% if task.assigned_to or task.completed_by %}
                                         <div class="tech-pill">
@@ -330,8 +347,8 @@
                 {% if tareas_pendientes %}
                 <div class="console-panel__title" id="sectionPendientes">Pendientes Activas</div>
                 <div class="table-responsive mb-4" id="tablePendientesContainer" style="border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; background: var(--card-bg);">
-                    <table class="table table-dark table-hover m-0 align-middle" id="tablePendientes">
-                        <thead style="background: rgba(0,0,0,0.4);">
+                    <table class="table table-hover m-0 align-middle" id="tablePendientes" style="color: var(--text-color); background: var(--card-bg);">
+                        <thead style="background: var(--table-header-bg); color: var(--text-muted); border-bottom: 1px solid var(--border-color);">
                             <tr>
                                 <th style="width: 110px; font-family: var(--font-mono); font-size: 0.75rem;">FECHA</th>
                                 <th style="width: 240px; font-family: var(--font-mono); font-size: 0.75rem;">EQUIPO/USUARIO/FUERO</th>
@@ -342,54 +359,54 @@
                         <tbody>
                             <!-- Injection -->
                             {% for task in tareas_pendientes %}
-                            <tr id="task-row-{{ task.id }}" style="background: rgba(255,255,255,0.01);">
+                            <tr id="task-row-{{ task.id }}">
                                 <td class="text-muted small font-mono" style="border-left: 4px solid var(--color-warning); position: relative;">{{ task.created_at_fmt or '--:--' }}</td>
                                 <td>
                                     <div><span class="pc-badge">{{ task.display_pc_name or task.pc_name or 'GENERICA' }}</span></div>
                                     {% if task.last_user or task.solicitante %}
-                                    <div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">{{ task.last_user or task.solicitante }}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">{{ task.last_user or task.solicitante }}</div>
                                     {% endif %}
                                     {% if task.fuero and task.fuero not in ('Desconocido', 'Sin Fuero') %}
-                                    <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                                    <div style="font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                                         <i class="bi bi-building me-1"></i>{{ task.fuero }}
                                     </div>
                                     {% endif %}
                                 </td>
 
                                 <td>
-                                    <div class="mb-1">{{ task.descripcion }}</div>
+                                    <div class="mb-1" style="color: var(--text-color);">{{ task.descripcion }}</div>
                                     {% if task.acciones %}
-                                    <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
+                                    <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.08); border-left: 2px solid #0ea5e9;">
                                         {% if task.acciones|length > 1 %}
                                         <div id="hidden-actions-{{ task.id }}" style="display: none; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed rgba(14, 165, 233, 0.2);">
                                             {% for accion in task.acciones[:-1] %}
-                                            <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                                <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ accion.created_at_fmt }}]</span>
+                                            <div class="small" style="color: var(--text-muted); margin-bottom: 2px;">
+                                                <span style="font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ accion.created_at_fmt }}]</span>
                                                 <i class="bi bi-chat-text me-1"></i>
-                                                <strong style="color: #e2e8f0;">{{ accion.user_name }}:</strong> {{ accion.action_text }}
+                                                <strong style="color: var(--text-color);">{{ accion.user_name }}:</strong> {{ accion.action_text }}
                                             </div>
                                             {% endfor %}
                                         </div>
                                         {% endif %}
                                         {% set last_action = task.acciones[-1] %}
-                                        <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                            <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ last_action.created_at_fmt }}]</span>
+                                        <div class="small" style="color: var(--text-muted); margin-bottom: 2px;">
+                                            <span style="font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[{{ last_action.created_at_fmt }}]</span>
                                             <i class="bi bi-chat-text me-1"></i>
-                                            <strong style="color: #e2e8f0;">{{ last_action.user_name }}:</strong> {{ last_action.action_text }}
+                                            <strong style="color: var(--text-color);">{{ last_action.user_name }}:</strong> {{ last_action.action_text }}
                                         </div>
                                     </div>
                                     {% endif %}
                                     <div class="mt-2 d-flex gap-2">
                                         <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction({{ task.id }})"><i class="bi bi-plus-circle me-1"></i>Acciones</button>
                                         {% if task.acciones and task.acciones|length > 1 %}
-                                        <button id="btn-toggle-actions-{{ task.id }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px; color: #94a3b8;" onclick="toggleHiddenActions({{ task.id }})"><i class="bi bi-eye me-1"></i>VER+</button>
+                                        <button id="btn-toggle-actions-{{ task.id }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px;" onclick="toggleHiddenActions({{ task.id }})"><i class="bi bi-eye me-1"></i>VER+</button>
                                         {% endif %}
                                     </div>
                                 </td>
                                 <td>
                                     <div class="mb-1">
                                         <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
-                                        <span class="fw-bold small">{{ task.estado }}</span>
+                                        <span class="fw-bold small" style="color: var(--text-color);">{{ task.estado }}</span>
                                     </div>
                                     {% if task.assigned_to %}
                                     <div class="tech-pill"><i class="bi bi-tools"></i><span>{{ task.assigned_to }}</span></div>
@@ -405,41 +422,42 @@
                 <!-- HISTORIAL ANTERIOR -->
                 {% if tareas_anteriores %}
                 <div class="console-panel__title">Historial Reciente</div>
-                <div class="table-responsive" id="tableAnterioresContainer" style="opacity: 0.7; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; background: var(--card-bg);">
-                    <table class="table table-dark table-hover m-0 align-middle" id="tableAnteriores">
+                <div class="table-responsive" id="tableAnterioresContainer" style="opacity: 0.85; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; background: var(--card-bg);">
+                    <table class="table table-hover m-0 align-middle" id="tableAnteriores" style="color: var(--text-color); background: var(--card-bg);">
                         <tbody>
                             <!-- Injection -->
                             {% for task in tareas_anteriores %}
                             <tr id="task-row-{{ task.id }}">
                                 <td style="width: 110px;" class="text-muted small font-mono">{{ task.created_at_fmt or '--:--' }}</td>
                                 <td style="width: 180px;">
-                                    <div><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">{{ task.display_pc_name or task.pc_name or 'GENERICA' }}</span></div>
+                                    <div><span class="pc-badge" style="background: var(--table-header-bg); color: var(--text-muted); border: 1px solid var(--border-color);">{{ task.display_pc_name or task.pc_name or 'GENERICA' }}</span></div>
                                     {% if task.last_user or task.solicitante %}
-                                    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">{{ task.last_user or task.solicitante }}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">{{ task.last_user or task.solicitante }}</div>
                                     {% endif %}
                                     {% if task.fuero and task.fuero not in ('Desconocido', 'Sin Fuero') %}
-                                    <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                                    <div style="font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                                         <i class="bi bi-building me-1"></i>{{ task.fuero }}
                                     </div>
                                     {% endif %}
                                 </td>
                                 <td class="text-muted">
-                                    <div class="mb-1">{{ task.descripcion }}</div>
+                                    <div class="mb-1" style="color: var(--text-color);">{{ task.descripcion }}</div>
                                     {% if task.solucion %}
-                                    <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #94a3b8;">
+                                    <div class="small mt-2 p-2 rounded" style="background: rgba(16, 185, 129, 0.08); border-left: 2px solid var(--color-stable); color: var(--text-color);">
                                         <strong class="text-success small text-uppercase">Solución:</strong> {{ task.solucion }}
                                     </div>
                                     {% endif %}
                                 </td>
                                 <td style="width: 130px;">
                                     <span class="status-dot status-dot-{{ task.estado|lower }}"></span>
-                                    <span class="small">{{ task.estado }}</span>
+                                    <span class="small" style="color: var(--text-color);">{{ task.estado }}</span>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+
                 {% endif %}
             </div>
         </div>
@@ -966,42 +984,42 @@
                 return;
             }
             tbody.innerHTML = tasks.map(task => `
-                <tr id="task-row-${task.id}" style="background: rgba(255,255,255,0.01);">
+                <tr id="task-row-${task.id}">
                     <td class="text-muted small font-mono" style="border-left: 4px solid ${task.estado === 'Hecha' ? 'var(--color-stable)' : (task.estado === 'En Curso' ? 'var(--color-warning)' : 'var(--border-color)')}; position: relative;">${task.created_at_time || '--:--'}</td>
                     <td>
                         <div><span class="pc-badge">${task.display_pc_name || task.pc_name || 'GENERICA'}</span></div>
-                        ${(task.last_user || task.solicitante) ? `<div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">${task.last_user || task.solicitante}</div>` : ''}
+                        ${(task.last_user || task.solicitante) ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">${task.last_user || task.solicitante}</div>` : ''}
                         ${(task.fuero && task.fuero !== 'Desconocido' && task.fuero !== 'Sin Fuero') ? `
-                        <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                        <div style="font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                             <i class="bi bi-building me-1"></i>${task.fuero}
                         </div>
                         ` : ''}
                     </td>
 
                     <td>
-                        <div class="mb-1">${task.descripcion}${task.desc_edited ? ' <i class="bi bi-info-circle-fill" style="color: rgba(255,255,255,0.4); font-size:0.75rem;"></i>' : ''}</div>
+                        <div class="mb-1" style="color: var(--text-color);">${task.descripcion}${task.desc_edited ? ' <i class="bi bi-info-circle-fill" style="color: var(--text-muted); font-size:0.75rem;"></i>' : ''}</div>
                         ${task.acciones && task.acciones.length > 0 ? `
-                        <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
+                        <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.08); border-left: 2px solid #0ea5e9;">
                             ${task.acciones.length > 1 ? `
                             <div id="hidden-actions-${task.id}" style="display: none; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed rgba(14, 165, 233, 0.2);">
                                 ${task.acciones.slice(0, -1).map(accion => `
-                                <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                    <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${accion.created_at_fmt}]</span>
-                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: #e2e8f0;">${accion.user_name}:</strong> ${accion.action_text}
+                                <div class="small" style="color: var(--text-muted); margin-bottom: 2px;">
+                                    <span style="font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${accion.created_at_fmt}]</span>
+                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: var(--text-color);">${accion.user_name}:</strong> ${accion.action_text}
                                 </div>
                                 `).join('')}
                             </div>
                             ` : ''}
                             ${(() => {
                                 const last = task.acciones[task.acciones.length - 1];
-                                return `<div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                    <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${last.created_at_fmt}]</span>
-                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: #e2e8f0;">${last.user_name}:</strong> ${last.action_text}
+                                return `<div class="small" style="color: var(--text-muted); margin-bottom: 2px;">
+                                    <span style="font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${last.created_at_fmt}]</span>
+                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: var(--text-color);">${last.user_name}:</strong> ${last.action_text}
                                 </div>`;
                             })()}
                         </div>` : ''}
                         ${task.solucion ? `
-                        <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #cbd5e1;">
+                        <div class="small mt-2 p-2 rounded" style="background: rgba(16, 185, 129, 0.08); border-left: 2px solid var(--color-stable); color: var(--text-color);">
                             <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
                         </div>` : ''}
                         <div class="mt-2 d-flex gap-2">
@@ -1009,12 +1027,12 @@
                             <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Acciones</button>
                             ` : ''}
                             ${task.acciones && task.acciones.length > 1 ? `
-                            <button id="btn-toggle-actions-${task.id}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px; color: #94a3b8;" onclick="toggleHiddenActions(${task.id})"><i class="bi bi-eye me-1"></i>VER+</button>
+                            <button id="btn-toggle-actions-${task.id}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px;" onclick="toggleHiddenActions(${task.id})"><i class="bi bi-eye me-1"></i>VER+</button>
                             ` : ''}
                         </div>
                     </td>
                     <td>
-                        <div class="mb-1"><span class="status-dot status-dot-${task.estado.toLowerCase()}"></span><span class="fw-bold small">${task.estado}</span></div>
+                        <div class="mb-1"><span class="status-dot status-dot-${task.estado.toLowerCase()}"></span><span class="fw-bold small" style="color: var(--text-color);">${task.estado}</span></div>
                         ${(task.assigned_to || task.completed_by) ? `<div class="tech-pill"><i class="bi bi-tools"></i><span>${task.completed_by || task.assigned_to}</span></div>` : '<span class="text-muted small">Sin asignar</span>'}
                     </td>
                 </tr>
@@ -1030,42 +1048,42 @@
             else { container.style.display = 'block'; document.getElementById('sectionPendientes').style.display='block'; }
             
             tbody.innerHTML = tasks.map(task => `
-                <tr style="background: rgba(255,255,255,0.01);">
+                <tr>
                     <td class="text-muted small font-mono" style="border-left: 4px solid var(--color-warning); position: relative;">${task.created_at_fmt || '--:--'}</td>
                     <td>
                         <div><span class="pc-badge">${task.display_pc_name || task.pc_name || 'GENERICA'}</span></div>
-                        ${(task.last_user || task.solicitante) ? `<div style="font-size: 0.7rem; color: #cbd5e1; margin-top: 2px;">${task.last_user || task.solicitante}</div>` : ''}
+                        ${(task.last_user || task.solicitante) ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">${task.last_user || task.solicitante}</div>` : ''}
                         ${(task.fuero && task.fuero !== 'Desconocido' && task.fuero !== 'Sin Fuero') ? `
-                        <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                        <div style="font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                             <i class="bi bi-building me-1"></i>${task.fuero}
                         </div>
                         ` : ''}
                     </td>
 
                     <td>
-                        <div class="mb-1">${task.descripcion}</div>
+                        <div class="mb-1" style="color: var(--text-color);">${task.descripcion}</div>
                         ${task.acciones && task.acciones.length > 0 ? `
-                        <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.05); border-left: 2px solid #0ea5e9;">
+                        <div class="mt-2 p-2 rounded" style="background: rgba(14, 165, 233, 0.08); border-left: 2px solid #0ea5e9;">
                             ${task.acciones.length > 1 ? `
                             <div id="hidden-actions-${task.id}" style="display: none; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed rgba(14, 165, 233, 0.2);">
                                 ${task.acciones.slice(0, -1).map(accion => `
-                                <div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                    <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${accion.created_at_fmt}]</span>
-                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: #e2e8f0;">${accion.user_name}:</strong> ${accion.action_text}
+                                <div class="small" style="color: var(--text-muted); margin-bottom: 2px;">
+                                    <span style="font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${accion.created_at_fmt}]</span>
+                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: var(--text-color);">${accion.user_name}:</strong> ${accion.action_text}
                                 </div>
                                 `).join('')}
                             </div>
                             ` : ''}
                             ${(() => {
                                 const last = task.acciones[task.acciones.length - 1];
-                                return `<div class="small" style="color: #cbd5e1; margin-bottom: 2px;">
-                                    <span style="color: #64748b; font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${last.created_at_fmt}]</span>
-                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: #e2e8f0;">${last.user_name}:</strong> ${last.action_text}
+                                return `<div class="small" style="color: var(--text-muted); margin-bottom: 2px;">
+                                    <span style="font-family: var(--font-mono); font-size: 0.7rem; margin-right: 4px;">[${last.created_at_fmt}]</span>
+                                    <i class="bi bi-chat-text me-1"></i> <strong style="color: var(--text-color);">${last.user_name}:</strong> ${last.action_text}
                                 </div>`;
                             })()}
                         </div>` : ''}
                         ${task.solucion ? `
-                        <div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #cbd5e1;">
+                        <div class="small mt-2 p-2 rounded" style="background: rgba(16, 185, 129, 0.08); border-left: 2px solid var(--color-stable); color: var(--text-color);">
                             <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
                         </div>` : ''}
                         <div class="mt-2 d-flex gap-2">
@@ -1073,12 +1091,12 @@
                             <button class="btn btn-sm btn-outline-info" style="font-size: 0.7rem; padding: 2px 6px;" onclick="promptAddAction(${task.id})"><i class="bi bi-plus-circle me-1"></i>Acciones</button>
                             ` : ''}
                             ${task.acciones && task.acciones.length > 1 ? `
-                            <button id="btn-toggle-actions-${task.id}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px; color: #94a3b8;" onclick="toggleHiddenActions(${task.id})"><i class="bi bi-eye me-1"></i>VER+</button>
+                            <button id="btn-toggle-actions-${task.id}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 2px 6px;" onclick="toggleHiddenActions(${task.id})"><i class="bi bi-eye me-1"></i>VER+</button>
                             ` : ''}
                         </div>
                     </td>
                     <td>
-                        <div class="mb-1"><span class="status-dot status-dot-${task.estado.toLowerCase()}"></span><span class="fw-bold small">${task.estado}</span></div>
+                        <div class="mb-1"><span class="status-dot status-dot-${task.estado.toLowerCase()}"></span><span class="fw-bold small" style="color: var(--text-color);">${task.estado}</span></div>
                         ${task.assigned_to ? `<div class="tech-pill"><i class="bi bi-tools"></i><span>${task.assigned_to}</span></div>` : '<span class="text-muted small">Sin asignar</span>'}
                     </td>
                 </tr>
@@ -1092,22 +1110,29 @@
                 <tr>
                     <td style="width: 110px;" class="text-muted small font-mono">${task.created_at_fmt || '--:--'}</td>
                     <td style="width: 180px;">
-                        <div><span class="pc-badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">${task.display_pc_name || task.pc_name || 'GENERICA'}</span></div>
-                        ${(task.last_user || task.solicitante) ? `<div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">${task.last_user || task.solicitante}</div>` : ''}
+                        <div><span class="pc-badge" style="background: var(--table-header-bg); color: var(--text-muted); border: 1px solid var(--border-color);">${task.display_pc_name || task.pc_name || 'GENERICA'}</span></div>
+                        ${(task.last_user || task.solicitante) ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">${task.last_user || task.solicitante}</div>` : ''}
                         ${(task.fuero && task.fuero !== 'Desconocido' && task.fuero !== 'Sin Fuero') ? `
-                        <div style="font-size: 0.65rem; color: #94a3b8; font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
+                        <div style="font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-display); line-height: 1.2; margin-top: 4px; max-width: 140px; white-space: normal; text-transform: capitalize;">
                             <i class="bi bi-building me-1"></i>${task.fuero}
                         </div>
                         ` : ''}
                     </td>
-                    <td class="text-muted">
-                        <div class="mb-1">${task.descripcion}</div>
-                        ${task.solucion ? `<div class="small mt-2 p-2 rounded" style="background: rgba(34, 197, 94, 0.05); border-left: 2px solid var(--color-stable); color: #94a3b8;"><strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}</div>` : ''}
+                    <td>
+                        <div class="mb-1" style="color: var(--text-color);">${task.descripcion}</div>
+                        ${task.solucion ? `
+                        <div class="small mt-2 p-2 rounded" style="background: rgba(16, 185, 129, 0.08); border-left: 2px solid var(--color-stable); color: var(--text-color);">
+                            <strong class="text-success small text-uppercase">Solución:</strong> ${task.solucion}
+                        </div>` : ''}
                     </td>
-                    <td style="width: 130px;"><span class="status-dot status-dot-${task.estado.toLowerCase()}"></span><span class="small">${task.estado}</span></td>
+                    <td style="width: 130px;">
+                        <span class="status-dot status-dot-${task.estado ? task.estado.toLowerCase() : 'pendiente'}"></span>
+                        <span class="small" style="color: var(--text-color);">${task.estado}</span>
+                    </td>
                 </tr>
             `).join('');
         }
+
 
         function updateStats(data) {
             const tasks_hoy = data.tasks_hoy || [];

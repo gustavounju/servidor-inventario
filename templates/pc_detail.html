@@ -5,14 +5,17 @@
 
 
 <head>
-
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>{{ pc.pc_name }} — Detalle PC | Inventario GOLD</title>
-
+  <script>
+    (function() {
+      var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme');
+      if (pref === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -372,7 +375,18 @@
 
         {% endif %}
 
+        {% if pc.validation_status == 'validado' %}
+        <span class="badge" style="background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;" title="Hardware validado con activo patrimonial registrado"><i class="bi bi-shield-check me-1"></i>Gemelo Validado</span>
+        {% elif pc.validation_status == 'pendiente' %}
+        <span class="badge" style="background:rgba(234,179,8,0.2);color:#eab308;border:1px solid rgba(234,179,8,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;" title="Asignado, esperando primera telemetría del script"><i class="bi bi-clock me-1"></i>Pendiente Telemetría</span>
+        {% elif pc.validation_status == 'discrepancia' %}
+        <span class="badge" style="background:rgba(239,68,68,0.2);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;" title="Discrepancia detectada entre hardware registrado y telemetría"><i class="bi bi-exclamation-triangle-fill me-1"></i>Discrepancia Patrimonial</span>
+        {% else %}
+        <span class="badge" style="background:rgba(107,114,128,0.2);color:#9ca3af;border:1px solid rgba(107,114,128,0.3);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;" title="Sin activo patrimonial registrado"><i class="bi bi-question-circle me-1"></i>Sin Gemelo</span>
+        {% endif %}
+
         {% if pc.alerta_ram_baja %}
+
 
         <span class="badge"
 
@@ -427,6 +441,15 @@
         <a href="{{ url_for('dashboard.pc_qr_label_view', pc_name=pc.pc_name) }}" target="_blank" class="badge bg-primary text-white text-decoration-none py-2 px-3 fw-bold" style="border-radius:8px;" title="Imprimir etiquetas QR para Gabinete y Monitor">
           <i class="bi bi-qr-code me-1"></i>🖨️ Imprimir Par de QR (CPU + Monitor)
         </a>
+
+        <button type="button" class="btn btn-sm btn-outline-warning text-warning fw-bold py-1 px-3" style="border-radius:8px;" onclick="homologarTelemetria('{{ pc.pc_name }}')" title="Aceptar telemetría pasiva del script como el nuevo estado patrimonial">
+          <i class="bi bi-check-circle me-1"></i>⚡ Homologar Telemetría
+        </button>
+
+        <button type="button" class="btn btn-sm btn-outline-info text-info fw-bold py-1 px-3" style="border-radius:8px;" onclick="abrirIntervencionModal('{{ pc.pc_name }}')" title="Abrir una nueva Intervención Técnica para esta PC">
+          <i class="bi bi-tools me-1"></i>🛠️ Abrir Intervención
+        </button>
+
 
         {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
 
@@ -3751,6 +3774,55 @@
     </div>
   </div>
 
+  <script>
+    async function homologarTelemetria(pcName) {
+      if (!confirm(`¿Homologar telemetría para ${pcName}?\nEsto consolidará los componentes reportados por el script como el nuevo estado del activo patrimonial.`)) {
+        return;
+      }
+      try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const res = await fetch('/api/intervenciones/homologar_telemetria', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+          body: JSON.stringify({ pc_name: pcName })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert(data.message);
+          window.location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (err) {
+        alert('Error de red al homologar telemetría: ' + err.message);
+      }
+    }
+
+    async function abrirIntervencionModal(pcName) {
+      const motivo = prompt(`Crear nueva Intervención Técnica para ${pcName}:\nIngrese el motivo de ingreso/mantenimiento:`, "Mantenimiento preventivo / Revisión de hardware");
+      if (!motivo) return;
+
+      try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const res = await fetch('/api/intervenciones/crear', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+          body: JSON.stringify({ pc_name: pcName, tipo: 'mantenimiento', ingreso_motivo: motivo })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert(data.message);
+          window.location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (err) {
+        alert('Error de red al crear intervención: ' + err.message);
+      }
+    }
+  </script>
+
 </body>
 </html>
+
 

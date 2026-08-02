@@ -235,7 +235,11 @@ def current_username():
 
 
 def is_superuser():
-    return bool(current_user().get("is_superuser"))
+    u = current_user()
+    if not u:
+        return False
+    return bool(u.get("is_superuser") or (u.get("role") or "").strip().lower() == "administrador")
+
 
 
 def has_permission(permission_name, user=None):

@@ -1,38 +1,38 @@
 <!-- Modal de Mantenimiento -->
 <div class="modal fade" id="maintenanceModal" tabindex="-1" aria-labelledby="maintenanceModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content glass-card">
-            <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title" id="maintenanceModalLabel" style="font-family: var(--font-display); font-weight: 600;">
-                    <i class="bi bi-tools text-primary me-2"></i> Modo Mantenimiento
+        <div class="modal-content console-panel" style="border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); background: var(--table-header-bg);">
+                <h5 class="modal-title font-display fw-bold" id="maintenanceModalLabel" style="font-size: 1.05rem; color: var(--text-color);">
+                    <i class="bi bi-tools text-primary me-2"></i> Modo Mantenimiento y Salud
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" >
-                <p style=" margin-bottom: 24px;">Herramientas administrativas y diagnóstico en vivo.</p>
+            <div class="modal-body p-4" style="color: var(--text-color);">
+                <p class="text-muted mb-4" style="font-size: 0.85rem; font-family: var(--font-mono);">Herramientas administrativas y diagnóstico del servidor en vivo.</p>
 
                 <div class="row g-4">
                     <!-- Tarjeta de Salud del Sistema -->
                     <div class="col-md-6">
-                        <div class="glass-card h-100 p-4" style="  border-radius: 10px;">
-                            <h4 style="font-weight: 500; margin-bottom: 20px; font-size: 1.2rem; ">
+                        <div class="h-100 p-4" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px;">
+                            <h4 style="font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; color: var(--text-color); font-family: var(--font-display);">
                                 <i class="bi bi-heart-pulse text-primary me-2"></i> Salud del Sistema
                             </h4>
                             <div id="healthIndicators">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span >Base de Datos (MySQL)</span>
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                                    <span style="font-weight: 500;">Base de Datos (MySQL)</span>
                                     <span id="status-db" class="badge bg-secondary">Verificando...</span>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span >Active Directory (LDAP)</span>
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                                    <span style="font-weight: 500;">Active Directory (LDAP)</span>
                                     <span id="status-ad" class="badge bg-secondary">Verificando...</span>
                                 </div>
-                                <div>
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span >Espacio en Disco (Servidor)</span>
-                                        <span id="status-disk-text" style=" font-size: 0.85rem;">Cargando...</span>
+                                <div class="p-2 rounded" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span style="font-weight: 500;">Espacio en Disco</span>
+                                        <span id="status-disk-text" style="font-size: 0.82rem; font-family: var(--font-mono); color: var(--text-muted);">Cargando...</span>
                                     </div>
-                                    <div class="progress" style="height: 10px; background-">
+                                    <div class="progress" style="height: 10px; background: var(--bg-color); border: 1px solid var(--border-color);">
                                         <div id="status-disk-bar" class="progress-bar bg-secondary" role="progressbar" style="width: 0%"></div>
                                     </div>
                                 </div>
@@ -42,62 +42,62 @@
 
                     <!-- Tarjeta de Operaciones Especiales -->
                     <div class="col-md-6">
-                        <div class="glass-card h-100 p-4" style="  border-radius: 10px;">
-                            <h4 style="font-weight: 500; margin-bottom: 20px; font-size: 1.2rem; ">
+                        <div class="h-100 p-4" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px;">
+                            <h4 style="font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; color: var(--text-color); font-family: var(--font-display);">
                                 <i class="bi bi-lightning-charge text-warning me-2"></i> Operaciones Críticas
                             </h4>
                             
-                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" >
+                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" style="background: var(--card-bg); border: 1px solid var(--border-color);">
                                 <div>
-                                    <strong class="d-block" >Sincronización AD Manual (Usuarios)</strong>
-                                    <small >Sincroniza usuarios desde el Directorio Activo.</small>
+                                    <strong class="d-block" style="font-size: 0.9rem; color: var(--text-color);">Sincronización AD (Usuarios)</strong>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Sincroniza usuarios desde el Directorio Activo.</small>
                                 </div>
                                 <button class="btn btn-outline-primary btn-sm" id="btnSyncAd" onclick="doSyncAd()">
                                     <i class="bi bi-person-lines-fill"></i> Usuarios
                                 </button>
                             </div>
 
-                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" >
+                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" style="background: var(--card-bg); border: 1px solid var(--border-color);">
                                 <div>
-                                    <strong class="d-block" >Sincronización AD Manual (PCs)</strong>
-                                    <small >Asigna fueros a PCs basado en OUs del AD.</small>
+                                    <strong class="d-block" style="font-size: 0.9rem; color: var(--text-color);">Sincronización AD (PCs)</strong>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Asigna fueros a PCs basado en OUs del AD.</small>
                                 </div>
                                 <button class="btn btn-outline-info btn-sm" id="btnSyncAdPcs" onclick="doSyncAdPcs()">
                                     <i class="bi bi-pc-display"></i> Equipos
                                 </button>
                             </div>
 
-                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" >
+                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" style="background: var(--card-bg); border: 1px solid var(--border-color);">
                                 <div>
-                                    <strong class="d-block" >Respaldar Base de Datos</strong>
-                                    <small >Descarga un archivo .sql.</small>
+                                    <strong class="d-block" style="font-size: 0.9rem; color: var(--text-color);">Respaldar Base de Datos</strong>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Descarga un archivo .sql completo.</small>
                                 </div>
                                 <a href="{{ url_for('maintenance.backup_db') }}" class="btn btn-outline-success btn-sm">
                                     <i class="bi bi-download"></i> Backup
                                 </a>
                             </div>
                             
-                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" >
+                            <div class="d-flex align-items-center justify-content-between p-3 rounded mb-3" style="background: var(--card-bg); border: 1px solid var(--border-color);">
                                 <div>
-                                    <strong class="d-block" >Limpiar Caché Global</strong>
-                                    <small >Invalida datos en RAM.</small>
+                                    <strong class="d-block" style="font-size: 0.9rem; color: var(--text-color);">Limpiar Caché Global</strong>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Invalida datos en RAM.</small>
                                 </div>
                                 <button class="btn btn-outline-danger btn-sm" id="btnClearCache" onclick="doClearCache()">
                                     <i class="bi bi-trash"></i> Limpiar
                                 </button>
                             </div>
 
-                            <div class="p-3 rounded mt-3" >
+                            <div class="p-3 rounded mt-3" style="background: var(--card-bg); border: 1px solid var(--border-color);">
                                 <div class="mb-3 text-center">
-                                    <strong class="d-block text-warning" style="font-size: 1.1rem;"><i class="bi bi-exclamation-triangle-fill"></i> Control de Acceso</strong>
-                                    <small style=" opacity: 0.8;">Bloquea el acceso al sistema para todos los técnicos.</small>
+                                    <strong class="d-block text-warning" style="font-size: 1rem;"><i class="bi bi-exclamation-triangle-fill me-1"></i> Control de Acceso Técnico</strong>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Bloquea el acceso al sistema para todos los técnicos.</small>
                                 </div>
                                 <div class="btn-group w-100" role="group" aria-label="Control de Mantenimiento">
                                     <input type="radio" class="btn-check" name="maintState" id="maintOff" autocomplete="off" onchange="setMaintenanceMode(false)">
-                                    <label class="btn btn-outline-secondary" for="maintOff"><i class="bi bi-unlock"></i> Abierto (Normal)</label>
+                                    <label class="btn btn-outline-secondary btn-sm" for="maintOff"><i class="bi bi-unlock me-1"></i> Abierto (Normal)</label>
 
                                     <input type="radio" class="btn-check" name="maintState" id="maintOn" autocomplete="off" onchange="setMaintenanceMode(true)">
-                                    <label class="btn btn-outline-warning" for="maintOn"><i class="bi bi-lock-fill"></i> Bloqueado (Mantenimiento)</label>
+                                    <label class="btn btn-outline-warning btn-sm" for="maintOn"><i class="bi bi-lock-fill me-1"></i> Bloqueado (Mantenimiento)</label>
                                 </div>
                             </div>
                         </div>
@@ -107,28 +107,29 @@
                 <!-- Tarjeta de Logs -->
                 <div class="row mt-4">
                     <div class="col-12">
-                        <div class="glass-card p-4" style="  border-radius: 10px;">
+                        <div class="p-4" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px;">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h4 style="font-weight: 500; margin: 0; font-size: 1.2rem; ">
+                                <h4 style="font-weight: 600; margin: 0; font-size: 1.1rem; color: var(--text-color); font-family: var(--font-display);">
                                     <i class="bi bi-terminal text-info me-2"></i> Registro de Eventos (Logs)
                                 </h4>
-                                <button class="btn btn-sm btn-outline-secondary" style="border- " onclick="fetchLogs()">
-                                    <i class="bi bi-arrow-clockwise"></i> Actualizar
+                                <button class="btn btn-sm btn-outline-secondary" onclick="fetchLogs()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
                                 </button>
                             </div>
-                            <div class="p-3 rounded" style=" border: 1px solid #1e293b; height: 350px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.85rem; " id="logConsole">
+                            <div class="p-3 rounded" style="background: var(--card-bg); border: 1px solid var(--border-color); height: 350px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-color);" id="logConsole">
                                 Cargando logs...
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                <button type="button" class="btn btn-secondary" style=" border: none;" data-bs-dismiss="modal">Cerrar</button>
+            <div class="modal-footer" style="border-top: 1px solid var(--border-color); background: var(--table-header-bg);">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="font-family: var(--font-mono); font-size: 0.85rem;">[ CERRAR ]</button>
             </div>
         </div>
     </div>
 </div>
+
 
 <script>
 // Trigger logic when modal opens

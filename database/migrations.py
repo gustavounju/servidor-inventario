@@ -658,6 +658,8 @@ def run_all_migrations():
     migrate_db_v52()
     # Fase 5.1 — target_pc_name en build_orders (AD)
     migrate_db_v53()
+    # Fase 6 — Intervenciones Técnicas y Telemetría Pasiva
+    migrate_db_v54()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1383,3 +1385,54 @@ def migrate_db_v53():
                 print("Migración V53 aplicada: columna target_pc_name agregada.")
             else:
                 print("Migración V53 verificada.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FASE 6 — Sistema Patrimonial: Intervenciones Técnicas y Telemetría Pasiva
+# ─────────────────────────────────────────────────────────────────────────────
+
+def migrate_db_v54():
+    """
+    Migración V54: Crear tabla intervenciones y agregar telemetry_snapshot a pcs.
+
+    Formaliza las Intervenciones Técnicas como el canal único para modificar el
+    patrimonio de un activo/PC desde el taller. Permite además almacenar la
+    telemetría pasiva (snapshot) sin sobreescribir los activos patrimoniales.
+    """
+    print("Verificando migración de DB v54 (Intervenciones Técnicas y Telemetría Pasiva)...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "intervenciones"):
+            print("Aplicando migración V54: creando tabla intervenciones...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS intervenciones (
+                    id                          INT AUTO_INCREMENT PRIMARY KEY,
+                    ticket_number               VARCHAR(50) UNIQUE NOT NULL,
+                    pc_name                     VARCHAR(255) DEFAULT NULL,
+                    asset_serial                VARCHAR(255) DEFAULT NULL,
+                    tipo                        VARCHAR(50) NOT NULL DEFAULT 'mantenimiento',
+                    ingreso_motivo              TEXT,
+                    diagnostico                 TEXT,
+                    componentes_cambiados_json TEXT,
+                    script_telemetry_before     LONGTEXT,
+                    script_telemetry_after      LONGTEXT,
+                    tecnico_responsable         VARCHAR(255),
+                    estado                      VARCHAR(50) NOT NULL DEFAULT 'abierta',
+                    created_at                  DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    closed_at                   DATETIME DEFAULT NULL,
+                    updated_at                  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+            conn.execute("CREATE INDEX idx_int_ticket ON intervenciones(ticket_number)")
+            conn.execute("CREATE INDEX idx_int_pc ON intervenciones(pc_name(100))")
+            conn.execute("CREATE INDEX idx_int_estado ON intervenciones(estado)")
+            print("Migración V54 aplicada: tabla intervenciones creada.")
+        else:
+            print("Migración V54 verificada.")
+
+        if _table_exists(conn, "pcs"):
+            if not _column_exists(conn, "pcs", "telemetry_snapshot"):
+                print("Aplicando V54: agregando telemetry_snapshot a pcs...")
+                conn.execute("ALTER TABLE pcs ADD COLUMN telemetry_snapshot LONGTEXT DEFAULT NULL")
+                print("Migración V54 aplicada: columna telemetry_snapshot agregada a pcs.")

@@ -5,12 +5,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Auditoría de Actividad | Inventario GOLD</title>
+    <script>
+      (function() {
+        var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme');
+        if (pref === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
+    <script defer src="{{ url_for('static', filename='js/gold.js') }}"?v={{ app_version }}></script>
     <script src="{{ url_for('static', filename='vendor/chartjs/chart.js') }}"></script>
     <style>
         /* Ajustes específicos para Auditoría Premium */
@@ -21,39 +29,42 @@
         }
         
         .audit-table-card {
-            border-radius: 20px;
+            border-radius: 16px;
             overflow: hidden;
-            border: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            background: #fff;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            background: var(--card-bg);
         }
 
         .audit-table thead th {
-            background: #1e293b;
-            color: #fff;
+            background: var(--table-header-bg);
+            color: var(--text-muted);
             font-size: 0.72rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             font-weight: 700;
             padding: 14px 20px;
-            border-bottom: none;
+            border-bottom: 1px solid var(--border-color);
+            font-family: var(--font-mono);
         }
 
         .audit-table tbody td {
             padding: 14px 20px;
             font-size: 0.85rem;
             vertical-align: middle;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            background: transparent;
         }
 
         .audit-table tbody tr:hover td {
-            background-color: #f8fafc;
+            background-color: rgba(59, 130, 246, 0.05);
         }
 
         .val-badge {
             padding: 4px 10px;
-            border-radius: 8px;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            border-radius: 6px;
+            font-family: var(--font-mono);
             font-size: 0.78rem;
             font-weight: 500;
             display: inline-block;
@@ -62,25 +73,25 @@
         }
 
         .val-old {
-            background: #fef2f2;
-            color: #b91c1c;
-            border: 1px solid #fee2e2;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         .val-new {
-            background: #f0fdf4;
-            color: #16a34a;
-            border: 1px solid #dcfce7;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         .field-chip {
-            background: #eff6ff;
-            color: #1e40af;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-color);
             border-radius: 6px;
             padding: 2px 8px;
             font-size: 0.72rem;
             font-weight: 700;
-            border: 1px solid #dbeafe;
+            border: 1px solid rgba(59, 130, 246, 0.3);
         }
         
         .action-badge {
@@ -91,21 +102,21 @@
             text-transform: uppercase;
         }
         
-        .action-update { background: #f1f5f9; color: #475569; }
-        .action-manual { background: #fff7ed; color: #9a3412; }
-        .action-task { background: #f0fdf4; color: #166534; }
-        .action-delete { background: #fef2f2; color: #991b1b; }
-        .action-system { background: #eef2ff; color: #3730a3; }
+        .action-update { background: var(--table-header-bg); color: var(--text-muted); border: 1px solid var(--border-color); }
+        .action-manual { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .action-task { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .action-delete { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .action-system { background: rgba(139, 92, 246, 0.1); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
         
         .pc-link {
             font-weight: 700;
-            color: #0f172a;
+            color: var(--accent-color);
             text-decoration: none;
             transition: color 0.2s;
         }
         
         .pc-link:hover {
-            color: #3b82f6;
+            color: var(--text-color);
         }
         
         .user-info {
@@ -117,14 +128,15 @@
         .user-avatar {
             width: 24px;
             height: 24px;
-            background: #e2e8f0;
+            background: var(--table-header-bg);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.7rem;
             font-weight: 700;
-            color: #475569;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
         }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -139,27 +151,35 @@
     <div class="audit-container" style="margin-top: 110px;">
         
         <!-- HERO HEADER PREMIUM -->
-        <header class="hero-header mb-4" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
+        <header class="hero-header mb-4" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px;">
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <div class="d-flex align-items-center gap-3 mb-2">
-                        <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.15);">
-                            <i class="bi bi-clock-history text-white fs-4"></i>
+                        <div style="width: 48px; height: 48px; background: rgba(59, 130, 246, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(59, 130, 246, 0.3);">
+                            <i class="bi bi-shield-check" style="color: var(--accent-color); font-size: 1.5rem;"></i>
                         </div>
                         <div>
-                            <h1 class="hero-title">Auditoría Extendida</h1>
-                            <p class="hero-subtitle">Registro detallado de cambios, usuarios y acciones del sistema.</p>
+                            <h1 class="hero-title mb-0 fw-bold" style="font-size: 1.3rem; color: var(--text-color); font-family: var(--font-display);">Historial Global de Auditoría</h1>
+                            <p class="hero-subtitle mb-0 small" style="color: var(--text-muted); font-family: var(--font-mono);">Registro detallado de cambios, tareas, usuarios y operaciones del sistema.</p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <div class="badge bg-white bg-opacity-10 py-2 px-3 border border-white border-opacity-10 mb-2">
+                    <div class="badge py-2 px-3 mb-2" style="background: var(--table-header-bg); border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-mono);">
                         <i class="bi bi-shield-lock-fill me-1 text-info"></i> Trazabilidad Completa
                     </div>
-                    <div class="text-white opacity-50 small">Versión del Sistema v{{ app_version }}</div>
+                    <div class="small" style="color: var(--text-muted); font-family: var(--font-mono);">Versión del Sistema v{{ app_version }}</div>
                 </div>
             </div>
-        </header>
+        <!-- BARRA DE BÚSQUEDA Y FILTRADO EN VIVO -->
+        <div class="mb-4 p-3" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px;">
+            <div class="input-group">
+                <span class="input-group-text" style="background: var(--table-header-bg); border: 1px solid var(--border-color); border-right: none; color: var(--text-muted);">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="searchAudit" class="form-control" style="background: var(--bg-color); border: 1px solid var(--border-color); border-left: none; color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;" placeholder="Buscar por equipo, usuario, dirección IP o campo modificado (ej: PC-01, gmurad, 10.15...)...">
+            </div>
+        </div>
 
         <!-- TABLA DE AUDITORÍA -->
         <div class="audit-table-card">
@@ -203,10 +223,10 @@
                             {% set human_desc = "Se actualizó " ~ field ~ " en " ~ pc ~ " (de " ~ old ~ " a " ~ new ~ ")" %}
                         {% endif %}
 
-                        <tr data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ human_desc }}">
+                        <tr class="audit-row" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ human_desc }}">
                             <td>
-                                <div class="fw-bold text-dark">{{ log.changed_at.strftime('%d/%m/%Y') if log.changed_at else 'N/A' }}</div>
-                                <div style="font-size: 0.75rem;" class="text-muted">{{ log.changed_at.strftime('%H:%M:%S') if log.changed_at else '' }}</div>
+                                <div class="fw-bold" style="color: var(--text-color); font-family: var(--font-mono); font-size: 0.85rem;">{{ log.changed_at.strftime('%d/%m/%Y') if log.changed_at else 'N/A' }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">{{ log.changed_at.strftime('%H:%M:%S') if log.changed_at else '' }}</div>
                             </td>
                             <td>
                                 <div class="user-info">
@@ -214,8 +234,8 @@
                                         {{ (log.user_name[:1] if log.user_name else 'S') | upper }}
                                     </div>
                                     <div>
-                                        <div class="fw-bold text-dark" style="font-size: 0.8rem;">{{ log.user_name or 'SISTEMA' }}</div>
-                                        <div class="text-muted" style="font-size: 0.65rem;">{{ log.ip_address or '0.0.0.0' }}</div>
+                                        <div class="fw-bold" style="font-size: 0.8rem; color: var(--text-color);">{{ log.user_name or 'SISTEMA' }}</div>
+                                        <div style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-mono);">{{ log.ip_address or '0.0.0.0' }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -230,34 +250,34 @@
                             </td>
                             <td>
                                 {% if log.pc_name %}
-                                <a href="{{ url_for('dashboard.pc_detail', pc_name=log.pc_name) }}" class="pc-link">
+                                <a href="{{ url_for('dashboard.pc_detail', pc_name=log.pc_name) }}" class="pc-link font-mono">
                                     <i class="bi bi-pc-display me-1 opacity-50"></i>{{ log.pc_name }}
                                 </a>
                                 {% else %}
-                                <span class="pc-link"><i class="bi bi-gear me-1 opacity-50"></i>SISTEMA</span>
+                                <span class="pc-link font-mono"><i class="bi bi-gear me-1 opacity-50"></i>SISTEMA</span>
                                 {% endif %}
-                                <div class="text-muted" style="font-size: 0.72rem;">{{ log.field }}</div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono);">{{ log.field }}</div>
                             </td>
                             <td>
                                 {% if log.old_value and log.old_value != 'None' and log.old_value != 'NULL' %}
                                 <div class="val-badge val-old">{{ log.old_value }}</div>
                                 {% else %}
-                                <span class="text-muted small opacity-50"><i>(Vacío)</i></span>
+                                <span style="color: var(--text-muted); font-size: 0.78rem; opacity: 0.5;"><i>(Vacío)</i></span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if log.new_value and log.new_value != 'None' and log.new_value != 'NULL' %}
                                 <div class="val-badge val-new">{{ log.new_value }}</div>
                                 {% else %}
-                                <span class="text-muted small opacity-50"><i>(Sin dato/Eliminado)</i></span>
+                                <span style="color: var(--text-muted); font-size: 0.78rem; opacity: 0.5;"><i>(Sin dato/Eliminado)</i></span>
                                 {% endif %}
                             </td>
                         </tr>
                         {% else %}
                         <tr>
                             <td colspan="6" class="text-center py-5">
-                                <i class="bi bi-clipboard-x fs-1 text-muted opacity-25 d-block mb-3"></i>
-                                <div class="text-muted fw-bold">No se encontraron registros de actividad</div>
+                                <i class="bi bi-clipboard-x fs-1 opacity-25 d-block mb-3" style="color: var(--text-muted);"></i>
+                                <div class="fw-bold" style="color: var(--text-muted);">No se encontraron registros de actividad</div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -268,21 +288,34 @@
 
         
         <div class="mt-4 text-center">
-            <p class="text-muted small"><i class="bi bi-shield-check me-1"></i> La integridad de estos registros está protegida por el módulo de seguridad del sistema.</p>
+            <p class="small" style="color: var(--text-muted); font-family: var(--font-mono);"><i class="bi bi-shield-check me-1"></i> La integridad de estos registros está protegida por el módulo de seguridad del sistema.</p>
         </div>
     </div>
 
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl)
-            })
+            });
+
+            // Buscador en vivo de la tabla de auditoría
+            const searchInput = document.getElementById('searchAudit');
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    const query = this.value.toLowerCase().trim();
+                    const rows = document.querySelectorAll('.audit-row');
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(query) ? '' : 'none';
+                    });
+                });
+            }
         });
     </script>
 </body>
 
 </html>
+
 

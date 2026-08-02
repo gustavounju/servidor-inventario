@@ -330,17 +330,32 @@ def config_api_get():
                     val = "********"
                 settings[key] = val
         
-        # Fallback para que los campos no se vean vacíos si sólo existen en el .env
-        for key in ["AD_SERVER", "AD_BASE_DN", "AD_SYNC_USER", "AD_SYNC_PASSWORD"]:
+        # Fallback inteligente desde .env / os.environ / valores por defecto del sistema
+        defaults = {
+            "DB_HOST": os.environ.get("DB_HOST", "10.15.0.62"),
+            "DB_PORT": os.environ.get("DB_PORT", "3306"),
+            "DB_NAME": os.environ.get("DB_NAME", "inventario_prod"),
+            "DB_USER": os.environ.get("DB_USER", "inventario_user"),
+            "DB_PASSWORD": os.environ.get("DB_PASS") or os.environ.get("DB_PASSWORD", ""),
+            "AD_SERVER": os.environ.get("AD_SERVER", "10.15.0.62"),
+            "AD_BASE_DN": os.environ.get("AD_BASE_DN", "DC=poderjudicial,DC=local"),
+            "AD_SYNC_USER": os.environ.get("AD_SYNC_USER", "admin_ad"),
+            "AD_SYNC_PASSWORD": os.environ.get("AD_SYNC_PASSWORD", "")
+        }
+
+        for key, default_val in defaults.items():
             if not settings.get(key):
-                val = get_app_setting(key, "")
-                if key.endswith("PASSWORD") and val:
+                val = get_app_setting(key, default_val)
+                if not val:
+                    val = default_val
+                if (key.endswith("PASSWORD") or key == "DB_PASS") and val:
                     val = "********"
                 settings[key] = val
-                
+
         return jsonify({"status": "success", "data": settings})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @bp_setup.route("/config/save", methods=["POST"])
 @login_required
