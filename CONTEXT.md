@@ -9,6 +9,18 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 - **Base de datos**: MySQL local (dev) / MySQL remoto (prod)
 - **Autenticación**: Sistema propio con roles, futura integración con Active Directory
 
+## 🏛️ Sistema Patrimonial y Gemelos Digitales (Novedad Agosto 2026)
+- **Modelo de Activos**: La verdad del sistema evoluciona de "inventario centrado en scripts" a "Gemelo Digital Patrimonial".
+- **Estado de Validación (`validation_status`)**:
+  - `validado`: Coincidencia confirmada entre el activo registrado y la telemetría del script.
+  - `pendiente`: Puesto armado y desplegado, esperando primera sincronización del script `.ps1`.
+  - `discrepancia`: Alerta por cambio o sustitución de hardware no documentada.
+  - `sin_gemelo`: PC reportada por script sin registro patrimonial de activo.
+- **Órdenes de Armado (Build Orders)**:
+  - Módulo de gestión en `/build_orders` (`[ ARMADO ]` en toolbar).
+  - Permite agrupar componentes del stock (`CPU`, `Monitor`, `Teclado`, `Mouse`, `Impresora`), asociarlos a un remito/OC y desplegarlos a un puesto judicial en 1-clic.
+  - Generación de doble etiqueta QR (Gabinete + Monitor) linkeada a la ficha viva `/pc/<pc_name>`.
+
 ## 🏗️ Infraestructura de Base de Datos
 ### Desarrollo (Casa/Oficina)
 - **Host**: 127.0.0.1
