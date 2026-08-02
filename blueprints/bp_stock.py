@@ -514,7 +514,9 @@ def build_orders_view():
                     """,
                     (bo["id"],)
                 ).fetchall()
-                item_dict["items"] = [dict(i) for i in items_rows]
+                items_list = [dict(i) for i in items_rows]
+                item_dict["items"] = items_list
+                item_dict["order_items"] = items_list
                 build_orders_list.append(item_dict)
 
             # Fueros
