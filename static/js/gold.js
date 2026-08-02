@@ -329,14 +329,10 @@ function toggleCompactMode() {
     }
 }
 
-// Initialize theme and compact mode on load
+// Restore compact mode on load (tema ya inicializado en la IIFE de la línea 1)
 (function() {
-    const savedTheme = localStorage.getItem('theme') || 'midnight';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    
     if (isCompactMode) {
         document.addEventListener('DOMContentLoaded', () => {
-            // Re-apply if table exists
             const table = document.getElementById('inventoryTable');
             if (table) {
                 table.classList.add('inventory-table--compact');
