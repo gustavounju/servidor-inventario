@@ -144,40 +144,40 @@
                 <div class="integrated-alert mb-3" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.25); border-left: 4px solid var(--accent-color, #38bdf8); border-radius: 8px; padding: 12px 14px;">
                     <div class="integrated-alert__header d-flex justify-content-between align-items-center mb-2" style="font-weight: 700; font-size: 0.85rem; color: #f8fafc;">
                         <span><i class="bi bi-shield-lock-fill me-1 text-info"></i> Gemelos Digitales</span>
-                        <span class="badge bg-dark border border-secondary" style="font-weight: normal; font-size: 0.7rem;">{{ kpi_pat_total_activos }} Activos</span>
+                        <span class="badge bg-dark border border-secondary" style="font-weight: normal; font-size: 0.7rem;">{{ kpi_pat_total_activos | default(0) }} Activos</span>
                     </div>
                     
                     <div class="row g-1 text-center" style="font-size: 0.75rem;">
                         <div class="col-6 mb-1">
                             <a href="{{ url_for('dashboard.dashboard', alerta='pat_validados') }}" class="text-decoration-none d-block p-1 rounded" style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80;">
-                                <div style="font-size: 1.1rem; font-weight: 700;">{{ kpi_pat_validados }}</div>
+                                <div style="font-size: 1.1rem; font-weight: 700;">{{ kpi_pat_validados | default(0) }}</div>
                                 <div><i class="bi bi-check-circle me-1"></i>Validados</div>
                             </a>
                         </div>
                         <div class="col-6 mb-1">
                             <a href="{{ url_for('dashboard.dashboard', alerta='pat_pendientes') }}" class="text-decoration-none d-block p-1 rounded" style="background: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.3); color: #facc15;">
-                                <div style="font-size: 1.1rem; font-weight: 700;">{{ kpi_pat_pendientes }}</div>
+                                <div style="font-size: 1.1rem; font-weight: 700;">{{ kpi_pat_pendientes | default(0) }}</div>
                                 <div><i class="bi bi-clock me-1"></i>Pendientes</div>
                             </a>
                         </div>
                         <div class="col-6">
                             <a href="{{ url_for('dashboard.dashboard', alerta='pat_discrepancias') }}" class="text-decoration-none d-block p-1 rounded" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
-                                <div style="font-size: 1.1rem; font-weight: 700;">{{ kpi_pat_discrepancias }}</div>
+                                <div style="font-size: 1.1rem; font-weight: 700;">{{ kpi_pat_discrepancias | default(0) }}</div>
                                 <div><i class="bi bi-exclamation-diamond me-1"></i>Discrepancias</div>
                             </a>
                         </div>
                         <div class="col-6">
                             <a href="{{ url_for('dashboard.dashboard', alerta='pat_sin_gemelo') }}" class="text-decoration-none d-block p-1 rounded" style="background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.3); color: #cbd5e1;">
-                                <div style="font-size: 1.1rem; font-weight: 700;">{{ kpi_pat_sin_gemelo }}</div>
+                                <div style="font-size: 1.1rem; font-weight: 700;">{{ kpi_pat_sin_gemelo | default(0) }}</div>
                                 <div><i class="bi bi-question-circle me-1"></i>Sin Gemelo</div>
                             </a>
                         </div>
                     </div>
                     
-                    {% if kpi_pat_garantia_prox > 0 %}
+                    {% if (kpi_pat_garantia_prox | default(0)) > 0 %}
                     <div class="mt-2 pt-2 border-top border-secondary d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
                         <span class="text-warning"><i class="bi bi-shield-exclamation me-1"></i>Garantías por vencer (60d)</span>
-                        <span class="badge bg-warning text-dark">{{ kpi_pat_garantia_prox }}</span>
+                        <span class="badge bg-warning text-dark">{{ kpi_pat_garantia_prox | default(0) }}</span>
                     </div>
                     {% endif %}
                 </div>

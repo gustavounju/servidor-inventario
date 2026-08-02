@@ -87,18 +87,27 @@
         </button>
         {% endif %}
 
-        <!-- Redes y Mapas -->
-        {% if has_access('infrastructure') %}
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#topoModal" title="Redes IP">[ SUBREDES ]</a>
-        <a href="{{ url_for('maps.index') }}" class="op-btn">[ MAPAS ]</a>
-        <a href="{{ url_for('infrastructure.switches_dashboard') }}" class="op-btn">[ SWITCHES ]</a>
-        <a href="{{ url_for('infrastructure.index') }}" class="op-btn {% if request.endpoint == 'infrastructure.index' %}op-btn--active{% endif %}" title="Gestión de Infraestructura (Impresoras, UPS, etc.)">[ INFRA ]</a>
-        {% else %}
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Subredes')" title="No tienes permiso para entrar en Subredes">[ SUBREDES ]</button>
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Mapas')" title="No tienes permiso para entrar en Mapas">[ MAPAS ]</button>
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Switches')" title="No tienes permiso para entrar en Switches">[ SWITCHES ]</button>
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Infra')" title="No tienes permiso para entrar en Infra">[ INFRA ]</button>
-        {% endif %}
+        <!-- MÓDULOS EN REVISIÓN / INFRA (Dropdown) -->
+        <div class="dropdown d-inline-block">
+            <button class="op-btn dropdown-toggle" type="button" id="dropdownRevision" data-bs-toggle="dropdown" aria-expanded="false" style="color: #94a3b8; border-color: rgba(148,163,184,0.3);">
+                [ MÓDULOS EN REVISIÓN ]
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark shadow" aria-labelledby="dropdownRevision" style="background: #1e293b; border: 1px solid rgba(148, 163, 184, 0.2); font-size: 0.82rem;">
+                <li><h6 class="dropdown-header text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Redes e Infraestructura (Legacy)</h6></li>
+                {% if has_access('infrastructure') %}
+                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#topoModal"><i class="bi bi-diagram-2 me-2 text-info"></i>Subredes IP</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('maps.index') }}"><i class="bi bi-geo-alt me-2 text-warning"></i>Mapas de Edificio</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('infrastructure.switches_dashboard') }}"><i class="bi bi-ethernet me-2 text-success"></i>Switches y Racks</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('infrastructure.index') }}"><i class="bi bi-hdd-network me-2 text-primary"></i>Catálogo Infra (Impresoras/UPS)</a></li>
+                {% else %}
+                <li><span class="dropdown-item text-muted disabled"><i class="bi bi-lock me-2"></i>Acceso restringido</span></li>
+                {% endif %}
+                {% if current_user.get('is_superuser') %}
+                <li><hr class="dropdown-divider border-secondary"></li>
+                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#fueroAdminModal"><i class="bi bi-building me-2 text-secondary"></i>Gestión de Fueros</a></li>
+                {% endif %}
+            </ul>
+        </div>
 
         <!-- Administración / Extras -->
         <span class="op-divider"></span>
@@ -116,11 +125,6 @@
         </a>
         {% endif %}
         
-        {% if current_user.get('is_superuser') %}
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#fueroAdminModal" title="Administración de Fueros">[ FUEROS ]</a>
-        {% else %}
-        <button class="op-btn" style="opacity: 0.4; border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed;" onclick="alert('Tu usuario no tiene permiso para entrar en Fueros')" title="No tienes permiso para entrar en Fueros">[ FUEROS ]</button>
-        {% endif %}
         {% if has_access('reports') %}
         <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#reportsModal">[ REPORTES ]</a>
         {% endif %}
