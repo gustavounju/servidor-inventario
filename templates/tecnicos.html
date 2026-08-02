@@ -381,7 +381,15 @@
     }
   </style>
   <script>
-    document.documentElement.setAttribute('data-theme', 'midnight');
+    // Anti-FOUC: aplicar tema guardado antes de que el DOM se pinte
+    (function() {
+        var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme') || 'light';
+        if (pref === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+    })();
 
 function openTaskActionsOverlay(taskId) {
     document.getElementById('mobileActionTaskId').value = taskId;

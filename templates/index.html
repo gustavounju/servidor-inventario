@@ -260,13 +260,10 @@
                 exportToCSV();
             }
 
-            // Ctrl+T: Cycle Theme
+            // Ctrl+T: Toggle modo claro/oscuro
             if (e.ctrlKey && e.key === 't') {
                 e.preventDefault();
-                const themes = ['oceanic', 'emerald', 'midnight'];
-                const current = localStorage.getItem('theme') || 'oceanic';
-                const nextIndex = (themes.indexOf(current) + 1) % themes.length;
-                setTheme(themes[nextIndex]);
+                toggleTheme();
             }
 
             // Ctrl+M: Toggle modo compacto
