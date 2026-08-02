@@ -450,6 +450,98 @@ def stock_view():
 
     return render_template("stock.html", pcs=pcs, ad_users=ad_users, stock_components=stock_components, stock_fueros=fueros)
 
+
+@bp_stock.route("/build_orders")
+def build_orders_view():
+    """Vista de gestión de Órdenes de Armado (Build Orders) — Fase 5."""
+    try:
+        with get_db_connection() as conn:
+            # Lista de PCs activas
+            pcs_rows = conn.execute(
+                "SELECT pc_name, last_user, fuero FROM pcs WHERE is_active = 1 ORDER BY pc_name ASC"
+            ).fetchall()
+            pcs = [dict(r) for r in pcs_rows]
+
+            # Usuarios de AD
+            ad_rows = conn.execute(
+                """
+                SELECT username, COALESCE(NULLIF(TRIM(real_name), ''), username) as real_name, fuero
+                FROM ad_users
+                ORDER BY real_name ASC
+                """
+            ).fetchall()
+            ad_users = [dict(r) for r in ad_rows]
+
+            # Componentes en stock disponibles para agregar
+            stock_comps_rows = conn.execute(
+                """
+                SELECT serial_number, component_type, brand_model, supplier, lifecycle_status
+                FROM components
+                WHERE (status = 'Stock' OR status IS NULL OR lifecycle_status = 'stock')
+                  AND (assigned_pc IS NULL OR assigned_pc = '')
+                  AND (assigned_user IS NULL OR assigned_user = '')
+                ORDER BY component_type ASC, brand_model ASC
+                """
+            ).fetchall()
+            stock_components = [dict(r) for r in stock_comps_rows]
+
+            # Órdenes de Armado existentes con sus ítems
+            bo_rows = conn.execute(
+                """
+                SELECT bo.id, bo.code, bo.status, bo.oc_number, bo.invoice_number,
+                       bo.target_fuero, bo.target_user, bo.notes,
+                       bo.created_by, bo.completed_at, bo.created_at
+                FROM build_orders bo
+                ORDER BY bo.created_at DESC
+                """
+            ).fetchall()
+            
+            build_orders_list = []
+            for bo in bo_rows:
+                item_dict = dict(bo)
+                if item_dict.get("created_at") and hasattr(item_dict["created_at"], "strftime"):
+                    item_dict["created_at"] = item_dict["created_at"].strftime("%Y-%m-%d %H:%M")
+                if item_dict.get("completed_at") and hasattr(item_dict["completed_at"], "strftime"):
+                    item_dict["completed_at"] = item_dict["completed_at"].strftime("%Y-%m-%d %H:%M")
+
+                # Obtener ítems de esta BO
+                items_rows = conn.execute(
+                    """
+                    SELECT id, serial_number, asset_type, brand_model, pc_name, scanned_at, scanned_by
+                    FROM build_order_items
+                    WHERE build_order_id = %s
+                    ORDER BY scanned_at ASC
+                    """,
+                    (bo["id"],)
+                ).fetchall()
+                item_dict["items"] = [dict(i) for i in items_rows]
+                build_orders_list.append(item_dict)
+
+            # Fueros
+            fueros_rows = conn.execute(
+                """
+                SELECT DISTINCT fuero_label as fuero FROM fuero_mappings WHERE is_active = 1
+                UNION
+                SELECT DISTINCT fuero FROM pcs WHERE fuero IS NOT NULL AND fuero != '' AND fuero != 'Desconocido' AND fuero != 'Sin Fuero'
+                ORDER BY fuero ASC
+                """
+            ).fetchall()
+            fueros = [r['fuero'] for r in fueros_rows if r.get('fuero')]
+
+    except Exception as exc:
+        logging.error("Error en build_orders_view: %s", exc)
+        pcs, ad_users, stock_components, build_orders_list, fueros = [], [], [], [], []
+
+    return render_template(
+        "build_orders.html",
+        pcs=pcs,
+        ad_users=ad_users,
+        stock_components=stock_components,
+        build_orders=build_orders_list,
+        fueros=fueros
+    )
+
+
 @bp_stock.route("/api/components/stock_available", methods=["GET"])
 def get_available_stock_components():
     try:

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Órdenes de Armado (Build Orders) — Inventario GOLD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
+    <style>
+        .bo-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .bo-card:hover {
+            border-color: rgba(168, 85, 247, 0.4);
+        }
+
+        .bo-card__header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .bo-card__body {
+            padding: 20px;
+        }
+
+        .bo-status-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bo-status--draft {
+            background: rgba(234, 179, 8, 0.15);
+            color: #facc15;
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+
+        .bo-status--in_progress {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .bo-status--completed {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .bo-status--cancelled {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .bo-item-table {
+            width: 100%;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            margin-bottom: 15px;
+        }
+
+        .bo-item-table th {
+            color: var(--text-muted, #94a3b8);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 8px 10px;
+        }
+
+        .bo-item-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .op-masthead {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+    </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
+</head>
+
+<body class="has-fixed-header">
+    {% include '_module_switcher.html' %}
+    {% include '_shared_modals.html' %}
+
+    <div class="container-fluid mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show shadow-sm" style="border-radius: 12px;" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- MASTHEAD -->
+        <div class="op-masthead d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2 style="font-weight: 800; font-family: var(--font-display); color: #f8fafc; margin-bottom: 4px;">
+                    <i class="bi bi-box-seam text-warning me-2"></i>Órdenes de Armado (Build Orders)
+                </h2>
+                <p style="color: #94a3b8; font-size: 0.88rem; margin: 0;">
+                    Armado y entrega de puestos de trabajo completos. Vinculación de periféricos, Gemelos Digitales y doble etiqueta QR.
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); border: none; font-weight: 600;" data-bs-toggle="modal" data-bs-target="#newBuildOrderModal">
+                    <i class="bi bi-plus-lg me-1"></i> Nueva Orden de Armado
+                </button>
+                <a href="{{ url_for('stock.stock_view') }}" class="btn btn-outline-light" style="border-color: rgba(148, 163, 184, 0.4); font-size: 0.88rem;">
+                    <i class="bi bi-boxes me-1"></i> Ver Stock
+                </a>
+            </div>
+        </div>
+
+        <!-- LISTA DE ÓRDENES DE ARMADO -->
+        <div class="row">
+            <div class="col-12">
+                {% if not build_orders %}
+                <div class="text-center p-5 rounded" style="background: rgba(30, 41, 59, 0.4); border: 1px dashed rgba(148, 163, 184, 0.3);">
+                    <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3 text-light">No hay Órdenes de Armado registradas</h4>
+                    <p class="text-muted">Crea una nueva Orden de Armado para armar un combo/puesto de trabajo completo con escáner.</p>
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newBuildOrderModal">
+                        <i class="bi bi-plus-lg me-1"></i> Crear primera Orden
+                    </button>
+                </div>
+                {% else %}
+                
+                {% for bo in build_orders %}
+                <div class="bo-card">
+                    <div class="bo-card__header">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="font-mono" style="font-size: 1.1rem; font-weight: 700; color: #f8fafc;">{{ bo.code }}</span>
+                            <span class="bo-status-badge bo-status--{{ bo.status }}">
+                                {% if bo.status == 'draft' %}Borrador
+                                {% elif bo.status == 'in_progress' %}En Armado
+                                {% elif bo.status == 'completed' %}Completado
+                                {% elif bo.status == 'cancelled' %}Cancelado
+                                {% else %}{{ bo.status }}{% endif %}
+                            </span>
+                        </div>
+                        
+                        <div style="font-size: 0.82rem; color: #94a3b8;">
+                            {% if bo.target_fuero %}
+                            <span class="badge bg-secondary me-1"><i class="bi bi-building me-1"></i>{{ bo.target_fuero }}</span>
+                            {% endif %}
+                            {% if bo.target_user %}
+                            <span class="badge bg-dark border border-secondary text-light me-1"><i class="bi bi-person me-1"></i>{{ bo.target_user }}</span>
+                            {% endif %}
+                            <span class="ms-2"><i class="bi bi-clock me-1"></i>{{ bo.created_at }} (por {{ bo.created_by or 'Sistema' }})</span>
+                        </div>
+                    </div>
+
+                    <div class="bo-card__body">
+                        {% if bo.notes %}
+                        <div class="mb-3 p-2 rounded" style="background: rgba(15, 23, 42, 0.4); border-left: 3px solid #a855f7; font-size: 0.82rem; color: #cbd5e1;">
+                            <strong>Notas:</strong> {{ bo.notes }}
+                        </div>
+                        {% endif %}
+
+                        <!-- TABLA DE COMPONENTES AGREGADOS -->
+                        <h6 style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;" class="mb-2">
+                            Componentes en la Orden ({{ bo.items|length }})
+                        </h6>
+
+                        {% if not bo.items %}
+                        <p class="text-muted" style="font-size: 0.82rem; font-style: italic;">No se han escaneado ni agregado componentes a esta orden aún.</p>
+                        {% else %}
+                        <div class="table-responsive">
+                            <table class="bo-item-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Serie / Código ID</th>
+                                        <th>Marca / Modelo</th>
+                                        <th>Escaneado Por</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in bo.items %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-dark text-info border border-info" style="font-size: 0.72rem;">{{ item.asset_type }}</span>
+                                        </td>
+                                        <td class="font-mono" style="font-weight: 600; color: #f8fafc;">{{ item.serial_number }}</td>
+                                        <td>{{ item.brand_model or '-' }}</td>
+                                        <td style="font-size: 0.78rem; color: #94a3b8;">{{ item.scanned_by or '-' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+
+                        <!-- ACCIONES SEGÚN ESTADO -->
+                        {% if bo.status in ['draft', 'in_progress'] %}
+                        <div class="p-3 rounded mt-3" style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(148, 163, 184, 0.15);">
+                            <div class="row g-2 align-items-center">
+                                <!-- Formulario agregar serial -->
+                                <div class="col-md-7">
+                                    <form onsubmit="addItemToBO(event, {{ bo.id }})" class="d-flex gap-2">
+                                        <input type="text" id="bo_serial_{{ bo.id }}" class="form-control form-control-sm font-mono" placeholder="Escaneá o pegá Número de Serie..." required style="background: rgba(30, 41, 59, 0.8); color: white; border-color: rgba(148, 163, 184, 0.3);">
+                                        <button type="submit" class="btn btn-sm btn-outline-info text-nowrap">
+                                            <i class="bi bi-plus-circle me-1"></i> Agregar Ítem
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- Botón completar y desplegar -->
+                                <div class="col-md-5 text-md-end mt-2 mt-md-0">
+                                    <button type="button" class="btn btn-sm btn-success text-nowrap" onclick="openCompleteModal({{ bo.id }}, '{{ bo.code }}', '{{ bo.target_user or '' }}', '{{ bo.target_fuero or '' }}')">
+                                        <i class="bi bi-rocket-takeoff-fill me-1"></i> Completar y Desplegar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% elif bo.status == 'completed' %}
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary">
+                            <span class="text-success" style="font-size: 0.82rem; font-weight: 600;">
+                                <i class="bi bi-check-circle-fill me-1"></i> Orden desplegada exitosamente. Pendiente de validación por script.
+                            </span>
+
+                            {% if bo.items and bo.items[0].pc_name %}
+                            <a href="{{ url_for('dashboard.pc_qr_label_view', pc_name=bo.items[0].pc_name) }}" target="_blank" class="btn btn-sm btn-outline-warning">
+                                <i class="bi bi-qr-code-scan me-1"></i> Imprimir Par QR (Gabinete + Monitor)
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVA ORDEN DE ARMADO -->
+    <div class="modal fade" id="newBuildOrderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: #1e293b; color: white; border: 1px solid rgba(168, 85, 247, 0.3);">
+                <div class="modal-header" style="border-bottom-color: rgba(148, 163, 184, 0.2);">
+                    <h5 class="modal-title font-display"><i class="bi bi-box-seam me-2 text-warning"></i>Nueva Orden de Armado</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="createBOForm" onsubmit="handleCreateBO(event)">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label text-muted" style="font-size: 0.82rem;">Fuero / Oficina Destino</label>
+                            <input type="text" id="bo_target_fuero" class="form-control" list="fuerosList" placeholder="Ej: JCC1, Juzgado de Instrucción 2...">
+                            <datalist id="fuerosList">
+                                {% for f in fueros %}
+                                <option value="{{ f }}">
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted" style="font-size: 0.82rem;">Usuario Asignado</label>
+                            <input type="text" id="bo_target_user" class="form-control" list="adUsersList" placeholder="Nombre o usuario AD...">
+                            <datalist id="adUsersList">
+                                {% for u in ad_users %}
+                                <option value="{{ u.real_name }}">
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label text-muted" style="font-size: 0.82rem;">Remito (Opcional)</label>
+                                <input type="text" id="bo_invoice" class="form-control" placeholder="REM-00123">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label text-muted" style="font-size: 0.82rem;">Orden de Compra (Opcional)</label>
+                                <input type="text" id="bo_oc" class="form-control" placeholder="OC-2026-44">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted" style="font-size: 0.82rem;">Notas u Observaciones</label>
+                            <textarea id="bo_notes" class="form-control" rows="2" placeholder="Comentarios sobre la entrega..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top-color: rgba(148, 163, 184, 0.2);">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary btn-sm" style="background: #a855f7; border: none;">Crear Orden</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL COMPLETAR Y DESPLEGAR -->
+    <div class="modal fade" id="completeBuildOrderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: #1e293b; color: white; border: 1px solid rgba(34, 197, 94, 0.3);">
+                <div class="modal-header" style="border-bottom-color: rgba(148, 163, 184, 0.2);">
+                    <h5 class="modal-title font-display"><i class="bi bi-rocket-takeoff-fill me-2 text-success"></i>Completar y Desplegar Puesto</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="completeBOForm" onsubmit="handleCompleteBO(event)">
+                    <input type="hidden" id="complete_bo_id">
+                    <div class="modal-body">
+                        <p class="text-muted" style="font-size: 0.85rem;">
+                            Al completar la Orden <strong id="complete_bo_code" class="text-light font-mono"></strong>, los componentes escaneados pasarán a estado <strong>Asignado / Desplegado</strong> y se registrará el puesto.
+                        </p>
+                        <div class="mb-3">
+                            <label class="form-label text-muted" style="font-size: 0.82rem;">Nombre de PC Destino</label>
+                            <input type="text" id="complete_pc_name" class="form-control font-mono" list="pcsList" placeholder="Ej: JCC1-PC01..." required>
+                            <datalist id="pcsList">
+                                {% for p in pcs %}
+                                <option value="{{ p.pc_name }}">
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted" style="font-size: 0.82rem;">Usuario Asignado</label>
+                            <input type="text" id="complete_user" class="form-control" list="adUsersList">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted" style="font-size: 0.82rem;">Fuero Destino</label>
+                            <input type="text" id="complete_fuero" class="form-control" list="fuerosList">
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top-color: rgba(148, 163, 184, 0.2);">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success btn-sm">Confirmar Despliegue</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        async function handleCreateBO(e) {
+            e.preventDefault();
+            const body = {
+                target_fuero: document.getElementById('bo_target_fuero').value,
+                target_user: document.getElementById('bo_target_user').value,
+                invoice_number: document.getElementById('bo_invoice').value,
+                oc_number: document.getElementById('bo_oc').value,
+                notes: document.getElementById('bo_notes').value
+            };
+
+            try {
+                const res = await fetch('/api/build_orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo crear la Orden'));
+                }
+            } catch (err) {
+                alert('Error al comunicar con el servidor');
+            }
+        }
+
+        async function addItemToBO(e, orderId) {
+            e.preventDefault();
+            const input = document.getElementById('bo_serial_' + orderId);
+            const serial = input.value.trim();
+            if (!serial) return;
+
+            try {
+                const res = await fetch('/api/build_orders/' + orderId + '/items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ serial_number: serial })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo agregar el ítem'));
+                }
+            } catch (err) {
+                alert('Error al comunicar con el servidor');
+            }
+        }
+
+        function openCompleteModal(orderId, code, user, fuero) {
+            document.getElementById('complete_bo_id').value = orderId;
+            document.getElementById('complete_bo_code').textContent = code;
+            document.getElementById('complete_user').value = user;
+            document.getElementById('complete_fuero').value = fuero;
+            const modal = new bootstrap.Modal(document.getElementById('completeBuildOrderModal'));
+            modal.show();
+        }
+
+        async function handleCompleteBO(e) {
+            e.preventDefault();
+            const orderId = document.getElementById('complete_bo_id').value;
+            const body = {
+                pc_name: document.getElementById('complete_pc_name').value.trim(),
+                assigned_user: document.getElementById('complete_user').value.trim(),
+                assigned_fuero: document.getElementById('complete_fuero').value.trim()
+            };
+
+            try {
+                const res = await fetch('/api/build_orders/' + orderId + '/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo completar la Orden'));
+                }
+            } catch (err) {
+                alert('Error al comunicar con el servidor');
+            }
+        }
+    </script>
+</body>
+
+</html>
