@@ -656,6 +656,8 @@ def run_all_migrations():
     migrate_db_v51()
     # Fase 3 — Columnas patrimoniales en components
     migrate_db_v52()
+    # Fase 5.1 — target_pc_name en build_orders (AD)
+    migrate_db_v53()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1357,3 +1359,27 @@ def migrate_db_v52():
             print("Migracion V52 aplicada: columnas patrimoniales agregadas a components.")
         else:
             print("Migracion V52 verificada.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FASE 5.1 — Sistema Patrimonial: target_pc_name en build_orders (Soporte AD)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def migrate_db_v53():
+    """
+    Migración V53: Agregar columna target_pc_name a build_orders.
+
+    Permite asignar provisoriamente el nombre de la PC del Active Directory / red
+    (ej: PC0006 para el Dr. González) desde la creación/armado de la Build Order.
+    """
+    print("Verificando migración de DB v53 (target_pc_name en build_orders)...")
+    with get_db_connection() as conn:
+        if _table_exists(conn, "build_orders"):
+            if not _column_exists(conn, "build_orders", "target_pc_name"):
+                print("Aplicando V53: agregando target_pc_name a build_orders...")
+                conn.execute(
+                    "ALTER TABLE build_orders ADD COLUMN target_pc_name VARCHAR(255) DEFAULT NULL AFTER target_user"
+                )
+                print("Migración V53 aplicada: columna target_pc_name agregada.")
+            else:
+                print("Migración V53 verificada.")

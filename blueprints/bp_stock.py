@@ -489,7 +489,7 @@ def build_orders_view():
             bo_rows = conn.execute(
                 """
                 SELECT bo.id, bo.code, bo.status, bo.oc_number, bo.invoice_number,
-                       bo.target_fuero, bo.target_user, bo.notes,
+                       bo.target_fuero, bo.target_user, bo.target_pc_name, bo.notes,
                        bo.created_by, bo.completed_at, bo.created_at
                 FROM build_orders bo
                 ORDER BY bo.created_at DESC
@@ -1864,6 +1864,14 @@ def list_build_orders():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@bp_stock.route("/api/components/generate_auto_id", methods=["GET"])
+def api_generate_auto_id():
+    """Genera un código Auto ID único (INT-XXX-YYYYMMDD-NNNN) para componentes sin número de serie de fábrica."""
+    ctype = request.args.get("component_type", "COMPONENTE")
+    serial = generate_internal_serial(ctype)
+    return jsonify({"status": "success", "serial_number": serial, "component_type": ctype})
+
+
 @bp_stock.route("/api/build_orders", methods=["POST"])
 def create_build_order():
     """Crea una nueva Orden de Armado en estado 'draft'."""
@@ -1875,11 +1883,12 @@ def create_build_order():
         tech = current_technician_identity()
         data = request.json or {}
 
-        oc_number    = (data.get("oc_number") or "").strip() or None
+        oc_number      = (data.get("oc_number") or "").strip() or None
         invoice_number = (data.get("invoice_number") or "").strip() or None
-        target_fuero = (data.get("target_fuero") or "").strip() or None
-        target_user  = (data.get("target_user") or "").strip() or None
-        notes        = (data.get("notes") or "").strip() or None
+        target_fuero   = (data.get("target_fuero") or "").strip() or None
+        target_user    = (data.get("target_user") or "").strip() or None
+        target_pc_name = (data.get("target_pc_name") or "").strip() or None
+        notes          = (data.get("notes") or "").strip() or None
 
         with get_db_connection() as conn:
             # Generar código único: BO-YYYY-NNNN
@@ -1893,10 +1902,10 @@ def create_build_order():
             conn.execute(
                 """
                 INSERT INTO build_orders
-                    (code, oc_number, invoice_number, target_fuero, target_user, notes, created_by, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft')
+                    (code, oc_number, invoice_number, target_fuero, target_user, target_pc_name, notes, created_by, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'draft')
                 """,
-                (code, oc_number, invoice_number, target_fuero, target_user, notes, tech)
+                (code, oc_number, invoice_number, target_fuero, target_user, target_pc_name, notes, tech)
             )
             new_id = conn.cursor.lastrowid
 
@@ -1904,6 +1913,7 @@ def create_build_order():
     except Exception as e:
         logging.error("Error en create_build_order: %s", e)
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 @bp_stock.route("/api/build_orders/<int:order_id>/items", methods=["POST"])

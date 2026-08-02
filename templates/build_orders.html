@@ -167,7 +167,9 @@
                             </span>
                         </div>
                         
-                        <div style="font-size: 0.82rem; color: #94a3b8;">
+                            {% if bo.target_pc_name %}
+                            <span class="badge bg-primary text-white me-1 font-mono"><i class="bi bi-pc-display me-1"></i>{{ bo.target_pc_name }}</span>
+                            {% endif %}
                             {% if bo.target_fuero %}
                             <span class="badge bg-secondary me-1"><i class="bi bi-building me-1"></i>{{ bo.target_fuero }}</span>
                             {% endif %}
@@ -226,16 +228,19 @@
                                 <!-- Formulario agregar serial -->
                                 <div class="col-md-7">
                                     <form onsubmit="addItemToBO(event, {{ bo.id }})" class="d-flex gap-2">
-                                        <input type="text" id="bo_serial_{{ bo.id }}" class="form-control form-control-sm font-mono" placeholder="Escaneá o pegá Número de Serie..." required style="background: rgba(30, 41, 59, 0.8); color: white; border-color: rgba(148, 163, 184, 0.3);">
+                                        <input type="text" id="bo_serial_{{ bo.id }}" class="form-control form-control-sm font-mono" placeholder="Escaneá N° Serie o usá Auto-ID..." required style="background: rgba(30, 41, 59, 0.8); color: white; border-color: rgba(148, 163, 184, 0.3);">
+                                        <button type="button" class="btn btn-sm btn-outline-warning text-nowrap" onclick="generateAutoIdForBO({{ bo.id }})" title="Generar ID interno (para Fuente o Gabinete sin serial impreso)">
+                                            <i class="bi bi-upc-scan me-1"></i> Auto-ID
+                                        </button>
                                         <button type="submit" class="btn btn-sm btn-outline-info text-nowrap">
-                                            <i class="bi bi-plus-circle me-1"></i> Agregar Ítem
+                                            <i class="bi bi-plus-circle me-1"></i> Agregar
                                         </button>
                                     </form>
                                 </div>
 
                                 <!-- Botón completar y desplegar -->
                                 <div class="col-md-5 text-md-end mt-2 mt-md-0">
-                                    <button type="button" class="btn btn-sm btn-success text-nowrap" onclick="openCompleteModal({{ bo.id }}, '{{ bo.code }}', '{{ bo.target_user or '' }}', '{{ bo.target_fuero or '' }}')">
+                                    <button type="button" class="btn btn-sm btn-success text-nowrap" onclick="openCompleteModal({{ bo.id }}, '{{ bo.code }}', '{{ bo.target_user or '' }}', '{{ bo.target_fuero or '' }}', '{{ bo.target_pc_name or '' }}')">
                                         <i class="bi bi-rocket-takeoff-fill me-1"></i> Completar y Desplegar
                                     </button>
                                 </div>
@@ -273,6 +278,10 @@
                 </div>
                 <form id="createBOForm" onsubmit="handleCreateBO(event)">
                     <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label text-muted" style="font-size: 0.82rem;">PC Destino Provisoria (AD / Red)</label>
+                            <input type="text" id="bo_target_pc_name" class="form-control font-mono" list="pcsList" placeholder="Ej: PC0006, JCC1-PC01...">
+                        </div>
                         <div class="mb-3">
                             <label class="form-label text-muted" style="font-size: 0.82rem;">Fuero / Oficina Destino</label>
                             <input type="text" id="bo_target_fuero" class="form-control" list="fuerosList" placeholder="Ej: JCC1, Juzgado de Instrucción 2...">
@@ -361,6 +370,7 @@
         async function handleCreateBO(e) {
             e.preventDefault();
             const body = {
+                target_pc_name: document.getElementById('bo_target_pc_name').value,
                 target_fuero: document.getElementById('bo_target_fuero').value,
                 target_user: document.getElementById('bo_target_user').value,
                 invoice_number: document.getElementById('bo_invoice').value,
@@ -382,6 +392,19 @@
                 }
             } catch (err) {
                 alert('Error al comunicar con el servidor');
+            }
+        }
+
+        async function generateAutoIdForBO(orderId) {
+            try {
+                const res = await fetch('/api/components/generate_auto_id?component_type=FUENTE');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const input = document.getElementById('bo_serial_' + orderId);
+                    if (input) input.value = data.serial_number;
+                }
+            } catch (err) {
+                alert('No se pudo generar el Auto ID');
             }
         }
 
@@ -408,11 +431,14 @@
             }
         }
 
-        function openCompleteModal(orderId, code, user, fuero) {
+        function openCompleteModal(orderId, code, user, fuero, targetPcName) {
             document.getElementById('complete_bo_id').value = orderId;
             document.getElementById('complete_bo_code').textContent = code;
             document.getElementById('complete_user').value = user;
             document.getElementById('complete_fuero').value = fuero;
+            if (targetPcName) {
+                document.getElementById('complete_pc_name').value = targetPcName;
+            }
             const modal = new bootstrap.Modal(document.getElementById('completeBuildOrderModal'));
             modal.show();
         }
