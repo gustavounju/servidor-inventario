@@ -27,6 +27,10 @@ CANONICAL_ALERTA_VALUES = {
     "critica",
     "media",
     "ninguna",
+    "pat_validados",
+    "pat_pendientes",
+    "pat_discrepancias",
+    "pat_sin_gemelo",
 }
 
 

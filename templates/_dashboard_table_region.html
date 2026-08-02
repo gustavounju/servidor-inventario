@@ -96,6 +96,15 @@
                                         {% if pc.tareas_pendientes %}
                                         <span class="inventory-mini-badge inventory-mini-badge--task">{{ pc.tareas_pendientes }}</span>
                                         {% endif %}
+                                        {% if pc.validation_status == 'validado' %}
+                                        <span class="badge bg-success bg-opacity-25 text-success border border-success ms-1" style="font-size: 0.6rem; padding: 1px 4px;" title="Gemelo Digital: Hardware validado con activo patrimonial"><i class="bi bi-shield-check"></i> Validado</span>
+                                        {% elif pc.validation_status == 'pendiente' %}
+                                        <span class="badge bg-warning bg-opacity-25 text-warning border border-warning ms-1" style="font-size: 0.6rem; padding: 1px 4px;" title="Gemelo Digital: Asignado, pendiente de sincronización del script"><i class="bi bi-clock"></i> Pendiente</span>
+                                        {% elif pc.validation_status == 'discrepancia' %}
+                                        <span class="badge bg-danger bg-opacity-25 text-danger border border-danger ms-1" style="font-size: 0.6rem; padding: 1px 4px;" title="Gemelo Digital: Discrepancia detectada entre activo y reporte script"><i class="bi bi-exclamation-triangle"></i> Discrepancia</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary ms-1" style="font-size: 0.6rem; padding: 1px 4px;" title="Gemelo Digital: Sin activo patrimonial registrado"><i class="bi bi-question-circle"></i> Sin Gemelo</span>
+                                        {% endif %}
                                     </div>
                                     {% if pc.last_report %}
                                     <div style="font-size:0.68rem;margin-top:3px;{% if pc.sin_reporte_30d %}color:#dc2626;font-weight:700;{% elif pc.dias_sin_reporte is not none and pc.dias_sin_reporte > 7 %}color:#d97706;{% else %}color:#9ca3af;{% endif %}">

@@ -263,6 +263,16 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
     kpi_tareas = 0
     total_rows = 0
     last_backup_info = "Sin backups"
+    # KPIs patrimoniales (Fase 4)
+    kpi_pat_validados = 0
+    kpi_pat_pendientes = 0
+    kpi_pat_discrepancias = 0
+    kpi_pat_sin_gemelo = 0
+    kpi_pat_total_activos = 0
+    kpi_pat_stock = 0
+    kpi_pat_desplegados = 0
+    kpi_pat_retirados = 0
+    kpi_pat_garantia_prox = 0
 
     alerta = normalize_alerta(alerta)
     offset = (page - 1) * per_page
@@ -292,6 +302,14 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 filter_sql += " AND p.alerta_ram_baja = 0 AND IF(p.alerta_sin_impresora = 1 AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) = 0 AND p.alerta_disco = 0 AND p.alerta_uptime = 0 AND p.alerta_nombre_duplicado = 0"
             elif alerta == "sin_impresora_inventario":
                 filter_sql += " AND (p.printer_model IS NULL OR p.printer_model = '' OR p.printer_model = 'N/A' OR UPPER(p.printer_model) IN ('NONE', '-') OR UPPER(p.printer_model) LIKE '%%SIN IMPRESORA%%') AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers)"
+            elif alerta == "pat_validados":
+                filter_sql += " AND p.validation_status = 'validado'"
+            elif alerta == "pat_pendientes":
+                filter_sql += " AND p.validation_status = 'pendiente'"
+            elif alerta == "pat_discrepancias":
+                filter_sql += " AND p.validation_status = 'discrepancia'"
+            elif alerta == "pat_sin_gemelo":
+                filter_sql += " AND (p.validation_status = 'sin_gemelo' OR p.validation_status IS NULL OR p.validation_status = '')"
 
             if os_param == "win7":
                 filter_sql += " AND p.os_name LIKE %s"
@@ -610,6 +628,43 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers)
             """).fetchone()["c"]
 
+            # ─── KPIs Patrimoniales (Fase 4) ────────────────────────────────
+            # Validation status: cuántas PCs activas tienen cada estado
+            _aux_filter = "pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'"
+            try:
+                kpi_pat_validados = conn.execute(
+                    f"SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND validation_status = 'validado' AND {_aux_filter}"
+                ).fetchone()["c"]
+                kpi_pat_pendientes = conn.execute(
+                    f"SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND validation_status = 'pendiente' AND {_aux_filter}"
+                ).fetchone()["c"]
+                kpi_pat_discrepancias = conn.execute(
+                    f"SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND validation_status = 'discrepancia' AND {_aux_filter}"
+                ).fetchone()["c"]
+                kpi_pat_sin_gemelo = conn.execute(
+                    f"SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND validation_status = 'sin_gemelo' AND {_aux_filter}"
+                ).fetchone()["c"]
+                # Activos en components (lifecycle_status Fase 3)
+                kpi_pat_total_activos = conn.execute(
+                    "SELECT COUNT(*) as c FROM components WHERE lifecycle_status IS NOT NULL AND lifecycle_status NOT IN ('retirado', 'scrap')"
+                ).fetchone()["c"]
+                kpi_pat_stock = conn.execute(
+                    "SELECT COUNT(*) as c FROM components WHERE lifecycle_status = 'stock'"
+                ).fetchone()["c"]
+                kpi_pat_desplegados = conn.execute(
+                    "SELECT COUNT(*) as c FROM components WHERE lifecycle_status = 'desplegado'"
+                ).fetchone()["c"]
+                kpi_pat_retirados = conn.execute(
+                    "SELECT COUNT(*) as c FROM components WHERE lifecycle_status IN ('retirado', 'scrap')"
+                ).fetchone()["c"]
+                # Alertas de garantía próxima a vencer (≤60 días)
+                kpi_pat_garantia_prox = conn.execute(
+                    "SELECT COUNT(*) as c FROM components WHERE warranty_until IS NOT NULL AND warranty_until BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND lifecycle_status = 'desplegado'"
+                ).fetchone()["c"]
+            except Exception as _pat_exc:
+                # Si la columna aún no existe (instancia pre-V49), los KPIs quedan en 0
+                pass
+
             all_pcs_dropdown = [dict(row) for row in conn.execute(
                 """SELECT p.pc_name, p.fuero, p.last_user, a.real_name 
                    FROM pcs p
@@ -709,4 +764,14 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
         "filter_tasks": filter_tasks,
         "last_backup_info": last_backup_info,
         "pending_users_list": pending_users_list,
+        # KPIs patrimoniales
+        "kpi_pat_validados": kpi_pat_validados,
+        "kpi_pat_pendientes": kpi_pat_pendientes,
+        "kpi_pat_discrepancias": kpi_pat_discrepancias,
+        "kpi_pat_sin_gemelo": kpi_pat_sin_gemelo,
+        "kpi_pat_total_activos": kpi_pat_total_activos,
+        "kpi_pat_stock": kpi_pat_stock,
+        "kpi_pat_desplegados": kpi_pat_desplegados,
+        "kpi_pat_retirados": kpi_pat_retirados,
+        "kpi_pat_garantia_prox": kpi_pat_garantia_prox,
     }
