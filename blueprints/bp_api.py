@@ -10,6 +10,7 @@ import re
 from database.db_core import get_db_connection
 from utils.constants import detect_fuero
 from utils.extensions import limiter
+from services.asset_validation import compute_validation_status
 
 bp_api = Blueprint('api', __name__)
 
@@ -388,6 +389,21 @@ def process_inventory_data(data):
                     """,
                     (pc_name, pm_extra, pp_extra, psn_extra, 1 if is_virtual_extra else 0)
                 )
+
+        # ─────────────────────────────────────────────────────────────────
+        # SISTEMA PATRIMONIAL — Calcular y persistir validation_status
+        # Se ejecuta dentro de la misma transacción del UPSERT para que
+        # el estado siempre refleje el último reporte del script.
+        # ─────────────────────────────────────────────────────────────────
+        try:
+            new_validation_status = compute_validation_status(pc_name, conn)
+            conn.execute(
+                "UPDATE pcs SET validation_status = %s WHERE pc_name = %s",
+                (new_validation_status, pc_name)
+            )
+        except Exception as vs_exc:
+            # No bloquear el flujo principal si falla la validación patrimonial
+            print(f"[PATRIMONIAL] Error calculando validation_status para {pc_name}: {vs_exc}")
 
         conn.commit()
 

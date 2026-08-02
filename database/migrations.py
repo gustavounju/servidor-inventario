@@ -649,6 +649,11 @@ def run_all_migrations():
     migrate_db_v46()
     migrate_db_v47()
     migrate_db_v48()
+    # Fase 1 — Sistema Patrimonial
+    migrate_db_v49()
+    # Fase 2 — Build Orders
+    migrate_db_v50()
+    migrate_db_v51()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1163,4 +1168,110 @@ def migrate_db_v48():
     print("Migración V48 verificada.")
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# FASE 1 — Sistema Patrimonial: validation_status en pcs
+# ─────────────────────────────────────────────────────────────────────────────
+
+def migrate_db_v49():
+    """
+    Migración V49: Agregar campo validation_status a la tabla pcs.
+
+    Este campo es el núcleo del sistema patrimonial: indica si la PC que
+    reportó el script .ps1 tiene un Gemelo Digital registrado y si coincide.
+
+    Valores posibles:
+      - 'sin_gemelo'   : El script reportó esta PC pero no hay activo patrimonial asignado.
+      - 'pendiente'    : Se registró un activo (Build Order) pero el script no corrió aún.
+      - 'validado'     : El script reportó y el hardware coincide con el activo registrado.
+      - 'discrepancia' : El script reportó pero el hardware cambió (posible reemplazo sin registrar).
+    """
+    print("Verificando migración de DB v49 (validation_status en pcs)...")
+    with get_db_connection() as conn:
+        if not _column_exists(conn, "pcs", "validation_status"):
+            print("Aplicando migración V49: agregando 'validation_status' a pcs...")
+            conn.execute(
+                "ALTER TABLE pcs ADD COLUMN validation_status VARCHAR(50) NOT NULL DEFAULT 'sin_gemelo'"
+            )
+            # Crear índice para filtros rápidos en dashboard
+            conn.execute(
+                "CREATE INDEX idx_pcs_validation_status ON pcs(validation_status)"
+            )
+            print("Migración V49 aplicada: columna validation_status creada.")
+        else:
+            print("Migración V49 verificada.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FASE 2 — Sistema Patrimonial: Build Orders
+# ─────────────────────────────────────────────────────────────────────────────
+
+def migrate_db_v50():
+    """
+    Migración V50: Crear tabla build_orders (Órdenes de Armado).
+
+    Formaliza el proceso de armado de puestos de trabajo que antes existía
+    informalmente a través de kit_name y assign_bundle.
+
+    Estados: draft | in_progress | completed | cancelled
+    """
+    print("Verificando migración de DB v50 (tabla build_orders)...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "build_orders"):
+            print("Aplicando migración V50: creando tabla build_orders...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS build_orders (
+                    id              INT AUTO_INCREMENT PRIMARY KEY,
+                    code            VARCHAR(50) UNIQUE NOT NULL,
+                    oc_number       VARCHAR(100) DEFAULT NULL,
+                    invoice_number  VARCHAR(100) DEFAULT NULL,
+                    status          VARCHAR(50) NOT NULL DEFAULT 'draft',
+                    target_fuero    VARCHAR(255) DEFAULT NULL,
+                    target_user     VARCHAR(255) DEFAULT NULL,
+                    notes           TEXT,
+                    created_by      VARCHAR(255),
+                    completed_at    DATETIME DEFAULT NULL,
+                    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+            conn.execute("CREATE INDEX idx_bo_status ON build_orders(status)")
+            conn.execute("CREATE INDEX idx_bo_oc ON build_orders(oc_number(50))")
+            print("Migración V50 aplicada: tabla build_orders creada.")
+        else:
+            print("Migración V50 verificada.")
+
+
+def migrate_db_v51():
+    """
+    Migración V51: Crear tabla build_order_items.
+
+    Cada ítem representa un componente (serial) asignado a una Orden de Armado,
+    incluyendo a qué PC quedó vinculado y quién lo escaneó.
+    """
+    print("Verificando migración de DB v51 (tabla build_order_items)...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "build_order_items"):
+            print("Aplicando migración V51: creando tabla build_order_items...")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS build_order_items (
+                    id              INT AUTO_INCREMENT PRIMARY KEY,
+                    build_order_id  INT NOT NULL,
+                    serial_number   VARCHAR(255),
+                    asset_type      VARCHAR(100),
+                    brand_model     TEXT,
+                    pc_name         VARCHAR(255) DEFAULT NULL,
+                    scanned_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    scanned_by      VARCHAR(255),
+                    FOREIGN KEY (build_order_id) REFERENCES build_orders(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """
+            )
+            conn.execute("CREATE INDEX idx_boi_order ON build_order_items(build_order_id)")
+            conn.execute("CREATE INDEX idx_boi_serial ON build_order_items(serial_number(100))")
+            print("Migración V51 aplicada: tabla build_order_items creada.")
+        else:
+            print("Migración V51 verificada.")
 

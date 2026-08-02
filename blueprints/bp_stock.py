@@ -1644,3 +1644,277 @@ def poll_scan_session(session_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SISTEMA PATRIMONIAL — Build Orders (Órdenes de Armado)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@bp_stock.route("/api/build_orders", methods=["GET"])
+def list_build_orders():
+    """Lista todas las Órdenes de Armado, con sus ítems agregados."""
+    try:
+        with get_db_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT bo.id, bo.code, bo.status, bo.oc_number, bo.invoice_number,
+                       bo.target_fuero, bo.target_user, bo.notes,
+                       bo.created_by, bo.completed_at, bo.created_at,
+                       COUNT(boi.id) AS total_items
+                FROM build_orders bo
+                LEFT JOIN build_order_items boi ON boi.build_order_id = bo.id
+                GROUP BY bo.id
+                ORDER BY bo.created_at DESC
+                LIMIT 200
+                """
+            ).fetchall()
+            result = []
+            for r in rows:
+                item = dict(r)
+                if item.get("created_at") and hasattr(item["created_at"], "strftime"):
+                    item["created_at"] = item["created_at"].strftime("%Y-%m-%d %H:%M")
+                if item.get("completed_at") and hasattr(item["completed_at"], "strftime"):
+                    item["completed_at"] = item["completed_at"].strftime("%Y-%m-%d %H:%M")
+                result.append(item)
+        return jsonify({"status": "success", "build_orders": result})
+    except Exception as e:
+        logging.error("Error en list_build_orders: %s", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/api/build_orders", methods=["POST"])
+def create_build_order():
+    """Crea una nueva Orden de Armado en estado 'draft'."""
+    if not check_stock_permission():
+        return jsonify({"status": "error", "message": "Acceso denegado."}), 403
+
+    try:
+        from utils.auth import current_technician_identity
+        tech = current_technician_identity()
+        data = request.json or {}
+
+        oc_number    = (data.get("oc_number") or "").strip() or None
+        invoice_number = (data.get("invoice_number") or "").strip() or None
+        target_fuero = (data.get("target_fuero") or "").strip() or None
+        target_user  = (data.get("target_user") or "").strip() or None
+        notes        = (data.get("notes") or "").strip() or None
+
+        with get_db_connection() as conn:
+            # Generar código único: BO-YYYY-NNNN
+            year = datetime.datetime.now().strftime("%Y")
+            count_row = conn.execute(
+                "SELECT COUNT(*) as cnt FROM build_orders WHERE YEAR(created_at) = %s", (year,)
+            ).fetchone()
+            seq = (count_row["cnt"] if count_row else 0) + 1
+            code = f"BO-{year}-{seq:04d}"
+
+            conn.execute(
+                """
+                INSERT INTO build_orders
+                    (code, oc_number, invoice_number, target_fuero, target_user, notes, created_by, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft')
+                """,
+                (code, oc_number, invoice_number, target_fuero, target_user, notes, tech)
+            )
+            new_id = conn.cursor.lastrowid
+
+        return jsonify({"status": "success", "id": new_id, "code": code}), 201
+    except Exception as e:
+        logging.error("Error en create_build_order: %s", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/api/build_orders/<int:order_id>/items", methods=["POST"])
+def add_build_order_item(order_id):
+    """
+    Agrega un componente (por serial) a una Orden de Armado activa.
+    Pone el estado de la BO en 'in_progress' si estaba en 'draft'.
+    """
+    if not check_stock_permission():
+        return jsonify({"status": "error", "message": "Acceso denegado."}), 403
+
+    try:
+        from utils.auth import current_technician_identity
+        tech = current_technician_identity()
+        data = request.json or {}
+        serial = (data.get("serial_number") or "").strip()
+        pc_name = (data.get("pc_name") or "").strip() or None
+
+        if not serial:
+            return jsonify({"status": "error", "message": "Falta serial_number."}), 400
+
+        with get_db_connection() as conn:
+            # Verificar que la BO existe y no está completada/cancelada
+            bo = conn.execute(
+                "SELECT id, status FROM build_orders WHERE id = %s", (order_id,)
+            ).fetchone()
+            if not bo:
+                return jsonify({"status": "error", "message": "Orden de Armado no encontrada."}), 404
+            if bo["status"] in ("completed", "cancelled"):
+                return jsonify({"status": "error", "message": f"La Orden ya está en estado '{bo['status']}'."}), 400
+
+            # Obtener datos del componente
+            comp = conn.execute(
+                "SELECT component_type, brand_model FROM components WHERE serial_number = %s", (serial,)
+            ).fetchone()
+            asset_type  = comp["component_type"] if comp else "Desconocido"
+            brand_model = comp["brand_model"] if comp else None
+
+            # Insertar ítem
+            conn.execute(
+                """
+                INSERT INTO build_order_items
+                    (build_order_id, serial_number, asset_type, brand_model, pc_name, scanned_by)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (order_id, serial, asset_type, brand_model, pc_name, tech)
+            )
+
+            # Poner la BO en in_progress si era draft
+            if bo["status"] == "draft":
+                conn.execute(
+                    "UPDATE build_orders SET status = 'in_progress' WHERE id = %s", (order_id,)
+                )
+
+        return jsonify({"status": "success", "serial": serial, "asset_type": asset_type})
+    except Exception as e:
+        logging.error("Error en add_build_order_item(%s): %s", order_id, e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/api/build_orders/<int:order_id>/complete", methods=["POST"])
+def complete_build_order(order_id):
+    """
+    Completa una Orden de Armado:
+    1. Llama a assign_bundle con los seriales de la BO.
+    2. Marca la BO como 'completed'.
+    3. Marca las PCs afectadas con validation_status = 'pendiente'.
+    """
+    if not check_stock_permission():
+        return jsonify({"status": "error", "message": "Acceso denegado."}), 403
+
+    try:
+        from utils.auth import current_technician_identity
+        from services.asset_validation import compute_validation_status
+        tech = current_technician_identity()
+        data = request.json or {}
+        pc_name       = (data.get("pc_name") or "").strip() or None
+        assigned_user = (data.get("assigned_user") or "").strip() or None
+        assigned_fuero = (data.get("assigned_fuero") or "").strip() or None
+
+        with get_db_connection() as conn:
+            bo = conn.execute(
+                "SELECT id, status, code FROM build_orders WHERE id = %s", (order_id,)
+            ).fetchone()
+            if not bo:
+                return jsonify({"status": "error", "message": "Orden no encontrada."}), 404
+            if bo["status"] == "completed":
+                return jsonify({"status": "error", "message": "La Orden ya fue completada."}), 400
+            if bo["status"] == "cancelled":
+                return jsonify({"status": "error", "message": "La Orden fue cancelada."}), 400
+
+            # Obtener ítems
+            items = conn.execute(
+                "SELECT serial_number, asset_type, brand_model FROM build_order_items WHERE build_order_id = %s",
+                (order_id,)
+            ).fetchall()
+
+            if not items:
+                return jsonify({"status": "error", "message": "La Orden no tiene ítems."}), 400
+
+            serials = [i["serial_number"] for i in items if i.get("serial_number")]
+
+            # Asignar cada componente (reutiliza la lógica de assign_bundle)
+            for serial in serials:
+                comp = conn.execute(
+                    "SELECT * FROM components WHERE serial_number = %s", (serial,)
+                ).fetchone()
+                if comp:
+                    new_status = "Installed" if pc_name else "Asignado"
+                    conn.execute(
+                        """
+                        UPDATE components
+                        SET status = %s, assigned_pc = %s, assigned_user = %s, assigned_fuero = %s, kit_name = NULL
+                        WHERE serial_number = %s
+                        """,
+                        (new_status, pc_name or None, assigned_user or None, assigned_fuero or None, serial)
+                    )
+
+            # Si hay pc_name y no existe en pcs, crearla
+            if pc_name and pc_name not in ("PC Generica",):
+                existing = conn.execute(
+                    "SELECT pc_name FROM pcs WHERE pc_name = %s", (pc_name,)
+                ).fetchone()
+                if not existing:
+                    conn.execute(
+                        """
+                        INSERT INTO pcs (pc_name, last_user, fuero, is_active, os_name, validation_status)
+                        VALUES (%s, %s, %s, 1, 'Equipo registrado desde Orden de Armado', 'pendiente')
+                        """,
+                        (pc_name, assigned_user or None, assigned_fuero or "Stock")
+                    )
+                else:
+                    # La PC ya existe: marcar como pendiente de validación
+                    conn.execute(
+                        "UPDATE pcs SET validation_status = 'pendiente' WHERE pc_name = %s",
+                        (pc_name,)
+                    )
+
+            # Marcar la BO como completada
+            conn.execute(
+                """
+                UPDATE build_orders
+                SET status = 'completed', completed_at = NOW()
+                WHERE id = %s
+                """,
+                (order_id,)
+            )
+
+            # Registrar en audit_logs
+            conn.execute(
+                """
+                INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    pc_name or "Stock",
+                    "BUILD_ORDER_COMPLETE",
+                    bo["code"],
+                    f"{len(serials)} componentes desplegados",
+                    tech, "BUILD_ORDER", request.remote_addr
+                )
+            )
+
+        return jsonify({
+            "status": "success",
+            "deployed_serials": serials,
+            "pc_name": pc_name,
+            "validation_status": "pendiente"
+        })
+    except Exception as e:
+        logging.error("Error en complete_build_order(%s): %s", order_id, e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SISTEMA PATRIMONIAL — Administración: recalcular validation_status
+# ─────────────────────────────────────────────────────────────────────────────
+
+@bp_stock.route("/api/admin/recalculate_validation", methods=["POST"])
+def admin_recalculate_validation():
+    """
+    Endpoint de administración: recalcula el validation_status de todas las PCs activas.
+    Solo accesible por superusuarios.
+    Útil para la pasada inicial post-migración V49 o después de cargas masivas de activos.
+    """
+    from utils.auth import current_user
+    user = current_user()
+    if not user or not user.get("is_superuser"):
+        return jsonify({"status": "error", "message": "Acceso exclusivo para administradores."}), 403
+
+    try:
+        from services.asset_validation import recalculate_all_validation_statuses
+        counts = recalculate_all_validation_statuses()
+        return jsonify({"status": "success", "counts": counts})
+    except Exception as e:
+        logging.error("Error en admin_recalculate_validation: %s", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
