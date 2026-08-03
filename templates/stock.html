@@ -185,12 +185,17 @@
                     <div class="modal-body p-4">
                         <!-- Remito Header -->
                         <div class="p-3 mb-3" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
-                            <h6 class="fw-bold text-info mb-3"><i class="bi bi-building me-1"></i>Datos del Remito / Licitación</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-info m-0"><i class="bi bi-building me-1"></i>Datos del Remito / Licitación</h6>
+                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="fillNoRemito()" style="font-size: 0.75rem;">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Sin Remito / Recuperado de Taller
+                                </button>
+                            </div>
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Proveedor / Empresa</label>
                                     <div class="input-group input-group-sm">
-                                        <input type="text" class="form-control bg-dark text-white border-secondary" id="inputSupplier" list="supplierList" placeholder="Ej: NOVA, BGH, Banghó..." required autocomplete="off">
+                                        <input type="text" class="form-control bg-dark text-white border-secondary" id="inputSupplier" list="supplierList" placeholder="Ej: NOVA, BGH (vacío p/ Taller)" autocomplete="off">
                                         <button class="btn btn-outline-secondary border-secondary text-info" type="button" onclick="openCatalogManager('supplier')" title="Gestionar proveedores (Modificar / Eliminar / Ver uso)">
                                             <i class="bi bi-gear-fill"></i>
                                         </button>
@@ -202,11 +207,11 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">N° de Remito / Factura</label>
-                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputRemito" placeholder="Ej: R0005400001550" required>
+                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputRemito" placeholder="Ej: R0005400 (vacío p/ Sin Remito)">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">N° Orden de Compra (OC)</label>
-                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputOc" placeholder="Ej: OC 185-2026">
+                                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputOc" placeholder="Ej: OC 185-2026 (Opcional)">
                                 </div>
                             </div>
                         </div>
@@ -997,7 +1002,9 @@
                 `;
             }
 
-            container.innerHTML = html;
+        function fillNoRemito() {
+            document.getElementById('inputSupplier').value = 'STOCK INTERNO / TALLER';
+            document.getElementById('inputRemito').value = 'SIN REMITO';
         }
 
         let kitRowIndex = 0;

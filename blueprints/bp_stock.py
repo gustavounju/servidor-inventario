@@ -654,8 +654,8 @@ def add_component():
 
         ctype = (data.get("component_type") or "").strip()
         model = (data.get("brand_model") or "").strip()
-        supplier = (data.get("supplier_name") or data.get("supplier") or "").strip()
-        invoice = (data.get("remito_number") or data.get("invoice_number") or "").strip()
+        supplier = (data.get("supplier_name") or data.get("supplier") or "").strip() or "STOCK INTERNO / TALLER"
+        invoice = (data.get("remito_number") or data.get("invoice_number") or "").strip() or "SIN REMITO"
         oc_num = (data.get("oc_number") or "").strip()
         assigned_user = (data.get("assigned_user") or "").strip()
         assigned_fuero = (data.get("assigned_fuero") or "").strip()
@@ -751,8 +751,8 @@ def add_components_batch():
             return jsonify({"status": "error", "message": "Acceso denegado: Solo los usuarios con el permiso 'Gestión Stock' pueden cargar nuevos remitos."}), 403
 
         data = request.json or {}
-        supplier = (data.get("supplier_name") or data.get("supplier") or "").strip()
-        invoice = (data.get("remito_number") or data.get("invoice_number") or "").strip()
+        supplier = (data.get("supplier_name") or data.get("supplier") or "").strip() or "STOCK INTERNO / TALLER"
+        invoice = (data.get("remito_number") or data.get("invoice_number") or "").strip() or "SIN REMITO"
         oc_num = (data.get("oc_number") or "").strip()
         assigned_user = (data.get("assigned_user") or "").strip()
         assigned_fuero = (data.get("assigned_fuero") or "").strip()
