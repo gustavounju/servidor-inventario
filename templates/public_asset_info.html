@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha Patrimonial - {{ pc_name }}</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .asset-card {
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 16px;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        .asset-header {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            padding: 20px;
+            text-align: center;
+        }
+        .asset-body {
+            padding: 24px;
+        }
+        .font-mono {
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="asset-card">
+        <div class="asset-header text-white">
+            <i class="bi bi-shield-check display-4 mb-2 d-block"></i>
+            <h5 class="fw-bold mb-0">Poder Judicial de Jujuy</h5>
+            <small class="opacity-75 font-monospace">Centro Judicial San Pedro • Departamento de Informática</small>
+        </div>
+
+        <div class="asset-body">
+            <div class="text-center mb-4">
+                <span class="badge bg-info text-dark font-monospace px-3 py-1 mb-2">BIEN PATRIMONIAL DSI</span>
+                <h3 class="fw-bold text-info font-mono mb-0">{{ pc_name }}</h3>
+                <small class="text-slate-400">Verificación de Inventario Oficial</small>
+            </div>
+
+            <div class="bg-dark p-3 rounded-3 border border-secondary mb-3">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-slate-400"><i class="bi bi-geo-alt-fill text-danger me-1"></i>Fuero / Ubicación:</span>
+                    <strong class="text-white">{{ fuero }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-slate-400"><i class="bi bi-pc-display text-info me-1"></i>S/N Gabinete / CPU:</span>
+                    <strong class="font-mono text-info">{{ cpu_sn }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-slate-400"><i class="bi bi-display text-warning me-1"></i>S/N Monitor:</span>
+                    <strong class="font-mono text-warning">{{ monitor_sn }}</strong>
+                </div>
+                {% if monitor_model and monitor_model != 'N/A' %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-slate-400"><i class="bi bi-card-list me-1"></i>Modelo Monitor:</span>
+                    <span class="text-light small">{{ monitor_model }}</span>
+                </div>
+                {% endif %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-slate-400"><i class="bi bi-receipt me-1"></i>N° Remito:</span>
+                    <span class="font-mono text-light">{{ invoice_list | join(', ') if invoice_list else 'SIN REMITO' }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-slate-400"><i class="bi bi-file-earmark-text me-1"></i>Orden de Compra:</span>
+                    <span class="font-mono text-light">{{ oc_list | join(', ') if oc_list else 'N/A' }}</span>
+                </div>
+            </div>
+
+            <div class="alert alert-success d-flex align-items-center py-2 px-3 small border-success mb-3" style="background: rgba(34, 197, 94, 0.1); color: #4ade80;">
+                <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                <div>Estado patrimonial <strong>AUDITADO Y REGISTRADO</strong> en el sistema de inventario judicial.</div>
+            </div>
+
+            {% if is_authenticated %}
+            <div class="text-center mt-3 border-top border-secondary pt-3">
+                <a href="{{ url_for('dashboard.pc_detail', pc_name=pc_name) }}" class="btn btn-outline-info btn-sm fw-bold w-100">
+                    <i class="bi bi-key-fill me-1"></i>Acceso Técnico Completo (Modo Administrador)
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card-footer bg-dark border-top border-secondary py-2 text-center text-muted small" style="font-size: 0.75rem;">
+            Sistema de Gestión de Inventario • Departamento de Informática
+        </div>
+    </div>
+
+</body>
+</html>

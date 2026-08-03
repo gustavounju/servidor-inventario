@@ -154,7 +154,7 @@ PUBLIC_ENDPOINTS = {
     "infrastructure.rack_audits_history",
     "stock.view_stock_kit_detail",
     "stock.kit_qr_label_view",
-    "dashboard.pc_detail",
+    "dashboard.public_asset_info",
     "dashboard.pc_qr_label_view"
 }
 

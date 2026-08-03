@@ -432,6 +432,35 @@ def pc_detail(pc_name):
         abort(404)
     return render_template("pc_detail.html", **ctx, fuero_colors=FUERO_COLORS)
 
+@bp_dashboard.route("/public/asset/<pc_name>")
+def public_asset_info(pc_name):
+    """
+    Vista pública restringida para escaneo de QR Patrimonial.
+    Muestra únicamente información básica institucional del bien (Equipo, Fuero, Remito, S/N Monitor)
+    sin exponer datos sensibles de usuarios, claves, red o historial.
+    """
+    ctx = get_pc_detail_context(pc_name)
+    if not ctx:
+        from flask import abort
+        abort(404)
+
+    pc = ctx.get("pc", {})
+    components = ctx.get("components", [])
+    monitor = next((c for c in components if (c.get("component_type") or "").upper() == "MONITOR"), None)
+    cpu = next((c for c in components if (c.get("component_type") or "").upper() in ["GABINETE", "CPU"]), None)
+
+    return render_template(
+        "public_asset_info.html",
+        pc_name=pc_name,
+        fuero=pc.get("fuero", "General"),
+        monitor_sn=monitor.get("serial_number") if monitor else "N/A",
+        monitor_model=monitor.get("brand_model") if monitor else "N/A",
+        cpu_sn=cpu.get("serial_number") if cpu else "N/A",
+        invoice_list=ctx.get("invoice_list", []),
+        oc_list=ctx.get("oc_list", []),
+        is_authenticated=is_authenticated()
+    )
+
 @bp_dashboard.route("/pc/<pc_name>/qr_label")
 def pc_qr_label_view(pc_name):
     """Renderiza la plantilla de doble etiqueta QR (Gabinete CPU + Monitor)."""
@@ -442,7 +471,7 @@ def pc_qr_label_view(pc_name):
     
     scheme = request.headers.get("X-Forwarded-Proto", request.scheme)
     server_host = request.host
-    qr_url = f"{scheme}://{server_host}/pc/{pc_name}"
+    qr_url = f"{scheme}://{server_host}/public/asset/{pc_name}"
     
     components = ctx.get("components", [])
     monitor_comp = next((c for c in components if (c.get("component_type") or "").upper() == "MONITOR"), None)

@@ -87,21 +87,21 @@
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code">
                 </div>
                 <div class="flex-grow-1 small">
-                    <div class="mb-1"><strong>Usuario:</strong> <span class="text-dark">{{ pc_info.last_user or 'No asignado' }}</span></div>
-                    <div class="mb-1"><strong>Fuero / Área:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
+                    <div class="mb-1"><strong>Equipo:</strong> <span class="text-dark font-mono fw-bold">{{ pc_name }}</span></div>
+                    <div class="mb-1"><strong>Fuero / Ubicación:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
                     <div class="mb-1" style="font-size:0.75rem;"><strong>Remito:</strong> <span class="font-mono text-primary">{{ invoice_list | join(', ') if invoice_list else 'N/A' }}</span> | <strong>O/C:</strong> <span class="font-mono text-dark">{{ oc_list | join(', ') if oc_list else 'N/A' }}</span></div>
                     
                     <div class="border-top pt-2 mt-2" style="font-size: 0.75rem;">
                         <div class="fw-bold text-muted mb-1"><i class="bi bi-diagram-3 me-1"></i>Periféricos Vinculados:</div>
-                        <div>• Monitor: <span class="font-mono fw-bold">{{ monitor_comp.serial_number if monitor_comp else 'Sin asignar' }}</span></div>
-                        <div>• Teclado: <span class="font-mono">{{ keyboard_comp.serial_number if keyboard_comp else 'N/A' }}</span></div>
-                        <div>• Mouse: <span class="font-mono">{{ mouse_comp.serial_number if mouse_comp else 'N/A' }}</span></div>
+                        <div>• Monitor S/N: <span class="font-mono fw-bold">{{ monitor_comp.serial_number if monitor_comp else 'Sin asignar' }}</span></div>
+                        <div>• Teclado S/N: <span class="font-mono">{{ keyboard_comp.serial_number if keyboard_comp else 'N/A' }}</span></div>
+                        <div>• Mouse S/N: <span class="font-mono">{{ mouse_comp.serial_number if mouse_comp else 'N/A' }}</span></div>
                     </div>
                 </div>
             </div>
 
             <div class="mt-3 text-center border-top pt-2 text-muted font-mono" style="font-size: 0.7rem;">
-                <i class="bi bi-qr-code me-1"></i>Escanear para acceder a la ficha técnica completa del equipo
+                <i class="bi bi-qr-code me-1"></i>Escanear para verificar la Ficha Patrimonial del Poder Judicial
             </div>
         </div>
 
@@ -125,14 +125,13 @@
                 <div class="flex-grow-1 small">
                     <div class="mb-1"><strong>S/N Monitor:</strong> <span class="font-mono fw-bold text-primary">{{ monitor_comp.serial_number if monitor_comp else 'Sin S/N' }}</span></div>
                     <div class="mb-1"><strong>Modelo:</strong> {{ monitor_comp.brand_model if monitor_comp else 'N/A' }}</div>
-                    <div class="mb-1"><strong>Asignado a:</strong> {{ pc_info.last_user or 'No asignado' }}</div>
-                    <div class="mb-1"><strong>Fuero / Área:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
+                    <div class="mb-1"><strong>Fuero / Ubicación:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
                     <div class="mb-1" style="font-size:0.75rem;"><strong>Remito:</strong> <span class="font-mono">{{ invoice_list | join(', ') if invoice_list else 'N/A' }}</span></div>
                 </div>
             </div>
 
             <div class="mt-3 text-center border-top pt-2 text-muted font-mono" style="font-size: 0.7rem;">
-                <i class="bi bi-qr-code me-1"></i>Escanear para verificar la CPU y oficina correspondiente
+                <i class="bi bi-qr-code me-1"></i>Escanear para verificar la Ficha Patrimonial del Poder Judicial
             </div>
         </div>
 
