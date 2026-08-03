@@ -121,24 +121,41 @@
         </div>
 
         <!-- Filters -->
-        <div class="card shadow-sm mb-3">
+        <!-- Filters -->
+        <div class="card shadow-sm mb-3" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
             <div class="card-body py-3">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label">Estado</label>
-                        <select id="filterStatus" class="form-select" onchange="loadComponents()">
-                            <option value="">Todos</option>
-                            <option value="Stock" selected>En Stock</option>
-                            <option value="Stock (Combo)">Combos / Kits en Depósito</option>
-                            <option value="Asignado">Asignados (Persona/Fuero)</option>
-                            <option value="Installed">Instalados en PC</option>
-                            <option value="Retirado">Retirados</option>
+                        <label class="form-label small fw-bold text-slate-300">Filtrar por Estado</label>
+                        <select id="filterStatus" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="loadComponents()">
+                            <option value="" selected>🔍 Todos los Estados (Stock, Asignados, Instalados)</option>
+                            <option value="Stock">📦 Solo En Stock (Libres)</option>
+                            <option value="Asignado">👤 Solo Asignados (Persona / Fuero)</option>
+                            <option value="Installed">⚙️ Solo Instalados en PC</option>
+                            <option value="Stock (Combo)">🧩 Combos / Kits en Depósito</option>
+                            <option value="Retirado">🗑️ Retirados de servicio</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Buscar (Serial / Remito / Usuario / Fuero)</label>
-                        <input type="text" id="stockSearchInput" class="form-control" placeholder="Buscar por remito, S/N, persona, fuero..."
-                            onkeyup="loadComponents()">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-slate-300">Filtrar por N° Remito / Factura</label>
+                        <select id="filterRemito" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="loadComponents()">
+                            <option value="">📄 Todos los Remitos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-slate-300">Filtrar por Proveedor</label>
+                        <select id="filterSupplier" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="loadComponents()">
+                            <option value="">🏢 Todos los Proveedores</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-slate-300">Búsqueda General</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="stockSearchInput" class="form-control bg-dark text-white border-secondary" placeholder="S/N, remito, OC, persona, fuero..." onkeyup="loadComponents()">
+                            <button type="button" class="btn btn-outline-secondary text-info" onclick="resetStockFilters()" title="Limpiar filtros">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1567,15 +1584,22 @@
             fetch('/api/components/list')
                 .then(res => res.json())
                 .then(data => {
+                    populateFilterDropdowns(data);
+
                     const tbody = document.getElementById('stockTableBody');
                     tbody.innerHTML = '';
                     clearComponentSelections();
 
                     const statusFilter = document.getElementById('filterStatus').value;
+                    const remitoFilter = document.getElementById('filterRemito')?.value || '';
+                    const supplierFilter = document.getElementById('filterSupplier')?.value || '';
                     const searchFilter = document.getElementById('stockSearchInput').value.toLowerCase();
 
                     const filtered = data.filter(item => {
                         const matchesStatus = !statusFilter || item.status === statusFilter;
+                        const matchesRemito = !remitoFilter || (item.invoice_number && item.invoice_number === remitoFilter);
+                        const matchesSupplier = !supplierFilter || (item.supplier && item.supplier === supplierFilter);
+
                         const searchStr = [
                             item.serial_number,
                             item.brand_model,
@@ -1589,11 +1613,11 @@
                         ].join(' ').toLowerCase();
 
                         const matchesSearch = !searchFilter || searchStr.includes(searchFilter);
-                        return matchesStatus && matchesSearch;
+                        return matchesStatus && matchesRemito && matchesSupplier && matchesSearch;
                     });
 
                     if (filtered.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-3 text-muted">No se encontraron componentes</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-3 text-muted">No se encontraron componentes con los filtros seleccionados</td></tr>';
                         return;
                     }
 
@@ -1656,6 +1680,37 @@
                     });
                 })
                 .catch(err => console.error("Error loading stock:", err));
+        }
+
+        function populateFilterDropdowns(data) {
+            const remitoSelect = document.getElementById('filterRemito');
+            const supplierSelect = document.getElementById('filterSupplier');
+            if (!remitoSelect || !supplierSelect) return;
+
+            const currRemito = remitoSelect.value;
+            const currSupplier = supplierSelect.value;
+
+            const remitos = new Set();
+            const suppliers = new Set();
+
+            data.forEach(item => {
+                if (item.invoice_number && item.invoice_number.trim()) remitos.add(item.invoice_number.trim());
+                if (item.supplier && item.supplier.trim()) suppliers.add(item.supplier.trim());
+            });
+
+            remitoSelect.innerHTML = '<option value="">📄 Todos los Remitos</option>' + 
+                Array.from(remitos).sort().map(r => `<option value="${escapeHtml(r)}"${r === currRemito ? ' selected' : ''}>${escapeHtml(r)}</option>`).join('');
+
+            supplierSelect.innerHTML = '<option value="">🏢 Todos los Proveedores</option>' + 
+                Array.from(suppliers).sort().map(s => `<option value="${escapeHtml(s)}"${s === currSupplier ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
+        }
+
+        function resetStockFilters() {
+            document.getElementById('filterStatus').value = '';
+            if (document.getElementById('filterRemito')) document.getElementById('filterRemito').value = '';
+            if (document.getElementById('filterSupplier')) document.getElementById('filterSupplier').value = '';
+            document.getElementById('stockSearchInput').value = '';
+            loadComponents();
         }
 
         function extractSerialFromOption(val) {
