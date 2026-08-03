@@ -80,32 +80,31 @@ def search_ad_users():
 
 def _ensure_stock_catalog_seeded(conn):
     try:
-        cnt_row = conn.execute("SELECT COUNT(*) as cnt FROM stock_catalogs").fetchone()
-        if not cnt_row or cnt_row['cnt'] == 0:
-            defaults = [
-                ('supplier', 'NOVA'), ('supplier', 'BGH'), ('supplier', 'Banghó'),
-                ('supplier', 'EXO'), ('supplier', 'HP'), ('supplier', 'Dell'),
-                ('supplier', 'Lenovo'), ('supplier', 'Kelyx'),
-                ('type', 'Monitor'), ('type', 'Teclado'), ('type', 'Mouse'),
-                ('type', 'CPU'), ('type', 'UPS'), ('type', 'Impresora'),
-                ('type', 'Disco'), ('type', 'Memoria'), ('type', 'Fuente'),
-                ('type', 'Gabinete'), ('type', 'Otro')
-            ]
-            for cat, val in defaults:
-                conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES (%s, %s)", (cat, val))
+        defaults = [
+            ('supplier', 'NOVA'), ('supplier', 'BGH'), ('supplier', 'Banghó'),
+            ('supplier', 'EXO'), ('supplier', 'HP'), ('supplier', 'Dell'),
+            ('supplier', 'Lenovo'), ('supplier', 'Kelyx'),
+            ('type', 'Monitor'), ('type', 'Teclado'), ('type', 'Mouse'),
+            ('type', 'CPU'), ('type', 'Procesador'), ('type', 'Motherboard'),
+            ('type', 'UPS'), ('type', 'Impresora'),
+            ('type', 'Disco'), ('type', 'Memoria'), ('type', 'Fuente'),
+            ('type', 'Gabinete'), ('type', 'Otro')
+        ]
+        for cat, val in defaults:
+            conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES (%s, %s)", (cat, val))
 
-            conn.execute("""
-                INSERT IGNORE INTO stock_catalogs (category, item_value)
-                SELECT 'supplier', supplier FROM components WHERE supplier IS NOT NULL AND TRIM(supplier) != ''
-            """)
-            conn.execute("""
-                INSERT IGNORE INTO stock_catalogs (category, item_value)
-                SELECT 'model', brand_model FROM components WHERE brand_model IS NOT NULL AND TRIM(brand_model) != ''
-            """)
-            conn.execute("""
-                INSERT IGNORE INTO stock_catalogs (category, item_value)
-                SELECT 'type', component_type FROM components WHERE component_type IS NOT NULL AND TRIM(component_type) != ''
-            """)
+        conn.execute("""
+            INSERT IGNORE INTO stock_catalogs (category, item_value)
+            SELECT 'supplier', supplier FROM components WHERE supplier IS NOT NULL AND TRIM(supplier) != ''
+        """)
+        conn.execute("""
+            INSERT IGNORE INTO stock_catalogs (category, item_value)
+            SELECT 'model', brand_model FROM components WHERE brand_model IS NOT NULL AND TRIM(brand_model) != ''
+        """)
+        conn.execute("""
+            INSERT IGNORE INTO stock_catalogs (category, item_value)
+            SELECT 'type', component_type FROM components WHERE component_type IS NOT NULL AND TRIM(component_type) != ''
+        """)
     except Exception as e:
         logging.warning("Error al inicializar el catálogo de stock: %s", e)
 
@@ -728,6 +727,10 @@ def add_component():
 
                 added_serials.append(curr_serial)
 
+            if ctype: conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES ('type', %s)", (ctype,))
+            if model: conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES ('model', %s)", (model,))
+            if supplier: conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES ('supplier', %s)", (supplier,))
+
             from utils.auth import current_technician_identity
             tech = current_technician_identity()
             if tech:
@@ -825,6 +828,10 @@ def add_components_batch():
                     raise insert_err
 
                 added_serials.append(curr_serial)
+
+                if ctype: conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES ('type', %s)", (ctype,))
+                if model: conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES ('model', %s)", (model,))
+            if supplier: conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES ('supplier', %s)", (supplier,))
 
             from utils.auth import current_technician_identity
             tech = current_technician_identity()

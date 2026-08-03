@@ -257,6 +257,8 @@
                                             <option value="Teclado">Teclado</option>
                                             <option value="Mouse">Mouse</option>
                                             <option value="CPU">CPU / Equipo Completo</option>
+                                            <option value="Procesador">Procesador / CPU</option>
+                                            <option value="Motherboard">Motherboard / Placa Madre</option>
                                             <option value="UPS">UPS / Batería</option>
                                             <option value="Impresora">Impresora</option>
                                             <option value="Disco">Disco Rígido / SSD</option>
@@ -540,14 +542,16 @@
                         const typeSel = document.getElementById('inputType');
 
                         if (sList && data.suppliers) {
-                            sList.innerHTML = data.suppliers.map(s => `<option value="${s}">`).join('');
+                            sList.innerHTML = data.suppliers.map(s => `<option value="${escapeHtml(s)}">`).join('');
                         }
                         if (mList && data.models) {
-                            mList.innerHTML = data.models.map(m => `<option value="${m}">`).join('');
+                            mList.innerHTML = data.models.map(m => `<option value="${escapeHtml(m)}">`).join('');
                         }
                         if (typeSel && data.types) {
-                            const currVal = typeSel.value;
-                            typeSel.innerHTML = data.types.map(t => `<option value="${t}" ${t === currVal ? 'selected' : ''}>${t}</option>`).join('');
+                            const defaultTypes = ['Monitor', 'Teclado', 'Mouse', 'CPU', 'Procesador', 'Motherboard', 'UPS', 'Impresora', 'Disco', 'Memoria', 'Fuente', 'Gabinete', 'Otro'];
+                            const mergedTypes = Array.from(new Set([...defaultTypes, ...data.types])).sort();
+                            const currVal = typeSel.value || 'Monitor';
+                            typeSel.innerHTML = mergedTypes.map(t => `<option value="${escapeHtml(t)}" ${t === currVal ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
                         }
                     }
                 })
