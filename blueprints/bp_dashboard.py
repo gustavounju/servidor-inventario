@@ -439,27 +439,75 @@ def public_asset_info(pc_name):
     Muestra únicamente información básica institucional del bien (Equipo, Fuero, Remito, S/N Monitor)
     sin exponer datos sensibles de usuarios, claves, red o historial.
     """
-    ctx = get_pc_detail_context(pc_name)
-    if not ctx:
-        from flask import abort
-        abort(404)
+    from utils.auth import is_authenticated
+    try:
+        ctx = get_pc_detail_context(pc_name)
+        if not ctx:
+            from flask import abort
+            abort(404)
 
-    pc = ctx.get("pc", {})
-    components = ctx.get("components", [])
-    monitor = next((c for c in components if (c.get("component_type") or "").upper() == "MONITOR"), None)
-    cpu = next((c for c in components if (c.get("component_type") or "").upper() in ["GABINETE", "CPU"]), None)
+        pc = ctx.get("pc", {}) or {}
+        components = ctx.get("components", []) or []
 
-    return render_template(
-        "public_asset_info.html",
-        pc_name=pc_name,
-        fuero=pc.get("fuero", "General"),
-        monitor_sn=monitor.get("serial_number") if monitor else "N/A",
-        monitor_model=monitor.get("brand_model") if monitor else "N/A",
-        cpu_sn=cpu.get("serial_number") if cpu else "N/A",
-        invoice_list=ctx.get("invoice_list", []),
-        oc_list=ctx.get("oc_list", []),
-        is_authenticated=is_authenticated()
-    )
+        def get_comp_val(comp, key):
+            if not comp:
+                return "N/A"
+            if isinstance(comp, dict):
+                return comp.get(key) or "N/A"
+            try:
+                return comp[key] or "N/A"
+            except Exception:
+                return "N/A"
+
+        def comp_type_upper(c):
+            val = get_comp_val(c, "component_type")
+            return (val or "").upper()
+
+        monitor = next((c for c in components if "MONITOR" in comp_type_upper(c)), None)
+        cpu = next((c for c in components if any(t in comp_type_upper(c) for t in ["GABINETE", "CPU"])), None)
+
+        monitor_sn = get_comp_val(monitor, "serial_number")
+        monitor_model = get_comp_val(monitor, "brand_model")
+        cpu_sn = get_comp_val(cpu, "serial_number")
+
+        user_auth = False
+        try:
+            user_auth = is_authenticated()
+        except Exception:
+            pass
+
+        fuero_val = "General"
+        if isinstance(pc, dict):
+            fuero_val = pc.get("fuero") or "General"
+        else:
+            try: fuero_val = pc["fuero"] or "General"
+            except Exception: pass
+
+        return render_template(
+            "public_asset_info.html",
+            pc_name=pc_name,
+            fuero=fuero_val,
+            monitor_sn=monitor_sn,
+            monitor_model=monitor_model,
+            cpu_sn=cpu_sn,
+            invoice_list=ctx.get("invoice_list", []),
+            oc_list=ctx.get("oc_list", []),
+            is_authenticated=user_auth
+        )
+    except Exception as err:
+        import logging
+        logging.error(f"Error en public_asset_info para {pc_name}: {err}", exc_info=True)
+        return render_template(
+            "public_asset_info.html",
+            pc_name=pc_name,
+            fuero="General",
+            monitor_sn="N/A",
+            monitor_model="N/A",
+            cpu_sn="N/A",
+            invoice_list=[],
+            oc_list=[],
+            is_authenticated=False
+        )
 
 @bp_dashboard.route("/pc/<pc_name>/qr_label")
 def pc_qr_label_view(pc_name):
