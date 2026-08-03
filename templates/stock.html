@@ -211,62 +211,119 @@
                             </div>
                         </div>
 
-                        <!-- Item Detail -->
-                        <h6 class="fw-bold text-warning mb-2"><i class="bi bi-box-seam me-1"></i>Detalle del Componente / Periférico</h6>
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Tipo de Componente</label>
-                                <div class="input-group input-group-sm">
-                                    <select class="form-select bg-dark text-white border-secondary" id="inputType" required>
-                                        <option value="Monitor">Monitor</option>
-                                        <option value="Teclado">Teclado</option>
-                                        <option value="Mouse">Mouse</option>
-                                        <option value="CPU">CPU / Equipo Completo</option>
-                                        <option value="UPS">UPS / Batería</option>
-                                        <option value="Impresora">Impresora</option>
-                                        <option value="Disco">Disco Rígido / SSD</option>
-                                        <option value="Memoria">Memoria RAM</option>
-                                        <option value="Fuente">Fuente de Poder</option>
-                                        <option value="Gabinete">Gabinete</option>
-                                        <option value="Otro">Otro Periférico</option>
-                                    </select>
-                                    <button class="btn btn-outline-secondary border-secondary text-info" type="button" onclick="openCatalogManager('type')" title="Gestionar tipos (Modificar / Eliminar / Ver uso)">
-                                        <i class="bi bi-gear-fill"></i>
-                                    </button>
-                                    <button class="btn btn-outline-info text-info border-secondary" type="button" onclick="promptAddCatalog('type')" title="Añadir rápido">
-                                        <i class="bi bi-plus-lg"></i>
-                                    </button>
+                        <!-- Mode Selector (Lote Único vs Equipo / Puesto Completo) -->
+                        <div class="btn-group w-100 mb-3" role="group">
+                            <input type="radio" class="btn-check" name="receptionMode" id="modeSingle" value="single" checked onchange="switchReceptionMode('single')">
+                            <label class="btn btn-outline-info font-monospace fw-bold py-2" for="modeSingle">
+                                <i class="bi bi-boxes me-1"></i> LOTE / COMPONENTE ÚNICO
+                            </label>
+                            <input type="radio" class="btn-check" name="receptionMode" id="modeKit" value="kit" onchange="switchReceptionMode('kit')">
+                            <label class="btn btn-outline-warning font-monospace fw-bold py-2" for="modeKit">
+                                <i class="bi bi-pc-display-horizontal me-1"></i> ⚡ RECEPCIÓN DE EQUIPO COMPLETO (MULTIESCAN)
+                            </label>
+                        </div>
+
+                        <!-- Item Detail (Modo Lote Único) -->
+                        <div id="singleComponentSection">
+                            <h6 class="fw-bold text-warning mb-2"><i class="bi bi-box-seam me-1"></i>Detalle del Componente / Periférico</h6>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Tipo de Componente</label>
+                                    <div class="input-group input-group-sm">
+                                        <select class="form-select bg-dark text-white border-secondary" id="inputType" required>
+                                            <option value="Monitor">Monitor</option>
+                                            <option value="Teclado">Teclado</option>
+                                            <option value="Mouse">Mouse</option>
+                                            <option value="CPU">CPU / Equipo Completo</option>
+                                            <option value="UPS">UPS / Batería</option>
+                                            <option value="Impresora">Impresora</option>
+                                            <option value="Disco">Disco Rígido / SSD</option>
+                                            <option value="Memoria">Memoria RAM</option>
+                                            <option value="Fuente">Fuente de Poder</option>
+                                            <option value="Gabinete">Gabinete</option>
+                                            <option value="Otro">Otro Periférico</option>
+                                        </select>
+                                        <button class="btn btn-outline-secondary border-secondary text-info" type="button" onclick="openCatalogManager('type')" title="Gestionar tipos (Modificar / Eliminar / Ver uso)">
+                                            <i class="bi bi-gear-fill"></i>
+                                        </button>
+                                        <button class="btn btn-outline-info text-info border-secondary" type="button" onclick="promptAddCatalog('type')" title="Añadir rápido">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Marca y Modelo</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control bg-dark text-white border-secondary" id="inputModel" list="modelList" placeholder="Ej: Philips 22 FHD 1920x1080" required autocomplete="off">
+                                        <button class="btn btn-outline-secondary border-secondary text-info" type="button" onclick="openCatalogManager('model')" title="Gestionar modelos (Modificar / Eliminar / Ver uso)">
+                                            <i class="bi bi-gear-fill"></i>
+                                        </button>
+                                        <button class="btn btn-outline-info text-info border-secondary" type="button" onclick="promptAddCatalog('model')" title="Añadir rápido">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                    </div>
+                                    <datalist id="modelList"></datalist>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Cantidad</label>
+                                    <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputQuantity" value="1" min="1" max="100" oninput="onQuantityChange()" onchange="onQuantityChange()">
                                 </div>
                             </div>
-                            <div class="col-md-5">
-                                <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Marca y Modelo</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="text" class="form-control bg-dark text-white border-secondary" id="inputModel" list="modelList" placeholder="Ej: Philips 22 FHD 1920x1080" required autocomplete="off">
-                                    <button class="btn btn-outline-secondary border-secondary text-info" type="button" onclick="openCatalogManager('model')" title="Gestionar modelos (Modificar / Eliminar / Ver uso)">
-                                        <i class="bi bi-gear-fill"></i>
-                                    </button>
-                                    <button class="btn btn-outline-info text-info border-secondary" type="button" onclick="promptAddCatalog('model')" title="Añadir rápido">
-                                        <i class="bi bi-plus-lg"></i>
-                                    </button>
+
+                            <div class="mb-3">
+                                <div id="serialsContainer">
+                                    <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Número de Serie / Código de Barras</label>
+                                    <input type="text" class="form-control form-control-sm font-monospace bg-dark text-white border-secondary serial-item-input" id="inputSerial" placeholder="Escanear o ingresar S/N de fábrica (ej: ZA12606000514)..." autocomplete="off">
                                 </div>
-                                <datalist id="modelList"></datalist>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Cantidad</label>
-                                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputQuantity" value="1" min="1" max="100" oninput="onQuantityChange()" onchange="onQuantityChange()">
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input bg-dark border-secondary" type="checkbox" id="chkAutoId" onchange="toggleSerialAutoId()">
+                                    <label class="form-check-label small" for="chkAutoId" style="color: #94a3b8;">
+                                        No tienen código de barras (generar IDs internos automáticamente)
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <div id="serialsContainer">
-                                <label class="form-label small fw-bold text-slate-300" style="color: #cbd5e1;">Número de Serie / Código de Barras</label>
-                                <input type="text" class="form-control form-control-sm font-monospace bg-dark text-white border-secondary serial-item-input" id="inputSerial" placeholder="Escanear o ingresar S/N de fábrica (ej: ZA12606000514)..." autocomplete="off">
+                        <!-- Item Detail (Modo Equipo Completo / Multiescan) -->
+                        <div id="kitComponentSection" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold text-warning m-0">
+                                    <i class="bi bi-cpu me-1"></i>Componentes del Equipo / Puesto Completo
+                                </h6>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="loadPresetKit()" title="Cargar plantilla estándar de Puesto de Trabajo">
+                                        <i class="bi bi-magic me-1"></i> Plantilla CPU Estándar
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success btn-sm" onclick="addKitRow()" title="Agregar otro componente a la lista">
+                                        <i class="bi bi-plus-lg me-1"></i> Agregar Fila
+                                    </button>
+                                </div>
                             </div>
-                            <div class="form-check mt-2">
-                                <input class="form-check-input bg-dark border-secondary" type="checkbox" id="chkAutoId" onchange="toggleSerialAutoId()">
-                                <label class="form-check-label small" for="chkAutoId" style="color: #94a3b8;">
-                                    No tienen código de barras (generar IDs internos automáticamente)
-                                </label>
+                            
+                            <div class="p-3 mb-3" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px;">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-sm align-middle mb-2" id="kitTable" style="font-size: 0.82rem;">
+                                        <thead>
+                                            <tr class="text-info border-secondary">
+                                                <th style="width: 25%;">Componente</th>
+                                                <th style="width: 35%;">Marca y Modelo</th>
+                                                <th style="width: 35%;">Número de Serie / Escáner S/N</th>
+                                                <th style="width: 5%; text-align: center;">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="kitTableBody">
+                                            <!-- Filas inyectadas por JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="small text-muted" style="font-size: 0.75rem;">
+                                        <i class="bi bi-info-circle me-1"></i>Los campos vacíos sin S/N recibirán automáticamente un ID interno (ej: INT-GAB-1024).
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="generateKitAutoSerials()" style="font-size: 0.75rem;">
+                                        <i class="bi bi-qr-code-scan me-1"></i>Marcar S/N Faltantes (Auto ID)
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -943,8 +1000,175 @@
             container.innerHTML = html;
         }
 
+        let kitRowIndex = 0;
+
+        function switchReceptionMode(mode) {
+            const singleSection = document.getElementById('singleComponentSection');
+            const kitSection = document.getElementById('kitComponentSection');
+            const singleType = document.getElementById('inputType');
+            const singleModel = document.getElementById('inputModel');
+
+            if (mode === 'kit') {
+                singleSection.style.display = 'none';
+                kitSection.style.display = 'block';
+                singleType.removeAttribute('required');
+                singleModel.removeAttribute('required');
+                if (document.querySelectorAll('#kitTableBody tr').length === 0) {
+                    loadPresetKit();
+                }
+            } else {
+                singleSection.style.display = 'block';
+                kitSection.style.display = 'none';
+                singleType.setAttribute('required', 'required');
+                singleModel.setAttribute('required', 'required');
+            }
+        }
+
+        function loadPresetKit() {
+            const tbody = document.getElementById('kitTableBody');
+            tbody.innerHTML = '';
+            const preset = [
+                { type: 'Gabinete', model: 'Gabinete ATX / CPU' },
+                { type: 'Motherboard', model: 'Motherboard H510M / LGA1200' },
+                { type: 'Disco', model: 'SSD 480GB SATA3' },
+                { type: 'Memoria', model: 'Memoria RAM DDR4 8GB' },
+                { type: 'Monitor', model: 'Monitor LED 22" Full HD' },
+                { type: 'Teclado', model: 'Teclado USB Español' },
+                { type: 'Mouse', model: 'Mouse Óptico USB' }
+            ];
+
+            preset.forEach(item => {
+                addKitRow(item.type, item.model);
+            });
+        }
+
+        function addKitRow(defaultType = 'Monitor', defaultModel = '') {
+            kitRowIndex++;
+            const tbody = document.getElementById('kitTableBody');
+            const tr = document.createElement('tr');
+            tr.id = `kit-row-${kitRowIndex}`;
+            tr.className = 'border-secondary';
+
+            tr.innerHTML = `
+                <td>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary kit-type-select">
+                        <option value="Gabinete" ${defaultType === 'Gabinete' ? 'selected' : ''}>Gabinete / CPU</option>
+                        <option value="Motherboard" ${defaultType === 'Motherboard' ? 'selected' : ''}>Motherboard</option>
+                        <option value="Disco" ${defaultType === 'Disco' ? 'selected' : ''}>Disco Rígido / SSD</option>
+                        <option value="Memoria" ${defaultType === 'Memoria' ? 'selected' : ''}>Memoria RAM</option>
+                        <option value="Fuente" ${defaultType === 'Fuente' ? 'selected' : ''}>Fuente de Poder</option>
+                        <option value="Monitor" ${defaultType === 'Monitor' ? 'selected' : ''}>Monitor</option>
+                        <option value="Teclado" ${defaultType === 'Teclado' ? 'selected' : ''}>Teclado</option>
+                        <option value="Mouse" ${defaultType === 'Mouse' ? 'selected' : ''}>Mouse</option>
+                        <option value="UPS" ${defaultType === 'UPS' ? 'selected' : ''}>UPS / Batería</option>
+                        <option value="Impresora" ${defaultType === 'Impresora' ? 'selected' : ''}>Impresora</option>
+                        <option value="Otro" ${defaultType === 'Otro' ? 'selected' : ''}>Otro Periférico</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary kit-model-input" list="modelList" value="${defaultModel}" placeholder="Marca y modelo..." autocomplete="off">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm font-monospace bg-dark text-white border-secondary kit-serial-input" placeholder="Escanear S/N (o vacío p/ Auto ID)..." autocomplete="off" onkeydown="handleKitSerialKeydown(event, this)">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm p-1" onclick="this.closest('tr').remove()" title="Quitar fila">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function handleKitSerialKeydown(e, inputEl) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const inputs = Array.from(document.querySelectorAll('.kit-serial-input'));
+                const idx = inputs.indexOf(inputEl);
+                if (idx !== -1 && idx < inputs.length - 1) {
+                    inputs[idx + 1].focus();
+                    inputs[idx + 1].select();
+                }
+            }
+        }
+
+        function generateKitAutoSerials() {
+            const inputs = document.querySelectorAll('.kit-serial-input');
+            inputs.forEach(inp => {
+                if (!inp.value.trim()) {
+                    inp.placeholder = "(Generación automática de ID al guardar)";
+                    inp.classList.add('border-warning');
+                }
+            });
+        }
+
         document.getElementById('addStockForm').addEventListener('submit', (e) => {
             e.preventDefault();
+
+            const mode = document.querySelector('input[name="receptionMode"]:checked')?.value || 'single';
+
+            if (mode === 'kit') {
+                const rows = document.querySelectorAll('#kitTableBody tr');
+                const kitItems = [];
+
+                rows.forEach(tr => {
+                    const ctype = tr.querySelector('.kit-type-select')?.value || '';
+                    const model = tr.querySelector('.kit-model-input')?.value.trim() || '';
+                    const serial = tr.querySelector('.kit-serial-input')?.value.trim() || '';
+
+                    if (ctype) {
+                        kitItems.push({
+                            component_type: ctype,
+                            brand_model: model,
+                            serial_number: serial
+                        });
+                    }
+                });
+
+                if (kitItems.length === 0) {
+                    alert("Debe ingresar al menos un componente en la lista del equipo completo.");
+                    return;
+                }
+
+                const payload = {
+                    supplier_name: document.getElementById('inputSupplier').value,
+                    remito_number: document.getElementById('inputRemito').value,
+                    oc_number: document.getElementById('inputOc').value,
+                    assigned_user: document.getElementById('addSelectedUser').value,
+                    assigned_fuero: document.getElementById('addResolvedFuero').value,
+                    items: kitItems
+                };
+
+                const submitBtn = document.querySelector('#addStockForm button[type="submit"]');
+                submitBtn.disabled = true;
+
+                fetch('/api/components/add_batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    submitBtn.disabled = false;
+                    if (data.status === 'success') {
+                        closeMobileScanSession();
+                        addStockModal.hide();
+                        document.getElementById('addStockForm').reset();
+                        switchReceptionMode('single');
+                        document.getElementById('modeSingle').checked = true;
+                        loadComponents();
+                        loadStockCatalog();
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(err => {
+                    submitBtn.disabled = false;
+                    alert("Error de red: " + err);
+                });
+
+                return;
+            }
 
             let serialsList = [];
             const isAutoId = document.getElementById('chkAutoId').checked;
