@@ -46,6 +46,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.documentElement.removeAttribute('data-theme');
     }
     updateThemeToggleIcons(activeTheme);
+
+    (function updateHeroDatetime() {
+        const el = document.getElementById('heroDatetime');
+        if (el) {
+            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const now = new Date();
+            const dayName = days[now.getDay()];
+            const day = now.getDate();
+            const month = months[now.getMonth()];
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            el.textContent = `${dayName} ${day} ${month} · ${h}:${m}:${s}`;
+        }
+        setTimeout(updateHeroDatetime, 1000);
+    })();
 });
 
 
