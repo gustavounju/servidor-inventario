@@ -41,81 +41,80 @@
     <!-- LADO DERECHO: HERRAMIENTAS DIRECTAS (Organizadas por Procesos) -->
     <div class="op-toolbar__tools-zone">
         
-        <!-- PROCESO 1: DASHBOARD (Solo visible si no estamos ya en el dashboard) -->
+        <!-- MÓDULOS PRINCIPALES (ACCESO DIRECTO) -->
         {% if request.endpoint != 'dashboard.dashboard' %}
         <a href="{{ url_for('dashboard.dashboard') }}" class="op-btn" title="Dashboard Principal">
             <i class="bi bi-speedometer2 me-1"></i>[ DASHBOARD ]
         </a>
         {% endif %}
 
-        <!-- PROCESO 2: PATRIMONIO Y STOCK -->
         {% if has_access('manage_stock') or has_access('infrastructure') %}
         <a href="{{ url_for('stock.stock_view') }}" class="op-btn op-btn--patrimonio {% if request.endpoint == 'stock.stock_view' %}op-btn--active{% endif %}" title="Gestión de Activos, Stock y Remitos">
             <i class="bi bi-box-seam me-1"></i>[ PATRIMONIO ]
         </a>
         {% endif %}
 
-        <!-- PROCESO 3: EQUIPOS BORRADOS (BAJAS / CEMENTERIO) -->
-        <a href="{{ url_for('dashboard.view_cementerio') }}" class="op-btn {% if request.args.get('estado') == 'False' %}op-btn--active{% endif %}" style="color: #f59e0b;" title="Ver Equipos Borrados y Dados de Baja (Cementerio)">
-            <i class="bi bi-archive me-1"></i>[ BAJAS / CEMENTERIO ]
-        </a>
-
-
-
-        <!-- PROCESO 4: VISOR DE TAREAS & TALLER -->
         {% if has_access('dashboard') %}
         <a href="{{ url_for('tasks.visor') }}" class="op-btn op-btn--visor {% if request.endpoint == 'tasks.visor' %}op-btn--active{% endif %}" title="Visor Global de Tareas de Técnicos">
             <i class="bi bi-eye-fill me-1"></i>[ VISOR ]
         </a>
-        <a href="{{ url_for('stock.build_orders_view') }}" class="op-btn op-btn--armado {% if request.endpoint == 'stock.build_orders_view' %}op-btn--active{% endif %}" title="Órdenes de Armado de Puestos">
-            <i class="bi bi-cpu me-1"></i>[ ARMADO ]
-        </a>
         {% endif %}
 
-
-        {% if current_user and current_user.get('role') == 'administrador' %}
-        <button class="op-btn op-btn--accent" data-bs-toggle="modal" data-bs-target="#createTaskModal" title="Crear Tarea / Intervención Rápidamente">
-            [+ TAREA]
-        </button>
-        {% endif %}
-
-        <span class="op-divider"></span>
-
-        <!-- PROCESO 5: AUDITORÍA GLOBAL DE ACTIVIDAD -->
-        <a href="{{ url_for('dashboard.global_activity') }}" class="op-btn {% if request.endpoint == 'dashboard.global_activity' %}op-btn--active{% endif %}" title="Historial Global de Auditoría y Registro de Eventos">
-            <i class="bi bi-shield-check me-1"></i>[ AUDITORÍA ]
-        </a>
-
-        <!-- PROCESO 6: INFRAESTRUCTURA GENERAL -->
         <a href="{{ url_for('infrastructure.index') }}" class="op-btn {% if request.endpoint and ('infrastructure' in request.endpoint or 'maps' in request.endpoint) %}op-btn--active{% endif %}" title="Gestión de Infraestructura, Switches, Racks y Redes">
             <i class="bi bi-diagram-3 me-1"></i>[ INFRAESTRUCTURA ]
         </a>
 
+        <!-- DROPDOWN OPERACIONES -->
+        <div class="op-dropdown">
+            <button type="button" class="op-btn" title="Ver Operaciones y Taller">
+                <i class="bi bi-grid-fill me-1"></i>[ OPERACIONES ▾ ]
+            </button>
+            <div class="op-dropdown-menu">
+                <a href="{{ url_for('dashboard.view_cementerio') }}" class="op-dropdown-item" style="color: #f59e0b;">
+                    <i class="bi bi-archive me-1"></i>[ BAJAS / CEMENTERIO ]
+                </a>
+                {% if has_access('dashboard') %}
+                <a href="{{ url_for('stock.build_orders_view') }}" class="op-dropdown-item op-btn--armado">
+                    <i class="bi bi-cpu me-1"></i>[ ARMADO DE PUESTOS ]
+                </a>
+                {% endif %}
+                <a href="{{ url_for('dashboard.global_activity') }}" class="op-dropdown-item">
+                    <i class="bi bi-shield-check me-1"></i>[ AUDITORÍA GLOBAL ]
+                </a>
+                {% if has_access('reports') %}
+                <button type="button" class="op-dropdown-item" data-bs-toggle="modal" data-bs-target="#reportsModal">
+                    <i class="bi bi-graph-up me-1"></i>[ REPORTES ]
+                </button>
+                <button type="button" class="op-dropdown-item" data-bs-toggle="modal" data-bs-target="#efemeridesModal">
+                    <i class="bi bi-calendar-event me-1"></i>[ EFEMÉRIDES ]
+                </button>
+                {% endif %}
+            </div>
+        </div>
 
-
-
-        <!-- PROCESO 6: REPORTES -->
-        {% if has_access('reports') %}
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#reportsModal" title="Informes y Estadísticas"><i class="bi bi-graph-up me-1"></i>[ REPORTES ]</a>
-        <a href="#" class="op-btn" data-bs-toggle="modal" data-bs-target="#efemeridesModal" title="Ver Efemérides">[ EFEMÉRIDES ]</a>
-        {% endif %}
-
-        <!-- PROCESO 7: MANTENIMIENTO & CONFIGURACIÓN -->
+        <!-- DROPDOWN SISTEMA Y CONFIGURACIÓN (Solo Administradores) -->
         {% if current_user and (current_user.get('is_superuser') or current_user.get('role') == 'administrador') %}
-        <button type="button" class="op-btn op-btn--mantenimiento" data-bs-toggle="modal" data-bs-target="#maintenanceModal" title="Modo Mantenimiento y Salud del Sistema">
-            <i class="bi bi-tools me-1"></i>[ MANTENIMIENTO ]
-        </button>
-
-        <button type="button" class="op-btn op-btn--config" data-bs-toggle="modal" data-bs-target="#configModal" title="Ajustes Globales del Sistema (Conexión BD y Active Directory)">
-            <i class="bi bi-gear me-1"></i>[ CONFIGURACIÓN ]
-        </button>
-        {% endif %}
-
-
-
-
-        {% if current_user.username in ['gmurad', 'dquiros'] %}
-        <a href="{{ url_for('vault.vault_index') }}" class="op-btn op-btn--vault">[ VAULT ]</a>
+        <div class="op-dropdown">
+            <button type="button" class="op-btn op-btn--config" title="Ajustes y Gestión del Sistema">
+                <i class="bi bi-gear-fill me-1"></i>[ GESTIÓN ▾ ]
+            </button>
+            <div class="op-dropdown-menu">
+                <button type="button" class="op-dropdown-item op-btn--accent" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                    <i class="bi bi-plus-circle me-1"></i>[+ NUEVA TAREA]
+                </button>
+                <button type="button" class="op-dropdown-item op-btn--mantenimiento" data-bs-toggle="modal" data-bs-target="#maintenanceModal">
+                    <i class="bi bi-tools me-1"></i>[ MANTENIMIENTO ]
+                </button>
+                <button type="button" class="op-dropdown-item op-btn--config" data-bs-toggle="modal" data-bs-target="#configModal">
+                    <i class="bi bi-gear me-1"></i>[ CONFIGURACIÓN ]
+                </button>
+                {% if current_user.username in ['gmurad', 'dquiros'] %}
+                <a href="{{ url_for('vault.vault_index') }}" class="op-dropdown-item op-btn--vault">
+                    <i class="bi bi-key me-1"></i>[ VAULT ]
+                </a>
+                {% endif %}
+            </div>
+        </div>
         {% endif %}
 
         <span class="op-divider"></span>
@@ -124,7 +123,6 @@
         <button type="button" onclick="toggleTheme()" class="op-btn theme-toggle-btn">
             [ ☀️ CLARO ]
         </button>
-
 
         <span class="op-divider"></span>
         <div class="op-user-label" title="Sesión activa">

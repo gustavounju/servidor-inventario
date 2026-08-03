@@ -4028,18 +4028,67 @@ body.has-fixed-header {
 .op-toolbar__tools-zone {
     display: flex;
     align-items: center;
-    gap: 2px;
+    justify-content: flex-end;
+    gap: 4px;
     height: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    overflow: visible;
     padding-right: 8px;
     min-width: 0;
     flex: 1;
 }
-.op-toolbar__tools-zone::-webkit-scrollbar {
+
+/* Dropdowns de Barra de Operaciones */
+.op-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+}
+
+.op-dropdown-menu {
     display: none;
+    position: absolute;
+    top: calc(100% - 2px);
+    right: 0;
+    min-width: 200px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    z-index: 1200;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.op-dropdown:hover .op-dropdown-menu,
+.op-dropdown:focus-within .op-dropdown-menu {
+    display: flex;
+}
+
+.op-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    color: var(--text-color);
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 4px;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.op-dropdown-item:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent-color);
 }
 
 .op-divider {
