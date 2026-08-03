@@ -471,6 +471,8 @@ def pc_qr_label_view(pc_name):
     
     scheme = request.headers.get("X-Forwarded-Proto", request.scheme)
     server_host = request.host
+    if any(h in server_host for h in ["localhost", "127.0.0.1", "0.0.0.0"]):
+        server_host = os.environ.get("SERVER_PUBLIC_HOST", "10.15.2.251:5000")
     qr_url = f"{scheme}://{server_host}/public/asset/{pc_name}"
     
     components = ctx.get("components", [])
