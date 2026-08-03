@@ -8,7 +8,7 @@
     <script>
       (function() {
         var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme');
-        if (pref === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        if (pref !== 'light') document.documentElement.setAttribute('data-theme', 'dark');
       })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">

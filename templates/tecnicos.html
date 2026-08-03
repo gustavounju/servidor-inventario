@@ -383,8 +383,8 @@
   <script>
     // Anti-FOUC: aplicar tema guardado antes de que el DOM se pinte
     (function() {
-        var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme') || 'light';
-        if (pref === 'dark') {
+        var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme') || 'dark';
+        if (pref !== 'light') {
             document.documentElement.setAttribute('data-theme', 'dark');
         } else {
             document.documentElement.removeAttribute('data-theme');
