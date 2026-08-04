@@ -550,6 +550,25 @@ def get_pc_detail_context(pc_name):
                     "oc_list": [c_dict["oc_number"]] if c_dict.get("oc_number") else [],
                     "invoice_list": [c_dict["invoice_number"]] if c_dict.get("invoice_number") else []
                 }
+        # Fallback 4: Buscar en build_orders / build_order_items por target_pc_name o pc_name
+        if not pc:
+            bo_match = conn.execute("""
+                SELECT bo.*, boi.pc_name as item_pc_name
+                FROM build_orders bo
+                LEFT JOIN build_order_items boi ON boi.build_order_id = bo.id
+                WHERE LOWER(bo.target_pc_name) = %s OR LOWER(boi.pc_name) = %s
+                LIMIT 1
+            """, (pc_name.lower(), pc_name.lower())).fetchone()
+            
+            if bo_match:
+                bo_dict = dict(bo_match)
+                pc_name_resolved = bo_dict.get("target_pc_name") or bo_dict.get("item_pc_name") or pc_name
+                pc = {
+                    "pc_name": pc_name_resolved,
+                    "last_user": bo_dict.get("target_user") or "Sin asignar",
+                    "fuero": bo_dict.get("target_fuero") or "General",
+                    "validation_status": "pendiente"
+                }
 
         if not pc:
             return None
