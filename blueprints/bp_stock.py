@@ -600,15 +600,14 @@ def build_orders_view():
                             val_status = p_data.get("validation_status")
                             break
 
-                # D) Coincidencia por fuero si hay PC validada en ese fuero
+                # D) Verificación por Fuero (sin sobrescribir nombre de PC para no duplicar equipos)
                 if not val_status and target_fuero:
                     tf_clean = _clean_str(target_fuero)
                     for p_key, p_data in pc_val_map.items():
                         f_clean = _clean_str(p_data.get("fuero"))
                         if tf_clean and (tf_clean in f_clean or f_clean in tf_clean):
                             if p_data.get("validation_status") == "validado":
-                                matched_pc_name = p_data.get("pc_name")
-                                val_status = p_data.get("validation_status")
+                                val_status = "validado"
                                 break
 
                 item_dict["target_pc_name"] = matched_pc_name or target_pc

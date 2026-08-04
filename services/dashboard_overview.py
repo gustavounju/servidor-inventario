@@ -644,10 +644,11 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 kpi_pat_sin_gemelo = conn.execute(
                     f"SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND validation_status = 'sin_gemelo' AND {_aux_filter}"
                 ).fetchone()["c"]
-                # Activos en components (lifecycle_status Fase 3)
+                # Gemelos Digitales (PCs Activas en pcs)
                 kpi_pat_total_activos = conn.execute(
-                    "SELECT COUNT(*) as c FROM components WHERE lifecycle_status IS NOT NULL AND lifecycle_status NOT IN ('retirado', 'scrap')"
+                    f"SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND {_aux_filter}"
                 ).fetchone()["c"]
+                # Activos en components (lifecycle_status Fase 3)
                 kpi_pat_stock = conn.execute(
                     "SELECT COUNT(*) as c FROM components WHERE lifecycle_status = 'stock'"
                 ).fetchone()["c"]
