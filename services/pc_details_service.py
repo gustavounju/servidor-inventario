@@ -241,93 +241,113 @@ def _parse_hardware_components(pc):
 
 def _enrich_components_with_remitos(conn, pc_components, hardware_components):
     comp_dicts = [dict(c) for c in pc_components]
-    serial_to_comp = {}
+    stock_monitors = [c for c in comp_dicts if (c.get("component_type") or "").strip().upper() == "MONITOR"]
+    hw_monitors = hardware_components.get("monitors") or []
+    
+    monitors_detail = []
+    serial_to_db_comp = {}
     for c in comp_dicts:
         sn = (c.get("serial_number") or "").strip().upper()
-        if sn and sn not in ("N/A", "SIN S/N"):
-            serial_to_comp[sn] = c
+        if sn and sn not in ("N/A", "SIN S/N", ""):
+            serial_to_db_comp[sn] = c
 
-    monitors_detail = []
-    # 1. Monitores desde la tabla `components`
-    for c in comp_dicts:
-        if (c.get("component_type") or "").strip().upper() == "MONITOR":
+    if not hw_monitors and stock_monitors:
+        for sm in stock_monitors:
             monitors_detail.append({
-                "brand_model": c.get("brand_model") or "Monitor Estándar",
-                "serial_number": c.get("serial_number") or "Sin S/N",
-                "invoice_number": c.get("invoice_number"),
-                "oc_number": c.get("oc_number"),
-                "supplier": c.get("supplier"),
+                "brand_model": sm.get("brand_model") or "Monitor Estándar",
+                "serial_number": sm.get("serial_number") or "Sin S/N",
+                "invoice_number": sm.get("invoice_number"),
+                "oc_number": sm.get("oc_number"),
+                "supplier": sm.get("supplier"),
                 "source": "stock"
             })
-
-    # 2. Monitores desde la auditoría de hardware (pcs.monitors / full_json)
-    hw_monitors = hardware_components.get("monitors") or []
-    for hw_m in hw_monitors:
-        m_model = hw_m.get("model") or "Monitor"
-        m_sn = (hw_m.get("serial") or "").strip()
-        m_sn_upper = m_sn.upper()
-
-        matched_idx = None
-        for idx, m in enumerate(monitors_detail):
-            existing_sn = (m.get("serial_number") or "").strip().upper()
-            if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N") and existing_sn == m_sn_upper:
-                matched_idx = idx
-                break
-
-        if matched_idx is not None:
-            if monitors_detail[matched_idx]["brand_model"] in ("Monitor", "Monitor Estándar", "Genérico"):
-                monitors_detail[matched_idx]["brand_model"] = m_model
-        else:
-            matched_db_comp = None
+    else:
+        unassigned_stock_monitors = list(stock_monitors)
+        
+        for hw_m in hw_monitors:
+            m_model = hw_m.get("model") or "Monitor Estándar"
+            m_sn = (hw_m.get("serial") or "").strip()
+            m_sn_upper = m_sn.upper()
+            
+            matched_stock = None
+            
+            # A) Buscar coincidencia exacta por S/N
             if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N", ""):
-                if m_sn_upper in serial_to_comp:
-                    matched_db_comp = serial_to_comp[m_sn_upper]
+                for sm in unassigned_stock_monitors:
+                    sm_sn = (sm.get("serial_number") or "").strip().upper()
+                    if sm_sn == m_sn_upper:
+                        matched_stock = sm
+                        break
+
+            # B) Si no hay match por S/N, tomar monitor de stock genérico/sin S/N
+            if not matched_stock and unassigned_stock_monitors:
+                for sm in unassigned_stock_monitors:
+                    sm_sn = (sm.get("serial_number") or "").strip().upper()
+                    if sm_sn in ("N/A", "SIN S/N", ""):
+                        matched_stock = sm
+                        break
+                if not matched_stock and len(unassigned_stock_monitors) == 1 and len(hw_monitors) == 1:
+                    matched_stock = unassigned_stock_monitors[0]
+
+            if matched_stock:
+                unassigned_stock_monitors.remove(matched_stock)
+
+            # C) Buscar Remito/OC en la tabla `components` si m_sn_upper existe en DB
+            matched_db_extra = None
+            if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N", ""):
+                if m_sn_upper in serial_to_db_comp:
+                    matched_db_extra = serial_to_db_comp[m_sn_upper]
                 else:
                     row = conn.execute(
                         "SELECT * FROM components WHERE UPPER(serial_number) = %s LIMIT 1",
                         (m_sn_upper,)
                     ).fetchone()
                     if row:
-                        matched_db_comp = dict(row)
+                        matched_db_extra = dict(row)
+
+            final_remito = matched_stock.get("invoice_number") if matched_stock else (matched_db_extra.get("invoice_number") if matched_db_extra else None)
+            final_oc = matched_stock.get("oc_number") if matched_stock else (matched_db_extra.get("oc_number") if matched_db_extra else None)
+            final_supplier = matched_stock.get("supplier") if matched_stock else (matched_db_extra.get("supplier") if matched_db_extra else None)
+            
+            final_model = m_model
+            if final_model in ("Monitor", "Monitor Estándar", "Genérico") and matched_stock and matched_stock.get("brand_model"):
+                final_model = matched_stock["brand_model"]
+
+            final_sn = m_sn if (m_sn and m_sn.upper() not in ("N/A", "SIN S/N")) else (matched_stock.get("serial_number") if matched_stock else "Sin S/N")
 
             monitors_detail.append({
-                "brand_model": m_model,
-                "serial_number": m_sn if m_sn else "Sin S/N",
-                "invoice_number": matched_db_comp.get("invoice_number") if matched_db_comp else None,
-                "oc_number": matched_db_comp.get("oc_number") if matched_db_comp else None,
-                "supplier": matched_db_comp.get("supplier") if matched_db_comp else None,
-                "source": "audit"
+                "brand_model": final_model,
+                "serial_number": final_sn if final_sn else "Sin S/N",
+                "invoice_number": final_remito,
+                "oc_number": final_oc,
+                "supplier": final_supplier,
+                "source": "merged"
+            })
+
+        for leftover in unassigned_stock_monitors:
+            monitors_detail.append({
+                "brand_model": leftover.get("brand_model") or "Monitor Estándar",
+                "serial_number": leftover.get("serial_number") or "Sin S/N",
+                "invoice_number": leftover.get("invoice_number"),
+                "oc_number": leftover.get("oc_number"),
+                "supplier": leftover.get("supplier"),
+                "source": "stock"
             })
 
     # 3. Componentes unificados
-    all_unified_components = list(comp_dicts)
+    all_unified_components = [c for c in comp_dicts if (c.get("component_type") or "").strip().upper() != "MONITOR"]
     existing_serials = { (c.get("serial_number") or "").strip().upper() for c in comp_dicts if c.get("serial_number") }
 
-    # Sincronizar todos los monitores de monitors_detail a all_unified_components
     for m in monitors_detail:
-        m_sn_upper = (m.get("serial_number") or "").strip().upper()
-        m_model = m.get("brand_model") or "Monitor"
-        exists = False
-        for c in all_unified_components:
-            c_type = (c.get("component_type") or "").upper()
-            c_sn = (c.get("serial_number") or "").strip().upper()
-            c_model = (c.get("brand_model") or "").strip()
-            if c_type == "MONITOR":
-                if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N") and c_sn == m_sn_upper:
-                    exists = True; break
-                elif c_model == m_model and (c_sn in ("N/A", "SIN S/N", "") or m_sn_upper in ("N/A", "SIN S/N", "")):
-                    exists = True; break
-        
-        if not exists:
-            all_unified_components.append({
-                "component_type": "Monitor",
-                "brand_model": m_model,
-                "serial_number": m.get("serial_number") or "Sin S/N",
-                "invoice_number": m.get("invoice_number"),
-                "oc_number": m.get("oc_number"),
-                "supplier": m.get("supplier"),
-                "source": m.get("source", "audit")
-            })
+        all_unified_components.append({
+            "component_type": "Monitor",
+            "brand_model": m.get("brand_model") or "Monitor Estándar",
+            "serial_number": m.get("serial_number") or "Sin S/N",
+            "invoice_number": m.get("invoice_number"),
+            "oc_number": m.get("oc_number"),
+            "supplier": m.get("supplier"),
+            "source": m.get("source", "merged")
+        })
 
     # Motherboard
     mb_hw = hardware_components.get("motherboard") or {}
