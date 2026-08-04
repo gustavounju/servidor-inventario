@@ -493,7 +493,19 @@ def build_orders_view():
             ).fetchall()
             stock_components = [dict(r) for r in stock_comps_rows]
 
-            # Órdenes de Armado existentes con sus ítems
+            # Obtener mapa de validación de PCs en red
+            pc_val_map = {}
+            try:
+                pc_rows = conn.execute(
+                    "SELECT LOWER(pc_name) as pc_key, pc_name, validation_status, is_active FROM pcs"
+                ).fetchall()
+                for pr in pc_rows:
+                    if pr.get("pc_key"):
+                        pc_val_map[pr["pc_key"]] = dict(pr)
+            except Exception:
+                pass
+
+            # Órdenes de Armado existentes con sus ítems y estado de validación WMI
             bo_rows = conn.execute(
                 """
                 SELECT bo.id, bo.code, bo.status, bo.oc_number, bo.invoice_number,
@@ -505,6 +517,9 @@ def build_orders_view():
             ).fetchall()
             
             build_orders_list = []
+            validados_count = 0
+            pendientes_count = 0
+
             for bo in bo_rows:
                 item_dict = dict(bo)
                 if item_dict.get("created_at") and hasattr(item_dict["created_at"], "strftime"):
@@ -525,6 +540,25 @@ def build_orders_view():
                 items_list = [dict(i) for i in items_rows]
                 item_dict["items"] = items_list
                 item_dict["order_items"] = items_list
+
+                # Determinar nombre de la PC vinculada
+                target_pc = (item_dict.get("target_pc_name") or "").strip()
+                if not target_pc:
+                    for it in items_list:
+                        if it.get("pc_name"):
+                            target_pc = it["pc_name"].strip()
+                            break
+
+                val_info = pc_val_map.get(target_pc.lower()) if target_pc else None
+                val_status = val_info.get("validation_status") if val_info else None
+                item_dict["validation_status"] = val_status
+                item_dict["pc_exists"] = bool(val_info)
+
+                if val_status == "validado":
+                    validados_count += 1
+                elif bo["status"] != "cancelled":
+                    pendientes_count += 1
+
                 build_orders_list.append(item_dict)
 
             # Fueros
@@ -552,6 +586,7 @@ def build_orders_view():
     except Exception as exc:
         logging.error("Error en build_orders_view: %s", exc)
         pcs, ad_users, stock_components, build_orders_list, fueros, remitos, ocs = [], [], [], [], [], [], []
+        validados_count, pendientes_count = 0, 0
 
     return render_template(
         "build_orders.html",
@@ -559,6 +594,8 @@ def build_orders_view():
         ad_users=ad_users,
         stock_components=stock_components,
         build_orders=build_orders_list,
+        validados_count=validados_count,
+        pendientes_count=pendientes_count,
         fueros=fueros,
         remitos=remitos,
         ocs=ocs
