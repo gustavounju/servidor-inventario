@@ -690,8 +690,55 @@ def get_pc_detail_context(pc_name):
 
             if bo_row:
                 linked_bo = dict(bo_row)
+
+                # Si la PC no tiene last_user o fuero en pcs, enriquecer con los datos de la Orden de Armado
+                pc_dict = dict(pc) if pc else {"pc_name": pc_name, "validation_status": "pendiente"}
+                if not pc_dict.get("last_user") and linked_bo.get("target_user"):
+                    pc_dict["last_user"] = linked_bo["target_user"]
+                if not pc_dict.get("fuero") and linked_bo.get("target_fuero"):
+                    pc_dict["fuero"] = linked_bo["target_fuero"]
+                pc = pc_dict
+
+                # Cargar ítems de la Orden de Armado
+                bo_items = conn.execute(
+                    """
+                    SELECT boi.serial_number, boi.asset_type as component_type, boi.brand_model, boi.pc_name,
+                           c.invoice_number, c.oc_number, c.supplier, c.status, c.build_order_id,
+                           bo.code as bo_code
+                    FROM build_order_items boi
+                    LEFT JOIN components c ON c.serial_number = boi.serial_number
+                    LEFT JOIN build_orders bo ON bo.id = boi.build_order_id
+                    WHERE boi.build_order_id = %s
+                    ORDER BY boi.scanned_at ASC
+                    """,
+                    (linked_bo["id"],)
+                ).fetchall()
+
+                existing_sns = {c.get("serial_number") for c in all_unified_components if c.get("serial_number")}
+                existing_mon_sns = {m.get("serial_number") for m in monitors_detail if m.get("serial_number")}
+
+                for bi in bo_items:
+                    b_dict = dict(bi)
+                    sn = b_dict.get("serial_number")
+                    if sn and sn not in existing_sns:
+                        existing_sns.add(sn)
+                        all_unified_components.append(b_dict)
+                    
+                    if (b_dict.get("component_type") or "").upper() == "MONITOR":
+                        if sn not in existing_mon_sns:
+                            existing_mon_sns.add(sn)
+                            monitors_detail.append({
+                                "brand_model": b_dict.get("brand_model") or "Monitor Estándar",
+                                "serial_number": sn or "Sin S/N",
+                                "invoice_number": b_dict.get("invoice_number"),
+                                "oc_number": b_dict.get("oc_number"),
+                                "supplier": b_dict.get("supplier"),
+                                "bo_code": b_dict.get("bo_code"),
+                                "status": b_dict.get("status") or "Reservado"
+                            })
+
         except Exception as bo_exc:
-            logger.warning("Error buscando linked_bo para %s: %s", pc_name, bo_exc)
+            logger.warning("Error buscando/enriqueciendo linked_bo para %s: %s", pc_name, bo_exc)
 
         return {
             "pc": pc, "tareas": tareas, "technicians": technicians, "ad_users_list": ad_users_list,
