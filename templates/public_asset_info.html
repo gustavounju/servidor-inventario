@@ -77,7 +77,27 @@
                     <span class="badge bg-warning text-dark px-3 py-1 fs-6"><i class="bi bi-clock-history me-1"></i>VERIFICADO</span>
                     {% endif %}
                 </div>
+            {% if is_standalone_component %}
+            <div class="mb-3">
+                {% set comp_item = components[0] if components else {} %}
+                {% if comp_item.status == 'Reservado' or comp_item.build_order_id %}
+                <div class="alert alert-warning border-warning text-dark py-2 px-3 fw-bold text-center small mb-2 font-mono" style="border-radius:10px; background-color: #fef08a;">
+                    <i class="bi bi-box-seam me-1 fs-5 align-middle"></i>
+                    RESERVADO EN ORDEN DE ARMADO: <strong>{{ comp_item.bo_code or ('BO #' ~ comp_item.build_order_id) }}</strong>
+                </div>
+                {% elif comp_item.assigned_pc or comp_item.assigned_user or comp_item.assigned_fuero %}
+                <div class="alert alert-info border-info text-dark py-2 px-3 fw-bold text-center small mb-2 font-mono" style="border-radius:10px; background-color: #bae6fd;">
+                    <i class="bi bi-person-badge me-1 fs-5 align-middle"></i>
+                    ASIGNADO A: <strong>{{ comp_item.assigned_pc or comp_item.assigned_user or comp_item.assigned_fuero }}</strong>
+                </div>
+                {% else %}
+                <div class="alert alert-success border-success text-dark py-2 px-3 fw-bold text-center small mb-2 font-mono" style="border-radius:10px; background-color: #bbf7d0;">
+                    <i class="bi bi-check-circle-fill me-1 fs-5 align-middle"></i>
+                    DISPONIBLE EN STOCK (DEPÓSITO)
+                </div>
+                {% endif %}
             </div>
+            {% endif %}
 
             <!-- DATOS DEL PUESTO -->
             <div class="bg-dark p-3 rounded-3 border border-secondary mb-3 small">
@@ -126,6 +146,12 @@
                             {% else %}
                             <span class="text-muted font-mono" style="font-size:0.68rem;">OC: Sin dato</span>
                             {% endif %}
+
+                            {% if m.status == 'Reservado' or m.build_order_id %}
+                            <span class="badge bg-warning text-dark font-mono" style="font-size:0.72rem;padding:3px 8px;"><i class="bi bi-box-seam me-1"></i>Reservado en Orden: <strong>{{ m.bo_code or ('BO #' ~ m.build_order_id) }}</strong></span>
+                            {% elif m.assigned_user or m.assigned_fuero or m.assigned_pc %}
+                            <span class="badge bg-info text-dark font-mono" style="font-size:0.72rem;padding:3px 8px;"><i class="bi bi-person-badge me-1"></i>Asignado a: <strong>{{ m.assigned_pc or m.assigned_user or m.assigned_fuero }}</strong></span>
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -157,7 +183,13 @@
                         <span class="oc-badge font-mono"><i class="bi bi-file-earmark-text me-1"></i>OC: <strong>{{ c.oc_number }}</strong></span>
                         {% endif %}
 
-                        {% if not c.invoice_number and not c.oc_number %}
+                        {% if c.status == 'Reservado' or c.build_order_id %}
+                        <span class="badge bg-warning text-dark font-mono" style="font-size:0.72rem;padding:3px 8px;"><i class="bi bi-box-seam me-1"></i>Reservado en Orden: <strong>{{ c.bo_code or ('BO #' ~ c.build_order_id) }}</strong></span>
+                        {% elif c.assigned_user or c.assigned_fuero or c.assigned_pc %}
+                        <span class="badge bg-info text-dark font-mono" style="font-size:0.72rem;padding:3px 8px;"><i class="bi bi-person-badge me-1"></i>Asignado a: <strong>{{ c.assigned_pc or c.assigned_user or c.assigned_fuero }}</strong></span>
+                        {% endif %}
+
+                        {% if not c.invoice_number and not c.oc_number and c.status != 'Reservado' and not c.assigned_pc and not c.assigned_user %}
                         <span class="text-muted font-mono" style="font-size:0.68rem;">Sin comprobante de compra adjunto</span>
                         {% endif %}
                     </div>

@@ -471,14 +471,16 @@ def build_orders_view():
             ).fetchall()
             ad_users = [dict(r) for r in ad_rows]
 
-            # Componentes en stock disponibles para agregar
+            # Componentes en stock disponibles para agregar (excluye reservados o asignados a BO/PC)
             stock_comps_rows = conn.execute(
                 """
-                SELECT serial_number, component_type, brand_model, supplier, lifecycle_status
+                SELECT serial_number, component_type, brand_model, supplier, lifecycle_status, status, build_order_id
                 FROM components
                 WHERE (status = 'Stock' OR status IS NULL OR lifecycle_status = 'stock')
                   AND (assigned_pc IS NULL OR assigned_pc = '')
                   AND (assigned_user IS NULL OR assigned_user = '')
+                  AND (build_order_id IS NULL OR build_order_id = 0)
+                  AND (status NOT IN ('Reservado', 'Asignado', 'Installed', 'Baja', 'En Reparacion'))
                 ORDER BY component_type ASC, brand_model ASC
                 """
             ).fetchall()
@@ -2162,7 +2164,7 @@ def manage_build_order(order_id):
 def add_build_order_item(order_id):
     """
     Agrega un componente (por serial) a una Orden de Armado activa.
-    Pone el estado de la BO en 'in_progress' si estaba en 'draft'.
+    Pone el estado de la BO en 'in_progress' si estaba en 'draft' y marca el componente como 'Reservado'.
     """
     if not check_stock_permission():
         return jsonify({"status": "error", "message": "Acceso denegado."}), 403
@@ -2180,7 +2182,7 @@ def add_build_order_item(order_id):
         with get_db_connection() as conn:
             # Verificar que la BO existe y no está completada/cancelada
             bo = conn.execute(
-                "SELECT id, status FROM build_orders WHERE id = %s", (order_id,)
+                "SELECT id, status, code, target_pc_name, target_user, target_fuero FROM build_orders WHERE id = %s", (order_id,)
             ).fetchone()
             if not bo:
                 return jsonify({"status": "error", "message": "Orden de Armado no encontrada."}), 404
@@ -2204,6 +2206,23 @@ def add_build_order_item(order_id):
                 (order_id, serial, asset_type, brand_model, pc_name, tech)
             )
 
+            # Marcar el componente en 'components' como 'Reservado' en esta Orden de Armado
+            tgt_pc = pc_name or bo.get("target_pc_name")
+            tgt_usr = bo.get("target_user")
+            tgt_fr = bo.get("target_fuero")
+            conn.execute(
+                """
+                UPDATE components
+                SET status = 'Reservado',
+                    build_order_id = %s,
+                    assigned_pc = COALESCE(%s, assigned_pc),
+                    assigned_user = COALESCE(%s, assigned_user),
+                    assigned_fuero = COALESCE(%s, assigned_fuero)
+                WHERE serial_number = %s
+                """,
+                (order_id, tgt_pc, tgt_usr, tgt_fr, serial)
+            )
+
             # Poner la BO en in_progress si era draft
             if bo["status"] == "draft":
                 conn.execute(
@@ -2218,7 +2237,7 @@ def add_build_order_item(order_id):
 
 @bp_stock.route("/api/build_orders/<int:order_id>/items/<path:serial>", methods=["DELETE"])
 def remove_build_order_item(order_id, serial):
-    """Quita un componente individual de una Orden de Armado activa (draft/in_progress)."""
+    """Quita un componente individual de una Orden de Armado activa y lo devuelve a Stock disponible."""
     if not check_stock_permission():
         return jsonify({"status": "error", "message": "Acceso denegado."}), 403
 
@@ -2241,6 +2260,20 @@ def remove_build_order_item(order_id, serial):
             )
             if deleted and deleted.rowcount == 0:
                 return jsonify({"status": "error", "message": "Ítem no encontrado en la orden."}), 404
+
+            # Restaurar el componente a estado 'Stock' disponible
+            conn.execute(
+                """
+                UPDATE components
+                SET status = 'Stock',
+                    build_order_id = NULL,
+                    assigned_pc = NULL,
+                    assigned_user = NULL,
+                    assigned_fuero = NULL
+                WHERE serial_number = %s
+                """,
+                (serial,)
+            )
 
             conn.execute(
                 """

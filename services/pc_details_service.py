@@ -243,6 +243,14 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
     comp_dicts = [dict(c) for c in pc_components]
     stock_monitors = [c for c in comp_dicts if (c.get("component_type") or "").strip().upper() == "MONITOR"]
     hw_monitors = hardware_components.get("monitors") or []
+
+    bo_map = {}
+    try:
+        bo_rows = conn.execute("SELECT id, code, target_pc_name, target_user, target_fuero FROM build_orders").fetchall()
+        for b in bo_rows:
+            bo_map[b["id"]] = dict(b)
+    except Exception:
+        pass
     
     monitors_detail = []
     serial_to_db_comp = {}
@@ -253,12 +261,20 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
 
     if not hw_monitors and stock_monitors:
         for sm in stock_monitors:
+            b_id = sm.get("build_order_id")
+            b_code = bo_map.get(b_id, {}).get("code") if b_id else None
             monitors_detail.append({
                 "brand_model": sm.get("brand_model") or "Monitor Estándar",
                 "serial_number": sm.get("serial_number") or "Sin S/N",
                 "invoice_number": sm.get("invoice_number"),
                 "oc_number": sm.get("oc_number"),
                 "supplier": sm.get("supplier"),
+                "status": sm.get("status") or "Stock",
+                "build_order_id": b_id,
+                "bo_code": b_code,
+                "assigned_pc": sm.get("assigned_pc"),
+                "assigned_user": sm.get("assigned_user"),
+                "assigned_fuero": sm.get("assigned_fuero"),
                 "source": "stock"
             })
     else:
@@ -305,15 +321,19 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
                     if row:
                         matched_db_extra = dict(row)
 
-            final_remito = matched_stock.get("invoice_number") if matched_stock else (matched_db_extra.get("invoice_number") if matched_db_extra else None)
-            final_oc = matched_stock.get("oc_number") if matched_stock else (matched_db_extra.get("oc_number") if matched_db_extra else None)
-            final_supplier = matched_stock.get("supplier") if matched_stock else (matched_db_extra.get("supplier") if matched_db_extra else None)
+            target_src = matched_stock or matched_db_extra or {}
+            final_remito = target_src.get("invoice_number")
+            final_oc = target_src.get("oc_number")
+            final_supplier = target_src.get("supplier")
+            final_status = target_src.get("status") or "Auditoria"
+            b_id = target_src.get("build_order_id")
+            b_code = bo_map.get(b_id, {}).get("code") if b_id else None
             
             final_model = m_model
             if final_model in ("Monitor", "Monitor Estándar", "Genérico") and matched_stock and matched_stock.get("brand_model"):
                 final_model = matched_stock["brand_model"]
 
-            final_sn = m_sn if (m_sn and m_sn.upper() not in ("N/A", "SIN S/N")) else (matched_stock.get("serial_number") if matched_stock else "Sin S/N")
+            final_sn = m_sn if (m_sn and m_sn.upper() not in ("N/A", "SIN S/N")) else (target_src.get("serial_number") if target_src.get("serial_number") else "Sin S/N")
 
             monitors_detail.append({
                 "brand_model": final_model,
@@ -321,22 +341,41 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
                 "invoice_number": final_remito,
                 "oc_number": final_oc,
                 "supplier": final_supplier,
+                "status": final_status,
+                "build_order_id": b_id,
+                "bo_code": b_code,
+                "assigned_pc": target_src.get("assigned_pc"),
+                "assigned_user": target_src.get("assigned_user"),
+                "assigned_fuero": target_src.get("assigned_fuero"),
                 "source": "merged"
             })
 
         for leftover in unassigned_stock_monitors:
+            b_id = leftover.get("build_order_id")
+            b_code = bo_map.get(b_id, {}).get("code") if b_id else None
             monitors_detail.append({
                 "brand_model": leftover.get("brand_model") or "Monitor Estándar",
                 "serial_number": leftover.get("serial_number") or "Sin S/N",
                 "invoice_number": leftover.get("invoice_number"),
                 "oc_number": leftover.get("oc_number"),
                 "supplier": leftover.get("supplier"),
+                "status": leftover.get("status") or "Stock",
+                "build_order_id": b_id,
+                "bo_code": b_code,
+                "assigned_pc": leftover.get("assigned_pc"),
+                "assigned_user": leftover.get("assigned_user"),
+                "assigned_fuero": leftover.get("assigned_fuero"),
                 "source": "stock"
             })
 
     # 3. Componentes unificados
-    all_unified_components = [c for c in comp_dicts if (c.get("component_type") or "").strip().upper() != "MONITOR"]
-    existing_serials = { (c.get("serial_number") or "").strip().upper() for c in comp_dicts if c.get("serial_number") }
+    all_unified_components = []
+    for c in comp_dicts:
+        if (c.get("component_type") or "").strip().upper() != "MONITOR":
+            c_dict = dict(c)
+            b_id = c_dict.get("build_order_id")
+            c_dict["bo_code"] = bo_map.get(b_id, {}).get("code") if b_id else None
+            all_unified_components.append(c_dict)
 
     for m in monitors_detail:
         all_unified_components.append({
@@ -346,6 +385,12 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
             "invoice_number": m.get("invoice_number"),
             "oc_number": m.get("oc_number"),
             "supplier": m.get("supplier"),
+            "status": m.get("status") or "Stock",
+            "build_order_id": m.get("build_order_id"),
+            "bo_code": m.get("bo_code"),
+            "assigned_pc": m.get("assigned_pc"),
+            "assigned_user": m.get("assigned_user"),
+            "assigned_fuero": m.get("assigned_fuero"),
             "source": m.get("source", "merged")
         })
 
