@@ -133,7 +133,7 @@
                                     <span class="bo-badge">{{ bo.status }}</span>
                                 {% endif %}
                             </td>
-                            <td style="max-width:240px;">
+                            <td style="max-width:260px;">
                                 {% if bo.target_pc_name %}
                                 <div class="d-flex align-items-center flex-wrap gap-1">
                                     <span style="color:#93c5fd;font-family:var(--font-mono);font-size:.82rem;font-weight:700;"><i class="bi bi-pc-display me-1"></i>{{ bo.target_pc_name }}</span>
@@ -145,12 +145,17 @@
                                     <span class="badge bg-danger text-white ms-1" style="font-size:0.62rem;padding:2px 6px;" title="Discrepancia patrimonial"><i class="bi bi-exclamation-triangle-fill me-1"></i>Discrepancia</span>
                                     {% endif %}
                                 </div>
-                                {% elif bo.target_user %}
-                                <span style="color:#c4b5fd;font-size:.82rem;"><i class="bi bi-person me-1"></i>{{ bo.target_user }}</span>
-                                {% elif bo.target_fuero %}
+                                {% endif %}
+
+                                {% if bo.target_user or bo.matched_user %}
+                                <div style="color:#c4b5fd;font-size:.8rem;" class="mt-1">
+                                    <i class="bi bi-person me-1"></i><strong>{{ bo.target_user or bo.matched_user }}</strong>
+                                </div>
+                                {% elif not bo.target_pc_name and bo.target_fuero %}
                                 <span style="color:#94a3b8;font-size:.82rem;"><i class="bi bi-building me-1"></i>{{ bo.target_fuero }}</span>
-                                {% else %}<span style="color:#475569;font-size:.8rem;">—</span>{% endif %}
-                                {% if bo.target_fuero and (bo.target_pc_name or bo.target_user) %}
+                                {% elif not bo.target_pc_name %}<span style="color:#475569;font-size:.8rem;">—</span>{% endif %}
+
+                                {% if bo.target_fuero and (bo.target_pc_name or bo.target_user or bo.matched_user) %}
                                 <div class="text-truncate" style="color:#64748b;font-size:.74rem;">· {{ bo.target_fuero }}</div>
                                 {% endif %}
                             </td>

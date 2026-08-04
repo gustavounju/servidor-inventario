@@ -610,7 +610,12 @@ def build_orders_view():
                                 val_status = "validado"
                                 break
 
+                matched_user = target_user
+                if not matched_user and matched_pc_name and _clean_str(matched_pc_name) in pc_val_map:
+                    matched_user = pc_val_map[_clean_str(matched_pc_name)].get("last_user")
+
                 item_dict["target_pc_name"] = matched_pc_name or target_pc
+                item_dict["matched_user"] = matched_user
                 item_dict["validation_status"] = val_status
                 item_dict["pc_exists"] = bool(val_status)
 
