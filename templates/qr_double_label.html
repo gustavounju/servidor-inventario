@@ -140,17 +140,22 @@
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code">
                 </div>
                 <div class="flex-grow-1 small">
-                    <div class="mb-1" style="font-size: 0.85rem;"><strong>S/N Monitor:</strong> <span class="font-mono fw-bold text-primary">{{ monitor_comp.serial_number if monitor_comp else 'Sin S/N' }}</span></div>
-                    <div class="mb-1"><strong>Modelo:</strong> {{ monitor_comp.brand_model if monitor_comp else 'Monitor Estándar' }}</div>
+                    {% set mon_sn = monitor_comp.serial_number if monitor_comp and monitor_comp.serial_number else (monitors_detail[0].serial_number if monitors_detail and monitors_detail[0].serial_number else 'Sin S/N') %}
+                    {% set mon_model = monitor_comp.brand_model if monitor_comp and monitor_comp.brand_model else (monitors_detail[0].brand_model if monitors_detail and monitors_detail[0].brand_model else 'Monitor Estándar') %}
+                    {% set mon_remito = monitor_comp.invoice_number if monitor_comp and monitor_comp.invoice_number else (monitors_detail[0].invoice_number if monitors_detail and monitors_detail[0].invoice_number else None) %}
+                    {% set mon_oc = monitor_comp.oc_number if monitor_comp and monitor_comp.oc_number else (monitors_detail[0].oc_number if monitors_detail and monitors_detail[0].oc_number else None) %}
+
+                    <div class="mb-1" style="font-size: 0.85rem;"><strong>S/N Monitor:</strong> <span class="font-mono fw-bold text-primary">{{ mon_sn }}</span></div>
+                    <div class="mb-1"><strong>Modelo:</strong> {{ mon_model }}</div>
                     <div class="mb-2"><strong>Fuero / Ubicación:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
                     
-                    {% if monitor_comp and (monitor_comp.invoice_number or monitor_comp.oc_number) %}
-                    <div class="border-top pt-2 mt-2">
-                        {% if monitor_comp.invoice_number %}
-                        <div><strong>Remito:</strong> <span class="font-mono text-dark">{{ monitor_comp.invoice_number }}</span></div>
+                    {% if mon_remito or mon_oc %}
+                    <div class="border-top pt-2 mt-2 font-mono">
+                        {% if mon_remito %}
+                        <div style="font-size:0.75rem;"><strong>Remito:</strong> <span class="text-dark fw-bold">{{ mon_remito }}</span></div>
                         {% endif %}
-                        {% if monitor_comp.oc_number %}
-                        <div><strong>Orden de Compra:</strong> <span class="font-mono text-dark">{{ monitor_comp.oc_number }}</span></div>
+                        {% if mon_oc %}
+                        <div style="font-size:0.75rem;"><strong>Orden de Compra:</strong> <span class="text-dark fw-bold">{{ mon_oc }}</span></div>
                         {% endif %}
                     </div>
                     {% endif %}

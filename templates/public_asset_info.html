@@ -21,7 +21,7 @@
             background: rgba(30, 41, 59, 0.95);
             border: 1px solid rgba(56, 189, 248, 0.35);
             border-radius: 16px;
-            max-width: 480px;
+            max-width: 520px;
             width: 100%;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
             overflow: hidden;
@@ -36,6 +36,22 @@
         }
         .font-mono {
             font-family: monospace;
+        }
+        .remito-badge {
+            background-color: #1e3a8a;
+            color: #93c5fd;
+            border: 1px solid #3b82f6;
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+        .oc-badge {
+            background-color: #064e3b;
+            color: #6ee7b7;
+            border: 1px solid #10b981;
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 6px;
         }
     </style>
 </head>
@@ -58,11 +74,12 @@
                     {% elif pc and pc.validation_status == 'discrepancia' %}
                     <span class="badge bg-danger text-white px-3 py-1 fs-6"><i class="bi bi-exclamation-triangle-fill me-1"></i>DISCREPANCIA PATRIMONIAL</span>
                     {% else %}
-                    <span class="badge bg-warning text-dark px-3 py-1 fs-6"><i class="bi bi-clock-history me-1"></i>PENDIENTE DE VERIFICACIÓN</span>
+                    <span class="badge bg-warning text-dark px-3 py-1 fs-6"><i class="bi bi-clock-history me-1"></i>VERIFICADO</span>
                     {% endif %}
                 </div>
             </div>
 
+            <!-- DATOS DEL PUESTO -->
             <div class="bg-dark p-3 rounded-3 border border-secondary mb-3 small">
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-secondary"><i class="bi bi-person-fill text-info me-1"></i>Usuario Asignado:</span>
@@ -72,16 +89,55 @@
                     <span class="text-secondary"><i class="bi bi-building text-warning me-1"></i>Fuero / Ubicación:</span>
                     <strong class="text-white">{{ (pc.fuero) if pc and pc.fuero else 'General' }}</strong>
                 </div>
+                {% if pc and pc.ip_address %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-secondary"><i class="bi bi-hdd-network text-success me-1"></i>IP Red:</span>
+                    <strong class="font-mono text-info">{{ pc.ip_address }}</strong>
+                </div>
+                {% endif %}
                 <div class="d-flex justify-content-between">
-                    <span class="text-secondary"><i class="bi bi-calendar-check me-1"></i>Último Reporte (.ps1):</span>
+                    <span class="text-secondary"><i class="bi bi-calendar-check me-1"></i>Último Reporte:</span>
                     <span class="font-mono text-light">{{ (pc.last_report) if pc and pc.last_report else 'Sin reporte previo' }}</span>
                 </div>
             </div>
 
-            <!-- COMPONENTES E INSUMOS VINCULADOS -->
+            <!-- SECCIÓN DESTACADA: MONITORES DEL PUESTO -->
+            <div class="bg-dark p-3 rounded-3 border border-info mb-3 small">
+                <h6 class="fw-bold text-info border-bottom border-secondary pb-2 mb-2 d-flex justify-content-between align-items-center" style="font-size:0.85rem;">
+                    <span><i class="bi bi-display me-1 text-cyan"></i>Monitor(es) Asociados</span>
+                    <span class="badge bg-info text-dark" style="font-size:0.65rem;">Sticker 2/2</span>
+                </h6>
+                {% if monitors_detail %}
+                    {% for m in monitors_detail %}
+                    <div class="mb-2 pb-2 {% if not loop.last %}border-bottom border-secondary{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-white fw-bold"><i class="bi bi-tv me-1 text-info"></i>{{ m.brand_model or 'Monitor Estándar' }}</span>
+                            <span class="font-mono text-info fw-bold" style="font-size:0.78rem;">S/N: {{ m.serial_number or 'Sin S/N' }}</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                            {% if m.invoice_number %}
+                            <span class="remito-badge font-mono"><i class="bi bi-receipt me-1"></i>Remito: <strong>{{ m.invoice_number }}</strong></span>
+                            {% else %}
+                            <span class="text-muted font-mono" style="font-size:0.68rem;">Remito: Sin dato</span>
+                            {% endif %}
+
+                            {% if m.oc_number %}
+                            <span class="oc-badge font-mono"><i class="bi bi-file-earmark-text me-1"></i>OC: <strong>{{ m.oc_number }}</strong></span>
+                            {% else %}
+                            <span class="text-muted font-mono" style="font-size:0.68rem;">OC: Sin dato</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-muted text-center py-1 style='font-size:0.75rem;'">Sin monitor registrado formalmente.</div>
+                {% endif %}
+            </div>
+
+            <!-- COMPONENTES E INSUMOS VINCULADOS (CPU / GABINETE / INTERNOS) -->
             <div class="bg-dark p-3 rounded-3 border border-secondary mb-3 small">
-                <h6 class="fw-bold text-info border-bottom border-secondary pb-2 mb-2" style="font-size:0.8rem;">
-                    <i class="bi bi-cpu me-1"></i>Componentes del Puesto (Armado)
+                <h6 class="fw-bold text-light border-bottom border-secondary pb-2 mb-2" style="font-size:0.8rem;">
+                    <i class="bi bi-cpu me-1 text-warning"></i>Componentes e Insumos del Puesto (Armado)
                 </h6>
                 {% for c in components %}
                 <div class="mb-2 pb-2 border-bottom border-secondary" style="border-bottom-style:dashed!important;">
@@ -92,12 +148,19 @@
                         </div>
                         <span class="font-mono text-info fw-bold" style="font-size:0.75rem;">S/N: {{ c.serial_number or 'Sin S/N' }}</span>
                     </div>
-                    {% if c.invoice_number or c.oc_number %}
-                    <div class="text-muted font-mono" style="font-size:0.68rem;padding-left:4px;">
-                        {% if c.invoice_number %}<span class="me-2"><i class="bi bi-receipt me-1"></i>Remito: {{ c.invoice_number }}</span>{% endif %}
-                        {% if c.oc_number %}<span><i class="bi bi-file-earmark-text me-1"></i>OC: {{ c.oc_number }}</span>{% endif %}
+                    <div class="d-flex flex-wrap gap-2 mt-1">
+                        {% if c.invoice_number %}
+                        <span class="remito-badge font-mono"><i class="bi bi-receipt me-1"></i>Remito: <strong>{{ c.invoice_number }}</strong></span>
+                        {% endif %}
+
+                        {% if c.oc_number %}
+                        <span class="oc-badge font-mono"><i class="bi bi-file-earmark-text me-1"></i>OC: <strong>{{ c.oc_number }}</strong></span>
+                        {% endif %}
+
+                        {% if not c.invoice_number and not c.oc_number %}
+                        <span class="text-muted font-mono" style="font-size:0.68rem;">Sin comprobante de compra adjunto</span>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
                 {% else %}
                 <div class="text-muted text-center py-2">No hay componentes vinculados registrados en la base.</div>

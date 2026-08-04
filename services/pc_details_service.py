@@ -148,8 +148,143 @@ def _parse_hardware_components(pc):
     }
 
 
+def _enrich_components_with_remitos(conn, pc_components, hardware_components):
+    comp_dicts = [dict(c) for c in pc_components]
+    serial_to_comp = {}
+    for c in comp_dicts:
+        sn = (c.get("serial_number") or "").strip().upper()
+        if sn and sn not in ("N/A", "SIN S/N"):
+            serial_to_comp[sn] = c
+
+    monitors_detail = []
+    # 1. Monitores desde la tabla `components`
+    for c in comp_dicts:
+        if (c.get("component_type") or "").strip().upper() == "MONITOR":
+            monitors_detail.append({
+                "brand_model": c.get("brand_model") or "Monitor Estándar",
+                "serial_number": c.get("serial_number") or "Sin S/N",
+                "invoice_number": c.get("invoice_number"),
+                "oc_number": c.get("oc_number"),
+                "supplier": c.get("supplier"),
+                "source": "stock"
+            })
+
+    # 2. Monitores desde la auditoría de hardware (pcs.monitors)
+    hw_monitors = hardware_components.get("monitors") or []
+    for hw_m in hw_monitors:
+        m_model = hw_m.get("model") or "Monitor"
+        m_sn = (hw_m.get("serial") or "").strip()
+        m_sn_upper = m_sn.upper()
+
+        already_added = any(
+            (m.get("serial_number") or "").strip().upper() == m_sn_upper 
+            for m in monitors_detail if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N")
+        )
+
+        if not already_added:
+            matched_db_comp = None
+            if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N", ""):
+                if m_sn_upper in serial_to_comp:
+                    matched_db_comp = serial_to_comp[m_sn_upper]
+                else:
+                    row = conn.execute(
+                        "SELECT * FROM components WHERE UPPER(serial_number) = %s LIMIT 1",
+                        (m_sn_upper,)
+                    ).fetchone()
+                    if row:
+                        matched_db_comp = dict(row)
+
+            monitors_detail.append({
+                "brand_model": m_model,
+                "serial_number": m_sn if m_sn else "Sin S/N",
+                "invoice_number": matched_db_comp.get("invoice_number") if matched_db_comp else None,
+                "oc_number": matched_db_comp.get("oc_number") if matched_db_comp else None,
+                "supplier": matched_db_comp.get("supplier") if matched_db_comp else None,
+                "source": "audit"
+            })
+
+    # 3. Componentes unificados
+    all_unified_components = list(comp_dicts)
+    existing_serials = { (c.get("serial_number") or "").strip().upper() for c in comp_dicts if c.get("serial_number") }
+
+    # Motherboard
+    mb_hw = hardware_components.get("motherboard") or {}
+    mb_model = mb_hw.get("model")
+    mb_sn = mb_hw.get("serial")
+    if mb_model and mb_model != "N/A":
+        mb_sn_upper = (mb_sn or "").strip().upper()
+        if not mb_sn_upper or mb_sn_upper not in existing_serials:
+            matched_db = None
+            if mb_sn_upper and mb_sn_upper not in ("N/A", "SIN S/N"):
+                row = conn.execute("SELECT * FROM components WHERE UPPER(serial_number) = %s LIMIT 1", (mb_sn_upper,)).fetchone()
+                if row: matched_db = dict(row)
+            all_unified_components.append({
+                "component_type": "Motherboard",
+                "brand_model": mb_model,
+                "serial_number": mb_sn if mb_sn else "N/A",
+                "invoice_number": matched_db.get("invoice_number") if matched_db else None,
+                "oc_number": matched_db.get("oc_number") if matched_db else None,
+                "supplier": matched_db.get("supplier") if matched_db else None,
+                "source": "audit"
+            })
+
+    # Procesador
+    proc_hw = hardware_components.get("processor")
+    if proc_hw and proc_hw != "N/A":
+        if not any((c.get("component_type") or "").upper() in ("PROCESADOR", "CPU") for c in all_unified_components):
+            all_unified_components.append({
+                "component_type": "Procesador",
+                "brand_model": proc_hw,
+                "serial_number": "N/A",
+                "invoice_number": None,
+                "oc_number": None,
+                "supplier": None,
+                "source": "audit"
+            })
+
+    # RAM
+    for ram in (hardware_components.get("ram_modules") or []):
+        r_sn = (ram.get("serial") or "").strip()
+        r_sn_upper = r_sn.upper()
+        if not r_sn_upper or r_sn_upper not in existing_serials:
+            matched_db = None
+            if r_sn_upper and r_sn_upper not in ("N/A", "SIN S/N"):
+                row = conn.execute("SELECT * FROM components WHERE UPPER(serial_number) = %s LIMIT 1", (r_sn_upper,)).fetchone()
+                if row: matched_db = dict(row)
+            all_unified_components.append({
+                "component_type": "Memoria RAM",
+                "brand_model": ram.get("spec") or "RAM",
+                "serial_number": r_sn if r_sn else "N/A",
+                "invoice_number": matched_db.get("invoice_number") if matched_db else None,
+                "oc_number": matched_db.get("oc_number") if matched_db else None,
+                "supplier": matched_db.get("supplier") if matched_db else None,
+                "source": "audit"
+            })
+
+    # Discos
+    for disk in (hardware_components.get("disks") or []):
+        d_sn = (disk.get("serial") or "").strip()
+        d_sn_upper = d_sn.upper()
+        if not d_sn_upper or d_sn_upper not in existing_serials:
+            matched_db = None
+            if d_sn_upper and d_sn_upper not in ("N/A", "SIN S/N"):
+                row = conn.execute("SELECT * FROM components WHERE UPPER(serial_number) = %s LIMIT 1", (d_sn_upper,)).fetchone()
+                if row: matched_db = dict(row)
+            all_unified_components.append({
+                "component_type": "Disco Rígido / SSD",
+                "brand_model": disk.get("model") or "Disco",
+                "serial_number": d_sn if d_sn else "N/A",
+                "invoice_number": matched_db.get("invoice_number") if matched_db else None,
+                "oc_number": matched_db.get("oc_number") if matched_db else None,
+                "supplier": matched_db.get("supplier") if matched_db else None,
+                "source": "audit"
+            })
+
+    return monitors_detail, all_unified_components
+
+
 def get_pc_detail_context(pc_name):
-    """Obtiene todo el contexto necesario para renderizar pc_detail.html."""
+    """Obtiene todo el contexto necesario para renderizar pc_detail.html y public_asset_info.html."""
     with get_db_connection() as conn:
         pc = conn.execute("""
             SELECT p.*, COALESCE(u.real_name, au.display_name) as ad_real_name 
@@ -159,6 +294,75 @@ def get_pc_detail_context(pc_name):
             WHERE p.pc_name = %s
         """, (pc_name,)).fetchone()
         
+        # Fallback 1: Buscar si pc_name es S/N de un componente asignado
+        if not pc:
+            comp_match = conn.execute("""
+                SELECT assigned_pc FROM components 
+                WHERE serial_number = %s AND assigned_pc IS NOT NULL AND assigned_pc != '' 
+                LIMIT 1
+            """, (pc_name,)).fetchone()
+            if comp_match:
+                pc_name = comp_match["assigned_pc"]
+                pc = conn.execute("""
+                    SELECT p.*, COALESCE(u.real_name, au.display_name) as ad_real_name 
+                    FROM pcs p 
+                    LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username 
+                    LEFT JOIN app_users au ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = au.username
+                    WHERE p.pc_name = %s
+                """, (pc_name,)).fetchone()
+
+        # Fallback 2: Buscar si pc_name está en las columnas auditadas de pcs
+        if not pc:
+            like_pat = f"%{pc_name}%"
+            pc_match = conn.execute("""
+                SELECT pc_name FROM pcs 
+                WHERE monitors LIKE %s OR motherboard_model LIKE %s OR disk_models LIKE %s OR ram_detalles LIKE %s 
+                LIMIT 1
+            """, (like_pat, like_pat, like_pat, like_pat)).fetchone()
+            if pc_match:
+                pc_name = pc_match["pc_name"]
+                pc = conn.execute("""
+                    SELECT p.*, COALESCE(u.real_name, au.display_name) as ad_real_name 
+                    FROM pcs p 
+                    LEFT JOIN ad_users u ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = u.username 
+                    LEFT JOIN app_users au ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = au.username
+                    WHERE p.pc_name = %s
+                """, (pc_name,)).fetchone()
+
+        # Fallback 3: Componente individual de inventario
+        if not pc:
+            standalone = conn.execute(
+                "SELECT * FROM components WHERE serial_number = %s OR id = %s LIMIT 1",
+                (pc_name, int(pc_name) if pc_name.isdigit() else -1)
+            ).fetchone()
+            if standalone:
+                c_dict = dict(standalone)
+                is_mon = (c_dict.get("component_type") or "").upper() == "MONITOR"
+                mon_list = [{
+                    "brand_model": c_dict.get("brand_model") or "Monitor",
+                    "serial_number": c_dict.get("serial_number") or "Sin S/N",
+                    "invoice_number": c_dict.get("invoice_number"),
+                    "oc_number": c_dict.get("oc_number"),
+                    "supplier": c_dict.get("supplier"),
+                    "source": "stock"
+                }] if is_mon else []
+                return {
+                    "is_standalone_component": True,
+                    "pc_name": f"COMPONENTE: {c_dict.get('component_type')} - {c_dict.get('brand_model')}",
+                    "pc": {
+                        "pc_name": c_dict.get("serial_number") or f"COMP-{c_dict.get('id')}",
+                        "last_user": c_dict.get("assigned_user") or "Sin asignar",
+                        "fuero": c_dict.get("assigned_fuero") or "Stock / Depósito",
+                        "validation_status": "validado" if c_dict.get("status") == "Asignado" else "pendiente"
+                    },
+                    "pc_components": [c_dict],
+                    "all_unified_components": [c_dict],
+                    "monitors_detail": mon_list,
+                    "hardware_components": {"motherboard": {"model": "N/A", "serial": "N/A"}, "ram_modules": [], "disks": [], "monitors": mon_list, "processor": "N/A"},
+                    "oc_list": [c_dict["oc_number"]] if c_dict.get("oc_number") else [],
+                    "invoice_list": [c_dict["invoice_number"]] if c_dict.get("invoice_number") else []
+                }
+
         if not pc:
             return None
 
@@ -259,6 +463,8 @@ def get_pc_detail_context(pc_name):
         disk_summary_lines = _build_disk_summary_lines(pc.get("disk_models"), pc.get("disk_speeds_rpm"))
         hardware_components = _parse_hardware_components(pc)
 
+        monitors_detail, all_unified_components = _enrich_components_with_remitos(conn, pc_components, hardware_components)
+
         preferred_printer_serial = pc.get("printer_sn")
         preferred_printer_serial_source = "pc"
         if (not preferred_printer_serial or preferred_printer_serial == "N/A") and assigned_network_printers:
@@ -271,6 +477,8 @@ def get_pc_detail_context(pc_name):
             "pc": pc, "tareas": tareas, "technicians": technicians, "ad_users_list": ad_users_list,
             "audit_logs": audit_logs, "all_pcs": all_pcs, "pc_ups_list": pc_ups_list,
             "available_ups": available_ups, "pc_components": pc_components,
+            "all_unified_components": all_unified_components,
+            "monitors_detail": monitors_detail,
             "available_components": available_components, "baterias_disponibles": baterias_disponibles,
             "sharing_pc": sharing_pc_data, "clients_using_this_printer": clients_using_this_printer,
             "assigned_network_printers": assigned_network_printers,

@@ -439,18 +439,20 @@ def public_asset_info(pc_name):
         from services.pc_details_service import get_pc_detail_context
         ctx = get_pc_detail_context(pc_name)
         if ctx:
-            components = ctx.get("pc_components") or ctx.get("components") or []
+            components = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
+            monitors_detail = ctx.get("monitors_detail") or []
             return render_template(
                 "public_asset_info.html",
                 **ctx,
                 components=components,
+                monitors_detail=monitors_detail,
                 is_authenticated=is_authenticated()
             )
     except Exception as e:
         import logging
         logging.error("Error en public_asset_info para %s: %s", pc_name, e)
 
-    return render_template("public_asset_info.html", pc_name=pc_name, pc={}, components=[], is_authenticated=False)
+    return render_template("public_asset_info.html", pc_name=pc_name, pc={}, components=[], monitors_detail=[], is_authenticated=False)
 
 @bp_dashboard.route("/pc/<pc_name>/qr_label")
 def pc_qr_label_view(pc_name):
@@ -466,9 +468,22 @@ def pc_qr_label_view(pc_name):
         server_host = os.environ.get("SERVER_PUBLIC_HOST", "10.15.2.251:5000")
     qr_url = f"{scheme}://{server_host}/public/asset/{pc_name}"
     
-    components = ctx.get("pc_components") or ctx.get("components") or []
+    components = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
+    monitors_detail = ctx.get("monitors_detail") or []
+    
     monitor_comp = next((c for c in components if (c.get("component_type") or "").upper() == "MONITOR"), None)
-    cpu_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["GABINETE", "CPU"]), None)
+    if not monitor_comp and monitors_detail:
+        first_mon = monitors_detail[0]
+        monitor_comp = {
+            "component_type": "MONITOR",
+            "brand_model": first_mon.get("brand_model"),
+            "serial_number": first_mon.get("serial_number"),
+            "invoice_number": first_mon.get("invoice_number"),
+            "oc_number": first_mon.get("oc_number"),
+            "supplier": first_mon.get("supplier")
+        }
+        
+    cpu_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["GABINETE", "CPU", "MOTHERBOARD"]), None)
     keyboard_comp = next((c for c in components if (c.get("component_type") or "").upper() == "TECLADO"), None)
     mouse_comp = next((c for c in components if (c.get("component_type") or "").upper() == "MOUSE"), None)
     
@@ -477,6 +492,7 @@ def pc_qr_label_view(pc_name):
         pc_name=pc_name,
         pc_info=ctx.get("pc", {}),
         components=components,
+        monitors_detail=monitors_detail,
         monitor_comp=monitor_comp,
         cpu_comp=cpu_comp,
         keyboard_comp=keyboard_comp,
