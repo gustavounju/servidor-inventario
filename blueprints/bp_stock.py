@@ -648,7 +648,7 @@ def build_orders_view():
     except Exception as exc:
         logging.error("Error en build_orders_view: %s", exc)
         pcs, ad_users, stock_components, build_orders_list, fueros, remitos, ocs = [], [], [], [], [], [], []
-        system_validados, system_sin_gemelo = 0, 0
+        validados_count, pendientes_count = 0, 0
 
     return render_template(
         "build_orders.html",
@@ -656,8 +656,8 @@ def build_orders_view():
         ad_users=ad_users,
         stock_components=stock_components,
         build_orders=build_orders_list,
-        validados_count=system_validados,
-        pendientes_count=system_sin_gemelo,
+        validados_count=validados_count,
+        pendientes_count=pendientes_count,
         fueros=fueros,
         remitos=remitos,
         ocs=ocs
