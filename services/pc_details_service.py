@@ -97,21 +97,71 @@ def _parse_hardware_components(pc):
                 model = d_str
             disk_list.append({"model": model, "serial": sn})
 
-    # Monitors
-    mon_raw = pc.get("monitors") or "N/A"
+def _parse_single_monitor_entry(m_str):
+    m_str = m_str.strip()
+    if not m_str:
+        return None
+    sn_match = re.search(r'[\(\[\{]\s*(?:SN|S/N|Serial|S\\N)\s*[:=]\s*([^\)\]\}]+)[\)\]\}]', m_str, re.IGNORECASE)
+    if sn_match:
+        sn = sn_match.group(1).strip()
+        model = m_str[:sn_match.start()].strip()
+        if not model:
+            model = m_str[sn_match.end():].strip() or "Monitor"
+        return {"model": model, "serial": sn}
+
+    return {"model": m_str, "serial": "N/A"}
+
+
+def _parse_monitors_string(mon_raw, full_json=None):
     mon_list = []
-    if mon_raw and mon_raw != "N/A":
-        for mon in mon_raw.split("|"):
-            m_str = mon.strip()
-            if not m_str: continue
-            sn = "N/A"
-            if " (SN: " in m_str:
-                m_parts = m_str.split(" (SN: ")
-                model = m_parts[0].strip()
-                sn = m_parts[1].replace(")", "").strip()
-            else:
-                model = m_str
-            mon_list.append({"model": model, "serial": sn})
+    if full_json and isinstance(full_json, dict):
+        json_mons = full_json.get("Monitors_Detail") or full_json.get("Monitors_List") or full_json.get("Detected_Monitors")
+        if isinstance(json_mons, list) and len(json_mons) > 0:
+            for item in json_mons:
+                if isinstance(item, dict):
+                    m_model = item.get("Model") or item.get("model") or item.get("Name") or "Monitor"
+                    m_sn = item.get("SerialNumber") or item.get("serial") or item.get("SN") or "N/A"
+                    mon_list.append({"model": str(m_model).strip(), "serial": str(m_sn).strip()})
+                elif isinstance(item, str) and item.strip():
+                    parsed = _parse_single_monitor_entry(item)
+                    if parsed: mon_list.append(parsed)
+
+    if mon_list:
+        return mon_list
+
+    if not mon_raw or mon_raw in ("N/A", "None", ""):
+        if full_json and isinstance(full_json, dict) and full_json.get("Monitors"):
+            mon_raw = str(full_json.get("Monitors"))
+
+    if not mon_raw or mon_raw in ("N/A", "None", ""):
+        return []
+
+    normalized_raw = mon_raw.replace("\r\n", "|").replace("\n", "|").replace(";", "|")
+    
+    if "|" not in normalized_raw and "," in normalized_raw:
+        if "SN:" in normalized_raw.upper() or "S/N:" in normalized_raw.upper() or normalized_raw.count(",") > 1:
+            normalized_raw = re.sub(r',\s*(?=[A-Za-z0-9])', '|', normalized_raw)
+
+    entries = [part.strip() for part in normalized_raw.split("|") if part.strip()]
+    for entry in entries:
+        if not entry or entry.upper() in ("N/A", "NONE"):
+            continue
+        parsed = _parse_single_monitor_entry(entry)
+        if parsed:
+            mon_list.append(parsed)
+
+    return mon_list
+
+
+def _parse_hardware_components(pc):
+    """
+    Formatea y estructura los componentes internos (Motherboard, RAM, Discos, CPU, Monitores) 
+    extrayendo marcas, modelos y números de serie físicos.
+    """
+    mb_raw = pc.get("motherboard_model") or "N/A"
+    ram_raw = pc.get("ram_detalles") or "N/A"
+    disk_raw = pc.get("disk_models") or "N/A"
+    proc_raw = pc.get("processor") or "N/A"
 
     # Keyboard & Mouse (from full_json_data or pc dict if present)
     full_json = {}
@@ -120,6 +170,47 @@ def _parse_hardware_components(pc):
             import json
             full_json = json.loads(pc["full_json_data"])
         except Exception: pass
+
+    # Motherboard
+    mb_info = {"model": mb_raw, "serial": "N/A"}
+    if " (SN: " in mb_raw:
+        parts = mb_raw.split(" (SN: ")
+        mb_info["model"] = parts[0].strip()
+        mb_info["serial"] = parts[1].replace(")", "").strip()
+
+    # RAM Modules
+    ram_list = []
+    if ram_raw and ram_raw != "N/A":
+        for module in ram_raw.split("|"):
+            mod_str = module.strip()
+            if not mod_str: continue
+            sn = "N/A"
+            if " (SN: " in mod_str:
+                m_parts = mod_str.split(" (SN: ")
+                spec = m_parts[0].strip()
+                sn = m_parts[1].replace(")", "").strip()
+            else:
+                spec = mod_str
+            ram_list.append({"spec": spec, "serial": sn})
+
+    # Disks
+    disk_list = []
+    if disk_raw and disk_raw != "N/A":
+        for disk in disk_raw.split("|"):
+            d_str = disk.strip()
+            if not d_str: continue
+            sn = "N/A"
+            if " [SN: " in d_str:
+                d_parts = d_str.split(" [SN: ")
+                model = d_parts[0].strip()
+                sn = d_parts[1].replace("]", "").strip()
+            else:
+                model = d_str
+            disk_list.append({"model": model, "serial": sn})
+
+    # Monitors
+    mon_raw = pc.get("monitors") or "N/A"
+    mon_list = _parse_monitors_string(mon_raw, full_json)
     
     keyboard_model = full_json.get("Keyboard_Model") or "Teclado USB Estándar"
     if not keyboard_model or keyboard_model in ("N/A", "None", ""):
@@ -169,19 +260,24 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
                 "source": "stock"
             })
 
-    # 2. Monitores desde la auditoría de hardware (pcs.monitors)
+    # 2. Monitores desde la auditoría de hardware (pcs.monitors / full_json)
     hw_monitors = hardware_components.get("monitors") or []
     for hw_m in hw_monitors:
         m_model = hw_m.get("model") or "Monitor"
         m_sn = (hw_m.get("serial") or "").strip()
         m_sn_upper = m_sn.upper()
 
-        already_added = any(
-            (m.get("serial_number") or "").strip().upper() == m_sn_upper 
-            for m in monitors_detail if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N")
-        )
+        matched_idx = None
+        for idx, m in enumerate(monitors_detail):
+            existing_sn = (m.get("serial_number") or "").strip().upper()
+            if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N") and existing_sn == m_sn_upper:
+                matched_idx = idx
+                break
 
-        if not already_added:
+        if matched_idx is not None:
+            if monitors_detail[matched_idx]["brand_model"] in ("Monitor", "Monitor Estándar", "Genérico"):
+                monitors_detail[matched_idx]["brand_model"] = m_model
+        else:
             matched_db_comp = None
             if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N", ""):
                 if m_sn_upper in serial_to_comp:
@@ -206,6 +302,32 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
     # 3. Componentes unificados
     all_unified_components = list(comp_dicts)
     existing_serials = { (c.get("serial_number") or "").strip().upper() for c in comp_dicts if c.get("serial_number") }
+
+    # Sincronizar todos los monitores de monitors_detail a all_unified_components
+    for m in monitors_detail:
+        m_sn_upper = (m.get("serial_number") or "").strip().upper()
+        m_model = m.get("brand_model") or "Monitor"
+        exists = False
+        for c in all_unified_components:
+            c_type = (c.get("component_type") or "").upper()
+            c_sn = (c.get("serial_number") or "").strip().upper()
+            c_model = (c.get("brand_model") or "").strip()
+            if c_type == "MONITOR":
+                if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N") and c_sn == m_sn_upper:
+                    exists = True; break
+                elif c_model == m_model and (c_sn in ("N/A", "SIN S/N", "") or m_sn_upper in ("N/A", "SIN S/N", "")):
+                    exists = True; break
+        
+        if not exists:
+            all_unified_components.append({
+                "component_type": "Monitor",
+                "brand_model": m_model,
+                "serial_number": m.get("serial_number") or "Sin S/N",
+                "invoice_number": m.get("invoice_number"),
+                "oc_number": m.get("oc_number"),
+                "supplier": m.get("supplier"),
+                "source": m.get("source", "audit")
+            })
 
     # Motherboard
     mb_hw = hardware_components.get("motherboard") or {}
