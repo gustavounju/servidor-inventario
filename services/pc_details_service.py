@@ -661,6 +661,38 @@ def get_pc_detail_context(pc_name):
                 preferred_printer_serial = first_assigned["serial_number"]
                 preferred_printer_serial_source = "assigned_network_printer"
 
+        # Buscar Orden de Armado vinculada a esta PC
+        linked_bo = None
+        try:
+            bo_row = conn.execute(
+                """
+                SELECT DISTINCT bo.id, bo.code, bo.status, bo.target_user, bo.target_fuero, bo.created_at
+                FROM build_orders bo
+                LEFT JOIN build_order_items boi ON boi.build_order_id = bo.id
+                WHERE LOWER(bo.target_pc_name) = %s OR LOWER(boi.pc_name) = %s
+                ORDER BY bo.created_at DESC LIMIT 1
+                """,
+                (pc_name.lower(), pc_name.lower())
+            ).fetchone()
+
+            if not bo_row:
+                bo_row = conn.execute(
+                    """
+                    SELECT DISTINCT bo.id, bo.code, bo.status, bo.target_user, bo.target_fuero, bo.created_at
+                    FROM build_orders bo
+                    JOIN build_order_items boi ON boi.build_order_id = bo.id
+                    JOIN components c ON c.serial_number = boi.serial_number
+                    WHERE LOWER(c.assigned_pc) = %s
+                    ORDER BY bo.created_at DESC LIMIT 1
+                    """,
+                    (pc_name.lower(),)
+                ).fetchone()
+
+            if bo_row:
+                linked_bo = dict(bo_row)
+        except Exception as bo_exc:
+            logger.warning("Error buscando linked_bo para %s: %s", pc_name, bo_exc)
+
         return {
             "pc": pc, "tareas": tareas, "technicians": technicians, "ad_users_list": ad_users_list,
             "audit_logs": audit_logs, "all_pcs": all_pcs, "pc_ups_list": pc_ups_list,
@@ -677,5 +709,6 @@ def get_pc_detail_context(pc_name):
             "preferred_printer_serial": preferred_printer_serial,
             "preferred_printer_serial_source": preferred_printer_serial_source,
             "oc_list": oc_list,
-            "invoice_list": invoice_list
+            "invoice_list": invoice_list,
+            "linked_bo": linked_bo
         }

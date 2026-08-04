@@ -504,17 +504,26 @@
     {% if validation_comparison %}
     <div class="card mb-4 shadow-sm" style="background:rgba(15,23,42,0.6);border:1px solid {% if pc.validation_status == 'discrepancia' %}rgba(239,68,68,0.5){% elif pc.validation_status == 'validado' %}rgba(34,197,94,0.3){% else %}rgba(234,179,8,0.3){% endif %};border-radius:12px;overflow:hidden;">
         <div class="card-header d-flex justify-content-between align-items-center" style="background:{% if pc.validation_status == 'discrepancia' %}rgba(239,68,68,0.18){% elif pc.validation_status == 'validado' %}rgba(34,197,94,0.12){% else %}rgba(234,179,8,0.12){% endif %};padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.08);">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 <i class="bi {% if pc.validation_status == 'discrepancia' %}bi-exclamation-triangle-fill text-danger{% elif pc.validation_status == 'validado' %}bi-patch-check-fill text-success{% else %}bi-clock-history text-warning{% endif %} fs-5"></i>
                 <h6 class="mb-0 font-display fw-bold" style="color:#f8fafc;">
                     Comparación de Gemelo Digital (Armado Patrimonial vs Script Telemetría)
                 </h6>
-                <span class="badge {% if pc.validation_status == 'discrepancia' %}bg-danger{% elif pc.validation_status == 'validado' %}bg-success{% else %}bg-warning text-dark{% endif %} ms-2" style="font-size:0.72rem;">
+                {% if linked_bo %}
+                <span class="badge bg-primary text-white ms-1 font-mono" style="font-size:0.75rem;padding:4px 8px;" title="Orden de Armado vinculada a este puesto">
+                    <i class="bi bi-box-seam me-1"></i>Orden: {{ linked_bo.code }}
+                </span>
+                {% else %}
+                <span class="badge bg-secondary text-light ms-1 font-mono" style="font-size:0.75rem;padding:4px 8px;" title="Sin Orden de Armado directa (Armado General por Componentes)">
+                    <i class="bi bi-boxes me-1"></i>Inventario General
+                </span>
+                {% endif %}
+                <span class="badge {% if pc.validation_status == 'discrepancia' %}bg-danger{% elif pc.validation_status == 'validado' %}bg-success{% else %}bg-warning text-dark{% endif %} ms-1" style="font-size:0.72rem;">
                     {{ pc.validation_status | upper if pc.validation_status else 'DESCONOCIDO' }}
                 </span>
             </div>
-            {% if pc.validation_status == 'discrepancia' %}
-            <button type="button" class="btn btn-sm btn-warning fw-bold py-1 px-3" onclick="homologarTelemetria('{{ pc.pc_name }}')" title="Aceptar el hardware detectado por el script como el nuevo estándar del equipo">
+            {% if pc.validation_status == 'discrepancia' or pc.validation_status == 'pendiente' %}
+            <button type="button" class="btn btn-sm btn-warning fw-bold py-1 px-3" onclick="homologarTelemetria('{{ pc.pc_name }}', '{{ linked_bo.code if linked_bo else '' }}')" title="Aceptar el hardware detectado por el script como el nuevo estándar del equipo">
                 <i class="bi bi-check-circle me-1"></i>⚡ Homologar Telemetría
             </button>
             {% endif %}
@@ -3838,8 +3847,10 @@
   </div>
 
   <script>
-    async function homologarTelemetria(pcName) {
-      if (!confirm(`¿Homologar telemetría para ${pcName}?\nEsto consolidará los componentes reportados por el script como el nuevo estado del activo patrimonial.`)) {
+    async function homologarTelemetria(pcName, boCode = '') {
+      const orderInfo = boCode ? `\n(Vinculada a Orden de Armado: ${boCode})` : '';
+      const confirmMsg = `¿Homologar telemetría para ${pcName}?${orderInfo}\n\nEsto consolidará los componentes detectados por el script en vivo como el nuevo estado oficial del activo patrimonial.`;
+      if (!confirm(confirmMsg)) {
         return;
       }
       try {
