@@ -2012,13 +2012,19 @@ def create_build_order():
 
         with get_db_connection() as conn:
             # Generar código único: BO-YYYY-NNNN
-            year = datetime.datetime.now().strftime("%Y")
-            count_row = conn.execute(
-                "SELECT COUNT(*) as cnt FROM build_orders WHERE YEAR(created_at) = %s", (year,)
-            ).fetchone()
-            seq = (count_row["cnt"] if count_row else 0) + 1
-            code = f"BO-{year}-{seq:04d}"
-
+            custom_code = (data.get("code") or "").strip()
+            if custom_code:
+                dup = conn.execute("SELECT id FROM build_orders WHERE code = %s", (custom_code,)).fetchone()
+                if dup:
+                    return jsonify({"status": "error", "message": f"El código '{custom_code}' ya existe."}), 400
+                code = custom_code
+            else:
+                year = datetime.datetime.now().strftime("%Y")
+                count_row = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM build_orders WHERE YEAR(created_at) = %s", (year,)
+                ).fetchone()
+                seq = (count_row["cnt"] if count_row else 0) + 1
+                code = f"BO-{year}-{seq:04d}"
             conn.execute(
                 """
                 INSERT INTO build_orders
@@ -2034,6 +2040,122 @@ def create_build_order():
         logging.error("Error en create_build_order: %s", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+@bp_stock.route("/api/build_orders/<int:order_id>", methods=["PATCH", "DELETE"])
+def manage_build_order(order_id):
+    """PATCH: actualiza metadatos. DELETE: elimina la orden (y restaura stock si estaba completada)."""
+    if not check_stock_permission():
+        return jsonify({"status": "error", "message": "Acceso denegado."}), 403
+
+    try:
+        from utils.auth import current_technician_identity
+        tech = current_technician_identity()
+
+        # ── PATCH: editar campos ──────────────────────────────────────────
+        if request.method == "PATCH":
+            data = request.json or {}
+            EDITABLE = {"code", "target_pc_name", "target_user", "target_fuero", "notes", "oc_number", "invoice_number"}
+            updates = {k: (v.strip() or None) for k, v in data.items() if k in EDITABLE and isinstance(v, str)}
+            if not updates:
+                return jsonify({"status": "error", "message": "No hay campos editables."}), 400
+
+            with get_db_connection() as conn:
+                bo = conn.execute("SELECT id, code FROM build_orders WHERE id = %s", (order_id,)).fetchone()
+                if not bo:
+                    return jsonify({"status": "error", "message": "Orden no encontrada."}), 404
+
+                if updates.get("code") and updates["code"] != bo["code"]:
+                    dup = conn.execute("SELECT id FROM build_orders WHERE code = %s AND id != %s", (updates["code"], order_id)).fetchone()
+                    if dup:
+                        return jsonify({"status": "error", "message": f"El código '{updates['code']}' ya existe en otra orden."}), 400
+
+                set_clauses = ", ".join(f"{col} = %s" for col in updates)
+                values = list(updates.values()) + [order_id]
+                conn.execute(f"UPDATE build_orders SET {set_clauses} WHERE id = %s", values)
+
+                changes_str = ", ".join(f"{k}={v}" for k, v in updates.items())
+                conn.execute(
+                    """
+                    INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    ("Stock", "BUILD_ORDER_UPDATE", bo["code"], changes_str, tech, "BUILD_ORDER", request.remote_addr)
+                )
+
+            return jsonify({"status": "success", "updated": updates})
+
+
+        # ── DELETE: eliminar orden ────────────────────────────────────────
+        with get_db_connection() as conn:
+            bo = conn.execute(
+                "SELECT id, code, status FROM build_orders WHERE id = %s", (order_id,)
+            ).fetchone()
+            if not bo:
+                return jsonify({"status": "error", "message": "Orden no encontrada."}), 404
+
+            restored_count = 0
+
+            if bo["status"] == "completed":
+                items = conn.execute(
+                    "SELECT serial_number FROM build_order_items WHERE build_order_id = %s",
+                    (order_id,)
+                ).fetchall()
+                for item in items:
+                    serial = item["serial_number"]
+                    if not serial:
+                        continue
+                    comp = conn.execute(
+                        "SELECT component_type, brand_model FROM components WHERE serial_number = %s",
+                        (serial,)
+                    ).fetchone()
+                    if comp:
+                        conn.execute(
+                            """
+                            UPDATE components
+                            SET status = 'Stock', assigned_pc = NULL, assigned_user = NULL,
+                                assigned_fuero = NULL, kit_name = NULL
+                            WHERE serial_number = %s
+                            """,
+                            (serial,)
+                        )
+                        restored_count += 1
+                        conn.execute(
+                            """
+                            INSERT INTO audit_logs
+                                (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            """,
+                            (
+                                "Stock", "BUILD_ORDER_DISASSEMBLE", bo["code"],
+                                f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Stock",
+                                tech, "BUILD_ORDER", request.remote_addr
+                            )
+                        )
+
+            conn.execute("DELETE FROM build_order_items WHERE build_order_id = %s", (order_id,))
+            conn.execute("DELETE FROM build_orders WHERE id = %s", (order_id,))
+            conn.execute(
+                """
+                INSERT INTO audit_logs
+                    (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    "Stock", "BUILD_ORDER_DELETE", bo["code"],
+                    f"Orden {bo['code']} eliminada (previo: {bo['status']}, restaurados: {restored_count})",
+                    tech, "BUILD_ORDER", request.remote_addr
+                )
+            )
+
+        return jsonify({
+            "status": "success",
+            "message": f"Orden {bo['code']} eliminada correctamente.",
+            "restored_to_stock": restored_count
+        })
+
+    except Exception as e:
+        logging.error("Error en manage_build_order(%s) [%s]: %s", order_id, request.method, e)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @bp_stock.route("/api/build_orders/<int:order_id>/items", methods=["POST"])
@@ -2091,6 +2213,46 @@ def add_build_order_item(order_id):
         return jsonify({"status": "success", "serial": serial, "asset_type": asset_type})
     except Exception as e:
         logging.error("Error en add_build_order_item(%s): %s", order_id, e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/api/build_orders/<int:order_id>/items/<path:serial>", methods=["DELETE"])
+def remove_build_order_item(order_id, serial):
+    """Quita un componente individual de una Orden de Armado activa (draft/in_progress)."""
+    if not check_stock_permission():
+        return jsonify({"status": "error", "message": "Acceso denegado."}), 403
+
+    try:
+        from utils.auth import current_technician_identity
+        tech = current_technician_identity()
+
+        with get_db_connection() as conn:
+            bo = conn.execute(
+                "SELECT id, code, status FROM build_orders WHERE id = %s", (order_id,)
+            ).fetchone()
+            if not bo:
+                return jsonify({"status": "error", "message": "Orden no encontrada."}), 404
+            if bo["status"] in ("completed", "cancelled"):
+                return jsonify({"status": "error", "message": f"No se puede modificar una orden '{bo['status']}'."}), 400
+
+            deleted = conn.execute(
+                "DELETE FROM build_order_items WHERE build_order_id = %s AND serial_number = %s",
+                (order_id, serial)
+            )
+            if deleted and deleted.rowcount == 0:
+                return jsonify({"status": "error", "message": "Ítem no encontrado en la orden."}), 404
+
+            conn.execute(
+                """
+                INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                ("Stock", "BUILD_ORDER_ITEM_REMOVED", bo["code"], serial, tech, "BUILD_ORDER", request.remote_addr)
+            )
+
+        return jsonify({"status": "success", "removed": serial})
+    except Exception as e:
+        logging.error("Error en remove_build_order_item(%s, %s): %s", order_id, serial, e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
 

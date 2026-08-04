@@ -189,3 +189,101 @@ def recalculate_all_validation_statuses() -> dict:
 
     logger.info("Recálculo validation_status completado: %s", counts)
     return counts
+
+
+def get_pc_validation_comparison(pc_name: str, conn=None):
+    """
+    Construye una comparativa estructurada entre el Armado Patrimonial (componentes asignados)
+    y la Telemetría Real reportada por el script .ps1.
+    """
+    close_conn = False
+    if conn is None:
+        from database.db_core import get_db_connection
+        conn_ctx = get_db_connection()
+        conn = conn_ctx.__enter__()
+        close_conn = True
+
+    try:
+        pc = conn.execute("SELECT * FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+        if not pc:
+            return []
+
+        comps = conn.execute(
+            "SELECT serial_number, component_type, brand_model FROM components WHERE LOWER(TRIM(assigned_pc)) = LOWER(TRIM(%s)) AND status NOT IN ('Retirado', 'Scrap')",
+            (pc_name,)
+        ).fetchall()
+
+        telemetry_raw = pc.get("telemetry_snapshot") or pc.get("full_json_data")
+        script_data = {}
+        if telemetry_raw:
+            try:
+                import json
+                script_data = json.loads(telemetry_raw)
+            except Exception:
+                pass
+
+        sistema = script_data.get("Sistema", {})
+        script_proc = sistema.get("Procesador") or pc.get("processor") or "Sin reporte de script"
+        script_ram = str(sistema.get("RAM (GB)") or pc.get("ram_gb") or "Sin reporte")
+        script_mb = script_data.get("Motherboard_Model") or pc.get("motherboard_model") or "Sin reporte de script"
+        script_disk = script_data.get("Disk_Models") or pc.get("disk_models") or "Sin reporte de script"
+
+        comp_by_type = {}
+        for c in comps:
+            ctype = (c.get("component_type") or "Otro").strip().title()
+            comp_by_type.setdefault(ctype, []).append(c)
+
+        comparison = []
+
+        # 1. Motherboard
+        mb_comps = comp_by_type.get("Motherboard", [])
+        reg_mb = ", ".join(f"{c['brand_model']} ({c['serial_number']})" for c in mb_comps) if mb_comps else "Sin registro de Placa"
+        mb_match = _hw_tokens_match(reg_mb, script_mb) if mb_comps else True
+        comparison.append({
+            "component": "Motherboard",
+            "registered": reg_mb,
+            "telemetry": script_mb,
+            "match": mb_match,
+            "status_label": "Coincide OK" if mb_match else "Diferencia de Placa Madre"
+        })
+
+        # 2. Procesador
+        cpu_comps = comp_by_type.get("Cpu", []) or comp_by_type.get("Gabinete", []) or comp_by_type.get("Pc", [])
+        reg_cpu = ", ".join(f"{c['brand_model']} ({c['serial_number']})" for c in cpu_comps) if cpu_comps else "Sin registro CPU"
+        proc_match = _hw_tokens_match(reg_cpu, script_proc) if cpu_comps else True
+        comparison.append({
+            "component": "Procesador (CPU)",
+            "registered": reg_cpu,
+            "telemetry": script_proc,
+            "match": proc_match,
+            "status_label": "Coincide OK" if proc_match else "Diferencia de Procesador"
+        })
+
+        # 3. Memoria RAM
+        ram_comps = comp_by_type.get("Memoria Ram", []) or comp_by_type.get("Ram", [])
+        reg_ram = ", ".join(f"{c['brand_model']} ({c['serial_number']})" for c in ram_comps) if ram_comps else "Sin registro RAM"
+        ram_match = _hw_tokens_match(reg_ram, script_ram) if (ram_comps and script_ram != "Sin reporte") else True
+        comparison.append({
+            "component": "Memoria RAM",
+            "registered": reg_ram,
+            "telemetry": f"{script_ram} GB" if script_ram != "Sin reporte" else "Sin reporte",
+            "match": ram_match,
+            "status_label": "Coincide OK" if ram_match else "Diferencia de Capacidad RAM"
+        })
+
+        # 4. Almacenamiento (Disco)
+        disk_comps = comp_by_type.get("Disco Rígido", []) or comp_by_type.get("Disco", [])
+        reg_disk = ", ".join(f"{c['brand_model']} ({c['serial_number']})" for c in disk_comps) if disk_comps else "Sin registro Disco"
+        disk_match = _hw_tokens_match(reg_disk, script_disk) if (disk_comps and script_disk != "Sin reporte de script") else True
+        comparison.append({
+            "component": "Almacenamiento (Disco)",
+            "registered": reg_disk,
+            "telemetry": script_disk,
+            "match": disk_match,
+            "status_label": "Coincide OK" if disk_match else "Diferencia de Disco"
+        })
+
+        return comparison
+    finally:
+        if close_conn:
+            conn_ctx.__exit__(None, None, None)

@@ -247,11 +247,11 @@ def process_inventory_data(data):
 
 
             # Deduplicate check: if hardware (motherboard & processor) drastically changed, it's likely another physical machine
-            old_mb = str(current_pc.get("motherboard_model", "")).strip()
-            old_proc = str(current_pc.get("processor", "")).strip()
+            old_mb = str(current_pc.get("motherboard_model") or "").strip()
+            old_proc = str(current_pc.get("processor") or "").strip()
             
             # Solo si el equipo anterior tenia datos utiles
-            if old_mb and old_mb != "N/A" and old_proc and old_proc != "N/A":
+            if old_mb and old_mb.upper() not in ("N/A", "NONE") and old_proc and old_proc.upper() not in ("N/A", "NONE"):
                 # Si ambos difieren completamente (no son substrings)
                 if (motherboard_model != "N/A" and motherboard_model != old_mb) and \
                    (processor != "N/A" and processor != old_proc):

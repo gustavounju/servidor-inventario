@@ -8,7 +8,7 @@ from io import BytesIO
 from openpyxl import Workbook
 from services.audit import log_audit_event
 from services.dashboard_overview import load_dashboard_overview
-from services.pc_actions import decommission_pc_service, reactivate_pc_service, delete_permanent_pc_service
+from services.pc_actions import decommission_pc_service, reactivate_pc_service, delete_permanent_pc_service, update_pc_infrastructure_service
 from services.pc_details_service import get_pc_detail_context
 from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data, recalculate_all_pc_fueros
 
@@ -434,80 +434,23 @@ def pc_detail(pc_name):
 
 @bp_dashboard.route("/public/asset/<pc_name>")
 def public_asset_info(pc_name):
-    """
-    Vista pública restringida para escaneo de QR Patrimonial.
-    Muestra únicamente información básica institucional del bien (Equipo, Fuero, Remito, S/N Monitor)
-    sin exponer datos sensibles de usuarios, claves, red o historial.
-    """
-    from utils.auth import is_authenticated
+    """Vista pública/móvil optimizada para lectura de QR desde smartphone."""
     try:
+        from services.pc_details_service import get_pc_detail_context
         ctx = get_pc_detail_context(pc_name)
-        if not ctx:
-            from flask import abort
-            abort(404)
-
-        pc = ctx.get("pc", {}) or {}
-        components = ctx.get("components", []) or []
-
-        def get_comp_val(comp, key):
-            if not comp:
-                return "N/A"
-            if isinstance(comp, dict):
-                return comp.get(key) or "N/A"
-            try:
-                return comp[key] or "N/A"
-            except Exception:
-                return "N/A"
-
-        def comp_type_upper(c):
-            val = get_comp_val(c, "component_type")
-            return (val or "").upper()
-
-        monitor = next((c for c in components if "MONITOR" in comp_type_upper(c)), None)
-        cpu = next((c for c in components if any(t in comp_type_upper(c) for t in ["GABINETE", "CPU"])), None)
-
-        monitor_sn = get_comp_val(monitor, "serial_number")
-        monitor_model = get_comp_val(monitor, "brand_model")
-        cpu_sn = get_comp_val(cpu, "serial_number")
-
-        user_auth = False
-        try:
-            user_auth = is_authenticated()
-        except Exception:
-            pass
-
-        fuero_val = "General"
-        if isinstance(pc, dict):
-            fuero_val = pc.get("fuero") or "General"
-        else:
-            try: fuero_val = pc["fuero"] or "General"
-            except Exception: pass
-
-        return render_template(
-            "public_asset_info.html",
-            pc_name=pc_name,
-            fuero=fuero_val,
-            monitor_sn=monitor_sn,
-            monitor_model=monitor_model,
-            cpu_sn=cpu_sn,
-            invoice_list=ctx.get("invoice_list", []),
-            oc_list=ctx.get("oc_list", []),
-            is_authenticated=user_auth
-        )
-    except Exception as err:
+        if ctx:
+            components = ctx.get("pc_components") or ctx.get("components") or []
+            return render_template(
+                "public_asset_info.html",
+                **ctx,
+                components=components,
+                is_authenticated=is_authenticated()
+            )
+    except Exception as e:
         import logging
-        logging.error(f"Error en public_asset_info para {pc_name}: {err}", exc_info=True)
-        return render_template(
-            "public_asset_info.html",
-            pc_name=pc_name,
-            fuero="General",
-            monitor_sn="N/A",
-            monitor_model="N/A",
-            cpu_sn="N/A",
-            invoice_list=[],
-            oc_list=[],
-            is_authenticated=False
-        )
+        logging.error("Error en public_asset_info para %s: %s", pc_name, e)
+
+    return render_template("public_asset_info.html", pc_name=pc_name, pc={}, components=[], is_authenticated=False)
 
 @bp_dashboard.route("/pc/<pc_name>/qr_label")
 def pc_qr_label_view(pc_name):
@@ -523,7 +466,7 @@ def pc_qr_label_view(pc_name):
         server_host = os.environ.get("SERVER_PUBLIC_HOST", "10.15.2.251:5000")
     qr_url = f"{scheme}://{server_host}/public/asset/{pc_name}"
     
-    components = ctx.get("components", [])
+    components = ctx.get("pc_components") or ctx.get("components") or []
     monitor_comp = next((c for c in components if (c.get("component_type") or "").upper() == "MONITOR"), None)
     cpu_comp = next((c for c in components if (c.get("component_type") or "").upper() in ["GABINETE", "CPU"]), None)
     keyboard_comp = next((c for c in components if (c.get("component_type") or "").upper() == "TECLADO"), None)
@@ -539,251 +482,60 @@ def pc_qr_label_view(pc_name):
         keyboard_comp=keyboard_comp,
         mouse_comp=mouse_comp,
         qr_url=qr_url,
-        server_host=server_host,
-        oc_list=ctx.get("oc_list", []),
-        invoice_list=ctx.get("invoice_list", [])
+        server_host=server_host
     )
+
+
+@bp_dashboard.route("/global_activity")
+@bp_dashboard.route("/actividad_global")
+def global_activity():
+    """Muestra la vista de Auditoría y Historial Global de Actividad."""
+    from utils.auth import has_permission, forbidden_response
+    if not has_permission("dashboard") and not has_permission("reports"):
+        return forbidden_response("dashboard")
+    try:
+        with get_db_connection() as conn:
+            logs = conn.execute(
+                "SELECT * FROM audit_logs ORDER BY changed_at DESC LIMIT 500"
+            ).fetchall()
+        return render_template("activity_logs.html", logs=logs)
+    except Exception as e:
+        flash(f"Error al cargar el historial de auditoría: {e}", "danger")
+        return redirect(url_for("dashboard.dashboard"))
+
 
 @bp_dashboard.route("/pc/<pc_name>/update_infrastructure", methods=["POST"])
 def update_pc_infrastructure(pc_name):
-    """Actualiza los datos de infraestructura de una PC."""
-    building = request.form.get("building", "").strip()
-    floor = request.form.get("floor", "").strip()
-    switch_name = request.form.get("switch_name", "").strip()
-    switch_port = request.form.get("switch_port", "").strip()
-    pachera_name = request.form.get("pachera_name", "").strip()
-    pachera_port = request.form.get("pachera_port", "").strip()
-    
-    try:
-        with get_db_connection() as conn:
-            old_pc = conn.execute("SELECT building, floor, switch_name, switch_port, pachera_name, pachera_port FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
-            conn.execute(
-                """UPDATE pcs SET building = %s, floor = %s, switch_name = %s, switch_port = %s, pachera_name = %s, pachera_port = %s WHERE pc_name = %s""",
-                (building, floor, switch_name, switch_port, pachera_name, pachera_port, pc_name)
-            )
-            if old_pc:
-                changes = [
-                    ("building", old_pc["building"], building), ("floor", old_pc["floor"], floor),
-                    ("switch_name", old_pc["switch_name"], switch_name), ("switch_port", old_pc["switch_port"], switch_port),
-                    ("pachera_name", old_pc["pachera_name"], pachera_name), ("pachera_port", old_pc["pachera_port"], pachera_port)
-                ]
-                for field, old, new in changes:
-                    old_str = str(old) if old is not None else ""
-                    new_str = str(new) if new is not None else ""
-                    if old_str != new_str:
-                        log_audit_event(
-                            conn,
-                            pc_name=pc_name,
-                            field=field,
-                            old_value=old_str,
-                            new_value=new_str,
-                            action_type="EDICION_INFRAESTRUCTURA",
-                            request_ip=request.remote_addr,
-                        )
-            conn.commit()
-        return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
-    except Exception as e:
-        return f"Error actualizando infraestructura: {e}", 500
+    """Actualiza datos de red y ubicación de una PC desde su vista de detalle."""
+    infra_data = {
+        'building': request.form.get('building', '').strip(),
+        'floor': request.form.get('floor', '').strip(),
+        'switch_name': request.form.get('switch_name', '').strip(),
+        'switch_port': request.form.get('switch_port', '').strip(),
+        'pachera_name': request.form.get('pachera_name', '').strip(),
+        'pachera_port': request.form.get('pachera_port', '').strip(),
+    }
+    if update_pc_infrastructure_service(pc_name, infra_data, request.remote_addr):
+        flash(f"Infraestructura de {pc_name} actualizada.", "success")
+    else:
+        flash(f"Error al actualizar infraestructura de {pc_name}.", "error")
+    return redirect(request.referrer or url_for("dashboard.pc_detail", pc_name=pc_name))
 
 
 @bp_dashboard.route("/pc/<pc_name>/update_serials", methods=["POST"])
 def update_pc_serials(pc_name):
-    """Permite cargar o corregir manualmente los números de serie de componentes de una PC (soportando múltiples monitores, discos y memorias)."""
-    mb_sn = request.form.get("motherboard_sn", "").strip()
-    printer_sn = request.form.get("printer_sn", "").strip()
-
+    """Actualiza los números de serie de CPU, monitor e impresora de una PC."""
+    monitor_sn = request.form.get('monitor_sn', '').strip()
+    cpu_sn = request.form.get('cpu_sn', '').strip()
+    printer_sn = request.form.get('printer_sn', '').strip()
     try:
         with get_db_connection() as conn:
-            pc = conn.execute("SELECT * FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
-            if not pc:
-                return f"PC {pc_name} no encontrada", 404
-
-            # 1. Motherboard Serial
-            new_mb_model = pc["motherboard_model"] or ""
-            if mb_sn:
-                if " (SN: " in new_mb_model:
-                    base = new_mb_model.split(" (SN: ")[0].strip()
-                    new_mb_model = f"{base} (SN: {mb_sn})"
-                else:
-                    new_mb_model = f"{new_mb_model} (SN: {mb_sn})".strip()
-
-            # 2. Monitors (Soporte Múltiple)
-            old_mon_raw = pc["monitors"] or ""
-            if old_mon_raw and old_mon_raw != "N/A":
-                mon_parts = [m.strip() for m in old_mon_raw.split("|") if m.strip()]
-                new_mon_parts = []
-                for idx, part in enumerate(mon_parts):
-                    sn_val = request.form.get(f"monitor_sn_{idx}", "").strip()
-                    if not sn_val and idx == 0:
-                        sn_val = request.form.get("monitor_sn", "").strip()
-                    
-                    if " (SN: " in part:
-                        base_model = part.split(" (SN: ")[0].strip()
-                        old_sn = part.split(" (SN: ")[1].replace(")", "").strip()
-                    else:
-                        base_model = part.strip()
-                        old_sn = ""
-                    
-                    final_sn = sn_val if sn_val else old_sn
-                    if final_sn:
-                        new_mon_parts.append(f"{base_model} (SN: {final_sn})")
-                    else:
-                        new_mon_parts.append(base_model)
-                new_monitors = " | ".join(new_mon_parts)
-            else:
-                single_sn = request.form.get("monitor_sn_0", "").strip() or request.form.get("monitor_sn", "").strip()
-                if single_sn:
-                    new_monitors = f"Monitor Detectado (SN: {single_sn})"
-                else:
-                    new_monitors = old_mon_raw
-
-            # 3. Printer Serial
-            new_printer_sn = pc["printer_sn"] or ""
-            if printer_sn:
-                new_printer_sn = printer_sn
-
-            # 4. Disks (Soporte Múltiple)
-            old_disk_raw = pc["disk_models"] or ""
-            if old_disk_raw and old_disk_raw != "N/A":
-                disk_parts = [d.strip() for d in old_disk_raw.split("|") if d.strip()]
-                new_disk_parts = []
-                for idx, part in enumerate(disk_parts):
-                    sn_val = request.form.get(f"disk_sn_{idx}", "").strip()
-                    if not sn_val and idx == 0:
-                        sn_val = request.form.get("disk_sn", "").strip()
-                    
-                    if " [SN: " in part:
-                        base_model = part.split(" [SN: ")[0].strip()
-                        old_sn = part.split(" [SN: ")[1].replace("]", "").strip()
-                    else:
-                        base_model = part.strip()
-                        old_sn = ""
-                    
-                    final_sn = sn_val if sn_val else old_sn
-                    if final_sn:
-                        new_disk_parts.append(f"{base_model} [SN: {final_sn}]")
-                    else:
-                        new_disk_parts.append(base_model)
-                new_disk_models = " | ".join(new_disk_parts)
-            else:
-                single_disk_sn = request.form.get("disk_sn_0", "").strip() or request.form.get("disk_sn", "").strip()
-                if single_disk_sn:
-                    new_disk_models = f"Disco Detectado [SN: {single_disk_sn}]"
-                else:
-                    new_disk_models = old_disk_raw
-
-            # 5. RAM Modules (Soporte Múltiple)
-            old_ram_raw = pc["ram_detalles"] or ""
-            if old_ram_raw and old_ram_raw != "N/A":
-                ram_parts = [r.strip() for r in old_ram_raw.split("|") if r.strip()]
-                new_ram_parts = []
-                for idx, part in enumerate(ram_parts):
-                    sn_val = request.form.get(f"ram_sn_{idx}", "").strip()
-                    if not sn_val and idx == 0:
-                        sn_val = request.form.get("ram_sn", "").strip()
-                    
-                    if " (SN: " in part:
-                        base_model = part.split(" (SN: ")[0].strip()
-                        old_sn = part.split(" (SN: ")[1].replace(")", "").strip()
-                    else:
-                        base_model = part.strip()
-                        old_sn = ""
-                    
-                    final_sn = sn_val if sn_val else old_sn
-                    if final_sn:
-                        new_ram_parts.append(f"{base_model} (SN: {final_sn})")
-                    else:
-                        new_ram_parts.append(base_model)
-                new_ram_detalles = " | ".join(new_ram_parts)
-            else:
-                single_ram_sn = request.form.get("ram_sn_0", "").strip() or request.form.get("ram_sn", "").strip()
-                if single_ram_sn:
-                    new_ram_detalles = f"RAM Detectada (SN: {single_ram_sn})"
-                else:
-                    new_ram_detalles = old_ram_raw
-
-            # 6. Keyboard & Mouse Custom Input
-            kb_custom = request.form.get("keyboard_model", "").strip()
-            ms_custom = request.form.get("mouse_model", "").strip()
-            
-            full_json = {}
-            if pc.get("full_json_data"):
-                try:
-                    import json
-                    full_json = json.loads(pc["full_json_data"])
-                except Exception: pass
-            
-            if kb_custom:
-                full_json["Keyboard_Model"] = kb_custom
-            if ms_custom:
-                full_json["Mouse_Model"] = ms_custom
-                
-            import json
-            updated_full_json = json.dumps(full_json)
-
             conn.execute(
-                """
-                UPDATE pcs 
-                SET motherboard_model = %s, monitors = %s, printer_sn = %s, disk_models = %s, ram_detalles = %s, full_json_data = %s
-                WHERE pc_name = %s
-                """,
-                (new_mb_model, new_monitors, new_printer_sn, new_disk_models, new_ram_detalles, updated_full_json, pc_name)
-            )
-
-            log_audit_event(
-                conn,
-                pc_name=pc_name,
-                field="SERIALES_COMPONENTES",
-                old_value="Actualización Manual de Seriales",
-                new_value=f"MB: {mb_sn} | Monitores: {new_monitors} | Prn: {printer_sn}",
-                action_type="CARGA_MANUAL_SERIALES",
-                request_ip=request.remote_addr,
+                "UPDATE pcs SET serial_number = %s, serial_monitor = %s, serial_impresora = %s WHERE pc_name = %s",
+                (cpu_sn or None, monitor_sn or None, printer_sn or None, pc_name)
             )
             conn.commit()
-
-        return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
+        flash(f"Números de serie de {pc_name} actualizados.", "success")
     except Exception as e:
-        return f"Error actualizando números de serie: {e}", 500
-
-@bp_dashboard.route("/actividad")
-def global_activity():
-    """Muestra el historial global de actividad de todas las PCs e Infraestructura."""
-    with get_db_connection() as conn:
-        # Traer los Ãºltimos 1000 registros para no sobrecargar
-        logs = conn.execute("""
-            SELECT id, pc_name, field, old_value, new_value, user_name, action_type, ip_address, changed_at 
-            FROM audit_logs 
-            ORDER BY changed_at DESC 
-            LIMIT 1000
-        """).fetchall()
-    return render_template("activity_logs.html", logs=logs)
-
-@bp_dashboard.route("/fueros")
-def view_fueros():
-    """Vista para consultar usuarios, impresoras y PCs por fuero."""
-    fuero_param = request.args.get("fuero", "").strip()
-    fueros_list, fuero_stats = get_fuero_summary_data()
-    pcs, users, printers = get_fuero_detail_data(fuero_param)
-    fuero_reference = list_fuero_mapping_rows()
-
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('json'):
-        from flask import jsonify
-        return jsonify({
-            'fuero_param': fuero_param,
-            'users':    [dict(u) for u in users],
-            'pcs':      [dict(p) for p in pcs],
-            'printers': printers,
-        })
-
-    return render_template(
-        "fueros.html",
-        fueros_list=fueros_list,
-        fuero_param=fuero_param,
-        fuero_stats=fuero_stats,
-        pcs=pcs,
-        users=users,
-        printers=printers,
-        fuero_colors=FUERO_COLORS,
-        fuero_reference=fuero_reference,
-    )
-
+        flash(f"Error al actualizar números de serie: {e}", "error")
+    return redirect(request.referrer or url_for("dashboard.pc_detail", pc_name=pc_name))

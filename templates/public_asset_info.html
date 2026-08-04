@@ -15,24 +15,24 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 16px;
+            padding: 12px;
         }
         .asset-card {
             background: rgba(30, 41, 59, 0.95);
-            border: 1px solid rgba(56, 189, 248, 0.3);
+            border: 1px solid rgba(56, 189, 248, 0.35);
             border-radius: 16px;
-            max-width: 460px;
+            max-width: 480px;
             width: 100%;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
             overflow: hidden;
         }
         .asset-header {
             background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-            padding: 20px;
+            padding: 18px;
             text-align: center;
         }
         .asset-body {
-            padding: 24px;
+            padding: 20px;
         }
         .font-mono {
             font-family: monospace;
@@ -43,63 +43,78 @@
 
     <div class="asset-card">
         <div class="asset-header text-white">
-            <i class="bi bi-shield-check display-4 mb-2 d-block"></i>
+            <i class="bi bi-shield-check fs-1 mb-1 d-block"></i>
             <h5 class="fw-bold mb-0">Poder Judicial de Jujuy</h5>
-            <small class="opacity-75 font-monospace">Centro Judicial San Pedro • Departamento de Informática</small>
+            <small class="opacity-75 font-monospace" style="font-size:0.75rem;">Centro Judicial San Pedro • Dpto. de Informática</small>
         </div>
 
         <div class="asset-body">
-            <div class="text-center mb-4">
-                <span class="badge bg-info text-dark font-monospace px-3 py-1 mb-2">BIEN PATRIMONIAL DSI</span>
+            <div class="text-center mb-3">
+                <span class="badge bg-info text-dark font-monospace px-3 py-1 mb-2" style="font-size:0.72rem;">FICHA PATRIMONIAL EN VIVO</span>
                 <h3 class="fw-bold text-info font-mono mb-0">{{ pc_name }}</h3>
-                <small class="text-slate-400">Verificación de Inventario Oficial</small>
+                <div class="mt-2">
+                    {% if pc and pc.validation_status == 'validado' %}
+                    <span class="badge bg-success text-white px-3 py-1 fs-6"><i class="bi bi-patch-check-fill me-1"></i>GEMELO VALIDADO</span>
+                    {% elif pc and pc.validation_status == 'discrepancia' %}
+                    <span class="badge bg-danger text-white px-3 py-1 fs-6"><i class="bi bi-exclamation-triangle-fill me-1"></i>DISCREPANCIA PATRIMONIAL</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark px-3 py-1 fs-6"><i class="bi bi-clock-history me-1"></i>PENDIENTE DE VERIFICACIÓN</span>
+                    {% endif %}
+                </div>
             </div>
 
-            <div class="bg-dark p-3 rounded-3 border border-secondary mb-3">
+            <div class="bg-dark p-3 rounded-3 border border-secondary mb-3 small">
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="text-slate-400"><i class="bi bi-geo-alt-fill text-danger me-1"></i>Fuero / Ubicación:</span>
-                    <strong class="text-white">{{ fuero }}</strong>
+                    <span class="text-secondary"><i class="bi bi-person-fill text-info me-1"></i>Usuario Asignado:</span>
+                    <strong class="text-white">{{ (pc.last_user or pc.ad_real_name) if pc else 'Sin asignar' }}</strong>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="text-slate-400"><i class="bi bi-pc-display text-info me-1"></i>S/N Gabinete / CPU:</span>
-                    <strong class="font-mono text-info">{{ cpu_sn }}</strong>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-slate-400"><i class="bi bi-display text-warning me-1"></i>S/N Monitor:</span>
-                    <strong class="font-mono text-warning">{{ monitor_sn }}</strong>
-                </div>
-                {% if monitor_model and monitor_model != 'N/A' %}
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-slate-400"><i class="bi bi-card-list me-1"></i>Modelo Monitor:</span>
-                    <span class="text-light small">{{ monitor_model }}</span>
-                </div>
-                {% endif %}
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-slate-400"><i class="bi bi-receipt me-1"></i>N° Remito:</span>
-                    <span class="font-mono text-light">{{ invoice_list | join(', ') if invoice_list else 'SIN REMITO' }}</span>
+                    <span class="text-secondary"><i class="bi bi-building text-warning me-1"></i>Fuero / Ubicación:</span>
+                    <strong class="text-white">{{ (pc.fuero) if pc and pc.fuero else 'General' }}</strong>
                 </div>
                 <div class="d-flex justify-content-between">
-                    <span class="text-slate-400"><i class="bi bi-file-earmark-text me-1"></i>Orden de Compra:</span>
-                    <span class="font-mono text-light">{{ oc_list | join(', ') if oc_list else 'N/A' }}</span>
+                    <span class="text-secondary"><i class="bi bi-calendar-check me-1"></i>Último Reporte (.ps1):</span>
+                    <span class="font-mono text-light">{{ (pc.last_report) if pc and pc.last_report else 'Sin reporte previo' }}</span>
                 </div>
             </div>
 
-            <div class="alert alert-success d-flex align-items-center py-2 px-3 small border-success mb-3" style="background: rgba(34, 197, 94, 0.1); color: #4ade80;">
-                <i class="bi bi-check-circle-fill me-2 fs-5"></i>
-                <div>Estado patrimonial <strong>AUDITADO Y REGISTRADO</strong> en el sistema de inventario judicial.</div>
+            <!-- COMPONENTES E INSUMOS VINCULADOS -->
+            <div class="bg-dark p-3 rounded-3 border border-secondary mb-3 small">
+                <h6 class="fw-bold text-info border-bottom border-secondary pb-2 mb-2" style="font-size:0.8rem;">
+                    <i class="bi bi-cpu me-1"></i>Componentes del Puesto (Armado)
+                </h6>
+                {% for c in components %}
+                <div class="mb-2 pb-2 border-bottom border-secondary" style="border-bottom-style:dashed!important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div>
+                            <span class="badge bg-secondary text-light me-1" style="font-size:0.65rem;">{{ c.component_type }}</span>
+                            <span class="text-white fw-bold">{{ c.brand_model or 'Genérico' }}</span>
+                        </div>
+                        <span class="font-mono text-info fw-bold" style="font-size:0.75rem;">S/N: {{ c.serial_number or 'Sin S/N' }}</span>
+                    </div>
+                    {% if c.invoice_number or c.oc_number %}
+                    <div class="text-muted font-mono" style="font-size:0.68rem;padding-left:4px;">
+                        {% if c.invoice_number %}<span class="me-2"><i class="bi bi-receipt me-1"></i>Remito: {{ c.invoice_number }}</span>{% endif %}
+                        {% if c.oc_number %}<span><i class="bi bi-file-earmark-text me-1"></i>OC: {{ c.oc_number }}</span>{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="text-muted text-center py-2">No hay componentes vinculados registrados en la base.</div>
+                {% endfor %}
             </div>
 
             {% if is_authenticated %}
             <div class="text-center mt-3 border-top border-secondary pt-3">
                 <a href="{{ url_for('dashboard.pc_detail', pc_name=pc_name) }}" class="btn btn-outline-info btn-sm fw-bold w-100">
-                    <i class="bi bi-key-fill me-1"></i>Acceso Técnico Completo (Modo Administrador)
+                    <i class="bi bi-key-fill me-1"></i>Acceso Técnico Completo (Administración)
                 </a>
             </div>
             {% endif %}
         </div>
 
         <div class="card-footer bg-dark border-top border-secondary py-2 text-center text-muted small" style="font-size: 0.75rem;">
-            Sistema de Gestión de Inventario • Departamento de Informática
+            Poder Judicial de Jujuy • Departamento de Informática
         </div>
     </div>
 
