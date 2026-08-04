@@ -497,11 +497,22 @@ def build_orders_view():
             pc_val_map = {}
             try:
                 pc_rows = conn.execute(
-                    "SELECT LOWER(pc_name) as pc_key, pc_name, validation_status, is_active FROM pcs"
+                    "SELECT LOWER(pc_name) as pc_key, pc_name, last_user, fuero, validation_status, is_active FROM pcs"
                 ).fetchall()
                 for pr in pc_rows:
                     if pr.get("pc_key"):
                         pc_val_map[pr["pc_key"]] = dict(pr)
+            except Exception:
+                pass
+
+            # Contadores globales de Gemelos Digitales en el sistema (100% alineados con el Dashboard)
+            system_validados = 0
+            system_sin_gemelo = 0
+            try:
+                v_row = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND validation_status = 'validado'").fetchone()
+                system_validados = v_row["c"] if v_row else 0
+                p_row = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND (validation_status IN ('pendiente', 'sin_gemelo') OR validation_status IS NULL)").fetchone()
+                system_sin_gemelo = p_row["c"] if p_row else 0
             except Exception:
                 pass
 
@@ -517,8 +528,6 @@ def build_orders_view():
             ).fetchall()
             
             build_orders_list = []
-            validados_count = 0
-            pendientes_count = 0
 
             for bo in bo_rows:
                 item_dict = dict(bo)
@@ -541,23 +550,53 @@ def build_orders_view():
                 item_dict["items"] = items_list
                 item_dict["order_items"] = items_list
 
-                # Determinar nombre de la PC vinculada
                 target_pc = (item_dict.get("target_pc_name") or "").strip()
-                if not target_pc:
+                target_user = (item_dict.get("target_user") or "").strip()
+                target_fuero = (item_dict.get("target_fuero") or "").strip()
+                
+                matched_pc_name = target_pc
+                val_status = None
+
+                # A) Coincidencia directa por nombre de PC
+                if target_pc and target_pc.lower() in pc_val_map:
+                    val_status = pc_val_map[target_pc.lower()].get("validation_status")
+                
+                # B) Coincidencia por componentes asignados a una PC en la tabla components
+                if not val_status and items_list:
                     for it in items_list:
-                        if it.get("pc_name"):
-                            target_pc = it["pc_name"].strip()
+                        sn = (it.get("serial_number") or "").strip()
+                        if sn:
+                            c_row = conn.execute(
+                                "SELECT assigned_pc FROM components WHERE serial_number = %s AND assigned_pc IS NOT NULL AND assigned_pc != ''",
+                                (sn,)
+                            ).fetchone()
+                            if c_row and c_row.get("assigned_pc") and c_row["assigned_pc"].lower() in pc_val_map:
+                                matched_pc_name = c_row["assigned_pc"]
+                                val_status = pc_val_map[c_row["assigned_pc"].lower()].get("validation_status")
+                                break
+                
+                # C) Coincidencia por usuario asignado en la tabla pcs
+                if not val_status and target_user:
+                    for p_key, p_data in pc_val_map.items():
+                        u_name = (p_data.get("last_user") or "").lower()
+                        if target_user.lower() in u_name or (u_name and u_name in target_user.lower()):
+                            matched_pc_name = p_data.get("pc_name")
+                            val_status = p_data.get("validation_status")
                             break
 
-                val_info = pc_val_map.get(target_pc.lower()) if target_pc else None
-                val_status = val_info.get("validation_status") if val_info else None
-                item_dict["validation_status"] = val_status
-                item_dict["pc_exists"] = bool(val_info)
+                # D) Coincidencia por fuero si hay PC validada en ese fuero
+                if not val_status and target_fuero:
+                    for p_key, p_data in pc_val_map.items():
+                        f_name = (p_data.get("fuero") or "").lower()
+                        if target_fuero.lower() in f_name or (f_name and f_name in target_fuero.lower()):
+                            if p_data.get("validation_status") == "validado":
+                                matched_pc_name = p_data.get("pc_name")
+                                val_status = p_data.get("validation_status")
+                                break
 
-                if val_status == "validado":
-                    validados_count += 1
-                elif bo["status"] != "cancelled":
-                    pendientes_count += 1
+                item_dict["target_pc_name"] = matched_pc_name or target_pc
+                item_dict["validation_status"] = val_status
+                item_dict["pc_exists"] = bool(val_status)
 
                 build_orders_list.append(item_dict)
 
@@ -586,7 +625,7 @@ def build_orders_view():
     except Exception as exc:
         logging.error("Error en build_orders_view: %s", exc)
         pcs, ad_users, stock_components, build_orders_list, fueros, remitos, ocs = [], [], [], [], [], [], []
-        validados_count, pendientes_count = 0, 0
+        system_validados, system_sin_gemelo = 0, 0
 
     return render_template(
         "build_orders.html",
@@ -594,8 +633,8 @@ def build_orders_view():
         ad_users=ad_users,
         stock_components=stock_components,
         build_orders=build_orders_list,
-        validados_count=validados_count,
-        pendientes_count=pendientes_count,
+        validados_count=system_validados,
+        pendientes_count=system_sin_gemelo,
         fueros=fueros,
         remitos=remitos,
         ocs=ocs
