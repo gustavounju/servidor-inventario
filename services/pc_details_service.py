@@ -370,6 +370,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
 
     # 3. Componentes unificados
     all_unified_components = []
+    existing_serials = {(c.get("serial_number") or "").strip().upper() for c in comp_dicts if c.get("serial_number")}
     for c in comp_dicts:
         if (c.get("component_type") or "").strip().upper() != "MONITOR":
             c_dict = dict(c)
