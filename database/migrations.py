@@ -660,6 +660,8 @@ def run_all_migrations():
     migrate_db_v53()
     # Fase 6 — Intervenciones Técnicas y Telemetría Pasiva
     migrate_db_v54()
+    # Sincronizar componentes asignados a Órdenes de Armado
+    migrate_db_v55()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1436,3 +1438,49 @@ def migrate_db_v54():
                 print("Aplicando V54: agregando telemetry_snapshot a pcs...")
                 conn.execute("ALTER TABLE pcs ADD COLUMN telemetry_snapshot LONGTEXT DEFAULT NULL")
                 print("Migración V54 aplicada: columna telemetry_snapshot agregada a pcs.")
+
+
+def migrate_db_v55():
+    """
+    Migración V55: Sincronizar componentes asignados a Órdenes de Armado.
+
+    Actualiza componentes existentes en build_order_items para poner status = 'Reservado'
+    y build_order_id = bo.id si la orden está en borrador/en armado, o 'Installed'/'Asignado'
+    si la orden fue completada.
+    """
+    print("Verificando migración de DB v55 (Sincronización de componentes en Órdenes de Armado)...")
+    with get_db_connection() as conn:
+        if _table_exists(conn, "build_order_items") and _table_exists(conn, "components"):
+            print("Aplicando V55: actualizando estado de componentes en Órdenes de Armado...")
+            try:
+                # 1. Órdenes activas (draft, in_progress) -> status = 'Reservado'
+                conn.execute(
+                    """
+                    UPDATE components c
+                    JOIN build_order_items boi ON c.serial_number = boi.serial_number
+                    JOIN build_orders bo ON boi.build_order_id = bo.id
+                    SET c.status = 'Reservado',
+                        c.build_order_id = bo.id,
+                        c.assigned_pc = COALESCE(NULLIF(boi.pc_name, ''), NULLIF(bo.target_pc_name, ''), c.assigned_pc),
+                        c.assigned_user = COALESCE(NULLIF(bo.target_user, ''), c.assigned_user),
+                        c.assigned_fuero = COALESCE(NULLIF(bo.target_fuero, ''), c.assigned_fuero)
+                    WHERE bo.status IN ('draft', 'in_progress')
+                    """
+                )
+                # 2. Órdenes completadas -> status = 'Installed' o 'Asignado'
+                conn.execute(
+                    """
+                    UPDATE components c
+                    JOIN build_order_items boi ON c.serial_number = boi.serial_number
+                    JOIN build_orders bo ON boi.build_order_id = bo.id
+                    SET c.status = IF(bo.target_pc_name IS NOT NULL AND bo.target_pc_name != '', 'Installed', 'Asignado'),
+                        c.build_order_id = bo.id,
+                        c.assigned_pc = COALESCE(NULLIF(boi.pc_name, ''), NULLIF(bo.target_pc_name, ''), c.assigned_pc),
+                        c.assigned_user = COALESCE(NULLIF(bo.target_user, ''), c.assigned_user),
+                        c.assigned_fuero = COALESCE(NULLIF(bo.target_fuero, ''), c.assigned_fuero)
+                    WHERE bo.status = 'completed'
+                    """
+                )
+                print("Migración V55 aplicada correctamente.")
+            except Exception as e:
+                print(f"Aviso en migración V55: {e}")

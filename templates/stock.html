@@ -128,8 +128,9 @@
                     <div class="col-md-3">
                         <label class="form-label small fw-bold text-slate-300">Filtrar por Estado</label>
                         <select id="filterStatus" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="loadComponents()">
-                            <option value="" selected>🔍 Todos los Estados (Stock, Asignados, Instalados)</option>
+                            <option value="" selected>🔍 Todos los Estados (Stock, Reservados, Asignados, Instalados)</option>
                             <option value="Stock">📦 Solo En Stock (Libres)</option>
+                            <option value="Reservado">📦 Reservados en Orden de Armado</option>
                             <option value="Asignado">👤 Solo Asignados (Persona / Fuero)</option>
                             <option value="Installed">⚙️ Solo Instalados en PC</option>
                             <option value="Stock (Combo)">🧩 Combos / Kits en Depósito</option>
@@ -1637,7 +1638,10 @@
                         let retireBtn = `<button class="btn btn-sm btn-outline-warning py-0 px-1 ms-1" onclick="retireComponent('${safeSerial}')" title="Dar de baja / Retirar de servicio"><i class="bi bi-archive"></i></button>`;
                         let deleteBtn = `<button class="btn btn-sm btn-outline-danger py-0 px-1 ms-1" onclick="deleteComponent('${safeSerial}')" title="Eliminar definitivamente de la Base de Datos"><i class="bi bi-trash"></i></button>`;
 
-                        if (item.status === 'Stock') {
+                        if (item.status === 'Reservado' || item.build_order_id) {
+                            statusHtml = `<span class="badge bg-warning text-dark font-mono" style="padding:4px 8px;"><i class="bi bi-box-seam me-1"></i>Reservado</span>`;
+                            actionBtn = `<span class="badge bg-secondary py-1 px-2" title="Asignado a una Orden de Armado activa"><i class="bi bi-lock-fill me-1"></i>En Armado</span> ${retireBtn} ${deleteBtn}`;
+                        } else if (item.status === 'Stock') {
                             statusHtml = `<span class="stock-badge status-stock">✓ En Stock</span>`;
                             actionBtn = `<button class="btn btn-sm btn-primary py-0 px-2" onclick="openAssignModal('${safeSerial}', '${safeType}')"><i class="bi bi-person-plus me-1"></i>Asignar</button> ${retireBtn} ${deleteBtn}`;
                         } else if (item.status === 'Asignado') {
@@ -1649,10 +1653,19 @@
                         } else if (item.status === 'Retirado') {
                             statusHtml = `<span class="stock-badge status-retired">✕ Retirado</span>`;
                             actionBtn = `<button class="btn btn-sm btn-outline-success py-0 px-2" onclick="restoreComponent('${safeSerial}')" title="Reactivar y volver a Stock"><i class="bi bi-arrow-counterclockwise me-1"></i>Volver a Stock</button> ${deleteBtn}`;
+                        } else {
+                            statusHtml = `<span class="stock-badge bg-secondary text-light">${escapeHtml(item.status || 'Stock')}</span>`;
+                            actionBtn = `${retireBtn} ${deleteBtn}`;
                         }
 
                         let assignedInfo = '-';
-                        if (item.assigned_pc) {
+                        if (item.status === 'Reservado' || item.build_order_id) {
+                            const boLabel = item.bo_code || (item.build_order_id ? ('BO #' + item.build_order_id) : 'Orden de Armado');
+                            assignedInfo = `<div><strong class="text-warning font-mono"><i class="bi bi-box-seam me-1"></i>${escapeHtml(boLabel)}</strong></div>`;
+                            if (item.assigned_pc || item.assigned_user || item.assigned_fuero) {
+                                assignedInfo += `<div class="small text-muted">Destino: ${escapeHtml(item.assigned_pc || item.assigned_user || item.assigned_fuero)}</div>`;
+                            }
+                        } else if (item.assigned_pc) {
                             assignedInfo = `<a href="/pc/${encodeURIComponent(item.assigned_pc)}" class="fw-bold">🖥 ${escapeHtml(item.assigned_pc)}</a>`;
                         } else if (item.assigned_user || item.assigned_fuero) {
                             assignedInfo = `<div><strong>👤 ${escapeHtml(item.assigned_user || 'Sin Usuario')}</strong></div><div class="small text-muted">🏛 ${escapeHtml(item.assigned_fuero || '')}</div>`;
