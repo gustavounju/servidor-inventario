@@ -434,11 +434,13 @@ def pc_detail(pc_name):
 
 @bp_dashboard.route("/public/asset/<pc_name>")
 def public_asset_info(pc_name):
-    """Vista pública/móvil optimizada para lectura de QR desde smartphone."""
+    """Vista pública/móvil optimizada para lectura de QR desde smartphone (Soporta PC o S/N Componente)."""
     try:
         from services.pc_details_service import get_pc_detail_context
+        
+        # 1. Probar si es una PC registrada en pcs
         ctx = get_pc_detail_context(pc_name)
-        if ctx:
+        if ctx and ctx.get("pc"):
             components = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
             monitors_detail = ctx.get("monitors_detail") or []
             return render_template(
@@ -446,8 +448,57 @@ def public_asset_info(pc_name):
                 **ctx,
                 components=components,
                 monitors_detail=monitors_detail,
+                is_standalone_component=False,
                 is_authenticated=is_authenticated()
             )
+        
+        # 2. Si no es una PC directamente, buscar en componentes por Número de Serie
+        with get_db_connection() as conn:
+            comp_row = conn.execute(
+                """
+                SELECT c.*, bo.code as bo_code
+                FROM components c
+                LEFT JOIN build_orders bo ON bo.id = c.build_order_id
+                WHERE LOWER(c.serial_number) = %s OR LOWER(c.serial_number) LIKE %s
+                LIMIT 1
+                """,
+                (pc_name.lower(), f"%{pc_name.lower()}%")
+            ).fetchone()
+            
+            if comp_row:
+                c_dict = dict(comp_row)
+                assigned_pc = c_dict.get("assigned_pc")
+                if assigned_pc:
+                    pc_ctx = get_pc_detail_context(assigned_pc)
+                    if pc_ctx and pc_ctx.get("pc"):
+                        components = pc_ctx.get("all_unified_components") or []
+                        monitors_detail = pc_ctx.get("monitors_detail") or []
+                        return render_template(
+                            "public_asset_info.html",
+                            **pc_ctx,
+                            components=components,
+                            monitors_detail=monitors_detail,
+                            scanned_comp=c_dict,
+                            is_standalone_component=False,
+                            is_authenticated=is_authenticated()
+                        )
+                
+                fake_pc = {
+                    "pc_name": c_dict.get("serial_number"),
+                    "fuero": c_dict.get("assigned_fuero") or "Depósito / Stock",
+                    "last_user": c_dict.get("assigned_user") or "En Stock",
+                    "validation_status": "validado" if c_dict.get("status") in ["Stock", "Asignado"] else "pendiente"
+                }
+                return render_template(
+                    "public_asset_info.html",
+                    pc_name=c_dict.get("serial_number"),
+                    pc=fake_pc,
+                    components=[c_dict],
+                    monitors_detail=[c_dict] if (c_dict.get("component_type") or "").upper() == "MONITOR" else [],
+                    is_standalone_component=True,
+                    is_authenticated=is_authenticated()
+                )
+
     except Exception as e:
         import logging
         logging.error("Error en public_asset_info para %s: %s", pc_name, e)
