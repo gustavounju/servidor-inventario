@@ -493,6 +493,26 @@ def build_orders_view():
             ).fetchall()
             stock_components = [dict(r) for r in stock_comps_rows]
 
+            # Helper interno de normalización de strings (ignora acentos y casing)
+            import unicodedata
+            def _clean_str(s):
+                if not s: return ""
+                s_norm = unicodedata.normalize('NFD', str(s))
+                return ''.join(c for c in s_norm if unicodedata.category(c) != 'Mn').lower().strip()
+
+            # Mapa de usuarios AD para resolver alias (ej. 'jangel' <-> 'Jimena Ángel Tapia')
+            ad_user_alias_map = {}
+            try:
+                ad_rows = conn.execute("SELECT username, real_name FROM ad_users").fetchall()
+                for ar in ad_rows:
+                    u_c = _clean_str(ar.get("username"))
+                    r_c = _clean_str(ar.get("real_name"))
+                    if u_c and r_c:
+                        ad_user_alias_map[u_c] = r_c
+                        ad_user_alias_map[r_c] = u_c
+            except Exception:
+                pass
+
             # Obtener mapa de validación de PCs en red
             pc_val_map = {}
             try:
@@ -502,17 +522,6 @@ def build_orders_view():
                 for pr in pc_rows:
                     if pr.get("pc_key"):
                         pc_val_map[pr["pc_key"]] = dict(pr)
-            except Exception:
-                pass
-
-            # Contadores globales de Gemelos Digitales en el sistema (100% alineados con el Dashboard)
-            system_validados = 0
-            system_sin_gemelo = 0
-            try:
-                v_row = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND validation_status = 'validado'").fetchone()
-                system_validados = v_row["c"] if v_row else 0
-                p_row = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND (validation_status IN ('pendiente', 'sin_gemelo') OR validation_status IS NULL)").fetchone()
-                system_sin_gemelo = p_row["c"] if p_row else 0
             except Exception:
                 pass
 
@@ -528,6 +537,8 @@ def build_orders_view():
             ).fetchall()
             
             build_orders_list = []
+            validados_count = 0
+            pendientes_count = 0
 
             for bo in bo_rows:
                 item_dict = dict(bo)
@@ -558,8 +569,10 @@ def build_orders_view():
                 val_status = None
 
                 # A) Coincidencia directa por nombre de PC
-                if target_pc and target_pc.lower() in pc_val_map:
-                    val_status = pc_val_map[target_pc.lower()].get("validation_status")
+                if target_pc and _clean_str(target_pc) in pc_val_map:
+                    p_info = pc_val_map[_clean_str(target_pc)]
+                    val_status = p_info.get("validation_status")
+                    matched_pc_name = p_info.get("pc_name")
                 
                 # B) Coincidencia por componentes asignados a una PC en la tabla components
                 if not val_status and items_list:
@@ -570,25 +583,29 @@ def build_orders_view():
                                 "SELECT assigned_pc FROM components WHERE serial_number = %s AND assigned_pc IS NOT NULL AND assigned_pc != ''",
                                 (sn,)
                             ).fetchone()
-                            if c_row and c_row.get("assigned_pc") and c_row["assigned_pc"].lower() in pc_val_map:
-                                matched_pc_name = c_row["assigned_pc"]
-                                val_status = pc_val_map[c_row["assigned_pc"].lower()].get("validation_status")
+                            if c_row and c_row.get("assigned_pc") and _clean_str(c_row["assigned_pc"]) in pc_val_map:
+                                p_info = pc_val_map[_clean_str(c_row["assigned_pc"])]
+                                matched_pc_name = p_info.get("pc_name")
+                                val_status = p_info.get("validation_status")
                                 break
                 
-                # C) Coincidencia por usuario asignado en la tabla pcs
+                # C) Coincidencia por usuario asignado en la tabla pcs (insensible a acentos, casing y alias)
                 if not val_status and target_user:
+                    tu_clean = _clean_str(target_user)
+                    tu_alias = ad_user_alias_map.get(tu_clean)
                     for p_key, p_data in pc_val_map.items():
-                        u_name = (p_data.get("last_user") or "").lower()
-                        if target_user.lower() in u_name or (u_name and u_name in target_user.lower()):
+                        u_clean = _clean_str(p_data.get("last_user"))
+                        if (tu_clean and tu_clean in u_clean) or (u_clean and u_clean in tu_clean) or (tu_alias and tu_alias in u_clean):
                             matched_pc_name = p_data.get("pc_name")
                             val_status = p_data.get("validation_status")
                             break
 
                 # D) Coincidencia por fuero si hay PC validada en ese fuero
                 if not val_status and target_fuero:
+                    tf_clean = _clean_str(target_fuero)
                     for p_key, p_data in pc_val_map.items():
-                        f_name = (p_data.get("fuero") or "").lower()
-                        if target_fuero.lower() in f_name or (f_name and f_name in target_fuero.lower()):
+                        f_clean = _clean_str(p_data.get("fuero"))
+                        if tf_clean and (tf_clean in f_clean or f_clean in tf_clean):
                             if p_data.get("validation_status") == "validado":
                                 matched_pc_name = p_data.get("pc_name")
                                 val_status = p_data.get("validation_status")
@@ -597,6 +614,12 @@ def build_orders_view():
                 item_dict["target_pc_name"] = matched_pc_name or target_pc
                 item_dict["validation_status"] = val_status
                 item_dict["pc_exists"] = bool(val_status)
+
+                # Conteo exclusivo para la vista de Órdenes de Armado
+                if val_status == "validado":
+                    validados_count += 1
+                elif bo["status"] != "cancelled":
+                    pendientes_count += 1
 
                 build_orders_list.append(item_dict)
 
