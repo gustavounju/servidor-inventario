@@ -442,16 +442,11 @@ def public_asset_info(pc_name):
         # 1. Probar si es una PC registrada en pcs
         ctx = get_pc_detail_context(pc_name)
         if ctx and ctx.get("pc"):
-            components = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
-            monitors_detail = ctx.get("monitors_detail") or []
-            return render_template(
-                "public_asset_info.html",
-                **ctx,
-                components=components,
-                monitors_detail=monitors_detail,
-                is_standalone_component=False,
-                is_authenticated=is_authenticated()
-            )
+            ctx["components"] = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
+            ctx["monitors_detail"] = ctx.get("monitors_detail") or []
+            ctx["is_standalone_component"] = False
+            ctx["is_authenticated"] = is_authenticated()
+            return render_template("public_asset_info.html", **ctx)
         
         # 2. Si no es una PC directamente, buscar en componentes por Número de Serie
         with get_db_connection() as conn:
@@ -472,17 +467,12 @@ def public_asset_info(pc_name):
                 if assigned_pc:
                     pc_ctx = get_pc_detail_context(assigned_pc)
                     if pc_ctx and pc_ctx.get("pc"):
-                        components = pc_ctx.get("all_unified_components") or []
-                        monitors_detail = pc_ctx.get("monitors_detail") or []
-                        return render_template(
-                            "public_asset_info.html",
-                            **pc_ctx,
-                            components=components,
-                            monitors_detail=monitors_detail,
-                            scanned_comp=c_dict,
-                            is_standalone_component=False,
-                            is_authenticated=is_authenticated()
-                        )
+                        pc_ctx["components"] = pc_ctx.get("all_unified_components") or []
+                        pc_ctx["monitors_detail"] = pc_ctx.get("monitors_detail") or []
+                        pc_ctx["scanned_comp"] = c_dict
+                        pc_ctx["is_standalone_component"] = False
+                        pc_ctx["is_authenticated"] = is_authenticated()
+                        return render_template("public_asset_info.html", **pc_ctx)
                 
                 fake_pc = {
                     "pc_name": c_dict.get("serial_number"),
