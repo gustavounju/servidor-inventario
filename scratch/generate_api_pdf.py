@@ -66,7 +66,7 @@ def create_api_documentation_pdf(output_path):
     pdf.cell(48, 5, "Token Oficial de Produccion:")
     pdf.set_font("Courier", "B", 9)
     pdf.set_text_color(180, 40, 40)
-    pdf.cell(0, 5, "z-NFJcr4BpXUypVxruNth3sBUSYelf8TKDTsB8cm4N0", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(0, 5, "<CONFIGURADO_EN_ENV_CONTABLE_API_TOKEN>", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     
     pdf.set_font("Helvetica", "", 8.5)
     pdf.set_text_color(80, 80, 80)
@@ -238,7 +238,7 @@ Respuesta HTTP 200 OK:
         "1. Desactivar SSL: En Postman -> Settings (engranaje) -> General -> Cambiar 'SSL certificate verification' a OFF.",
         "2. Crear Peticion HTTP GET con la URL (ej: https://10.15.2.251:5000/api/external/purchase-orders/185-2026).",
         "3. Ir a la pestana 'Authorization', seleccionar Type: 'Bearer Token'.",
-        "4. En el campo Token pegar la clave oficial: z-NFJcr4BpXUypVxruNth3sBUSYelf8TKDTsB8cm4N0",
+        "4. En el campo Token pegar la clave de variable de entorno CONTABLE_API_TOKEN.",
         "5. Presionar 'Send'. Debera retornar HTTP 200 OK con el cuerpo JSON."
     ]
     for step in steps:

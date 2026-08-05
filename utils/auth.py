@@ -239,9 +239,6 @@ def _user_from_bearer_token():
             t = os.environ.get(env_key, "").strip()
             if t:
                 valid_tokens.add(t)
-        
-        valid_tokens.add("NFJcr4BpXUypVxruNth3sBUSYelf8TKDTsB8cm4N0")
-        valid_tokens.add("z-NFJcr4BpXUypVxruNth3sBUSYelf8TKDTsB8cm4N0")
 
         for vt in valid_tokens:
             if hmac.compare_digest(token, vt):
