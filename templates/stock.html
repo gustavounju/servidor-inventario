@@ -1060,13 +1060,15 @@
             const tbody = document.getElementById('kitTableBody');
             tbody.innerHTML = '';
             const preset = [
-                { type: 'Gabinete', model: 'Gabinete ATX / CPU' },
-                { type: 'Motherboard', model: 'Motherboard H510M / LGA1200' },
-                { type: 'Disco', model: 'SSD 480GB SATA3' },
-                { type: 'Memoria', model: 'Memoria RAM DDR4 8GB' },
-                { type: 'Monitor', model: 'Monitor LED 22" Full HD' },
-                { type: 'Teclado', model: 'Teclado USB Español' },
-                { type: 'Mouse', model: 'Mouse Óptico USB' }
+                { type: 'Gabinete', model: '' },
+                { type: 'Fuente', model: '' },
+                { type: 'Motherboard', model: '' },
+                { type: 'Procesador', model: '' },
+                { type: 'Disco', model: '' },
+                { type: 'Memoria', model: '' },
+                { type: 'Monitor', model: '' },
+                { type: 'Teclado', model: '' },
+                { type: 'Mouse', model: '' }
             ];
 
             preset.forEach(item => {
@@ -1085,10 +1087,11 @@
                 <td>
                     <select class="form-select form-select-sm bg-dark text-white border-secondary kit-type-select">
                         <option value="Gabinete" ${defaultType === 'Gabinete' ? 'selected' : ''}>Gabinete / CPU</option>
+                        <option value="Fuente" ${defaultType === 'Fuente' ? 'selected' : ''}>Fuente de Poder</option>
                         <option value="Motherboard" ${defaultType === 'Motherboard' ? 'selected' : ''}>Motherboard</option>
+                        <option value="Procesador" ${defaultType === 'Procesador' ? 'selected' : ''}>Procesador / CPU</option>
                         <option value="Disco" ${defaultType === 'Disco' ? 'selected' : ''}>Disco Rígido / SSD</option>
                         <option value="Memoria" ${defaultType === 'Memoria' ? 'selected' : ''}>Memoria RAM</option>
-                        <option value="Fuente" ${defaultType === 'Fuente' ? 'selected' : ''}>Fuente de Poder</option>
                         <option value="Monitor" ${defaultType === 'Monitor' ? 'selected' : ''}>Monitor</option>
                         <option value="Teclado" ${defaultType === 'Teclado' ? 'selected' : ''}>Teclado</option>
                         <option value="Mouse" ${defaultType === 'Mouse' ? 'selected' : ''}>Mouse</option>
