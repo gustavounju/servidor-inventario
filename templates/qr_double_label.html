@@ -100,7 +100,7 @@
                         <div class="fw-bold text-dark mb-1" style="font-size: 0.74rem;">
                             <i class="bi bi-boxes me-1 text-primary"></i>Componentes Vinculados (S/N):
                         </div>
-                        {% for c in components %}
+                        {% for c in components if (c.component_type or '').strip().upper() != 'MONITOR' %}
                         <div class="comp-line">
                             • <strong>{{ c.component_type }}:</strong> {{ c.brand_model or 'Genérico' }}
                             <br>&nbsp;&nbsp;<span class="font-mono text-primary fw-bold">S/N: {{ c.serial_number or 'Sin S/N' }}</span>
@@ -112,7 +112,7 @@
                             {% endif %}
                         </div>
                         {% else %}
-                        <div class="text-muted small">• Sin componentes vinculados</div>
+                        <div class="text-muted small">• Sin componentes de CPU vinculados</div>
                         {% endfor %}
                     </div>
                 </div>

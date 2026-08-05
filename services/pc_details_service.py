@@ -395,15 +395,18 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
             "source": m.get("source", "merged")
         })
 
+    existing_types = {(c.get("component_type") or "").strip().upper() for c in all_unified_components}
+
     # Motherboard
     mb_hw = hardware_components.get("motherboard") or {}
     mb_model = mb_hw.get("model")
     mb_sn = mb_hw.get("serial")
     if mb_model and mb_model != "N/A":
         mb_sn_upper = (mb_sn or "").strip().upper()
-        if not mb_sn_upper or mb_sn_upper not in existing_serials:
+        has_real_sn = mb_sn_upper and mb_sn_upper not in ("N/A", "SIN S/N")
+        if (has_real_sn and mb_sn_upper not in existing_serials) or (not has_real_sn and "MOTHERBOARD" not in existing_types):
             matched_db = None
-            if mb_sn_upper and mb_sn_upper not in ("N/A", "SIN S/N"):
+            if has_real_sn:
                 row = conn.execute("SELECT * FROM components WHERE UPPER(serial_number) = %s LIMIT 1", (mb_sn_upper,)).fetchone()
                 if row: matched_db = dict(row)
             all_unified_components.append({
@@ -431,12 +434,14 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
             })
 
     # RAM
+    has_ram_in_components = any("RAM" in (c.get("component_type") or "").upper() for c in all_unified_components)
     for ram in (hardware_components.get("ram_modules") or []):
         r_sn = (ram.get("serial") or "").strip()
         r_sn_upper = r_sn.upper()
-        if not r_sn_upper or r_sn_upper not in existing_serials:
+        has_real_sn = r_sn_upper and r_sn_upper not in ("N/A", "SIN S/N")
+        if (has_real_sn and r_sn_upper not in existing_serials) or (not has_real_sn and not has_ram_in_components):
             matched_db = None
-            if r_sn_upper and r_sn_upper not in ("N/A", "SIN S/N"):
+            if has_real_sn:
                 row = conn.execute("SELECT * FROM components WHERE UPPER(serial_number) = %s LIMIT 1", (r_sn_upper,)).fetchone()
                 if row: matched_db = dict(row)
             all_unified_components.append({
@@ -450,12 +455,14 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
             })
 
     # Discos
+    has_disk_in_components = any(any(tok in (c.get("component_type") or "").upper() for tok in ["DISCO", "SSD", "HDD", "ALMACENAMIENTO"]) for c in all_unified_components)
     for disk in (hardware_components.get("disks") or []):
         d_sn = (disk.get("serial") or "").strip()
         d_sn_upper = d_sn.upper()
-        if not d_sn_upper or d_sn_upper not in existing_serials:
+        has_real_sn = d_sn_upper and d_sn_upper not in ("N/A", "SIN S/N")
+        if (has_real_sn and d_sn_upper not in existing_serials) or (not has_real_sn and not has_disk_in_components):
             matched_db = None
-            if d_sn_upper and d_sn_upper not in ("N/A", "SIN S/N"):
+            if has_real_sn:
                 row = conn.execute("SELECT * FROM components WHERE UPPER(serial_number) = %s LIMIT 1", (d_sn_upper,)).fetchone()
                 if row: matched_db = dict(row)
             all_unified_components.append({

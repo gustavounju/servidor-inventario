@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, abort,
 from datetime import datetime as dt
 from database.db_core import get_db_connection
 import socket
+import os
 from utils.constants import FUERO_COLORS, list_fuero_mapping_rows
 import datetime
 from io import BytesIO
