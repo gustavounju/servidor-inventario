@@ -563,6 +563,7 @@ def get_pc_detail_context(pc_name):
             if bo_match:
                 bo_dict = dict(bo_match)
                 pc_name_resolved = bo_dict.get("target_pc_name") or bo_dict.get("item_pc_name") or pc_name
+                pc_name = pc_name_resolved
                 pc = {
                     "pc_name": pc_name_resolved,
                     "last_user": bo_dict.get("target_user") or "Sin asignar",
