@@ -2681,18 +2681,543 @@
 
   </script>
 
-
-
-</body>
-
-
-
-</html>
-
     </div>
 
     <!-- TAB: COMPONENTES -->
     <div class="pd-pane" id="pane-componentes">
+
+    <style>
+      /* ── Comparador de componentes ──────────────────────────── */
+      .comp-panel {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-color, #e2e8f0);
+        box-shadow: 0 2px 12px rgba(15,23,42,0.06);
+        height: 100%;
+      }
+      .comp-panel__header {
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .comp-panel--stock .comp-panel__header {
+        background: rgba(99,102,241,0.12);
+        color: #6366f1;
+        border-bottom: 2px solid rgba(99,102,241,0.25);
+      }
+      .comp-panel--wmi .comp-panel__header {
+        background: rgba(14,165,233,0.1);
+        color: #0ea5e9;
+        border-bottom: 2px solid rgba(14,165,233,0.22);
+      }
+      .comp-panel__body {
+        padding: 14px;
+        background: var(--card-bg, #fff);
+      }
+      .comp-item {
+        border-radius: 8px;
+        border: 1px solid var(--border-color, #e2e8f0);
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        background: var(--bg-secondary, #f8fafc);
+        transition: border-color 0.15s;
+      }
+      .comp-item:last-child { margin-bottom: 0; }
+      .comp-item__type {
+        font-size: 0.67rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-muted, #64748b);
+        margin-bottom: 3px;
+      }
+      .comp-item__value {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--text-color, #0f172a);
+        word-break: break-word;
+        line-height: 1.3;
+      }
+      .comp-item__serial {
+        font-size: 0.72rem;
+        font-family: 'Courier New', monospace;
+        color: var(--text-muted, #64748b);
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      .comp-item__serial .badge { font-size: 0.68rem; }
+      .comp-item--match  { border-left: 3px solid #22c55e; }
+      .comp-item--diff   { border-left: 3px solid #ef4444; background: rgba(239,68,68,0.04); }
+      .comp-item--pending{ border-left: 3px solid #eab308; }
+      .comp-item--nodata { border-left: 3px solid #94a3b8; opacity: 0.7; }
+      .comp-separator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        padding: 0 6px;
+      }
+      .comp-separator__icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        background: var(--bg-secondary, #f1f5f9);
+        border: 2px solid var(--border-color, #e2e8f0);
+      }
+      .comp-row {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 0;
+        margin-bottom: 10px;
+        align-items: stretch;
+      }
+      .comp-legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        align-items: center;
+        font-size: 0.74rem;
+        color: var(--text-muted, #64748b);
+        margin-bottom: 14px;
+      }
+      .comp-legend-dot {
+        width: 10px; height: 10px;
+        border-radius: 2px;
+        display: inline-block;
+        margin-right: 4px;
+        flex-shrink: 0;
+      }
+    </style>
+
+    <!-- Banner de estado del Gemelo Digital -->
+    {% if pc.validation_status %}
+    <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3"
+         style="background:{% if pc.validation_status == 'validado' %}rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25){% elif pc.validation_status == 'discrepancia' %}rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3){% else %}rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.25){% endif %}">
+      <i class="bi {% if pc.validation_status == 'validado' %}bi-shield-check text-success{% elif pc.validation_status == 'discrepancia' %}bi-exclamation-triangle-fill text-danger{% else %}bi-clock-history text-warning{% endif %} fs-4"></i>
+      <div>
+        <div class="fw-bold" style="font-size:0.9rem; color:var(--text-color)">
+          {% if pc.validation_status == 'validado' %}Gemelo Digital Validado — Lo registrado coincide con la telemetría
+          {% elif pc.validation_status == 'discrepancia' %}Discrepancia Patrimonial — Los datos del stock no coinciden con el hardware detectado
+          {% else %}Pendiente de primera telemetría — Sin datos WMI para comparar
+          {% endif %}
+        </div>
+        <div style="font-size:0.77rem; color:var(--text-muted)">
+          📋 Columna izquierda: datos del <strong>stock patrimonial</strong> (remito / OC / serial impreso) &nbsp;·&nbsp;
+          🔬 Columna derecha: datos capturados por el <strong>script WMI</strong> en el último reporte
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Leyenda de colores -->
+    <div class="comp-legend">
+      <span><span class="comp-legend-dot" style="background:#22c55e"></span>Serial coincide</span>
+      <span><span class="comp-legend-dot" style="background:#ef4444"></span>Discrepancia detectada</span>
+      <span><span class="comp-legend-dot" style="background:#eab308"></span>Pendiente / Sin serial impreso</span>
+      <span><span class="comp-legend-dot" style="background:#94a3b8"></span>Sin datos en esa fuente</span>
+    </div>
+
+    <!-- ── COMPARADOR PRINCIPAL ─────────────────────────────── -->
+    {% set stock_types = pc_components | selectattr('assigned_to_component_id', 'none') | list %}
+    {% set wmi = hardware_components %}
+
+    {% if stock_types or wmi %}
+
+    <!-- Cabeceras de columna -->
+    <div class="comp-row mb-1">
+      <div class="text-center" style="font-size:0.72rem; font-weight:800; letter-spacing:0.07em; text-transform:uppercase; color:#6366f1; padding-bottom:4px;">
+        <i class="bi bi-archive-fill me-1"></i>Patrimonio Registrado (Stock)
+      </div>
+      <div style="width:44px;"></div>
+      <div class="text-center" style="font-size:0.72rem; font-weight:800; letter-spacing:0.07em; text-transform:uppercase; color:#0ea5e9; padding-bottom:4px;">
+        <i class="bi bi-broadcast me-1"></i>Telemetría WMI (Script)
+      </div>
+    </div>
+
+    <!-- ── Procesador ──────────────────────────────── -->
+    {% set wmi_cpu = pc.processor %}
+    {% set stock_cpu = pc_components | selectattr('component_type', 'equalto', 'Procesador') | list %}
+    <div class="comp-row">
+      <div class="comp-panel comp-panel--stock">
+        <div class="comp-panel__header"><i class="bi bi-cpu-fill"></i> Procesador</div>
+        <div class="comp-panel__body">
+          {% if stock_cpu %}
+            {% for c in stock_cpu %}
+            <div class="comp-item {% if wmi_cpu and c.brand_model and (c.brand_model | lower) in (wmi_cpu | lower) %}comp-item--match{% elif wmi_cpu %}comp-item--diff{% else %}comp-item--pending{% endif %}">
+              <div class="comp-item__type">{{ c.component_type }}</div>
+              <div class="comp-item__value">{{ c.brand_model }}</div>
+              <div class="comp-item__serial">
+                <i class="bi bi-upc-scan"></i>
+                {% if c.serial_number and c.serial_number != 'N/A' %}
+                  <span class="badge bg-dark font-monospace">{{ c.serial_number }}</span>
+                {% else %}
+                  <span class="text-muted fst-italic">Sin serial impreso</span>
+                {% endif %}
+                {% if c.remito %}<span class="badge bg-primary-subtle text-primary">Rem. {{ c.remito }}</span>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="comp-item comp-item--nodata">
+              <div class="comp-item__type">Procesador</div>
+              <div class="comp-item__value text-muted fst-italic">No registrado en stock</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="comp-separator">
+        <div class="comp-separator__icon">
+          {% if stock_cpu and wmi_cpu %}⟺{% else %}?{% endif %}
+        </div>
+      </div>
+      <div class="comp-panel comp-panel--wmi">
+        <div class="comp-panel__header"><i class="bi bi-broadcast"></i> CPU detectada</div>
+        <div class="comp-panel__body">
+          {% if wmi_cpu %}
+            <div class="comp-item comp-item--{% if stock_cpu and stock_cpu[0].brand_model and (stock_cpu[0].brand_model | lower) in (wmi_cpu | lower) %}match{% elif stock_cpu %}diff{% else %}pending{% endif %}">
+              <div class="comp-item__type">WMI · CPU</div>
+              <div class="comp-item__value">{{ wmi_cpu }}</div>
+              <div class="comp-item__serial"><i class="bi bi-broadcast"></i> Script de inventario</div>
+            </div>
+          {% else %}
+            <div class="comp-item comp-item--nodata">
+              <div class="comp-item__type">WMI · CPU</div>
+              <div class="comp-item__value text-muted fst-italic">Sin telemetría</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Placa Madre ──────────────────────────────── -->
+    {% set wmi_mb = wmi.motherboard if wmi else None %}
+    {% set stock_mb = pc_components | selectattr('component_type', 'equalto', 'Motherboard') | list %}
+    <div class="comp-row">
+      <div class="comp-panel comp-panel--stock">
+        <div class="comp-panel__header"><i class="bi bi-motherboard-fill"></i> Placa Madre</div>
+        <div class="comp-panel__body">
+          {% if stock_mb %}
+            {% for c in stock_mb %}
+            {% set wmi_sn = wmi_mb.serial if wmi_mb else 'N/A' %}
+            {% set sn_ok = c.serial_number and c.serial_number != 'N/A' and wmi_sn != 'N/A' and (c.serial_number | lower) == (wmi_sn | lower) %}
+            <div class="comp-item {% if sn_ok %}comp-item--match{% elif c.serial_number and c.serial_number != 'N/A' and wmi_sn != 'N/A' %}comp-item--diff{% else %}comp-item--pending{% endif %}">
+              <div class="comp-item__type">{{ c.component_type }}</div>
+              <div class="comp-item__value">{{ c.brand_model }}</div>
+              <div class="comp-item__serial">
+                <i class="bi bi-upc-scan"></i>
+                {% if c.serial_number and c.serial_number != 'N/A' %}
+                  <span class="badge bg-dark font-monospace">{{ c.serial_number }}</span>
+                {% else %}
+                  <span class="text-muted fst-italic">Sin serial impreso</span>
+                {% endif %}
+                {% if c.remito %}<span class="badge bg-primary-subtle text-primary">Rem. {{ c.remito }}</span>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="comp-item comp-item--nodata">
+              <div class="comp-item__type">Placa Madre</div>
+              <div class="comp-item__value text-muted fst-italic">No registrada en stock</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="comp-separator">
+        <div class="comp-separator__icon">⟺</div>
+      </div>
+      <div class="comp-panel comp-panel--wmi">
+        <div class="comp-panel__header"><i class="bi bi-broadcast"></i> Placa detectada</div>
+        <div class="comp-panel__body">
+          {% if wmi_mb %}
+            {% set stock_sn = stock_mb[0].serial_number if stock_mb else 'N/A' %}
+            {% set sn_ok = stock_sn and stock_sn != 'N/A' and wmi_mb.serial != 'N/A' and (stock_sn | lower) == (wmi_mb.serial | lower) %}
+            <div class="comp-item {% if sn_ok %}comp-item--match{% elif stock_mb %}comp-item--diff{% else %}comp-item--pending{% endif %}">
+              <div class="comp-item__type">WMI · Motherboard</div>
+              <div class="comp-item__value">{{ wmi_mb.model }}</div>
+              <div class="comp-item__serial">
+                <i class="bi bi-broadcast"></i>
+                {% if wmi_mb.serial != 'N/A' %}
+                  <span class="badge bg-secondary font-monospace">SN WMI: {{ wmi_mb.serial }}</span>
+                {% else %}
+                  <span class="text-muted fst-italic">SN no expuesto en BIOS</span>
+                {% endif %}
+              </div>
+            </div>
+          {% else %}
+            <div class="comp-item comp-item--nodata">
+              <div class="comp-item__type">WMI · Motherboard</div>
+              <div class="comp-item__value text-muted fst-italic">Sin telemetría</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Memoria RAM ──────────────────────────────── -->
+    {% set wmi_ram = wmi.ram_modules if wmi else [] %}
+    {% set stock_ram = pc_components | selectattr('component_type', 'equalto', 'Memoria RAM') | list %}
+    <div class="comp-row">
+      <div class="comp-panel comp-panel--stock">
+        <div class="comp-panel__header"><i class="bi bi-memory"></i> Memoria RAM</div>
+        <div class="comp-panel__body">
+          {% if stock_ram %}
+            {% for c in stock_ram %}
+            {% set matched_wmi = wmi_ram | selectattr('serial', 'equalto', c.serial_number) | list if c.serial_number and c.serial_number != 'N/A' else [] %}
+            <div class="comp-item {% if matched_wmi %}comp-item--match{% elif c.serial_number and c.serial_number != 'N/A' and wmi_ram %}comp-item--diff{% else %}comp-item--pending{% endif %}">
+              <div class="comp-item__type">{{ c.component_type }}</div>
+              <div class="comp-item__value">{{ c.brand_model }}</div>
+              <div class="comp-item__serial">
+                <i class="bi bi-upc-scan"></i>
+                {% if c.serial_number and c.serial_number != 'N/A' %}
+                  <span class="badge bg-dark font-monospace">{{ c.serial_number }}</span>
+                {% else %}
+                  <span class="text-muted fst-italic">Sin serial impreso</span>
+                {% endif %}
+                {% if c.remito %}<span class="badge bg-primary-subtle text-primary">Rem. {{ c.remito }}</span>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="comp-item comp-item--nodata">
+              <div class="comp-item__type">RAM</div>
+              <div class="comp-item__value text-muted fst-italic">No registrada en stock</div>
+              {% if pc.ram_gb %}<div class="comp-item__serial text-muted">WMI reporta: {{ pc.ram_gb }} GB total</div>{% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="comp-separator">
+        <div class="comp-separator__icon">⟺</div>
+      </div>
+      <div class="comp-panel comp-panel--wmi">
+        <div class="comp-panel__header"><i class="bi bi-broadcast"></i> RAM detectada ({{ pc.ram_gb }} GB)</div>
+        <div class="comp-panel__body">
+          {% if wmi_ram %}
+            {% for ram in wmi_ram %}
+            {% set matched_stock = stock_ram | selectattr('serial_number', 'equalto', ram.serial) | list if ram.serial != 'N/A' else [] %}
+            <div class="comp-item {% if matched_stock %}comp-item--match{% elif stock_ram and ram.serial != 'N/A' %}comp-item--diff{% else %}comp-item--pending{% endif %}">
+              <div class="comp-item__type">WMI · Módulo {{ loop.index }}</div>
+              <div class="comp-item__value">{{ ram.spec }}</div>
+              <div class="comp-item__serial">
+                <i class="bi bi-broadcast"></i>
+                {% if ram.serial != 'N/A' %}
+                  <span class="badge bg-secondary font-monospace">SN WMI: {{ ram.serial }}</span>
+                {% else %}
+                  <span class="text-muted fst-italic">SN no reportado por WMI</span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% elif pc.ram_detalles %}
+            <div class="comp-item comp-item--pending">
+              <div class="comp-item__type">WMI · RAM</div>
+              <div class="comp-item__value">{{ pc.ram_detalles }}</div>
+              <div class="comp-item__serial text-muted">Sin módulos individualizados</div>
+            </div>
+          {% else %}
+            <div class="comp-item comp-item--nodata">
+              <div class="comp-item__type">WMI · RAM</div>
+              <div class="comp-item__value text-muted fst-italic">Sin telemetría</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Discos / Almacenamiento ──────────────────────────────── -->
+    {% set wmi_disks = wmi.disks if wmi else [] %}
+    {% set stock_disks = pc_components | selectattr('component_type', 'in', ['Disco Rígido', 'Disco SSD', 'Disco HDD', 'Disco', 'SSD', 'HDD']) | list %}
+    <div class="comp-row">
+      <div class="comp-panel comp-panel--stock">
+        <div class="comp-panel__header"><i class="bi bi-device-hdd-fill"></i> Almacenamiento</div>
+        <div class="comp-panel__body">
+          {% if stock_disks %}
+            {% for c in stock_disks %}
+            {% set matched_wmi = wmi_disks | selectattr('serial', 'equalto', c.serial_number) | list if c.serial_number and c.serial_number != 'N/A' else [] %}
+            <div class="comp-item {% if matched_wmi %}comp-item--match{% elif c.serial_number and c.serial_number != 'N/A' and wmi_disks %}comp-item--diff{% else %}comp-item--pending{% endif %}">
+              <div class="comp-item__type">{{ c.component_type }}</div>
+              <div class="comp-item__value">{{ c.brand_model }}</div>
+              <div class="comp-item__serial">
+                <i class="bi bi-upc-scan"></i>
+                {% if c.serial_number and c.serial_number != 'N/A' %}
+                  <span class="badge bg-dark font-monospace">{{ c.serial_number }}</span>
+                {% else %}
+                  <span class="text-muted fst-italic">Sin serial impreso</span>
+                {% endif %}
+                {% if c.remito %}<span class="badge bg-primary-subtle text-primary">Rem. {{ c.remito }}</span>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="comp-item comp-item--nodata">
+              <div class="comp-item__type">Almacenamiento</div>
+              <div class="comp-item__value text-muted fst-italic">No registrado en stock</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="comp-separator">
+        <div class="comp-separator__icon">⟺</div>
+      </div>
+      <div class="comp-panel comp-panel--wmi">
+        <div class="comp-panel__header"><i class="bi bi-broadcast"></i> Discos detectados</div>
+        <div class="comp-panel__body">
+          {% if wmi_disks %}
+            {% for disk in wmi_disks %}
+            {% set matched_stock = stock_disks | selectattr('serial_number', 'equalto', disk.serial) | list if disk.serial != 'N/A' else [] %}
+            <div class="comp-item {% if matched_stock %}comp-item--match{% elif stock_disks and disk.serial != 'N/A' %}comp-item--diff{% else %}comp-item--pending{% endif %}">
+              <div class="comp-item__type">WMI · Disco {{ loop.index }}</div>
+              <div class="comp-item__value">{{ disk.model }}</div>
+              <div class="comp-item__serial">
+                <i class="bi bi-broadcast"></i>
+                {% if disk.serial != 'N/A' %}
+                  <span class="badge bg-secondary font-monospace">SN WMI: {{ disk.serial }}</span>
+                {% else %}
+                  <span class="text-muted fst-italic">SN no reportado</span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="comp-item comp-item--nodata">
+              <div class="comp-item__type">WMI · Discos</div>
+              <div class="comp-item__value text-muted fst-italic">Sin telemetría</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Monitor ──────────────────────────────── -->
+    {% set wmi_monitors = wmi.monitors if wmi else [] %}
+    {% set stock_monitors = pc_components | selectattr('component_type', 'equalto', 'Monitor') | list %}
+    {% if stock_monitors or wmi_monitors %}
+    <div class="comp-row">
+      <div class="comp-panel comp-panel--stock">
+        <div class="comp-panel__header"><i class="bi bi-display-fill"></i> Monitor</div>
+        <div class="comp-panel__body">
+          {% if stock_monitors %}
+            {% for c in stock_monitors %}
+            {% set matched_wmi = wmi_monitors | selectattr('serial', 'equalto', c.serial_number) | list if c.serial_number and c.serial_number != 'N/A' else [] %}
+            <div class="comp-item {% if matched_wmi %}comp-item--match{% elif c.serial_number and c.serial_number != 'N/A' and wmi_monitors %}comp-item--diff{% else %}comp-item--pending{% endif %}">
+              <div class="comp-item__type">{{ c.component_type }}</div>
+              <div class="comp-item__value">{{ c.brand_model }}</div>
+              <div class="comp-item__serial">
+                <i class="bi bi-upc-scan"></i>
+                {% if c.serial_number and c.serial_number != 'N/A' %}
+                  <span class="badge bg-dark font-monospace">{{ c.serial_number }}</span>
+                {% else %}
+                  <span class="text-muted fst-italic">Sin serial impreso</span>
+                {% endif %}
+                {% if c.remito %}<span class="badge bg-primary-subtle text-primary">Rem. {{ c.remito }}</span>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="comp-item comp-item--nodata">
+              <div class="comp-item__type">Monitor</div>
+              <div class="comp-item__value text-muted fst-italic">No registrado en stock</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="comp-separator">
+        <div class="comp-separator__icon">⟺</div>
+      </div>
+      <div class="comp-panel comp-panel--wmi">
+        <div class="comp-panel__header"><i class="bi bi-broadcast"></i> Monitor detectado</div>
+        <div class="comp-panel__body">
+          {% if wmi_monitors %}
+            {% for mon in wmi_monitors %}
+            {% set matched_stock = stock_monitors | selectattr('serial_number', 'equalto', mon.serial) | list if mon.serial != 'N/A' else [] %}
+            <div class="comp-item {% if matched_stock %}comp-item--match{% elif stock_monitors and mon.serial != 'N/A' %}comp-item--diff{% else %}comp-item--pending{% endif %}">
+              <div class="comp-item__type">WMI · Monitor {{ loop.index }}</div>
+              <div class="comp-item__value">{{ mon.model }}</div>
+              <div class="comp-item__serial">
+                <i class="bi bi-broadcast"></i>
+                {% if mon.serial != 'N/A' %}
+                  <span class="badge bg-secondary font-monospace">SN WMI: {{ mon.serial }}</span>
+                {% else %}
+                  <span class="text-muted fst-italic">SN no reportado por WMI</span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="comp-item comp-item--nodata">
+              <div class="comp-item__type">WMI · Monitor</div>
+              <div class="comp-item__value text-muted fst-italic">Sin telemetría</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Otros componentes del stock no categorizados arriba ── -->
+    {% set cat_types = ['Procesador', 'Motherboard', 'Memoria RAM', 'Disco Rígido', 'Disco SSD', 'Disco HDD', 'Disco', 'SSD', 'HDD', 'Monitor'] %}
+    {% set otros_stock = pc_components | rejectattr('assigned_to_component_id') | rejectattr('component_type', 'in', cat_types) | list %}
+    {% if otros_stock %}
+    <div class="mb-2">
+      <div style="font-size:0.72rem; font-weight:800; letter-spacing:0.07em; text-transform:uppercase; color:#6366f1; margin-bottom:8px;">
+        <i class="bi bi-archive-fill me-1"></i>Otros componentes del stock
+      </div>
+      <div class="row g-2">
+        {% for c in otros_stock %}
+        <div class="col-md-6 col-lg-4">
+          <div class="comp-item comp-item--pending">
+            <div class="comp-item__type">{{ c.component_type }}</div>
+            <div class="comp-item__value">{{ c.brand_model }}</div>
+            <div class="comp-item__serial">
+              <i class="bi bi-upc-scan"></i>
+              {% if c.serial_number and c.serial_number != 'N/A' %}
+                <span class="badge bg-dark font-monospace">{{ c.serial_number }}</span>
+              {% else %}
+                <span class="text-muted fst-italic">Sin serial impreso</span>
+              {% endif %}
+              {% if c.remito %}<span class="badge bg-primary-subtle text-primary">Rem. {{ c.remito }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-cpu fs-1 d-block mb-2 opacity-25"></i>
+      <p class="mb-1">Sin componentes registrados ni telemetría para este equipo.</p>
+      <small>Vinculá componentes desde el <strong>Stock</strong> o esperá el próximo reporte del script.</small>
+    </div>
+    {% endif %}
+
+    <!-- Acceso rápido -->
+    <div class="d-flex gap-2 flex-wrap mt-3 pt-3 border-top">
+      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAssignComponent">
+        <i class="bi bi-plus-circle me-1"></i>Vincular componente del stock
+      </button>
+      <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalCargarSeriales">
+        <i class="bi bi-pencil-square me-1"></i>Cargar / Corregir seriales
+      </button>
+      {% if pc.validation_status == 'discrepancia' or pc.validation_status == 'pendiente' %}
+      <button class="btn btn-sm btn-outline-warning" onclick="homologarTelemetria('{{ pc.pc_name }}')">
+        <i class="bi bi-check-circle me-1"></i>Homologar Telemetría
+      </button>
+      {% endif %}
+    </div>
 
     </div>
 
