@@ -395,8 +395,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
             "source": m.get("source", "merged")
         })
 
-    existing_types = {(c.get("component_type") or "").strip().upper() for c in all_unified_components}
-
+    has_mb_in_components = any(any(tok in t for tok in ["MOTHERBOARD", "PLACA MADRE"]) for t in existing_types)
     # Motherboard
     mb_hw = hardware_components.get("motherboard") or {}
     mb_model = mb_hw.get("model")
@@ -404,7 +403,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
     if mb_model and mb_model != "N/A":
         mb_sn_upper = (mb_sn or "").strip().upper()
         has_real_sn = mb_sn_upper and mb_sn_upper not in ("N/A", "SIN S/N")
-        if (has_real_sn and mb_sn_upper not in existing_serials) or (not has_real_sn and "MOTHERBOARD" not in existing_types):
+        if (has_real_sn and mb_sn_upper not in existing_serials) or (not has_real_sn and not has_mb_in_components):
             matched_db = None
             if has_real_sn:
                 row = conn.execute("SELECT * FROM components WHERE UPPER(serial_number) = %s LIMIT 1", (mb_sn_upper,)).fetchone()
