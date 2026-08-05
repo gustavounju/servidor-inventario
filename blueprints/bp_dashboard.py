@@ -11,6 +11,7 @@ from services.dashboard_overview import load_dashboard_overview
 from services.pc_actions import decommission_pc_service, reactivate_pc_service, delete_permanent_pc_service, update_pc_infrastructure_service
 from services.pc_details_service import get_pc_detail_context
 from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data, recalculate_all_pc_fueros
+from utils.auth import is_authenticated
 
 bp_dashboard = Blueprint('dashboard', __name__)
 
