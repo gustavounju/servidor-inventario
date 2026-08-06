@@ -280,7 +280,7 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
         })
 
         # 4. Almacenamiento (Disco)
-        disk_comps = comp_by_type.get("disco rígido", []) + comp_by_type.get("disco rigido", []) + comp_by_type.get("disco ssd", []) + comp_by_type.get("ssd", []) + comp_by_type.get("disco", []) + comp_by_type.get("almacenamiento", [])
+        disk_comps = comp_by_type.get("disco rígido", []) + comp_by_type.get("disco rigido", []) + comp_by_type.get("disco ssd", []) + comp_by_type.get("ssd", []) + comp_by_type.get("disco", []) + comp_by_type.get("almacenamiento", []) + comp_by_type.get("disco rígido / ssd", []) + comp_by_type.get("disco rigido / ssd", [])
         reg_disk = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in disk_comps) if disk_comps else "Sin registro en Stock"
         disk_has_telem = bool(script_disk and script_disk not in ("Sin reporte de script", "N/A"))
         disk_match = _hw_tokens_match(reg_disk, script_disk) if (disk_comps and disk_has_telem) else False if (disk_comps or disk_has_telem) else True
