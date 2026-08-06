@@ -134,11 +134,17 @@ def compute_validation_status(pc_name: str, conn) -> str:
 
         # 4. Verificar RAM registrada vs telemetría si existe registro previo
         reg_ram = pc_data.get("ram_gb")
-        if reg_ram and reg_ram > 0 and script_ram and float(script_ram) > 0:
+        if reg_ram and float(reg_ram) > 0 and script_ram and float(script_ram) > 0:
             try:
-                diff = abs(float(reg_ram) - float(script_ram))
-                # Si la diferencia de RAM es superior a 1 GB sin intervención registrada
-                if diff > 1.0:
+                r_ram = float(reg_ram)
+                s_ram = float(script_ram)
+                diff = abs(r_ram - s_ram)
+                is_apu_reserved = False
+                for tier in [2, 4, 8, 16, 32, 64, 128]:
+                    if s_ram <= tier and (tier - s_ram) <= (tier * 0.35) and r_ram == tier:
+                        is_apu_reserved = True
+                        break
+                if diff > 2.25 and not is_apu_reserved:
                     return "discrepancia"
             except Exception:
                 pass
@@ -293,8 +299,14 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
                     if m_telem:
                         telem_gb = float(m_telem.group())
                         if total_stock_gb > 0 and telem_gb > 0:
-                            if abs(total_stock_gb - telem_gb) <= 1.0 or round(telem_gb) == round(total_stock_gb) or int(round(telem_gb)) == int(total_stock_gb):
+                            diff = abs(total_stock_gb - telem_gb)
+                            if diff <= 2.25 or round(telem_gb) == round(total_stock_gb) or int(round(telem_gb)) == int(total_stock_gb):
                                 ram_match = True
+                            else:
+                                for tier in [2, 4, 8, 16, 32, 64, 128]:
+                                    if telem_gb <= tier and (tier - telem_gb) <= (tier * 0.35) and total_stock_gb == tier:
+                                        ram_match = True
+                                        break
                 except Exception:
                     pass
         elif not ram_comps and not ram_has_telem:
