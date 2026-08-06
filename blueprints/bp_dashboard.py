@@ -583,18 +583,24 @@ def update_pc_infrastructure(pc_name):
 
 @bp_dashboard.route("/pc/<pc_name>/update_serials", methods=["POST"])
 def update_pc_serials(pc_name):
-    """Actualiza los números de serie de CPU, monitor e impresora de una PC."""
-    monitor_sn = request.form.get('monitor_sn', '').strip()
+    """Actualiza los números de serie de CPU/Gabinete, monitor, impresora y motherboard de una PC."""
     cpu_sn = request.form.get('cpu_sn', '').strip()
+    monitor_sn = request.form.get('monitor_sn', '').strip()
     printer_sn = request.form.get('printer_sn', '').strip()
+    motherboard_sn = request.form.get('motherboard_sn', '').strip()
     try:
         with get_db_connection() as conn:
             conn.execute(
                 "UPDATE pcs SET serial_number = %s, serial_monitor = %s, serial_impresora = %s WHERE pc_name = %s",
                 (cpu_sn or None, monitor_sn or None, printer_sn or None, pc_name)
             )
+            if motherboard_sn:
+                conn.execute(
+                    "UPDATE components SET serial_number = %s WHERE LOWER(TRIM(assigned_pc)) = LOWER(TRIM(%s)) AND LOWER(component_type) IN ('motherboard', 'placa madre', 'mother')",
+                    (motherboard_sn, pc_name)
+                )
             conn.commit()
-        flash(f"Números de serie de {pc_name} actualizados.", "success")
+        flash(f"Números de serie de {pc_name} actualizados correctamente.", "success")
     except Exception as e:
         flash(f"Error al actualizar números de serie: {e}", "error")
     return redirect(request.referrer or url_for("dashboard.pc_detail", pc_name=pc_name))

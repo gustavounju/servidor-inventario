@@ -767,11 +767,21 @@ def get_pc_detail_context(pc_name):
         except Exception as bo_exc:
             logger.warning("Error buscando/enriqueciendo linked_bo para %s: %s", pc_name, bo_exc)
 
+        validation_comparison = get_pc_validation_comparison(pc_name, conn)
+        if validation_comparison and any(not row.get("match") for row in validation_comparison):
+            pc["validation_status"] = "discrepancia"
+            try:
+                conn.execute("UPDATE pcs SET validation_status = 'discrepancia' WHERE LOWER(TRIM(pc_name)) = LOWER(TRIM(%s))", (pc_name,))
+                conn.commit()
+            except Exception:
+                pass
+
         return {
             "pc": pc, "tareas": tareas, "technicians": technicians, "ad_users_list": ad_users_list,
             "audit_logs": audit_logs, "all_pcs": all_pcs, "pc_ups_list": pc_ups_list,
             "available_ups": available_ups, "pc_components": pc_components,
             "all_unified_components": all_unified_components,
+            "validation_comparison": validation_comparison,
             "monitors_detail": monitors_detail,
             "available_components": available_components, "baterias_disponibles": baterias_disponibles,
             "sharing_pc": sharing_pc_data, "clients_using_this_printer": clients_using_this_printer,

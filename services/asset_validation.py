@@ -230,57 +230,61 @@ def get_pc_validation_comparison(pc_name: str, conn=None):
 
         comp_by_type = {}
         for c in comps:
-            ctype = (c.get("component_type") or "Otro").strip().title()
+            ctype = (c.get("component_type") or "Otro").strip().lower()
             comp_by_type.setdefault(ctype, []).append(c)
 
         comparison = []
 
         # 1. Motherboard
-        mb_comps = comp_by_type.get("Motherboard", [])
-        reg_mb = ", ".join(f"{c['brand_model']} ({c['serial_number']})" for c in mb_comps) if mb_comps else "Sin registro de Placa"
-        mb_match = _hw_tokens_match(reg_mb, script_mb) if mb_comps else True
+        mb_comps = comp_by_type.get("motherboard", []) + comp_by_type.get("placa madre", []) + comp_by_type.get("mother", []) + comp_by_type.get("placa", [])
+        reg_mb = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in mb_comps) if mb_comps else "Sin registro en Stock"
+        mb_has_telem = bool(script_mb and script_mb not in ("Sin reporte de script", "N/A"))
+        mb_match = _hw_tokens_match(reg_mb, script_mb) if (mb_comps and mb_has_telem) else False if (mb_comps or mb_has_telem) else True
         comparison.append({
             "component": "Motherboard",
             "registered": reg_mb,
             "telemetry": script_mb,
             "match": mb_match,
-            "status_label": "Coincide OK" if mb_match else "Diferencia de Placa Madre"
+            "status_label": "Coincide OK" if mb_match else ("Pendiente Ejecutar Script (.ps1)" if mb_comps and not mb_has_telem else "Diferencia de Hardware")
         })
 
-        # 2. Procesador
-        cpu_comps = comp_by_type.get("Cpu", []) or comp_by_type.get("Gabinete", []) or comp_by_type.get("Pc", [])
-        reg_cpu = ", ".join(f"{c['brand_model']} ({c['serial_number']})" for c in cpu_comps) if cpu_comps else "Sin registro CPU"
-        proc_match = _hw_tokens_match(reg_cpu, script_proc) if cpu_comps else True
+        # 2. Procesador (CPU)
+        cpu_comps = comp_by_type.get("procesador", []) + comp_by_type.get("microprocesador", []) + comp_by_type.get("cpu", []) + comp_by_type.get("micro", [])
+        reg_cpu = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in cpu_comps) if cpu_comps else "Sin registro en Stock"
+        cpu_has_telem = bool(script_proc and script_proc not in ("Sin reporte de script", "N/A"))
+        proc_match = _hw_tokens_match(reg_cpu, script_proc) if (cpu_comps and cpu_has_telem) else False if (cpu_comps or cpu_has_telem) else True
         comparison.append({
             "component": "Procesador (CPU)",
             "registered": reg_cpu,
             "telemetry": script_proc,
             "match": proc_match,
-            "status_label": "Coincide OK" if proc_match else "Diferencia de Procesador"
+            "status_label": "Coincide OK" if proc_match else ("Pendiente Ejecutar Script (.ps1)" if cpu_comps and not cpu_has_telem else "Diferencia de Procesador")
         })
 
         # 3. Memoria RAM
-        ram_comps = comp_by_type.get("Memoria Ram", []) or comp_by_type.get("Ram", [])
-        reg_ram = ", ".join(f"{c['brand_model']} ({c['serial_number']})" for c in ram_comps) if ram_comps else "Sin registro RAM"
-        ram_match = _hw_tokens_match(reg_ram, script_ram) if (ram_comps and script_ram != "Sin reporte") else True
+        ram_comps = comp_by_type.get("memoria ram", []) + comp_by_type.get("ram", []) + comp_by_type.get("memoria", [])
+        reg_ram = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in ram_comps) if ram_comps else "Sin registro en Stock"
+        ram_has_telem = bool(script_ram and script_ram not in ("Sin reporte", "N/A"))
+        ram_match = _hw_tokens_match(reg_ram, script_ram) if (ram_comps and ram_has_telem) else False if (ram_comps or ram_has_telem) else True
         comparison.append({
             "component": "Memoria RAM",
             "registered": reg_ram,
-            "telemetry": f"{script_ram} GB" if script_ram != "Sin reporte" else "Sin reporte",
+            "telemetry": f"{script_ram} GB" if ram_has_telem else "Sin reporte",
             "match": ram_match,
-            "status_label": "Coincide OK" if ram_match else "Diferencia de Capacidad RAM"
+            "status_label": "Coincide OK" if ram_match else ("Pendiente Ejecutar Script (.ps1)" if ram_comps and not ram_has_telem else "Diferencia de RAM")
         })
 
         # 4. Almacenamiento (Disco)
-        disk_comps = comp_by_type.get("Disco Rígido", []) or comp_by_type.get("Disco", [])
-        reg_disk = ", ".join(f"{c['brand_model']} ({c['serial_number']})" for c in disk_comps) if disk_comps else "Sin registro Disco"
-        disk_match = _hw_tokens_match(reg_disk, script_disk) if (disk_comps and script_disk != "Sin reporte de script") else True
+        disk_comps = comp_by_type.get("disco rígido", []) + comp_by_type.get("disco rigido", []) + comp_by_type.get("disco ssd", []) + comp_by_type.get("ssd", []) + comp_by_type.get("disco", []) + comp_by_type.get("almacenamiento", [])
+        reg_disk = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in disk_comps) if disk_comps else "Sin registro en Stock"
+        disk_has_telem = bool(script_disk and script_disk not in ("Sin reporte de script", "N/A"))
+        disk_match = _hw_tokens_match(reg_disk, script_disk) if (disk_comps and disk_has_telem) else False if (disk_comps or disk_has_telem) else True
         comparison.append({
             "component": "Almacenamiento (Disco)",
             "registered": reg_disk,
             "telemetry": script_disk,
             "match": disk_match,
-            "status_label": "Coincide OK" if disk_match else "Diferencia de Disco"
+            "status_label": "Coincide OK" if disk_match else ("Pendiente Ejecutar Script (.ps1)" if disk_comps and not disk_has_telem else "Diferencia de Disco")
         })
 
         return comparison

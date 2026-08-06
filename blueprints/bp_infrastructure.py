@@ -362,30 +362,57 @@ def add_component():
     return redirect(url_for('infrastructure.index'))
 
 @bp_infrastructure.route('/components/<int:component_id>/assign_pc', methods=['POST'])
+@bp_infrastructure.route('/components/<int:component_id>/assign_pc', methods=['POST'])
 def assign_component_to_pc(component_id):
     pc_name = request.form.get('pc_name')
+    destination = request.form.get('destination', 'stock') # 'stock' or 'scrap'
+    reason = (request.form.get('reason') or '').strip()
+    replacement_id = request.form.get('replacement_component_id')
     
     try:
         with get_db_connection() as conn:
-            comp = conn.execute("SELECT assigned_pc, serial_number, component_type FROM components WHERE id = %s", (component_id,)).fetchone()
+            comp = conn.execute("SELECT assigned_pc, serial_number, component_type, brand_model FROM components WHERE id = %s", (component_id,)).fetchone()
             if not comp: return redirect(url_for('infrastructure.index'))
             
             old_pc = comp['assigned_pc']
             
             if pc_name:
-                conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = 'Instalado' WHERE id = %s", (pc_name, component_id))
+                conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = 'Instalado', lifecycle_status = 'desplegado' WHERE id = %s", (pc_name, component_id))
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                             (pc_name, f"{comp['component_type']} Asignado", str(old_pc), comp['serial_number'], current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
+                             (pc_name, f"{comp['component_type']} Asignado", str(old_pc or 'Stock'), f"{comp['brand_model']} ({comp['serial_number'] or 'Sin S/N'})", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             else:
-                conn.execute("UPDATE components SET assigned_pc = NULL, status = 'Stock' WHERE id = %s", (component_id,))
+                # Retiro / Sustitución
+                if destination == 'scrap':
+                    new_status = 'Retirado'
+                    new_lifecycle = 'scrap'
+                    dest_label = 'Enviado a Scrap (Baja por Falla)'
+                else:
+                    new_status = 'Stock'
+                    new_lifecycle = 'stock'
+                    dest_label = 'Devuelto a Stock (Disponible para Reuso)'
+                
+                conn.execute("UPDATE components SET assigned_pc = NULL, assigned_to_component_id = NULL, status = %s, lifecycle_status = %s WHERE id = %s", (new_status, new_lifecycle, component_id))
+                
                 if old_pc:
+                    log_detail = f"{comp['brand_model']} -> {dest_label}"
+                    if reason:
+                        log_detail += f" | Motivo: {reason}"
                     conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                                 (old_pc, f"{comp['component_type']} Retirado", comp['serial_number'], "None", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
+                                 (old_pc, f"Sustitución de {comp['component_type']}", f"{comp['brand_model']} ({comp['serial_number'] or 'Sin S/N'})", log_detail, current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
+            
+            # Si se seleccionó componente de reemplazo, asignarlo a la PC inmediatamente
+            target_pc = pc_name or old_pc
+            if replacement_id and target_pc:
+                rep_comp = conn.execute("SELECT serial_number, component_type, brand_model FROM components WHERE id = %s", (replacement_id,)).fetchone()
+                if rep_comp:
+                    conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = 'Instalado', lifecycle_status = 'desplegado' WHERE id = %s", (target_pc, replacement_id))
+                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                 (target_pc, f"Reemplazo {rep_comp['component_type']} Instalado", "Sin componente", f"{rep_comp['brand_model']} ({rep_comp['serial_number'] or 'Sin S/N'})", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             
             conn.commit()
-            flash("Asignación de componente a PC actualizada.", "success")
+            flash("Operación de sustitución procesada correctamente.", "success")
     except Exception as e:
-        flash(f"Error vinculando componente: {e}", "error")
+        flash(f"Error procesando componente: {e}", "error")
         
     return redirect(request.referrer or url_for('infrastructure.index'))
 
