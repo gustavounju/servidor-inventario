@@ -422,7 +422,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
     # Procesador
     proc_hw = hardware_components.get("processor")
     if proc_hw and proc_hw != "N/A":
-        if not any((c.get("component_type") or "").upper() in ("PROCESADOR", "CPU") for c in all_unified_components):
+        if not any(any(tok in (c.get("component_type") or "").upper() for tok in ["PROCESADOR", "CPU", "MICRO"]) for c in all_unified_components):
             all_unified_components.append({
                 "component_type": "Procesador",
                 "brand_model": proc_hw,
@@ -434,7 +434,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
             })
 
     # RAM
-    has_ram_in_components = any("RAM" in (c.get("component_type") or "").upper() for c in all_unified_components)
+    has_ram_in_components = any(any(tok in (c.get("component_type") or "").upper() for tok in ["RAM", "MEMORIA"]) for c in all_unified_components)
     for ram in (hardware_components.get("ram_modules") or []):
         r_sn = (ram.get("serial") or "").strip()
         r_sn_upper = r_sn.upper()
