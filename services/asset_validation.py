@@ -34,6 +34,8 @@ def _normalize_hw_token(value: str) -> str:
     # Eliminar sufijos de velocidad / revisiones que no identifican el modelo
     v = re.sub(r"\s*@\s*[\d.]+\s*GHZ", "", v)
     v = re.sub(r"\s+REV\s*[\d.]+", "", v)
+    # Remove 'SN:' or '(SN: ' to avoid false discrepancies between telemetry and stock
+    v = re.sub(r"\(SN:\s*", "(", v)
     v = re.sub(r"\s+", " ", v)
     return v.strip()
 
