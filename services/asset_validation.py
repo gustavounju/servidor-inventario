@@ -36,8 +36,8 @@ def _normalize_hw_token(value: str) -> str:
     v = re.sub(r"\s+REV\s*[\d.]+", "", v)
     # Eliminar prefijos de número de serie habituales como SN:, S/N:, UUID:
     v = re.sub(r"\[?\b(SN|S/N|SERIAL|UUID)\b\s*:\s*", "", v)
-    # Reemplazar corchetes y paréntesis por espacios para evitar fallos por puntuación
-    v = re.sub(r"[\[\]\(\)\,\;]", " ", v)
+    # Reemplazar corchetes, paréntesis, comas y barras por espacios para evitar fallos por puntuación
+    v = re.sub(r"[\[\]\(\)\,\;\|]", " ", v)
     v = re.sub(r"\s+", " ", v)
     return v.strip()
 
