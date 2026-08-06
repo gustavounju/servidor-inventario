@@ -767,7 +767,7 @@ def get_pc_detail_context(pc_name):
         except Exception as bo_exc:
             logger.warning("Error buscando/enriqueciendo linked_bo para %s: %s", pc_name, bo_exc)
 
-        validation_comparison = get_pc_validation_comparison(pc_name, conn)
+        validation_comparison = get_pc_validation_comparison(pc_name, conn, unified_components=all_unified_components)
         if validation_comparison and any(not row.get("match") for row in validation_comparison):
             pc["validation_status"] = "discrepancia"
             try:

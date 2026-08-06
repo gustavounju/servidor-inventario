@@ -191,7 +191,7 @@ def recalculate_all_validation_statuses() -> dict:
     return counts
 
 
-def get_pc_validation_comparison(pc_name: str, conn=None):
+def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=None):
     """
     Construye una comparativa estructurada entre el Armado Patrimonial (componentes asignados)
     y la Telemetría Real reportada por el script .ps1.
@@ -208,10 +208,13 @@ def get_pc_validation_comparison(pc_name: str, conn=None):
         if not pc:
             return []
 
-        comps = conn.execute(
-            "SELECT serial_number, component_type, brand_model FROM components WHERE LOWER(TRIM(assigned_pc)) = LOWER(TRIM(%s)) AND status NOT IN ('Retirado', 'Scrap')",
-            (pc_name,)
-        ).fetchall()
+        if unified_components is not None:
+            comps = unified_components
+        else:
+            comps = conn.execute(
+                "SELECT serial_number, component_type, brand_model FROM components WHERE LOWER(TRIM(assigned_pc)) = LOWER(TRIM(%s)) AND status NOT IN ('Retirado', 'Scrap')",
+                (pc_name,)
+            ).fetchall()
 
         telemetry_raw = pc.get("telemetry_snapshot") or pc.get("full_json_data")
         script_data = {}
