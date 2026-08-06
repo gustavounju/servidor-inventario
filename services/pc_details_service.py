@@ -768,10 +768,12 @@ def get_pc_detail_context(pc_name):
             logger.warning("Error buscando/enriqueciendo linked_bo para %s: %s", pc_name, bo_exc)
 
         validation_comparison = get_pc_validation_comparison(pc_name, conn, unified_components=all_unified_components)
-        if validation_comparison and any(not row.get("match") for row in validation_comparison):
-            pc["validation_status"] = "discrepancia"
+        if validation_comparison:
+            has_discrepancy = any(not row.get("match") for row in validation_comparison)
+            new_status = "discrepancia" if has_discrepancy else "validado"
+            pc["validation_status"] = new_status
             try:
-                conn.execute("UPDATE pcs SET validation_status = 'discrepancia' WHERE LOWER(TRIM(pc_name)) = LOWER(TRIM(%s))", (pc_name,))
+                conn.execute("UPDATE pcs SET validation_status = %s WHERE LOWER(TRIM(pc_name)) = LOWER(TRIM(%s))", (new_status, pc_name))
                 conn.commit()
             except Exception:
                 pass

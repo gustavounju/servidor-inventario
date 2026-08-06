@@ -34,8 +34,10 @@ def _normalize_hw_token(value: str) -> str:
     # Eliminar sufijos de velocidad / revisiones que no identifican el modelo
     v = re.sub(r"\s*@\s*[\d.]+\s*GHZ", "", v)
     v = re.sub(r"\s+REV\s*[\d.]+", "", v)
-    # Remove 'SN:' or '(SN: ' to avoid false discrepancies between telemetry and stock
-    v = re.sub(r"\(SN:\s*", "(", v)
+    # Eliminar prefijos de número de serie habituales como SN:, S/N:, UUID:
+    v = re.sub(r"\[?\b(SN|S/N|SERIAL|UUID)\b\s*:\s*", "", v)
+    # Reemplazar corchetes y paréntesis por espacios para evitar fallos por puntuación
+    v = re.sub(r"[\[\]\(\)\,\;]", " ", v)
     v = re.sub(r"\s+", " ", v)
     return v.strip()
 
@@ -270,11 +272,38 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
         ram_comps = comp_by_type.get("memoria ram", []) + comp_by_type.get("ram", []) + comp_by_type.get("memoria", [])
         reg_ram = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in ram_comps) if ram_comps else "Sin registro en Stock"
         ram_has_telem = bool(script_ram and script_ram not in ("Sin reporte", "N/A"))
-        ram_match = _hw_tokens_match(reg_ram, script_ram) if (ram_comps and ram_has_telem) else False if (ram_comps or ram_has_telem) else True
+        
+        ram_match = False
+        if ram_comps and ram_has_telem:
+            if _hw_tokens_match(reg_ram, script_ram):
+                ram_match = True
+            else:
+                total_stock_gb = 0.0
+                for c in ram_comps:
+                    bm = (c.get("brand_model") or "") + " " + (c.get("component_type") or "")
+                    m = re.search(r"(\d+(?:\.\d+)?)\s*GB", bm, re.IGNORECASE)
+                    if m:
+                        total_stock_gb += float(m.group(1))
+                if total_stock_gb == 0.0:
+                    gb_matches = re.findall(r"(\d+(?:\.\d+)?)\s*GB", reg_ram, re.IGNORECASE)
+                    if gb_matches:
+                        total_stock_gb = sum(float(x) for x in gb_matches)
+                try:
+                    m_telem = re.search(r"[\d.]+", str(script_ram))
+                    if m_telem:
+                        telem_gb = float(m_telem.group())
+                        if total_stock_gb > 0 and telem_gb > 0:
+                            if abs(total_stock_gb - telem_gb) <= 1.0 or round(telem_gb) == round(total_stock_gb) or int(round(telem_gb)) == int(total_stock_gb):
+                                ram_match = True
+                except Exception:
+                    pass
+        elif not ram_comps and not ram_has_telem:
+            ram_match = True
+
         comparison.append({
             "component": "Memoria RAM",
             "registered": reg_ram,
-            "telemetry": f"{script_ram} GB" if ram_has_telem else "Sin reporte",
+            "telemetry": f"{script_ram} GB" if ram_has_telem and not str(script_ram).lower().endswith("gb") else (script_ram if ram_has_telem else "Sin reporte"),
             "match": ram_match,
             "status_label": "Coincide OK" if ram_match else ("Pendiente Ejecutar Script (.ps1)" if ram_comps and not ram_has_telem else "Diferencia de RAM")
         })
