@@ -12,114 +12,142 @@
             color: #0f172a;
             font-family: system-ui, -apple-system, sans-serif;
         }
+
         .label-card {
             border: 2px solid #0284c7;
-            border-radius: 10px;
+            border-radius: 8px;
             background: #ffffff;
-            padding: 16px;
+            padding: 12px;
             width: 100%;
-            max-width: 490px;
+            max-width: 480px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        .label-header {
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
-        }
+
         .qr-img {
-            width: 130px;
-            height: 130px;
+            width: 110px;
+            height: 110px;
             border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 4px;
+            border-radius: 6px;
+            padding: 3px;
             background: #fff;
         }
+
         .font-mono {
             font-family: monospace;
         }
-        .comp-line {
-            font-size: 0.73rem;
-            line-height: 1.3;
-            margin-bottom: 3px;
+
+        /* Modo Compacto Solo QR (Stickers Pequeños) */
+        .compact-mode .label-card {
+            max-width: 270px !important;
+            padding: 8px !important;
+            border: 1.5px solid #0f172a !important;
         }
+
+        .compact-mode .qr-img {
+            width: 75px !important;
+            height: 75px !important;
+            padding: 2px !important;
+        }
+
+        .compact-mode .extra-details {
+            display: none !important;
+        }
+
+        .compact-mode .compact-only {
+            display: block !important;
+        }
+
+        .compact-only {
+            display: none;
+        }
+
         @media print {
             .no-print {
                 display: none !important;
             }
             body {
                 background-color: #ffffff !important;
+                padding: 0 !important;
             }
             .label-card {
                 box-shadow: none !important;
-                border: 2px solid #000 !important;
+                border: 1.5px solid #000 !important;
                 page-break-inside: avoid;
             }
         }
     </style>
 </head>
-<body class="p-4">
+<body class="p-4 compact-mode" id="labelBody">
 
-    <!-- Action Toolbar (Hidden when printing) -->
+    <!-- Action Toolbar (Oculto al imprimir) -->
     <div class="d-flex justify-content-between align-items-center mb-4 no-print container" style="max-width: 1000px;">
-        <div>
-            <a href="{{ url_for('dashboard.pc_detail', pc_name=pc_name) }}" class="btn btn-outline-secondary btn-sm me-2">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('dashboard.pc_detail', pc_name=pc_name) }}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left me-1"></i>Volver a Ficha PC
             </a>
-            <span class="fw-bold text-dark fs-5">Impresión de Etiquetas QR Par (CPU + Monitor)</span>
+            <span class="fw-bold text-dark fs-5 ms-2">Etiquetas QR - {{ pc_name }}</span>
         </div>
-        <button onclick="window.print()" class="btn btn-primary btn-sm fw-bold shadow-sm">
-            <i class="bi bi-printer-fill me-1"></i>Imprimir Etiquetas
-        </button>
+
+        <div class="d-flex gap-2 align-items-center">
+            <!-- Mode Switcher -->
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary active" id="btnModeCompact" onclick="setLabelMode('compact')">
+                    <i class="bi bi-qr-code me-1"></i>Solo QR (Sticker Pequeño)
+                </button>
+                <button type="button" class="btn btn-outline-primary" id="btnModeFull" onclick="setLabelMode('full')">
+                    <i class="bi bi-card-text me-1"></i>Detallado
+                </button>
+            </div>
+
+            <button onclick="window.print()" class="btn btn-primary btn-sm fw-bold shadow-sm">
+                <i class="bi bi-printer-fill me-1"></i>Imprimir QR
+            </button>
+        </div>
     </div>
 
     {% set total_stickers = 1 + (monitors_detail | length if monitors_detail else 1) %}
-    <div class="container d-flex flex-wrap justify-content-center gap-4" style="max-width: 1050px;">
+    <div class="container d-flex flex-wrap justify-content-center gap-3" style="max-width: 1050px;">
 
         <!-- STICKER 1: GABINETE CPU -->
         <div class="label-card">
-            <div class="label-header d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
                 <div>
-                    <span class="badge bg-primary text-uppercase px-2 py-1" style="font-size: 0.7rem;">Sticker 1 / {{ total_stickers }} • CPU</span>
-                    <h5 class="fw-bold text-dark mb-0 mt-1"><i class="bi bi-pc-display me-2 text-primary"></i>{{ pc_name }}</h5>
+                    <span class="badge bg-primary text-uppercase px-2 py-0-5" style="font-size: 0.65rem;">Sticker 1 • CPU</span>
+                    <h6 class="fw-bold text-dark mb-0 mt-1 font-mono"><i class="bi bi-pc-display me-1 text-primary"></i>{{ pc_name }}</h6>
                 </div>
-                <div class="text-end text-muted small">
-                    <div>Poder Judicial</div>
-                    <div class="fw-bold" style="font-size: 0.75rem;">San Pedro - Jujuy</div>
+                <div class="text-end text-muted" style="font-size: 0.68rem;">
+                    <div>Poder Judicial Jujuy</div>
+                    <div class="fw-bold">{{ pc_info.fuero or 'San Pedro' }}</div>
                 </div>
             </div>
 
-            <div class="d-flex gap-3 align-items-start">
+            <div class="d-flex gap-2 align-items-center">
                 <div>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code {{ pc_name }}">
                 </div>
-                <div class="flex-grow-1">
-                    <div class="mb-1" style="font-size: 0.82rem;"><strong>Equipo:</strong> <span class="text-dark font-mono fw-bold">{{ pc_name }}</span></div>
-                    <div class="mb-2" style="font-size: 0.82rem;"><strong>Fuero / Ubicación:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
-                    
-                    <div class="border-top pt-2">
-                        <div class="fw-bold text-dark mb-1" style="font-size: 0.74rem;">
-                            <i class="bi bi-boxes me-1 text-primary"></i>Componentes Vinculados (S/N):
+                
+                <div class="flex-grow-1 min-w-0">
+                    <div class="font-mono fw-bold text-dark mb-1" style="font-size: 0.85rem;">{{ pc_name }}</div>
+                    <div class="text-muted small" style="font-size: 0.72rem;"><strong>Fuero:</strong> {{ pc_info.fuero or 'General' }}</div>
+                    {% if pc_info.ad_real_name or pc_info.last_user %}
+                    <div class="text-muted small" style="font-size: 0.72rem;"><strong>Usuario:</strong> {{ pc_info.ad_real_name or pc_info.last_user }}</div>
+                    {% endif %}
+
+                    <!-- Extra details (Hidden in compact QR mode) -->
+                    <div class="extra-details border-top pt-2 mt-2">
+                        <div class="fw-bold text-dark mb-1" style="font-size: 0.72rem;">
+                            Componentes Vinculados:
                         </div>
                         {% for c in components if (c.component_type or '').strip().upper() != 'MONITOR' %}
                         <div class="comp-line">
                             • <strong>{{ c.component_type }}:</strong> {{ c.brand_model or 'Genérico' }}
-                            <br>&nbsp;&nbsp;<span class="font-mono text-primary fw-bold">S/N: {{ c.serial_number or 'Sin S/N' }}</span>
-                            {% if c.invoice_number %}
-                            <span class="badge bg-light text-dark border font-mono" style="font-size: 0.62rem;">REM: {{ c.invoice_number }}</span>
-                            {% endif %}
-                            {% if c.oc_number %}
-                            <span class="badge bg-light text-dark border font-mono" style="font-size: 0.62rem;">OC: {{ c.oc_number }}</span>
-                            {% endif %}
+                            <span class="font-mono text-primary fw-bold">({{ c.serial_number or 'Sin S/N' }})</span>
                         </div>
                         {% else %}
-                        <div class="text-muted small">• Sin componentes de CPU vinculados</div>
+                        <div class="text-muted small">• Sin componentes vinculados</div>
                         {% endfor %}
                     </div>
                 </div>
-            </div>
-
-            <div class="mt-3 text-center border-top pt-2 text-muted font-mono" style="font-size: 0.7rem;">
-                <i class="bi bi-qr-code me-1"></i>Escanear para verificar la Ficha Patrimonial del Poder Judicial
             </div>
         </div>
 
@@ -127,75 +155,82 @@
         {% if monitors_detail %}
             {% for m in monitors_detail %}
             <div class="label-card">
-                <div class="label-header d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
                     <div>
-                        <span class="badge bg-info text-dark text-uppercase px-2 py-1" style="font-size: 0.7rem;">Sticker {{ loop.index + 1 }} / {{ total_stickers }} • Monitor</span>
-                        <h5 class="fw-bold text-dark mb-0 mt-1"><i class="bi bi-display me-2 text-info"></i>{{ pc_name }}</h5>
+                        <span class="badge bg-info text-dark text-uppercase px-2 py-0-5" style="font-size: 0.65rem;">Sticker {{ loop.index + 1 }} • Monitor</span>
+                        <h6 class="fw-bold text-dark mb-0 mt-1 font-mono"><i class="bi bi-display me-1 text-info"></i>{{ pc_name }}</h6>
                     </div>
-                    <div class="text-end text-muted small">
-                        <div>Poder Judicial</div>
-                        <div class="fw-bold" style="font-size: 0.75rem;">San Pedro - Jujuy</div>
+                    <div class="text-end text-muted" style="font-size: 0.68rem;">
+                        <div>Poder Judicial Jujuy</div>
+                        <div class="fw-bold">{{ pc_info.fuero or 'San Pedro' }}</div>
                     </div>
                 </div>
 
-                <div class="d-flex gap-3 align-items-start">
+                <div class="d-flex gap-2 align-items-center">
                     <div>
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code Monitor">
                     </div>
-                    <div class="flex-grow-1 small">
-                        <div class="mb-1" style="font-size: 0.85rem;"><strong>S/N Monitor:</strong> <span class="font-mono fw-bold text-primary">{{ m.serial_number or 'Sin S/N' }}</span></div>
-                        <div class="mb-1"><strong>Modelo:</strong> {{ m.brand_model or 'Monitor Estándar' }}</div>
-                        <div class="mb-2"><strong>Fuero / Ubicación:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
-                        
-                        {% if m.invoice_number or m.oc_number %}
-                        <div class="border-top pt-2 mt-2 font-mono">
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="font-mono fw-bold text-dark mb-1" style="font-size: 0.85rem;">{{ pc_name }}</div>
+                        <div class="text-muted small mb-1" style="font-size: 0.75rem;"><strong>S/N Monitor:</strong> <span class="font-mono fw-bold text-primary">{{ m.serial_number or 'Sin S/N' }}</span></div>
+                        <div class="text-muted small" style="font-size: 0.72rem;"><strong>Modelo:</strong> {{ m.brand_model or 'Monitor Estándar' }}</div>
+
+                        <div class="extra-details border-top pt-2 mt-2 font-mono" style="font-size: 0.72rem;">
                             {% if m.invoice_number %}
-                            <div style="font-size:0.75rem;"><strong>Remito:</strong> <span class="text-dark fw-bold">{{ m.invoice_number }}</span></div>
+                            <div><strong>Remito:</strong> {{ m.invoice_number }}</div>
                             {% endif %}
                             {% if m.oc_number %}
-                            <div style="font-size:0.75rem;"><strong>Orden de Compra:</strong> <span class="text-dark fw-bold">{{ m.oc_number }}</span></div>
+                            <div><strong>OC:</strong> {{ m.oc_number }}</div>
                             {% endif %}
                         </div>
-                        {% endif %}
                     </div>
-                </div>
-
-                <div class="mt-3 text-center border-top pt-2 text-muted font-mono" style="font-size: 0.7rem;">
-                    <i class="bi bi-qr-code me-1"></i>Escanear para verificar la Ficha Patrimonial del Poder Judicial
                 </div>
             </div>
             {% endfor %}
         {% else %}
             <div class="label-card">
-                <div class="label-header d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
                     <div>
-                        <span class="badge bg-info text-dark text-uppercase px-2 py-1" style="font-size: 0.7rem;">Sticker 2 / 2 • Monitor</span>
-                        <h5 class="fw-bold text-dark mb-0 mt-1"><i class="bi bi-display me-2 text-info"></i>{{ pc_name }}</h5>
+                        <span class="badge bg-info text-dark text-uppercase px-2 py-0-5" style="font-size: 0.65rem;">Sticker 2 • Monitor</span>
+                        <h6 class="fw-bold text-dark mb-0 mt-1 font-mono"><i class="bi bi-display me-1 text-info"></i>{{ pc_name }}</h6>
                     </div>
-                    <div class="text-end text-muted small">
-                        <div>Poder Judicial</div>
-                        <div class="fw-bold" style="font-size: 0.75rem;">San Pedro - Jujuy</div>
+                    <div class="text-end text-muted" style="font-size: 0.68rem;">
+                        <div>Poder Judicial Jujuy</div>
+                        <div class="fw-bold">{{ pc_info.fuero or 'San Pedro' }}</div>
                     </div>
                 </div>
 
-                <div class="d-flex gap-3 align-items-start">
+                <div class="d-flex gap-2 align-items-center">
                     <div>
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code Monitor">
                     </div>
-                    <div class="flex-grow-1 small">
-                        <div class="mb-1" style="font-size: 0.85rem;"><strong>S/N Monitor:</strong> <span class="font-mono fw-bold text-primary">Sin S/N</span></div>
-                        <div class="mb-1"><strong>Modelo:</strong> Monitor Estándar</div>
-                        <div class="mb-2"><strong>Fuero / Ubicación:</strong> <span class="badge bg-secondary text-white">{{ pc_info.fuero or 'General' }}</span></div>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="font-mono fw-bold text-dark mb-1" style="font-size: 0.85rem;">{{ pc_name }}</div>
+                        <div class="text-muted small mb-1" style="font-size: 0.75rem;"><strong>S/N Monitor:</strong> <span class="font-mono fw-bold text-primary">Sin S/N</span></div>
+                        <div class="text-muted small" style="font-size: 0.72rem;"><strong>Fuero:</strong> {{ pc_info.fuero or 'General' }}</div>
                     </div>
-                </div>
-
-                <div class="mt-3 text-center border-top pt-2 text-muted font-mono" style="font-size: 0.7rem;">
-                    <i class="bi bi-qr-code me-1"></i>Escanear para verificar la Ficha Patrimonial del Poder Judicial
                 </div>
             </div>
         {% endif %}
 
     </div>
 
+    <script>
+        function setLabelMode(mode) {
+            const body = document.getElementById('labelBody');
+            const btnCompact = document.getElementById('btnModeCompact');
+            const btnFull = document.getElementById('btnModeFull');
+
+            if (mode === 'compact') {
+                body.classList.add('compact-mode');
+                btnCompact.classList.add('active');
+                btnFull.classList.remove('active');
+            } else {
+                body.classList.remove('compact-mode');
+                btnFull.classList.add('active');
+                btnCompact.classList.remove('active');
+            }
+        }
+    </script>
 </body>
 </html>

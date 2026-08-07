@@ -232,11 +232,6 @@
                 </div>
                 <div class="modal-footer" style="border-top-color:rgba(148,163,184,.15);justify-content:space-between;">
                     <div>
-                        <div id="detail_completed_actions" style="display:none;">
-                            <a id="detail_qr_link" href="#" target="_blank" class="btn btn-sm btn-outline-warning">
-                                <i class="bi bi-qr-code-scan me-1"></i>Imprimir QR
-                            </a>
-                        </div>
                         <div id="detail_active_actions" style="display:none;">
                             <button type="button" class="btn btn-sm btn-success" onclick="openCompleteModalFromDetail()">
                                 <i class="bi bi-rocket-takeoff-fill me-1"></i>Completar y Desplegar
@@ -493,11 +488,7 @@
                 aa.style.display='';ca.style.display='none';as.style.display='';
                 document.getElementById('detail_serial_input').value='';
             }else if(bo.status==='completed'){
-                aa.style.display='none';ca.style.display='';as.style.display='none';
-                const pcName=bo.target_pc_name||(items.length&&items[0].pc_name)||'';
-                const ql=document.getElementById('detail_qr_link');
-                if(pcName){ql.href=`/dashboard/pc/${encodeURIComponent(pcName)}/qr_label`;ql.style.display='';}
-                else{ql.style.display='none';}
+                aa.style.display='none';ca.style.display='none';as.style.display='none';
             }else{aa.style.display='none';ca.style.display='none';as.style.display='none';}
             new bootstrap.Modal(document.getElementById('boDetailModal')).show();
         }
