@@ -2638,7 +2638,7 @@
                 <form action="{{ url_for('stock.stock_report_pdf') }}" method="GET" target="_blank">
                     <div class="modal-body p-4">
                         <p class="text-muted small mb-4">
-                            Selecciona los criterios para filtrar el inventario o dejálos en <strong>-- Todos --</strong> para incluir la totalidad de los registros.
+                            Selecciona los criterios para filtrar el inventario. El sistema generará una vista previa oficial optimizada para impresión o exportación a PDF.
                         </p>
 
                         <div class="row g-3">
@@ -2646,7 +2646,7 @@
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-muted">Tipo de Componente:</label>
                                 <select name="component_type" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
-                                    <option value="todos">-- Todos --</option>
+                                    <option value="todos"></option>
                                     {% if component_types %}
                                       {% for ct in component_types %}
                                         <option value="{{ ct }}">{{ ct }}</option>
@@ -2668,7 +2668,7 @@
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-muted">Estado del Activo:</label>
                                 <select name="status" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
-                                    <option value="todos">-- Todos --</option>
+                                    <option value="todos"></option>
                                     <option value="disponible">Solo Disponibles en Stock Libre</option>
                                     <option value="asignado">Solo Asignados a Equipos / Puestos</option>
                                     <option value="scrap">Solo Baja / Scrap / Defectuosos</option>
@@ -2689,7 +2689,7 @@
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-muted">Nº Remito / Factura:</label>
                                 <select name="remito" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
-                                    <option value="todos">-- Todos --</option>
+                                    <option value="todos"></option>
                                     {% if remitos %}
                                       {% for r in remitos %}
                                         <option value="{{ r }}">{{ r }}</option>
@@ -2702,7 +2702,7 @@
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-muted">Orden de Compra (O/C):</label>
                                 <select name="oc" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
-                                    <option value="todos">-- Todos --</option>
+                                    <option value="todos"></option>
                                     {% if ocs %}
                                       {% for o in ocs %}
                                         <option value="{{ o }}">{{ o }}</option>
@@ -2715,7 +2715,7 @@
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-muted">Fuero Judicial / Destino:</label>
                                 <select name="fuero" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
-                                    <option value="todos">-- Todos --</option>
+                                    <option value="todos"></option>
                                     {% if stock_fueros %}
                                       {% for f in stock_fueros %}
                                         <option value="{{ f }}">{{ f }}</option>
@@ -2728,7 +2728,7 @@
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-muted">Nombre de PC Asignada / Dominio:</label>
                                 <select name="assigned_pc" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
-                                    <option value="todos">-- Todos --</option>
+                                    <option value="todos"></option>
                                     {% if assigned_pcs %}
                                       {% for p in assigned_pcs %}
                                         <option value="{{ p }}">{{ p }}</option>
