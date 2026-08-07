@@ -1128,9 +1128,14 @@ def retire_component():
             old_status = comp.get("status") or "Stock"
             old_pc = comp.get("assigned_pc")
             conn.execute(
-                "UPDATE components SET status = 'Retirado', assigned_pc = NULL, assigned_user = NULL, assigned_fuero = NULL WHERE serial_number = %s",
+                "UPDATE components SET status = 'Retirado', build_order_id = NULL, assigned_pc = NULL, assigned_user = NULL, assigned_fuero = NULL WHERE serial_number = %s",
                 (serial,)
             )
+            try:
+                conn.execute("DELETE FROM build_order_items WHERE serial_number = %s", (serial,))
+            except Exception:
+                pass
+
             detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Motivo: {reason}"
             conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                          (old_pc or 'Stock', 'COMPONENT_RETIRED', old_status, detalles, user_name, "BAJA_COMPONENTE", request.remote_addr))
@@ -1177,9 +1182,13 @@ def retire_components_bulk():
                     old_status = comp.get("status") or "Stock"
                     old_pc = comp.get("assigned_pc")
                     conn.execute(
-                        "UPDATE components SET status = 'Retirado', assigned_pc = NULL, assigned_user = NULL, assigned_fuero = NULL WHERE serial_number = %s",
+                        "UPDATE components SET status = 'Retirado', build_order_id = NULL, assigned_pc = NULL, assigned_user = NULL, assigned_fuero = NULL WHERE serial_number = %s",
                         (serial,)
                     )
+                    try:
+                        conn.execute("DELETE FROM build_order_items WHERE serial_number = %s", (serial,))
+                    except Exception:
+                        pass
                     retired_count += 1
                     detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Motivo: {reason}"
                     conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
