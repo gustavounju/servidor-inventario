@@ -443,8 +443,16 @@ def public_asset_info(pc_name):
         # 1. Probar si es una PC registrada en pcs
         ctx = get_pc_detail_context(pc_name)
         if ctx and ctx.get("pc"):
-            ctx["components"] = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
-            ctx["monitors_detail"] = ctx.get("monitors_detail") or []
+            all_comps = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
+            mon_detail = list(ctx.get("monitors_detail") or [])
+            if not mon_detail:
+                mon_detail = [
+                    c for c in all_comps 
+                    if "MONITOR" in (c.get("component_type") or "").strip().upper() 
+                    or "MONITOR" in (c.get("brand_model") or "").strip().upper()
+                ]
+            ctx["components"] = all_comps
+            ctx["monitors_detail"] = mon_detail
             ctx["is_standalone_component"] = False
             ctx["is_authenticated"] = is_authenticated()
             return render_template("public_asset_info.html", **ctx)
@@ -473,8 +481,16 @@ def public_asset_info(pc_name):
                 if assigned_pc:
                     pc_ctx = get_pc_detail_context(assigned_pc)
                     if pc_ctx and pc_ctx.get("pc"):
-                        pc_ctx["components"] = pc_ctx.get("all_unified_components") or []
-                        pc_ctx["monitors_detail"] = pc_ctx.get("monitors_detail") or []
+                        all_comps = pc_ctx.get("all_unified_components") or pc_ctx.get("pc_components") or pc_ctx.get("components") or []
+                        mon_detail = list(pc_ctx.get("monitors_detail") or [])
+                        if not mon_detail:
+                            mon_detail = [
+                                c for c in all_comps 
+                                if "MONITOR" in (c.get("component_type") or "").strip().upper() 
+                                or "MONITOR" in (c.get("brand_model") or "").strip().upper()
+                            ]
+                        pc_ctx["components"] = all_comps
+                        pc_ctx["monitors_detail"] = mon_detail
                         pc_ctx["scanned_comp"] = c_dict
                         pc_ctx["is_standalone_component"] = False
                         pc_ctx["is_authenticated"] = is_authenticated()

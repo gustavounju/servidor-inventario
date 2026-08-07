@@ -122,26 +122,16 @@
             </div>
 
             <!-- SECCIÓN DESTACADA: MONITORES DEL PUESTO -->
-            {% set display_monitors = monitors_detail if monitors_detail else [] %}
-            {% if not display_monitors and components %}
-              {% set ns_mon = namespace(items=[]) %}
-              {% for c in components %}
-                {% if (c.component_type or '').strip().upper() == 'MONITOR' or 'MONITOR' in (c.component_type or '').strip().upper() %}
-                  {% set _ = ns_mon.items.append(c) %}
-                {% endif %}
-              {% endfor %}
-              {% set display_monitors = ns_mon.items %}
-            {% endif %}
-
             <div class="bg-dark p-3 rounded-3 border border-info mb-3 small">
                 <h6 class="fw-bold text-info border-bottom border-secondary pb-2 mb-2 d-flex justify-content-between align-items-center" style="font-size:0.85rem;">
                     <span><i class="bi bi-display me-1 text-cyan"></i>Monitor(es) Asociados</span>
-                    {% if display_monitors %}
-                    <span class="badge bg-info text-dark font-mono" style="font-size:0.65rem;">{{ display_monitors|length }} registrado(s)</span>
+                    {% if monitors_detail %}
+                    <span class="badge bg-info text-dark font-mono" style="font-size:0.65rem;">{{ monitors_detail|length }} registrado(s)</span>
                     {% endif %}
                 </h6>
-                {% if display_monitors %}
-                    {% for m in display_monitors %}
+                {% if monitors_detail %}
+                    {% for m in monitors_detail %}
+                    {% if m and m is mapping %}
                     <div class="mb-2 pb-2 {% if not loop.last %}border-bottom border-secondary{% endif %}">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="text-white fw-bold"><i class="bi bi-tv me-1 text-info"></i>{{ m.brand_model or 'Monitor Estándar' }}</span>
@@ -167,6 +157,7 @@
                             {% endif %}
                         </div>
                     </div>
+                    {% endif %}
                     {% endfor %}
                 {% else %}
                     <div class="text-muted text-center py-1" style="font-size:0.75rem;">Sin monitor registrado formalmente.</div>
