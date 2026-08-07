@@ -73,6 +73,9 @@
                 <p class="hero-subtitle">Recepción por remitos, control de existencias y componentes en inventario</p>
             </div>
             <div class="d-flex gap-2 align-items-center">
+                <button type="button" class="op-btn" style="background: var(--card-bg, #1e1e1e); border: 1px solid var(--border-color, #333); color: var(--text-color, #e5e5e5);" data-bs-toggle="modal" data-bs-target="#modalInformePatrimonio" title="Generar Informe Filtrado de Patrimonio y Remitos">
+                    <i class="bi bi-file-earmark-bar-graph me-1"></i>[ 📄 INFORME ]
+                </button>
                 <a href="{{ url_for('stock.build_orders_view') }}" class="op-btn op-btn--armado">
                     <i class="bi bi-cpu me-1"></i>[ ARMADO ]
                 </a>
@@ -2618,6 +2621,121 @@
                         <i class="bi bi-save-fill me-1"></i>Guardar Cambios del Kit
                     </button>
                 </div>
+            </div>
+        </div>
+    <!-- Modal Generar Informe de Patrimonio -->
+    <div class="modal fade" id="modalInformePatrimonio" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content text-start" style="background: var(--card-bg, #1e1e1e); border: 1px solid var(--border-color, #2c2c2c); border-radius: 12px; color: var(--text-color, #e5e5e5);">
+                <div class="modal-header border-bottom" style="border-color: var(--border-color, #2c2c2c) !important;">
+                    <h5 class="modal-title fw-bold" style="font-size: 1.1rem; color: var(--text-color, #e5e5e5);">
+                        <i class="bi bi-file-earmark-bar-graph me-2" style="color: #38bdf8;"></i>Generar Informe de Patrimonio y Remitos
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ url_for('stock.stock_report_pdf') }}" method="GET" target="_blank">
+                    <div class="modal-body p-4">
+                        <p class="text-muted small mb-4">
+                            Selecciona los criterios para filtrar el inventario. El sistema generará una vista previa oficial optimizada para impresión o exportación a PDF.
+                        </p>
+
+                        <div class="row g-3">
+                            <!-- Tipo de Componente -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted">Tipo de Componente:</label>
+                                <select name="component_type" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                                    <option value="todos">-- Todos los componentes --</option>
+                                    {% if component_types %}
+                                      {% for ct in component_types %}
+                                        <option value="{{ ct }}">{{ ct }}</option>
+                                      {% endfor %}
+                                    {% else %}
+                                        <option value="Motherboard">Motherboard</option>
+                                        <option value="Memoria RAM">Memoria RAM</option>
+                                        <option value="Disco Rígido / SSD">Disco Rígido / SSD</option>
+                                        <option value="Procesador">Procesador</option>
+                                        <option value="Monitor">Monitor</option>
+                                        <option value="Fuente">Fuente</option>
+                                        <option value="Impresora">Impresora</option>
+                                        <option value="UPS">UPS</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+
+                            <!-- Estado Patrimonial -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted">Estado del Activo:</label>
+                                <select name="status" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                                    <option value="todos">-- Todos los estados --</option>
+                                    <option value="disponible">Solo Disponibles en Stock Libre</option>
+                                    <option value="asignado">Solo Asignados a Equipos / Puestos</option>
+                                    <option value="scrap">Solo Baja / Scrap / Defectuosos</option>
+                                </select>
+                            </div>
+
+                            <!-- Rango de Fechas -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted">Fecha Desde (Recepción / Alta):</label>
+                                <input type="date" name="fecha_desde" class="form-control form-control-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted">Fecha Hasta:</label>
+                                <input type="date" name="fecha_hasta" class="form-control form-control-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                            </div>
+
+                            <!-- Remito / Factura -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted">Nº Remito / Factura:</label>
+                                <input type="text" name="remito" list="listRemitosModal" class="form-control form-control-sm" placeholder="Ej: REM-2026-001..." autocomplete="off" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                                <datalist id="listRemitosModal">
+                                    {% if remitos %}
+                                      {% for r in remitos %}
+                                        <option value="{{ r }}"></option>
+                                      {% endfor %}
+                                    {% endif %}
+                                </datalist>
+                            </div>
+
+                            <!-- Orden de Compra -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted">Orden de Compra (O/C):</label>
+                                <input type="text" name="oc" list="listOcsModal" class="form-control form-control-sm" placeholder="Ej: OC-2026-042..." autocomplete="off" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                                <datalist id="listOcsModal">
+                                    {% if ocs %}
+                                      {% for o in ocs %}
+                                        <option value="{{ o }}"></option>
+                                      {% endfor %}
+                                    {% endif %}
+                                </datalist>
+                            </div>
+
+                            <!-- Fuero / Asignación -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted">Fuero Judicial / Destino:</label>
+                                <select name="fuero" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                                    <option value="todos">-- Todos los Fueros --</option>
+                                    {% if stock_fueros %}
+                                      {% for f in stock_fueros %}
+                                        <option value="{{ f }}">{{ f }}</option>
+                                      {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+
+                            <!-- PC Específica -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted">Nombre de PC Asignada:</label>
+                                <input type="text" name="assigned_pc" class="form-control form-control-sm" placeholder="Ej: JCC1-PC01..." style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top p-3" style="border-color: var(--border-color, #2c2c2c) !important;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-3" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-primary fw-medium px-4">
+                            <i class="bi bi-file-earmark-pdf me-1"></i>Generar y Abrir PDF
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

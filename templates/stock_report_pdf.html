@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informe Patrimonial de Activos — Poder Judicial de Jujuy</title>
+  
+  <!-- Geist Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+  
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #fafafa;
+      --text: #171717;
+      --text-muted: #666666;
+      --border: #eaeaea;
+      --border-dark: #000000;
+      --badge-bg: #f5f5f5;
+      --green-bg: #e6f4ea;
+      --green-text: #137333;
+      --blue-bg: #e8f0fe;
+      --blue-text: #1a73e8;
+      --red-bg: #fce8e6;
+      --red-text: #c5221f;
+    }
+
+    body {
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      font-size: 0.875rem;
+      padding: 0;
+      margin: 0;
+    }
+
+    .font-mono {
+      font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Roboto Mono, monospace !important;
+      letter-spacing: -0.01em;
+    }
+
+    .report-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .report-header {
+      border-bottom: 2px solid var(--border-dark);
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .report-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .report-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .summary-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      background-color: var(--surface);
+      margin-bottom: 20px;
+    }
+
+    .metric-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .filter-tag {
+      display: inline-block;
+      background: #f1f3f4;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+
+    .table-report {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      margin-bottom: 24px;
+    }
+
+    .table-report th {
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--border-dark);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    .table-report td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: middle;
+    }
+
+    .badge-report {
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .badge-report-green { background: var(--green-bg); color: var(--green-text); }
+    .badge-report-blue { background: var(--blue-bg); color: var(--blue-text); }
+    .badge-report-red { background: var(--red-bg); color: var(--red-text); }
+    .badge-report-neutral { background: var(--badge-bg); color: var(--text-muted); }
+
+    .signature-section {
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--border);
+      page-break-inside: avoid;
+    }
+
+    .signature-line {
+      border-top: 1px solid #999;
+      width: 200px;
+      margin-top: 40px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding-top: 4px;
+    }
+
+    /* Print styling optimizations */
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 10pt !important;
+      }
+      .report-container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .summary-box {
+        background: #fff !important;
+        border: 1px solid #ccc !important;
+      }
+      .table-report th {
+        background: #f5f5f5 !important;
+        color: #000 !important;
+      }
+      .table-report td {
+        border-bottom: 1px solid #ccc !important;
+      }
+      a {
+        text-decoration: none !important;
+        color: #000 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Toolbar (Solo en Pantalla, se oculta al imprimir) -->
+  <div class="no-print bg-light border-bottom py-3 px-4 mb-4">
+    <div class="max-w-1100 mx-auto d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <button onclick="window.close()" class="btn btn-sm btn-outline-secondary font-mono">
+          <i class="bi bi-arrow-left me-1"></i> Volver al Sistema
+        </button>
+        <span class="text-muted small">| Vista previa de informe de inventario</span>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-sm btn-primary fw-medium px-3">
+          <i class="bi bi-printer-fill me-1"></i> Imprimir / Guardar como PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="report-container">
+    <!-- Encabezado Oficial -->
+    <div class="report-header d-flex justify-content-between align-items-start">
+      <div>
+        <div class="hero-label text-uppercase font-mono" style="font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.08em; font-weight: 600;">
+          PODER JUDICIAL DE JUJUY — DEPARTAMENTO DE INFORMÁTICA
+        </div>
+        <h1 class="report-title">Informe Patrimonial de Componentes y Remitos</h1>
+        <div class="report-subtitle">
+          Listado oficial de existencias, remitos de recepción y asignación de piezas técnicas
+        </div>
+      </div>
+      <div class="text-end font-mono" style="font-size: 0.75rem; color: var(--text-muted);">
+        <div><strong>Emisión:</strong> {{ generated_at }}</div>
+        <div><strong>Origen:</strong> Servidor Inventario IT</div>
+      </div>
+    </div>
+
+    <!-- Filtros Aplicados -->
+    <div class="mb-3">
+      <span class="font-mono text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-right: 6px;">Filtros:</span>
+      {% if filters.component_type and filters.component_type != 'todos' %}
+        <span class="filter-tag font-mono">Tipo: {{ filters.component_type }}</span>
+      {% endif %}
+      {% if filters.fecha_desde or filters.fecha_hasta %}
+        <span class="filter-tag font-mono">Fechas: {{ filters.fecha_desde or 'Inicio' }} a {{ filters.fecha_hasta or 'Hoy' }}</span>
+      {% endif %}
+      {% if filters.remito %}
+        <span class="filter-tag font-mono">Remito: {{ filters.remito }}</span>
+      {% endif %}
+      {% if filters.oc %}
+        <span class="filter-tag font-mono">O/C: {{ filters.oc }}</span>
+      {% endif %}
+      {% if filters.status and filters.status != 'todos' %}
+        <span class="filter-tag font-mono">Estado: {{ filters.status|upper }}</span>
+      {% endif %}
+      {% if filters.fuero and filters.fuero != 'todos' %}
+        <span class="filter-tag font-mono">Fuero: {{ filters.fuero }}</span>
+      {% endif %}
+      {% if filters.assigned_pc %}
+        <span class="filter-tag font-mono">PC: {{ filters.assigned_pc }}</span>
+      {% endif %}
+      {% if not filters.component_type and not filters.fecha_desde and not filters.remito and not filters.oc and not filters.status and not filters.fuero and not filters.assigned_pc %}
+        <span class="filter-tag font-mono">Todos los registros</span>
+      {% endif %}
+    </div>
+
+    <!-- Métrica Sintética -->
+    <div class="summary-box">
+      <div class="row g-3">
+        <div class="col-4">
+          <div class="metric-title font-mono">Total de Componentes</div>
+          <div class="metric-value font-mono">{{ total_count }}</div>
+        </div>
+        <div class="col-4" style="border-left: 1px solid var(--border);">
+          <div class="metric-title font-mono">Disponibles en Stock</div>
+          <div class="metric-value font-mono" style="color: var(--green-text);">{{ disponibles_count }}</div>
+        </div>
+        <div class="col-4" style="border-left: 1px solid var(--border);">
+          <div class="metric-title font-mono">Asignados a Equipos</div>
+          <div class="metric-value font-mono" style="color: var(--blue-text);">{{ asignados_count }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de Componentes -->
+    <table class="table-report">
+      <thead>
+        <tr>
+          <th style="width: 14%;">Tipo</th>
+          <th style="width: 25%;">Marca / Modelo</th>
+          <th style="width: 18%;">S/N o Código</th>
+          <th style="width: 15%;">Remito / Factura</th>
+          <th style="width: 12%;">O/C</th>
+          <th style="width: 16%;">Estado / Asignación</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if components %}
+          {% for comp in components %}
+          <tr>
+            <td class="fw-medium">{{ comp.component_type or 'Otro' }}</td>
+            <td class="fw-semibold" style="color: var(--text);">{{ comp.brand_model or 'Sin modelo' }}</td>
+            <td class="font-mono" style="font-size: 0.8rem;">{{ comp.serial_number or 'Sin S/N' }}</td>
+            <td class="font-mono" style="font-size: 0.78rem; color: var(--text-muted);">{{ comp.invoice_number or 'Sin Remito' }}</td>
+            <td class="font-mono" style="font-size: 0.78rem; color: var(--text-muted);">{{ comp.oc_number or '-' }}</td>
+            <td>
+              {% if comp.assigned_pc and comp.assigned_pc.lower() not in ('stock', 'disponible', '') %}
+                <span class="badge-report badge-report-blue font-mono">
+                  <i class="bi bi-pc-display me-1"></i>{{ comp.assigned_pc }}
+                </span>
+              {% elif comp.status and comp.status.lower() in ('scrap', 'baja', 'falla') %}
+                <span class="badge-report badge-report-red font-mono">
+                  ⚠️ BAJA / SCRAP
+                </span>
+              {% else %}
+                <span class="badge-report badge-report-green font-mono">
+                  ✓ STOCK LIBRE
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center font-mono text-muted py-4">
+              No se encontraron componentes que coincidan con los filtros seleccionados.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    <!-- Firmas / Certificación -->
+    <div class="signature-section">
+      <div class="d-flex justify-content-between align-items-end">
+        <div>
+          <div class="font-mono text-muted" style="font-size: 0.7rem;">Documento oficial generado para control patrimonial e inventario técnico.</div>
+          <div class="font-mono text-muted" style="font-size: 0.7rem;">Centro Judicial San Pedro — Jujuy.</div>
+        </div>
+
+        <div class="d-flex gap-5">
+          <div class="signature-line">
+            Firma Responsable de Stock
+          </div>
+          <div class="signature-line">
+            Firma Jefe Informática / Auditoría
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -448,13 +448,140 @@ def stock_view():
                 fueros = [r['fuero'] for r in fueros_rows if r.get('fuero')]
             except Exception:
                 fueros = []
+
+            # Tipos de componentes, remitos y OCs para los filtros del informe
+            try:
+                ctype_rows = conn.execute("SELECT DISTINCT component_type FROM components WHERE component_type IS NOT NULL AND component_type != '' ORDER BY component_type ASC").fetchall()
+                component_types = [r['component_type'] for r in ctype_rows]
+            except Exception:
+                component_types = []
+
+            try:
+                remito_rows = conn.execute("SELECT DISTINCT invoice_number FROM components WHERE invoice_number IS NOT NULL AND invoice_number != '' ORDER BY invoice_number ASC").fetchall()
+                remitos = [r['invoice_number'] for r in remito_rows]
+            except Exception:
+                remitos = []
+
+            try:
+                oc_rows = conn.execute("SELECT DISTINCT oc_number FROM components WHERE oc_number IS NOT NULL AND oc_number != '' ORDER BY oc_number ASC").fetchall()
+                ocs = [r['oc_number'] for r in oc_rows]
+            except Exception:
+                ocs = []
+
     except Exception:
         pcs = []
         ad_users = []
         stock_components = []
         fueros = []
+        component_types = []
+        remitos = []
+        ocs = []
 
-    return render_template("stock.html", pcs=pcs, ad_users=ad_users, stock_components=stock_components, stock_fueros=fueros)
+    return render_template(
+        "stock.html",
+        pcs=pcs,
+        ad_users=ad_users,
+        stock_components=stock_components,
+        stock_fueros=fueros,
+        component_types=component_types,
+        remitos=remitos,
+        ocs=ocs
+    )
+
+
+@bp_stock.route("/stock/report/pdf", methods=["GET", "POST"])
+def stock_report_pdf():
+    """Genera una vista previa del informe de patrimonio filtrado lista para imprimir o guardar como PDF."""
+    import datetime
+    req_data = request.form if request.method == "POST" else request.args
+
+    component_type = (req_data.get("component_type") or "todos").strip()
+    fecha_desde = (req_data.get("fecha_desde") or "").strip()
+    fecha_hasta = (req_data.get("fecha_hasta") or "").strip()
+    remito = (req_data.get("remito") or "").strip()
+    oc = (req_data.get("oc") or "").strip()
+    status = (req_data.get("status") or "todos").strip()
+    fuero = (req_data.get("fuero") or "todos").strip()
+    assigned_pc = (req_data.get("assigned_pc") or "").strip()
+
+    sql = """
+        SELECT c.*, p.fuero as pc_fuero, p.last_user as pc_user
+        FROM components c
+        LEFT JOIN pcs p ON c.assigned_pc = p.pc_name
+        WHERE 1=1
+    """
+    params = []
+
+    if component_type and component_type.lower() != "todos":
+        sql += " AND LOWER(c.component_type) = LOWER(%s)"
+        params.append(component_type)
+
+    if fecha_desde:
+        sql += " AND DATE(c.created_at) >= %s"
+        params.append(fecha_desde)
+
+    if fecha_hasta:
+        sql += " AND DATE(c.created_at) <= %s"
+        params.append(fecha_hasta)
+
+    if remito:
+        sql += " AND c.invoice_number LIKE %s"
+        params.append(f"%{remito}%")
+
+    if oc:
+        sql += " AND c.oc_number LIKE %s"
+        params.append(f"%{oc}%")
+
+    if status and status.lower() != "todos":
+        if status.lower() == "disponible":
+            sql += " AND (c.assigned_pc IS NULL OR c.assigned_pc = '' OR LOWER(c.assigned_pc) = 'stock' OR LOWER(c.assigned_pc) = 'disponible') AND (c.status IS NULL OR LOWER(c.status) != 'scrap')"
+        elif status.lower() == "asignado":
+            sql += " AND c.assigned_pc IS NOT NULL AND c.assigned_pc != '' AND LOWER(c.assigned_pc) != 'stock' AND LOWER(c.assigned_pc) != 'disponible'"
+        elif status.lower() in ("scrap", "baja"):
+            sql += " AND (LOWER(c.status) = 'scrap' OR LOWER(c.status) = 'baja' OR LOWER(c.status) = 'falla')"
+
+    if fuero and fuero.lower() != "todos":
+        sql += " AND (LOWER(c.supplier) LIKE %s OR LOWER(p.fuero) LIKE %s)"
+        params.extend([f"%{fuero.lower()}%", f"%{fuero.lower()}%"])
+
+    if assigned_pc:
+        sql += " AND c.assigned_pc LIKE %s"
+        params.append(f"%{assigned_pc}%")
+
+    sql += " ORDER BY c.component_type ASC, c.brand_model ASC, c.created_at DESC"
+
+    try:
+        with get_db_connection() as conn:
+            rows = conn.execute(sql, params).fetchall()
+            report_components = [dict(r) for r in rows]
+    except Exception as exc:
+        logging.error("Error consultando informe de patrimonio: %s", exc)
+        report_components = []
+
+    total_count = len(report_components)
+    disponibles_count = sum(1 for c in report_components if not c.get("assigned_pc") or str(c.get("assigned_pc")).lower() in ("stock", "disponible", "none"))
+    asignados_count = total_count - disponibles_count
+
+    now_str = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    return render_template(
+        "stock_report_pdf.html",
+        components=report_components,
+        total_count=total_count,
+        disponibles_count=disponibles_count,
+        asignados_count=asignados_count,
+        filters={
+            "component_type": component_type,
+            "fecha_desde": fecha_desde,
+            "fecha_hasta": fecha_hasta,
+            "remito": remito,
+            "oc": oc,
+            "status": status,
+            "fuero": fuero,
+            "assigned_pc": assigned_pc
+        },
+        generated_at=now_str
+    )
 
 
 @bp_stock.route("/build_orders")
