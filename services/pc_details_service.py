@@ -241,7 +241,7 @@ def _parse_hardware_components(pc):
 
 def _enrich_components_with_remitos(conn, pc_components, hardware_components):
     comp_dicts = [dict(c) for c in pc_components]
-    stock_monitors = [c for c in comp_dicts if (c.get("component_type") or "").strip().upper() == "MONITOR"]
+    stock_monitors = [c for c in comp_dicts if "MONITOR" in (c.get("component_type") or "").strip().upper()]
     hw_monitors = hardware_components.get("monitors") or []
 
     bo_map = {}
@@ -373,7 +373,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
     existing_serials = {(c.get("serial_number") or "").strip().upper() for c in comp_dicts if c.get("serial_number")}
     existing_types = {(c.get("component_type") or "").strip().upper() for c in comp_dicts}
     for c in comp_dicts:
-        if (c.get("component_type") or "").strip().upper() != "MONITOR":
+        if "MONITOR" not in (c.get("component_type") or "").strip().upper():
             c_dict = dict(c)
             b_id = c_dict.get("build_order_id")
             c_dict["bo_code"] = bo_map.get(b_id, {}).get("code") if b_id else None
