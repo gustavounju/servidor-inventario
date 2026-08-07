@@ -49,8 +49,7 @@ stock y tareas. Corre en producción real, en infraestructura del Poder Judicial
 6. **Datos sensibles**: el módulo Vault (`blueprints/bp_vault.py`, `templates/vault.html`)
    y la autenticación (`utils/auth.py`, roles, futura AD) son las superficies de más alto
    riesgo del sistema. Cualquier cambio ahí pasa primero por `/cso` antes de mergear.
-7. **El repo remoto es GitLab** (no GitHub) — los flujos de PR en los skills usan
-   terminología de Merge Request (MR) y, si está disponible, la CLI `glab` en vez de `gh`.
+7. **Repositorios remotos duales**: El repositorio principal de desarrollo y MRs es GitLab (`origin`), pero **siempre que se suban cambios a GitLab se debe hacer push también a GitHub** (`github` — `https://github.com/gustavounju/servidor-inventario.git`).
 
 ## El flujo de sprint (orden recomendado)
 
