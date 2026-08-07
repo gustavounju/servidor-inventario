@@ -70,15 +70,12 @@ def compute_validation_status(pc_name: str, conn) -> str:
         str : 'sin_gemelo' | 'pendiente' | 'validado' | 'discrepancia'
     """
     try:
-        # 1. ¿Hay algún activo de tipo CPU asignado a esta PC?
-        #    Filtra por lifecycle_status (Fase 3) con fallback a status original
-        #    para compatibilidad con instalaciones que aún no corrieron V52.
-        cpu_asset = conn.execute(
+        # 1. ¿Hay algún activo patrimonial asignado a esta PC (en components o build_orders)?
+        assigned_comp = conn.execute(
             """
-            SELECT brand_model, serial_number
+            SELECT id, brand_model, serial_number
             FROM components
             WHERE LOWER(TRIM(assigned_pc)) = LOWER(TRIM(%s))
-              AND LOWER(TRIM(component_type)) IN ('cpu', 'gabinete', 'computadora', 'pc')
               AND status NOT IN ('Retirado', 'Scrap')
               AND (lifecycle_status IS NULL OR lifecycle_status NOT IN ('retirado', 'scrap'))
             LIMIT 1
@@ -86,9 +83,20 @@ def compute_validation_status(pc_name: str, conn) -> str:
             (pc_name,)
         ).fetchone()
 
-        if not cpu_asset:
-            # Sin activo patrimonial asignado → todavía no tiene gemelo
-            return "sin_gemelo"
+        if not assigned_comp:
+            assigned_bo = conn.execute(
+                """
+                SELECT boi.id
+                FROM build_order_items boi
+                JOIN build_orders bo ON bo.id = boi.build_order_id
+                WHERE LOWER(TRIM(boi.pc_name)) = LOWER(TRIM(%s))
+                   OR LOWER(TRIM(bo.target_pc_name)) = LOWER(TRIM(%s))
+                LIMIT 1
+                """,
+                (pc_name, pc_name)
+            ).fetchone()
+            if not assigned_bo:
+                return "sin_gemelo"
 
         # 2. ¿La PC ya reportó desde el script?
         pc_data = conn.execute(

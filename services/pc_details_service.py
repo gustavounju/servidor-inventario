@@ -783,18 +783,13 @@ def get_pc_detail_context(pc_name):
             logger.warning("Error buscando/enriqueciendo linked_bo para %s: %s", pc_name, bo_exc)
 
         validation_comparison = get_pc_validation_comparison(pc_name, conn, unified_components=all_unified_components)
-        from services.asset_validation import compute_validation_status
-        computed_status = compute_validation_status(pc_name, conn)
+        current_status = pc.get("validation_status")
 
         if validation_comparison and any(not row.get("match") for row in validation_comparison):
-            computed_status = "discrepancia"
-
-        pc["validation_status"] = computed_status
-        try:
-            conn.execute("UPDATE pcs SET validation_status = %s WHERE LOWER(TRIM(pc_name)) = LOWER(TRIM(%s))", (computed_status, pc_name))
-            conn.commit()
-        except Exception:
-            pass
+            pc["validation_status"] = "discrepancia"
+        elif not current_status:
+            from services.asset_validation import compute_validation_status
+            pc["validation_status"] = compute_validation_status(pc_name, conn)
 
         return {
             "pc": pc, "tareas": tareas, "technicians": technicians, "ad_users_list": ad_users_list,
