@@ -465,6 +465,11 @@ def public_asset_info(pc_name):
             if comp_row:
                 c_dict = dict(comp_row)
                 assigned_pc = c_dict.get("assigned_pc")
+                if not assigned_pc and c_dict.get("build_order_id"):
+                    bo = conn.execute("SELECT target_pc_name FROM build_orders WHERE id = %s", (c_dict["build_order_id"],)).fetchone()
+                    if bo and bo.get("target_pc_name"):
+                        assigned_pc = bo["target_pc_name"]
+
                 if assigned_pc:
                     pc_ctx = get_pc_detail_context(assigned_pc)
                     if pc_ctx and pc_ctx.get("pc"):

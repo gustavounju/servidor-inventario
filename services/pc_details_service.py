@@ -645,9 +645,18 @@ def get_pc_detail_context(pc_name):
         
         available_ups = conn.execute("SELECT id, code, model FROM ups_inventory WHERE assigned_pc IS NULL").fetchall()
         pc_components = conn.execute('''
-            SELECT id, serial_number, component_type, brand_model, status, assigned_to_component_id, oc_number, invoice_number, supplier, assigned_user, assigned_fuero 
-            FROM components WHERE assigned_pc = %s ORDER BY assigned_to_component_id ASC, component_type
-        ''', (pc_name,)).fetchall()
+            SELECT DISTINCT c.id, c.serial_number, c.component_type, c.brand_model, c.status, c.assigned_to_component_id, 
+                   c.oc_number, c.invoice_number, c.supplier, c.assigned_user, c.assigned_fuero, c.assigned_pc, c.build_order_id
+            FROM components c
+            WHERE LOWER(TRIM(c.assigned_pc)) = LOWER(TRIM(%s))
+               OR c.build_order_id IN (
+                   SELECT id FROM build_orders WHERE LOWER(TRIM(target_pc_name)) = LOWER(TRIM(%s))
+               )
+               OR c.serial_number IN (
+                   SELECT serial_number FROM build_order_items WHERE LOWER(TRIM(pc_name)) = LOWER(TRIM(%s))
+               )
+            ORDER BY c.assigned_to_component_id ASC, c.component_type
+        ''', (pc_name, pc_name, pc_name)).fetchall()
         
         comp_dicts = [dict(c) for c in pc_components]
         oc_list = sorted(list({c["oc_number"].strip() for c in comp_dicts if c.get("oc_number") and c["oc_number"].strip()}))
@@ -755,7 +764,9 @@ def get_pc_detail_context(pc_name):
                         existing_sns.add(sn)
                         all_unified_components.append(b_dict)
                     
-                    if (b_dict.get("component_type") or "").upper() == "MONITOR":
+                    comp_type = (b_dict.get("component_type") or "").strip().upper()
+                    brand_mod = (b_dict.get("brand_model") or "").strip().upper()
+                    if "MONITOR" in comp_type or "MONITOR" in brand_mod:
                         if sn not in existing_mon_sns:
                             existing_mon_sns.add(sn)
                             monitors_detail.append({
