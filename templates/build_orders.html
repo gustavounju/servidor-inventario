@@ -447,85 +447,122 @@
         const SC={draft:'bo-badge--draft',in_progress:'bo-badge--in_progress',completed:'bo-badge--completed',cancelled:'bo-badge--cancelled'};
 
         function openBODetail(bo){
-            _activeBOId=bo.id;_activeBOCode=bo.code;_activeBOStatus=bo.status;_activeBOData=bo;
-            document.getElementById('detail_bo_code').textContent=bo.code;
-            const badge=document.getElementById('detail_bo_status_badge');
-            
-            if (bo.validation_status === 'validado') {
-                badge.className='badge bg-success text-white px-2 py-1 font-mono';
-                badge.innerHTML='<i class="bi bi-patch-check-fill me-1"></i>GEMELO VALIDADO';
-            } else if (bo.status === 'completed') {
-                if (bo.validation_status === 'discrepancia') {
-                    badge.className='badge bg-danger text-white px-2 py-1 font-mono';
-                    badge.innerHTML='<i class="bi bi-exclamation-triangle-fill me-1"></i>DISCREPANCIA PATRIMONIAL';
-                } else if (bo.validation_status === 'pendiente') {
-                    badge.className='badge bg-warning text-dark px-2 py-1 font-mono';
-                    badge.innerHTML='<i class="bi bi-clock-history me-1"></i>PENDIENTE AUDITORÍA WMI';
+            if (!bo) return;
+            _activeBOId = bo.id;
+            _activeBOCode = bo.code;
+            _activeBOStatus = bo.status;
+            _activeBOData = bo;
+
+            const codeEl = document.getElementById('detail_bo_code');
+            if (codeEl) codeEl.textContent = bo.code || '';
+
+            const badge = document.getElementById('detail_bo_status_badge');
+            if (badge) {
+                if (bo.validation_status === 'validado') {
+                    badge.className = 'badge bg-success text-white px-2 py-1 font-mono';
+                    badge.innerHTML = '<i class="bi bi-patch-check-fill me-1"></i>GEMELO VALIDADO';
+                } else if (bo.status === 'completed') {
+                    if (bo.validation_status === 'discrepancia') {
+                        badge.className = 'badge bg-danger text-white px-2 py-1 font-mono';
+                        badge.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>DISCREPANCIA PATRIMONIAL';
+                    } else if (bo.validation_status === 'pendiente') {
+                        badge.className = 'badge bg-warning text-dark px-2 py-1 font-mono';
+                        badge.innerHTML = '<i class="bi bi-clock-history me-1"></i>PENDIENTE AUDITORÍA WMI';
+                    } else {
+                        badge.className = 'bo-badge bo-badge--completed';
+                        badge.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Completado';
+                    }
                 } else {
-                    badge.className='bo-badge bo-badge--completed';
-                    badge.innerHTML='<i class="bi bi-check-circle-fill me-1"></i>Completado';
+                    badge.className = 'bo-badge ' + (SC[bo.status] || '');
+                    badge.textContent = SL[bo.status] || bo.status;
                 }
-            } else {
-                badge.className='bo-badge '+(SC[bo.status]||'');
-                badge.textContent=SL[bo.status]||bo.status;
             }
 
-            const meta=document.getElementById('detail_bo_meta');meta.innerHTML='';
-            if(bo.target_pc_name)meta.innerHTML+=`<span class="bo-meta-chip"><i class="bi bi-pc-display text-info"></i><strong>${bo.target_pc_name}</strong></span>`;
-            if(bo.validation_status === 'validado') meta.innerHTML+=`<span class="badge bg-success text-white font-mono p-1 px-2"><i class="bi bi-patch-check-fill me-1"></i>Gemelo Validado WMI</span>`;
-            else if(bo.validation_status === 'pendiente') meta.innerHTML+=`<span class="badge bg-warning text-dark font-mono p-1 px-2"><i class="bi bi-clock-history me-1"></i>Queda por validar en red</span>`;
-            if(bo.target_user)meta.innerHTML+=`<span class="bo-meta-chip"><i class="bi bi-person"></i><strong>${bo.target_user}</strong></span>`;
-            if(bo.target_fuero)meta.innerHTML+=`<span class="bo-meta-chip"><i class="bi bi-building"></i>${bo.target_fuero}</span>`;
-            
-            const items=bo.order_items||bo.items||[];
-            document.getElementById('detail_items_count').textContent=items.length;
-            const tbody=document.getElementById('detail_items_tbody');tbody.innerHTML='';
-            if(items.length===0){
-                document.getElementById('detail_items_empty').style.display='';
-                document.getElementById('detail_items_table').style.display='none';
-            }else{
-                document.getElementById('detail_items_empty').style.display='none';
-                document.getElementById('detail_items_table').style.display='';
-                const canEdit = (bo.status === 'draft' || bo.status === 'in_progress');
-            items.forEach(i=>{
-                const serial = i.serial_number || '';
-                const type   = i.asset_type   || '---';
-                const model  = i.brand_model  || '---';
-                const scaner = i.scanned_by   || '---';
-                const tr = document.createElement('tr');
-                tr.innerHTML =
-                    '<td><span class="badge" style="background:rgba(6,182,212,.15);color:#67e8f9;border:1px solid rgba(6,182,212,.25);font-size:.72rem;">' + type + '</span></td>'
-                  + '<td class="font-mono" style="font-weight:600;color:#f1f5f9;">' + serial + '</td>'
-                  + '<td style="color:#94a3b8;">' + model + '</td>'
-                  + '<td style="font-size:.76rem;color:#64748b;">' + scaner + '</td>'
-                  + '<td>' + (canEdit ? '<button class="bo-action-btn danger rm-item-btn" style="padding:2px 6px;font-size:.7rem;" title="Quitar"><i class="bi bi-x-lg"></i></button>' : '') + '</td>';
-                if (canEdit) {
-                    const btn = tr.querySelector('.rm-item-btn');
-                    if (btn) {
-                        btn.dataset.serial = serial;
-                        btn.dataset.orderid = bo.id;
-                        btn.addEventListener('click', function(e){
-                            e.stopPropagation();
-                            removeItemFromBO(this.dataset.orderid, this.dataset.serial);
-                        });
-                    }
-                }
-                tbody.appendChild(tr);
-            });
+            const meta = document.getElementById('detail_bo_meta');
+            if (meta) {
+                meta.innerHTML = '';
+                if (bo.target_pc_name) meta.innerHTML += `<span class="bo-meta-chip"><i class="bi bi-pc-display text-info"></i><strong>${bo.target_pc_name}</strong></span>`;
+                if (bo.validation_status === 'validado') meta.innerHTML += `<span class="badge bg-success text-white font-mono p-1 px-2"><i class="bi bi-patch-check-fill me-1"></i>Gemelo Validado WMI</span>`;
+                else if (bo.validation_status === 'pendiente') meta.innerHTML += `<span class="badge bg-warning text-dark font-mono p-1 px-2"><i class="bi bi-clock-history me-1"></i>Queda por validar en red</span>`;
+                if (bo.target_user) meta.innerHTML += `<span class="bo-meta-chip"><i class="bi bi-person"></i><strong>${bo.target_user}</strong></span>`;
+                if (bo.target_fuero) meta.innerHTML += `<span class="bo-meta-chip"><i class="bi bi-building"></i>${bo.target_fuero}</span>`;
             }
-            const nw=document.getElementById('detail_notes_wrap');
-            if(bo.notes){document.getElementById('detail_notes_text').textContent=bo.notes;nw.style.display='block';}
-            else{nw.style.display='none';}
-            const aa=document.getElementById('detail_active_actions');
-            const ca=document.getElementById('detail_completed_actions');
-            const as=document.getElementById('detail_add_section');
-            if(bo.status==='draft'||bo.status==='in_progress'){
-                aa.style.display='';ca.style.display='none';as.style.display='';
-                document.getElementById('detail_serial_input').value='';
-            }else if(bo.status==='completed'){
-                aa.style.display='none';ca.style.display='none';as.style.display='none';
-            }else{aa.style.display='none';ca.style.display='none';as.style.display='none';}
-            new bootstrap.Modal(document.getElementById('boDetailModal')).show();
+
+            const items = bo.order_items || bo.items || [];
+            const countEl = document.getElementById('detail_items_count');
+            if (countEl) countEl.textContent = items.length;
+
+            const tbody = document.getElementById('detail_items_tbody');
+            const emptyEl = document.getElementById('detail_items_empty');
+            const tableEl = document.getElementById('detail_items_table');
+
+            if (tbody) tbody.innerHTML = '';
+
+            if (items.length === 0) {
+                if (emptyEl) emptyEl.style.display = '';
+                if (tableEl) tableEl.style.display = 'none';
+            } else {
+                if (emptyEl) emptyEl.style.display = 'none';
+                if (tableEl) tableEl.style.display = '';
+                const canEdit = (bo.status === 'draft' || bo.status === 'in_progress');
+                items.forEach(i => {
+                    const serial = i.serial_number || '---';
+                    const type   = i.asset_type || i.component_type || '---';
+                    const model  = i.brand_model || '---';
+                    const scaner = i.scanned_by || i.supplier || '---';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML =
+                        '<td><span class="badge" style="background:rgba(6,182,212,.15);color:#67e8f9;border:1px solid rgba(6,182,212,.25);font-size:.72rem;">' + type + '</span></td>'
+                      + '<td class="font-mono" style="font-weight:600;color:#f1f5f9;">' + serial + '</td>'
+                      + '<td style="color:#94a3b8;">' + model + '</td>'
+                      + '<td style="font-size:.76rem;color:#64748b;">' + scaner + '</td>'
+                      + '<td>' + (canEdit ? '<button class="bo-action-btn danger rm-item-btn" style="padding:2px 6px;font-size:.7rem;" title="Quitar"><i class="bi bi-x-lg"></i></button>' : '') + '</td>';
+                    if (canEdit) {
+                        const btn = tr.querySelector('.rm-item-btn');
+                        if (btn) {
+                            btn.dataset.serial = serial;
+                            btn.dataset.orderid = bo.id;
+                            btn.addEventListener('click', function(e){
+                                e.stopPropagation();
+                                removeItemFromBO(this.dataset.orderid, this.dataset.serial);
+                            });
+                        }
+                    }
+                    if (tbody) tbody.appendChild(tr);
+                });
+            }
+
+            const nw = document.getElementById('detail_notes_wrap');
+            const nt = document.getElementById('detail_notes_text');
+            if (nw) {
+                if (bo.notes) {
+                    if (nt) nt.textContent = bo.notes;
+                    nw.style.display = 'block';
+                } else {
+                    nw.style.display = 'none';
+                }
+            }
+
+            const aa = document.getElementById('detail_active_actions');
+            const ca = document.getElementById('detail_completed_actions');
+            const as = document.getElementById('detail_add_section');
+
+            if (aa) aa.style.display = (bo.status === 'draft' || bo.status === 'in_progress') ? '' : 'none';
+            if (ca) ca.style.display = (bo.status === 'completed') ? '' : 'none';
+            if (as) as.style.display = (bo.status === 'draft' || bo.status === 'in_progress') ? '' : 'none';
+
+            if ((bo.status === 'draft' || bo.status === 'in_progress') && document.getElementById('detail_serial_input')) {
+                document.getElementById('detail_serial_input').value = '';
+            }
+
+            const modalElement = document.getElementById('boDetailModal');
+            if (modalElement) {
+                let modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (!modalInstance) {
+                    modalInstance = new bootstrap.Modal(modalElement);
+                }
+                modalInstance.show();
+            }
         }
 
         async function handleDetailAddItem(e){
