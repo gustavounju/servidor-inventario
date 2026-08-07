@@ -411,6 +411,8 @@
                       GEMELO DIGITAL VALIDADO OK
                     {% elif ns.has_discrepancy %}
                       DISCREPANCIA DE HARDWARE DETECTADA
+                    {% elif pc.validation_status == 'sin_gemelo' or not pc.validation_status %}
+                      SIN GEMELO DIGITAL ASIGNADO
                     {% else %}
                       PENDIENTE DE AUDITORÍA DE HARDWARE
                     {% endif %}
@@ -420,6 +422,8 @@
                     El hardware físico reportado por el script (.ps1) coincide 100% con el inventario patrimonial.
                     {% elif ns.has_discrepancy %}
                     Se detectó una diferencia entre la pieza física asignada y la telemetría WMI. <strong>Si realizaste un cambio físico de componente, ejecutá nuevamente el script (.ps1) en la PC cliente para refrescar la telemetría en vivo.</strong>
+                    {% elif pc.validation_status == 'sin_gemelo' or not pc.validation_status %}
+                    No hay un activo patrimonial (CPU) registrado y asignado a esta PC.
                     {% else %}
                     Esperando primera lectura o validación técnica. Revisá la pestaña Componentes.
                     {% endif %}
