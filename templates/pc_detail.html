@@ -11,10 +11,12 @@
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pc_detail_vercel.css') }}">
 
   <style>
     /* Estilos globales y adaptables a tema Claro / Oscuro */
@@ -304,82 +306,115 @@
   {% include '_module_switcher.html' %}
   {% include '_shared_modals.html' %}
 
-  <div class="container-fluid px-3 pt-3 pb-4" style="margin-top: 56px;">
+  <div class="vercel-detail">
+    <div class="container-fluid px-3 pt-3 pb-4" style="margin-top: 56px;">
 
-    <!-- HERO HEADER -->
-    <div class="mb-3 p-3 rounded-3" style="background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e2e8f0);">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <!-- HERO HEADER CARD (Estilo Vercel Geist idéntico a la referencia) -->
+    <div class="mb-4 hero-card">
+      <!-- Top header row -->
+      <div class="d-flex justify-content-between align-items-start mb-2">
         <div>
-          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-            <h1 class="hero-title mb-0 fw-bold fs-4" style="color: var(--text-color, #0f172a);">🖥️ {{ pc.pc_name }}</h1>
-
-            {% if pc.is_active == 1 %}
-            <span class="badge" style="background:rgba(34,197,94,0.15);color:#16a34a;border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:4px 8px;font-size:0.75rem;font-weight:700;">● Activa</span>
-            {% else %}
-            <span class="badge" style="background:rgba(107,114,128,0.15);color:#6b7280;border:1px solid rgba(107,114,128,0.3);border-radius:6px;padding:4px 8px;font-size:0.75rem;font-weight:700;">⚰️ Cementerio</span>
-            {% endif %}
-
-            {% if pc.validation_status == 'validado' %}
-            <span class="badge" style="background:rgba(34,197,94,0.15);color:#16a34a;border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:4px 8px;font-size:0.75rem;font-weight:700;"><i class="bi bi-shield-check me-1"></i>Gemelo Validado</span>
-            {% elif pc.validation_status == 'pendiente' %}
-            <span class="badge" style="background:rgba(234,179,8,0.15);color:#d97706;border:1px solid rgba(234,179,8,0.3);border-radius:6px;padding:4px 8px;font-size:0.75rem;font-weight:700;"><i class="bi bi-clock me-1"></i>Pendiente Telemetría</span>
-            {% elif pc.validation_status == 'discrepancia' %}
-            <span class="badge" style="background:rgba(239,68,68,0.15);color:#dc2626;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 8px;font-size:0.75rem;font-weight:700;"><i class="bi bi-exclamation-triangle-fill me-1"></i>Discrepancia Patrimonial</span>
-            {% else %}
-            <span class="badge" style="background:rgba(107,114,128,0.15);color:#6b7280;border:1px solid rgba(107,114,128,0.3);border-radius:6px;padding:4px 8px;font-size:0.75rem;font-weight:700;"><i class="bi bi-question-circle me-1"></i>Sin Gemelo</span>
-            {% endif %}
-
-            {% if pc.alerta_ram_baja %}
-            <span class="badge" style="background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:4px 8px;font-size:0.75rem;font-weight:700;">⚠️ RAM Baja</span>
-            {% endif %}
-
-            {% if pc.alerta_impresora_red %}
-            <span class="badge" style="background:rgba(14,165,233,0.15);color:#0284c7;border:1px solid rgba(14,165,233,0.3);border-radius:6px;padding:4px 8px;font-size:0.75rem;font-weight:700;">🌐 Imp. Red</span>
-            {% elif pc.alerta_sin_impresora %}
-            <span class="badge" style="background:rgba(107,114,128,0.15);color:#6b7280;border:1px solid rgba(107,114,128,0.3);border-radius:6px;padding:4px 8px;font-size:0.75rem;font-weight:700;">🖨️ Sin Imp.</span>
-            {% endif %}
-          </div>
-
-          <div class="d-flex gap-3 flex-wrap text-muted small mt-2" style="color: var(--text-muted, #64748b);">
-            <span><i class="bi bi-person-fill me-1"></i><strong>{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '-' }}</strong></span>
-            <span><i class="bi bi-building me-1"></i><strong>{{ pc.fuero or '-' }}</strong></span>
+          <div class="hero-label text-uppercase mb-1" style="font-size: 0.72rem; color: var(--vercel-text-muted); letter-spacing: 0.05em;">EQUIPO</div>
+          <h1 class="fw-bold mb-1" style="font-size: 1.75rem; letter-spacing: -0.02em; color: var(--vercel-text);">{{ pc.pc_name }}</h1>
+          <div style="font-size: 0.9rem; color: var(--vercel-text-muted);">
+            {{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '-' }} · {{ pc.fuero or '-' }}
           </div>
         </div>
 
-        <div class="d-flex gap-2 flex-wrap align-items-center">
-          <a href="{{ url_for('dashboard.pc_qr_label_view', pc_name=pc.pc_name) }}" target="_blank" class="btn btn-sm btn-primary fw-bold px-3 py-1-5" style="border-radius:6px;" title="Imprimir etiqueta QR oficial">
-            <i class="bi bi-qr-code me-1"></i> QR Par
-          </a>
+        <div class="d-flex gap-2 align-items-center">
+          {% if pc.is_active == 1 %}
+          <span class="badge badge-success-geist">Activa</span>
+          {% else %}
+          <span class="badge badge-muted-geist">Cementerio</span>
+          {% endif %}
 
-          <button type="button" class="btn btn-sm btn-outline-info fw-bold px-3 py-1-5" style="border-radius:6px;" onclick="abrirIntervencionModal('{{ pc.pc_name }}')" title="Abrir Intervención Técnica">
-            <i class="bi bi-tools me-1"></i> Intervención
-          </button>
-
-          <button type="button" class="btn btn-sm btn-outline-secondary fw-bold px-3 py-1-5" style="border-radius:6px;" data-bs-toggle="modal" data-bs-target="#modalCargarSeriales" title="Cargar / Corregir Seriales">
-            <i class="bi bi-barcode me-1"></i> Cargar Seriales
-          </button>
-
-          {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
-            {% if pc.is_active == 1 %}
-            <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Pasar esta PC al cementerio?')">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1-5" style="border-radius:6px;">
-                <i class="bi bi-archive me-1"></i> Cementerio
-              </button>
-            </form>
-            {% else %}
-            <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" method="POST" class="d-inline">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="btn btn-sm btn-outline-success px-2 py-1-5" style="border-radius:6px;">
-                <i class="bi bi-activity me-1"></i> Reactivar
-              </button>
-            </form>
-            {% endif %}
-            <a href="{{ url_for('tasks.report_tasks_completed') }}?pc={{ pc.pc_name }}" class="btn btn-sm btn-outline-secondary px-2 py-1-5" style="border-radius:6px;">
-              <i class="bi bi-file-earmark-excel me-1"></i> Tareas
-            </a>
+          {% if pc.validation_status == 'validado' %}
+          <span class="badge badge-success-geist">Gemelo Validado</span>
+          {% elif pc.validation_status == 'pendiente' %}
+          <span class="badge badge-warning-geist">Pendiente Telemetría</span>
+          {% elif pc.validation_status == 'discrepancia' %}
+          <span class="badge badge-danger-geist">Discrepancia</span>
+          {% else %}
+          <span class="badge badge-muted-geist">Sin Gemelo</span>
           {% endif %}
         </div>
+      </div>
+
+      <hr style="border-top: 1px solid var(--vercel-border); margin: 18px 0; opacity: 1;">
+
+
+
+      <!-- Comparador Stock vs. Telemetría (Solo datos reales) -->
+      <div class="mb-4">
+        <h6 class="fw-bold mb-3" style="font-size: 1.05rem; color: var(--vercel-text);">Comparador Stock vs. Telemetría</h6>
+
+        <div style="border: 1px solid var(--vercel-border); border-radius: 8px; overflow: hidden; background: var(--vercel-bg);">
+          <table class="table mb-0" style="font-size: 0.875rem;">
+            <thead>
+              <tr style="background: var(--vercel-surface); border-bottom: 1px solid var(--vercel-border);">
+                <th class="font-mono fw-normal text-muted" style="padding: 10px 16px; font-size: 0.8rem; color: var(--vercel-text-muted);">Registrado</th>
+                <th class="font-mono fw-normal text-muted" style="padding: 10px 16px; font-size: 0.8rem; color: var(--vercel-text-muted);">Telemetria (WMI)</th>
+                <th class="font-mono fw-normal text-muted text-end" style="padding: 10px 16px; font-size: 0.8rem; width: 90px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if validation_comparison %}
+                {% for row in validation_comparison %}
+                <tr style="border-bottom: 1px solid var(--vercel-border);">
+                  <td class="font-mono" style="padding: 12px 16px; color: var(--vercel-text);">{{ row.registered or '-' }}</td>
+                  <td class="font-mono" style="padding: 12px 16px; color: var(--vercel-text-muted);">{{ row.telemetry or '-' }}</td>
+                  <td class="font-mono text-end fw-medium" style="padding: 12px 16px;">
+                    {% if row.match %}
+                    <span style="color: var(--color-stable, #137333);">✓ OK</span>
+                    {% else %}
+                    <span style="color: var(--color-critical, #c5221f);">⚠️ DIFERENCIA</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="3" class="text-center text-muted font-mono py-3" style="padding: 16px; color: var(--vercel-text-muted);">
+                    <i class="bi bi-info-circle me-1"></i>Sin lecturas de telemetría o comparación disponible para este equipo.
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex gap-2 flex-wrap align-items-center">
+        <a href="{{ url_for('dashboard.pc_qr_label_view', pc_name=pc.pc_name) }}" target="_blank" class="btn btn-primary fw-medium px-4 py-2" title="Imprimir etiqueta QR oficial">
+          Imprimir Par de QR
+        </a>
+
+        <button type="button" class="btn btn-outline-secondary fw-medium px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalCargarSeriales" title="Cargar / Corregir Seriales">
+          Cargar Seriales
+        </button>
+
+        <button type="button" class="btn btn-outline-secondary fw-medium px-3 py-2" onclick="abrirIntervencionModal('{{ pc.pc_name }}')" title="Abrir Intervención Técnica">
+          Intervención
+        </button>
+
+        {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
+          {% if pc.is_active == 1 %}
+          <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Pasar esta PC al cementerio?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger fw-medium px-3 py-2">
+              Cementerio
+            </button>
+          </form>
+          {% else %}
+          <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" method="POST" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-success fw-medium px-3 py-2">
+              Reactivar
+            </button>
+          </form>
+          {% endif %}
+        {% endif %}
       </div>
     </div>
 
@@ -1205,6 +1240,7 @@
       </div>
     </div>
   </div>
+  </div><!-- /.vercel-detail -->
 
   <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
   <script>

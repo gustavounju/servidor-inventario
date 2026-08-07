@@ -4,58 +4,64 @@
  * Este archivo se aplica DESPUÉS de Bootstrap para sobreescribir donde sea necesario.
  */
 
-/* ===== GOOGLE FONTS ===== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+/* ===== GOOGLE FONTS GEIST ===== */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
 
-/* ===== VARIABLES DE TEMA ===== */
+/* ===== VARIABLES DE TEMA Y ERGONOMÍA VISUAL ===== */
 :root {
-    /* CLARO — nuevo default */
-    --bg-color: #F8FAFC;
-    --text-color: #0F172A;
-    --text-muted: #64748B;
-    --card-bg: #FFFFFF;
-    --card-border: #E2E8F0;
-    --accent-color: #3b82f6;      /* sin cambios */
-    --accent-dark: #2563eb;       /* sin cambios */
-    --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    --secondary-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    --hero-bg: #F8FAFC;
-    --table-header-bg: #F1F5F9;
-    --glass-bg: rgba(255, 255, 255, 0.85);
-    --glass-border: rgba(226, 232, 240, 0.8);
-    --border-color: #E2E8F0;
-    --navbar-bg: #FFFFFF;
-    --navbar-border: #E2E8F0;
-    --kpi-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
-    --input-focus-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-    --radius-xl: 12px;
-    --radius-lg: 8px;
-    --font-display: 'Inter', sans-serif;
-    --font-body: 'Inter', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-    --color-critical: #ef4444;    /* sin cambios */
-    --color-warning: #f59e0b;     /* sin cambios */
-    --color-stable: #10b981;      /* sin cambios */
+    /* CLARO — Vercel Geist Amortiguado (Sin contraste extremo) */
+    --bg-color: #fafafa;
+    --text-color: #171717;
+    --text-muted: #666666;
+    --card-bg: #ffffff;
+    --card-border: #eaeaea;
+    --accent-color: #0070f3;
+    --accent-dark: #0051a8;
+    --primary-gradient: linear-gradient(135deg, #171717 0%, #333333 100%);
+    --secondary-gradient: linear-gradient(135deg, #fafafa 0%, #eaeaea 100%);
+    --hero-bg: #fafafa;
+    --table-header-bg: #f4f4f4;
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(234, 234, 234, 0.9);
+    --border-color: #eaeaea;
+    --navbar-bg: #ffffff;
+    --navbar-border: #eaeaea;
+    --kpi-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --input-focus-shadow: 0 0 0 2px rgba(0, 112, 243, 0.2);
+    --radius-xl: 10px;
+    --radius-lg: 6px;
+    --font-display: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-body: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: 'Geist Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --color-critical: #c5221f;
+    --color-warning: #b45309;
+    --color-stable: #137333;
 }
 
 [data-theme="dark"] {
-    /* OSCURO — valores preexistentes del sistema */
-    --bg-color: #0f172a;
-    --text-color: #f8fafc;
-    --text-muted: #94a3b8;
-    --card-bg: #1e293b;
-    --card-border: #334155;
-    --secondary-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    --hero-bg: #0f172a;
-    --table-header-bg: #1e293b;
-    --glass-bg: rgba(30, 41, 59, 0.7);
-    --glass-border: rgba(51, 65, 85, 0.5);
-    --border-color: #334155;
-    --navbar-bg: #0f172a;
-    --navbar-border: #334155;
-    --kpi-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    /* OSCURO NEUTRO — Ergonomía pura (Sin tinte azul slate, cero cansancio visual) */
+    --bg-color: #121212;
+    --text-color: #e5e5e5;
+    --text-muted: #909090;
+    --card-bg: #1e1e1e;
+    --card-border: #2c2c2c;
+    --accent-color: #3b82f6;
+    --accent-dark: #2563eb;
+    --primary-gradient: linear-gradient(135deg, #2c2c2c 0%, #1e1e1e 100%);
+    --secondary-gradient: linear-gradient(135deg, #1e1e1e 0%, #121212 100%);
+    --hero-bg: #121212;
+    --table-header-bg: #181818;
+    --glass-bg: rgba(30, 30, 30, 0.95);
+    --glass-border: rgba(44, 44, 44, 0.8);
+    --border-color: #2c2c2c;
+    --navbar-bg: #181818;
+    --navbar-border: #2c2c2c;
+    --kpi-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --color-critical: #f87171;
+    --color-warning: #fbbf24;
+    --color-stable: #4ade80;
 }
 
 
@@ -69,13 +75,19 @@ body {
     font-family: var(--font-body);
     background-color: var(--bg-color);
     color: var(--text-color);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 0.875rem; /* 14px de piso para lectura cómoda y reducción de fatiga */
+    line-height: 1.55;
+    transition: background-color 0.2s ease, color 0.2s ease;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Tipografías Utilitarias */
 .font-display { font-family: var(--font-display) !important; }
-.font-mono { font-family: var(--font-mono) !important; font-size: 0.9em; letter-spacing: -0.02em; }
+.font-mono, code, kbd, samp {
+    font-family: var(--font-mono) !important;
+    letter-spacing: 0.03em !important; /* Facilita el escaneo visual de números de serie y códigos */
+}
 
 /* ===== CLASES DE DISEÑO (Terminal Estricta) ===== */
 .glass-card {

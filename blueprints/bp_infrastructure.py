@@ -362,7 +362,6 @@ def add_component():
     return redirect(url_for('infrastructure.index'))
 
 @bp_infrastructure.route('/components/<int:component_id>/assign_pc', methods=['POST'])
-@bp_infrastructure.route('/components/<int:component_id>/assign_pc', methods=['POST'])
 def assign_component_to_pc(component_id):
     pc_name = request.form.get('pc_name')
     destination = request.form.get('destination', 'stock') # 'stock' or 'scrap'
