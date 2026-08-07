@@ -2688,27 +2688,27 @@
                             <!-- Remito / Factura -->
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-muted">Nº Remito / Factura:</label>
-                                <input type="text" name="remito" list="listRemitosModal" class="form-control form-control-sm" placeholder="Ej: REM-2026-001..." autocomplete="off" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
-                                <datalist id="listRemitosModal">
+                                <select name="remito" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                                    <option value="todos">-- Todos los Remitos / Facturas --</option>
                                     {% if remitos %}
                                       {% for r in remitos %}
-                                        <option value="{{ r }}"></option>
+                                        <option value="{{ r }}">{{ r }}</option>
                                       {% endfor %}
                                     {% endif %}
-                                </datalist>
+                                </select>
                             </div>
 
                             <!-- Orden de Compra -->
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-muted">Orden de Compra (O/C):</label>
-                                <input type="text" name="oc" list="listOcsModal" class="form-control form-control-sm" placeholder="Ej: OC-2026-042..." autocomplete="off" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
-                                <datalist id="listOcsModal">
+                                <select name="oc" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                                    <option value="todos">-- Todas las Órdenes de Compra (O/C) --</option>
                                     {% if ocs %}
                                       {% for o in ocs %}
-                                        <option value="{{ o }}"></option>
+                                        <option value="{{ o }}">{{ o }}</option>
                                       {% endfor %}
                                     {% endif %}
-                                </datalist>
+                                </select>
                             </div>
 
                             <!-- Fuero / Asignación -->
@@ -2724,10 +2724,17 @@
                                 </select>
                             </div>
 
-                            <!-- PC Específica -->
+                            <!-- PC Específica / Dominio -->
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold text-muted">Nombre de PC Asignada:</label>
-                                <input type="text" name="assigned_pc" class="form-control form-control-sm" placeholder="Ej: JCC1-PC01..." style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                                <label class="form-label small fw-semibold text-muted">Nombre de PC Asignada / Dominio:</label>
+                                <select name="assigned_pc" class="form-select form-select-sm" style="background: var(--bg-color, #121212); color: var(--text-color, #e5e5e5); border-color: var(--border-color, #333);">
+                                    <option value="todos">-- Todas las PCs / Equipos --</option>
+                                    {% if assigned_pcs %}
+                                      {% for p in assigned_pcs %}
+                                        <option value="{{ p }}">{{ p }}</option>
+                                      {% endfor %}
+                                    {% endif %}
+                                </select>
                             </div>
                         </div>
                     </div>

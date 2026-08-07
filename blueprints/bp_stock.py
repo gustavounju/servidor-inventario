@@ -449,24 +449,39 @@ def stock_view():
             except Exception:
                 fueros = []
 
-            # Tipos de componentes, remitos y OCs para los filtros del informe
+            # Tipos de componentes, remitos, OCs y PCs para los filtros del informe
             try:
-                ctype_rows = conn.execute("SELECT DISTINCT component_type FROM components WHERE component_type IS NOT NULL AND component_type != '' ORDER BY component_type ASC").fetchall()
+                ctype_rows = conn.execute("SELECT DISTINCT component_type FROM components WHERE component_type IS NOT NULL AND TRIM(component_type) != '' ORDER BY component_type ASC").fetchall()
                 component_types = [r['component_type'] for r in ctype_rows]
             except Exception:
                 component_types = []
 
             try:
-                remito_rows = conn.execute("SELECT DISTINCT invoice_number FROM components WHERE invoice_number IS NOT NULL AND invoice_number != '' ORDER BY invoice_number ASC").fetchall()
+                remito_rows = conn.execute("SELECT DISTINCT invoice_number FROM components WHERE invoice_number IS NOT NULL AND TRIM(invoice_number) != '' ORDER BY invoice_number ASC").fetchall()
                 remitos = [r['invoice_number'] for r in remito_rows]
             except Exception:
                 remitos = []
 
             try:
-                oc_rows = conn.execute("SELECT DISTINCT oc_number FROM components WHERE oc_number IS NOT NULL AND oc_number != '' ORDER BY oc_number ASC").fetchall()
+                oc_rows = conn.execute("SELECT DISTINCT oc_number FROM components WHERE oc_number IS NOT NULL AND TRIM(oc_number) != '' ORDER BY oc_number ASC").fetchall()
                 ocs = [r['oc_number'] for r in oc_rows]
             except Exception:
                 ocs = []
+
+            try:
+                assigned_pc_rows = conn.execute(
+                    """
+                    SELECT DISTINCT pc_name FROM (
+                        SELECT assigned_pc AS pc_name FROM components WHERE assigned_pc IS NOT NULL AND TRIM(assigned_pc) != ''
+                        UNION
+                        SELECT pc_name FROM pcs WHERE pc_name IS NOT NULL AND TRIM(pc_name) != ''
+                    ) AS combined_pcs
+                    ORDER BY pc_name ASC
+                    """
+                ).fetchall()
+                assigned_pcs = [r['pc_name'] for r in assigned_pc_rows]
+            except Exception:
+                assigned_pcs = []
 
     except Exception:
         pcs = []
@@ -476,6 +491,7 @@ def stock_view():
         component_types = []
         remitos = []
         ocs = []
+        assigned_pcs = []
 
     return render_template(
         "stock.html",
@@ -485,7 +501,8 @@ def stock_view():
         stock_fueros=fueros,
         component_types=component_types,
         remitos=remitos,
-        ocs=ocs
+        ocs=ocs,
+        assigned_pcs=assigned_pcs
     )
 
 
@@ -524,11 +541,11 @@ def stock_report_pdf():
         sql += " AND DATE(c.created_at) <= %s"
         params.append(fecha_hasta)
 
-    if remito:
+    if remito and remito.lower() != "todos":
         sql += " AND c.invoice_number LIKE %s"
         params.append(f"%{remito}%")
 
-    if oc:
+    if oc and oc.lower() != "todos":
         sql += " AND c.oc_number LIKE %s"
         params.append(f"%{oc}%")
 
@@ -544,7 +561,7 @@ def stock_report_pdf():
         sql += " AND (LOWER(c.supplier) LIKE %s OR LOWER(p.fuero) LIKE %s)"
         params.extend([f"%{fuero.lower()}%", f"%{fuero.lower()}%"])
 
-    if assigned_pc:
+    if assigned_pc and assigned_pc.lower() != "todos":
         sql += " AND c.assigned_pc LIKE %s"
         params.append(f"%{assigned_pc}%")
 
