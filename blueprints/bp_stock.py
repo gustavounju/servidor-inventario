@@ -691,7 +691,7 @@ def build_orders_view():
                 if item_dict.get("completed_at") and hasattr(item_dict["completed_at"], "strftime"):
                     item_dict["completed_at"] = item_dict["completed_at"].strftime("%Y-%m-%d %H:%M")
 
-                # Obtener ítems de esta BO
+                # Obtener ítems de esta BO (desde build_order_items y components)
                 items_rows = conn.execute(
                     """
                     SELECT id, serial_number, asset_type, brand_model, pc_name, scanned_at, scanned_by
@@ -702,6 +702,25 @@ def build_orders_view():
                     (bo["id"],)
                 ).fetchall()
                 items_list = [dict(i) for i in items_rows]
+
+                try:
+                    comp_bo_rows = conn.execute(
+                        """
+                        SELECT id, serial_number, component_type as asset_type, brand_model, assigned_pc as pc_name, created_at as scanned_at, supplier as scanned_by
+                        FROM components
+                        WHERE build_order_id = %s
+                        """,
+                        (bo["id"],)
+                    ).fetchall()
+                    existing_serials = {it.get("serial_number") for it in items_list if it.get("serial_number")}
+                    for c_row in comp_bo_rows:
+                        cd = dict(c_row)
+                        sn = cd.get("serial_number")
+                        if not sn or sn not in existing_serials:
+                            items_list.append(cd)
+                except Exception:
+                    pass
+
                 item_dict["items"] = items_list
                 item_dict["order_items"] = items_list
 
@@ -2314,15 +2333,70 @@ def create_build_order():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-@bp_stock.route("/api/build_orders/<int:order_id>", methods=["PATCH", "DELETE"])
+@bp_stock.route("/api/build_orders/<int:order_id>", methods=["GET", "PATCH", "DELETE"])
 def manage_build_order(order_id):
-    """PATCH: actualiza metadatos. DELETE: elimina la orden (y restaura stock si estaba completada)."""
+    """GET: obtiene detalle e ítems. PATCH: actualiza metadatos. DELETE: elimina la orden."""
     if not check_stock_permission():
         return jsonify({"status": "error", "message": "Acceso denegado."}), 403
 
     try:
         from utils.auth import current_technician_identity
         tech = current_technician_identity()
+
+        # ── GET: consultar detalle e ítems ──────────────────────────────
+        if request.method == "GET":
+            with get_db_connection() as conn:
+                bo = conn.execute(
+                    """
+                    SELECT id, code, status, oc_number, invoice_number,
+                           target_fuero, target_user, target_pc_name, notes,
+                           created_by, completed_at, created_at
+                    FROM build_orders
+                    WHERE id = %s
+                    """,
+                    (order_id,)
+                ).fetchone()
+                if not bo:
+                    return jsonify({"status": "error", "message": "Orden no encontrada."}), 404
+
+                item_dict = dict(bo)
+                if item_dict.get("created_at") and hasattr(item_dict["created_at"], "strftime"):
+                    item_dict["created_at"] = item_dict["created_at"].strftime("%Y-%m-%d %H:%M")
+                if item_dict.get("completed_at") and hasattr(item_dict["completed_at"], "strftime"):
+                    item_dict["completed_at"] = item_dict["completed_at"].strftime("%Y-%m-%d %H:%M")
+
+                items_rows = conn.execute(
+                    """
+                    SELECT id, serial_number, asset_type, brand_model, pc_name, scanned_at, scanned_by
+                    FROM build_order_items
+                    WHERE build_order_id = %s
+                    ORDER BY scanned_at ASC
+                    """,
+                    (order_id,)
+                ).fetchall()
+                items_list = [dict(i) for i in items_rows]
+
+                try:
+                    comp_bo_rows = conn.execute(
+                        """
+                        SELECT id, serial_number, component_type as asset_type, brand_model, assigned_pc as pc_name, created_at as scanned_at, supplier as scanned_by
+                        FROM components
+                        WHERE build_order_id = %s
+                        """,
+                        (order_id,)
+                    ).fetchall()
+                    existing_serials = {it.get("serial_number") for it in items_list if it.get("serial_number")}
+                    for cr in comp_bo_rows:
+                        cd = dict(cr)
+                        sn = cd.get("serial_number")
+                        if not sn or sn not in existing_serials:
+                            items_list.append(cd)
+                except Exception:
+                    pass
+
+                item_dict["items"] = items_list
+                item_dict["order_items"] = items_list
+                return jsonify({"status": "success", "build_order": item_dict})
 
         # ── PATCH: editar campos ──────────────────────────────────────────
         if request.method == "PATCH":

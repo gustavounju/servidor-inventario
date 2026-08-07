@@ -411,13 +411,25 @@
     <script>
         window.BUILD_ORDERS = {{ build_orders | tojson }};
 
-        function openBODetailById(id) {
+        async function openBODetailById(id) {
             const list = window.BUILD_ORDERS || [];
-            const bo = list.find(b => String(b.id) === String(id));
+            let bo = list.find(b => String(b.id) === String(id));
             if (bo) {
                 openBODetail(bo);
-            } else {
-                console.error("Orden de armado no encontrada para ID:", id);
+            }
+            try {
+                const res = await fetch(`/api/build_orders/${id}`);
+                const data = await res.json();
+                if (data.status === 'success' && data.build_order) {
+                    const fresh = data.build_order;
+                    if (bo) {
+                        fresh.validation_status = bo.validation_status || fresh.validation_status;
+                        fresh.matched_user = bo.matched_user || fresh.matched_user;
+                    }
+                    openBODetail(fresh);
+                }
+            } catch (err) {
+                console.error("Error consultando detalle vía API:", err);
             }
         }
 
