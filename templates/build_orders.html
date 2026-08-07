@@ -99,8 +99,8 @@
                     </tr></thead>
                     <tbody>
                         {% for bo in build_orders %}
-                        <tr onclick='openBODetail({{ bo | tojson }})'>
-                            <td><span class="font-mono" style="font-weight:700;color:#f1f5f9;font-size:.9rem;">{{ bo.code }}</span></td>
+                        <tr onclick="openBODetailById({{ bo.id }})">
+                            <td><span class="font-mono" style="font-weight:700;color:#38bdf8;font-size:.9rem;cursor:pointer;" title="Ver detalle de {{ bo.code }}"><i class="bi bi-box-seam me-1"></i>{{ bo.code }}</span></td>
                             <td>
                                 {% if bo.validation_status == 'validado' %}
                                 <span class="badge bg-success text-white font-mono px-2 py-1" style="font-size:0.75rem;" title="Puesto / Gemelo Validado por Auditoría WMI en Red">
@@ -168,7 +168,10 @@
                             <td style="color:#64748b;font-size:.78rem;">{{ bo.created_by or '—' }}</td>
                             <td class="text-end" onclick="event.stopPropagation()">
                                 <div class="d-flex gap-1 justify-content-end">
-                                    <button class="bo-action-btn edit" onclick='openEditModal({{ bo | tojson }})' title="Editar">
+                                    <button class="bo-action-btn edit text-info" onclick="openBODetailById({{ bo.id }}); event.stopPropagation();" title="Ver Detalle">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="bo-action-btn edit" onclick="openEditModalById({{ bo.id }}); event.stopPropagation();" title="Editar">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
                                     <button class="bo-action-btn danger" onclick="openDeleteBOModal({{ bo.id }},'{{ bo.code }}','{{ bo.status }}',{{ bo.order_items|length }})" title="Eliminar">
@@ -407,6 +410,26 @@
 
     <script>
         window.BUILD_ORDERS = {{ build_orders | tojson }};
+
+        function openBODetailById(id) {
+            const list = window.BUILD_ORDERS || [];
+            const bo = list.find(b => String(b.id) === String(id));
+            if (bo) {
+                openBODetail(bo);
+            } else {
+                console.error("Orden de armado no encontrada para ID:", id);
+            }
+        }
+
+        function openEditModalById(id) {
+            const list = window.BUILD_ORDERS || [];
+            const bo = list.find(b => String(b.id) === String(id));
+            if (bo) {
+                openEditModal(bo);
+            } else {
+                console.error("Orden de armado no encontrada para ID:", id);
+            }
+        }
         let _activeBOId=null,_activeBOCode='',_activeBOStatus='',_activeBOData=null;
         const SL={draft:'Borrador',in_progress:'En Armado',completed:'Completado',cancelled:'Cancelado'};
         const SC={draft:'bo-badge--draft',in_progress:'bo-badge--in_progress',completed:'bo-badge--completed',cancelled:'bo-badge--cancelled'};
