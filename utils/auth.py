@@ -1075,3 +1075,77 @@ def permission_required(permission_name):
         return wrapped
 
     return decorator
+
+
+# --- API SCOPES Y DECORADORES SEGÚN ÁMBITO ---
+
+SCOPE_INVENTORY_SUBMIT = "inventory:submit"
+SCOPE_EXTERNAL_READ_PO = "external:read_purchase_orders"
+SCOPE_EXTERNAL_READ_REMITOS = "external:read_remitos"
+SCOPE_MAINTENANCE_READ = "maintenance:read"
+SCOPE_ADMIN_ALL = "admin:*"
+
+DEFAULT_TOKEN_SCOPES = {
+    "CONTABLE_API_TOKEN": {SCOPE_EXTERNAL_READ_PO, SCOPE_EXTERNAL_READ_REMITOS},
+    "INVENTARIO_API_TOKEN": {SCOPE_INVENTORY_SUBMIT, SCOPE_EXTERNAL_READ_PO, SCOPE_EXTERNAL_READ_REMITOS, SCOPE_MAINTENANCE_READ},
+    "API_TOKEN": {SCOPE_INVENTORY_SUBMIT, SCOPE_EXTERNAL_READ_PO, SCOPE_EXTERNAL_READ_REMITOS, SCOPE_MAINTENANCE_READ},
+    "API_KEY": {SCOPE_INVENTORY_SUBMIT, SCOPE_EXTERNAL_READ_PO, SCOPE_EXTERNAL_READ_REMITOS, SCOPE_MAINTENANCE_READ},
+}
+
+def resolve_token_scopes(provided_token):
+    """
+    Dado un token de API proporcionado, retorna el conjunto de scopes asociados.
+    Compara de manera segura con las variables de entorno sin exponer secretos.
+    """
+    if not provided_token:
+        return set()
+
+    scopes = set()
+
+    for env_var, default_scopes in DEFAULT_TOKEN_SCOPES.items():
+        configured_token = os.environ.get(env_var, "").strip()
+        if configured_token and hmac.compare_digest(provided_token, configured_token):
+            scopes.update(default_scopes)
+
+            # Admite la opción de configurar scopes personalizados mediante env vars como API_TOKEN_SCOPES
+            custom_scopes_env = os.environ.get(f"{env_var}_SCOPES", "").strip()
+            if custom_scopes_env:
+                custom_set = {s.strip() for s in custom_scopes_env.split(",") if s.strip()}
+                scopes.update(custom_set)
+
+    return scopes
+
+
+def require_api_scope(required_scope):
+    """
+    Decorador que verifica si la petición incluye un token Bearer o api_key con el scope requerido.
+    Retorna 401 Unauthorized si no hay token o es inválido.
+    Retorna 403 Forbidden si el token es válido pero no posee el scope requerido.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            auth_header = request.headers.get("Authorization", "").strip()
+            provided_token = ""
+            if auth_header.lower().startswith("bearer "):
+                provided_token = auth_header[7:].strip()
+            if not provided_token:
+                provided_token = request.args.get("api_key", "").strip()
+
+            if not provided_token:
+                return jsonify({"status": "error", "message": "Unauthorized. Se requiere token de autorización"}), 401
+
+            token_scopes = resolve_token_scopes(provided_token)
+            if not token_scopes:
+                return jsonify({"status": "error", "message": "Unauthorized. Token inválido o deshabilitado"}), 401
+
+            if required_scope not in token_scopes and SCOPE_ADMIN_ALL not in token_scopes:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Forbidden. Permiso insuficiente para la operación (se requiere scope '{required_scope}')"
+                }), 403
+
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+

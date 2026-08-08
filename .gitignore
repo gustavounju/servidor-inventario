@@ -35,3 +35,8 @@ tmp/
 # Instaladores y Drivers locales
 static/downloads/drivers/
 *.exe
+
+# Temporales de desarrollo IA
+scratch/
+scripts_tmp/
+backups/

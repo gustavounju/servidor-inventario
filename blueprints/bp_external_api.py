@@ -6,54 +6,15 @@ from flask import Blueprint, request, jsonify, current_app
 
 from database.db_core import get_db_connection
 from utils.extensions import limiter
+from utils.auth import require_api_scope, SCOPE_EXTERNAL_READ_PO, SCOPE_EXTERNAL_READ_REMITOS
 
 bp_external_api = Blueprint('external_api', __name__, url_prefix='/api/external')
 
 logger = logging.getLogger(__name__)
 
 
-def require_contable_token(f):
-    """
-    Decorador de seguridad estricto para la API del Sistema Contable.
-    Exige cabecera 'Authorization: Bearer <token>' matching la variable CONTABLE_API_TOKEN.
-    No utiliza fallbacks hardcodeados en el código.
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        expected_token = os.environ.get("CONTABLE_API_TOKEN", "").strip()
-        if not expected_token:
-            # Fallback opcional a INVENTARIO_API_TOKEN si está configurado en .env
-            expected_token = os.environ.get("INVENTARIO_API_TOKEN", "").strip()
-
-        if not expected_token:
-            logger.error("API Contable rechazada: CONTABLE_API_TOKEN no está definida en .env")
-            return jsonify({
-                "status": "error",
-                "message": "Servicio de API externa deshabilitado (token no configurado en servidor)"
-            }), 500
-
-        auth_header = request.headers.get("Authorization", "").strip()
-        if not auth_header.lower().startswith("bearer "):
-            logger.warning(f"Intento de acceso a API externa sin token Bearer desde IP: {request.remote_addr}")
-            return jsonify({
-                "status": "error",
-                "message": "Cabecera de autorización faltante o formato inválido. Use 'Authorization: Bearer <token>'"
-            }), 401
-
-        provided_token = auth_header[7:].strip()
-        if not hmac.compare_digest(provided_token, expected_token):
-            logger.warning(f"Intento de acceso a API externa con token inválido desde IP: {request.remote_addr}")
-            return jsonify({
-                "status": "error",
-                "message": "Token de autorización inválido"
-            }), 401
-
-        return f(*args, **kwargs)
-    return decorated_function
-
-
 @bp_external_api.route('/purchase-orders/<oc_number>', methods=['GET'])
-@require_contable_token
+@require_api_scope(SCOPE_EXTERNAL_READ_PO)
 @limiter.limit("60 per minute")
 def get_purchase_order(oc_number):
     """
@@ -141,7 +102,7 @@ def get_purchase_order(oc_number):
 
 
 @bp_external_api.route('/purchase-orders', methods=['GET'])
-@require_contable_token
+@require_api_scope(SCOPE_EXTERNAL_READ_PO)
 @limiter.limit("60 per minute")
 def list_purchase_orders():
     """
@@ -216,7 +177,7 @@ def list_purchase_orders():
 
 
 @bp_external_api.route('/remitos/<invoice_number>', methods=['GET'])
-@require_contable_token
+@require_api_scope(SCOPE_EXTERNAL_READ_REMITOS)
 @limiter.limit("60 per minute")
 def get_remito(invoice_number):
     """

@@ -200,7 +200,13 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
   3. **Impresión de Etiquetas QR Par (CPU + Monitor)**: Vista `/pc/<pc_name>/qr_label` con diseño de doble etiqueta (Gabinete + Trasera de Monitor) optimizada para impresoras térmicas y papel A4.
   4. **Flujo de Reemplazo por Falla (Sustitución Directa de Repuesto)**: Acción atómica `⚡ Sustituir por Falla` en `pc_detail.html` que da de baja el componente averiado a estado `Retirado` (Scrap) y asigna el repuesto del Stock en un solo clic.
 
+- **Agosto 2026 (Monolito Modular Endurecido - Fases 1 a 4 Completadas)**:
+  1. **Fase 1 (Seguridad Urgente y Secretos)**: Eliminación de secretos hardcodeados, sanitización contra inyección LDAP en Active Directory, requerimiento estricto de autenticación Bearer/Token en ingesta y protección CSRF en acciones mutativas del Vault.
+  2. **Fase 2 (Autenticación y API Scopes)**: Implementación de control granular de acceso a nivel de API (`utils/auth.py`) con permisos parametrizados por ámbitos (*scopes* como `inventory:submit`, `external:read_purchase_orders`, `external:read_remitos`, `maintenance:read`).
+  3. **Fase 3 (Migraciones Versionadas y Capa de Repositorios)**: Sistema autónomo de migraciones versionadas en `database/migrator.py` e introducción de la capa `repositories/` (`PcRepository`, `ComponentRepository`, `TaskRepository`, `UserRepository`) para desacoplar SQL directo en Blueprints.
+  4. **Fase 4 (Observabilidad, Auditoría y Backups)**: Centralización de eventos en `services/audit_service.py` (Vault, gestión de usuarios, cambios patrimoniales) y respaldos automatizados e íntegros en `scripts/backup_db.py` con prueba autónoma de descompresión GZip y firmas SQL. Cobertura de pruebas completa en `tests/`.
+
 ---
 
-**Última actualización**: 29 de Julio 2026  
+**Última actualización**: 8 de Agosto 2026  
 **Versión del sistema**: Según APP_VERSION en utils/constants.py

@@ -11,8 +11,48 @@ from database.db_core import get_db_connection
 from utils.constants import detect_fuero
 from utils.extensions import limiter
 from services.asset_validation import compute_validation_status
+from utils.auth import require_api_scope, SCOPE_INVENTORY_SUBMIT
+from repositories.pc_repository import PcRepository
+from services.audit_service import AuditService
+
+from utils.api_responses import success_response, error_response
 
 bp_api = Blueprint('api', __name__)
+
+@bp_api.route('/health', methods=['GET'])
+def health_check():
+    """
+    Endpoint de diagnóstico de salud del sistema.
+    Verifica estado de la aplicación, base de datos y OCR.
+    """
+    db_status = "ok"
+    try:
+        with get_db_connection() as conn:
+            conn.execute("SELECT 1")
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+
+    ocr_status = "available"
+    tesseract_cmd = os.environ.get("TESSERACT_CMD", "")
+    if not tesseract_cmd and os.name == 'nt' and not os.path.exists(r"C:\Program Files\Tesseract-OCR\tesseract.exe"):
+        ocr_status = "not_configured"
+
+    is_healthy = db_status == "ok"
+    status_code = 200 if is_healthy else 503
+
+    payload = {
+        "status": "healthy" if is_healthy else "unhealthy",
+        "timestamp": datetime.datetime.now().isoformat(),
+        "components": {
+            "database": db_status,
+            "ocr": ocr_status
+        }
+    }
+    if is_healthy:
+        return success_response(data=payload, status_code=200)
+    else:
+        return error_response(code="SERVICE_UNHEALTHY", message="El servicio presenta degradación", details=payload, status_code=503)
+
 
 
 def _normalize_printer_endpoint(value):
@@ -242,8 +282,7 @@ def process_inventory_data(data):
             # Check for reactivation from Cementerio
             if current_pc.get("is_active") == 0 or current_pc.get("is_active") == False or str(current_pc.get("is_active")) == "False":
                 reactivado = True
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                             (pc_name, "Estado de PC", "Cementerio (Baja)", "Reactivado (Activo)", "SISTEMA", "INVENTARIO_AUTOMATICO", client_ip))
+                AuditService.log_action(pc_name, "Estado de PC", "Cementerio (Baja)", "Reactivado (Activo)", "SISTEMA", "INVENTARIO_AUTOMATICO", client_ip)
 
 
             # Deduplicate check: if hardware (motherboard & processor) drastically changed, it's likely another physical machine
@@ -267,8 +306,7 @@ def process_inventory_data(data):
             for field, old_val in fields_to_check.items():
                 new_val = new_values_map.get(field, "N/A")
                 if old_val.strip() != new_val.strip():
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                                 (pc_name, field, old_val, new_val, "SISTEMA", "INVENTARIO_AUTOMATICO", client_ip))
+                    AuditService.log_action(pc_name, field, old_val, new_val, "SISTEMA", "INVENTARIO_AUTOMATICO", client_ip)
 
 
 
@@ -321,8 +359,7 @@ def process_inventory_data(data):
                 printer_id = known_printer['id']
                 # 3. Vincular la actual
                 conn.execute("INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)", (pc_name, printer_id))
-                conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                             (pc_name, 'AUTO_SYNC_PRINTER', 'Catalog', printer_sn if printer_sn != 'N/A' else clean_ip, "SISTEMA", "AUTO_SYNC", client_ip))
+                AuditService.log_action(pc_name, 'AUTO_SYNC_PRINTER', 'Catalog', printer_sn if printer_sn != 'N/A' else clean_ip, "SISTEMA", "AUTO_SYNC", client_ip)
 
         
         elif alerta_sin_impresora == 1:
@@ -333,8 +370,7 @@ def process_inventory_data(data):
                 print(f"[DEBUG] Catálogo limpiado. SN: {old_printer_sn}. Filas: {cursor.rowcount}")
 
             # 2. Limpieza de Asignaciones Internas
-            conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                         (pc_name, 'AUTO_CLEAN_PRINTER', 'Assigned', 'None', "SISTEMA", "AUTO_SYNC", client_ip))
+            AuditService.log_action(pc_name, 'AUTO_CLEAN_PRINTER', 'Assigned', 'None', "SISTEMA", "AUTO_SYNC", client_ip)
                 
             # 3. LIMPIEZA EN CASCADA (Misión: Clientes huérfanos)
             host_pattern = f"%\\\\\\\\{pc_name.upper()}\\\\%"
@@ -343,8 +379,7 @@ def process_inventory_data(data):
                 for c in clients:
                     client_name = c["pc_name"]
                     conn.execute("DELETE FROM pc_network_printers WHERE pc_name = %s", (client_name,))
-                    conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                                 (client_name, 'CASCADE_UNASSIGN', 'Host Offline', pc_name, "SISTEMA", "CASCADE_ACTION", client_ip))
+                    AuditService.log_action(client_name, 'CASCADE_UNASSIGN', 'Host Offline', pc_name, "SISTEMA", "CASCADE_ACTION", client_ip)
 
 
         # --- PROPAGACIÓN EN CASCADA (SI SOY HOST) ---
@@ -424,14 +459,8 @@ def process_inventory_data(data):
 
 @bp_api.route("/submit_inventory", methods=["POST"])
 @limiter.limit("60 per minute")
+@require_api_scope(SCOPE_INVENTORY_SUBMIT)
 def receive_inventory():
-    api_token = (os.environ.get("API_TOKEN") or os.environ.get("INVENTARIO_API_TOKEN") or "").strip()
-    auth_header = request.headers.get("Authorization", "")
-    token_query = request.args.get("api_key", "")
-    
-    if not api_token or (auth_header != f"Bearer {api_token}" and token_query != api_token):
-        return jsonify({"status": "error", "message": "Unauthorized"}), 401
-        
     try:
         raw_data = request.get_data()
         try:
@@ -529,20 +558,16 @@ def api_pc_printer(pc_ref):
     """Devuelve el serial de la impresora de una PC dada (por nombre o IP)."""
     try:
         pc_ref = pc_ref.upper()
-        with get_db_connection() as conn:
-            row = conn.execute(
-                "SELECT printer_sn, printer_model, printer_port FROM pcs WHERE pc_name = %s OR ip_address = %s LIMIT 1", 
-                (pc_ref, pc_ref)
-            ).fetchone()
-            if not row:
-                return jsonify({"status": "error", "message": "PC no encontrada"}), 404
-            
-            return jsonify({
-                "status": "success", 
-                "printer_sn": row["printer_sn"] or "N/A",
-                "printer_model": row["printer_model"] or "N/A",
-                "printer_port": row["printer_port"] or "N/A"
-            })
+        row = PcRepository.get_pc_by_name_or_ip(pc_ref)
+        if not row:
+            return jsonify({"status": "error", "message": "PC no encontrada"}), 404
+        
+        return jsonify({
+            "status": "success", 
+            "printer_sn": row.get("printer_sn") or "N/A",
+            "printer_model": row.get("printer_model") or "N/A",
+            "printer_port": row.get("printer_port") or "N/A"
+        })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 

@@ -3,6 +3,7 @@ import json
 import time
 from flask import Blueprint, jsonify, render_template, request, redirect, url_for, send_from_directory, flash
 from utils.auth import current_user, is_authenticated
+from services.audit_service import AuditService
 
 bp_vault = Blueprint("vault", __name__)
 
@@ -154,6 +155,11 @@ def upload_file():
         os.remove(file_path)
         flash("Error: El archivo excede el límite de espacio compartido disponible.", "danger")
     else:
+        AuditService.log_security_event(
+            event_name="VAULT_UPLOAD",
+            details=f"Archivo subido al Vault: {safe_filename}",
+            user_name=user.get('username')
+        )
         flash(f"Archivo '{file.filename}' subido correctamente.", "success")
         
     return redirect(url_for("vault.vault_index"))
@@ -165,6 +171,11 @@ def download_file(filename):
         return redirect(url_for("dashboard.dashboard"))
     
     path = get_vault_path()
+    AuditService.log_security_event(
+        event_name="VAULT_DOWNLOAD",
+        details=f"Descarga de archivo del Vault: {filename}",
+        user_name=user.get('username')
+    )
     return send_from_directory(path, filename, as_attachment=True)
 
 @bp_vault.route("/recursos_internos/delete/<path:filename>", methods=["POST"])
@@ -180,6 +191,11 @@ def delete_file(filename):
     
     if os.path.exists(file_path) and os.path.isfile(file_path):
         os.remove(file_path)
+        AuditService.log_security_event(
+            event_name="VAULT_DELETE",
+            details=f"Archivo eliminado del Vault: {safe_filename}",
+            user_name=user.get('username')
+        )
         flash(f"Archivo '{safe_filename}' eliminado.", "info")
     
     return redirect(url_for("vault.vault_index"))
@@ -191,8 +207,15 @@ def expand_storage():
         return redirect(url_for("dashboard.dashboard"))
     
     config = get_vault_config()
-    config['limit_mb'] = config.get('limit_mb', DEFAULT_LIMIT_MB) + 300
+    old_limit = config.get('limit_mb', DEFAULT_LIMIT_MB)
+    config['limit_mb'] = old_limit + 300
     save_vault_config(config)
+    
+    AuditService.log_security_event(
+        event_name="VAULT_EXPAND_STORAGE",
+        details=f"Almacenamiento del Vault ampliado de {old_limit} MB a {config['limit_mb']} MB",
+        user_name=user.get('username')
+    )
     
     flash(f"Espacio compartido ampliado a {config['limit_mb']} MB.", "success")
     return redirect(url_for("vault.vault_index"))
