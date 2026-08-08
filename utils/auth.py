@@ -474,7 +474,12 @@ def _authenticate_against_ad(username, password):
             mail = None
             if base_dn:
                 search_name = _normalize_username(username)
-                if conn.search(base_dn, f"(sAMAccountName={search_name})", attributes=["displayName", "mail", "sAMAccountName"]):
+                try:
+                    from ldap3.utils.conv import escape_filter_chars
+                    search_name_escaped = escape_filter_chars(search_name)
+                except ImportError:
+                    search_name_escaped = search_name
+                if conn.search(base_dn, f"(sAMAccountName={search_name_escaped})", attributes=["displayName", "mail", "sAMAccountName"]):
                     if conn.entries:
                         entry = conn.entries[0]
                         display_attr = getattr(entry, "displayName", None)

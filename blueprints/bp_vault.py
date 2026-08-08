@@ -10,14 +10,24 @@ bp_vault = Blueprint("vault", __name__)
 VAULT_BASE = os.path.join("uploads", "vault")
 DEFAULT_LIMIT_MB = 300
 
-# Usuarios autorizados para el Vault
+# Usuarios autorizados legacy para el Vault (como fallback si no es superuser/admin)
 VAULT_ALLOWED_USERS = ['gmurad', 'dquiros']
 # Carpeta compartida única para estos usuarios
 VAULT_SHARED_FOLDER = "shared_admin_vault"
 
-def is_vault_authorized(username):
-    """Verifica si el usuario actual está en la lista de permitidos."""
-    return username in VAULT_ALLOWED_USERS
+def is_vault_authorized(username=None):
+    """Verifica si el usuario actual está autorizado para acceder al Vault."""
+    user = current_user()
+    if not user:
+        return False
+    if user.get("is_superuser") or user.get("role") == "administrador":
+        return True
+    perms = user.get("permissions", {})
+    if perms.get("vault") or perms.get("can_access_vault"):
+        return True
+    if username and username in VAULT_ALLOWED_USERS:
+        return True
+    return False
 
 def get_vault_path():
     """Obtiene o crea la carpeta compartida para el vault."""
@@ -157,7 +167,7 @@ def download_file(filename):
     path = get_vault_path()
     return send_from_directory(path, filename, as_attachment=True)
 
-@bp_vault.route("/recursos_internos/delete/<path:filename>")
+@bp_vault.route("/recursos_internos/delete/<path:filename>", methods=["POST"])
 def delete_file(filename):
     user = current_user()
     if not is_authenticated() or not is_vault_authorized(user.get('username')):

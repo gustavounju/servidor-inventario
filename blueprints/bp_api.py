@@ -425,11 +425,11 @@ def process_inventory_data(data):
 @bp_api.route("/submit_inventory", methods=["POST"])
 @limiter.limit("60 per minute")
 def receive_inventory():
-    api_token = os.environ.get("API_TOKEN", "super-secret-token")
+    api_token = (os.environ.get("API_TOKEN") or os.environ.get("INVENTARIO_API_TOKEN") or "").strip()
     auth_header = request.headers.get("Authorization", "")
     token_query = request.args.get("api_key", "")
     
-    if auth_header != f"Bearer {api_token}" and token_query != api_token:
+    if not api_token or (auth_header != f"Bearer {api_token}" and token_query != api_token):
         return jsonify({"status": "error", "message": "Unauthorized"}), 401
         
     try:
