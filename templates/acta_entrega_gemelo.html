@@ -315,25 +315,25 @@
           <tr>
             <td><strong>Procesador (CPU)</strong></td>
             <td>{{ pc.processor or 'N/D' }}</td>
-            <td class="font-mono">Registrado en Ficha</td>
+            <td class="font-mono">{% if pc.processor_sn %}S/N: {{ pc.processor_sn }}{% else %}........................................{% endif %}</td>
           </tr>
           <!-- Memoria RAM -->
           <tr>
             <td><strong>Memoria RAM</strong></td>
             <td>{{ pc.ram_gb or '0' }} GB DDR</td>
-            <td class="font-mono">Registrado en Ficha</td>
+            <td class="font-mono">{% if pc.ram_sn %}S/N: {{ pc.ram_sn }}{% else %}........................................{% endif %}</td>
           </tr>
           <!-- Motherboard -->
           <tr>
             <td><strong>Placa Madre</strong></td>
             <td>{{ pc.motherboard_model or 'N/D' }}</td>
-            <td class="font-mono">Registrado en Ficha</td>
+            <td class="font-mono">{% if pc.motherboard_sn %}S/N: {{ pc.motherboard_sn }}{% else %}........................................{% endif %}</td>
           </tr>
           <!-- Discos -->
           <tr>
             <td><strong>Almacenamiento (Disco)</strong></td>
             <td>{{ pc.disk_models or 'N/D' }}</td>
-            <td class="font-mono">Registrado en Ficha</td>
+            <td class="font-mono">{% if pc.disk_sn %}S/N: {{ pc.disk_sn }}{% else %}........................................{% endif %}</td>
           </tr>
 
           <!-- Componentes patrimoniales adicionales y monitores -->
@@ -343,9 +343,12 @@
               <td><strong>{{ comp.component_type or 'Periférico' }}</strong></td>
               <td>{{ comp.brand_model or comp.model or comp.brand or 'Genérico' }}</td>
               <td class="font-mono">
-                {% if comp.serial_number %}S/N: {{ comp.serial_number }}{% endif %}
-                {% if comp.patrimonio_code %} | Cod: {{ comp.patrimonio_code }}{% endif %}
-                {% if not comp.serial_number and not comp.patrimonio_code %}Asignado{% endif %}
+                {% if comp.serial_number or comp.patrimonio_code %}
+                  {% if comp.serial_number %}S/N: {{ comp.serial_number }}{% endif %}
+                  {% if comp.patrimonio_code %} | Cod: {{ comp.patrimonio_code }}{% endif %}
+                {% else %}
+                  ........................................
+                {% endif %}
               </td>
             </tr>
             {% endif %}
@@ -356,7 +359,7 @@
             <td><strong>Monitor / Pantalla</strong></td>
             <td>{{ mon.brand_model or mon.model or mon.brand or 'Monitor de Red' }}</td>
             <td class="font-mono">
-              {% if mon.serial_number %}S/N: {{ mon.serial_number }}{% else %}Asignado{% endif %}
+              {% if mon.serial_number %}S/N: {{ mon.serial_number }}{% else %}........................................{% endif %}
             </td>
           </tr>
           {% endfor %}
