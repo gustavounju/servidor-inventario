@@ -343,6 +343,12 @@
 
           <!-- Botones de Acción (Moviditos a la fila superior) -->
           <div class="d-flex gap-2 flex-wrap justify-content-end align-items-center mt-1">
+            {% if pc.validation_status == 'validado' %}
+            <a href="{{ url_for('dashboard.acta_gemelo_validado', pc_name=pc.pc_name) }}" target="_blank" class="btn btn-success fw-medium px-3 py-1-5" title="Generar e imprimir Acta de Entrega Gemelo Validado">
+              <i class="bi bi-file-earmark-check-fill me-1"></i> Acta Gemelo Validado
+            </a>
+            {% endif %}
+
             <a href="{{ url_for('dashboard.pc_qr_label_view', pc_name=pc.pc_name) }}" target="_blank" class="btn btn-primary fw-medium px-3 py-1-5" title="Imprimir etiqueta QR oficial">
               Imprimir Par de QR
             </a>
@@ -431,6 +437,11 @@
             </div>
         </div>
         <div class="d-flex gap-2 align-items-center">
+            {% if is_valid %}
+            <a href="{{ url_for('dashboard.acta_gemelo_validado', pc_name=pc.pc_name) }}" target="_blank" class="btn btn-sm btn-success fw-bold px-3 py-1 shadow-sm" style="border-radius:6px; font-size:0.8rem;" title="Imprimir Acta de Entrega y Conformidad">
+                <i class="bi bi-file-earmark-check-fill me-1"></i> Imprimir Acta de Entrega
+            </a>
+            {% endif %}
             {% if ns.has_discrepancy or not is_valid %}
             <button type="button" class="btn btn-sm btn-warning fw-semibold px-3 py-1" style="border-radius:6px; font-size:0.8rem;" onclick="homologarTelemetria('{{ pc.pc_name }}', '{{ linked_bo.code if linked_bo else '' }}')" title="Aceptar la telemetría actual como la nueva base patrimonial">
                 ⚡ Homologar Telemetría

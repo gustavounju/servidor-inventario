@@ -482,7 +482,11 @@
             if (meta) {
                 meta.innerHTML = '';
                 if (bo.target_pc_name) meta.innerHTML += `<span class="bo-meta-chip"><i class="bi bi-pc-display text-info"></i><strong>${bo.target_pc_name}</strong></span>`;
-                if (bo.validation_status === 'validado') meta.innerHTML += `<span class="badge bg-success text-white font-mono p-1 px-2"><i class="bi bi-patch-check-fill me-1"></i>Gemelo Validado WMI</span>`;
+                if (bo.validation_status === 'validado' && bo.target_pc_name) {
+                    meta.innerHTML += `<a href="/pc/${encodeURIComponent(bo.target_pc_name)}/acta_gemelo_validado" target="_blank" class="btn btn-sm btn-success py-0 px-2 font-mono ms-1" style="font-size:0.72rem;"><i class="bi bi-file-earmark-check-fill me-1"></i>Acta Gemelo Validado</a>`;
+                } else if (bo.validation_status === 'validado') {
+                    meta.innerHTML += `<span class="badge bg-success text-white font-mono p-1 px-2"><i class="bi bi-patch-check-fill me-1"></i>Gemelo Validado WMI</span>`;
+                }
                 else if (bo.validation_status === 'pendiente') meta.innerHTML += `<span class="badge bg-warning text-dark font-mono p-1 px-2"><i class="bi bi-clock-history me-1"></i>Queda por validar en red</span>`;
                 if (bo.target_user) meta.innerHTML += `<span class="bo-meta-chip"><i class="bi bi-person"></i><strong>${bo.target_user}</strong></span>`;
                 if (bo.target_fuero) meta.innerHTML += `<span class="bo-meta-chip"><i class="bi bi-building"></i>${bo.target_fuero}</span>`;
