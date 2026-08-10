@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, abort, send_file, flash
+from flask import Blueprint, render_template, request, redirect, url_for, abort, send_file, flash, session
 from datetime import datetime as dt
 from database.db_core import get_db_connection
 import socket
@@ -433,6 +433,46 @@ def pc_detail(pc_name):
         from flask import abort
         abort(404)
     return render_template("pc_detail.html", **ctx, fuero_colors=FUERO_COLORS)
+
+@bp_dashboard.route("/pc/<pc_name>/acta_gemelo_validado")
+def acta_gemelo_validado(pc_name):
+    """Genera la plantilla imprimible del Acta de Entrega y Conformidad (Gemelo Validado OK)."""
+    from datetime import datetime
+
+    ctx = get_pc_detail_context(pc_name)
+    if not ctx or not ctx.get("pc"):
+        from flask import abort
+        abort(404)
+
+    pc = ctx["pc"]
+    val_status = pc.get("validation_status")
+    validation_comp = ctx.get("validation_comparison") or []
+    has_discrepancy = any(not item.get("match") for item in validation_comp)
+
+    # REGLA DE NEGOCIO RESTRICTIVA: Solo disponible si Gemelo Digital está Validado OK y sin discrepancias
+    if val_status != "validado" or has_discrepancy:
+        flash("El Acta de Entrega sólo está disponible para equipos con Gemelo Digital Validado OK.", "warning")
+        return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
+
+    components = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
+    monitors_detail = ctx.get("monitors_detail") or []
+
+    # Identificar técnico conectado
+    auth_user = session.get("auth_user") or {}
+    tecnico_user = auth_user.get("full_name") or auth_user.get("username") or "Departamento de Informática"
+
+    generated_at = datetime.now().strftime("%d/%m/%Y %H:%M hs")
+
+    return render_template(
+        "acta_entrega_gemelo.html",
+        pc=pc,
+        linked_bo=ctx.get("linked_bo"),
+        components=components,
+        monitors_detail=monitors_detail,
+        tecnico_user=tecnico_user,
+        generated_at=generated_at
+    )
+
 
 @bp_dashboard.route("/public/asset/<pc_name>")
 def public_asset_info(pc_name):
