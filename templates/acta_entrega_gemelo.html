@@ -285,7 +285,7 @@
         </div>
         <div class="meta-item">
           <span class="label">Persona Receptor / Responsable</span>
-          <span class="val">{{ pc.last_user or 'Sin especificar' }}</span>
+          <span class="val font-mono">.............................................................</span>
         </div>
         <div class="meta-item">
           <span class="label">Dependencia / Juzgado / Fuero</span>
@@ -301,6 +301,18 @@
         </div>
       </div>
 
+      <!-- Buscar componentes asignados de Gabinete y Fuente de Poder -->
+      {% set gab_comp = namespace(item=none) %}
+      {% set psu_comp = namespace(item=none) %}
+      {% for comp in components %}
+        {% set ctype = (comp.component_type or '')|upper %}
+        {% if 'GABINETE' in ctype or ctype == 'CPU' or 'CHASIS' in ctype %}
+          {% if not gab_comp.item %}{% set gab_comp.item = comp %}{% endif %}
+        {% elif 'FUENTE' in ctype or 'PSU' in ctype or 'POWER' in ctype %}
+          {% if not psu_comp.item %}{% set psu_comp.item = comp %}{% endif %}
+        {% endif %}
+      {% endfor %}
+
       <!-- Tabla de Componentes Entregados -->
       <table class="table-acta">
         <thead>
@@ -311,6 +323,34 @@
           </tr>
         </thead>
         <tbody>
+          <!-- Gabinete -->
+          <tr>
+            <td><strong>Gabinete (Chasis)</strong></td>
+            <td>{{ gab_comp.item.brand_model if gab_comp.item and gab_comp.item.brand_model else 'Genérico' }}</td>
+            <td class="font-mono">
+              {% if gab_comp.item and (gab_comp.item.serial_number or gab_comp.item.patrimonio_code) %}
+                {% if gab_comp.item.serial_number %}S/N: {{ gab_comp.item.serial_number }}{% endif %}
+                {% if gab_comp.item.patrimonio_code %} | Cod: {{ gab_comp.item.patrimonio_code }}{% endif %}
+              {% else %}
+                ........................................
+              {% endif %}
+            </td>
+          </tr>
+
+          <!-- Fuente de Poder -->
+          <tr>
+            <td><strong>Fuente de Poder</strong></td>
+            <td>{{ psu_comp.item.brand_model if psu_comp.item and psu_comp.item.brand_model else 'Genérica' }}</td>
+            <td class="font-mono">
+              {% if psu_comp.item and (psu_comp.item.serial_number or psu_comp.item.patrimonio_code) %}
+                {% if psu_comp.item.serial_number %}S/N: {{ psu_comp.item.serial_number }}{% endif %}
+                {% if psu_comp.item.patrimonio_code %} | Cod: {{ psu_comp.item.patrimonio_code }}{% endif %}
+              {% else %}
+                ........................................
+              {% endif %}
+            </td>
+          </tr>
+
           <!-- Procesador -->
           <tr>
             <td><strong>Procesador (CPU)</strong></td>
@@ -338,7 +378,8 @@
 
           <!-- Componentes patrimoniales adicionales y monitores -->
           {% for comp in components %}
-            {% if comp.component_type not in ['Procesador', 'CPU', 'Memoria RAM', 'RAM', 'Placa Madre', 'Motherboard', 'Disco', 'Almacenamiento'] %}
+            {% set ctype = (comp.component_type or '')|upper %}
+            {% if ctype not in ['PROCESADOR', 'CPU', 'MEMORIA RAM', 'RAM', 'PLACA MADRE', 'MOTHERBOARD', 'DISCO', 'ALMACENAMIENTO', 'GABINETE', 'FUENTE DE PODER', 'FUENTE', 'CHASIS', 'PSU'] %}
             <tr>
               <td><strong>{{ comp.component_type or 'Periférico' }}</strong></td>
               <td>{{ comp.brand_model or comp.model or comp.brand or 'Genérico' }}</td>
@@ -370,14 +411,14 @@
       <div class="signatures-row">
         <div class="signature-box">
           <p class="sig-title">Receptor del Equipo</p>
-          <p class="sig-dots"><strong>Persona:</strong> {{ pc.last_user or '.............................................................' }}</p>
+          <p class="sig-dots"><strong>Persona:</strong> .............................................................</p>
           <p class="sig-dots">Firma: ................................................................</p>
           <p class="sig-dots">Aclaración: .............................................................</p>
           <p class="sig-dots">D.N.I. / Legajo: .....................................................</p>
           <p class="sig-dots">Dependencia: {{ pc.fuero or '...........................................' }}</p>
         </div>
         <div class="signature-box">
-          <p class="sig-title">Técnico Entregador</p>
+          <p class="sig-title">Técnico</p>
           <p class="sig-dots">Firma: ................................................................</p>
           <p class="sig-dots">Aclaración: .............................................................</p>
           <p class="sig-dots">Departamento de Informática</p>

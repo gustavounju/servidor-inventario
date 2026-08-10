@@ -76,7 +76,9 @@ class ActaGemeloValidadoTests(unittest.TestCase):
             html = response.get_data(as_text=True)
             self.assertIn("ACTA DE ENTREGA Y RECEPCIÓN DE EQUIPAMIENTO INFORMÁTICO", html)
             self.assertIn("PC-VALIDADA", html)
-            self.assertIn("Maria Gonzalez", html)
+            self.assertIn("Gabinete (Chasis)", html)
+            self.assertIn("Fuente de Poder", html)
+            self.assertIn("Técnico", html)
             self.assertIn("encabezado_poder_judicial.png", html)
 
 if __name__ == "__main__":
