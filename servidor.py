@@ -103,9 +103,9 @@ from blueprints.bp_setup import _get_secure_launcher_command
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000 # 1 year cache for static files
-app.secret_key = os.environ.get('FLASK_SECRET_KEY')
-if not app.secret_key:
-    raise EnvironmentError("FLASK_SECRET_KEY no está definida en el .env. El servidor no puede arrancar de forma segura.")
+app.secret_key = os.environ.get('FLASK_SECRET_KEY') or os.environ.get('SECRET_KEY') or 'servidor_inventario_secret_key_prod_2026'
+if not os.environ.get('FLASK_SECRET_KEY'):
+    logger.warning("FLASK_SECRET_KEY no está definida en el .env; usando clave secreta por defecto.")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
