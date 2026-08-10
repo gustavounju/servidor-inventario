@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acta de Entrega — Gemelo Validado {{ pc.pc_name }}</title>
+  <title>Acta de Entrega — {{ pc.pc_name }}</title>
 
   <!-- Typography & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,9 +19,6 @@
       --text-muted: #475569;
       --border: #cbd5e1;
       --primary: #1e3a8a;
-      --success-bg: #dcfce7;
-      --success-text: #15803d;
-      --success-border: #86efac;
     }
 
     * {
@@ -94,41 +91,11 @@
       border: 1px solid #cbd5e1;
     }
 
-    .header-logo-title {
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    .official-header-img {
+      max-height: 75px;
+      width: auto;
+      display: block;
       margin-bottom: 12px;
-    }
-
-    .judicial-seal {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      font-weight: bold;
-      flex-shrink: 0;
-    }
-
-    .header-text h5 {
-      font-size: 1rem;
-      font-weight: 800;
-      margin: 0;
-      color: var(--primary);
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-    }
-
-    .header-text p {
-      font-size: 0.75rem;
-      margin: 0;
-      color: var(--text-muted);
-      font-weight: 600;
     }
 
     .acta-title-box {
@@ -149,19 +116,6 @@
       margin: 0;
       color: var(--primary);
       letter-spacing: 0.01em;
-    }
-
-    .val-status-badge {
-      background: var(--success-bg);
-      color: var(--success-text);
-      border: 1px solid var(--success-border);
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
     }
 
     .meta-grid {
@@ -223,28 +177,6 @@
       background: #fafafa;
     }
 
-    .wmi-tag {
-      font-size: 0.65rem;
-      font-weight: 700;
-      color: #166534;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      padding: 2px 6px;
-      border-radius: 4px;
-      display: inline-block;
-    }
-
-    .declaration-clause {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      padding: 10px 14px;
-      border-radius: 6px;
-      font-size: 0.76rem;
-      color: #334155;
-      text-align: justify;
-      margin-bottom: 18px;
-    }
-
     /* Signature blocks */
     .signatures-row {
       display: grid;
@@ -257,25 +189,25 @@
     .signature-box {
       border-top: 2px solid #334155;
       padding-top: 8px;
-      text-align: center;
+      text-align: left;
     }
 
     .signature-box p {
-      margin: 2px 0;
-      font-size: 0.74rem;
+      margin: 3px 0;
+      font-size: 0.76rem;
     }
 
     .signature-box .sig-title {
       font-weight: 800;
       color: #0f172a;
       text-transform: uppercase;
-      font-size: 0.78rem;
+      font-size: 0.8rem;
+      margin-bottom: 6px;
     }
 
     .signature-box .sig-dots {
-      color: #94a3b8;
-      font-size: 0.72rem;
-      margin-top: 4px;
+      color: #475569;
+      font-size: 0.75rem;
     }
 
     /* Print styles */
@@ -316,9 +248,6 @@
       <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="btn btn-outline-light btn-sm fw-semibold">
         <i class="bi bi-arrow-left me-1"></i> Volver a {{ pc.pc_name }}
       </a>
-      <span class="badge bg-success text-white font-mono px-2 py-1 fs-7">
-        <i class="bi bi-patch-check-fill me-1"></i> GEMELO VALIDADO OK
-      </span>
     </div>
     <div class="d-flex align-items-center gap-2">
       <button onclick="window.print()" class="btn btn-success btn-sm fw-bold px-3">
@@ -333,26 +262,15 @@
     <div class="copy-block">
       <span class="copy-badge">{{ copy_name }}</span>
 
-      <!-- Encabezado Institucional -->
-      <div class="header-logo-title">
-        <div class="judicial-seal">
-          <i class="bi bi-bank"></i>
-        </div>
-        <div class="header-text">
-          <h5>Poder Judicial de la Provincia de Jujuy</h5>
-          <p>Centro Judicial San Pedro — Departamento de Informática</p>
-        </div>
-      </div>
+      <!-- Encabezado Oficial Extraído del PDF -->
+      <img src="{{ url_for('static', filename='img/encabezado_poder_judicial.png') }}" class="official-header-img" alt="Poder Judicial de la Provincia de Jujuy">
 
       <!-- Título de Acta -->
       <div class="acta-title-box">
         <div>
-          <h6>ACTA DE ENTREGA Y CONFORMIDAD DE EQUIPAMIENTO INFORMÁTICO</h6>
-          <span class="text-muted small font-mono" style="font-size:0.7rem;">Ref: Telemetría de Hardware WMI Auditada en Red</span>
+          <h6>ACTA DE ENTREGA Y RECEPCIÓN DE EQUIPAMIENTO INFORMÁTICO</h6>
+          <span class="text-muted small font-mono" style="font-size:0.7rem;">Centro Judicial San Pedro — Departamento de Informática</span>
         </div>
-        <span class="val-status-badge">
-          <i class="bi bi-patch-check-fill"></i> Gemelo Validado OK
-        </span>
       </div>
 
       <!-- Metadatos de la PC y Receptor -->
@@ -366,12 +284,12 @@
           <span class="val font-mono">{{ generated_at }}</span>
         </div>
         <div class="meta-item">
-          <span class="label">Usuario Receptor / Responsable</span>
-          <span class="val">{{ pc.last_user or 'Sin usuario asignado' }}</span>
+          <span class="label">Persona Receptor / Responsable</span>
+          <span class="val">{{ pc.last_user or 'Sin especificar' }}</span>
         </div>
         <div class="meta-item">
           <span class="label">Dependencia / Juzgado / Fuero</span>
-          <span class="val">{{ pc.fuero or 'Sin fuero asignado' }}</span>
+          <span class="val">{{ pc.fuero or 'Sin especificar' }}</span>
         </div>
         <div class="meta-item">
           <span class="label">Sistema Operativo</span>
@@ -383,7 +301,7 @@
         </div>
       </div>
 
-      <!-- Tabla de Componentes Validados -->
+      <!-- Tabla de Componentes Entregados -->
       <table class="table-acta">
         <thead>
           <tr>
@@ -397,25 +315,25 @@
           <tr>
             <td><strong>Procesador (CPU)</strong></td>
             <td>{{ pc.processor or 'N/D' }}</td>
-            <td><span class="wmi-tag"><i class="bi bi-check-circle-fill me-1"></i>Validado WMI</span></td>
+            <td class="font-mono">Registrado en Ficha</td>
           </tr>
           <!-- Memoria RAM -->
           <tr>
             <td><strong>Memoria RAM</strong></td>
             <td>{{ pc.ram_gb or '0' }} GB DDR</td>
-            <td><span class="wmi-tag"><i class="bi bi-check-circle-fill me-1"></i>Validado WMI</span></td>
+            <td class="font-mono">Registrado en Ficha</td>
           </tr>
           <!-- Motherboard -->
           <tr>
             <td><strong>Placa Madre</strong></td>
             <td>{{ pc.motherboard_model or 'N/D' }}</td>
-            <td><span class="wmi-tag"><i class="bi bi-check-circle-fill me-1"></i>Validado WMI</span></td>
+            <td class="font-mono">Registrado en Ficha</td>
           </tr>
           <!-- Discos -->
           <tr>
             <td><strong>Almacenamiento (Disco)</strong></td>
             <td>{{ pc.disk_models or 'N/D' }}</td>
-            <td><span class="wmi-tag"><i class="bi bi-check-circle-fill me-1"></i>Validado WMI</span></td>
+            <td class="font-mono">Registrado en Ficha</td>
           </tr>
 
           <!-- Componentes patrimoniales adicionales y monitores -->
@@ -427,7 +345,7 @@
               <td class="font-mono">
                 {% if comp.serial_number %}S/N: {{ comp.serial_number }}{% endif %}
                 {% if comp.patrimonio_code %} | Cod: {{ comp.patrimonio_code }}{% endif %}
-                {% if not comp.serial_number and not comp.patrimonio_code %}<span class="wmi-tag"><i class="bi bi-check-circle-fill me-1"></i>Asignado</span>{% endif %}
+                {% if not comp.serial_number and not comp.patrimonio_code %}Asignado{% endif %}
               </td>
             </tr>
             {% endif %}
@@ -438,30 +356,28 @@
             <td><strong>Monitor / Pantalla</strong></td>
             <td>{{ mon.brand_model or mon.model or mon.brand or 'Monitor de Red' }}</td>
             <td class="font-mono">
-              {% if mon.serial_number %}S/N: {{ mon.serial_number }}{% else %}<span class="wmi-tag"><i class="bi bi-check-circle-fill me-1"></i>Validado</span>{% endif %}
+              {% if mon.serial_number %}S/N: {{ mon.serial_number }}{% else %}Asignado{% endif %}
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
 
-      <!-- Cláusula de Conformidad Legal -->
-      <div class="declaration-clause">
-        <strong>DECLARACIÓN DE CONFORMIDAD:</strong> Por medio de la presente, la persona / dependencia receptora declara recibir a entera satisfacción el equipamiento informático detallado precedentemente en perfecto estado de funcionamiento, habiendo sido auditado y validado en red mediante telemetría (Gemelo Digital Validado OK). Se compromete a la custodia del bien patrimonial y a no realizar reemplazos o modificaciones físicas de hardware sin autorización expresa del Departamento de Informática.
-      </div>
-
       <!-- Bloques de Firma -->
       <div class="signatures-row">
         <div class="signature-box">
-          <p class="sig-title">Firma del Receptor</p>
+          <p class="sig-title">Receptor del Equipo</p>
+          <p class="sig-dots"><strong>Persona:</strong> {{ pc.last_user or '.............................................................' }}</p>
+          <p class="sig-dots">Firma: ................................................................</p>
           <p class="sig-dots">Aclaración: .............................................................</p>
           <p class="sig-dots">D.N.I. / Legajo: .....................................................</p>
-          <p class="sig-dots">Cargo / Dependencia: ...........................................</p>
+          <p class="sig-dots">Dependencia: {{ pc.fuero or '...........................................' }}</p>
         </div>
         <div class="signature-box">
-          <p class="sig-title">Departamento de Informática</p>
-          <p class="sig-dots">Técnico Entregador: {{ tecnico_user }}</p>
-          <p class="sig-dots">Firma y Sello: ......................................................</p>
+          <p class="sig-title">Técnico Entregador</p>
+          <p class="sig-dots">Firma: ................................................................</p>
+          <p class="sig-dots">Aclaración: .............................................................</p>
+          <p class="sig-dots">Departamento de Informática</p>
           <p class="sig-dots">Centro Judicial San Pedro — Jujuy</p>
         </div>
       </div>

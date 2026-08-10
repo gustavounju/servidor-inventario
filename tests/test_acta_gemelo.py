@@ -60,10 +60,10 @@ class ActaGemeloValidadoTests(unittest.TestCase):
             response = client.get("/pc/PC-VALIDADA/acta_gemelo_validado")
             self.assertEqual(response.status_code, 200)
             html = response.get_data(as_text=True)
-            self.assertIn("ACTA DE ENTREGA Y CONFORMIDAD DE EQUIPAMIENTO INFORMÁTICO", html)
+            self.assertIn("ACTA DE ENTREGA Y RECEPCIÓN DE EQUIPAMIENTO INFORMÁTICO", html)
             self.assertIn("PC-VALIDADA", html)
             self.assertIn("Maria Gonzalez", html)
-            self.assertIn("Gemelo Validado OK", html)
+            self.assertIn("encabezado_poder_judicial.png", html)
 
 if __name__ == "__main__":
     unittest.main()
