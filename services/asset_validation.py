@@ -42,6 +42,32 @@ def _normalize_hw_token(value: str) -> str:
     return v.strip()
 
 
+def filter_ignore_devices(disk_str: str) -> str:
+    """
+    Filtra lectores de tarjetas USB (0GB, SD/MS/CF readers) de la cadena de discos
+    para evitar falsas discrepancias en la auditoría del gemelo digital.
+    """
+    if not disk_str or disk_str == "Sin reporte de script":
+        return disk_str or ""
+    
+    parts = [p.strip() for p in str(disk_str).split("|") if p.strip()]
+    cleaned = []
+    
+    for p in parts:
+        p_up = p.upper()
+        if "(0GB)" in p_up or "(0.00GB)" in p_up or "0.0 GB" in p_up or " 0GB" in p_up:
+            continue
+        if any(term in p_up for term in [
+            "USB SD READER", "USB MS READER", "USB SM READER", "USB CF READER", 
+            "CARD READER USB DEVICE", "GENERIC USB STORAGE", "USB CR READER",
+            "SD/MMC CARD READER"
+        ]):
+            continue
+        cleaned.append(p)
+        
+    return " | ".join(cleaned) if cleaned else disk_str
+
+
 def _hw_tokens_match(a: str, b: str) -> bool:
     """Compara dos strings de hardware normalizados."""
     na, nb = _normalize_hw_token(a), _normalize_hw_token(b)
@@ -247,7 +273,8 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
         script_proc = sistema.get("Procesador") or pc.get("processor") or "Sin reporte de script"
         script_ram = str(sistema.get("RAM (GB)") or pc.get("ram_gb") or "Sin reporte")
         script_mb = script_data.get("Motherboard_Model") or pc.get("motherboard_model") or "Sin reporte de script"
-        script_disk = script_data.get("Disk_Models") or pc.get("disk_models") or "Sin reporte de script"
+        raw_disk_str = script_data.get("Disk_Models") or pc.get("disk_models") or "Sin reporte de script"
+        script_disk = filter_ignore_devices(raw_disk_str)
 
         comp_by_type = {}
         for c in comps:

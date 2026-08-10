@@ -1552,7 +1552,9 @@ def homologar_telemetria():
 
             # 4. Discos
             if new_disks:
-                disks = [d.strip() for d in str(new_disks).split("|") if d.strip()]
+                from services.asset_validation import filter_ignore_devices
+                cleaned_disks = filter_ignore_devices(new_disks)
+                disks = [d.strip() for d in str(cleaned_disks).split("|") if d.strip()]
                 for d in disks:
                     d_sn = re.search(r"\(([A-Za-z0-9\-]+)\)", d)
                     sn_val = d_sn.group(1) if d_sn else None

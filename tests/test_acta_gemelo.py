@@ -3,6 +3,20 @@ from unittest.mock import patch
 
 class ActaGemeloValidadoTests(unittest.TestCase):
 
+    def test_filter_ignore_devices_removes_usb_card_readers(self):
+        from services.asset_validation import filter_ignore_devices
+        raw_telemetry = (
+            "Generic USB SD Reader USB Device (0GB) [SN: 058F63326330] (0GB) | "
+            "Generic USB MS Reader USB Device (0GB) [SN: 058F63326331] | "
+            "ADATA SU630 (447GB) [SN: 11EF07211CF000344575] | "
+            "TOSHIBA DT01ACA050 (466GB) [SN: 27D009EBS]"
+        )
+        cleaned = filter_ignore_devices(raw_telemetry)
+        self.assertNotIn("Generic USB SD Reader", cleaned)
+        self.assertNotIn("Generic USB MS Reader", cleaned)
+        self.assertIn("ADATA SU630", cleaned)
+        self.assertIn("TOSHIBA DT01ACA050", cleaned)
+
     @patch("blueprints.bp_dashboard.get_pc_detail_context")
     def test_acta_gemelo_validado_requires_valid_status(self, mock_get_context):
         from flask import Flask
