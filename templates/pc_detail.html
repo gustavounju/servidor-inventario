@@ -1337,44 +1337,66 @@
               <div class="col-md-6">
                 <label class="form-label small fw-bold">Usuario Destino / Asignado</label>
                 <input type="text" name="target_user" class="form-control form-control-sm" value="{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '' }}" placeholder="Nombre del usuario">
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Usuario Destino / Asignado</label>
+                <input type="text" name="target_user" class="form-control form-control-sm" value="{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '' }}" placeholder="Nombre del usuario">
               </div>
               <div class="col-md-6">
                 <label class="form-label small fw-bold">Fuero / Área Destino</label>
                 <input type="text" name="target_fuero" class="form-control form-control-sm" value="{{ pc.fuero or '' }}" placeholder="Ej: Fuero Civil">
               </div>
-              <div class="col-md-6">
-                <label class="form-label small fw-bold">N° de Remito (opcional)</label>
-                <input type="text" name="invoice_number" list="list-existing-remitos" class="form-control form-control-sm" placeholder="Seleccionar o escribir Remito (ej: R-0001-00045612)" autocomplete="off">
-                <datalist id="list-existing-remitos">
-                  {% if all_existing_remitos %}
-                    {% for rem in all_existing_remitos %}
-                    <option value="{{ rem }}">
-                    {% endfor %}
-                  {% endif %}
-                </datalist>
+            </div>
+
+            <!-- Remito y O.C. General con opción de Aplicar a Todo -->
+            <div class="card p-2 mb-3 shadow-sm" style="background: var(--card-bg, #f8fafc); border: 1px solid var(--border-color, #cbd5e1);">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-5">
+                  <label class="form-label mb-1 text-primary fw-bold" style="font-size:0.75rem;">
+                    <i class="bi bi-file-earmark-text me-1"></i> Remito General (todas las piezas)
+                  </label>
+                  <input type="text" id="global_invoice" name="invoice_number" list="list-existing-remitos" class="form-control form-control-sm" placeholder="Seleccionar o escribir Remito..." autocomplete="off" oninput="autoSyncGlobalRemito(this.value)">
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label mb-1 text-primary fw-bold" style="font-size:0.75rem;">
+                    <i class="bi bi-receipt me-1"></i> Orden de Compra General
+                  </label>
+                  <input type="text" id="global_oc" name="oc_number" list="list-existing-ocs" class="form-control form-control-sm" placeholder="Seleccionar o escribir O.C..." autocomplete="off" oninput="autoSyncGlobalOC(this.value)">
+                </div>
+                <div class="col-md-2">
+                  <button type="button" class="btn btn-sm btn-primary w-100 fw-bold py-1" onclick="applyGlobalRemitoOC()" title="Copiar este Remito y O.C. a todas las piezas individuales">
+                    <i class="bi bi-lightning-fill me-1"></i> Aplicar
+                  </button>
+                </div>
               </div>
-              <div class="col-md-6">
-                <label class="form-label small fw-bold">N° Orden de Compra (opcional)</label>
-                <input type="text" name="oc_number" list="list-existing-ocs" class="form-control form-control-sm" placeholder="Seleccionar o escribir O.C. (ej: OC-2026-104)" autocomplete="off">
-                <datalist id="list-existing-ocs">
-                  {% if all_existing_ocs %}
-                    {% for oc in all_existing_ocs %}
-                    <option value="{{ oc }}">
-                    {% endfor %}
-                  {% endif %}
-                </datalist>
-              </div>
+              <datalist id="list-existing-remitos">
+                {% if all_existing_remitos %}
+                  {% for rem in all_existing_remitos %}
+                  <option value="{{ rem }}">
+                  {% endfor %}
+                {% endif %}
+              </datalist>
+              <datalist id="list-existing-ocs">
+                {% if all_existing_ocs %}
+                  {% for oc in all_existing_ocs %}
+                  <option value="{{ oc }}">
+                  {% endfor %}
+                {% endif %}
+              </datalist>
             </div>
 
             <div class="mb-3">
-              <label class="form-label small fw-bold mb-2">Componentes Detectados en la Telemetría (Script .ps1):</label>
-              <div class="list-group shadow-sm" style="max-height: 320px; overflow-y: auto;">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label small fw-bold mb-0">Componentes Detectados en la Telemetría (Script .ps1):</label>
+                <span class="text-muted" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Podés ajustar el Remito/O.C. de cada pieza de forma individual</span>
+              </div>
+              <div class="list-group shadow-sm" style="max-height: 340px; overflow-y: auto;">
                 {% set ns_idx = namespace(val=0) %}
 
                 {# 1. Motherboard #}
                 {% if hardware_components and hardware_components.motherboard and hardware_components.motherboard.model and hardware_components.motherboard.model != 'N/A' %}
-                <label class="list-group-item d-flex align-items-center gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
-                  <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
+                <div class="list-group-item d-flex align-items-start gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
+                  <input class="form-check-input flex-shrink-0 mt-2" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
                   <input type="hidden" name="comp_type" value="Motherboard">
                   <input type="hidden" name="comp_model" value="{{ hardware_components.motherboard.model }}">
                   <input type="hidden" name="comp_serial" value="{{ hardware_components.motherboard.serial if hardware_components.motherboard.serial else 'N/A' }}">
@@ -1383,16 +1405,31 @@
                       <span class="fw-bold" style="font-size:0.85rem; color:var(--text-color);"><i class="bi bi-motherboard me-1 text-primary"></i> Motherboard</span>
                       <span class="badge bg-secondary" style="font-size:0.7rem;">SN: {{ hardware_components.motherboard.serial if hardware_components.motherboard.serial else 'N/A' }}</span>
                     </div>
-                    <div class="small text-muted font-mono">{{ hardware_components.motherboard.model }}</div>
+                    <div class="small text-muted font-mono mb-2">{{ hardware_components.motherboard.model }}</div>
+                    
+                    <div class="row g-2 pt-1 border-top" style="font-size:0.75rem;">
+                      <div class="col-md-6">
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text bg-body-tertiary text-muted" style="font-size:0.68rem; padding: 2px 6px;">Remito</span>
+                          <input type="text" name="comp_invoice" list="list-existing-remitos" class="form-control form-control-sm item-invoice-input" style="font-size:0.74rem;" placeholder="Remito Motherboard..." autocomplete="off">
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text bg-body-tertiary text-muted" style="font-size:0.68rem; padding: 2px 6px;">O.C.</span>
+                          <input type="text" name="comp_oc" list="list-existing-ocs" class="form-control form-control-sm item-oc-input" style="font-size:0.74rem;" placeholder="O.C. Motherboard..." autocomplete="off">
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </label>
+                </div>
                 {% set ns_idx.val = ns_idx.val + 1 %}
                 {% endif %}
 
                 {# 2. Procesador #}
                 {% if hardware_components and hardware_components.processor and hardware_components.processor != 'N/A' %}
-                <label class="list-group-item d-flex align-items-center gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
-                  <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
+                <div class="list-group-item d-flex align-items-start gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
+                  <input class="form-check-input flex-shrink-0 mt-2" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
                   <input type="hidden" name="comp_type" value="Procesador">
                   <input type="hidden" name="comp_model" value="{{ hardware_components.processor }}">
                   <input type="hidden" name="comp_serial" value="N/A">
@@ -1400,17 +1437,32 @@
                     <div class="d-flex justify-content-between align-items-center">
                       <span class="fw-bold" style="font-size:0.85rem; color:var(--text-color);"><i class="bi bi-cpu me-1 text-primary"></i> Procesador (CPU)</span>
                     </div>
-                    <div class="small text-muted font-mono">{{ hardware_components.processor }}</div>
+                    <div class="small text-muted font-mono mb-2">{{ hardware_components.processor }}</div>
+
+                    <div class="row g-2 pt-1 border-top" style="font-size:0.75rem;">
+                      <div class="col-md-6">
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text bg-body-tertiary text-muted" style="font-size:0.68rem; padding: 2px 6px;">Remito</span>
+                          <input type="text" name="comp_invoice" list="list-existing-remitos" class="form-control form-control-sm item-invoice-input" style="font-size:0.74rem;" placeholder="Remito Procesador..." autocomplete="off">
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text bg-body-tertiary text-muted" style="font-size:0.68rem; padding: 2px 6px;">O.C.</span>
+                          <input type="text" name="comp_oc" list="list-existing-ocs" class="form-control form-control-sm item-oc-input" style="font-size:0.74rem;" placeholder="O.C. Procesador..." autocomplete="off">
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </label>
+                </div>
                 {% set ns_idx.val = ns_idx.val + 1 %}
                 {% endif %}
 
                 {# 3. Módulos RAM #}
                 {% if hardware_components and hardware_components.ram_modules %}
                   {% for ram in hardware_components.ram_modules %}
-                  <label class="list-group-item d-flex align-items-center gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
-                    <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
+                  <div class="list-group-item d-flex align-items-start gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
+                    <input class="form-check-input flex-shrink-0 mt-2" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
                     <input type="hidden" name="comp_type" value="Memoria RAM">
                     <input type="hidden" name="comp_model" value="{{ ram.spec or 'Memoria RAM' }}">
                     <input type="hidden" name="comp_serial" value="{{ ram.serial if ram.serial else 'N/A' }}">
@@ -1419,9 +1471,24 @@
                         <span class="fw-bold" style="font-size:0.85rem; color:var(--text-color);"><i class="bi bi-memory me-1 text-primary"></i> Memoria RAM #{{ loop.index }}</span>
                         <span class="badge bg-secondary" style="font-size:0.7rem;">SN: {{ ram.serial if ram.serial else 'N/A' }}</span>
                       </div>
-                      <div class="small text-muted font-mono">{{ ram.spec }}</div>
+                      <div class="small text-muted font-mono mb-2">{{ ram.spec }}</div>
+
+                      <div class="row g-2 pt-1 border-top" style="font-size:0.75rem;">
+                        <div class="col-md-6">
+                          <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-body-tertiary text-muted" style="font-size:0.68rem; padding: 2px 6px;">Remito</span>
+                            <input type="text" name="comp_invoice" list="list-existing-remitos" class="form-control form-control-sm item-invoice-input" style="font-size:0.74rem;" placeholder="Remito RAM #{{ loop.index }}..." autocomplete="off">
+                          </div>
+                        </div>
+                        <div class="col-md-6">
+                          <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-body-tertiary text-muted" style="font-size:0.68rem; padding: 2px 6px;">O.C.</span>
+                            <input type="text" name="comp_oc" list="list-existing-ocs" class="form-control form-control-sm item-oc-input" style="font-size:0.74rem;" placeholder="O.C. RAM #{{ loop.index }}..." autocomplete="off">
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </label>
+                  </div>
                   {% set ns_idx.val = ns_idx.val + 1 %}
                   {% endfor %}
                 {% endif %}
@@ -1429,8 +1496,8 @@
                 {# 4. Discos #}
                 {% if hardware_components and hardware_components.disks %}
                   {% for disk in hardware_components.disks %}
-                  <label class="list-group-item d-flex align-items-center gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
-                    <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
+                  <div class="list-group-item d-flex align-items-start gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
+                    <input class="form-check-input flex-shrink-0 mt-2" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
                     <input type="hidden" name="comp_type" value="Disco Rígido / SSD">
                     <input type="hidden" name="comp_model" value="{{ disk.model or 'Almacenamiento' }}">
                     <input type="hidden" name="comp_serial" value="{{ disk.serial if disk.serial else 'N/A' }}">
@@ -1439,9 +1506,24 @@
                         <span class="fw-bold" style="font-size:0.85rem; color:var(--text-color);"><i class="bi bi-hdd me-1 text-primary"></i> Almacenamiento #{{ loop.index }}</span>
                         <span class="badge bg-secondary" style="font-size:0.7rem;">SN: {{ disk.serial if disk.serial else 'N/A' }}</span>
                       </div>
-                      <div class="small text-muted font-mono">{{ disk.model }}</div>
+                      <div class="small text-muted font-mono mb-2">{{ disk.model }}</div>
+
+                      <div class="row g-2 pt-1 border-top" style="font-size:0.75rem;">
+                        <div class="col-md-6">
+                          <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-body-tertiary text-muted" style="font-size:0.68rem; padding: 2px 6px;">Remito</span>
+                            <input type="text" name="comp_invoice" list="list-existing-remitos" class="form-control form-control-sm item-invoice-input" style="font-size:0.74rem;" placeholder="Remito Disco #{{ loop.index }}..." autocomplete="off">
+                          </div>
+                        </div>
+                        <div class="col-md-6">
+                          <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-body-tertiary text-muted" style="font-size:0.68rem; padding: 2px 6px;">O.C.</span>
+                            <input type="text" name="comp_oc" list="list-existing-ocs" class="form-control form-control-sm item-oc-input" style="font-size:0.74rem;" placeholder="O.C. Disco #{{ loop.index }}..." autocomplete="off">
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </label>
+                  </div>
                   {% set ns_idx.val = ns_idx.val + 1 %}
                   {% endfor %}
                 {% endif %}
@@ -1449,8 +1531,8 @@
                 {# 5. Monitores #}
                 {% if hardware_components and hardware_components.monitors %}
                   {% for mon in hardware_components.monitors %}
-                  <label class="list-group-item d-flex align-items-center gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
-                    <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
+                  <div class="list-group-item d-flex align-items-start gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
+                    <input class="form-check-input flex-shrink-0 mt-2" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
                     <input type="hidden" name="comp_type" value="Monitor">
                     <input type="hidden" name="comp_model" value="{{ mon.model or 'Monitor' }}">
                     <input type="hidden" name="comp_serial" value="{{ mon.serial if mon.serial else 'N/A' }}">
@@ -1459,9 +1541,24 @@
                         <span class="fw-bold" style="font-size:0.85rem; color:var(--text-color);"><i class="bi bi-display me-1 text-primary"></i> Monitor #{{ loop.index }}</span>
                         <span class="badge bg-secondary" style="font-size:0.7rem;">SN: {{ mon.serial if mon.serial else 'N/A' }}</span>
                       </div>
-                      <div class="small text-muted font-mono">{{ mon.model }}</div>
+                      <div class="small text-muted font-mono mb-2">{{ mon.model }}</div>
+
+                      <div class="row g-2 pt-1 border-top" style="font-size:0.75rem;">
+                        <div class="col-md-6">
+                          <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-body-tertiary text-muted" style="font-size:0.68rem; padding: 2px 6px;">Remito</span>
+                            <input type="text" name="comp_invoice" list="list-existing-remitos" class="form-control form-control-sm item-invoice-input" style="font-size:0.74rem;" placeholder="Remito Monitor #{{ loop.index }}..." autocomplete="off">
+                          </div>
+                        </div>
+                        <div class="col-md-6">
+                          <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-body-tertiary text-muted" style="font-size:0.68rem; padding: 2px 6px;">O.C.</span>
+                            <input type="text" name="comp_oc" list="list-existing-ocs" class="form-control form-control-sm item-oc-input" style="font-size:0.74rem;" placeholder="O.C. Monitor #{{ loop.index }}..." autocomplete="off">
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </label>
+                  </div>
                   {% set ns_idx.val = ns_idx.val + 1 %}
                   {% endfor %}
                 {% endif %}
@@ -1488,7 +1585,42 @@
         </form>
       </div>
     </div>
-  </div>
+  <script>
+    function applyGlobalRemitoOC() {
+      const gInv = document.getElementById('global_invoice') ? document.getElementById('global_invoice').value.trim() : '';
+      const gOc = document.getElementById('global_oc') ? document.getElementById('global_oc').value.trim() : '';
 
+      document.querySelectorAll('.item-invoice-input').forEach(inp => {
+        inp.value = gInv;
+      });
+      document.querySelectorAll('.item-oc-input').forEach(inp => {
+        inp.value = gOc;
+      });
+    }
+
+    function autoSyncGlobalRemito(val) {
+      document.querySelectorAll('.item-invoice-input').forEach(inp => {
+        if (!inp.getAttribute('data-user-edited')) {
+          inp.value = val.trim();
+        }
+      });
+    }
+
+    function autoSyncGlobalOC(val) {
+      document.querySelectorAll('.item-oc-input').forEach(inp => {
+        if (!inp.getAttribute('data-user-edited')) {
+          inp.value = val.trim();
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.item-invoice-input, .item-oc-input').forEach(inp => {
+        inp.addEventListener('input', function() {
+          this.setAttribute('data-user-edited', 'true');
+        });
+      });
+    });
+  </script>
 </body>
 </html>

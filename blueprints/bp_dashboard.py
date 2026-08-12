@@ -444,6 +444,8 @@ def create_bo_from_telemetry(pc_name):
         comp_types = request.form.getlist("comp_type")
         comp_models = request.form.getlist("comp_model")
         comp_serials = request.form.getlist("comp_serial")
+        comp_invoices = request.form.getlist("comp_invoice")
+        comp_ocs = request.form.getlist("comp_oc")
         
         selected_indices = set()
         for idx_str in comp_selected:
@@ -492,6 +494,8 @@ def create_bo_from_telemetry(pc_name):
                 c_type = comp_types[idx].strip()
                 c_model = comp_models[idx].strip()
                 c_serial = comp_serials[idx].strip()
+                item_inv = comp_invoices[idx].strip() if idx < len(comp_invoices) and comp_invoices[idx].strip() else invoice_number
+                item_oc = comp_ocs[idx].strip() if idx < len(comp_ocs) and comp_ocs[idx].strip() else oc_number
 
                 if not c_type or not c_model:
                     continue
@@ -510,7 +514,7 @@ def create_bo_from_telemetry(pc_name):
                                 invoice_number = COALESCE(%s, invoice_number), oc_number = COALESCE(%s, oc_number)
                             WHERE id = %s
                             """,
-                            (bo_id, pc_name, final_user, final_fuero, invoice_number, oc_number, comp_id)
+                            (bo_id, pc_name, final_user, final_fuero, item_inv, item_oc, comp_id)
                         )
 
                 if not comp_id:
@@ -520,7 +524,7 @@ def create_bo_from_telemetry(pc_name):
                         INSERT INTO components (serial_number, component_type, brand_model, status, assigned_pc, build_order_id, assigned_user, assigned_fuero, invoice_number, oc_number)
                         VALUES (%s, %s, %s, 'Asignado', %s, %s, %s, %s, %s, %s)
                         """,
-                        (sn_to_insert, c_type, c_model, pc_name, bo_id, final_user, final_fuero, invoice_number, oc_number)
+                        (sn_to_insert, c_type, c_model, pc_name, bo_id, final_user, final_fuero, item_inv, item_oc)
                     )
                     clean_sn = sn_to_insert
 
