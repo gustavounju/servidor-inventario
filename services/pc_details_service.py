@@ -2,6 +2,14 @@ from services.asset_validation import get_pc_validation_comparison
 from database.db_core import get_db_connection
 from utils.auth import list_technician_users
 import re
+import unicodedata
+
+
+def _clean_str(s):
+    if not s:
+        return ""
+    s_norm = unicodedata.normalize('NFD', str(s))
+    return ''.join(c for c in s_norm if unicodedata.category(c) != 'Mn').lower().strip()
 
 
 def _infer_disk_kind(model, speed_text):
