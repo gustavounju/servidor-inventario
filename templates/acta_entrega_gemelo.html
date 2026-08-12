@@ -139,40 +139,25 @@
 
     .meta-qr-box {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       background: #ffffff;
       border: 1.5px solid var(--primary);
       border-radius: 6px;
-      padding: 6px 10px;
-      min-width: 115px;
+      padding: 3px;
+      min-width: 110px;
       text-align: center;
       box-shadow: 0 2px 4px rgba(0,0,0,0.03);
     }
 
     .meta-qr-img {
-      width: 72px;
-      height: 72px;
+      width: 102px;
+      height: 102px;
       border-radius: 3px;
-      margin-bottom: 3px;
-      border: 1px solid #cbd5e1;
-      padding: 2px;
+      display: block;
+      border: none;
+      padding: 0;
       background: #ffffff;
-    }
-
-    .meta-qr-label {
-      font-size: 0.58rem;
-      font-weight: 800;
-      color: var(--primary);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-
-    .meta-qr-sub {
-      font-size: 0.56rem;
-      font-weight: 700;
-      color: #475569;
     }
 
     .meta-item {
@@ -394,9 +379,7 @@
 
         {% if qr_url %}
         <div class="meta-qr-box">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={{ qr_url | urlencode }}" class="meta-qr-img" alt="QR {{ pc.pc_name }}">
-          <span class="meta-qr-label">Gemelo Digital</span>
-          <span class="meta-qr-sub font-mono">Ficha en Vivo</span>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ qr_url | urlencode }}" class="meta-qr-img" alt="QR {{ pc.pc_name }}">
         </div>
         {% endif %}
       </div>
