@@ -461,6 +461,7 @@ def create_bo_from_telemetry(pc_name):
     try:
         from utils.auth import current_technician_identity
         tech = current_technician_identity() or "Sistema"
+        year = datetime.datetime.now().strftime("%Y")
         
         target_user = request.form.get("target_user", "").strip() or None
         target_fuero = request.form.get("target_fuero", "").strip() or None
