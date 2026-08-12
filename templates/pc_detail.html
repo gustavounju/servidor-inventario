@@ -748,6 +748,9 @@
             <a href="{{ url_for('stock.build_orders_view') }}?search={{ linked_bo.code }}" class="btn btn-sm btn-outline-success fw-bold py-1 px-3" title="Este equipo ya posee la Orden de Armado {{ linked_bo.code }} asignada">
               <i class="bi bi-box-seam me-1"></i> Orden de Armado {{ linked_bo.code }} (Asignada)
             </a>
+            <button type="button" class="btn btn-sm btn-primary fw-bold py-1 px-3" data-bs-toggle="modal" data-bs-target="#modalCrearBODesdeTelemetria" title="Actualizar la Orden de Armado {{ linked_bo.code }}, asignarle nuevos Remitos, O.C. o refrescar componentes">
+              <i class="bi bi-pencil-square me-1"></i> 🛠️ Actualizar Orden / Remitos
+            </button>
             {% else %}
             <button type="button" class="btn btn-sm btn-primary fw-bold py-1 px-3" data-bs-toggle="modal" data-bs-target="#modalCrearBODesdeTelemetria" title="Generar una nueva Orden de Armado patrimonial con los componentes elegidos de la telemetría">
               <i class="bi bi-tools me-1"></i> 🛠️ Crear Orden de Armado
@@ -1326,7 +1329,7 @@
       <div class="modal-content" style="background: var(--card-bg, #ffffff); color: var(--text-color, #0f172a); border: 1px solid var(--border-color, #e2e8f0);">
         <div class="modal-header">
           <h5 class="modal-title fw-bold" id="modalCrearBODesdeTelemetriaLabel">
-            <i class="bi bi-tools text-primary me-2"></i>Crear Orden de Armado desde Telemetría
+            <i class="bi bi-tools text-primary me-2"></i>{% if linked_bo %}Actualizar Orden de Armado {{ linked_bo.code }} desde Telemetría{% else %}Crear Orden de Armado desde Telemetría{% endif %}
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
