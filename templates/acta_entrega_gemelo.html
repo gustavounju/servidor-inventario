@@ -470,7 +470,15 @@
           <!-- Memoria RAM -->
           <tr>
             <td><strong>Memoria RAM</strong></td>
-            <td>{{ (pc.ram_gb | float | round | int) if pc.ram_gb else '0' }} GB DDR</td>
+            <td>
+              {% if ram_comp.item and ram_comp.item.brand_model %}
+                {{ ram_comp.item.brand_model }}
+              {% elif pc.ram_detalles and pc.ram_detalles.strip() not in ('N/A', 'None', '') %}
+                {{ pc.ram_detalles }}
+              {% else %}
+                {{ (pc.ram_gb | float | round | int) if pc.ram_gb else '0' }} GB DDR
+              {% endif %}
+            </td>
             <td class="font-mono">
               {{ format_sn_remito_oc(ram_comp.item, pc.ram_sn, global_inv, global_oc) }}
             </td>
