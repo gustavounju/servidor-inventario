@@ -1337,10 +1337,6 @@
               <div class="col-md-6">
                 <label class="form-label small fw-bold">Usuario Destino / Asignado</label>
                 <input type="text" name="target_user" class="form-control form-control-sm" value="{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '' }}" placeholder="Nombre del usuario">
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <label class="form-label small fw-bold">Usuario Destino / Asignado</label>
-                <input type="text" name="target_user" class="form-control form-control-sm" value="{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '' }}" placeholder="Nombre del usuario">
               </div>
               <div class="col-md-6">
                 <label class="form-label small fw-bold">Fuero / Área Destino</label>
@@ -1349,7 +1345,7 @@
             </div>
 
             <!-- Remito y O.C. General con opción de Aplicar a Todo -->
-            <div class="card p-2 mb-3 shadow-sm" style="background: var(--card-bg, #f8fafc); border: 1px solid var(--border-color, #cbd5e1);">
+            <div class="card p-2 mb-3 shadow-sm" style="background: var(--card-bg, #1e293b); border: 1px solid var(--border-color, #334155);">
               <div class="row g-2 align-items-end">
                 <div class="col-md-5">
                   <label class="form-label mb-1 text-primary fw-bold" style="font-size:0.75rem;">
@@ -1364,7 +1360,7 @@
                   <input type="text" id="global_oc" name="oc_number" list="list-existing-ocs" class="form-control form-control-sm" placeholder="Seleccionar o escribir O.C..." autocomplete="off" oninput="autoSyncGlobalOC(this.value)">
                 </div>
                 <div class="col-md-2">
-                  <button type="button" class="btn btn-sm btn-primary w-100 fw-bold py-1" onclick="applyGlobalRemitoOC()" title="Copiar este Remito y O.C. a todas las piezas individuales">
+                  <button type="button" class="btn btn-sm btn-primary w-100 fw-bold py-1 px-2" onclick="applyGlobalRemitoOC()" style="white-space: nowrap; font-size: 0.78rem;" title="Copiar este Remito y O.C. a todas las piezas individuales">
                     <i class="bi bi-lightning-fill me-1"></i> Aplicar
                   </button>
                 </div>
@@ -1386,9 +1382,9 @@
             </div>
 
             <div class="mb-3">
-              <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="mb-2">
                 <label class="form-label small fw-bold mb-0">Componentes Detectados en la Telemetría (Script .ps1):</label>
-                <span class="text-muted" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Podés ajustar el Remito/O.C. de cada pieza de forma individual</span>
+                <div class="text-muted" style="font-size:0.72rem;"><i class="bi bi-info-circle me-1"></i>Podés ajustar el Remito/O.C. de cada pieza de forma individual o usar la opción general arriba.</div>
               </div>
               <div class="list-group shadow-sm" style="max-height: 340px; overflow-y: auto;">
                 {% set ns_idx = namespace(val=0) %}
