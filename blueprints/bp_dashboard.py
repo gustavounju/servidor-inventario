@@ -588,6 +588,12 @@ def acta_gemelo_validado(pc_name):
 
     generated_at = datetime.now().strftime("%d/%m/%Y %H:%M hs")
 
+    scheme = request.headers.get("X-Forwarded-Proto", request.scheme)
+    server_host = request.host
+    if any(h in server_host for h in ["localhost", "127.0.0.1", "0.0.0.0"]):
+        server_host = os.environ.get("SERVER_PUBLIC_HOST", "10.15.2.251:5000")
+    qr_url = f"{scheme}://{server_host}/public/asset/{pc_name}"
+
     return render_template(
         "acta_entrega_gemelo.html",
         pc=pc,
@@ -595,7 +601,8 @@ def acta_gemelo_validado(pc_name):
         components=components,
         monitors_detail=monitors_detail,
         tecnico_user=tecnico_user,
-        generated_at=generated_at
+        generated_at=generated_at,
+        qr_url=qr_url
     )
 
 

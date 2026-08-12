@@ -86,11 +86,54 @@
       border: 1px solid #cbd5e1;
     }
 
+    .header-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
     .official-header-img {
       max-height: 36px;
       width: auto;
       display: block;
-      margin-bottom: 4px;
+    }
+
+    .qr-header-box {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 2px 5px;
+      margin-right: 90px;
+    }
+
+    .qr-header-img {
+      width: 34px;
+      height: 34px;
+      border-radius: 2px;
+    }
+
+    .qr-header-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .qr-header-text .qr-title {
+      font-size: 0.54rem;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .qr-header-text .qr-sub {
+      font-size: 0.58rem;
+      font-weight: 700;
+      color: #0f172a;
     }
 
     .acta-title-box {
@@ -298,8 +341,19 @@
     <div class="copy-block">
       <span class="copy-badge">{{ copy_name }}</span>
 
-      <!-- Encabezado Oficial -->
-      <img src="{{ url_for('static', filename='img/encabezado_poder_judicial.png') }}" class="official-header-img" alt="Poder Judicial de la Provincia de Jujuy">
+      <!-- Encabezado Oficial + QR -->
+      <div class="header-top-row">
+        <img src="{{ url_for('static', filename='img/encabezado_poder_judicial.png') }}" class="official-header-img" alt="Poder Judicial de la Provincia de Jujuy">
+        {% if qr_url %}
+        <div class="qr-header-box">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ qr_url | urlencode }}" class="qr-header-img" alt="QR {{ pc.pc_name }}">
+          <div class="qr-header-text">
+            <span class="qr-title">Gemelo Digital</span>
+            <span class="qr-sub font-mono">{{ pc.pc_name }}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
 
       <!-- Título de Acta -->
       <div class="acta-title-box">
