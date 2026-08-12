@@ -436,6 +436,8 @@ def create_bo_from_telemetry(pc_name):
         
         target_user = request.form.get("target_user", "").strip() or None
         target_fuero = request.form.get("target_fuero", "").strip() or None
+        invoice_number = request.form.get("invoice_number", "").strip() or None
+        oc_number = request.form.get("oc_number", "").strip() or None
         notes = request.form.get("notes", "").strip() or "Generada desde Telemetría (.ps1)"
         
         comp_selected = request.form.getlist("comp_selected")
@@ -476,10 +478,10 @@ def create_bo_from_telemetry(pc_name):
 
             conn.execute(
                 """
-                INSERT INTO build_orders (code, target_fuero, target_user, target_pc_name, notes, created_by, status)
-                VALUES (%s, %s, %s, %s, %s, %s, 'completed')
+                INSERT INTO build_orders (code, oc_number, invoice_number, target_fuero, target_user, target_pc_name, notes, created_by, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'completed')
                 """,
-                (code, final_fuero, final_user, pc_name, notes, tech)
+                (code, oc_number, invoice_number, final_fuero, final_user, pc_name, notes, tech)
             )
             bo_id = conn.cursor.lastrowid
 
@@ -504,20 +506,21 @@ def create_bo_from_telemetry(pc_name):
                         conn.execute(
                             """
                             UPDATE components 
-                            SET build_order_id = %s, assigned_pc = %s, status = 'Asignado', assigned_user = %s, assigned_fuero = %s
+                            SET build_order_id = %s, assigned_pc = %s, status = 'Asignado', assigned_user = %s, assigned_fuero = %s,
+                                invoice_number = COALESCE(%s, invoice_number), oc_number = COALESCE(%s, oc_number)
                             WHERE id = %s
                             """,
-                            (bo_id, pc_name, final_user, final_fuero, comp_id)
+                            (bo_id, pc_name, final_user, final_fuero, invoice_number, oc_number, comp_id)
                         )
 
                 if not comp_id:
                     sn_to_insert = clean_sn if clean_sn else f"SN-{c_type[:3].upper()}-{year}-{idx+1}-{datetime.datetime.now().strftime('%M%S')}"
                     conn.execute(
                         """
-                        INSERT INTO components (serial_number, component_type, brand_model, status, assigned_pc, build_order_id, assigned_user, assigned_fuero)
-                        VALUES (%s, %s, %s, 'Asignado', %s, %s, %s, %s)
+                        INSERT INTO components (serial_number, component_type, brand_model, status, assigned_pc, build_order_id, assigned_user, assigned_fuero, invoice_number, oc_number)
+                        VALUES (%s, %s, %s, 'Asignado', %s, %s, %s, %s, %s, %s)
                         """,
-                        (sn_to_insert, c_type, c_model, pc_name, bo_id, final_user, final_fuero)
+                        (sn_to_insert, c_type, c_model, pc_name, bo_id, final_user, final_fuero, invoice_number, oc_number)
                     )
                     clean_sn = sn_to_insert
 
