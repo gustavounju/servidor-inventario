@@ -1446,7 +1446,7 @@ def homologar_telemetria():
             conn.execute(
                 """
                 UPDATE pcs
-                SET processor = %s, ram_gb = %s, motherboard_model = %s, disk_models = %s, validation_status = 'validado'
+                SET processor = %s, ram_gb = %s, motherboard_model = %s, disk_models = %s, validation_status = 'validado', alerta_nombre_duplicado = 0
                 WHERE pc_name = %s
                 """,
                 (new_proc, new_ram, new_mb, new_disks, pc_name)
