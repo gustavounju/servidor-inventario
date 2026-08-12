@@ -93,12 +93,25 @@
       margin-bottom: 6px;
     }
 
+    .acta-header-block {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 8px;
+    }
+
+    .header-left-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
     .acta-title-box {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-left: 3.5px solid var(--primary);
       padding: 5px 10px;
-      margin: 6px 0 8px 0;
+      margin: 0 0 6px 0;
       border-radius: 4px;
       display: flex;
       justify-content: space-between;
@@ -113,15 +126,7 @@
       letter-spacing: 0.01em;
     }
 
-    .meta-container {
-      display: flex;
-      gap: 10px;
-      align-items: stretch;
-      margin-bottom: 8px;
-    }
-
     .meta-grid {
-      flex: 1;
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 4px 14px;
@@ -129,6 +134,7 @@
       border: 1px solid #cbd5e1;
       padding: 6px 12px;
       border-radius: 4px;
+      flex: 1;
     }
 
     .meta-qr-box {
@@ -137,22 +143,26 @@
       align-items: center;
       justify-content: center;
       background: #ffffff;
-      border: 1px solid #cbd5e1;
-      border-radius: 4px;
-      padding: 4px 8px;
-      min-width: 90px;
+      border: 1.5px solid var(--primary);
+      border-radius: 6px;
+      padding: 6px 10px;
+      min-width: 115px;
       text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
     }
 
     .meta-qr-img {
-      width: 50px;
-      height: 50px;
-      border-radius: 2px;
-      margin-bottom: 2px;
+      width: 72px;
+      height: 72px;
+      border-radius: 3px;
+      margin-bottom: 3px;
+      border: 1px solid #cbd5e1;
+      padding: 2px;
+      background: #ffffff;
     }
 
     .meta-qr-label {
-      font-size: 0.54rem;
+      font-size: 0.58rem;
       font-weight: 800;
       color: var(--primary);
       text-transform: uppercase;
@@ -160,9 +170,9 @@
     }
 
     .meta-qr-sub {
-      font-size: 0.58rem;
+      font-size: 0.56rem;
       font-weight: 700;
-      color: #64748b;
+      color: #475569;
     }
 
     .meta-item {
@@ -342,46 +352,49 @@
       <!-- Encabezado Oficial -->
       <img src="{{ url_for('static', filename='img/encabezado_poder_judicial.png') }}" class="official-header-img" alt="Poder Judicial de la Provincia de Jujuy">
 
-      <!-- Título de Acta -->
-      <div class="acta-title-box">
-        <div>
-          <h6>ACTA DE ENTREGA Y RECEPCIÓN DE EQUIPAMIENTO INFORMÁTICO</h6>
-          <span class="text-muted font-mono" style="font-size:0.62rem;">Centro Judicial San Pedro — Departamento de Informática</span>
-        </div>
-      </div>
+      <!-- Bloque Cabecera: Título + Metadatos con QR Prominente al Costado -->
+      <div class="acta-header-block">
+        <div class="header-left-col">
+          <!-- Título de Acta -->
+          <div class="acta-title-box">
+            <div>
+              <h6>ACTA DE ENTREGA Y RECEPCIÓN DE EQUIPAMIENTO INFORMÁTICO</h6>
+              <span class="text-muted font-mono" style="font-size:0.62rem;">Centro Judicial San Pedro — Departamento de Informática</span>
+            </div>
+          </div>
 
-      <!-- Metadatos de la PC y Receptor + QR Integrado -->
-      <div class="meta-container">
-        <div class="meta-grid">
-          <div class="meta-item">
-            <span class="label">Nombre de Equipo (Host)</span>
-            <span class="val font-mono">{{ pc.pc_name }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="label">Fecha y Hora de Emisión</span>
-            <span class="val font-mono">{{ generated_at }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="label">Persona Receptor / Responsable</span>
-            <span class="val font-mono">{{ receptor_name if receptor_name else '.............................................................' }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="label">Dependencia / Juzgado / Fuero</span>
-            <span class="val">{{ pc.fuero or 'Sin especificar' }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="label">Sistema Operativo</span>
-            <span class="val">{{ pc.os_name or 'N/D' }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="label">IP / Dirección MAC</span>
-            <span class="val font-mono">{{ pc.ip_address or 'DHCP LAN' }} / {{ pc.mac_address or 'N/D' }}</span>
+          <!-- Metadatos de la PC y Receptor -->
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="label">Nombre de Equipo (Host)</span>
+              <span class="val font-mono">{{ pc.pc_name }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="label">Fecha y Hora de Emisión</span>
+              <span class="val font-mono">{{ generated_at }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="label">Persona Receptor / Responsable</span>
+              <span class="val font-mono">{{ receptor_name if receptor_name else '.............................................................' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="label">Dependencia / Juzgado / Fuero</span>
+              <span class="val">{{ pc.fuero or 'Sin especificar' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="label">Sistema Operativo</span>
+              <span class="val">{{ pc.os_name or 'N/D' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="label">IP / Dirección MAC</span>
+              <span class="val font-mono">{{ pc.ip_address or 'DHCP LAN' }} / {{ pc.mac_address or 'N/D' }}</span>
+            </div>
           </div>
         </div>
 
         {% if qr_url %}
         <div class="meta-qr-box">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={{ qr_url | urlencode }}" class="meta-qr-img" alt="QR {{ pc.pc_name }}">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={{ qr_url | urlencode }}" class="meta-qr-img" alt="QR {{ pc.pc_name }}">
           <span class="meta-qr-label">Gemelo Digital</span>
           <span class="meta-qr-sub font-mono">Ficha en Vivo</span>
         </div>
