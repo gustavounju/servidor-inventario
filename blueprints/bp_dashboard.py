@@ -482,18 +482,17 @@ def create_bo_from_telemetry(pc_name):
             except ValueError:
                 pass
 
-        if not selected_indices:
-            flash("Debe seleccionar al menos un componente para incluir en la Orden de Armado.", "warning")
-            return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
+        # Fallback si no vinieron índices seleccionados explicitamente
+        if not selected_indices and comp_types:
+            selected_indices = set(range(len(comp_types)))
 
         with get_db_connection() as conn:
-            pc = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
-            if not pc:
-                flash("Equipo no encontrado.", "error")
-                return redirect(url_for("dashboard.dashboard"))
+            clean_name = pc_name.strip().lower()
+            pc = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE LOWER(TRIM(pc_name)) = %s", (clean_name,)).fetchone()
+            pc_dict = dict(pc) if pc else {"pc_name": pc_name, "last_user": None, "fuero": None}
 
-            final_user = target_user or pc.get("last_user")
-            final_fuero = target_fuero or pc.get("fuero")
+            final_user = target_user or pc_dict.get("last_user")
+            final_fuero = target_fuero or pc_dict.get("fuero")
 
             # Fallback de O.C. y Remito General desde los componentes individuales si la cabecera vino vacía
             if not oc_number:
