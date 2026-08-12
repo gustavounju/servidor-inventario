@@ -425,6 +425,131 @@ def delete_permanent_pc(pc_name):
 
 
 
+@bp_dashboard.route("/pc/<pc_name>/create_bo_from_telemetry", methods=["POST"])
+def create_bo_from_telemetry(pc_name):
+    """Crea una nueva Orden de Armado basada en componentes seleccionados de la telemetría WMI."""
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        from utils.auth import current_technician_identity
+        tech = current_technician_identity() or "Sistema"
+        
+        target_user = request.form.get("target_user", "").strip() or None
+        target_fuero = request.form.get("target_fuero", "").strip() or None
+        notes = request.form.get("notes", "").strip() or "Generada desde Telemetría (.ps1)"
+        
+        comp_selected = request.form.getlist("comp_selected")
+        comp_types = request.form.getlist("comp_type")
+        comp_models = request.form.getlist("comp_model")
+        comp_serials = request.form.getlist("comp_serial")
+        
+        selected_indices = set()
+        for idx_str in comp_selected:
+            try:
+                selected_indices.add(int(idx_str))
+            except ValueError:
+                pass
+
+        if not selected_indices:
+            flash("Debe seleccionar al menos un componente para incluir en la Orden de Armado.", "warning")
+            return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
+
+        with get_db_connection() as conn:
+            pc = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
+            if not pc:
+                flash("Equipo no encontrado.", "error")
+                return redirect(url_for("dashboard.dashboard"))
+
+            # Validar si ya existe una Orden de Armado
+            existing_bo = conn.execute("SELECT id FROM build_orders WHERE target_pc_name = %s", (pc_name,)).fetchone()
+            if existing_bo:
+                flash("Este equipo ya tiene una Orden de Armado asignada. No se pueden generar múltiples órdenes.", "warning")
+                return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
+
+            final_user = target_user or pc.get("last_user")
+            final_fuero = target_fuero or pc.get("fuero")
+
+            year = datetime.datetime.now().strftime("%Y")
+            count_row = conn.execute("SELECT COUNT(*) as cnt FROM build_orders WHERE YEAR(created_at) = %s", (year,)).fetchone()
+            seq = (count_row["cnt"] if count_row else 0) + 1
+            code = f"BO-{year}-{seq:04d}"
+
+            conn.execute(
+                """
+                INSERT INTO build_orders (code, target_fuero, target_user, target_pc_name, notes, created_by, status)
+                VALUES (%s, %s, %s, %s, %s, %s, 'completed')
+                """,
+                (code, final_fuero, final_user, pc_name, notes, tech)
+            )
+            bo_id = conn.cursor.lastrowid
+
+            for idx in range(len(comp_types)):
+                if idx not in selected_indices:
+                    continue
+
+                c_type = comp_types[idx].strip()
+                c_model = comp_models[idx].strip()
+                c_serial = comp_serials[idx].strip()
+
+                if not c_type or not c_model:
+                    continue
+
+                clean_sn = c_serial if c_serial and c_serial.upper() not in ("N/A", "SIN S/N", "NONE", "") else None
+                
+                comp_id = None
+                if clean_sn:
+                    existing = conn.execute("SELECT id FROM components WHERE UPPER(serial_number) = %s LIMIT 1", (clean_sn.upper(),)).fetchone()
+                    if existing:
+                        comp_id = existing["id"]
+                        conn.execute(
+                            """
+                            UPDATE components 
+                            SET build_order_id = %s, assigned_pc = %s, status = 'Asignado', assigned_user = %s, assigned_fuero = %s
+                            WHERE id = %s
+                            """,
+                            (bo_id, pc_name, final_user, final_fuero, comp_id)
+                        )
+
+                if not comp_id:
+                    sn_to_insert = clean_sn if clean_sn else f"SN-{c_type[:3].upper()}-{year}-{idx+1}-{datetime.datetime.now().strftime('%M%S')}"
+                    conn.execute(
+                        """
+                        INSERT INTO components (serial_number, component_type, brand_model, status, assigned_pc, build_order_id, assigned_user, assigned_fuero)
+                        VALUES (%s, %s, %s, 'Asignado', %s, %s, %s, %s)
+                        """,
+                        (sn_to_insert, c_type, c_model, pc_name, bo_id, final_user, final_fuero)
+                    )
+                    clean_sn = sn_to_insert
+
+                conn.execute(
+                    """
+                    INSERT INTO build_order_items (build_order_id, serial_number, asset_type, brand_model, pc_name, scanned_by)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                    (bo_id, clean_sn, c_type, c_model, pc_name, tech)
+                )
+
+            conn.execute("UPDATE pcs SET validation_status = 'validado' WHERE pc_name = %s", (pc_name,))
+
+            log_audit_event(
+                conn,
+                pc_name=pc_name,
+                field="build_order",
+                old_value=None,
+                new_value=code,
+                action_type="CREAR_BO_TELEMETRIA",
+                request_ip=request.remote_addr,
+            )
+            conn.commit()
+
+        flash(f"Se creó con éxito la Orden de Armado {code} con los componentes seleccionados.", "success")
+    except Exception as exc:
+        logger.error("Error creando Orden de Armado desde telemetría para %s: %s", pc_name, exc)
+        flash(f"Error al generar la Orden de Armado: {exc}", "error")
+
+    return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
+
+
 @bp_dashboard.route("/pc/<pc_name>")
 def pc_detail(pc_name):
     """Detalle de una PC."""

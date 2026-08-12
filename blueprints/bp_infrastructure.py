@@ -376,7 +376,7 @@ def assign_component_to_pc(component_id):
             old_pc = comp['assigned_pc']
             
             if pc_name:
-                conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = 'Instalado', lifecycle_status = 'desplegado' WHERE id = %s", (pc_name, component_id))
+                conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = 'Instalado', lifecycle_status = 'desplegado', build_order_id = NULL WHERE id = %s", (pc_name, component_id))
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                              (pc_name, f"{comp['component_type']} Asignado", str(old_pc or 'Stock'), f"{comp['brand_model']} ({comp['serial_number'] or 'Sin S/N'})", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             else:
@@ -390,7 +390,7 @@ def assign_component_to_pc(component_id):
                     new_lifecycle = 'stock'
                     dest_label = 'Devuelto a Stock (Disponible para Reuso)'
                 
-                conn.execute("UPDATE components SET assigned_pc = NULL, assigned_to_component_id = NULL, status = %s, lifecycle_status = %s WHERE id = %s", (new_status, new_lifecycle, component_id))
+                conn.execute("UPDATE components SET assigned_pc = NULL, assigned_to_component_id = NULL, status = %s, lifecycle_status = %s, build_order_id = NULL WHERE id = %s", (new_status, new_lifecycle, component_id))
                 
                 if old_pc:
                     log_detail = f"{comp['brand_model']} -> {dest_label}"
@@ -428,14 +428,14 @@ def assign_component_to_component(component_id):
                 # Get parent details for log
                 parent = conn.execute("SELECT serial_number, component_type, assigned_pc FROM components WHERE id = %s", (parent_id,)).fetchone()
                 
-                conn.execute("UPDATE components SET assigned_to_component_id = %s, assigned_pc = %s, status = 'Instalado' WHERE id = %s", 
+                conn.execute("UPDATE components SET assigned_to_component_id = %s, assigned_pc = %s, status = 'Instalado', build_order_id = NULL WHERE id = %s", 
                              (parent_id, parent['assigned_pc'], component_id))
                 
                 pc_context = parent["assigned_pc"] or f"COMP:{parent['serial_number']}"
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                              (pc_context, f"Sub-componente {comp['component_type']} Asignado a {parent['component_type']}", "None", comp['serial_number'], current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             else:
-                conn.execute("UPDATE components SET assigned_to_component_id = NULL, assigned_pc = NULL, status = 'Stock' WHERE id = %s", (component_id,))
+                conn.execute("UPDATE components SET assigned_to_component_id = NULL, assigned_pc = NULL, status = 'Stock', build_order_id = NULL WHERE id = %s", (component_id,))
             
             conn.commit()
             flash("Asignación interna de componente actualizada.", "success")

@@ -743,11 +743,19 @@
             <p class="text-muted small mb-0 mt-1">Auditoría automática entre los componentes físicos leídos por script (.ps1) y el registro oficial.</p>
           </div>
 
-          {% if pc.validation_status == 'discrepancia' or pc.validation_status == 'pendiente' %}
-          <button type="button" class="btn btn-sm btn-warning fw-bold py-1 px-3" onclick="homologarTelemetria('{{ pc.pc_name }}', '{{ linked_bo.code if linked_bo else '' }}')">
-            <i class="bi bi-check-circle me-1"></i> ⚡ Homologar Telemetría
-          </button>
-          {% endif %}
+          <div class="d-flex gap-2 flex-wrap">
+            {% if not linked_bo %}
+            <button type="button" class="btn btn-sm btn-primary fw-bold py-1 px-3" data-bs-toggle="modal" data-bs-target="#modalCrearBODesdeTelemetria" title="Generar una nueva Orden de Armado patrimonial con los componentes elegidos de la telemetría">
+              <i class="bi bi-tools me-1"></i> 🛠️ Crear Orden de Armado
+            </button>
+            {% endif %}
+
+            {% if pc.validation_status == 'discrepancia' or pc.validation_status == 'pendiente' %}
+            <button type="button" class="btn btn-sm btn-warning fw-bold py-1 px-3" onclick="homologarTelemetria('{{ pc.pc_name }}', '{{ linked_bo.code if linked_bo else '' }}')">
+              <i class="bi bi-check-circle me-1"></i> ⚡ Homologar Telemetría
+            </button>
+            {% endif %}
+          </div>
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
@@ -1308,5 +1316,157 @@
       else if (h === '#historial') switchTab('historial', document.querySelectorAll('.pd-tab')[4]);
     })();
   </script>
+  <!-- MODAL: CREAR ORDEN DE ARMADO DESDE TELEMETRIA -->
+  <div class="modal fade" id="modalCrearBODesdeTelemetria" tabindex="-1" aria-labelledby="modalCrearBODesdeTelemetriaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="background: var(--card-bg, #ffffff); color: var(--text-color, #0f172a); border: 1px solid var(--border-color, #e2e8f0);">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modalCrearBODesdeTelemetriaLabel">
+            <i class="bi bi-tools text-primary me-2"></i>Crear Orden de Armado desde Telemetría
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <form action="{{ url_for('dashboard.create_bo_from_telemetry', pc_name=pc.pc_name) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="modal-body">
+            <p class="small text-muted mb-3">
+              Seleccioná cuáles de los componentes detectados electrónicamente en <strong>{{ pc.pc_name }}</strong> querés incluir en la nueva Orden de Armado patrimonial.
+            </p>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Usuario Destino / Asignado</label>
+                <input type="text" name="target_user" class="form-control form-control-sm" value="{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '' }}" placeholder="Nombre del usuario">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Fuero / Área Destino</label>
+                <input type="text" name="target_fuero" class="form-control form-control-sm" value="{{ pc.fuero or '' }}" placeholder="Ej: Fuero Civil">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold mb-2">Componentes Detectados en la Telemetría (Script .ps1):</label>
+              <div class="list-group shadow-sm" style="max-height: 320px; overflow-y: auto;">
+                {% set ns_idx = namespace(val=0) %}
+
+                {# 1. Motherboard #}
+                {% if hardware_components and hardware_components.motherboard and hardware_components.motherboard.model and hardware_components.motherboard.model != 'N/A' %}
+                <label class="list-group-item d-flex align-items-center gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
+                  <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
+                  <input type="hidden" name="comp_type" value="Motherboard">
+                  <input type="hidden" name="comp_model" value="{{ hardware_components.motherboard.model }}">
+                  <input type="hidden" name="comp_serial" value="{{ hardware_components.motherboard.serial if hardware_components.motherboard.serial else 'N/A' }}">
+                  <div class="w-100">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span class="fw-bold" style="font-size:0.85rem; color:var(--text-color);"><i class="bi bi-motherboard me-1 text-primary"></i> Motherboard</span>
+                      <span class="badge bg-secondary" style="font-size:0.7rem;">SN: {{ hardware_components.motherboard.serial if hardware_components.motherboard.serial else 'N/A' }}</span>
+                    </div>
+                    <div class="small text-muted font-mono">{{ hardware_components.motherboard.model }}</div>
+                  </div>
+                </label>
+                {% set ns_idx.val = ns_idx.val + 1 %}
+                {% endif %}
+
+                {# 2. Procesador #}
+                {% if hardware_components and hardware_components.processor and hardware_components.processor != 'N/A' %}
+                <label class="list-group-item d-flex align-items-center gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
+                  <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
+                  <input type="hidden" name="comp_type" value="Procesador">
+                  <input type="hidden" name="comp_model" value="{{ hardware_components.processor }}">
+                  <input type="hidden" name="comp_serial" value="N/A">
+                  <div class="w-100">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span class="fw-bold" style="font-size:0.85rem; color:var(--text-color);"><i class="bi bi-cpu me-1 text-primary"></i> Procesador (CPU)</span>
+                    </div>
+                    <div class="small text-muted font-mono">{{ hardware_components.processor }}</div>
+                  </div>
+                </label>
+                {% set ns_idx.val = ns_idx.val + 1 %}
+                {% endif %}
+
+                {# 3. Módulos RAM #}
+                {% if hardware_components and hardware_components.ram_modules %}
+                  {% for ram in hardware_components.ram_modules %}
+                  <label class="list-group-item d-flex align-items-center gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
+                    <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
+                    <input type="hidden" name="comp_type" value="Memoria RAM">
+                    <input type="hidden" name="comp_model" value="{{ ram.spec or 'Memoria RAM' }}">
+                    <input type="hidden" name="comp_serial" value="{{ ram.serial if ram.serial else 'N/A' }}">
+                    <div class="w-100">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold" style="font-size:0.85rem; color:var(--text-color);"><i class="bi bi-memory me-1 text-primary"></i> Memoria RAM #{{ loop.index }}</span>
+                        <span class="badge bg-secondary" style="font-size:0.7rem;">SN: {{ ram.serial if ram.serial else 'N/A' }}</span>
+                      </div>
+                      <div class="small text-muted font-mono">{{ ram.spec }}</div>
+                    </div>
+                  </label>
+                  {% set ns_idx.val = ns_idx.val + 1 %}
+                  {% endfor %}
+                {% endif %}
+
+                {# 4. Discos #}
+                {% if hardware_components and hardware_components.disks %}
+                  {% for disk in hardware_components.disks %}
+                  <label class="list-group-item d-flex align-items-center gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
+                    <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
+                    <input type="hidden" name="comp_type" value="Disco Rígido / SSD">
+                    <input type="hidden" name="comp_model" value="{{ disk.model or 'Almacenamiento' }}">
+                    <input type="hidden" name="comp_serial" value="{{ disk.serial if disk.serial else 'N/A' }}">
+                    <div class="w-100">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold" style="font-size:0.85rem; color:var(--text-color);"><i class="bi bi-hdd me-1 text-primary"></i> Almacenamiento #{{ loop.index }}</span>
+                        <span class="badge bg-secondary" style="font-size:0.7rem;">SN: {{ disk.serial if disk.serial else 'N/A' }}</span>
+                      </div>
+                      <div class="small text-muted font-mono">{{ disk.model }}</div>
+                    </div>
+                  </label>
+                  {% set ns_idx.val = ns_idx.val + 1 %}
+                  {% endfor %}
+                {% endif %}
+
+                {# 5. Monitores #}
+                {% if hardware_components and hardware_components.monitors %}
+                  {% for mon in hardware_components.monitors %}
+                  <label class="list-group-item d-flex align-items-center gap-3" style="background:var(--card-bg); border-color:var(--border-color);">
+                    <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="comp_selected" value="{{ ns_idx.val }}" checked>
+                    <input type="hidden" name="comp_type" value="Monitor">
+                    <input type="hidden" name="comp_model" value="{{ mon.model or 'Monitor' }}">
+                    <input type="hidden" name="comp_serial" value="{{ mon.serial if mon.serial else 'N/A' }}">
+                    <div class="w-100">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold" style="font-size:0.85rem; color:var(--text-color);"><i class="bi bi-display me-1 text-primary"></i> Monitor #{{ loop.index }}</span>
+                        <span class="badge bg-secondary" style="font-size:0.7rem;">SN: {{ mon.serial if mon.serial else 'N/A' }}</span>
+                      </div>
+                      <div class="small text-muted font-mono">{{ mon.model }}</div>
+                    </div>
+                  </label>
+                  {% set ns_idx.val = ns_idx.val + 1 %}
+                  {% endfor %}
+                {% endif %}
+
+                {% if ns_idx.val == 0 %}
+                <div class="p-3 text-center text-muted small">
+                  No se encontraron componentes detallados en la telemetría actual.
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Notas u Observaciones (opcional)</label>
+              <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Ej: Orden generada retroactivamente desde relevamiento en calle."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-sm btn-primary fw-bold px-3" {% if ns_idx.val == 0 %}disabled{% endif %}>
+              <i class="bi bi-check-lg me-1"></i> Generar Orden de Armado
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

@@ -1450,7 +1450,9 @@ def migrate_db_v55():
     """
     print("Verificando migración de DB v55 (Sincronización de componentes en Órdenes de Armado)...")
     with get_db_connection() as conn:
-        if _table_exists(conn, "build_order_items") and _table_exists(conn, "components"):
+        # V55 ya fue aplicada y como no agrega columnas, no debe correr en cada inicio.
+        # if _table_exists(conn, "build_order_items") and _table_exists(conn, "components"):
+        if False:
             print("Aplicando V55: actualizando estado de componentes en Órdenes de Armado...")
             try:
                 # 1. Órdenes activas (draft, in_progress) -> status = 'Reservado'

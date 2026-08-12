@@ -2295,8 +2295,8 @@ def create_build_order():
         tech = current_technician_identity()
         data = request.json or {}
 
-        oc_number      = (data.get("oc_number") or "").strip() or None
-        invoice_number = (data.get("invoice_number") or "").strip() or None
+        oc_number      = (data.get("oc_number") or "").strip() or "STOCK INTERNO / TALLER"
+        invoice_number = (data.get("invoice_number") or "").strip() or "SIN REMITO"
         target_fuero   = (data.get("target_fuero") or "").strip() or None
         target_user    = (data.get("target_user") or "").strip() or None
         target_pc_name = (data.get("target_pc_name") or "").strip() or None
@@ -2442,42 +2442,45 @@ def manage_build_order(order_id):
 
             restored_count = 0
 
-            if bo["status"] == "completed":
-                items = conn.execute(
-                    "SELECT serial_number FROM build_order_items WHERE build_order_id = %s",
-                    (order_id,)
-                ).fetchall()
-                for item in items:
-                    serial = item["serial_number"]
-                    if not serial:
-                        continue
-                    comp = conn.execute(
-                        "SELECT component_type, brand_model FROM components WHERE serial_number = %s",
+            # Restablecer todos los componentes ligados a esta orden, sin importar su estado
+            items = conn.execute(
+                "SELECT serial_number FROM build_order_items WHERE build_order_id = %s",
+                (order_id,)
+            ).fetchall()
+            for item in items:
+                serial = item["serial_number"]
+                if not serial:
+                    continue
+                comp = conn.execute(
+                    "SELECT component_type, brand_model FROM components WHERE serial_number = %s",
+                    (serial,)
+                ).fetchone()
+                if comp:
+                    conn.execute(
+                        """
+                        UPDATE components
+                        SET status = 'Stock', assigned_pc = NULL, assigned_user = NULL,
+                            assigned_fuero = NULL, kit_name = NULL, build_order_id = NULL
+                        WHERE serial_number = %s
+                        """,
                         (serial,)
-                    ).fetchone()
-                    if comp:
-                        conn.execute(
-                            """
-                            UPDATE components
-                            SET status = 'Stock', assigned_pc = NULL, assigned_user = NULL,
-                                assigned_fuero = NULL, kit_name = NULL
-                            WHERE serial_number = %s
-                            """,
-                            (serial,)
+                    )
+                    restored_count += 1
+                    conn.execute(
+                        """
+                        INSERT INTO audit_logs
+                            (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (
+                            "Stock", "BUILD_ORDER_DISASSEMBLE", bo["code"],
+                            f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Stock",
+                            tech, "BUILD_ORDER", request.remote_addr
                         )
-                        restored_count += 1
-                        conn.execute(
-                            """
-                            INSERT INTO audit_logs
-                                (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)
-                            """,
-                            (
-                                "Stock", "BUILD_ORDER_DISASSEMBLE", bo["code"],
-                                f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Stock",
-                                tech, "BUILD_ORDER", request.remote_addr
-                            )
-                        )
+                    )
+
+            # Para aquellos componentes que tengan el build_order_id pero que no estén en items
+            conn.execute("UPDATE components SET build_order_id = NULL WHERE build_order_id = %s", (order_id,))
 
             conn.execute("DELETE FROM build_order_items WHERE build_order_id = %s", (order_id,))
             conn.execute("DELETE FROM build_orders WHERE id = %s", (order_id,))

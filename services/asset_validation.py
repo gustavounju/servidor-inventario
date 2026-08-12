@@ -368,6 +368,23 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
             "status_label": "Coincide OK" if disk_match else ("Pendiente Ejecutar Script (.ps1)" if disk_comps and not disk_has_telem else "Diferencia de Disco")
         })
 
+        # 5. Otros componentes (Monitores, UPS, etc.) que no reporta WMI
+        core_keys = {"motherboard", "placa madre", "mother", "placa", 
+                     "procesador", "microprocesador", "cpu", "micro",
+                     "memoria ram", "ram", "memoria",
+                     "disco rígido", "disco rigido", "disco ssd", "ssd", "disco", "almacenamiento", "disco rígido / ssd", "disco rigido / ssd"}
+        
+        for ctype, comps_list in comp_by_type.items():
+            if ctype not in core_keys:
+                reg_str = ", ".join(f"{c.get('brand_model', '')} ({c.get('serial_number') or 'Sin S/N'})" for c in comps_list)
+                comparison.append({
+                    "component": str(comps_list[0].get("component_type") or ctype).title(),
+                    "registered": reg_str,
+                    "telemetry": "N/A (No reportable por WMI)",
+                    "match": True,
+                    "status_label": "Asignado en Patrimonio"
+                })
+
         return comparison
     finally:
         if close_conn:

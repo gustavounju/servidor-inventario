@@ -158,6 +158,12 @@
                                 {% if bo.target_fuero and (bo.target_pc_name or bo.target_user or bo.matched_user) %}
                                 <div class="text-truncate" style="color:#64748b;font-size:.74rem;">· {{ bo.target_fuero }}</div>
                                 {% endif %}
+
+                                {% if bo.invoice_number or bo.oc_number %}
+                                <div class="text-truncate" style="color:#64748b;font-size:.74rem; margin-top:2px;">
+                                    · Remito: <strong>{{ bo.invoice_number or 'SIN REMITO' }}</strong> | Prov: <strong>{{ bo.oc_number or 'STOCK INTERNO / TALLER' }}</strong>
+                                </div>
+                                {% endif %}
                             </td>
                             <td class="text-center">
                                 <span class="badge" style="background:rgba(99,102,241,.2);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);font-size:.78rem;">
@@ -490,6 +496,8 @@
                 else if (bo.validation_status === 'pendiente') meta.innerHTML += `<span class="badge bg-warning text-dark font-mono p-1 px-2"><i class="bi bi-clock-history me-1"></i>Queda por validar en red</span>`;
                 if (bo.target_user) meta.innerHTML += `<span class="bo-meta-chip"><i class="bi bi-person"></i><strong>${bo.target_user}</strong></span>`;
                 if (bo.target_fuero) meta.innerHTML += `<span class="bo-meta-chip"><i class="bi bi-building"></i>${bo.target_fuero}</span>`;
+                if (bo.invoice_number) meta.innerHTML += `<span class="bo-meta-chip"><i class="bi bi-receipt"></i>Remito: <strong>${bo.invoice_number}</strong></span>`;
+                if (bo.oc_number) meta.innerHTML += `<span class="bo-meta-chip"><i class="bi bi-truck"></i>Prov: <strong>${bo.oc_number}</strong></span>`;
             }
 
             const items = bo.order_items || bo.items || [];

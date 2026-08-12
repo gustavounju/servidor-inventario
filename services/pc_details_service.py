@@ -335,7 +335,14 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
 
             final_sn = m_sn if (m_sn and m_sn.upper() not in ("N/A", "SIN S/N")) else (target_src.get("serial_number") if target_src.get("serial_number") else "Sin S/N")
 
+            # Determine source: if it was found in the DB but NOT in the PC's unassigned_stock_monitors,
+            # it means it is physically plugged in but NOT officially assigned to this PC (e.g. in Stock).
+            source_type = "merged"
+            if target_src == matched_db_extra:
+                source_type = "audit"
+
             monitors_detail.append({
+                "id": target_src.get("id"),
                 "brand_model": final_model,
                 "serial_number": final_sn if final_sn else "Sin S/N",
                 "invoice_number": final_remito,
@@ -347,13 +354,14 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
                 "assigned_pc": target_src.get("assigned_pc"),
                 "assigned_user": target_src.get("assigned_user"),
                 "assigned_fuero": target_src.get("assigned_fuero"),
-                "source": "merged"
+                "source": source_type
             })
 
         for leftover in unassigned_stock_monitors:
             b_id = leftover.get("build_order_id")
             b_code = bo_map.get(b_id, {}).get("code") if b_id else None
             monitors_detail.append({
+                "id": leftover.get("id"),
                 "brand_model": leftover.get("brand_model") or "Monitor Estándar",
                 "serial_number": leftover.get("serial_number") or "Sin S/N",
                 "invoice_number": leftover.get("invoice_number"),
@@ -381,6 +389,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
 
     for m in monitors_detail:
         all_unified_components.append({
+            "id": m.get("id"),
             "component_type": "Monitor",
             "brand_model": m.get("brand_model") or "Monitor Estándar",
             "serial_number": m.get("serial_number") or "Sin S/N",
@@ -648,13 +657,14 @@ def get_pc_detail_context(pc_name):
             SELECT DISTINCT c.id, c.serial_number, c.component_type, c.brand_model, c.status, c.assigned_to_component_id, 
                    c.oc_number, c.invoice_number, c.supplier, c.assigned_user, c.assigned_fuero, c.assigned_pc, c.build_order_id
             FROM components c
-            WHERE LOWER(TRIM(c.assigned_pc)) = LOWER(TRIM(%s))
-               OR c.build_order_id IN (
-                   SELECT id FROM build_orders WHERE LOWER(TRIM(target_pc_name)) = LOWER(TRIM(%s))
-               )
-               OR c.serial_number IN (
-                   SELECT serial_number FROM build_order_items WHERE LOWER(TRIM(pc_name)) = LOWER(TRIM(%s))
-               )
+            WHERE (
+                LOWER(TRIM(c.assigned_pc)) = LOWER(TRIM(%s))
+                OR c.build_order_id IN (
+                    SELECT id FROM build_orders WHERE LOWER(TRIM(target_pc_name)) = LOWER(TRIM(%s))
+                )
+            )
+            AND (c.status IS NULL OR c.status NOT IN ('Retirado', 'Scrap', 'Stock'))
+            AND (c.assigned_pc IS NULL OR c.assigned_pc = '' OR LOWER(TRIM(c.assigned_pc)) = LOWER(TRIM(%s)))
             ORDER BY c.assigned_to_component_id ASC, c.component_type
         ''', (pc_name, pc_name, pc_name)).fetchall()
         
@@ -782,7 +792,9 @@ def get_pc_detail_context(pc_name):
         except Exception as bo_exc:
             logger.warning("Error buscando/enriqueciendo linked_bo para %s: %s", pc_name, bo_exc)
 
-        validation_comparison = get_pc_validation_comparison(pc_name, conn, unified_components=all_unified_components)
+        # Filtrar componentes inyectados por telemetría (script ps1) para la validación estricta
+        official_components = [c for c in all_unified_components if c.get("source") != "audit"]
+        validation_comparison = get_pc_validation_comparison(pc_name, conn, unified_components=official_components)
         current_status = pc.get("validation_status")
 
         if validation_comparison and any(not row.get("match") for row in validation_comparison):
