@@ -29,8 +29,8 @@
       font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: #f8fafc;
       color: var(--text);
-      font-size: 0.74rem;
-      line-height: 1.35;
+      font-size: 0.72rem;
+      line-height: 1.3;
       margin: 0;
       padding: 0;
     }
@@ -45,7 +45,7 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 50px;
+      height: 48px;
       background: #0f172a;
       color: #fff;
       display: flex;
@@ -58,9 +58,9 @@
 
     .acta-page-wrapper {
       max-width: 850px;
-      margin: 65px auto 20px auto;
+      margin: 58px auto 15px auto;
       background: #ffffff;
-      padding: 20px 24px;
+      padding: 16px 20px;
       border-radius: 8px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
       border: 1px solid #e2e8f0;
@@ -68,14 +68,14 @@
 
     /* Copy Container */
     .copy-block {
-      padding-bottom: 4px;
+      padding-bottom: 2px;
       position: relative;
     }
 
     .copy-badge {
       display: inline-block;
       float: right;
-      font-size: 0.62rem;
+      font-size: 0.60rem;
       font-weight: 800;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -87,18 +87,18 @@
     }
 
     .official-header-img {
-      max-height: 42px;
+      max-height: 36px;
       width: auto;
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .acta-title-box {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-left: 3px solid var(--primary);
-      padding: 4px 10px;
-      margin: 6px 0;
+      padding: 3px 8px;
+      margin: 4px 0;
       border-radius: 4px;
       display: flex;
       justify-content: space-between;
@@ -106,7 +106,7 @@
     }
 
     .acta-title-box h6 {
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 800;
       margin: 0;
       color: var(--primary);
@@ -116,12 +116,12 @@
     .meta-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 4px 12px;
+      gap: 2px 10px;
       background: #ffffff;
       border: 1px solid #cbd5e1;
-      padding: 6px 10px;
+      padding: 4px 8px;
       border-radius: 4px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .meta-item {
@@ -130,7 +130,7 @@
     }
 
     .meta-item .label {
-      font-size: 0.60rem;
+      font-size: 0.58rem;
       font-weight: 700;
       color: #64748b;
       text-transform: uppercase;
@@ -138,7 +138,7 @@
     }
 
     .meta-item .val {
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       font-weight: 700;
       color: #0f172a;
     }
@@ -147,8 +147,8 @@
     .table-acta {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 8px;
-      font-size: 0.70rem;
+      margin-bottom: 6px;
+      font-size: 0.68rem;
     }
 
     .table-acta th {
@@ -156,14 +156,14 @@
       color: #334155;
       font-weight: 700;
       text-transform: uppercase;
-      font-size: 0.62rem;
-      padding: 3px 6px;
+      font-size: 0.60rem;
+      padding: 2px 5px;
       border: 1px solid #cbd5e1;
       letter-spacing: 0.02em;
     }
 
     .table-acta td {
-      padding: 3px 6px;
+      padding: 2px 5px;
       border: 1px solid #e2e8f0;
       vertical-align: middle;
     }
@@ -176,42 +176,55 @@
     .signatures-row {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
-      margin-top: 8px;
+      gap: 16px;
+      margin-top: 6px;
       page-break-inside: avoid;
     }
 
     .signature-box {
       border-top: 1.5px solid #334155;
-      padding-top: 4px;
+      padding-top: 3px;
       text-align: left;
     }
 
     .signature-box p {
       margin: 1px 0;
-      font-size: 0.68rem;
+      font-size: 0.66rem;
     }
 
     .signature-box .sig-title {
       font-weight: 800;
       color: #0f172a;
       text-transform: uppercase;
-      font-size: 0.72rem;
+      font-size: 0.70rem;
       margin-bottom: 2px;
     }
 
     .signature-box .sig-dots {
       color: #475569;
-      font-size: 0.67rem;
+      font-size: 0.66rem;
+      margin: 2px 0;
+    }
+
+    /* Espacio amplio para firma holgada a mano */
+    .signature-box .sig-field-firma {
+      margin: 18px 0 8px 0;
+      color: #475569;
+      font-size: 0.66rem;
+    }
+
+    .signature-box .sig-field-firma .sig-label {
+      font-weight: 700;
+      color: #0f172a;
     }
 
     /* Marca de Corte */
     .cut-line {
       text-align: center;
-      margin: 8px 0 10px 0;
+      margin: 6px 0 8px 0;
       position: relative;
       border-bottom: 1px dashed #64748b;
-      font-size: 0.60rem;
+      font-size: 0.58rem;
       color: #475569;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -223,14 +236,14 @@
       background: #ffffff;
       padding: 0 10px;
       position: relative;
-      top: 6px;
+      top: 5px;
     }
 
     /* Print styles */
     @media print {
       html, body {
         background: #ffffff !important;
-        font-size: 0.70rem !important;
+        font-size: 0.68rem !important;
         margin: 0 !important;
         padding: 0 !important;
         height: 100%;
@@ -254,7 +267,7 @@
 
       @page {
         size: A4 portrait;
-        margin: 4mm 6mm 4mm 6mm;
+        margin: 3mm 6mm 3mm 6mm;
       }
     }
   </style>
@@ -290,7 +303,7 @@
       <div class="acta-title-box">
         <div>
           <h6>ACTA DE ENTREGA Y RECEPCIÓN DE EQUIPAMIENTO INFORMÁTICO</h6>
-          <span class="text-muted font-mono" style="font-size:0.65rem;">Centro Judicial San Pedro — Departamento de Informática</span>
+          <span class="text-muted font-mono" style="font-size:0.62rem;">Centro Judicial San Pedro — Departamento de Informática</span>
         </div>
       </div>
 
@@ -441,15 +454,19 @@
         <div class="signature-box">
           <p class="sig-title">Receptor del Equipo</p>
           <p class="sig-dots"><strong>Persona:</strong> {{ receptor_name if receptor_name else '.............................................................' }}</p>
-          <p class="sig-dots">Firma: ................................................................</p>
-          <p class="sig-dots">Aclaración: .............................................................</p>
-          <p class="sig-dots">D.N.I. / Legajo: .....................................................</p>
-          <p class="sig-dots">Dependencia: {{ pc.fuero or '...........................................' }}</p>
+          <div class="sig-field-firma">
+            <span class="sig-label">Firma:</span> ................................................................
+          </div>
+          <p class="sig-dots"><strong>Aclaración:</strong> .............................................................</p>
+          <p class="sig-dots"><strong>D.N.I. / Legajo:</strong> .....................................................</p>
+          <p class="sig-dots"><strong>Dependencia:</strong> {{ pc.fuero or '...........................................' }}</p>
         </div>
         <div class="signature-box">
           <p class="sig-title">Técnico</p>
-          <p class="sig-dots">Firma: ................................................................</p>
-          <p class="sig-dots">Aclaración: .............................................................</p>
+          <div class="sig-field-firma">
+            <span class="sig-label">Firma:</span> ................................................................
+          </div>
+          <p class="sig-dots"><strong>Aclaración:</strong> .............................................................</p>
           <p class="sig-dots">Departamento de Informática</p>
           <p class="sig-dots">Centro Judicial San Pedro — Jujuy</p>
         </div>
