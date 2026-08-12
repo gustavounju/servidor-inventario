@@ -464,19 +464,8 @@ def create_bo_from_telemetry(pc_name):
                 flash("Equipo no encontrado.", "error")
                 return redirect(url_for("dashboard.dashboard"))
 
-            # Validar si ya existe una Orden de Armado
-            existing_bo = conn.execute("SELECT id FROM build_orders WHERE target_pc_name = %s", (pc_name,)).fetchone()
-            if existing_bo:
-                flash("Este equipo ya tiene una Orden de Armado asignada. No se pueden generar múltiples órdenes.", "warning")
-                return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
-
             final_user = target_user or pc.get("last_user")
             final_fuero = target_fuero or pc.get("fuero")
-
-            year = datetime.datetime.now().strftime("%Y")
-            count_row = conn.execute("SELECT COUNT(*) as cnt FROM build_orders WHERE YEAR(created_at) = %s", (year,)).fetchone()
-            seq = (count_row["cnt"] if count_row else 0) + 1
-            code = f"BO-{year}-{seq:04d}"
 
             # Fallback de O.C. y Remito General desde los componentes individuales si la cabecera vino vacía
             if not oc_number:
@@ -489,14 +478,44 @@ def create_bo_from_telemetry(pc_name):
                 if first_inv:
                     invoice_number = first_inv
 
-            conn.execute(
-                """
-                INSERT INTO build_orders (code, oc_number, invoice_number, target_fuero, target_user, target_pc_name, notes, created_by, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'completed')
-                """,
-                (code, oc_number, invoice_number, final_fuero, final_user, pc_name, notes, tech)
-            )
-            bo_id = conn.cursor.lastrowid
+            # Validar si ya existe una Orden de Armado previa para esta PC (Actualizar o Crear)
+            existing_bo = conn.execute(
+                "SELECT id, code FROM build_orders WHERE LOWER(TRIM(target_pc_name)) = %s ORDER BY created_at DESC LIMIT 1",
+                (pc_name.strip().lower(),)
+            ).fetchone()
+
+            if existing_bo:
+                bo_id = existing_bo["id"]
+                code = existing_bo["code"]
+                conn.execute(
+                    """
+                    UPDATE build_orders 
+                    SET oc_number = COALESCE(%s, oc_number),
+                        invoice_number = COALESCE(%s, invoice_number),
+                        target_fuero = COALESCE(%s, target_fuero),
+                        target_user = COALESCE(%s, target_user),
+                        notes = %s,
+                        status = 'completed'
+                    WHERE id = %s
+                    """,
+                    (oc_number, invoice_number, final_fuero, final_user, notes, bo_id)
+                )
+                # Limpiar ítems previos de esta BO para refrescarlos con la nueva selección
+                conn.execute("DELETE FROM build_order_items WHERE build_order_id = %s", (bo_id,))
+            else:
+                year = datetime.datetime.now().strftime("%Y")
+                count_row = conn.execute("SELECT COUNT(*) as cnt FROM build_orders WHERE YEAR(created_at) = %s", (year,)).fetchone()
+                seq = (count_row["cnt"] if count_row else 0) + 1
+                code = f"BO-{year}-{seq:04d}"
+
+                conn.execute(
+                    """
+                    INSERT INTO build_orders (code, oc_number, invoice_number, target_fuero, target_user, target_pc_name, notes, created_by, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'completed')
+                    """,
+                    (code, oc_number, invoice_number, final_fuero, final_user, pc_name, notes, tech)
+                )
+                bo_id = conn.cursor.lastrowid
 
             for idx in range(len(comp_types)):
                 if idx not in selected_indices:
