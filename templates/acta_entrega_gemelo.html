@@ -393,9 +393,9 @@
         {% set pat = item_obj.patrimonio_code if item_obj and item_obj.patrimonio_code else None %}
 
         {% if sn %}
-          S/N: {{ sn }}{% if inv %} * Remito: {{ inv }}{% endif %}{% if oc %} * OC: {{ oc }}{% endif %}{% if pat %} | Cod: {{ pat }}{% endif %}
+          S/N: {{ sn }}{% if inv %} * {{ inv }}{% endif %}{% if oc %} * {{ oc }}{% endif %}{% if pat %} | Cod: {{ pat }}{% endif %}
         {% elif inv or oc %}
-          {% if inv %}Remito: {{ inv }}{% endif %}{% if oc %}{% if inv %} * {% endif %}OC: {{ oc }}{% endif %}{% if pat %} | Cod: {{ pat }}{% endif %}
+          {% if inv %}{{ inv }}{% endif %}{% if oc %}{% if inv %} * {% endif %}{{ oc }}{% endif %}{% if pat %} | Cod: {{ pat }}{% endif %}
         {% elif pat %}
           Cod: {{ pat }}
         {% else %}
