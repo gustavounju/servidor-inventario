@@ -478,6 +478,17 @@ def create_bo_from_telemetry(pc_name):
             seq = (count_row["cnt"] if count_row else 0) + 1
             code = f"BO-{year}-{seq:04d}"
 
+            # Fallback de O.C. y Remito General desde los componentes individuales si la cabecera vino vacía
+            if not oc_number:
+                first_oc = next((oc.strip() for idx, oc in enumerate(comp_ocs) if idx in selected_indices and oc and oc.strip()), None)
+                if first_oc:
+                    oc_number = first_oc
+
+            if not invoice_number:
+                first_inv = next((inv.strip() for idx, inv in enumerate(comp_invoices) if idx in selected_indices and inv and inv.strip()), None)
+                if first_inv:
+                    invoice_number = first_inv
+
             conn.execute(
                 """
                 INSERT INTO build_orders (code, oc_number, invoice_number, target_fuero, target_user, target_pc_name, notes, created_by, status)
