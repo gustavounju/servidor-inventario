@@ -743,8 +743,12 @@
             <p class="text-muted small mb-0 mt-1">Auditoría automática entre los componentes físicos leídos por script (.ps1) y el registro oficial.</p>
           </div>
 
-          <div class="d-flex gap-2 flex-wrap">
-            {% if not linked_bo %}
+          <div class="d-flex gap-2 flex-wrap align-items-center">
+            {% if linked_bo %}
+            <a href="{{ url_for('stock.build_orders_view') }}?search={{ linked_bo.code }}" class="btn btn-sm btn-outline-success fw-bold py-1 px-3" title="Este equipo ya posee la Orden de Armado {{ linked_bo.code }} asignada">
+              <i class="bi bi-box-seam me-1"></i> Orden de Armado {{ linked_bo.code }} (Asignada)
+            </a>
+            {% else %}
             <button type="button" class="btn btn-sm btn-primary fw-bold py-1 px-3" data-bs-toggle="modal" data-bs-target="#modalCrearBODesdeTelemetria" title="Generar una nueva Orden de Armado patrimonial con los componentes elegidos de la telemetría">
               <i class="bi bi-tools me-1"></i> 🛠️ Crear Orden de Armado
             </button>

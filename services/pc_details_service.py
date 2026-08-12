@@ -714,15 +714,16 @@ def get_pc_detail_context(pc_name):
         # Buscar Orden de Armado vinculada a esta PC
         linked_bo = None
         try:
+            clean_name = pc_name.strip().lower()
             bo_row = conn.execute(
                 """
                 SELECT DISTINCT bo.id, bo.code, bo.status, bo.target_user, bo.target_fuero, bo.created_at
                 FROM build_orders bo
                 LEFT JOIN build_order_items boi ON boi.build_order_id = bo.id
-                WHERE LOWER(bo.target_pc_name) = %s OR LOWER(boi.pc_name) = %s
+                WHERE LOWER(TRIM(bo.target_pc_name)) = %s OR LOWER(TRIM(boi.pc_name)) = %s
                 ORDER BY bo.created_at DESC LIMIT 1
                 """,
-                (pc_name.lower(), pc_name.lower())
+                (clean_name, clean_name)
             ).fetchone()
 
             if not bo_row:
@@ -730,12 +731,24 @@ def get_pc_detail_context(pc_name):
                     """
                     SELECT DISTINCT bo.id, bo.code, bo.status, bo.target_user, bo.target_fuero, bo.created_at
                     FROM build_orders bo
-                    JOIN build_order_items boi ON boi.build_order_id = bo.id
-                    JOIN components c ON c.serial_number = boi.serial_number
-                    WHERE LOWER(c.assigned_pc) = %s
+                    JOIN components c ON c.build_order_id = bo.id
+                    WHERE LOWER(TRIM(c.assigned_pc)) = %s
                     ORDER BY bo.created_at DESC LIMIT 1
                     """,
-                    (pc_name.lower(),)
+                    (clean_name,)
+                ).fetchone()
+
+            if not bo_row:
+                bo_row = conn.execute(
+                    """
+                    SELECT DISTINCT bo.id, bo.code, bo.status, bo.target_user, bo.target_fuero, bo.created_at
+                    FROM build_orders bo
+                    JOIN build_order_items boi ON boi.build_order_id = bo.id
+                    JOIN components c ON UPPER(TRIM(c.serial_number)) = UPPER(TRIM(boi.serial_number))
+                    WHERE LOWER(TRIM(c.assigned_pc)) = %s
+                    ORDER BY bo.created_at DESC LIMIT 1
+                    """,
+                    (clean_name,)
                 ).fetchone()
 
             if bo_row:
