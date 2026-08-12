@@ -385,9 +385,9 @@
       </div>
 
       <!-- Macro para formatear S/N * Remito * O.C. -->
-      {% macro format_sn_remito_oc(item_obj, fallback_sn, global_inv=None, global_oc=None) %}
+      {% macro format_sn_remito_oc(item_obj, fallback_sn, global_inv=None, global_oc=None, include_sn=True) %}
         {% set sn = (item_obj.serial_number if item_obj and item_obj.serial_number else None) or fallback_sn %}
-        {% if sn and sn.upper() in ('N/A', 'SIN S/N', 'NONE', '') %}{% set sn = None %}{% endif %}
+        {% if not include_sn or (sn and sn.upper() in ('N/A', 'SIN S/N', 'NONE', '')) %}{% set sn = None %}{% endif %}
         {% set inv = (item_obj.invoice_number if item_obj and item_obj.invoice_number else None) or global_inv %}
         {% set oc = (item_obj.oc_number if item_obj and item_obj.oc_number else None) or global_oc %}
         {% set pat = item_obj.patrimonio_code if item_obj and item_obj.patrimonio_code else None %}
@@ -486,17 +486,17 @@
           <!-- Motherboard -->
           <tr>
             <td><strong>Placa Madre</strong></td>
-            <td>{{ pc.motherboard_model or 'N/D' }}</td>
+            <td>{{ (pc.motherboard_model or 'N/D').split(' (SN:')[0] }}</td>
             <td class="font-mono">
-              {{ format_sn_remito_oc(mb_comp.item, pc.motherboard_sn, global_inv, global_oc) }}
+              {{ format_sn_remito_oc(mb_comp.item, None, global_inv, global_oc, include_sn=False) }}
             </td>
           </tr>
           <!-- Discos -->
           <tr>
             <td><strong>Almacenamiento (Disco)</strong></td>
-            <td>{{ pc.disk_models or 'N/D' }}</td>
+            <td>{{ (pc.disk_models or 'N/D').split(' [SN:')[0].split(' (SN:')[0] }}</td>
             <td class="font-mono">
-              {{ format_sn_remito_oc(disk_comp.item, pc.disk_sn, global_inv, global_oc) }}
+              {{ format_sn_remito_oc(disk_comp.item, None, global_inv, global_oc, include_sn=False) }}
             </td>
           </tr>
 
