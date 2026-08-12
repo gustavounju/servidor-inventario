@@ -2312,11 +2312,30 @@ def create_build_order():
                 code = custom_code
             else:
                 year = datetime.datetime.now().strftime("%Y")
-                count_row = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM build_orders WHERE YEAR(created_at) = %s", (year,)
-                ).fetchone()
-                seq = (count_row["cnt"] if count_row else 0) + 1
-                code = f"BO-{year}-{seq:04d}"
+                prefix = f"BO-{year}-"
+                rows = conn.execute(
+                    "SELECT code FROM build_orders WHERE code LIKE %s",
+                    (f"{prefix}%",)
+                ).fetchall()
+
+                max_seq = 0
+                for r in rows:
+                    code_str = r.get("code") or ""
+                    try:
+                        num = int(code_str.replace(prefix, ""))
+                        if num > max_seq:
+                            max_seq = num
+                    except ValueError:
+                        pass
+
+                seq = max_seq + 1
+                while True:
+                    candidate = f"BO-{year}-{seq:04d}"
+                    exists = conn.execute("SELECT id FROM build_orders WHERE code = %s", (candidate,)).fetchone()
+                    if not exists:
+                        code = candidate
+                        break
+                    seq += 1
             conn.execute(
                 """
                 INSERT INTO build_orders

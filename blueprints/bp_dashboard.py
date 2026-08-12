@@ -12,7 +12,7 @@ from services.dashboard_overview import load_dashboard_overview
 from services.pc_actions import decommission_pc_service, reactivate_pc_service, delete_permanent_pc_service, update_pc_infrastructure_service
 from services.pc_details_service import get_pc_detail_context
 from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data, recalculate_all_pc_fueros
-from utils.auth import is_authenticated
+from utils.auth import is_authenticated, login_required, permission_required, current_technician_identity
 
 bp_dashboard = Blueprint('dashboard', __name__)
 
@@ -425,6 +425,34 @@ def delete_permanent_pc(pc_name):
 
 
 
+def generate_next_bo_code(conn):
+    """Genera el siguiente código BO-YYYY-XXXX garantizando que sea único y evitando duplicados."""
+    year = datetime.datetime.now().strftime("%Y")
+    prefix = f"BO-{year}-"
+    rows = conn.execute(
+        "SELECT code FROM build_orders WHERE code LIKE %s",
+        (f"{prefix}%",)
+    ).fetchall()
+
+    max_seq = 0
+    for r in rows:
+        code_str = r.get("code") or ""
+        try:
+            num = int(code_str.replace(prefix, ""))
+            if num > max_seq:
+                max_seq = num
+        except ValueError:
+            pass
+
+    seq = max_seq + 1
+    while True:
+        candidate = f"BO-{year}-{seq:04d}"
+        exists = conn.execute("SELECT id FROM build_orders WHERE code = %s", (candidate,)).fetchone()
+        if not exists:
+            return candidate
+        seq += 1
+
+
 @bp_dashboard.route("/pc/<pc_name>/create_bo_from_telemetry", methods=["POST"])
 def create_bo_from_telemetry(pc_name):
     """Crea una nueva Orden de Armado basada en componentes seleccionados de la telemetría WMI."""
@@ -494,20 +522,17 @@ def create_bo_from_telemetry(pc_name):
                         invoice_number = COALESCE(%s, invoice_number),
                         target_fuero = COALESCE(%s, target_fuero),
                         target_user = COALESCE(%s, target_user),
+                        target_pc_name = %s,
                         notes = %s,
                         status = 'completed'
                     WHERE id = %s
                     """,
-                    (oc_number, invoice_number, final_fuero, final_user, notes, bo_id)
+                    (oc_number, invoice_number, final_fuero, final_user, pc_name, notes, bo_id)
                 )
                 # Limpiar ítems previos de esta BO para refrescarlos con la nueva selección
                 conn.execute("DELETE FROM build_order_items WHERE build_order_id = %s", (bo_id,))
             else:
-                year = datetime.datetime.now().strftime("%Y")
-                count_row = conn.execute("SELECT COUNT(*) as cnt FROM build_orders WHERE YEAR(created_at) = %s", (year,)).fetchone()
-                seq = (count_row["cnt"] if count_row else 0) + 1
-                code = f"BO-{year}-{seq:04d}"
-
+                code = generate_next_bo_code(conn)
                 conn.execute(
                     """
                     INSERT INTO build_orders (code, oc_number, invoice_number, target_fuero, target_user, target_pc_name, notes, created_by, status)
