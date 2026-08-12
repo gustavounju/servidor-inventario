@@ -470,7 +470,7 @@
           <!-- Memoria RAM -->
           <tr>
             <td><strong>Memoria RAM</strong></td>
-            <td>{{ pc.ram_gb or '0' }} GB DDR</td>
+            <td>{{ (pc.ram_gb | float | round | int) if pc.ram_gb else '0' }} GB DDR</td>
             <td class="font-mono">
               {{ format_sn_remito_oc(ram_comp.item, pc.ram_sn, global_inv, global_oc) }}
             </td>

@@ -498,7 +498,7 @@
         <div class="pc-detail-card">
           <div class="pc-detail-card__title">Hardware base</div>
           <div class="pc-detail-card__value">{{ pc.processor or '-' }}</div>
-          <div class="pc-detail-card__meta">{{ pc.ram_gb }} GB RAM · {{ pc.motherboard_model or 'Sin placa detectada' }}</div>
+          <div class="pc-detail-card__meta">{{ (pc.ram_gb | float | round | int) if pc.ram_gb else '0' }} GB RAM · {{ pc.motherboard_model or 'Sin placa detectada' }}</div>
         </div>
 
         <div class="pc-detail-card">
