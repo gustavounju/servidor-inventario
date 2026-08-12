@@ -384,15 +384,50 @@
         {% endif %}
       </div>
 
-      <!-- Buscar componentes asignados de Gabinete y Fuente de Poder -->
+      <!-- Macro para formatear S/N * Remito * O.C. -->
+      {% macro format_sn_remito_oc(item_obj, fallback_sn, global_inv=None, global_oc=None) %}
+        {% set sn = (item_obj.serial_number if item_obj and item_obj.serial_number else None) or fallback_sn %}
+        {% if sn and sn.upper() in ('N/A', 'SIN S/N', 'NONE', '') %}{% set sn = None %}{% endif %}
+        {% set inv = (item_obj.invoice_number if item_obj and item_obj.invoice_number else None) or global_inv %}
+        {% set oc = (item_obj.oc_number if item_obj and item_obj.oc_number else None) or global_oc %}
+        {% set pat = item_obj.patrimonio_code if item_obj and item_obj.patrimonio_code else None %}
+
+        {% if sn %}
+          S/N: {{ sn }}{% if inv %} * Remito: {{ inv }}{% endif %}{% if oc %} * OC: {{ oc }}{% endif %}{% if pat %} | Cod: {{ pat }}{% endif %}
+        {% elif inv or oc %}
+          {% if inv %}Remito: {{ inv }}{% endif %}{% if oc %}{% if inv %} * {% endif %}OC: {{ oc }}{% endif %}{% if pat %} | Cod: {{ pat }}{% endif %}
+        {% elif pat %}
+          Cod: {{ pat }}
+        {% else %}
+          ........................................
+        {% endif %}
+      {% endmacro %}
+
+      {% set global_inv = linked_bo.invoice_number if linked_bo and linked_bo.invoice_number else None %}
+      {% set global_oc = linked_bo.oc_number if linked_bo and linked_bo.oc_number else None %}
+
+      <!-- Buscar componentes asignados -->
       {% set gab_comp = namespace(item=none) %}
       {% set psu_comp = namespace(item=none) %}
+      {% set cpu_comp = namespace(item=none) %}
+      {% set ram_comp = namespace(item=none) %}
+      {% set mb_comp = namespace(item=none) %}
+      {% set disk_comp = namespace(item=none) %}
+
       {% for comp in components %}
         {% set ctype = (comp.component_type or '')|upper %}
         {% if 'GABINETE' in ctype or ctype == 'CPU' or 'CHASIS' in ctype %}
           {% if not gab_comp.item %}{% set gab_comp.item = comp %}{% endif %}
         {% elif 'FUENTE' in ctype or 'PSU' in ctype or 'POWER' in ctype %}
           {% if not psu_comp.item %}{% set psu_comp.item = comp %}{% endif %}
+        {% elif 'PROCESADOR' in ctype or 'MICRO' in ctype %}
+          {% if not cpu_comp.item %}{% set cpu_comp.item = comp %}{% endif %}
+        {% elif 'RAM' in ctype or 'MEMORIA' in ctype %}
+          {% if not ram_comp.item %}{% set ram_comp.item = comp %}{% endif %}
+        {% elif 'MOTHERBOARD' in ctype or 'PLACA MADRE' in ctype %}
+          {% if not mb_comp.item %}{% set mb_comp.item = comp %}{% endif %}
+        {% elif 'DISCO' in ctype or 'ALMACENAMIENTO' in ctype or 'SSD' in ctype or 'HDD' in ctype %}
+          {% if not disk_comp.item %}{% set disk_comp.item = comp %}{% endif %}
         {% endif %}
       {% endfor %}
 
@@ -401,8 +436,8 @@
         <thead>
           <tr>
             <th style="width: 25%;">Componente / Hardware</th>
-            <th style="width: 45%;">Marca y Modelo Registrado</th>
-            <th style="width: 30%;">N° Serie / Código Patrimonial</th>
+            <th style="width: 42%;">Marca y Modelo Registrado</th>
+            <th style="width: 33%;">N° Serie / Remito / O.C.</th>
           </tr>
         </thead>
         <tbody>
@@ -411,12 +446,7 @@
             <td><strong>Gabinete (Chasis)</strong></td>
             <td>{{ gab_comp.item.brand_model if gab_comp.item and gab_comp.item.brand_model else 'Genérico' }}</td>
             <td class="font-mono">
-              {% if gab_comp.item and (gab_comp.item.serial_number or gab_comp.item.patrimonio_code) %}
-                {% if gab_comp.item.serial_number %}S/N: {{ gab_comp.item.serial_number }}{% endif %}
-                {% if gab_comp.item.patrimonio_code %} | Cod: {{ gab_comp.item.patrimonio_code }}{% endif %}
-              {% else %}
-                ........................................
-              {% endif %}
+              {{ format_sn_remito_oc(gab_comp.item, None, global_inv, global_oc) }}
             </td>
           </tr>
 
@@ -425,12 +455,7 @@
             <td><strong>Fuente de Poder</strong></td>
             <td>{{ psu_comp.item.brand_model if psu_comp.item and psu_comp.item.brand_model else 'Genérica' }}</td>
             <td class="font-mono">
-              {% if psu_comp.item and (psu_comp.item.serial_number or psu_comp.item.patrimonio_code) %}
-                {% if psu_comp.item.serial_number %}S/N: {{ psu_comp.item.serial_number }}{% endif %}
-                {% if psu_comp.item.patrimonio_code %} | Cod: {{ psu_comp.item.patrimonio_code }}{% endif %}
-              {% else %}
-                ........................................
-              {% endif %}
+              {{ format_sn_remito_oc(psu_comp.item, None, global_inv, global_oc) }}
             </td>
           </tr>
 
@@ -438,25 +463,33 @@
           <tr>
             <td><strong>Procesador (CPU)</strong></td>
             <td>{{ pc.processor or 'N/D' }}</td>
-            <td class="font-mono">{% if pc.processor_sn %}S/N: {{ pc.processor_sn }}{% else %}........................................{% endif %}</td>
+            <td class="font-mono">
+              {{ format_sn_remito_oc(cpu_comp.item, pc.processor_sn, global_inv, global_oc) }}
+            </td>
           </tr>
           <!-- Memoria RAM -->
           <tr>
             <td><strong>Memoria RAM</strong></td>
             <td>{{ pc.ram_gb or '0' }} GB DDR</td>
-            <td class="font-mono">{% if pc.ram_sn %}S/N: {{ pc.ram_sn }}{% else %}........................................{% endif %}</td>
+            <td class="font-mono">
+              {{ format_sn_remito_oc(ram_comp.item, pc.ram_sn, global_inv, global_oc) }}
+            </td>
           </tr>
           <!-- Motherboard -->
           <tr>
             <td><strong>Placa Madre</strong></td>
             <td>{{ pc.motherboard_model or 'N/D' }}</td>
-            <td class="font-mono">{% if pc.motherboard_sn %}S/N: {{ pc.motherboard_sn }}{% else %}........................................{% endif %}</td>
+            <td class="font-mono">
+              {{ format_sn_remito_oc(mb_comp.item, pc.motherboard_sn, global_inv, global_oc) }}
+            </td>
           </tr>
           <!-- Discos -->
           <tr>
             <td><strong>Almacenamiento (Disco)</strong></td>
             <td>{{ pc.disk_models or 'N/D' }}</td>
-            <td class="font-mono">{% if pc.disk_sn %}S/N: {{ pc.disk_sn }}{% else %}........................................{% endif %}</td>
+            <td class="font-mono">
+              {{ format_sn_remito_oc(disk_comp.item, pc.disk_sn, global_inv, global_oc) }}
+            </td>
           </tr>
 
           <!-- Componentes patrimoniales adicionales y periféricos -->
@@ -475,12 +508,7 @@
               <td><strong>{{ comp.component_type or 'Periférico' }}</strong></td>
               <td>{{ comp.brand_model or comp.model or comp.brand or 'Genérico' }}</td>
               <td class="font-mono">
-                {% if comp.serial_number or comp.patrimonio_code %}
-                  {% if comp.serial_number %}S/N: {{ comp.serial_number }}{% endif %}
-                  {% if comp.patrimonio_code %} | Cod: {{ comp.patrimonio_code }}{% endif %}
-                {% else %}
-                  ........................................
-                {% endif %}
+                {{ format_sn_remito_oc(comp, comp.serial_number, global_inv, global_oc) }}
               </td>
             </tr>
             {% endif %}
@@ -491,7 +519,7 @@
             <td><strong>Monitor / Pantalla</strong></td>
             <td>{{ mon.brand_model or mon.model or mon.brand or 'Monitor de Red' }}</td>
             <td class="font-mono">
-              {% if mon.serial_number %}S/N: {{ mon.serial_number }}{% else %}........................................{% endif %}
+              {{ format_sn_remito_oc(mon, mon.serial_number, global_inv, global_oc) }}
             </td>
           </tr>
           {% endfor %}

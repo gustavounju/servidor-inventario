@@ -295,14 +295,23 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
                         matched_stock = sm
                         break
 
-            # B) Si no hay match por S/N, tomar monitor de stock genérico/sin S/N
+            # B) Si no hay match por S/N, tomar coincidencia por modelo o monitor de stock genérico/sin S/N
             if not matched_stock and unassigned_stock_monitors:
                 for sm in unassigned_stock_monitors:
                     sm_sn = (sm.get("serial_number") or "").strip().upper()
                     if sm_sn in ("N/A", "SIN S/N", ""):
                         matched_stock = sm
                         break
-                if not matched_stock and len(unassigned_stock_monitors) == 1 and len(hw_monitors) == 1:
+
+                if not matched_stock and m_model:
+                    m_mod_clean = _clean_str(m_model)
+                    for sm in unassigned_stock_monitors:
+                        sm_mod_clean = _clean_str(sm.get("brand_model"))
+                        if m_mod_clean and sm_mod_clean and (m_mod_clean in sm_mod_clean or sm_mod_clean in m_mod_clean):
+                            matched_stock = sm
+                            break
+
+                if not matched_stock and len(unassigned_stock_monitors) == 1:
                     matched_stock = unassigned_stock_monitors[0]
 
             if matched_stock:
