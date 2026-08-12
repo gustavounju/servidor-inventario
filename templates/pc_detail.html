@@ -1344,11 +1344,25 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label small fw-bold">N° de Remito (opcional)</label>
-                <input type="text" name="invoice_number" class="form-control form-control-sm" placeholder="Ej: R-0001-00045612">
+                <input type="text" name="invoice_number" list="list-existing-remitos" class="form-control form-control-sm" placeholder="Seleccionar o escribir Remito (ej: R-0001-00045612)" autocomplete="off">
+                <datalist id="list-existing-remitos">
+                  {% if all_existing_remitos %}
+                    {% for rem in all_existing_remitos %}
+                    <option value="{{ rem }}">
+                    {% endfor %}
+                  {% endif %}
+                </datalist>
               </div>
               <div class="col-md-6">
                 <label class="form-label small fw-bold">N° Orden de Compra (opcional)</label>
-                <input type="text" name="oc_number" class="form-control form-control-sm" placeholder="Ej: OC-2026-104">
+                <input type="text" name="oc_number" list="list-existing-ocs" class="form-control form-control-sm" placeholder="Seleccionar o escribir O.C. (ej: OC-2026-104)" autocomplete="off">
+                <datalist id="list-existing-ocs">
+                  {% if all_existing_ocs %}
+                    {% for oc in all_existing_ocs %}
+                    <option value="{{ oc }}">
+                    {% endfor %}
+                  {% endif %}
+                </datalist>
               </div>
             </div>
 

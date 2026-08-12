@@ -797,11 +797,22 @@ def get_pc_detail_context(pc_name):
         validation_comparison = get_pc_validation_comparison(pc_name, conn, unified_components=official_components)
         current_status = pc.get("validation_status")
 
-        if validation_comparison and any(not row.get("match") for row in validation_comparison):
-            pc["validation_status"] = "discrepancia"
-        elif not current_status:
-            from services.asset_validation import compute_validation_status
-            pc["validation_status"] = compute_validation_status(pc_name, conn)
+        # Obtener lista completa de todos los Remitos y OCs existentes en el sistema para autocompletado inteligente
+        all_remito_rows = conn.execute("""
+            SELECT DISTINCT invoice_number as num FROM components WHERE invoice_number IS NOT NULL AND TRIM(invoice_number) != ''
+            UNION
+            SELECT DISTINCT invoice_number as num FROM build_orders WHERE invoice_number IS NOT NULL AND TRIM(invoice_number) != ''
+            ORDER BY num ASC
+        """).fetchall()
+        all_existing_remitos = sorted(list({r["num"].strip() for r in all_remito_rows if r.get("num") and r["num"].strip()}))
+
+        all_oc_rows = conn.execute("""
+            SELECT DISTINCT oc_number as num FROM components WHERE oc_number IS NOT NULL AND TRIM(oc_number) != ''
+            UNION
+            SELECT DISTINCT oc_number as num FROM build_orders WHERE oc_number IS NOT NULL AND TRIM(oc_number) != ''
+            ORDER BY num ASC
+        """).fetchall()
+        all_existing_ocs = sorted(list({r["num"].strip() for r in all_oc_rows if r.get("num") and r["num"].strip()}))
 
         return {
             "pc": pc, "tareas": tareas, "technicians": technicians, "ad_users_list": ad_users_list,
@@ -821,5 +832,7 @@ def get_pc_detail_context(pc_name):
             "preferred_printer_serial_source": preferred_printer_serial_source,
             "oc_list": oc_list,
             "invoice_list": invoice_list,
+            "all_existing_remitos": all_existing_remitos,
+            "all_existing_ocs": all_existing_ocs,
             "linked_bo": linked_bo
         }
