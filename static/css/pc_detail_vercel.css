@@ -263,3 +263,401 @@
 .vercel-detail .table tbody tr:last-child td {
   border-bottom: none !important;
 }
+
+/* --- 8. Decision-oriented equipment layout --- */
+.vercel-detail .pc-command-bar {
+  align-items: center;
+  background: color-mix(in srgb, var(--vercel-bg) 94%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--vercel-border);
+  border-radius: 14px;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 20px 22px;
+  position: sticky;
+  top: 64px;
+  z-index: 1010;
+}
+
+.vercel-detail .pc-command-bar__identity {
+  min-width: 0;
+}
+
+.vercel-detail .pc-command-bar .hero-label {
+  color: var(--vercel-text-subtle);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  margin-bottom: 4px;
+}
+
+.vercel-detail .pc-command-bar h1 {
+  color: var(--vercel-text);
+  font-size: clamp(1.45rem, 2vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.vercel-detail .pc-command-bar__meta {
+  color: var(--vercel-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  gap: 7px 18px;
+  margin-top: 9px;
+}
+
+.vercel-detail .pc-command-bar__actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.vercel-detail .pc-action-menu {
+  background: var(--vercel-bg);
+  border: 1px solid var(--vercel-border);
+  border-radius: 10px;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.14);
+  min-width: 245px;
+  padding: 6px;
+}
+
+.vercel-detail .pc-action-menu .dropdown-item {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--vercel-text);
+  font-size: 0.84rem;
+  padding: 9px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.vercel-detail .pc-action-menu .dropdown-item:hover {
+  background: var(--vercel-surface-hover);
+}
+
+.vercel-detail .pc-decision-grid,
+.vercel-detail .pc-overview-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.vercel-detail .pc-decision-grid {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+}
+
+.vercel-detail .pc-overview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vercel-detail .pc-status-panel,
+.vercel-detail .pc-attention-panel,
+.vercel-detail .pc-overview-card {
+  background: var(--vercel-bg);
+  border: 1px solid var(--vercel-border);
+  border-radius: 12px;
+  min-width: 0;
+  padding: 20px;
+}
+
+.vercel-detail .pc-status-panel {
+  border-left: 4px solid #d97706;
+}
+
+.vercel-detail .pc-status-panel--ok {
+  background: linear-gradient(135deg, rgba(19, 115, 51, 0.075), transparent 58%), var(--vercel-bg);
+  border-left-color: #22a447;
+}
+
+.vercel-detail .pc-status-panel--danger {
+  background: linear-gradient(135deg, rgba(197, 34, 31, 0.08), transparent 58%), var(--vercel-bg);
+  border-left-color: #d93025;
+}
+
+.vercel-detail .pc-panel-heading {
+  align-items: center;
+  color: var(--vercel-text-muted);
+  display: flex;
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  justify-content: space-between;
+  letter-spacing: 0.055em;
+  margin-bottom: 13px;
+  text-transform: uppercase;
+}
+
+.vercel-detail .pc-status-panel__headline {
+  color: var(--vercel-text);
+  font-size: 1.22rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  margin-bottom: 15px;
+}
+
+.vercel-detail .pc-status-list {
+  display: grid;
+  gap: 9px;
+}
+
+.vercel-detail .pc-status-list > div {
+  align-items: center;
+  color: var(--vercel-text-muted);
+  display: flex;
+  font-size: 0.84rem;
+  gap: 9px;
+}
+
+.vercel-detail .pc-status-list i {
+  color: #22a447;
+  font-size: 1rem;
+}
+
+.vercel-detail .pc-status-list strong {
+  color: var(--vercel-text);
+  font-family: 'Geist Mono', monospace;
+}
+
+.vercel-detail .pc-attention-count {
+  align-items: center;
+  background: #fef7e0;
+  border-radius: 999px;
+  color: #9a5600;
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+[data-theme="dark"] .vercel-detail .pc-attention-count {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+}
+
+.vercel-detail .pc-attention-list {
+  display: grid;
+  gap: 7px;
+}
+
+.vercel-detail .pc-attention-list button {
+  align-items: center;
+  background: var(--vercel-surface);
+  border: 1px solid var(--vercel-border);
+  border-radius: 8px;
+  color: var(--vercel-text);
+  display: grid;
+  font-size: 0.82rem;
+  gap: 9px;
+  grid-template-columns: auto 1fr auto;
+  padding: 10px 11px;
+  text-align: left;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.vercel-detail .pc-attention-list button:hover {
+  border-color: #d97706;
+  transform: translateX(2px);
+}
+
+.vercel-detail .pc-attention-list button > i:first-child {
+  color: #d97706;
+}
+
+.vercel-detail .pc-empty-attention {
+  align-items: center;
+  color: #16833b;
+  display: flex;
+  font-size: 0.86rem;
+  gap: 9px;
+  min-height: 90px;
+}
+
+.vercel-detail .pc-overview-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.vercel-detail .pc-fact-list {
+  display: grid;
+  margin: 0;
+}
+
+.vercel-detail .pc-fact-list > div {
+  align-items: baseline;
+  border-bottom: 1px solid var(--vercel-border);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 112px minmax(0, 1fr);
+  padding: 9px 0;
+}
+
+.vercel-detail .pc-fact-list > div:last-child {
+  border-bottom: 0;
+}
+
+.vercel-detail .pc-fact-list dt {
+  color: var(--vercel-text-subtle);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.vercel-detail .pc-fact-list dd {
+  color: var(--vercel-text);
+  font-size: 0.84rem;
+  font-weight: 550;
+  margin: 0;
+  min-width: 0;
+}
+
+.vercel-detail .pc-truncate-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vercel-detail .pc-hardware-hero {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 12px;
+  margin-bottom: 8px;
+}
+
+.vercel-detail .pc-hardware-hero strong {
+  color: var(--vercel-text);
+  font-size: 0.98rem;
+}
+
+.vercel-detail .pc-hardware-hero span {
+  color: var(--vercel-text-muted);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.76rem;
+}
+
+.vercel-detail .pc-disk-list {
+  display: grid;
+  gap: 8px;
+}
+
+.vercel-detail .pc-disk-list > div {
+  align-items: flex-start;
+  background: var(--vercel-surface);
+  border: 1px solid var(--vercel-border);
+  border-radius: 7px;
+  color: var(--vercel-text);
+  display: flex;
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.76rem;
+  gap: 8px;
+  padding: 9px 10px;
+}
+
+.vercel-detail .pc-inline-link {
+  align-items: center;
+  align-self: flex-start;
+  background: transparent;
+  border: 0;
+  color: var(--vercel-accent);
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 600;
+  gap: 6px;
+  margin-top: auto;
+  padding: 13px 0 0;
+  text-decoration: none;
+}
+
+.vercel-detail .pc-inline-link:hover {
+  text-decoration: underline;
+}
+
+.vercel-detail .pc-operation-section {
+  padding: 4px 0;
+}
+
+.vercel-detail .pc-operation-divider {
+  border-top: 1px solid var(--vercel-border);
+  margin: 28px 0;
+}
+
+.vercel-detail .pc-match-footer {
+  background: var(--vercel-surface);
+  border-top: 1px solid var(--vercel-border);
+  padding: 0 16px 13px;
+}
+
+.vercel-detail .pc-mobile-actions {
+  display: none;
+}
+
+@media (max-width: 991.98px) {
+  .vercel-detail .pc-command-bar {
+    align-items: flex-start;
+    position: static;
+  }
+
+  .vercel-detail .pc-command-bar__actions {
+    display: none;
+  }
+
+  .vercel-detail .pc-decision-grid,
+  .vercel-detail .pc-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vercel-detail .pc-mobile-actions {
+    align-items: center;
+    background: color-mix(in srgb, var(--vercel-bg) 94%, transparent);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--vercel-border);
+    bottom: 0;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1fr 1fr;
+    left: 0;
+    padding: 10px 14px max(10px, env(safe-area-inset-bottom));
+    position: fixed;
+    right: 0;
+    z-index: 1050;
+  }
+
+  .vercel-detail .container-fluid {
+    padding-bottom: 88px !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .vercel-detail .pc-command-bar {
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .vercel-detail .pc-command-bar__meta {
+    display: grid;
+    gap: 5px;
+  }
+
+  .vercel-detail .pc-status-panel,
+  .vercel-detail .pc-attention-panel,
+  .vercel-detail .pc-overview-card {
+    padding: 16px;
+  }
+
+  .vercel-detail .pc-fact-list > div {
+    gap: 4px;
+    grid-template-columns: 1fr;
+  }
+
+  .vercel-detail .pd-tabs {
+    gap: 18px !important;
+    position: sticky;
+    top: 56px;
+    z-index: 1000;
+  }
+}

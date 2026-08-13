@@ -309,21 +309,19 @@
   <div class="vercel-detail">
     <div class="container-fluid px-3 pt-3 pb-4" style="margin-top: 56px;">
 
-    <!-- HERO HEADER CARD (Estilo Vercel Geist - Reubicación de Acciones y Resumen) -->
-    <div class="mb-4 hero-card">
-      <!-- Top header row (Nombre a la izquierda, Badges y Botones a la derecha) -->
-      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-2">
-        <div>
-          <div class="hero-label text-uppercase mb-1" style="font-size: 0.72rem; color: var(--vercel-text-muted); letter-spacing: 0.05em;">EQUIPO</div>
-          <h1 class="fw-bold mb-1" style="font-size: 1.75rem; letter-spacing: -0.02em; color: var(--vercel-text);">{{ pc.pc_name }}</h1>
-          <div style="font-size: 0.9rem; color: var(--vercel-text-muted);">
-            {{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '-' }} · {{ pc.fuero or '-' }}
-          </div>
-        </div>
+    {% set pending_tasks = tareas | rejectattr('estado', 'equalto', 'Hecha') | list %}
+    {% set components_to_count = pc_components if pc_components else all_unified_components %}
+    {% set attention = namespace(count=0) %}
+    {% if not pc.fuero or pc.fuero | lower in ('desconocido', 'sin fuero', 'n/a') %}{% set attention.count = attention.count + 1 %}{% endif %}
+    {% if not pc.building or not pc.floor or not pc.switch_name or not pc.switch_port %}{% set attention.count = attention.count + 1 %}{% endif %}
+    {% if pc.printer_model and pc.printer_model != 'N/A' and 'SIN IMPRESORA' not in pc.printer_model | upper and (not preferred_printer_serial or preferred_printer_serial == 'N/A') %}{% set attention.count = attention.count + 1 %}{% endif %}
 
-        <div class="d-flex flex-column align-items-end gap-2 ms-auto">
-          <!-- Badges de estado -->
-          <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+    <header class="pc-command-bar mb-3">
+      <div class="pc-command-bar__identity">
+        <div class="hero-label">EQUIPO</div>
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <h1>{{ pc.pc_name }}</h1>
+          <div class="d-flex gap-2 align-items-center flex-wrap">
             {% if pc.is_active == 1 %}
             <span class="badge badge-success-geist">Activa</span>
             {% else %}
@@ -340,40 +338,48 @@
             <span class="badge badge-muted-geist">Sin Gemelo</span>
             {% endif %}
           </div>
+        </div>
+        <div class="pc-command-bar__meta">
+          <span><i class="bi bi-person me-1"></i>{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or 'Sin usuario' }}</span>
+          <span><i class="bi bi-bank me-1"></i>{{ pc.fuero or 'Sin fuero' }}</span>
+          <span><i class="bi bi-clock-history me-1"></i>Reporte {{ pc.last_report | datetime_es }}</span>
+        </div>
+      </div>
 
-          <!-- Botones de Acción (Moviditos a la fila superior) -->
-          <div class="d-flex gap-2 flex-wrap justify-content-end align-items-center mt-1">
+      <div class="pc-command-bar__actions">
+        <button type="button" class="btn btn-primary" onclick="abrirIntervencionModal('{{ pc.pc_name }}')">
+          <i class="bi bi-tools me-1"></i>Nueva intervención
+        </button>
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Más acciones
+          </button>
+          <div class="dropdown-menu dropdown-menu-end pc-action-menu">
             {% if pc.validation_status == 'validado' %}
-            <a href="{{ url_for('dashboard.acta_gemelo_validado', pc_name=pc.pc_name) }}" target="_blank" class="btn btn-success fw-medium px-3 py-1-5" title="Generar e imprimir Acta de Entrega Gemelo Validado">
-              <i class="bi bi-file-earmark-check-fill me-1"></i> Acta Gemelo Validado
+            <a href="{{ url_for('dashboard.acta_gemelo_validado', pc_name=pc.pc_name) }}" target="_blank" class="dropdown-item">
+              <i class="bi bi-file-earmark-check me-2"></i>Acta Gemelo Validado
             </a>
             {% endif %}
-
-            <a href="{{ url_for('dashboard.pc_qr_label_view', pc_name=pc.pc_name) }}" target="_blank" class="btn btn-primary fw-medium px-3 py-1-5" title="Imprimir etiqueta QR oficial">
-              Imprimir Par de QR
+            <a href="{{ url_for('dashboard.pc_qr_label_view', pc_name=pc.pc_name) }}" target="_blank" class="dropdown-item">
+              <i class="bi bi-qr-code me-2"></i>Imprimir par de QR
             </a>
-
-            <button type="button" class="btn btn-outline-secondary fw-medium px-3 py-1-5" data-bs-toggle="modal" data-bs-target="#modalCargarSeriales" title="Cargar / Corregir Seriales">
-              Cargar Seriales
+            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalCargarSeriales">
+              <i class="bi bi-upc-scan me-2"></i>Cargar o corregir seriales
             </button>
-
-            <button type="button" class="btn btn-outline-secondary fw-medium px-3 py-1-5" onclick="abrirIntervencionModal('{{ pc.pc_name }}')" title="Abrir Intervención Técnica">
-              Intervención
-            </button>
-
             {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
+            <div class="dropdown-divider"></div>
               {% if pc.is_active == 1 %}
-              <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Pasar esta PC al cementerio?')">
+              <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST" onsubmit="return confirm('¿Pasar esta PC al cementerio?')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-outline-danger fw-medium px-3 py-1-5">
-                  Cementerio
+                <button type="submit" class="dropdown-item text-danger">
+                  <i class="bi bi-archive me-2"></i>Enviar al cementerio
                 </button>
               </form>
               {% else %}
-              <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" method="POST" class="d-inline">
+              <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-outline-success fw-medium px-3 py-1-5">
-                  Reactivar
+                <button type="submit" class="dropdown-item text-success">
+                  <i class="bi bi-arrow-counterclockwise me-2"></i>Reactivar equipo
                 </button>
               </form>
               {% endif %}
@@ -381,78 +387,7 @@
           </div>
         </div>
       </div>
-
-      <!-- Resumen sintético de una línea (en reemplazo de la tabla duplicada) -->
-      {% if validation_comparison %}
-        {% set total = validation_comparison|length %}
-        {% set ok_count = validation_comparison|selectattr('match')|list|length %}
-        <div class="mt-3 pt-2" style="font-size: 0.875rem; border-top: 1px solid var(--vercel-border);">
-          {% if ok_count == total %}
-            <span style="color: var(--color-stable, #137333); font-weight: 500;">✓ {{ ok_count }}/{{ total }} componentes coinciden con la telemetría</span>
-          {% else %}
-            <span style="color: var(--color-critical, #c5221f); font-weight: 500;">⚠ {{ total - ok_count }}/{{ total }} componente(s) con diferencias — ver pestaña Componentes</span>
-          {% endif %}
-        </div>
-      {% endif %}
-    </div>
-
-    <!-- CALLOUT GEMELO DIGITAL (SI HAY COMPARACION O DISCREPANCIA) -->
-    {% if validation_comparison %}
-    {% set ns = namespace(has_discrepancy=false) %}
-    {% for item in validation_comparison %}
-      {% if not item.match %}
-        {% set ns.has_discrepancy = true %}
-      {% endif %}
-    {% endfor %}
-    {% set is_valid = (not ns.has_discrepancy) and pc.validation_status == 'validado' %}
-    
-    <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded-3" 
-         style="background: {% if is_valid %}rgba(34,197,94,0.08){% elif ns.has_discrepancy %}rgba(239,68,68,0.08){% else %}rgba(234,179,8,0.08){% endif %}; 
-                border: 1px solid {% if is_valid %}rgba(34,197,94,0.25){% elif ns.has_discrepancy %}rgba(239,68,68,0.25){% else %}rgba(239,68,68,0.25){% endif %};">
-        <div class="d-flex align-items-center gap-3">
-            <i class="bi {% if is_valid %}bi-patch-check-fill text-success{% elif ns.has_discrepancy %}bi-exclamation-triangle-fill text-danger{% else %}bi-clock-history text-warning{% endif %} fs-4"></i>
-            <div>
-                <h6 class="mb-0 fw-bold" style="color: var(--text-color, #0f172a); font-size: 0.92rem;">
-                    {% if is_valid %}
-                      GEMELO DIGITAL VALIDADO OK
-                    {% elif ns.has_discrepancy %}
-                      DISCREPANCIA DE HARDWARE DETECTADA
-                    {% elif pc.validation_status == 'sin_gemelo' or not pc.validation_status %}
-                      SIN GEMELO DIGITAL ASIGNADO
-                    {% else %}
-                      PENDIENTE DE AUDITORÍA DE HARDWARE
-                    {% endif %}
-                </h6>
-                <p class="mb-0 small" style="color: var(--text-muted, #64748b);">
-                    {% if is_valid %}
-                    El hardware físico reportado por el script (.ps1) coincide 100% con el inventario patrimonial.
-                    {% elif ns.has_discrepancy %}
-                    Se detectó una diferencia entre la pieza física asignada y la telemetría WMI. <strong>Si realizaste un cambio físico de componente, ejecutá nuevamente el script (.ps1) en la PC cliente para refrescar la telemetría en vivo.</strong>
-                    {% elif pc.validation_status == 'sin_gemelo' or not pc.validation_status %}
-                    No hay un activo patrimonial (CPU) registrado y asignado a esta PC.
-                    {% else %}
-                    Esperando primera lectura o validación técnica. Revisá la pestaña Componentes.
-                    {% endif %}
-                </p>
-            </div>
-        </div>
-        <div class="d-flex gap-2 align-items-center">
-            {% if is_valid %}
-            <a href="{{ url_for('dashboard.acta_gemelo_validado', pc_name=pc.pc_name) }}" target="_blank" class="btn btn-sm btn-success fw-bold px-3 py-1 shadow-sm" style="border-radius:6px; font-size:0.8rem;" title="Imprimir Acta de Entrega y Conformidad">
-                <i class="bi bi-file-earmark-check-fill me-1"></i> Imprimir Acta de Entrega
-            </a>
-            {% endif %}
-            {% if ns.has_discrepancy or not is_valid %}
-            <button type="button" class="btn btn-sm btn-warning fw-semibold px-3 py-1" style="border-radius:6px; font-size:0.8rem;" onclick="homologarTelemetria('{{ pc.pc_name }}', '{{ linked_bo.code if linked_bo else '' }}')" title="Aceptar la telemetría actual como la nueva base patrimonial">
-                ⚡ Homologar Telemetría
-            </button>
-            {% endif %}
-            <button type="button" class="btn btn-sm btn-light fw-semibold px-3 py-1" style="border-radius:6px; font-size:0.8rem; border: 1px solid var(--border-color, #e2e8f0);" onclick="switchTab('componentes', document.querySelectorAll('.pd-tab')[3])">
-                Ver Detalles <i class="bi bi-arrow-right ms-1"></i>
-            </button>
-        </div>
-    </div>
-    {% endif %}
+    </header>
 
     {% if pc.alerta_nombre_duplicado %}
     <div class="alert alert-danger shadow-sm d-flex align-items-center mb-3" role="alert">
@@ -467,107 +402,119 @@
     <!-- NAV TABS -->
     <div class="pd-tabs" id="pdTabBar">
       <button class="pd-tab active" onclick="switchTab('resumen', this)"><i class="bi bi-pc-display me-1"></i>Resumen</button>
-      <button class="pd-tab" onclick="switchTab('tareas', this)"><i class="bi bi-list-task me-1"></i>Tareas <span class="pd-tab-badge">{{ tareas | length }}</span></button>
-      <button class="pd-tab" onclick="switchTab('red', this)"><i class="bi bi-diagram-3 me-1"></i>Red y Energía</button>
-      <button class="pd-tab" onclick="switchTab('componentes', this)"><i class="bi bi-cpu me-1"></i>Componentes</button>
+      <button class="pd-tab" onclick="switchTab('patrimonio', this)"><i class="bi bi-box-seam me-1"></i>Patrimonio <span class="pd-tab-badge">{{ components_to_count | length }}</span></button>
+      <button class="pd-tab" onclick="switchTab('operacion', this)"><i class="bi bi-tools me-1"></i>Operación <span class="pd-tab-badge">{{ pending_tasks | length }}</span></button>
       <button class="pd-tab" onclick="switchTab('historial', this)"><i class="bi bi-clock-history me-1"></i>Historial <span class="pd-tab-badge">{{ audit_logs | length }}</span></button>
     </div>
 
     <!-- TAB 1: RESUMEN -->
     <div class="pd-pane active" id="pane-resumen">
       {% set printer_missing = not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in pc.printer_model | upper %}
-      <div class="pc-detail-summary">
-        <span class="pc-detail-chip"><i class="bi bi-windows"></i>{{ pc.os_name or 'Sistema no detectado' }}</span>
-        {% if pc.office_version and pc.office_version != 'N/A' %}
-        <span class="pc-detail-chip"><i class="bi bi-microsoft"></i>{{ pc.office_version }}</span>
-        {% endif %}
-        {% if pc.monitors and pc.monitors != 'N/A' %}
-        <span class="pc-detail-chip"><i class="bi bi-display"></i>{{ pc.monitors }}</span>
-        {% endif %}
-        <span class="pc-detail-chip"><i class="bi bi-hdd-network"></i>{{ pc.ip_address or '-' }}</span>
-        <span class="pc-detail-chip"><i class="bi bi-clock-history"></i>{{ pc.last_report | datetime_es }}</span>
-      </div>
+      {% set validation_total = validation_comparison | length if validation_comparison else 0 %}
+      {% set validation_ok = validation_comparison | selectattr('match') | list | length if validation_comparison else 0 %}
 
-      <div class="pc-detail-grid">
-        <div class="pc-detail-card">
-          <div class="pc-detail-card__title">Usuario y fuero</div>
-          <div class="pc-detail-card__value">{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or '-' }}</div>
-          <div class="pc-detail-card__meta">{{ pc.last_user or '-' }} · {{ pc.fuero or '-' }}</div>
-        </div>
+      <section class="pc-decision-grid mb-3" aria-label="Estado general del equipo">
+        <article class="pc-status-panel {% if pc.validation_status == 'validado' %}pc-status-panel--ok{% elif pc.validation_status == 'discrepancia' %}pc-status-panel--danger{% else %}pc-status-panel--warning{% endif %}">
+          <div class="pc-panel-heading">
+            <span>Estado general</span>
+            <i class="bi {% if pc.validation_status == 'validado' %}bi-patch-check-fill{% elif pc.validation_status == 'discrepancia' %}bi-exclamation-octagon-fill{% else %}bi-clock-history{% endif %}"></i>
+          </div>
+          <div class="pc-status-panel__headline">
+            {% if pc.validation_status == 'validado' %}Equipo verificado{% elif pc.validation_status == 'discrepancia' %}Revisión patrimonial requerida{% else %}Validación pendiente{% endif %}
+          </div>
+          <div class="pc-status-list">
+            <div><i class="bi bi-check2-circle"></i><span><strong>{{ validation_ok }}/{{ validation_total }}</strong> controles de telemetría coinciden</span></div>
+            <div><i class="bi bi-box-seam"></i><span><strong>{{ components_to_count | length }}</strong> componentes patrimoniales asignados</span></div>
+            <div><i class="bi bi-list-check"></i><span><strong>{{ pending_tasks | length }}</strong> tareas pendientes</span></div>
+          </div>
+          {% if validation_total and validation_ok != validation_total %}
+          <button type="button" class="pc-inline-link" onclick="activatePcTab('patrimonio')">Revisar diferencias <i class="bi bi-arrow-right"></i></button>
+          {% endif %}
+        </article>
 
-        <div class="pc-detail-card">
-          <div class="pc-detail-card__title">Hardware base</div>
-          <div class="pc-detail-card__value">{{ pc.processor or '-' }}</div>
-          <div class="pc-detail-card__meta">{{ (pc.ram_gb | float | round | int) if pc.ram_gb else '0' }} GB RAM · {{ pc.motherboard_model or 'Sin placa detectada' }}</div>
-        </div>
+        <article class="pc-attention-panel {% if attention.count == 0 %}pc-attention-panel--clear{% endif %}">
+          <div class="pc-panel-heading">
+            <span>Requiere atención</span>
+            <span class="pc-attention-count">{{ attention.count }}</span>
+          </div>
+          {% if attention.count == 0 %}
+          <div class="pc-empty-attention"><i class="bi bi-check-circle-fill"></i><span>No hay datos críticos pendientes.</span></div>
+          {% else %}
+          <div class="pc-attention-list">
+            {% if not pc.fuero or pc.fuero | lower in ('desconocido', 'sin fuero', 'n/a') %}
+            <button type="button" onclick="activatePcTab('operacion')"><i class="bi bi-bank"></i><span>Asignar fuero del puesto</span><i class="bi bi-chevron-right"></i></button>
+            {% endif %}
+            {% if not pc.building or not pc.floor or not pc.switch_name or not pc.switch_port %}
+            <button type="button" onclick="activatePcTab('operacion')"><i class="bi bi-geo-alt"></i><span>Completar ubicación y conexión de red</span><i class="bi bi-chevron-right"></i></button>
+            {% endif %}
+            {% if not printer_missing and (not preferred_printer_serial or preferred_printer_serial == 'N/A') %}
+            <button type="button" data-bs-toggle="modal" data-bs-target="#modalCargarSeriales"><i class="bi bi-printer"></i><span>Cargar serial de la impresora</span><i class="bi bi-chevron-right"></i></button>
+            {% endif %}
+          </div>
+          {% endif %}
+        </article>
+      </section>
 
-        <div class="pc-detail-card">
-          <div class="pc-detail-card__title">Discos</div>
-          <div class="pc-detail-card__value">
+      <section class="pc-overview-grid">
+        <article class="pc-overview-card">
+          <div class="pc-panel-heading"><span>Puesto y conectividad</span><i class="bi bi-diagram-3"></i></div>
+          <dl class="pc-fact-list">
+            <div><dt>Usuario</dt><dd>{{ pc.ad_real_name if pc.ad_real_name else pc.last_user or 'Sin asignar' }}</dd></div>
+            <div><dt>Fuero</dt><dd>{{ pc.fuero or 'Sin asignar' }}</dd></div>
+            <div><dt>Dirección IP</dt><dd class="font-mono">{{ pc.ip_address or '-' }}</dd></div>
+            <div><dt>Ubicación</dt><dd>{{ pc.building or 'Sin edificio' }} · Piso {{ pc.floor or '-' }}</dd></div>
+            <div><dt>Red física</dt><dd>{{ pc.switch_name or 'Sin switch' }} · Puerto {{ pc.switch_port or '-' }}</dd></div>
+          </dl>
+          <button type="button" class="pc-inline-link" onclick="activatePcTab('operacion')">Ver red y energía <i class="bi bi-arrow-right"></i></button>
+        </article>
+
+        <article class="pc-overview-card">
+          <div class="pc-panel-heading"><span>Hardware principal</span><i class="bi bi-cpu"></i></div>
+          <div class="pc-hardware-hero">
+            <strong>{{ pc.processor or 'Procesador no detectado' }}</strong>
+            <span>{{ (pc.ram_gb | float | round | int) if pc.ram_gb else '0' }} GB RAM</span>
+          </div>
+          <dl class="pc-fact-list">
+            <div><dt>Sistema</dt><dd>{{ pc.os_name or 'No detectado' }}</dd></div>
+            <div><dt>Office</dt><dd>{{ pc.office_version or 'No detectado' }}</dd></div>
+            <div><dt>Monitor</dt><dd>{{ pc.monitors or 'No detectado' }}</dd></div>
+            <div><dt>Placa madre</dt><dd class="pc-truncate-value" title="{{ pc.motherboard_model or '' }}">{{ pc.motherboard_model or 'No detectada' }}</dd></div>
+          </dl>
+          <button type="button" class="pc-inline-link" onclick="activatePcTab('patrimonio')">Ver patrimonio completo <i class="bi bi-arrow-right"></i></button>
+        </article>
+
+        <article class="pc-overview-card">
+          <div class="pc-panel-heading"><span>Almacenamiento</span><i class="bi bi-device-ssd"></i></div>
+          <div class="pc-disk-list">
             {% if disk_summary_lines %}
-              {% for disk_line in disk_summary_lines %}
-              <div>{{ disk_line }}</div>
-              {% endfor %}
+              {% for disk_line in disk_summary_lines %}<div><i class="bi bi-hdd"></i><span>{{ disk_line }}</span></div>{% endfor %}
             {% else %}
-              {{ pc.disk_models or '-' }}
+              <div><i class="bi bi-hdd"></i><span>{{ pc.disk_models or 'Sin discos detectados' }}</span></div>
             {% endif %}
           </div>
-        </div>
+        </article>
 
-        <div class="pc-detail-card pc-detail-printer">
-          <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-            <div>
-              <div class="pc-detail-card__title">Impresión</div>
-              <div class="pc-detail-card__value">
-                {% if printer_missing %}
-                Sin impresora detectada
-                {% elif printer_cataloged %}
-                {{ assigned_network_printers[0].brand_model }} <span class="pc-detail-chip pc-detail-chip--ok ms-1">Catálogo</span>
-                {% else %}
-                {{ pc.printer_model }}
-                {% endif %}
-              </div>
-            </div>
-
-            {% if printer_pending %}
-            <button type="button" class="btn btn-sm btn-warning fw-bold" title="Sumar esta impresora al catálogo oficial"
-              onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')">
-              <i class="bi bi-plus-circle-fill me-1"></i> Catalogar
-            </button>
-            {% endif %}
+        <article class="pc-overview-card">
+          <div class="pc-panel-heading"><span>Impresión</span><i class="bi bi-printer"></i></div>
+          <div class="pc-hardware-hero">
+            <strong>{% if printer_missing %}Sin impresora detectada{% elif printer_cataloged %}{{ assigned_network_printers[0].brand_model }}{% else %}{{ pc.printer_model }}{% endif %}</strong>
+            <span>{{ pc.printer_port or 'Sin puerto configurado' }}</span>
           </div>
-
-          <div class="pc-detail-summary mt-2 mb-0">
-            {% if printer_missing %}
-            <span class="pc-detail-chip">Sin impresora</span>
-            {% elif printer_cataloged %}
-            <span class="pc-detail-chip pc-detail-chip--ok"><i class="bi bi-check2-circle"></i>Registrada en catálogo</span>
-            {% else %}
-            <span class="pc-detail-chip pc-detail-chip--pending"><i class="bi bi-exclamation-triangle"></i>Pendiente de catálogo</span>
-            {% endif %}
-
-            {% if printer_is_shared %}
-            <span class="pc-detail-chip"><i class="bi bi-share"></i>Compartida</span>
-            {% elif printer_is_network %}
-            <span class="pc-detail-chip {% if printer_pending %}pc-detail-chip--pending{% endif %}"><i class="bi bi-diagram-3"></i>Por Red/IP</span>
-            {% elif not printer_missing %}
-            <span class="pc-detail-chip"><i class="bi bi-usb-symbol"></i>Local/USB</span>
-            {% endif %}
-
-            {% if preferred_printer_serial and preferred_printer_serial != 'N/A' %}
-            <span class="pc-detail-chip"><i class="bi bi-upc-scan"></i>{{ preferred_printer_serial }}</span>
-            {% endif %}
-
-            {% if pc.printer_port and pc.printer_port != 'N/A' %}
-            <span class="pc-detail-chip"><i class="bi bi-plug"></i>{{ pc.printer_port }}</span>
-            {% endif %}
+          <div class="pc-detail-summary mb-0">
+            {% if printer_cataloged %}<span class="pc-detail-chip pc-detail-chip--ok"><i class="bi bi-check2-circle"></i>Catalogada</span>{% elif not printer_missing %}<span class="pc-detail-chip pc-detail-chip--pending"><i class="bi bi-exclamation-triangle"></i>Pendiente de catálogo</span>{% endif %}
+            {% if printer_is_shared %}<span class="pc-detail-chip"><i class="bi bi-share"></i>Compartida</span>{% elif printer_is_network %}<span class="pc-detail-chip"><i class="bi bi-diagram-3"></i>Red/IP</span>{% elif not printer_missing %}<span class="pc-detail-chip"><i class="bi bi-usb-symbol"></i>Local/USB</span>{% endif %}
+            {% if preferred_printer_serial and preferred_printer_serial != 'N/A' %}<span class="pc-detail-chip"><i class="bi bi-upc-scan"></i>{{ preferred_printer_serial }}</span>{% endif %}
           </div>
-        </div>
-      </div>
+          {% if printer_pending %}
+          <button type="button" class="pc-inline-link" onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')">Catalogar impresora <i class="bi bi-arrow-right"></i></button>
+          {% endif %}
+        </article>
+      </section>
     </div>
 
-    <!-- TAB 2: TAREAS -->
-    <div class="pd-pane" id="pane-tareas">
+    <!-- TAB 2: OPERACION -->
+    <div class="pd-pane" id="pane-operacion">
+      <section class="pc-operation-section">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0 fw-bold" style="color:var(--text-color)"><i class="bi bi-list-task me-2 text-primary"></i>Tareas del Equipo</h5>
         <button type="button" class="btn btn-sm btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea" style="border-radius:6px;">
@@ -641,10 +588,16 @@
           </tbody>
         </table>
       </div>
-    </div>
+      </section>
 
-    <!-- TAB 3: RED Y ENERGIA -->
-    <div class="pd-pane" id="pane-red">
+    <div class="pc-operation-divider"></div>
+    <section class="pc-operation-section">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="mb-0 fw-bold" style="color:var(--text-color)"><i class="bi bi-diagram-3 me-2 text-primary"></i>Red, ubicación y energía</h5>
+          <p class="text-muted small mb-0">Datos físicos del puesto, cableado y respaldo eléctrico.</p>
+        </div>
+      </div>
       <div class="card mb-4" style="background:var(--card-bg, #fff); border:1px solid var(--border-color, #e2e8f0); border-radius:10px;">
         <div class="card-header d-flex justify-content-between align-items-center" style="background:var(--table-header-bg, #f1f5f9); color:var(--text-color, #0f172a); border-bottom:1px solid var(--border-color, #e2e8f0);">
           <h6 class="mb-0 fw-bold"><i class="bi bi-diagram-3 me-2 text-primary"></i> Infraestructura de Red y Ubicación</h6>
@@ -714,10 +667,11 @@
           {% endif %}
         </div>
       </div>
+    </section>
     </div>
 
-    <!-- TAB 4: COMPONENTES -->
-    <div class="pd-pane" id="pane-componentes">
+    <!-- TAB 3: PATRIMONIO -->
+    <div class="pd-pane" id="pane-patrimonio">
       <!-- Acciones de Componentes -->
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0 fw-bold" style="color:var(--text-color, #0f172a);"><i class="bi bi-cpu me-2 text-primary"></i>Hardware y Componentes</h5>
@@ -776,7 +730,7 @@
                 </tr>
               </thead>
               <tbody>
-                {% for row in validation_comparison %}
+                {% for row in validation_comparison if not row.match %}
                 <tr>
                   <td class="fw-bold" style="color:var(--text-color, #0f172a);">
                     <i class="bi bi-cpu me-1 text-muted"></i>{{ row.component }}
@@ -788,21 +742,37 @@
                     {{ row.telemetry }}
                   </td>
                   <td class="text-center">
-                    {% if row.match %}
-                    <span class="badge" style="background:rgba(34,197,94,0.15);color:#16a34a;border:1px solid rgba(34,197,94,0.3);font-size:0.72rem;font-weight:700;">
-                      <i class="bi bi-check-lg me-1"></i>COINCIDE
-                    </span>
-                    {% else %}
                     <span class="badge" style="background:rgba(239,68,68,0.18);color:#dc2626;border:1px solid rgba(239,68,68,0.4);font-size:0.72rem;font-weight:700;">
                       <i class="bi bi-x-circle me-1"></i>DIFERENCIA
                     </span>
-                    {% endif %}
                   </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="4" class="text-center py-4">
+                    <i class="bi bi-patch-check-fill text-success me-1"></i>
+                    No se detectaron diferencias patrimoniales.
+                  </td>
+                </tr>
+                {% endfor %}
+                {% for row in validation_comparison if row.match %}
+                <tr class="pc-matched-row d-none">
+                  <td class="fw-bold"><i class="bi bi-cpu me-1 text-muted"></i>{{ row.component }}</td>
+                  <td class="font-mono">{{ row.registered }}</td>
+                  <td class="font-mono">{{ row.telemetry }}</td>
+                  <td class="text-center"><span class="badge bg-success-subtle text-success"><i class="bi bi-check-lg me-1"></i>COINCIDE</span></td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
+          {% if validation_ok %}
+          <div class="pc-match-footer">
+            <button type="button" class="pc-inline-link" onclick="toggleMatchedRows(this)">
+              Mostrar {{ validation_ok }} componente(s) coincidente(s) <i class="bi bi-chevron-down"></i>
+            </button>
+          </div>
+          {% endif %}
         </div>
       </div>
       {% endif %}
@@ -1242,6 +1212,45 @@
       </div>
     </div>
   </div>
+  <div class="pc-mobile-actions" aria-label="Acciones rápidas del equipo">
+    <button type="button" class="btn btn-primary" onclick="abrirIntervencionModal('{{ pc.pc_name }}')">
+      <i class="bi bi-tools me-1"></i>Intervención
+    </button>
+    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalPcQuickActions">
+      <i class="bi bi-three-dots me-1"></i>Más acciones
+    </button>
+  </div>
+
+  <div class="modal fade" id="modalPcQuickActions" tabindex="-1" aria-labelledby="modalPcQuickActionsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalPcQuickActionsLabel">Acciones de {{ pc.pc_name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body d-grid gap-2">
+          {% if pc.validation_status == 'validado' %}
+          <a href="{{ url_for('dashboard.acta_gemelo_validado', pc_name=pc.pc_name) }}" target="_blank" class="btn btn-outline-secondary text-start"><i class="bi bi-file-earmark-check me-2"></i>Acta Gemelo Validado</a>
+          {% endif %}
+          <a href="{{ url_for('dashboard.pc_qr_label_view', pc_name=pc.pc_name) }}" target="_blank" class="btn btn-outline-secondary text-start"><i class="bi bi-qr-code me-2"></i>Imprimir par de QR</a>
+          <button type="button" class="btn btn-outline-secondary text-start" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#modalCargarSeriales"><i class="bi bi-upc-scan me-2"></i>Cargar o corregir seriales</button>
+          {% if not pc.pc_name.upper().startswith('PC-GENERICA') and not pc.pc_name.upper().startswith('PC GENERICA') and not pc.pc_name.upper().startswith('INFRAESTRUCTURA') %}
+            {% if pc.is_active == 1 %}
+            <form action="{{ url_for('dashboard.decommission_pc', pc_name=pc.pc_name) }}" method="POST" onsubmit="return confirm('¿Pasar esta PC al cementerio?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-outline-danger text-start w-100"><i class="bi bi-archive me-2"></i>Enviar al cementerio</button>
+            </form>
+            {% else %}
+            <form action="{{ url_for('dashboard.reactivate_pc', pc_name=pc.pc_name) }}" method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-outline-success text-start w-100"><i class="bi bi-arrow-counterclockwise me-2"></i>Reactivar equipo</button>
+            </form>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
   </div><!-- /.vercel-detail -->
 
   <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
@@ -1252,6 +1261,22 @@
       var pane = document.getElementById('pane-' + name);
       if (pane) pane.classList.add('active');
       if (btn) btn.classList.add('active');
+      window.history.replaceState(null, '', '#' + name);
+    }
+
+    function activatePcTab(name) {
+      var btn = document.querySelector('.pd-tab[onclick*="\'' + name + '\'"]');
+      switchTab(name, btn);
+      document.getElementById('pdTabBar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleMatchedRows(button) {
+      var rows = document.querySelectorAll('.pc-matched-row');
+      var willShow = Array.from(rows).some(row => row.classList.contains('d-none'));
+      rows.forEach(row => row.classList.toggle('d-none', !willShow));
+      button.innerHTML = willShow
+        ? 'Ocultar componentes coincidentes <i class="bi bi-chevron-up"></i>'
+        : 'Mostrar {{ validation_ok }} componente(s) coincidente(s) <i class="bi bi-chevron-down"></i>';
     }
 
     async function homologarTelemetria(pcName, boCode = '') {
@@ -1318,9 +1343,9 @@
       tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
 
       var h = window.location.hash;
-      if (h === '#tareas') switchTab('tareas', document.querySelectorAll('.pd-tab')[1]);
-      else if (h === '#componentes') switchTab('componentes', document.querySelectorAll('.pd-tab')[3]);
-      else if (h === '#historial') switchTab('historial', document.querySelectorAll('.pd-tab')[4]);
+      if (h === '#tareas' || h === '#red' || h === '#operacion') activatePcTab('operacion');
+      else if (h === '#componentes' || h === '#patrimonio') activatePcTab('patrimonio');
+      else if (h === '#historial') activatePcTab('historial');
     })();
   </script>
   <!-- MODAL: CREAR ORDEN DE ARMADO DESDE TELEMETRIA -->
