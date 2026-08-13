@@ -1092,13 +1092,6 @@ DEFAULT_TOKEN_SCOPES = {
     "API_KEY": {SCOPE_INVENTORY_SUBMIT, SCOPE_EXTERNAL_READ_PO, SCOPE_EXTERNAL_READ_REMITOS, SCOPE_MAINTENANCE_READ},
 }
 
-DEFAULT_TOKEN_FALLBACKS = {
-    "CONTABLE_API_TOKEN": "super-secret-contable-token",
-    "INVENTARIO_API_TOKEN": "super-secret-token",
-    "API_TOKEN": "super-secret-token",
-    "API_KEY": "super-secret-token",
-}
-
 def resolve_token_scopes(provided_token):
     """
     Dado un token de API proporcionado, retorna el conjunto de scopes asociados.
@@ -1110,8 +1103,7 @@ def resolve_token_scopes(provided_token):
     scopes = set()
 
     for env_var, default_scopes in DEFAULT_TOKEN_SCOPES.items():
-        fallback_val = DEFAULT_TOKEN_FALLBACKS.get(env_var, "")
-        configured_token = os.environ.get(env_var, fallback_val).strip()
+        configured_token = os.environ.get(env_var, "").strip()
         if configured_token and hmac.compare_digest(provided_token, configured_token):
             scopes.update(default_scopes)
 
