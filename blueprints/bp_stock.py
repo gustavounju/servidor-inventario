@@ -2500,9 +2500,20 @@ def manage_build_order(order_id):
             if not bo:
                 return jsonify({"status": "error", "message": "Orden no encontrada."}), 404
 
+            if bo["status"] == "completed":
+                return jsonify({
+                    "status": "error",
+                    "message": (
+                        "Una orden completada no se puede eliminar porque documenta una asignación patrimonial. "
+                        "Si es una orden duplicada, usá la acción 'Anular duplicada'."
+                    ),
+                }), 409
+            if bo["status"] == "cancelled":
+                return jsonify({"status": "error", "message": "La orden ya está anulada."}), 409
+
             restored_count = 0
 
-            # Restablecer todos los componentes ligados a esta orden, sin importar su estado
+            # Liberar solo las reservas que todavía pertenecen a esta orden.
             items = conn.execute(
                 "SELECT serial_number FROM build_order_items WHERE build_order_id = %s",
                 (order_id,)
@@ -2512,35 +2523,49 @@ def manage_build_order(order_id):
                 if not serial:
                     continue
                 comp = conn.execute(
-                    "SELECT component_type, brand_model FROM components WHERE serial_number = %s",
-                    (serial,)
+                    """
+                    SELECT component_type, brand_model
+                    FROM components
+                    WHERE serial_number = %s AND build_order_id = %s AND status = 'Reservado'
+                    """,
+                    (serial, order_id)
                 ).fetchone()
                 if comp:
-                    conn.execute(
+                    released = conn.execute(
                         """
                         UPDATE components
                         SET status = 'Stock', assigned_pc = NULL, assigned_user = NULL,
                             assigned_fuero = NULL, kit_name = NULL, build_order_id = NULL
-                        WHERE serial_number = %s
+                        WHERE serial_number = %s AND build_order_id = %s AND status = 'Reservado'
                         """,
-                        (serial,)
+                        (serial, order_id)
                     )
-                    restored_count += 1
-                    conn.execute(
-                        """
-                        INSERT INTO audit_logs
-                            (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        """,
-                        (
-                            "Stock", "BUILD_ORDER_DISASSEMBLE", bo["code"],
-                            f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Stock",
-                            tech, "BUILD_ORDER", request.remote_addr
+                    if released.rowcount:
+                        restored_count += released.rowcount
+                        conn.execute(
+                            """
+                            INSERT INTO audit_logs
+                                (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            """,
+                            (
+                                "Stock", "BUILD_ORDER_RESERVATION_RELEASED", bo["code"],
+                                f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Stock",
+                                tech, "BUILD_ORDER", request.remote_addr
+                            )
                         )
-                    )
 
             # Para aquellos componentes que tengan el build_order_id pero que no estén en items
-            conn.execute("UPDATE components SET build_order_id = NULL WHERE build_order_id = %s", (order_id,))
+            orphan_releases = conn.execute(
+                """
+                UPDATE components
+                SET status = 'Stock', assigned_pc = NULL, assigned_user = NULL,
+                    assigned_fuero = NULL, kit_name = NULL, build_order_id = NULL
+                WHERE build_order_id = %s AND status = 'Reservado'
+                """,
+                (order_id,)
+            )
+            restored_count += orphan_releases.rowcount
 
             conn.execute("DELETE FROM build_order_items WHERE build_order_id = %s", (order_id,))
             conn.execute("DELETE FROM build_orders WHERE id = %s", (order_id,))
@@ -2559,12 +2584,83 @@ def manage_build_order(order_id):
 
         return jsonify({
             "status": "success",
-            "message": f"Orden {bo['code']} eliminada correctamente.",
+            "message": f"Orden activa {bo['code']} cancelada correctamente.",
             "restored_to_stock": restored_count
         })
 
     except Exception as e:
         logging.error("Error en manage_build_order(%s) [%s]: %s", order_id, request.method, e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_stock.route("/api/build_orders/<int:order_id>/void", methods=["POST"])
+def void_duplicate_build_order(order_id):
+    """Anula una orden completada duplicada sin modificar el patrimonio actual."""
+    if not check_stock_permission():
+        return jsonify({"status": "error", "message": "Acceso denegado."}), 403
+
+    try:
+        from utils.auth import current_technician_identity
+        tech = current_technician_identity()
+        reason_value = (request.get_json(silent=True) or {}).get("reason") or "Orden duplicada"
+        reason = (reason_value.strip() or "Orden duplicada")[:500]
+
+        with get_db_connection() as conn:
+            bo = conn.execute(
+                "SELECT id, code, status FROM build_orders WHERE id = %s", (order_id,)
+            ).fetchone()
+            if not bo:
+                return jsonify({"status": "error", "message": "Orden no encontrada."}), 404
+            if bo["status"] == "cancelled":
+                return jsonify({"status": "error", "message": "La orden ya está anulada."}), 409
+            if bo["status"] != "completed":
+                return jsonify({
+                    "status": "error",
+                    "message": "Las órdenes activas se cancelan con la acción normal de cancelar orden.",
+                }), 400
+
+            linked = conn.execute(
+                "SELECT COUNT(*) AS linked_count FROM components WHERE build_order_id = %s",
+                (order_id,)
+            ).fetchone()
+            linked_count = int((linked or {}).get("linked_count") or 0)
+            if linked_count:
+                return jsonify({
+                    "status": "error",
+                    "message": (
+                        f"La orden todavía posee {linked_count} componente(s). "
+                        "Reasignalos a la orden correcta antes de anularla; no serán enviados a stock automáticamente."
+                    ),
+                    "linked_components": linked_count,
+                }), 409
+
+            removed_items = conn.execute(
+                "DELETE FROM build_order_items WHERE build_order_id = %s", (order_id,)
+            )
+            removed_relations = removed_items.rowcount
+            conn.execute(
+                "UPDATE build_orders SET status = 'cancelled' WHERE id = %s", (order_id,)
+            )
+            conn.execute(
+                """
+                INSERT INTO audit_logs
+                    (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    "Stock", "BUILD_ORDER_VOID_DUPLICATE", bo["code"],
+                    f"Orden duplicada anulada; relaciones removidas: {removed_relations}; motivo: {reason}",
+                    tech, "BUILD_ORDER", request.remote_addr
+                )
+            )
+
+        return jsonify({
+            "status": "success",
+            "message": f"Orden duplicada {bo['code']} anulada sin modificar componentes.",
+            "removed_relations": removed_relations,
+        })
+    except Exception as e:
+        logging.error("Error anulando Orden de Armado duplicada %s: %s", order_id, e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
@@ -2599,10 +2695,40 @@ def add_build_order_item(order_id):
 
             # Obtener datos del componente
             comp = conn.execute(
-                "SELECT component_type, brand_model FROM components WHERE serial_number = %s", (serial,)
+                """
+                SELECT component_type, brand_model, status, build_order_id, assigned_pc, assigned_user
+                FROM components
+                WHERE serial_number = %s
+                FOR UPDATE
+                """,
+                (serial,)
             ).fetchone()
             asset_type  = comp["component_type"] if comp else "Desconocido"
             brand_model = comp["brand_model"] if comp else None
+
+            if comp:
+                current_order_id = comp.get("build_order_id")
+                if current_order_id:
+                    if int(current_order_id) == order_id:
+                        return jsonify({"status": "error", "message": "El componente ya pertenece a esta orden."}), 409
+                    return jsonify({
+                        "status": "error",
+                        "message": f"El componente ya pertenece a la Orden de Armado #{current_order_id}.",
+                    }), 409
+
+                component_status = (comp.get("status") or "Stock").strip().lower()
+                if component_status != "stock" or comp.get("assigned_pc") or comp.get("assigned_user"):
+                    return jsonify({
+                        "status": "error",
+                        "message": "El componente no está disponible en stock y no puede reservarse en esta orden.",
+                    }), 409
+
+            duplicate_item = conn.execute(
+                "SELECT id FROM build_order_items WHERE build_order_id = %s AND serial_number = %s",
+                (order_id, serial)
+            ).fetchone()
+            if duplicate_item:
+                return jsonify({"status": "error", "message": "El componente ya figura en esta orden."}), 409
 
             # Insertar ítem
             conn.execute(
@@ -2678,9 +2804,9 @@ def remove_build_order_item(order_id, serial):
                     assigned_pc = NULL,
                     assigned_user = NULL,
                     assigned_fuero = NULL
-                WHERE serial_number = %s
+                WHERE serial_number = %s AND build_order_id = %s AND status = 'Reservado'
                 """,
-                (serial,)
+                (serial, order_id)
             )
 
             conn.execute(
