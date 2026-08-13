@@ -78,6 +78,47 @@ def search_ad_users():
         return jsonify({"error": str(e)}), 500
 
 
+@bp_stock.route("/api/components/<path:serial_number>/history", methods=["GET"])
+def get_component_history(serial_number):
+    """
+    Retorna el historial de auditoría de un componente específico a partir de su número de serie.
+    """
+    from utils.auth import is_authenticated
+    if not is_authenticated():
+        return jsonify({"status": "error", "message": "No autenticado"}), 401
+    
+    serial_clean = (serial_number or "").strip()
+    if not serial_clean:
+        return jsonify({"status": "error", "message": "Serial no válido"}), 400
+        
+    try:
+        with get_db_connection() as conn:
+            like_pat = f"%{serial_clean}%"
+            rows = conn.execute(
+                """
+                SELECT pc_name, field, old_value, new_value, user_name, action_type, changed_at as timestamp
+                FROM audit_logs
+                WHERE pc_name = %s
+                   OR old_value LIKE %s
+                   OR new_value LIKE %s
+                ORDER BY changed_at DESC
+                LIMIT 15
+                """,
+                (serial_clean, like_pat, like_pat)
+            ).fetchall()
+            
+            history = []
+            for r in rows:
+                item = dict(r)
+                if item.get("timestamp") and hasattr(item["timestamp"], "strftime"):
+                    item["timestamp"] = item["timestamp"].strftime("%Y-%m-%d %H:%M")
+                history.append(item)
+                
+            return jsonify({"status": "success", "history": history})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 def _ensure_stock_catalog_seeded(conn):
     try:
         defaults = [
