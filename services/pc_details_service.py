@@ -485,7 +485,11 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
     for disk in (hardware_components.get("disks") or []):
         d_model = (disk.get("model") or "").upper()
         # Ignorar pendrives / almacenamiento extraíble USB para que no se autogeneren como discos fijos patrimoniales
-        if any(usb_tok in d_model for usb_tok in ["USB DEVICE", "USB FLASH", "PENDRIVE", "DATATRAVELER", "CRUZER", "CARD READER", "CARD_READER"]):
+        if any(usb_tok in d_model for usb_tok in [
+            "USB DEVICE", "USB FLASH", "PENDRIVE", "DATATRAVELER", "CRUZER", 
+            "CARD READER", "CARD_READER", "SD READER", "MS READER", "CF READER", 
+            "SM READER", "GENERIC USB STORAGE", "USB CR READER", "SD/MMC CARD"
+        ]):
             continue
         d_sn = (disk.get("serial") or "").strip()
         d_sn_upper = d_sn.upper()

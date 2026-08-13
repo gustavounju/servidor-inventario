@@ -60,7 +60,9 @@ def filter_ignore_devices(disk_str: str) -> str:
         if any(term in p_up for term in [
             "USB SD READER", "USB MS READER", "USB SM READER", "USB CF READER", 
             "CARD READER USB DEVICE", "GENERIC USB STORAGE", "USB CR READER",
-            "SD/MMC CARD READER"
+            "SD/MMC CARD READER", "USB DEVICE", "USB FLASH", "PENDRIVE", 
+            "DATATRAVELER", "CRUZER", "CARD READER", "CARD_READER", 
+            "MS READER", "SD READER", "CF READER", "SM READER", "SD/MMC CARD"
         ]):
             continue
         cleaned.append(p)

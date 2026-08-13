@@ -1473,6 +1473,16 @@ def homologar_telemetria():
                 if not brand_model or str(brand_model).strip() in ("N/A", "Sin reporte de script", ""):
                     return
                 brand_model_str = str(brand_model).strip()
+                
+                # Ignorar pendrives / almacenamiento extraíble USB / lectores de tarjeta
+                if comp_type in ("Disco Rígido / SSD", "Disco"):
+                    bm_up = brand_model_str.upper()
+                    if any(usb_tok in bm_up for usb_tok in [
+                        "USB DEVICE", "USB FLASH", "PENDRIVE", "DATATRAVELER", "CRUZER", 
+                        "CARD READER", "CARD_READER", "SD READER", "MS READER", "CF READER", 
+                        "SM READER", "GENERIC USB STORAGE", "USB CR READER", "SD/MMC CARD"
+                    ]):
+                        return
 
                 # Verificar si ya existe en components o en la orden de armado vinculada
                 query_parts = ["(LOWER(TRIM(assigned_pc)) = LOWER(TRIM(%s)))"]
