@@ -180,9 +180,15 @@
                                     <button class="bo-action-btn edit" onclick="openEditModalById({{ bo.id }}); event.stopPropagation();" title="Editar">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
-                                    <button class="bo-action-btn danger" onclick="openDeleteBOModal({{ bo.id }},'{{ bo.code }}','{{ bo.status }}',{{ bo.order_items|length }})" title="Eliminar">
+                                    {% if bo.status == 'completed' %}
+                                    <button class="bo-action-btn danger" onclick="openDeleteBOModal({{ bo.id }},'{{ bo.code }}','{{ bo.status }}',{{ bo.order_items|length }})" title="Anular orden duplicada" aria-label="Anular orden duplicada {{ bo.code }}">
+                                        <i class="bi bi-x-octagon"></i>
+                                    </button>
+                                    {% elif bo.status != 'cancelled' %}
+                                    <button class="bo-action-btn danger" onclick="openDeleteBOModal({{ bo.id }},'{{ bo.code }}','{{ bo.status }}',{{ bo.order_items|length }})" title="Cancelar orden activa" aria-label="Cancelar orden activa {{ bo.code }}">
                                         <i class="bi bi-trash3"></i>
                                     </button>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
@@ -383,24 +389,24 @@
         <div class="modal-dialog">
             <div class="modal-content modal-content-dark" style="border-color:rgba(239,68,68,.35);">
                 <div class="modal-header" style="border-bottom-color:rgba(148,163,184,.2);">
-                    <h5 class="modal-title font-display"><i class="bi bi-trash3 me-2 text-danger"></i>Eliminar Orden</h5>
+                    <h5 class="modal-title font-display"><i class="bi bi-exclamation-octagon me-2 text-danger"></i><span id="delete_bo_title">Cancelar Orden</span></h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p style="font-size:.88rem;color:#cbd5e1;">Vas a eliminar la orden <strong id="delete_bo_code" class="font-mono text-light"></strong>.</p>
+                    <p style="font-size:.88rem;color:#cbd5e1;">Vas a procesar la orden <strong id="delete_bo_code" class="font-mono text-light"></strong>.</p>
                     <div id="delete_bo_warning_completed" class="alert d-none" style="background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.35);color:#fde68a;font-size:.83rem;">
                         <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                        Esta orden fue <strong>completada</strong> — <strong id="delete_bo_items_count"></strong> componente(s) volverán al stock.
+                        Se anularán <strong id="delete_bo_items_count"></strong> relaciones de esta orden duplicada. <strong>Ningún componente volverá al stock.</strong> Si la orden todavía posee componentes, la operación será rechazada.
                     </div>
                     <div id="delete_bo_warning_draft" class="alert d-none" style="background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.25);color:#94a3b8;font-size:.83rem;">
-                        <i class="bi bi-info-circle me-1"></i>Borrador o en progreso — se elimina sin afectar el stock.
+                        <i class="bi bi-info-circle me-1"></i>Se cancelará la orden. Solo las reservas que todavía le pertenezcan volverán al stock; los componentes reasignados no se modificarán.
                     </div>
                     <p style="font-size:.82rem;color:#f87171;margin-top:12px;margin-bottom:0;"><i class="bi bi-exclamation-circle me-1"></i>Esta acción no se puede deshacer.</p>
                 </div>
                 <div class="modal-footer" style="border-top-color:rgba(148,163,184,.2);">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteBOBtn" onclick="handleDeleteBO()">
-                        <i class="bi bi-trash3 me-1"></i>Confirmar
+                        <i class="bi bi-trash3 me-1"></i><span id="confirmDeleteBOLabel">Cancelar orden</span>
                     </button>
                 </div>
             </div>
@@ -642,13 +648,28 @@
         }
 
         let _deleteBOId=null;
+        let _deleteBOStatus=null;
         function openDeleteBOModal(orderId,code,status,itemsCount){
             _deleteBOId=orderId;
+            _deleteBOStatus=status;
             document.getElementById('delete_bo_code').textContent=code;
             const wC=document.getElementById('delete_bo_warning_completed');
             const wD=document.getElementById('delete_bo_warning_draft');
-            if(status==='completed'){document.getElementById('delete_bo_items_count').textContent=itemsCount;wC.classList.remove('d-none');wD.classList.add('d-none');}
-            else{wC.classList.add('d-none');wD.classList.remove('d-none');}
+            const title=document.getElementById('delete_bo_title');
+            const label=document.getElementById('confirmDeleteBOLabel');
+            const icon=document.querySelector('#confirmDeleteBOBtn > i');
+            if(status==='completed'){
+                document.getElementById('delete_bo_items_count').textContent=itemsCount;
+                title.textContent='Anular Orden Duplicada';
+                label.textContent='Anular duplicada';
+                icon.className='bi bi-x-octagon me-1';
+                wC.classList.remove('d-none');wD.classList.add('d-none');
+            } else {
+                title.textContent='Cancelar Orden Activa';
+                label.textContent='Cancelar orden';
+                icon.className='bi bi-trash3 me-1';
+                wC.classList.add('d-none');wD.classList.remove('d-none');
+            }
             new bootstrap.Modal(document.getElementById('deleteBOModal')).show();
         }
 
@@ -672,13 +693,25 @@
         async function handleDeleteBO(){
             if(!_deleteBOId)return;
             const btn=document.getElementById('confirmDeleteBOBtn');
-            btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Eliminando...';
+            btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Procesando...';
             try{
-                const res=await fetch(`/api/build_orders/${_deleteBOId}`,{method:'DELETE',headers:{'Content-Type':'application/json'}});
+                const isDuplicate=_deleteBOStatus==='completed';
+                const endpoint=isDuplicate ? `/api/build_orders/${_deleteBOId}/void` : `/api/build_orders/${_deleteBOId}`;
+                const options={method:isDuplicate?'POST':'DELETE',headers:{'Content-Type':'application/json'}};
+                if(isDuplicate)options.body=JSON.stringify({reason:'Orden duplicada'});
+                const res=await fetch(endpoint,options);
                 const data=await res.json();
                 if(data.status==='success'){window.location.reload();}
-                else{alert('Error: '+(data.message||'No se pudo eliminar'));btn.disabled=false;btn.innerHTML='<i class="bi bi-trash3 me-1"></i>Confirmar';}
-            }catch{alert('Error al comunicar con el servidor');btn.disabled=false;btn.innerHTML='<i class="bi bi-trash3 me-1"></i>Confirmar';}
+                else{alert('Error: '+(data.message||'No se pudo completar la acción'));resetDeleteBOButton(btn);}
+            }catch{alert('Error al comunicar con el servidor');resetDeleteBOButton(btn);}
+        }
+
+        function resetDeleteBOButton(btn){
+            const isDuplicate=_deleteBOStatus==='completed';
+            btn.disabled=false;
+            btn.innerHTML=isDuplicate
+                ? '<i class="bi bi-x-octagon me-1"></i><span id="confirmDeleteBOLabel">Anular duplicada</span>'
+                : '<i class="bi bi-trash3 me-1"></i><span id="confirmDeleteBOLabel">Cancelar orden</span>';
         }
 
         document.addEventListener('DOMContentLoaded', function() {
