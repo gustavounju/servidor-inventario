@@ -22,6 +22,33 @@ import re
 
 logger = logging.getLogger(__name__)
 
+_IGNORED_STORAGE_TOKENS = (
+    "USB SD READER", "USB MS READER", "USB SM READER", "USB CF READER",
+    "CARD READER USB DEVICE", "GENERIC USB STORAGE", "USB CR READER",
+    "SD/MMC CARD READER", "USB DEVICE", "USB FLASH", "PENDRIVE",
+    "DATATRAVELER", "CRUZER", "CARD READER", "CARD_READER",
+    "MS READER", "SD READER", "CF READER", "SM READER", "SD/MMC CARD",
+)
+
+
+def is_ignored_storage_device(value: str) -> bool:
+    """Indica si WMI describió un lector/medio USB que no es disco patrimonial."""
+    normalized = str(value or "").upper()
+    if not normalized:
+        return False
+    if any(marker in normalized for marker in ("(0GB)", "(0.00GB)", "0.0 GB", " 0GB")):
+        return True
+    return any(token in normalized for token in _IGNORED_STORAGE_TOKENS)
+
+
+def is_ignored_storage_component(component) -> bool:
+    """Aplica la exclusión solo a componentes que representan almacenamiento."""
+    if not component:
+        return False
+    component_type = str(component.get("component_type") or "").upper()
+    is_storage = any(token in component_type for token in ("DISCO", "SSD", "HDD", "ALMACEN"))
+    return is_storage and is_ignored_storage_device(component.get("brand_model"))
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers de normalización (locales para evitar importar bp_api)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -54,20 +81,11 @@ def filter_ignore_devices(disk_str: str) -> str:
     cleaned = []
     
     for p in parts:
-        p_up = p.upper()
-        if "(0GB)" in p_up or "(0.00GB)" in p_up or "0.0 GB" in p_up or " 0GB" in p_up:
-            continue
-        if any(term in p_up for term in [
-            "USB SD READER", "USB MS READER", "USB SM READER", "USB CF READER", 
-            "CARD READER USB DEVICE", "GENERIC USB STORAGE", "USB CR READER",
-            "SD/MMC CARD READER", "USB DEVICE", "USB FLASH", "PENDRIVE", 
-            "DATATRAVELER", "CRUZER", "CARD READER", "CARD_READER", 
-            "MS READER", "SD READER", "CF READER", "SM READER", "SD/MMC CARD"
-        ]):
+        if is_ignored_storage_device(p):
             continue
         cleaned.append(p)
         
-    return " | ".join(cleaned) if cleaned else disk_str
+    return " | ".join(cleaned)
 
 
 def _hw_tokens_match(a: str, b: str) -> bool:
@@ -317,6 +335,9 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
                 (pc_name,)
             ).fetchall()
 
+        comps = [c for c in comps if not is_ignored_storage_component(c)]
+        has_twin_evidence = bool(comps)
+
         telemetry_raw = pc.get("telemetry_snapshot") or pc.get("full_json_data")
         script_data = {}
         if telemetry_raw:
@@ -342,9 +363,11 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
 
         # 1. Motherboard
         mb_comps = comp_by_type.get("motherboard", []) + comp_by_type.get("placa madre", []) + comp_by_type.get("mother", []) + comp_by_type.get("placa", [])
-        reg_mb = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in mb_comps) if mb_comps else "Sin registro en Stock"
+        fallback_mb = pc.get("motherboard_model") if has_twin_evidence else None
+        reg_mb = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in mb_comps) if mb_comps else (fallback_mb or "Sin registro en Stock")
+        mb_has_reg = bool(mb_comps or fallback_mb)
         mb_has_telem = bool(script_mb and script_mb not in ("Sin reporte de script", "N/A"))
-        mb_match = _hw_tokens_match(reg_mb, script_mb) if (mb_comps and mb_has_telem) else False if (mb_comps or mb_has_telem) else True
+        mb_match = _hw_tokens_match(reg_mb, script_mb) if (mb_has_reg and mb_has_telem) else False if (mb_has_reg or mb_has_telem) else True
         comparison.append({
             "component": "Motherboard",
             "registered": reg_mb,
@@ -355,9 +378,11 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
 
         # 2. Procesador (CPU)
         cpu_comps = comp_by_type.get("procesador", []) + comp_by_type.get("microprocesador", []) + comp_by_type.get("cpu", []) + comp_by_type.get("micro", [])
-        reg_cpu = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in cpu_comps) if cpu_comps else "Sin registro en Stock"
+        fallback_cpu = pc.get("processor") if has_twin_evidence else None
+        reg_cpu = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in cpu_comps) if cpu_comps else (fallback_cpu or "Sin registro en Stock")
+        cpu_has_reg = bool(cpu_comps or fallback_cpu)
         cpu_has_telem = bool(script_proc and script_proc not in ("Sin reporte de script", "N/A"))
-        proc_match = _hw_tokens_match(reg_cpu, script_proc) if (cpu_comps and cpu_has_telem) else False if (cpu_comps or cpu_has_telem) else True
+        proc_match = _hw_tokens_match(reg_cpu, script_proc) if (cpu_has_reg and cpu_has_telem) else False if (cpu_has_reg or cpu_has_telem) else True
         comparison.append({
             "component": "Procesador (CPU)",
             "registered": reg_cpu,
@@ -368,11 +393,13 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
 
         # 3. Memoria RAM
         ram_comps = comp_by_type.get("memoria ram", []) + comp_by_type.get("ram", []) + comp_by_type.get("memoria", [])
-        reg_ram = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in ram_comps) if ram_comps else "Sin registro en Stock"
+        fallback_ram = pc.get("ram_gb") if has_twin_evidence else None
+        reg_ram = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in ram_comps) if ram_comps else (f"{fallback_ram} GB" if fallback_ram else "Sin registro en Stock")
+        ram_has_reg = bool(ram_comps or fallback_ram)
         ram_has_telem = bool(script_ram and script_ram not in ("Sin reporte", "N/A"))
         
         ram_match = False
-        if ram_comps and ram_has_telem:
+        if ram_has_reg and ram_has_telem:
             if _hw_tokens_match(reg_ram, script_ram):
                 ram_match = True
             else:
@@ -382,6 +409,11 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
                     m = re.search(r"(\d+(?:\.\d+)?)\s*GB", bm, re.IGNORECASE)
                     if m:
                         total_stock_gb += float(m.group(1))
+                if total_stock_gb == 0.0 and fallback_ram:
+                    try:
+                        total_stock_gb = float(fallback_ram)
+                    except (TypeError, ValueError):
+                        pass
                 if total_stock_gb == 0.0:
                     gb_matches = re.findall(r"(\d+(?:\.\d+)?)\s*GB", reg_ram, re.IGNORECASE)
                     if gb_matches:
@@ -401,7 +433,7 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
                                         break
                 except Exception:
                     pass
-        elif not ram_comps and not ram_has_telem:
+        elif not ram_has_reg and not ram_has_telem:
             ram_match = True
 
         comparison.append({
@@ -414,9 +446,11 @@ def get_pc_validation_comparison(pc_name: str, conn=None, unified_components=Non
 
         # 4. Almacenamiento (Disco)
         disk_comps = comp_by_type.get("disco rígido", []) + comp_by_type.get("disco rigido", []) + comp_by_type.get("disco ssd", []) + comp_by_type.get("ssd", []) + comp_by_type.get("disco", []) + comp_by_type.get("almacenamiento", []) + comp_by_type.get("disco rígido / ssd", []) + comp_by_type.get("disco rigido / ssd", [])
-        reg_disk = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in disk_comps) if disk_comps else "Sin registro en Stock"
+        fallback_disk = filter_ignore_devices(pc.get("disk_models")) if has_twin_evidence else None
+        reg_disk = ", ".join(f"{c['brand_model']} ({c['serial_number'] or 'Sin S/N'})" for c in disk_comps) if disk_comps else (fallback_disk or "Sin registro en Stock")
+        disk_has_reg = bool(disk_comps or fallback_disk)
         disk_has_telem = bool(script_disk and script_disk not in ("Sin reporte de script", "N/A"))
-        disk_match = _hw_tokens_match(reg_disk, script_disk) if (disk_comps and disk_has_telem) else False if (disk_comps or disk_has_telem) else True
+        disk_match = _hw_tokens_match(reg_disk, script_disk) if (disk_has_reg and disk_has_telem) else False if (disk_has_reg or disk_has_telem) else True
         comparison.append({
             "component": "Almacenamiento (Disco)",
             "registered": reg_disk,

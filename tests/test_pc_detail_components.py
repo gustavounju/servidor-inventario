@@ -4,6 +4,30 @@ from services.pc_details_service import _filter_display_components_for_pc
 
 
 class PcDetailComponentFilteringTests(unittest.TestCase):
+    def test_hides_zero_gb_usb_reader_from_patimonial_display(self):
+        components, _monitors = _filter_display_components_for_pc(
+            components=[
+                {
+                    "id": 1,
+                    "component_type": "Disco Rígido / SSD",
+                    "brand_model": "Generic USB SD Reader USB Device (0GB)",
+                    "serial_number": "058F63326330",
+                    "assigned_pc": "SISTEMAS-105",
+                },
+                {
+                    "id": 2,
+                    "component_type": "Gabinete",
+                    "brand_model": "PC de escritorio",
+                    "serial_number": "PC-105",
+                    "assigned_pc": "SISTEMAS-105",
+                },
+            ],
+            monitors_detail=[],
+            pc_name="SISTEMAS-105",
+        )
+
+        self.assertEqual([item["serial_number"] for item in components], ["PC-105"])
+
     def test_excludes_audit_only_component_that_was_returned_to_stock(self):
         components, monitors = _filter_display_components_for_pc(
             components=[

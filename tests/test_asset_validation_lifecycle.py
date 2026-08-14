@@ -2,6 +2,8 @@ import json
 
 from services.asset_validation import (
     compute_validation_status,
+    filter_ignore_devices,
+    get_pc_validation_comparison,
     resolve_build_order_action,
     resolve_effective_validation_status,
 )
@@ -13,6 +15,9 @@ class _Result:
 
     def fetchone(self):
         return self._row
+
+    def fetchall(self):
+        return self._row or []
 
 
 class _ValidationConnection:
@@ -98,3 +103,50 @@ def test_stale_without_twin_status_is_derived_from_existing_patrimony():
     assert resolve_effective_validation_status(
         "sin_gemelo", has_official_components=False, has_discrepancies=True
     ) == "sin_gemelo"
+
+
+def test_filter_ignore_devices_returns_empty_when_every_disk_is_removable():
+    assert filter_ignore_devices("Generic USB SD Reader USB Device (0GB)") == ""
+
+
+def test_validated_legacy_twin_uses_pc_record_when_component_rows_are_incomplete():
+    telemetry = {
+        "Sistema": {"Procesador": "Intel Core i5-10400", "RAM (GB)": 16},
+        "Motherboard_Model": "ASUS PRIME H510M",
+        "Disk_Models": "ADATA SU630 (447GB) [SN: SSD-001]",
+    }
+    pc = {
+        "processor": "Intel Core i5-10400",
+        "motherboard_model": "ASUS PRIME H510M",
+        "ram_gb": 16,
+        "disk_models": "ADATA SU630 (447GB) [SN: SSD-001]",
+        "telemetry_snapshot": json.dumps(telemetry),
+        "full_json_data": None,
+    }
+
+    class _ComparisonConnection:
+        def execute(self, query, params=None):
+            assert "FROM pcs" in " ".join(str(query).split())
+            return _Result(pc)
+
+    comparison = get_pc_validation_comparison(
+        "SISTEMAS-105",
+        _ComparisonConnection(),
+        unified_components=[
+            {
+                "component_type": "Gabinete",
+                "brand_model": "PC de escritorio",
+                "serial_number": "PC-105",
+            },
+            {
+                "component_type": "Disco Rígido / SSD",
+                "brand_model": "Generic USB SD Reader USB Device (0GB)",
+                "serial_number": "058F63326330",
+            },
+        ],
+    )
+
+    core_rows = comparison[:4]
+    assert all(row["match"] for row in core_rows)
+    disk_row = next(row for row in core_rows if row["component"] == "Almacenamiento (Disco)")
+    assert "Generic USB" not in disk_row["registered"]

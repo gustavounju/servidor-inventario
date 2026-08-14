@@ -1,5 +1,6 @@
 from services.asset_validation import (
     get_pc_validation_comparison,
+    is_ignored_storage_component,
     resolve_build_order_action,
     resolve_effective_validation_status,
 )
@@ -120,6 +121,8 @@ def _filter_display_components_for_pc(components, monitors_detail, pc_name, link
 
     def should_keep(item):
         if not item:
+            return False
+        if is_ignored_storage_component(item):
             return False
         if _is_inactive_inventory_status(item.get("status")):
             return False
