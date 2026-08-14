@@ -3915,6 +3915,250 @@ button.kpi-mini-chip:hover {
 .integrated-alert--danger .integrated-alert__header { color: var(--color-critical); }
 .integrated-alert .integrated-alert__header { color: var(--color-warning); }
 
+/* Dashboard principal: misma jerarquia operativa y densidad que Stock. */
+.dashboard-workspace {
+    padding: 0 0 24px;
+}
+
+.dashboard-workspace__inner {
+    display: grid;
+    gap: 16px;
+    margin-top: 38px;
+}
+
+.dashboard-page-hero {
+    align-items: center;
+    display: flex;
+    gap: 24px;
+    justify-content: space-between;
+}
+
+.dashboard-page-hero__summary {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.dashboard-radar {
+    margin: 0;
+    padding: 0;
+}
+
+.dashboard-radar .health-radar {
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.dashboard-radar .health-radar__bar {
+    border-radius: 4px;
+}
+
+.dashboard-radar .health-radar__segment {
+    transition: none;
+}
+
+.dashboard-content-stack {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+}
+
+.dashboard-attention-panel,
+.dashboard-inventory-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.dashboard-attention-panel {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    padding: 16px;
+}
+
+.dashboard-section-heading {
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    gap: 16px;
+    grid-column: 1 / -1;
+    justify-content: space-between;
+    margin: 0;
+    padding: 0 0 12px;
+}
+
+.dashboard-section-heading h2 {
+    color: var(--text-color);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.dashboard-section-heading p {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin: 3px 0 0;
+}
+
+.dashboard-section-heading__meta {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.dashboard-attention-panel > .integrated-alert,
+.dashboard-attention-panel > .priority-ticket {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    grid-column: span 4;
+    margin: 0;
+    min-height: 112px;
+    padding: 14px;
+}
+
+.dashboard-attention-panel > .integrated-alert--danger,
+.dashboard-attention-panel > .priority-ticket--critical {
+    border-color: rgba(239, 68, 68, 0.42);
+}
+
+.dashboard-attention-panel .integrated-alert--danger .integrated-alert__header {
+    color: var(--color-critical);
+}
+
+.dashboard-attention-panel > .integrated-alert:not(.integrated-alert--danger),
+.dashboard-attention-panel > .priority-ticket--warning {
+    border-color: rgba(245, 158, 11, 0.38);
+}
+
+.dashboard-patrimony-panel {
+    border-color: rgba(56, 189, 248, 0.35) !important;
+    box-shadow: none !important;
+}
+
+.priority-ticket--tasks {
+    border-color: rgba(59, 130, 246, 0.38) !important;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.priority-ticket:hover,
+.priority-ticket:focus-visible {
+    background: var(--table-header-bg);
+    color: inherit;
+}
+
+.priority-ticket:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.35);
+    outline-offset: 2px;
+}
+
+.dashboard-inventory-panel {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.dashboard-inventory-panel__heading {
+    padding: 14px 16px;
+}
+
+.dashboard-inventory-panel__count {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 5px 8px;
+    white-space: nowrap;
+}
+
+.dashboard-inventory-panel .master-table-container {
+    margin: 0;
+    padding: 0;
+}
+
+.dashboard-inventory-panel #dashboardTableRegion > .d-flex:first-of-type {
+    padding: 12px 16px 0;
+}
+
+.dashboard-inventory-panel .master-table th:first-child,
+.dashboard-inventory-panel .master-table td:first-child {
+    padding-left: 16px;
+}
+
+.dashboard-inventory-panel .master-table th:last-child,
+.dashboard-inventory-panel .master-table td:last-child {
+    padding-right: 16px;
+}
+
+.dashboard-inventory-panel .inventory-pagination-wrap {
+    padding: 0 16px 12px;
+}
+
+@media (max-width: 1199px) {
+    .dashboard-attention-panel > .integrated-alert,
+    .dashboard-attention-panel > .priority-ticket {
+        grid-column: span 6;
+    }
+}
+
+@media (max-width: 767px) {
+    .dashboard-workspace__inner {
+        margin-top: 24px;
+    }
+
+    .dashboard-page-hero {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 18px;
+    }
+
+    .dashboard-page-hero__summary {
+        justify-content: flex-start;
+    }
+
+    .dashboard-radar .health-radar__labels,
+    .dashboard-radar .health-radar__legend {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .dashboard-attention-panel {
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+
+    .dashboard-attention-panel > .integrated-alert,
+    .dashboard-attention-panel > .priority-ticket {
+        grid-column: 1;
+    }
+
+    .dashboard-section-heading {
+        align-items: flex-start;
+    }
+
+    .dashboard-inventory-panel__heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-radar .health-radar__segment,
+    .dashboard-attention-panel .priority-ticket {
+        transition: none;
+    }
+}
+
 /* ===== RADAR DROPDOWNS (Menús Reorganizados) ===== */
 .radar-dropdown-menu,
 .dropdown-menu-dark {

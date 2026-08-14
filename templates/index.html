@@ -4,6 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Inventario | Inventario GOLD</title>
     <script>
       (function() {
@@ -78,7 +79,8 @@
         {% endwith %}
     </div>
 
-    <main style="padding-top: 0; padding-bottom: 20px;">
+    <main class="dashboard-workspace">
+        <div class="container-fluid px-3 dashboard-workspace__inner">
         {% set fleet_attention_count = kpi_alerta_media + kpi_criticas %}
         {% set total = kpi_total_activas if kpi_total_activas else 1 %}
         {% set fleet_attention_pct = ((fleet_attention_count * 100 / total)) | round(0, 'floor') | int %}
@@ -88,14 +90,25 @@
         {% set pct_stable = 100 - pct_crit - pct_warn %}
         {% if pct_stable < 0 %}{% set pct_stable = 0 %}{% endif %}
 
+        <header class="hero-header dashboard-page-hero">
+            <div>
+                <h1 class="hero-title"><i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Centro de operaciones</h1>
+                <p class="hero-subtitle">Estado de la flota, alertas patrimoniales y acceso al inventario de equipos</p>
+            </div>
+            <div class="dashboard-page-hero__summary" aria-label="Resumen de la flota">
+                <span class="hero-stat"><i class="bi bi-pc-display" aria-hidden="true"></i><strong>{{ kpi_total_activas }}</strong> activas</span>
+                <span class="hero-stat"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i><strong>{{ fleet_attention_count }}</strong> por revisar</span>
+            </div>
+        </header>
+
         <!-- MIDNIGHT RADAR MASTHEAD -->
-        <div class="radar-masthead">
+        <section class="radar-masthead dashboard-radar" aria-labelledby="fleetHealthTitle">
             <div class="health-radar">
                 <div class="health-radar__labels">
-                    <span>Estado de Flota</span>
+                    <span id="fleetHealthTitle">Estado de Flota</span>
                     <span>{{ kpi_total_activas }} Equipos Activos</span>
                 </div>
-                <div class="health-radar__bar">
+                <div class="health-radar__bar" role="img" aria-label="Flota: {{ pct_stable | round(1) }} por ciento estable, {{ pct_warn | round(1) }} por ciento en advertencia y {{ pct_crit | round(1) }} por ciento en estado crítico">
                     <div class="health-radar__segment health-radar__segment--stable" style="width: {{ pct_stable }}%;" title="Estable: {{ kpi_total_activas - kpi_criticas - kpi_alerta_media }}"></div>
                     <div class="health-radar__segment health-radar__segment--warning" style="width: {{ pct_warn }}%;" title="Advertencia: {{ kpi_alerta_media }}"></div>
                     <div class="health-radar__segment health-radar__segment--critical" style="width: {{ pct_crit }}%;" title="Críticos: {{ kpi_criticas }}"></div>
@@ -106,15 +119,15 @@
                     <div class="health-radar__legend-item"><div class="health-radar__legend-dot" style="background: var(--color-critical);"></div> <span class="font-mono">{{ pct_crit | round(1) }}% Crítico</span></div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- CONSOLE GRID -->
-        <div class="console-grid">
-            <!-- COLUMNA IZQUIERDA: PRIORIDADES Y ALERTAS -->
-            <div class="console-panel">
-                <div class="console-panel__title" style="display: flex; justify-content: space-between;">
-                    <span>Acción Requerida</span>
-                    <span style="font-size: 0.9em; font-weight: normal; color: var(--text-muted, #94a3b8); text-transform: none; letter-spacing: normal;">Total Flota: {{ kpi_total_activas }}</span>
+        <!-- RESUMEN OPERATIVO + INVENTARIO A ANCHO COMPLETO -->
+        <div class="dashboard-content-stack">
+            <!-- PRIORIDADES Y ALERTAS -->
+            <section class="dashboard-attention-panel" aria-labelledby="attentionTitle">
+                <div class="console-panel__title dashboard-section-heading">
+                    <h2 id="attentionTitle">Acción requerida</h2>
+                    <span class="dashboard-section-heading__meta">Total flota: {{ kpi_total_activas }}</span>
                 </div>
                 
                 {% if duplicates_count and duplicates_count > 0 %}
@@ -148,7 +161,7 @@
                 {% endif %}
 
                 <!-- PANEL PATRIMONIAL (FASE 4) -->
-                <div class="integrated-alert mb-3" style="background: var(--card-bg); border: 1px solid var(--border-color); border-left: 4px solid var(--accent-color); border-radius: 8px; padding: 12px 14px; box-shadow: var(--kpi-shadow);">
+                <div class="integrated-alert dashboard-patrimony-panel">
                     <div class="integrated-alert__header d-flex justify-content-between align-items-center mb-2" style="font-weight: 700; font-size: 0.85rem; color: var(--text-color);">
                         <span><i class="bi bi-shield-lock-fill me-1 text-info"></i> Gemelos Digitales</span>
                         <span class="badge border" style="font-weight: 600; font-size: 0.7rem; background: var(--bg-color); color: var(--text-color); border-color: var(--border-color) !important;">{{ kpi_pat_total_activos | default(0) }} Activos</span>
@@ -190,7 +203,7 @@
                     {% endif %}
                 </div>
 
-                <a href="{{ url_for('dashboard.dashboard', alerta='critica') }}" class="priority-ticket">
+                <a href="{{ url_for('dashboard.dashboard', alerta='critica') }}" class="priority-ticket priority-ticket--critical">
                     <div class="priority-ticket__header">
                         <span class="priority-ticket__badge">PRIORIDAD MAX</span>
                         <i class="bi bi-arrow-right text-muted"></i>
@@ -199,7 +212,7 @@
                     <p class="priority-ticket__desc">RAM menor a 8GB, alertas simultáneas o SO obsoleto.</p>
                 </a>
 
-                <a href="{{ url_for('dashboard.dashboard', alerta='media') }}" class="priority-ticket" style="border-left-color: var(--color-warning);">
+                <a href="{{ url_for('dashboard.dashboard', alerta='media') }}" class="priority-ticket priority-ticket--warning">
                     <div class="priority-ticket__header">
                         <span class="priority-ticket__badge" style="background: rgba(249, 115, 22, 0.1); color: var(--color-warning);">REVISIÓN</span>
                         <i class="bi bi-arrow-right text-muted"></i>
@@ -209,19 +222,26 @@
                 </a>
                 
                 {% if unassigned_tasks %}
-                <div class="priority-ticket" style="border-left-color: var(--accent-color); cursor: pointer;" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal">
+                <button type="button" class="priority-ticket priority-ticket--tasks" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal">
                     <div class="priority-ticket__header">
                         <span class="priority-ticket__badge" style="background: rgba(250, 204, 21, 0.1); color: var(--accent-color);">TAREAS</span>
                         <i class="bi bi-arrow-right text-muted"></i>
                     </div>
                     <h3 class="priority-ticket__title">{{ unassigned_count }} Tareas Huérfanas</h3>
                     <p class="priority-ticket__desc">Hay tickets sin técnico asignado. Clic para resolver.</p>
-                </div>
+                </button>
                 {% endif %}
-            </div>
+            </section>
             
-            <!-- COLUMNA DERECHA: MÉTRICAS GLOBALES Y TABLA -->
-            <div class="console-panel">
+            <!-- INVENTARIO PRINCIPAL -->
+            <section class="dashboard-inventory-panel" aria-labelledby="inventoryTitle">
+                <div class="dashboard-section-heading dashboard-inventory-panel__heading">
+                    <div>
+                        <h2 id="inventoryTitle">Inventario de equipos</h2>
+                        <p>Busque, filtre y gestione la flota sin salir del tablero.</p>
+                    </div>
+                    <span class="dashboard-inventory-panel__count">{{ kpi_total_activas }} activos</span>
+                </div>
                 <div>
                     {% block content %}{% endblock %}
 
@@ -229,7 +249,7 @@
                     {% include '_dashboard_table_region.html' %}
                     {% endblock %}
                 </div>
-            </div>
+            </section>
         </div>
 
         <div id="server-data-container" data-server-url="{{ server_url }}" style="display: none;"></div>
