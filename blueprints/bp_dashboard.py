@@ -11,7 +11,7 @@ from services.audit import log_audit_event
 from services.dashboard_overview import load_dashboard_overview
 from services.pc_actions import decommission_pc_service, reactivate_pc_service, delete_permanent_pc_service, update_pc_infrastructure_service
 from services.pc_details_service import get_pc_detail_context
-from services.asset_validation import is_ignored_storage_component, is_ignored_storage_device
+from services.asset_validation import is_ignored_storage_component
 from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data, recalculate_all_pc_fueros
 from utils.auth import is_authenticated, login_required, permission_required, current_technician_identity, has_permission, current_username
 
@@ -55,8 +55,6 @@ def build_acta_component_groups(components, monitors_detail, hardware_components
 
     for raw_component in components or []:
         component = dict(raw_component)
-        if is_ignored_storage_component(component):
-            continue
         bucket = _acta_component_bucket(component.get("component_type"))
         if bucket == "monitores":
             continue
@@ -83,7 +81,7 @@ def build_acta_component_groups(components, monitors_detail, hardware_components
         serial = str(disk.get("serial") or disk.get("serial_number") or "").strip()
         normalized_serial = serial.upper()
         normalized_model = _normalize_component_type(model)
-        if not model or is_ignored_storage_device(model):
+        if not model:
             continue
         if normalized_serial and normalized_serial not in {"N/A", "SIN S/N", "NONE"}:
             if normalized_serial in existing_disk_serials:
@@ -823,7 +821,26 @@ def acta_gemelo_validado(pc_name):
         flash("El Acta de Entrega sólo está disponible para equipos con Gemelo Digital Validado OK.", "warning")
         return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
 
-    components = ctx.get("display_components") or ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
+    components = list(
+        ctx.get("display_components")
+        or ctx.get("all_unified_components")
+        or ctx.get("pc_components")
+        or ctx.get("components")
+        or []
+    )
+    # El lector USB se ignora para validar el gemelo, pero el Acta debe enumerar
+    # todo el almacenamiento físico reportado/registrado, incluido el removible.
+    known_serials = {
+        str(item.get("serial_number") or "").strip().upper()
+        for item in components
+        if item
+    }
+    for item in ctx.get("all_unified_components") or []:
+        serial = str(item.get("serial_number") or "").strip().upper()
+        if is_ignored_storage_component(item) and serial not in known_serials:
+            components.append(dict(item))
+            if serial:
+                known_serials.add(serial)
     monitors_detail = ctx.get("display_monitors_detail") or ctx.get("monitors_detail") or []
     acta_component_groups = build_acta_component_groups(
         components,
