@@ -702,13 +702,19 @@
             <a href="{{ url_for('stock.build_orders_view') }}?search={{ linked_bo.code }}" class="btn btn-sm btn-outline-success fw-bold py-1 px-3" title="Este equipo ya posee la Orden de Armado {{ linked_bo.code }} asignada">
               <i class="bi bi-box-seam me-1"></i> Orden de Armado {{ linked_bo.code }} (Asignada)
             </a>
+            {% if build_order_action == 'update' %}
             <button type="button" class="btn btn-sm btn-primary fw-bold py-1 px-3" data-bs-toggle="modal" data-bs-target="#modalCrearBODesdeTelemetria" title="Actualizar la Orden de Armado {{ linked_bo.code }}, asignarle nuevos Remitos, O.C. o refrescar componentes">
               <i class="bi bi-pencil-square me-1"></i> 🛠️ Actualizar Orden / Remitos
             </button>
-            {% else %}
+            {% endif %}
+            {% elif build_order_action == 'create' %}
             <button type="button" class="btn btn-sm btn-primary fw-bold py-1 px-3" data-bs-toggle="modal" data-bs-target="#modalCrearBODesdeTelemetria" title="Generar una nueva Orden de Armado patrimonial con los componentes elegidos de la telemetría">
               <i class="bi bi-tools me-1"></i> 🛠️ Crear Orden de Armado
             </button>
+            {% else %}
+            <span class="badge text-bg-success-subtle border border-success-subtle text-success-emphasis py-2 px-3" title="Los nuevos reportes del script se conservan en el historial de vida del equipo">
+              <i class="bi bi-clock-history me-1"></i> Gemelo existente · reporte al historial
+            </span>
             {% endif %}
 
             {% if pc.validation_status == 'discrepancia' or pc.validation_status == 'pendiente' %}
@@ -1386,7 +1392,8 @@
       else if (h === '#historial') activatePcTab('historial');
     })();
   </script>
-  <!-- MODAL: CREAR ORDEN DE ARMADO DESDE TELEMETRIA -->
+  {% if build_order_action in ('create', 'update') %}
+  <!-- MODAL: CREAR O ACTUALIZAR ORDEN DE ARMADO DESDE TELEMETRIA -->
   <div class="modal fade" id="modalCrearBODesdeTelemetria" tabindex="-1" aria-labelledby="modalCrearBODesdeTelemetriaLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content" style="background: var(--card-bg, #ffffff); color: var(--text-color, #0f172a); border: 1px solid var(--border-color, #e2e8f0);">
@@ -1400,7 +1407,11 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="modal-body">
             <p class="small text-muted mb-3">
+              {% if linked_bo %}
+              Seleccioná los cambios reales que querés agregar a <strong>{{ linked_bo.code }}</strong>. Los componentes ya registrados y su historial se conservarán.
+              {% else %}
               Seleccioná cuáles de los componentes detectados electrónicamente en <strong>{{ pc.pc_name }}</strong> querés incluir en la nueva Orden de Armado patrimonial.
+              {% endif %}
             </p>
 
             <div class="row g-3 mb-3">
@@ -1678,6 +1689,8 @@
         </form>
       </div>
     </div>
+  </div>
+  {% endif %}
   <script>
     function applyGlobalRemitoOC() {
       const gInv = document.getElementById('global_invoice') ? document.getElementById('global_invoice').value.trim() : '';

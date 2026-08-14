@@ -510,15 +510,17 @@ def generate_next_bo_code(conn):
 
 
 @bp_dashboard.route("/pc/<pc_name>/create_bo_from_telemetry", methods=["POST"])
+@login_required
 def create_bo_from_telemetry(pc_name):
-    """Crea una nueva Orden de Armado basada en componentes seleccionados de la telemetría WMI."""
+    """Crea la primera orden o agrega cambios a la orden patrimonial existente."""
     import logging
     logger = logging.getLogger(__name__)
+    if not _has_stock_management_access():
+        flash("Acceso denegado: se requiere permiso de Gestión Stock.", "error")
+        return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
     try:
         from utils.auth import current_technician_identity
         tech = current_technician_identity() or "Sistema"
-        year = datetime.datetime.now().strftime("%Y")
-        
         target_user = request.form.get("target_user", "").strip() or None
         target_fuero = request.form.get("target_fuero", "").strip() or None
         invoice_number = request.form.get("invoice_number", "").strip() or None
@@ -545,8 +547,21 @@ def create_bo_from_telemetry(pc_name):
 
         with get_db_connection() as conn:
             clean_name = pc_name.strip().lower()
-            pc = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE LOWER(TRIM(pc_name)) = %s", (clean_name,)).fetchone()
-            pc_dict = dict(pc) if pc else {"pc_name": pc_name, "last_user": None, "fuero": None}
+            pc = conn.execute(
+                """
+                SELECT pc_name, last_user, fuero, validation_status
+                FROM pcs
+                WHERE LOWER(TRIM(pc_name)) = %s
+                FOR UPDATE
+                """,
+                (clean_name,),
+            ).fetchone()
+            pc_dict = dict(pc) if pc else {
+                "pc_name": pc_name,
+                "last_user": None,
+                "fuero": None,
+                "validation_status": "sin_gemelo",
+            }
 
             final_user = target_user or pc_dict.get("last_user")
             final_fuero = target_fuero or pc_dict.get("fuero")
@@ -564,10 +579,30 @@ def create_bo_from_telemetry(pc_name):
 
             # Validar si ya existe una Orden de Armado previa para esta PC (Actualizar o Crear)
             existing_bo = conn.execute(
-                "SELECT id, code FROM build_orders WHERE LOWER(TRIM(target_pc_name)) = %s ORDER BY created_at DESC LIMIT 1",
-                (pc_name.strip().lower(),)
+                """
+                SELECT DISTINCT bo.id, bo.code
+                FROM build_orders bo
+                LEFT JOIN build_order_items boi ON boi.build_order_id = bo.id
+                WHERE LOWER(TRIM(bo.target_pc_name)) = %s
+                   OR LOWER(TRIM(boi.pc_name)) = %s
+                ORDER BY bo.created_at DESC
+                LIMIT 1
+                """,
+                (clean_name, clean_name),
             ).fetchone()
 
+            # Un gemelo ya confirmado puede provenir de una asignación directa
+            # antigua, sin Orden de Armado. No fabricamos una orden nueva al
+            # volver a recibir el mismo reporte: esa ejecución queda en historial.
+            current_validation = (pc_dict.get("validation_status") or "sin_gemelo").strip().lower()
+            if not existing_bo and current_validation != "sin_gemelo":
+                flash(
+                    "El equipo ya posee un gemelo patrimonial. El nuevo reporte queda en su historial; no se creó otra Orden de Armado.",
+                    "info",
+                )
+                return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
+
+            updating_existing = bool(existing_bo)
             if existing_bo:
                 bo_id = existing_bo["id"]
                 code = existing_bo["code"]
@@ -585,8 +620,6 @@ def create_bo_from_telemetry(pc_name):
                     """,
                     (oc_number, invoice_number, final_fuero, final_user, pc_name, notes, bo_id)
                 )
-                # Limpiar ítems previos de esta BO para refrescarlos con la nueva selección
-                conn.execute("DELETE FROM build_order_items WHERE build_order_id = %s", (bo_id,))
             else:
                 code = generate_next_bo_code(conn)
                 conn.execute(
@@ -615,9 +648,13 @@ def create_bo_from_telemetry(pc_name):
                 
                 comp_id = None
                 if clean_sn:
-                    existing = conn.execute("SELECT id FROM components WHERE UPPER(serial_number) = %s LIMIT 1", (clean_sn.upper(),)).fetchone()
+                    existing = conn.execute(
+                        "SELECT id, serial_number FROM components WHERE UPPER(serial_number) = %s LIMIT 1",
+                        (clean_sn.upper(),),
+                    ).fetchone()
                     if existing:
                         comp_id = existing["id"]
+                        clean_sn = existing.get("serial_number") or clean_sn
                         conn.execute(
                             """
                             UPDATE components 
@@ -628,8 +665,33 @@ def create_bo_from_telemetry(pc_name):
                             (bo_id, pc_name, final_user, final_fuero, item_inv, item_oc, comp_id)
                         )
 
+                # Componentes WMI sin serie (CPU/RAM) se reconocen por tipo y
+                # modelo dentro del mismo gemelo. Así un reporte repetido no
+                # genera otro Auto-ID.
+                if not comp_id and not clean_sn:
+                    existing = conn.execute(
+                        """
+                        SELECT id, serial_number
+                        FROM components
+                        WHERE (LOWER(TRIM(assigned_pc)) = %s OR build_order_id = %s)
+                          AND LOWER(TRIM(component_type)) = LOWER(TRIM(%s))
+                          AND LOWER(TRIM(brand_model)) = LOWER(TRIM(%s))
+                          AND status NOT IN ('Retirado', 'Scrap')
+                          AND (lifecycle_status IS NULL OR lifecycle_status NOT IN ('retirado', 'scrap'))
+                        LIMIT 1
+                        """,
+                        (clean_name, bo_id, c_type, c_model),
+                    ).fetchone()
+                    if existing:
+                        comp_id = existing["id"]
+                        clean_sn = existing.get("serial_number")
+
                 if not comp_id:
-                    sn_to_insert = clean_sn if clean_sn else f"SN-{c_type[:3].upper()}-{year}-{idx+1}-{datetime.datetime.now().strftime('%M%S')}"
+                    if clean_sn:
+                        sn_to_insert = clean_sn
+                    else:
+                        from blueprints.bp_stock import generate_internal_serial
+                        sn_to_insert = generate_internal_serial(c_type)
                     conn.execute(
                         """
                         INSERT INTO components (serial_number, component_type, brand_model, status, assigned_pc, build_order_id, assigned_user, assigned_fuero, invoice_number, oc_number)
@@ -639,13 +701,22 @@ def create_bo_from_telemetry(pc_name):
                     )
                     clean_sn = sn_to_insert
 
-                conn.execute(
+                existing_item = conn.execute(
                     """
-                    INSERT INTO build_order_items (build_order_id, serial_number, asset_type, brand_model, pc_name, scanned_by)
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    SELECT id FROM build_order_items
+                    WHERE build_order_id = %s AND UPPER(TRIM(serial_number)) = UPPER(TRIM(%s))
+                    LIMIT 1
                     """,
-                    (bo_id, clean_sn, c_type, c_model, pc_name, tech)
-                )
+                    (bo_id, clean_sn),
+                ).fetchone()
+                if not existing_item:
+                    conn.execute(
+                        """
+                        INSERT INTO build_order_items (build_order_id, serial_number, asset_type, brand_model, pc_name, scanned_by)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                        """,
+                        (bo_id, clean_sn, c_type, c_model, pc_name, tech)
+                    )
 
             conn.execute("UPDATE pcs SET validation_status = 'validado' WHERE pc_name = %s", (pc_name,))
 
@@ -653,14 +724,17 @@ def create_bo_from_telemetry(pc_name):
                 conn,
                 pc_name=pc_name,
                 field="build_order",
-                old_value=None,
+                old_value=code if updating_existing else None,
                 new_value=code,
-                action_type="CREAR_BO_TELEMETRIA",
+                action_type="ACTUALIZAR_BO_TELEMETRIA" if updating_existing else "CREAR_BO_TELEMETRIA",
                 request_ip=request.remote_addr,
             )
             conn.commit()
 
-        flash(f"Se creó con éxito la Orden de Armado {code} con los componentes seleccionados.", "success")
+        if updating_existing:
+            flash(f"Se actualizó la Orden de Armado {code} sin duplicar sus componentes ni borrar su historial.", "success")
+        else:
+            flash(f"Se creó con éxito la Orden de Armado {code} con los componentes seleccionados.", "success")
     except Exception as exc:
         logger.error("Error creando Orden de Armado desde telemetría para %s: %s", pc_name, exc)
         flash(f"Error al generar la Orden de Armado: {exc}", "error")

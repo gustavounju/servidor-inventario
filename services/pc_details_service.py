@@ -1,4 +1,4 @@
-from services.asset_validation import get_pc_validation_comparison
+from services.asset_validation import get_pc_validation_comparison, resolve_build_order_action
 from database.db_core import get_db_connection
 from utils.auth import list_technician_users
 import re
@@ -974,6 +974,14 @@ def get_pc_detail_context(pc_name):
         official_components = [c for c in all_unified_components if c.get("source") != "audit"]
         validation_comparison = get_pc_validation_comparison(pc_name, conn, unified_components=official_components)
         current_status = pc.get("validation_status")
+        has_validation_discrepancies = any(
+            not item.get("match") for item in (validation_comparison or [])
+        )
+        build_order_action = resolve_build_order_action(
+            current_status,
+            linked_bo,
+            has_validation_discrepancies,
+        )
 
         # Obtener lista completa de todos los Remitos y OCs existentes en el sistema para autocompletado inteligente
         all_remito_rows = conn.execute("""
@@ -1015,5 +1023,6 @@ def get_pc_detail_context(pc_name):
             "invoice_list": invoice_list,
             "all_existing_remitos": all_existing_remitos,
             "all_existing_ocs": all_existing_ocs,
-            "linked_bo": linked_bo
+            "linked_bo": linked_bo,
+            "build_order_action": build_order_action,
         }

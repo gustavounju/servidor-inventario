@@ -176,8 +176,9 @@ class ActaGemeloValidadoTests(unittest.TestCase):
             self.assertIn("alerta_nombre_duplicado = 0", update_query)
             self.assertIn("validation_status = 'validado'", update_query)
 
+    @patch("utils.auth.refresh_session_user", return_value=True)
     @patch("blueprints.bp_dashboard.get_db_connection")
-    def test_create_bo_from_telemetry_saves_remito_and_oc(self, mock_get_db):
+    def test_create_bo_from_telemetry_saves_remito_and_oc(self, mock_get_db, _mock_refresh):
         from flask import Flask
         from blueprints.bp_dashboard import bp_dashboard
 
@@ -212,6 +213,11 @@ class ActaGemeloValidadoTests(unittest.TestCase):
         mock_conn.execute.side_effect = side_effect
 
         with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess["auth_user"] = {
+                    "username": "tecnico",
+                    "permissions": {"manage_stock": True},
+                }
             res = client.post(
                 "/pc/PC-TEST/create_bo_from_telemetry",
                 data={
@@ -238,6 +244,125 @@ class ActaGemeloValidadoTests(unittest.TestCase):
             bo_call_args = next(call[0][1] for call in mock_conn.execute.call_args_list if "INSERT INTO build_orders" in str(call[0][0]))
             self.assertIn("OC-2026-777", bo_call_args)
             self.assertIn("REM-2026-999", bo_call_args)
+
+    @patch("utils.auth.refresh_session_user", return_value=True)
+    @patch("blueprints.bp_dashboard.get_db_connection")
+    def test_existing_build_order_is_updated_without_deleting_or_duplicating_items(self, mock_get_db, _mock_refresh):
+        from flask import Flask
+        from blueprints.bp_dashboard import bp_dashboard
+
+        app = Flask(__name__)
+        app.secret_key = "test_secret"
+        app.register_blueprint(bp_dashboard)
+
+        mock_conn = mock_get_db.return_value.__enter__.return_value
+
+        class MockResult:
+            def __init__(self, row=None):
+                self.row = row
+
+            def fetchone(self):
+                return self.row
+
+            def fetchall(self):
+                return []
+
+        def side_effect(query, *args, **kwargs):
+            sql = " ".join(str(query).split())
+            if "FROM pcs WHERE LOWER(TRIM(pc_name))" in sql:
+                return MockResult({
+                    "pc_name": "PC-VALIDADA",
+                    "last_user": "Ana",
+                    "fuero": "Civil",
+                    "validation_status": "validado",
+                })
+            if "FROM build_orders" in sql:
+                return MockResult({"id": 12, "code": "BO-2026-0012"})
+            if "FROM components WHERE UPPER(serial_number)" in sql:
+                return MockResult({"id": 77, "serial_number": "CPU-77"})
+            if "FROM build_order_items" in sql:
+                return MockResult({"id": 90})
+            return MockResult()
+
+        mock_conn.execute.side_effect = side_effect
+
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess["auth_user"] = {
+                    "username": "tecnico",
+                    "permissions": {"manage_stock": True},
+                }
+            response = client.post(
+                "/pc/PC-VALIDADA/create_bo_from_telemetry",
+                data={
+                    "comp_selected": ["0"],
+                    "comp_type": ["Procesador"],
+                    "comp_model": ["Intel Core i5-10400"],
+                    "comp_serial": ["CPU-77"],
+                },
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 302)
+        queries = [" ".join(str(call[0][0]).split()) for call in mock_conn.execute.call_args_list]
+        self.assertFalse(any("DELETE FROM build_order_items" in query for query in queries))
+        self.assertFalse(any("INSERT INTO components" in query for query in queries))
+        self.assertFalse(any("INSERT INTO build_order_items" in query for query in queries))
+
+    @patch("utils.auth.refresh_session_user", return_value=True)
+    @patch("blueprints.bp_dashboard.get_db_connection")
+    def test_validated_twin_without_order_does_not_create_a_new_order(self, mock_get_db, _mock_refresh):
+        from flask import Flask
+        from blueprints.bp_dashboard import bp_dashboard
+
+        app = Flask(__name__)
+        app.secret_key = "test_secret"
+        app.register_blueprint(bp_dashboard)
+
+        mock_conn = mock_get_db.return_value.__enter__.return_value
+
+        class MockResult:
+            def __init__(self, row=None):
+                self.row = row
+
+            def fetchone(self):
+                return self.row
+
+        def side_effect(query, *args, **kwargs):
+            sql = " ".join(str(query).split())
+            if "FROM pcs WHERE LOWER(TRIM(pc_name))" in sql:
+                return MockResult({
+                    "pc_name": "PC-VALIDADA",
+                    "last_user": "Ana",
+                    "fuero": "Civil",
+                    "validation_status": "validado",
+                })
+            if "FROM build_orders" in sql:
+                return MockResult(None)
+            return MockResult(None)
+
+        mock_conn.execute.side_effect = side_effect
+
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess["auth_user"] = {
+                    "username": "tecnico",
+                    "permissions": {"manage_stock": True},
+                }
+            response = client.post(
+                "/pc/PC-VALIDADA/create_bo_from_telemetry",
+                data={
+                    "comp_selected": ["0"],
+                    "comp_type": ["Procesador"],
+                    "comp_model": ["Intel Core i5-10400"],
+                    "comp_serial": ["CPU-77"],
+                },
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 302)
+        queries = [" ".join(str(call[0][0]).split()) for call in mock_conn.execute.call_args_list]
+        self.assertFalse(any("INSERT INTO build_orders" in query for query in queries))
 
 if __name__ == "__main__":
     unittest.main()

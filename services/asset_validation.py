@@ -79,6 +79,21 @@ def _hw_tokens_match(a: str, b: str) -> bool:
     return na == nb or na in nb or nb in na
 
 
+def resolve_build_order_action(validation_status: str, linked_bo=None, has_discrepancies=False) -> str:
+    """Decide la acción patrimonial sin crear órdenes duplicadas.
+
+    Un equipo que ya tiene gemelo conserva su historia aunque no se haya podido
+    localizar una orden antigua. Una orden nueva solo corresponde a un equipo
+    realmente sin gemelo. Si ya existe una orden, las diferencias se agregan a
+    esa misma orden.
+    """
+    if linked_bo:
+        return "update" if has_discrepancies else "history"
+    if (validation_status or "sin_gemelo").strip().lower() == "sin_gemelo":
+        return "create"
+    return "history"
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Función principal
 # ─────────────────────────────────────────────────────────────────────────────
@@ -101,11 +116,16 @@ def compute_validation_status(pc_name: str, conn) -> str:
         # 1. ¿Hay algún activo patrimonial asignado a esta PC (en components o build_orders)?
         assigned_comp = conn.execute(
             """
-            SELECT id, brand_model, serial_number
+            SELECT id, component_type, brand_model, serial_number
             FROM components
             WHERE LOWER(TRIM(assigned_pc)) = LOWER(TRIM(%s))
               AND status NOT IN ('Retirado', 'Scrap')
               AND (lifecycle_status IS NULL OR lifecycle_status NOT IN ('retirado', 'scrap'))
+            ORDER BY CASE
+                WHEN LOWER(TRIM(component_type)) IN ('procesador', 'microprocesador', 'cpu') THEN 0
+                WHEN LOWER(TRIM(component_type)) IN ('placa madre', 'motherboard') THEN 1
+                ELSE 2
+            END
             LIMIT 1
             """,
             (pc_name,)
@@ -128,7 +148,7 @@ def compute_validation_status(pc_name: str, conn) -> str:
 
         # 2. ¿La PC ya reportó desde el script?
         pc_data = conn.execute(
-            "SELECT processor, motherboard_model, ram_gb, disk_models, last_report, telemetry_snapshot, full_json_data FROM pcs WHERE pc_name = %s",
+            "SELECT processor, motherboard_model, ram_gb, disk_models, last_report, telemetry_snapshot, full_json_data, validation_status FROM pcs WHERE pc_name = %s",
             (pc_name,)
         ).fetchone()
 
@@ -155,17 +175,20 @@ def compute_validation_status(pc_name: str, conn) -> str:
             except Exception:
                 pass
 
-        asset_model = cpu_asset.get("brand_model") or ""
+        # Solo comparar un activo con la telemetría de su mismo tipo. Antes se
+        # intentaba leer una variable inexistente (`cpu_asset`) y cualquier error
+        # degradaba un gemelo validado a `sin_gemelo`.
+        if assigned_comp:
+            asset_model = assigned_comp.get("brand_model") or ""
+            asset_type = (assigned_comp.get("component_type") or "").strip().lower()
+            comparable_value = None
+            if asset_type in ("procesador", "microprocesador", "cpu"):
+                comparable_value = script_processor
+            elif asset_type in ("placa madre", "motherboard"):
+                comparable_value = script_motherboard
 
-        # Si el modelo del activo coincide con procesador O motherboard reportados,
-        # consideramos que el hardware de CPU es compatible.
-        processor_match = _hw_tokens_match(asset_model, script_processor)
-        motherboard_match = _hw_tokens_match(asset_model, script_motherboard)
-
-        # Si ninguno coincide pero el activo existe y hay telemetría limpia
-        if not (processor_match or motherboard_match):
-            if (script_processor and script_processor not in ("N/A", "") and
-                    script_motherboard and script_motherboard not in ("N/A", "")):
+            if (comparable_value and comparable_value not in ("N/A", "") and
+                    asset_model and not _hw_tokens_match(asset_model, comparable_value)):
                 return "discrepancia"
 
         # 4. Verificar RAM registrada vs telemetría si existe registro previo
@@ -192,6 +215,19 @@ def compute_validation_status(pc_name: str, conn) -> str:
             "compute_validation_status(%s): error calculando estado — %s",
             pc_name, exc
         )
+        # Un fallo transitorio no debe borrar una validación patrimonial ya
+        # confirmada. Recuperamos el estado persistido y solo usamos sin_gemelo
+        # cuando tampoco puede consultarse.
+        try:
+            row = conn.execute(
+                "SELECT validation_status FROM pcs WHERE pc_name = %s",
+                (pc_name,),
+            ).fetchone()
+            previous = (row or {}).get("validation_status")
+            if previous in {"sin_gemelo", "pendiente", "validado", "discrepancia"}:
+                return previous
+        except Exception:
+            pass
         return "sin_gemelo"
 
 
