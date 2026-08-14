@@ -3922,23 +3922,8 @@ button.kpi-mini-chip:hover {
 
 .dashboard-workspace__inner {
     display: grid;
-    gap: 16px;
+    gap: 12px;
     margin-top: 38px;
-}
-
-.dashboard-page-hero {
-    align-items: center;
-    display: flex;
-    gap: 24px;
-    justify-content: space-between;
-}
-
-.dashboard-page-hero__summary {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: flex-end;
 }
 
 .dashboard-radar {
@@ -3947,12 +3932,48 @@ button.kpi-mini-chip:hover {
 }
 
 .dashboard-radar .health-radar {
+    align-items: center;
     border-radius: 12px;
-    padding: 14px 16px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: auto minmax(160px, 1fr) auto;
+    padding: 10px 12px;
+}
+
+.dashboard-radar .health-radar__labels {
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.64rem;
+    gap: 1px;
+    justify-content: center;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.dashboard-radar .health-radar__labels strong {
+    color: var(--text-color);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
 }
 
 .dashboard-radar .health-radar__bar {
     border-radius: 4px;
+    height: 8px;
+}
+
+.dashboard-radar .health-radar__legend {
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.dashboard-radar .health-radar__legend-item {
+    gap: 4px;
+}
+
+.dashboard-radar .health-radar__legend-dot {
+    height: 7px;
+    width: 7px;
 }
 
 .dashboard-radar .health-radar__segment {
@@ -4115,21 +4136,20 @@ button.kpi-mini-chip:hover {
         margin-top: 24px;
     }
 
-    .dashboard-page-hero {
-        align-items: flex-start;
-        flex-direction: column;
-        padding: 18px;
+    .dashboard-radar .health-radar {
+        align-items: stretch;
+        grid-template-columns: 1fr;
     }
 
-    .dashboard-page-hero__summary {
-        justify-content: flex-start;
+    .dashboard-radar .health-radar__labels {
+        align-items: center;
+        flex-direction: row;
+        justify-content: space-between;
     }
 
-    .dashboard-radar .health-radar__labels,
     .dashboard-radar .health-radar__legend {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 6px;
+        flex-wrap: wrap;
+        gap: 6px 12px;
     }
 
     .dashboard-attention-panel {

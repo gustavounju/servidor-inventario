@@ -81,32 +81,19 @@
 
     <main class="dashboard-workspace">
         <div class="container-fluid px-3 dashboard-workspace__inner">
-        {% set fleet_attention_count = kpi_alerta_media + kpi_criticas %}
         {% set total = kpi_total_activas if kpi_total_activas else 1 %}
-        {% set fleet_attention_pct = ((fleet_attention_count * 100 / total)) | round(0, 'floor') | int %}
         
         {% set pct_crit = ((kpi_criticas * 100 / total)) %}
         {% set pct_warn = ((kpi_alerta_media * 100 / total)) %}
         {% set pct_stable = 100 - pct_crit - pct_warn %}
         {% if pct_stable < 0 %}{% set pct_stable = 0 %}{% endif %}
 
-        <header class="hero-header dashboard-page-hero">
-            <div>
-                <h1 class="hero-title"><i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Centro de operaciones</h1>
-                <p class="hero-subtitle">Estado de la flota, alertas patrimoniales y acceso al inventario de equipos</p>
-            </div>
-            <div class="dashboard-page-hero__summary" aria-label="Resumen de la flota">
-                <span class="hero-stat"><i class="bi bi-pc-display" aria-hidden="true"></i><strong>{{ kpi_total_activas }}</strong> activas</span>
-                <span class="hero-stat"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i><strong>{{ fleet_attention_count }}</strong> por revisar</span>
-            </div>
-        </header>
-
         <!-- MIDNIGHT RADAR MASTHEAD -->
         <section class="radar-masthead dashboard-radar" aria-labelledby="fleetHealthTitle">
             <div class="health-radar">
                 <div class="health-radar__labels">
-                    <span id="fleetHealthTitle">Estado de Flota</span>
-                    <span>{{ kpi_total_activas }} Equipos Activos</span>
+                    <span id="fleetHealthTitle">Estado de flota</span>
+                    <strong>{{ kpi_total_activas }} activos</strong>
                 </div>
                 <div class="health-radar__bar" role="img" aria-label="Flota: {{ pct_stable | round(1) }} por ciento estable, {{ pct_warn | round(1) }} por ciento en advertencia y {{ pct_crit | round(1) }} por ciento en estado crítico">
                     <div class="health-radar__segment health-radar__segment--stable" style="width: {{ pct_stable }}%;" title="Estable: {{ kpi_total_activas - kpi_criticas - kpi_alerta_media }}"></div>
