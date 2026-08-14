@@ -405,31 +405,15 @@
 
       {% set global_inv = linked_bo.invoice_number if linked_bo and linked_bo.invoice_number else None %}
       {% set global_oc = linked_bo.oc_number if linked_bo and linked_bo.oc_number else None %}
-
-      <!-- Buscar componentes asignados -->
-      {% set gab_comp = namespace(item=none) %}
-      {% set psu_comp = namespace(item=none) %}
-      {% set cpu_comp = namespace(item=none) %}
-      {% set ram_comp = namespace(item=none) %}
-      {% set mb_comp = namespace(item=none) %}
-      {% set disk_comp = namespace(item=none) %}
-
-      {% for comp in components %}
-        {% set ctype = (comp.component_type or '')|upper %}
-        {% if 'GABINETE' in ctype or ctype == 'CPU' or 'CHASIS' in ctype %}
-          {% if not gab_comp.item %}{% set gab_comp.item = comp %}{% endif %}
-        {% elif 'FUENTE' in ctype or 'PSU' in ctype or 'POWER' in ctype %}
-          {% if not psu_comp.item %}{% set psu_comp.item = comp %}{% endif %}
-        {% elif 'PROCESADOR' in ctype or 'MICRO' in ctype %}
-          {% if not cpu_comp.item %}{% set cpu_comp.item = comp %}{% endif %}
-        {% elif 'RAM' in ctype or 'MEMORIA' in ctype %}
-          {% if not ram_comp.item %}{% set ram_comp.item = comp %}{% endif %}
-        {% elif 'MOTHERBOARD' in ctype or 'PLACA MADRE' in ctype %}
-          {% if not mb_comp.item %}{% set mb_comp.item = comp %}{% endif %}
-        {% elif 'DISCO' in ctype or 'ALMACENAMIENTO' in ctype or 'SSD' in ctype or 'HDD' in ctype %}
-          {% if not disk_comp.item %}{% set disk_comp.item = comp %}{% endif %}
-        {% endif %}
-      {% endfor %}
+      {% set groups = acta_component_groups or {} %}
+      {% set gabinetes = groups.get('gabinetes', []) %}
+      {% set fuentes = groups.get('fuentes', []) %}
+      {% set procesadores = groups.get('procesadores', []) %}
+      {% set memorias = groups.get('memorias', []) %}
+      {% set placas_madre = groups.get('placas_madre', []) %}
+      {% set discos = groups.get('discos', []) %}
+      {% set otros = groups.get('otros', []) %}
+      {% set monitores = groups.get('monitores', monitors_detail or []) %}
 
       <!-- Tabla de Componentes Entregados -->
       <table class="table-acta">
@@ -441,77 +425,134 @@
           </tr>
         </thead>
         <tbody>
-          <!-- Gabinete -->
+          {% if gabinetes %}
+            {% for comp in gabinetes %}
           <tr>
             <td><strong>Gabinete (Chasis)</strong></td>
-            <td>{{ gab_comp.item.brand_model if gab_comp.item and gab_comp.item.brand_model else 'Genérico' }}</td>
+            <td>{{ comp.brand_model or comp.model or comp.brand or 'Genérico' }}</td>
             <td class="font-mono">
-              {{ format_sn_remito_oc(gab_comp.item, None, global_inv, global_oc) }}
+              {{ format_sn_remito_oc(comp, comp.serial_number, global_inv, global_oc) }}
             </td>
           </tr>
+            {% endfor %}
+          {% else %}
+          <tr>
+            <td><strong>Gabinete (Chasis)</strong></td>
+            <td>Genérico</td>
+            <td class="font-mono">
+              {{ format_sn_remito_oc(None, None, global_inv, global_oc) }}
+            </td>
+          </tr>
+          {% endif %}
 
-          <!-- Fuente de Poder -->
+          {% if fuentes %}
+            {% for comp in fuentes %}
           <tr>
             <td><strong>Fuente de Poder</strong></td>
-            <td>{{ psu_comp.item.brand_model if psu_comp.item and psu_comp.item.brand_model else 'Genérica' }}</td>
+            <td>{{ comp.brand_model or comp.model or comp.brand or 'Genérica' }}</td>
             <td class="font-mono">
-              {{ format_sn_remito_oc(psu_comp.item, None, global_inv, global_oc) }}
+              {{ format_sn_remito_oc(comp, comp.serial_number, global_inv, global_oc) }}
             </td>
           </tr>
+            {% endfor %}
+          {% else %}
+          <tr>
+            <td><strong>Fuente de Poder</strong></td>
+            <td>Genérica</td>
+            <td class="font-mono">
+              {{ format_sn_remito_oc(None, None, global_inv, global_oc) }}
+            </td>
+          </tr>
+          {% endif %}
 
-          <!-- Procesador -->
+          {% if procesadores %}
+            {% for comp in procesadores %}
+          <tr>
+            <td><strong>Procesador (CPU)</strong></td>
+            <td>{{ comp.brand_model or comp.model or pc.processor or 'N/D' }}</td>
+            <td class="font-mono">
+              {{ format_sn_remito_oc(comp, comp.serial_number or pc.processor_sn, global_inv, global_oc) }}
+            </td>
+          </tr>
+            {% endfor %}
+          {% else %}
           <tr>
             <td><strong>Procesador (CPU)</strong></td>
             <td>{{ pc.processor or 'N/D' }}</td>
             <td class="font-mono">
-              {{ format_sn_remito_oc(cpu_comp.item, pc.processor_sn, global_inv, global_oc) }}
+              {{ format_sn_remito_oc(None, pc.processor_sn, global_inv, global_oc) }}
             </td>
           </tr>
-          <!-- Memoria RAM -->
+          {% endif %}
+
+          {% if memorias %}
+            {% for comp in memorias %}
+          <tr>
+            <td><strong>Memoria RAM</strong></td>
+            <td>{{ comp.brand_model or comp.model or comp.brand or ((pc.ram_gb | float | round | int) if pc.ram_gb else '0') ~ ' GB DDR' }}</td>
+            <td class="font-mono">
+              {{ format_sn_remito_oc(comp, comp.serial_number or pc.ram_sn, global_inv, global_oc) }}
+            </td>
+          </tr>
+            {% endfor %}
+          {% else %}
           <tr>
             <td><strong>Memoria RAM</strong></td>
             <td>
-              {% if ram_comp.item and ram_comp.item.brand_model %}
-                {{ ram_comp.item.brand_model }}
-              {% elif pc.ram_detalles and pc.ram_detalles.strip() not in ('N/A', 'None', '') %}
+              {% if pc.ram_detalles and pc.ram_detalles.strip() not in ('N/A', 'None', '') %}
                 {{ pc.ram_detalles }}
               {% else %}
                 {{ (pc.ram_gb | float | round | int) if pc.ram_gb else '0' }} GB DDR
               {% endif %}
             </td>
             <td class="font-mono">
-              {{ format_sn_remito_oc(ram_comp.item, pc.ram_sn, global_inv, global_oc) }}
+              {{ format_sn_remito_oc(None, pc.ram_sn, global_inv, global_oc) }}
             </td>
           </tr>
-          <!-- Motherboard -->
+          {% endif %}
+
+          {% if placas_madre %}
+            {% for comp in placas_madre %}
+          <tr>
+            <td><strong>Placa Madre</strong></td>
+            <td>{{ comp.brand_model or comp.model or comp.brand or (pc.motherboard_model or 'N/D').split(' (SN:')[0] }}</td>
+            <td class="font-mono">
+              {{ format_sn_remito_oc(comp, comp.serial_number, global_inv, global_oc) }}
+            </td>
+          </tr>
+            {% endfor %}
+          {% else %}
           <tr>
             <td><strong>Placa Madre</strong></td>
             <td>{{ (pc.motherboard_model or 'N/D').split(' (SN:')[0] }}</td>
             <td class="font-mono">
-              {{ format_sn_remito_oc(mb_comp.item, None, global_inv, global_oc, include_sn=False) }}
+              {{ format_sn_remito_oc(None, None, global_inv, global_oc, include_sn=False) }}
             </td>
           </tr>
-          <!-- Discos -->
+          {% endif %}
+
+          {% if discos %}
+            {% for comp in discos %}
+          <tr>
+            <td><strong>Almacenamiento (Disco)</strong></td>
+            <td>{{ comp.brand_model or comp.model or comp.brand or (pc.disk_models or 'N/D').split(' [SN:')[0].split(' (SN:')[0] }}</td>
+            <td class="font-mono">
+              {{ format_sn_remito_oc(comp, comp.serial_number, global_inv, global_oc) }}
+            </td>
+          </tr>
+            {% endfor %}
+          {% else %}
           <tr>
             <td><strong>Almacenamiento (Disco)</strong></td>
             <td>{{ (pc.disk_models or 'N/D').split(' [SN:')[0].split(' (SN:')[0] }}</td>
             <td class="font-mono">
-              {{ format_sn_remito_oc(disk_comp.item, None, global_inv, global_oc, include_sn=False) }}
+              {{ format_sn_remito_oc(None, None, global_inv, global_oc, include_sn=False) }}
             </td>
           </tr>
+          {% endif %}
 
           <!-- Componentes patrimoniales adicionales y periféricos -->
-          {% for comp in components %}
-            {% set ctype = (comp.component_type or '')|upper %}
-            {% if not (
-              'PROCESADOR' in ctype or 'CPU' in ctype or 'MICRO' in ctype or
-              'RAM' in ctype or 'MEMORIA' in ctype or
-              'MOTHERBOARD' in ctype or 'PLACA MADRE' in ctype or
-              'DISCO' in ctype or 'ALMACENAMIENTO' in ctype or 'SSD' in ctype or 'HDD' in ctype or
-              'GABINETE' in ctype or 'CHASIS' in ctype or
-              'FUENTE' in ctype or 'PSU' in ctype or 'POWER' in ctype or
-              'MONITOR' in ctype or 'PANTALLA' in ctype
-            ) %}
+          {% for comp in otros %}
             <tr>
               <td><strong>{{ comp.component_type or 'Periférico' }}</strong></td>
               <td>{{ comp.brand_model or comp.model or comp.brand or 'Genérico' }}</td>
@@ -519,10 +560,9 @@
                 {{ format_sn_remito_oc(comp, comp.serial_number, global_inv, global_oc) }}
               </td>
             </tr>
-            {% endif %}
           {% endfor %}
 
-          {% for mon in monitors_detail %}
+          {% for mon in monitores %}
           <tr>
             <td><strong>Monitor / Pantalla</strong></td>
             <td>{{ mon.brand_model or mon.model or mon.brand or 'Monitor de Red' }}</td>

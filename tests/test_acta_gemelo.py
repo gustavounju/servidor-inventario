@@ -81,6 +81,51 @@ class ActaGemeloValidadoTests(unittest.TestCase):
             self.assertIn("Técnico", html)
             self.assertIn("encabezado_poder_judicial.png", html)
 
+    @patch("blueprints.bp_dashboard.get_pc_detail_context")
+    def test_acta_gemelo_validado_lists_all_assigned_processors_and_monitors(self, mock_get_context):
+        from flask import Flask
+        from blueprints.bp_dashboard import bp_dashboard
+
+        app = Flask(__name__, template_folder="../templates")
+        app.secret_key = "test_secret"
+        app.register_blueprint(bp_dashboard)
+
+        mock_get_context.return_value = {
+            "pc": {
+                "pc_name": "JCC1-PC01",
+                "validation_status": "validado",
+                "last_user": "Andrea Gomez",
+                "fuero": "Juzgado Civil y Comercial",
+                "os_name": "Windows 11 Pro",
+                "processor": "Intel Core i5-12400 @ 2.50GHz",
+                "ram_gb": 16,
+                "motherboard_model": "ASUS PRIME B660M-A",
+                "disk_models": "NVMe Kingston 512GB M.2",
+            },
+            "validation_comparison": [{"match": True}],
+            "display_components": [
+                {"component_type": "Microprocesador", "brand_model": "I3 prueba", "serial_number": "INT-MIC-20260806-7092"},
+                {"component_type": "Procesador", "brand_model": "Intel Core i5-12400 @ 2.50GHz", "serial_number": "INT-PRO-20260813-3986"},
+                {"component_type": "Disco Rígido", "brand_model": "NVMe Kingston 512GB M.2", "serial_number": "DSK-NVME-512G-006"},
+            ],
+            "display_monitors_detail": [
+                {"component_type": "Monitor", "brand_model": "LG 24FHD 24 pulgadas", "serial_number": "MON-LG-24FHD-001"},
+                {"component_type": "Monitor", "brand_model": "Samsung LS27C36x", "serial_number": "H9TW800682"},
+            ],
+            "linked_bo": None,
+        }
+
+        with app.test_client() as client:
+            response = client.get("/pc/JCC1-PC01/acta_gemelo_validado")
+            self.assertEqual(response.status_code, 200)
+            html = response.get_data(as_text=True)
+            self.assertEqual(html.count("Procesador (CPU)"), 4)
+            self.assertEqual(html.count("INT-MIC-20260806-7092"), 2)
+            self.assertEqual(html.count("INT-PRO-20260813-3986"), 2)
+            self.assertEqual(html.count("Monitor / Pantalla"), 4)
+            self.assertEqual(html.count("MON-LG-24FHD-001"), 2)
+            self.assertEqual(html.count("H9TW800682"), 2)
+
     @patch("blueprints.bp_tasks.get_db_connection")
     def test_homologar_telemetria_resets_alerta_duplicado(self, mock_get_db):
         from flask import Flask

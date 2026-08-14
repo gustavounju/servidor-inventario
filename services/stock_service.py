@@ -17,13 +17,13 @@ class StockService:
             return False, "Componente no encontrado."
 
         old_status = comp.get('status', 'Desconocido')
-        success = StockRepository.update_component_status(comp_id, 'Asignado', target_user_or_pc)
+        success = StockRepository.update_component_status(comp_id, 'Installed', target_user_or_pc)
         if success:
             AuditService.log_action(
                 pc_name=f"STOCK:{comp_id}",
                 field="Asignación",
                 old_value=f"Estado: {old_status}",
-                new_value=f"Asignado a {target_user_or_pc}",
+                new_value=f"Instalado en {target_user_or_pc}",
                 user_name=actor_user,
                 action_type="STOCK_ASSIGNMENT"
             )
@@ -47,7 +47,7 @@ class StockService:
             return False, "Fallo al dar de baja el componente averiado."
 
         # 2. Asignar el repuesto
-        assign_ok = StockRepository.update_component_status(replacement_comp_id, 'Asignado', target_pc)
+        assign_ok = StockRepository.update_component_status(replacement_comp_id, 'Installed', target_pc)
         if not assign_ok:
             return False, "Fallo al asignar el nuevo componente de repuesto."
 

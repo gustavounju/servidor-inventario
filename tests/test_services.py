@@ -25,7 +25,7 @@ class TestServicesLayer(unittest.TestCase):
     def test_stock_service_replacement(self):
         """Verifica la sustitución atómica de componentes en StockService."""
         with get_db_connection() as conn:
-            res1 = conn.execute("INSERT INTO components (serial_number, component_type, status) VALUES ('SN_FAULTY_99', 'RAM', 'Asignado') ON DUPLICATE KEY UPDATE status='Asignado'")
+            res1 = conn.execute("INSERT INTO components (serial_number, component_type, status) VALUES ('SN_FAULTY_99', 'RAM', 'Installed') ON DUPLICATE KEY UPDATE status='Installed'")
             res2 = conn.execute("INSERT INTO components (serial_number, component_type, status) VALUES ('SN_REPLACEMENT_99', 'RAM', 'Stock') ON DUPLICATE KEY UPDATE status='Stock'")
             conn.commit()
             faulty_comp = conn.execute("SELECT id FROM components WHERE serial_number='SN_FAULTY_99'").fetchone()
@@ -40,8 +40,27 @@ class TestServicesLayer(unittest.TestCase):
             c1 = conn.execute("SELECT status FROM components WHERE id = %s", (faulty_id,)).fetchone()
             c2 = conn.execute("SELECT status, assigned_user FROM components WHERE id = %s", (replacement_id,)).fetchone()
             self.assertEqual(c1['status'], 'Retirado')
-            self.assertEqual(c2['status'], 'Asignado')
+            self.assertEqual(c2['status'], 'Installed')
             self.assertEqual(c2['assigned_user'], 'PC_TEST_DESTINO')
+
+    def test_stock_service_assignment_marks_component_installed(self):
+        """Verifica que asignar un componente representa un despliegue físico real."""
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO components (serial_number, component_type, status) VALUES ('SN_ASSIGN_99', 'Monitor', 'Stock') "
+                "ON DUPLICATE KEY UPDATE status='Stock', assigned_user=NULL, assigned_pc=NULL, assigned_fuero=NULL"
+            )
+            conn.commit()
+            comp = conn.execute("SELECT id FROM components WHERE serial_number='SN_ASSIGN_99'").fetchone()
+            comp_id = comp['id']
+
+        ok, msg = StockService.assign_component(comp_id, "Gustavo", "TEST_TECH")
+        self.assertTrue(ok, f"Error devuelto por StockService: {msg}")
+
+        with get_db_connection() as conn:
+            row = conn.execute("SELECT status, assigned_user FROM components WHERE id = %s", (comp_id,)).fetchone()
+            self.assertEqual(row['status'], 'Installed')
+            self.assertEqual(row['assigned_user'], 'Gustavo')
 
     def test_task_service_resolve(self):
         """Verifica la resolución de tareas en TaskService."""

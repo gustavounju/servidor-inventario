@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, abort, send_file, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, abort, send_file, flash, session, jsonify
 from datetime import datetime as dt
 from database.db_core import get_db_connection
 import socket
@@ -12,9 +12,65 @@ from services.dashboard_overview import load_dashboard_overview
 from services.pc_actions import decommission_pc_service, reactivate_pc_service, delete_permanent_pc_service, update_pc_infrastructure_service
 from services.pc_details_service import get_pc_detail_context
 from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data, recalculate_all_pc_fueros
-from utils.auth import is_authenticated, login_required, permission_required, current_technician_identity
+from utils.auth import is_authenticated, login_required, permission_required, current_technician_identity, has_permission, current_username
 
 bp_dashboard = Blueprint('dashboard', __name__)
+
+
+def _normalize_component_type(value):
+    return (value or "").strip().upper()
+
+
+def _acta_component_bucket(component_type):
+    ctype = _normalize_component_type(component_type)
+    if "GABINETE" in ctype or "CHASIS" in ctype or ctype == "CPU":
+        return "gabinetes"
+    if "FUENTE" in ctype or "PSU" in ctype or "POWER" in ctype:
+        return "fuentes"
+    if "PROCESADOR" in ctype or "MICRO" in ctype:
+        return "procesadores"
+    if "RAM" in ctype or "MEMORIA" in ctype:
+        return "memorias"
+    if "MOTHERBOARD" in ctype or "PLACA MADRE" in ctype:
+        return "placas_madre"
+    if "DISCO" in ctype or "ALMACENAMIENTO" in ctype or "SSD" in ctype or "HDD" in ctype:
+        return "discos"
+    if "MONITOR" in ctype or "PANTALLA" in ctype:
+        return "monitores"
+    return "otros"
+
+
+def build_acta_component_groups(components, monitors_detail):
+    groups = {
+        "gabinetes": [],
+        "fuentes": [],
+        "procesadores": [],
+        "memorias": [],
+        "placas_madre": [],
+        "discos": [],
+        "otros": [],
+        "monitores": [],
+    }
+
+    for raw_component in components or []:
+        component = dict(raw_component)
+        bucket = _acta_component_bucket(component.get("component_type"))
+        if bucket == "monitores":
+            continue
+        groups[bucket].append(component)
+
+    for raw_monitor in monitors_detail or []:
+        groups["monitores"].append(dict(raw_monitor))
+
+    return groups
+
+
+def _has_stock_management_access():
+    return (
+        has_permission("funcionario")
+        or has_permission("manage_stock")
+        or has_permission("can_manage_stock")
+    )
 
 @bp_dashboard.route("/cementerio")
 def view_cementerio():
@@ -565,7 +621,7 @@ def create_bo_from_telemetry(pc_name):
                         conn.execute(
                             """
                             UPDATE components 
-                            SET build_order_id = %s, assigned_pc = %s, status = 'Asignado', assigned_user = %s, assigned_fuero = %s,
+                            SET build_order_id = %s, assigned_pc = %s, status = 'Installed', assigned_user = %s, assigned_fuero = %s,
                                 invoice_number = COALESCE(%s, invoice_number), oc_number = COALESCE(%s, oc_number)
                             WHERE id = %s
                             """,
@@ -577,7 +633,7 @@ def create_bo_from_telemetry(pc_name):
                     conn.execute(
                         """
                         INSERT INTO components (serial_number, component_type, brand_model, status, assigned_pc, build_order_id, assigned_user, assigned_fuero, invoice_number, oc_number)
-                        VALUES (%s, %s, %s, 'Asignado', %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, 'Installed', %s, %s, %s, %s, %s, %s)
                         """,
                         (sn_to_insert, c_type, c_model, pc_name, bo_id, final_user, final_fuero, item_inv, item_oc)
                     )
@@ -641,8 +697,9 @@ def acta_gemelo_validado(pc_name):
         flash("El Acta de Entrega sólo está disponible para equipos con Gemelo Digital Validado OK.", "warning")
         return redirect(url_for("dashboard.pc_detail", pc_name=pc_name))
 
-    components = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
-    monitors_detail = ctx.get("monitors_detail") or []
+    components = ctx.get("display_components") or ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
+    monitors_detail = ctx.get("display_monitors_detail") or ctx.get("monitors_detail") or []
+    acta_component_groups = build_acta_component_groups(components, monitors_detail)
 
     # Identificar técnico conectado
     auth_user = session.get("auth_user") or {}
@@ -662,10 +719,68 @@ def acta_gemelo_validado(pc_name):
         linked_bo=ctx.get("linked_bo"),
         components=components,
         monitors_detail=monitors_detail,
+        acta_component_groups=acta_component_groups,
         tecnico_user=tecnico_user,
         generated_at=generated_at,
         qr_url=qr_url
     )
+
+
+@bp_dashboard.route("/api/pc/<pc_name>/resolve_autogenerated_duplicates", methods=["POST"])
+@login_required
+def resolve_autogenerated_duplicates(pc_name):
+    if not _has_stock_management_access():
+        return jsonify({"status": "error", "message": "Acceso denegado: se requiere permiso de Gestión Stock."}), 403
+
+    ctx = get_pc_detail_context(pc_name)
+    candidates = ctx.get("autogenerated_shadow_candidates") or []
+    serials = [c.get("serial_number") for c in candidates if c.get("serial_number")]
+
+    if not serials:
+        return jsonify({"status": "success", "deleted_count": 0, "deleted_serials": [], "message": "No se detectaron Auto-ID duplicados para resolver."})
+
+    placeholders = ",".join(["%s"] * len(serials))
+    actor = current_technician_identity() or current_username() or "Sistema"
+    deleted_serials = []
+
+    with get_db_connection() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT serial_number, component_type, brand_model, assigned_pc
+            FROM components
+            WHERE serial_number IN ({placeholders})
+            """,
+            tuple(serials),
+        ).fetchall()
+
+        for row in rows:
+            component = dict(row)
+            serial = component.get("serial_number")
+            old_pc = component.get("assigned_pc") or pc_name
+            conn.execute("DELETE FROM components WHERE serial_number = %s", (serial,))
+            conn.execute(
+                """
+                INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    old_pc,
+                    "AUTO_ID_DUPLICATE_RESOLVED",
+                    f"{component.get('component_type')} {component.get('brand_model')} (S/N: {serial})",
+                    "DELETED",
+                    actor,
+                    "AUTO_ID_DUPLICATE_RESOLVED",
+                    request.remote_addr,
+                ),
+            )
+            deleted_serials.append(serial)
+
+    return jsonify({
+        "status": "success",
+        "deleted_count": len(deleted_serials),
+        "deleted_serials": deleted_serials,
+        "message": f"Se resolvieron {len(deleted_serials)} Auto-ID duplicado(s) en {pc_name}.",
+    })
 
 
 @bp_dashboard.route("/public/asset/<pc_name>")
@@ -677,8 +792,8 @@ def public_asset_info(pc_name):
         # 1. Probar si es una PC registrada en pcs
         ctx = get_pc_detail_context(pc_name)
         if ctx and ctx.get("pc"):
-            all_comps = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
-            mon_detail = list(ctx.get("monitors_detail") or [])
+            all_comps = ctx.get("display_components") or ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
+            mon_detail = list(ctx.get("display_monitors_detail") or ctx.get("monitors_detail") or [])
             if not mon_detail:
                 mon_detail = [
                     c for c in all_comps 
@@ -715,8 +830,8 @@ def public_asset_info(pc_name):
                 if assigned_pc:
                     pc_ctx = get_pc_detail_context(assigned_pc)
                     if pc_ctx and pc_ctx.get("pc"):
-                        all_comps = pc_ctx.get("all_unified_components") or pc_ctx.get("pc_components") or pc_ctx.get("components") or []
-                        mon_detail = list(pc_ctx.get("monitors_detail") or [])
+                        all_comps = pc_ctx.get("display_components") or pc_ctx.get("all_unified_components") or pc_ctx.get("pc_components") or pc_ctx.get("components") or []
+                        mon_detail = list(pc_ctx.get("display_monitors_detail") or pc_ctx.get("monitors_detail") or [])
                         if not mon_detail:
                             mon_detail = [
                                 c for c in all_comps 
@@ -734,7 +849,7 @@ def public_asset_info(pc_name):
                     "pc_name": c_dict.get("serial_number"),
                     "fuero": c_dict.get("assigned_fuero") or "Depósito / Stock",
                     "last_user": c_dict.get("assigned_user") or "En Stock",
-                    "validation_status": "validado" if c_dict.get("status") in ["Stock", "Asignado"] else "pendiente"
+                    "validation_status": "validado" if c_dict.get("status") in ["Stock", "Installed"] else "pendiente"
                 }
                 return render_template(
                     "public_asset_info.html",
@@ -766,8 +881,8 @@ def pc_qr_label_view(pc_name):
         server_host = os.environ.get("SERVER_PUBLIC_HOST", "10.15.2.251:5000")
     qr_url = f"{scheme}://{server_host}/public/asset/{pc_name}"
     
-    components = ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
-    monitors_detail = ctx.get("monitors_detail") or []
+    components = ctx.get("display_components") or ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
+    monitors_detail = ctx.get("display_monitors_detail") or ctx.get("monitors_detail") or []
     
     monitor_comp = next((c for c in components if (c.get("component_type") or "").upper() == "MONITOR"), None)
     if not monitor_comp and monitors_detail:

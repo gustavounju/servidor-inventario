@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/gold.js') }}"?v={{ app_version }}></script>
+    <script defer src="{{ url_for('static', filename='js/gold.js') }}?v={{ app_version }}"></script>
 </head>
 <body class="has-fixed-header">
     {% include '_module_switcher.html' %}

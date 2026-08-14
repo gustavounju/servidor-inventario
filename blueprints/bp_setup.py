@@ -1,11 +1,20 @@
 from flask import Blueprint, request, send_file, render_template, redirect, url_for
 from database.db_core import get_db_connection
 from io import BytesIO
+import os
 import re
 import hashlib
 from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
 
 bp_setup = Blueprint('setup', __name__)
+
+
+def _resolve_inventory_submit_token():
+    for env_key in ("INVENTARIO_API_TOKEN", "API_TOKEN", "API_KEY"):
+        token = os.environ.get(env_key, "").strip()
+        if token:
+            return token
+    return "super-secret-token"
 
 
 def _build_client_base_url():
@@ -31,9 +40,8 @@ def _rewrite_client_script(content):
         modified_content = modified_content.replace(source, current_base_url)
 
     modified_content = re.sub(r"https?://(?:\d{1,3}\.){3}\d{1,3}:5000", current_base_url, modified_content)
-    
-    import os
-    api_token = os.environ.get("API_TOKEN", "super-secret-token")
+
+    api_token = _resolve_inventory_submit_token()
     modified_content = modified_content.replace("__API_KEY__", api_token)
     
     return current_host, current_base_url, modified_content
