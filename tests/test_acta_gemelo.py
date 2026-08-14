@@ -3,6 +3,34 @@ from unittest.mock import patch
 
 class ActaGemeloValidadoTests(unittest.TestCase):
 
+    def test_acta_uses_real_telemetry_disks_and_excludes_usb_reader(self):
+        from blueprints.bp_dashboard import build_acta_component_groups
+
+        groups = build_acta_component_groups(
+            components=[
+                {
+                    "component_type": "Disco Rígido / SSD",
+                    "brand_model": "Generic USB SD Reader USB Device (0GB)",
+                    "serial_number": "058F63326330",
+                }
+            ],
+            monitors_detail=[],
+            hardware_components={
+                "disks": [
+                    {"model": "ADATA SU630 (447GB)", "serial": "11EF07211CF000344575"},
+                    {"model": "TOSHIBA DT01ACA050 (466GB)", "serial": "27D009EBS"},
+                    {"model": "KINGSTON SA400S37240G (224GB)", "serial": "50026B7784EFFCBC"},
+                    {"model": "Seagate Expansion SCSI Disk Device (1863GB)", "serial": "NAAX3Y9E"},
+                ]
+            },
+        )
+
+        self.assertEqual(
+            [disk["serial_number"] for disk in groups["discos"]],
+            ["11EF07211CF000344575", "27D009EBS", "50026B7784EFFCBC", "NAAX3Y9E"],
+        )
+        self.assertFalse(any("Generic USB" in disk["brand_model"] for disk in groups["discos"]))
+
     def test_filter_ignore_devices_removes_usb_card_readers(self):
         from services.asset_validation import filter_ignore_devices
         raw_telemetry = (

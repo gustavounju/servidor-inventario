@@ -11,6 +11,7 @@ from services.audit import log_audit_event
 from services.dashboard_overview import load_dashboard_overview
 from services.pc_actions import decommission_pc_service, reactivate_pc_service, delete_permanent_pc_service, update_pc_infrastructure_service
 from services.pc_details_service import get_pc_detail_context
+from services.asset_validation import is_ignored_storage_component, is_ignored_storage_device
 from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data, recalculate_all_pc_fueros
 from utils.auth import is_authenticated, login_required, permission_required, current_technician_identity, has_permission, current_username
 
@@ -40,7 +41,7 @@ def _acta_component_bucket(component_type):
     return "otros"
 
 
-def build_acta_component_groups(components, monitors_detail):
+def build_acta_component_groups(components, monitors_detail, hardware_components=None):
     groups = {
         "gabinetes": [],
         "fuentes": [],
@@ -54,6 +55,8 @@ def build_acta_component_groups(components, monitors_detail):
 
     for raw_component in components or []:
         component = dict(raw_component)
+        if is_ignored_storage_component(component):
+            continue
         bucket = _acta_component_bucket(component.get("component_type"))
         if bucket == "monitores":
             continue
@@ -61,6 +64,41 @@ def build_acta_component_groups(components, monitors_detail):
 
     for raw_monitor in monitors_detail or []:
         groups["monitores"].append(dict(raw_monitor))
+
+    # Los discos WMI forman parte del estado físico entregado aunque todavía
+    # no tengan una fila patrimonial individual. Se agregan al Acta sin crear
+    # componentes en Stock y evitando duplicar los ya registrados por serie.
+    existing_disk_serials = {
+        str(item.get("serial_number") or "").strip().upper()
+        for item in groups["discos"]
+        if str(item.get("serial_number") or "").strip()
+    }
+    existing_disk_models = {
+        _normalize_component_type(item.get("brand_model") or item.get("model"))
+        for item in groups["discos"]
+    }
+    for raw_disk in (hardware_components or {}).get("disks", []) or []:
+        disk = dict(raw_disk)
+        model = str(disk.get("model") or disk.get("brand_model") or "").strip()
+        serial = str(disk.get("serial") or disk.get("serial_number") or "").strip()
+        normalized_serial = serial.upper()
+        normalized_model = _normalize_component_type(model)
+        if not model or is_ignored_storage_device(model):
+            continue
+        if normalized_serial and normalized_serial not in {"N/A", "SIN S/N", "NONE"}:
+            if normalized_serial in existing_disk_serials:
+                continue
+        elif normalized_model in existing_disk_models:
+            continue
+        groups["discos"].append({
+            "component_type": "Disco Rígido / SSD",
+            "brand_model": model,
+            "serial_number": serial if normalized_serial not in {"", "N/A", "SIN S/N", "NONE"} else None,
+            "source": "telemetry",
+        })
+        if normalized_serial:
+            existing_disk_serials.add(normalized_serial)
+        existing_disk_models.add(normalized_model)
 
     return groups
 
@@ -787,7 +825,11 @@ def acta_gemelo_validado(pc_name):
 
     components = ctx.get("display_components") or ctx.get("all_unified_components") or ctx.get("pc_components") or ctx.get("components") or []
     monitors_detail = ctx.get("display_monitors_detail") or ctx.get("monitors_detail") or []
-    acta_component_groups = build_acta_component_groups(components, monitors_detail)
+    acta_component_groups = build_acta_component_groups(
+        components,
+        monitors_detail,
+        ctx.get("hardware_components"),
+    )
 
     # Identificar técnico conectado
     auth_user = session.get("auth_user") or {}
