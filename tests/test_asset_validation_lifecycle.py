@@ -1,6 +1,10 @@
 import json
 
-from services.asset_validation import compute_validation_status, resolve_build_order_action
+from services.asset_validation import (
+    compute_validation_status,
+    resolve_build_order_action,
+    resolve_effective_validation_status,
+)
 
 
 class _Result:
@@ -67,7 +71,12 @@ def test_unexpected_validation_error_does_not_erase_existing_valid_state():
 
 
 def test_build_order_action_only_creates_when_there_is_no_twin():
-    assert resolve_build_order_action("sin_gemelo", linked_bo=None, has_discrepancies=True) == "create"
+    assert resolve_build_order_action(
+        "sin_gemelo", linked_bo=None, has_discrepancies=True, has_official_components=False
+    ) == "create"
+    assert resolve_build_order_action(
+        "sin_gemelo", linked_bo=None, has_discrepancies=True, has_official_components=True
+    ) == "history"
     assert resolve_build_order_action("validado", linked_bo=None, has_discrepancies=False) == "history"
     assert resolve_build_order_action("discrepancia", linked_bo=None, has_discrepancies=True) == "history"
 
@@ -77,3 +86,15 @@ def test_build_order_action_reuses_existing_order_only_for_real_changes():
 
     assert resolve_build_order_action("validado", linked_bo, has_discrepancies=False) == "history"
     assert resolve_build_order_action("discrepancia", linked_bo, has_discrepancies=True) == "update"
+
+
+def test_stale_without_twin_status_is_derived_from_existing_patrimony():
+    assert resolve_effective_validation_status(
+        "sin_gemelo", has_official_components=True, has_discrepancies=False
+    ) == "validado"
+    assert resolve_effective_validation_status(
+        "sin_gemelo", has_official_components=True, has_discrepancies=True
+    ) == "discrepancia"
+    assert resolve_effective_validation_status(
+        "sin_gemelo", has_official_components=False, has_discrepancies=True
+    ) == "sin_gemelo"

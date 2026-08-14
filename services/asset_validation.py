@@ -79,7 +79,24 @@ def _hw_tokens_match(a: str, b: str) -> bool:
     return na == nb or na in nb or nb in na
 
 
-def resolve_build_order_action(validation_status: str, linked_bo=None, has_discrepancies=False) -> str:
+def resolve_effective_validation_status(
+    validation_status: str,
+    has_official_components=False,
+    has_discrepancies=False,
+) -> str:
+    """Corrige para la vista un `sin_gemelo` obsoleto usando patrimonio real."""
+    normalized = (validation_status or "sin_gemelo").strip().lower()
+    if normalized == "sin_gemelo" and has_official_components:
+        return "discrepancia" if has_discrepancies else "validado"
+    return normalized
+
+
+def resolve_build_order_action(
+    validation_status: str,
+    linked_bo=None,
+    has_discrepancies=False,
+    has_official_components=False,
+) -> str:
     """Decide la acción patrimonial sin crear órdenes duplicadas.
 
     Un equipo que ya tiene gemelo conserva su historia aunque no se haya podido
@@ -89,6 +106,8 @@ def resolve_build_order_action(validation_status: str, linked_bo=None, has_discr
     """
     if linked_bo:
         return "update" if has_discrepancies else "history"
+    if has_official_components:
+        return "history"
     if (validation_status or "sin_gemelo").strip().lower() == "sin_gemelo":
         return "create"
     return "history"

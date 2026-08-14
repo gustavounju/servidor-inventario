@@ -595,7 +595,21 @@ def create_bo_from_telemetry(pc_name):
             # antigua, sin Orden de Armado. No fabricamos una orden nueva al
             # volver a recibir el mismo reporte: esa ejecución queda en historial.
             current_validation = (pc_dict.get("validation_status") or "sin_gemelo").strip().lower()
-            if not existing_bo and current_validation != "sin_gemelo":
+            existing_component = None
+            if not existing_bo and current_validation == "sin_gemelo":
+                existing_component = conn.execute(
+                    """
+                    SELECT id
+                    FROM components
+                    WHERE LOWER(TRIM(assigned_pc)) = %s
+                      AND (status IS NULL OR status NOT IN ('Retirado', 'Scrap', 'Stock'))
+                      AND (lifecycle_status IS NULL OR lifecycle_status NOT IN ('retirado', 'scrap', 'stock'))
+                    LIMIT 1
+                    """,
+                    (clean_name,),
+                ).fetchone()
+
+            if not existing_bo and (current_validation != "sin_gemelo" or existing_component):
                 flash(
                     "El equipo ya posee un gemelo patrimonial. El nuevo reporte queda en su historial; no se creó otra Orden de Armado.",
                     "info",

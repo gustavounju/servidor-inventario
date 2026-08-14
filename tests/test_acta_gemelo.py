@@ -364,6 +364,62 @@ class ActaGemeloValidadoTests(unittest.TestCase):
         queries = [" ".join(str(call[0][0]).split()) for call in mock_conn.execute.call_args_list]
         self.assertFalse(any("INSERT INTO build_orders" in query for query in queries))
 
+    @patch("utils.auth.refresh_session_user", return_value=True)
+    @patch("blueprints.bp_dashboard.get_db_connection")
+    def test_stale_sin_gemelo_with_components_does_not_create_order(self, mock_get_db, _mock_refresh):
+        from flask import Flask
+        from blueprints.bp_dashboard import bp_dashboard
+
+        app = Flask(__name__)
+        app.secret_key = "test_secret"
+        app.register_blueprint(bp_dashboard)
+        mock_conn = mock_get_db.return_value.__enter__.return_value
+
+        class MockResult:
+            def __init__(self, row=None):
+                self.row = row
+
+            def fetchone(self):
+                return self.row
+
+        def side_effect(query, *args, **kwargs):
+            sql = " ".join(str(query).split())
+            if "FROM pcs" in sql:
+                return MockResult({
+                    "pc_name": "SISTEMAS-105",
+                    "last_user": "Gustavo",
+                    "fuero": "Sistemas",
+                    "validation_status": "sin_gemelo",
+                })
+            if "FROM build_orders" in sql:
+                return MockResult(None)
+            if "FROM components" in sql:
+                return MockResult({"id": 6})
+            return MockResult(None)
+
+        mock_conn.execute.side_effect = side_effect
+
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess["auth_user"] = {
+                    "username": "tecnico",
+                    "permissions": {"manage_stock": True},
+                }
+            response = client.post(
+                "/pc/SISTEMAS-105/create_bo_from_telemetry",
+                data={
+                    "comp_selected": ["0"],
+                    "comp_type": ["Disco Rígido / SSD"],
+                    "comp_model": ["ADATA SU630"],
+                    "comp_serial": ["11EF07211CF000344575"],
+                },
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 302)
+        queries = [" ".join(str(call[0][0]).split()) for call in mock_conn.execute.call_args_list]
+        self.assertFalse(any("INSERT INTO build_orders" in query for query in queries))
+
 if __name__ == "__main__":
     unittest.main()
 

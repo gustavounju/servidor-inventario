@@ -1,4 +1,8 @@
-from services.asset_validation import get_pc_validation_comparison, resolve_build_order_action
+from services.asset_validation import (
+    get_pc_validation_comparison,
+    resolve_build_order_action,
+    resolve_effective_validation_status,
+)
 from database.db_core import get_db_connection
 from utils.auth import list_technician_users
 import re
@@ -977,10 +981,20 @@ def get_pc_detail_context(pc_name):
         has_validation_discrepancies = any(
             not item.get("match") for item in (validation_comparison or [])
         )
-        build_order_action = resolve_build_order_action(
+        has_official_components = bool(official_components)
+        effective_status = resolve_effective_validation_status(
             current_status,
+            has_official_components,
+            has_validation_discrepancies,
+        )
+        if effective_status != current_status:
+            pc = dict(pc)
+            pc["validation_status"] = effective_status
+        build_order_action = resolve_build_order_action(
+            effective_status,
             linked_bo,
             has_validation_discrepancies,
+            has_official_components,
         )
 
         # Obtener lista completa de todos los Remitos y OCs existentes en el sistema para autocompletado inteligente
