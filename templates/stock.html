@@ -56,6 +56,242 @@
         .ad-user-result:hover {
             background-color: #f1f5f9;
         }
+
+        .autoid-modal .modal-content {
+            background: #111827;
+            color: #f8fafc;
+            border: 1px solid rgba(251, 191, 36, 0.25);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+        }
+
+        .autoid-modal .modal-dialog {
+            max-width: min(1480px, 96vw);
+        }
+
+        .autoid-modal .modal-header {
+            border-bottom: 1px solid rgba(251, 191, 36, 0.16);
+            padding: 0.85rem 1.15rem 0.8rem;
+        }
+
+        .autoid-modal .modal-title {
+            font-size: 1rem;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .autoid-modal .modal-header .small {
+            font-size: 0.77rem;
+            line-height: 1.35;
+            margin-top: 0.2rem;
+        }
+
+        .autoid-explainer {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(15, 23, 42, 0.3));
+            border-bottom: 1px solid rgba(251, 191, 36, 0.12);
+        }
+
+        .autoid-explainer .row {
+            align-items: start;
+        }
+
+        .autoid-explainer .small {
+            font-size: 0.74rem;
+            line-height: 1.35;
+        }
+
+        .autoid-table {
+            --bs-table-bg: transparent;
+            --bs-table-color: #f8fafc;
+            --bs-table-border-color: rgba(148, 163, 184, 0.12);
+            table-layout: fixed;
+            margin-bottom: 0;
+        }
+
+        .autoid-table thead th {
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+            color: #94a3b8;
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 0.68rem 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .autoid-table tbody tr {
+            border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+        }
+
+        .autoid-table tbody tr:hover {
+            --bs-table-hover-bg: rgba(30, 41, 59, 0.45);
+        }
+
+        .autoid-table td {
+            padding: 0.7rem 0.9rem;
+            vertical-align: top;
+        }
+
+        .autoid-table td:not(:last-child) {
+            border-right: 1px solid rgba(148, 163, 184, 0.06);
+        }
+
+        .autoid-destination a {
+            color: #93c5fd;
+            text-decoration: none;
+        }
+
+        .autoid-destination a:hover {
+            color: #dbeafe;
+        }
+
+        .autoid-item {
+            min-width: 0;
+        }
+
+        .autoid-destination {
+            min-width: 0;
+        }
+
+        .autoid-item__top {
+            align-items: center;
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .autoid-item__serial {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .autoid-item__meta {
+            color: #94a3b8;
+            font-size: 0.74rem;
+            line-height: 1.25;
+        }
+
+        .autoid-item--real {
+            position: relative;
+        }
+
+        .autoid-item--real::before {
+            background: linear-gradient(180deg, rgba(34, 197, 94, 0.55), rgba(34, 197, 94, 0));
+            border-radius: 999px;
+            content: "";
+            height: 78%;
+            left: -0.55rem;
+            position: absolute;
+            top: 0.12rem;
+            width: 2px;
+        }
+
+        .autoid-pill {
+            border-radius: 999px;
+            font-size: 0.62rem;
+            font-weight: 700;
+            padding: 0.18rem 0.46rem;
+        }
+
+        .autoid-pill--auto {
+            background: #fbbf24;
+            color: #111827;
+        }
+
+        .autoid-pill--real {
+            background: rgba(34, 197, 94, 0.14);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            color: #86efac;
+        }
+
+        .autoid-actions {
+            align-items: flex-end;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            min-width: 0;
+        }
+
+        .autoid-confidence {
+            max-width: 300px;
+        }
+
+        .autoid-confidence .badge {
+            font-size: 0.66rem;
+            font-weight: 700;
+            padding: 0.3rem 0.56rem;
+        }
+
+        .autoid-confidence__note {
+            color: #94a3b8;
+            font-size: 0.71rem;
+            line-height: 1.28;
+            margin-top: 0.28rem;
+        }
+
+        .autoid-actions__buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.38rem;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .autoid-actions__buttons .btn {
+            border-radius: 9px;
+            font-size: 0.72rem;
+            padding: 0.34rem 0.62rem;
+            white-space: nowrap;
+        }
+
+        .autoid-actions__buttons .btn-outline-secondary {
+            background: transparent;
+            border-color: rgba(148, 163, 184, 0.16);
+            color: #94a3b8;
+            font-size: 0.68rem;
+            padding: 0.28rem 0.46rem;
+        }
+
+        .autoid-actions__buttons .btn-outline-secondary:hover {
+            background: rgba(51, 65, 85, 0.18);
+            border-color: rgba(148, 163, 184, 0.3);
+            color: #f8fafc;
+        }
+
+        .autoid-actions__buttons .btn-outline-warning {
+            background: rgba(251, 191, 36, 0.08);
+            border-color: rgba(251, 191, 36, 0.48);
+            color: #fde68a;
+            box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.1);
+            font-weight: 700;
+        }
+
+        .autoid-actions__buttons .btn-outline-warning:hover {
+            background: rgba(251, 191, 36, 0.16);
+            border-color: rgba(251, 191, 36, 0.7);
+            color: #fff7d6;
+        }
+
+        .autoid-actions__buttons .btn i {
+            opacity: 0.9;
+        }
+
+        .autoid-table__head-actions {
+            text-align: right;
+        }
+
+        .autoid-destination__label {
+            color: #94a3b8;
+            display: block;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.16rem;
+            text-transform: uppercase;
+        }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
@@ -111,13 +347,13 @@
             </div>
         </div>
 
-        <div class="modal fade" id="modalAutoIdPendientes" tabindex="-1" aria-hidden="true">
+        <div class="modal fade autoid-modal" id="modalAutoIdPendientes" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                <div class="modal-content" style="background:#111827; color:#f8fafc; border:1px solid rgba(251,191,36,0.25);">
-                    <div class="modal-header" style="border-bottom:1px solid rgba(251,191,36,0.2);">
+                <div class="modal-content">
+                    <div class="modal-header">
                         <div>
-                            <h5 class="modal-title fw-bold text-warning mb-0"><i class="bi bi-magic me-2"></i>Componentes autogenerados duplicados</h5>
-                            <div class="small text-muted">Componentes creados automáticamente por el sistema, por ejemplo con prefijo `INT-*`, que quedaron duplicados frente a una pieza real equivalente dentro del mismo destino.</div>
+                            <h5 class="modal-title fw-bold text-warning mb-0"><i class="bi bi-magic me-2"></i>Duplicados entre Auto-ID y pieza real</h5>
+                            <div class="small text-muted">Acá aparecen fichas internas `INT-*` que el sistema creó de forma provisoria y que hoy conviven con una pieza real equivalente en el mismo destino.</div>
                         </div>
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-sm btn-outline-light fw-bold" onclick="refreshAutogeneratedDuplicatesCard()">
@@ -127,20 +363,47 @@
                         </div>
                     </div>
                     <div id="autoIdDuplicatesTableWrap" class="modal-body p-0" {% if not autogenerated_duplicate_candidates %}style="display:none;"{% endif %}>
+                        <div class="autoid-explainer px-3 py-3 border-bottom">
+                            <div class="row g-3">
+                                <div class="col-lg-7">
+                                    <div class="fw-bold text-warning mb-1"><i class="bi bi-info-circle me-1"></i>Qué significa</div>
+                                    <div class="small text-muted">
+                                        El sistema detectó dos fichas para una misma pieza física dentro del mismo equipo o destino:
+                                        una ficha interna `INT-*` y una ficha real patrimonial.
+                                    </div>
+                                </div>
+                                <div class="col-lg-5">
+                                    <div class="small text-muted">
+                                        <strong class="text-light">Conservar pieza real y borrar Auto-ID</strong>: úselo cuando ambas filas representan la misma pieza.
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        <strong class="text-light">Ocultar este caso</strong>: úselo si cree que no es un duplicado real y quiere revisarlo más adelante.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead class="table-dark">
+                            <table class="autoid-table table table-sm table-hover">
+                                <colgroup>
+                                    <col style="width: 18%;">
+                                    <col style="width: 27%;">
+                                    <col style="width: 27%;">
+                                    <col style="width: 28%;">
+                                </colgroup>
+                                <thead>
                                     <tr>
                                         <th>Destino</th>
-                                        <th>Componente autogenerado</th>
-                                        <th>Pieza real que lo reemplaza</th>
-                                        <th class="text-end">Acciones</th>
+                                        <th>Ficha Auto-ID provisoria</th>
+                                        <th>Pieza real a conservar</th>
+                                        <th class="autoid-table__head-actions">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="autoIdDuplicatesTbody">
                                     {% for item in autogenerated_duplicate_candidates %}
+                                    {% set safe_to_clean = item.shadowed_by_serial_number %}
                                     <tr>
-                                        <td>
+                                        <td class="autoid-destination">
+                                            <span class="autoid-destination__label">Destino</span>
                                             {% if item.assigned_pc %}
                                                 <a href="{{ url_for('dashboard.pc_detail', pc_name=item.assigned_pc) }}" class="fw-bold">🖥 {{ item.assigned_pc }}</a>
                                             {% elif item.assigned_user or item.assigned_fuero %}
@@ -153,20 +416,43 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <div class="font-monospace fw-bold">{{ item.serial_number }}</div>
-                                            <div class="small text-muted">{{ item.component_type }} · {{ item.brand_model }}</div>
+                                            <div class="autoid-item">
+                                                <div class="autoid-item__top">
+                                                    <span class="autoid-pill autoid-pill--auto">Auto-ID</span>
+                                                    <div class="autoid-item__serial">{{ item.serial_number }}</div>
+                                                </div>
+                                                <div class="autoid-item__meta">{{ item.component_type }} · {{ item.brand_model }}</div>
+                                            </div>
                                         </td>
                                         <td>
-                                            <div class="font-monospace fw-bold">{{ item.shadowed_by_serial_number or 'Pieza real' }}</div>
-                                            <div class="small text-muted">{{ item.shadowed_by_component_type }} · {{ item.shadowed_by_brand_model }}</div>
+                                            <div class="autoid-item autoid-item--real">
+                                                <div class="autoid-item__top">
+                                                    <span class="autoid-pill autoid-pill--real">Real</span>
+                                                    <div class="autoid-item__serial">{{ item.shadowed_by_serial_number or 'Pieza real' }}</div>
+                                                </div>
+                                                <div class="autoid-item__meta">{{ item.shadowed_by_component_type }} · {{ item.shadowed_by_brand_model }}</div>
+                                            </div>
                                         </td>
                                         <td class="text-end">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary fw-bold me-1" onclick="ignoreAutogeneratedDuplicates(['{{ item.serial_number }}'])">
-                                                <i class="bi bi-eye-slash me-1"></i> Ignorar
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="resolveAutogeneratedDuplicates(['{{ item.serial_number }}'])">
-                                                <i class="bi bi-trash3 me-1"></i> Resolver
-                                            </button>
+                                            <div class="autoid-actions">
+                                                <div class="autoid-confidence text-end">
+                                                    {% if safe_to_clean %}
+                                                    <span class="badge rounded-pill text-bg-success"><i class="bi bi-check2-circle me-1"></i>Seguro para limpiar</span>
+                                                    <div class="autoid-confidence__note">Se conserva la pieza real y se elimina solo la ficha Auto-ID.</div>
+                                                    {% else %}
+                                                    <span class="badge rounded-pill text-bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Revisar antes de borrar</span>
+                                                    <div class="autoid-confidence__note">Falta una referencia real clara. Conviene revisar este caso manualmente.</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="autoid-actions__buttons">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary fw-bold me-1" onclick="ignoreAutogeneratedDuplicates(['{{ item.serial_number }}'])">
+                                                        <i class="bi bi-eye-slash me-1"></i> Ocultar este caso
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="resolveAutogeneratedDuplicates(['{{ item.serial_number }}'])">
+                                                        <i class="bi bi-trash3 me-1"></i> Conservar real y borrar Auto-ID
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -176,7 +462,7 @@
                     </div>
                     <div id="autoIdDuplicatesEmptyState" class="modal-body py-4 px-4" {% if autogenerated_duplicate_candidates %}style="display:none;"{% endif %}>
                         <div class="text-muted small">
-                            <i class="bi bi-patch-check me-1 text-success"></i>No hay componentes autogenerados duplicados detectados en este momento.
+                            <i class="bi bi-patch-check me-1 text-success"></i>No hay duplicados entre Auto-ID y pieza real detectados en este momento.
                         </div>
                     </div>
                 </div>
@@ -189,7 +475,7 @@
                     <div class="modal-header" style="border-bottom:1px solid rgba(148,163,184,0.2);">
                         <div>
                             <h5 class="modal-title fw-bold text-light mb-0"><i class="bi bi-eye-slash me-2"></i>Componentes autogenerados ignorados</h5>
-                            <div class="small text-muted">Falsos positivos ocultados manualmente del tablero de limpieza de componentes autogenerados duplicados.</div>
+                            <div class="small text-muted">Casos que se ocultaron manualmente porque por ahora no conviene borrar la ficha Auto-ID o porque no parecen un duplicado real.</div>
                         </div>
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-sm btn-outline-light fw-bold" onclick="refreshIgnoredAutogeneratedDuplicatesCard()">
@@ -1898,25 +2184,51 @@
                 const realType = escapeHtml(item.shadowed_by_component_type || '');
                 const realModel = escapeHtml(item.shadowed_by_brand_model || '');
                 const safeSerialArg = String(item.serial_number || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const safeToClean = Boolean(item.shadowed_by_serial_number);
+                const confidenceHtml = safeToClean
+                    ? `<span class="badge rounded-pill text-bg-success"><i class="bi bi-check2-circle me-1"></i>Seguro para limpiar</span>
+                       <div class="small text-muted mt-1">Se conserva la pieza real y se elimina solo la ficha Auto-ID.</div>`
+                    : `<span class="badge rounded-pill text-bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Revisar antes de borrar</span>
+                       <div class="small text-muted mt-1">Falta una referencia real clara. Conviene revisar este caso manualmente.</div>`;
 
                 return `
                     <tr>
-                        <td>${destinationHtml}</td>
-                        <td>
-                            <div class="font-monospace fw-bold">${serial}</div>
-                            <div class="small text-muted">${compType} · ${brandModel}</div>
+                        <td class="autoid-destination">
+                            <span class="autoid-destination__label">Destino</span>
+                            ${destinationHtml}
                         </td>
                         <td>
-                            <div class="font-monospace fw-bold">${realSerial}</div>
-                            <div class="small text-muted">${realType} · ${realModel}</div>
+                            <div class="autoid-item">
+                                <div class="autoid-item__top">
+                                    <span class="autoid-pill autoid-pill--auto">Auto-ID</span>
+                                    <div class="autoid-item__serial">${serial}</div>
+                                </div>
+                                <div class="autoid-item__meta">${compType} · ${brandModel}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="autoid-item autoid-item--real">
+                                <div class="autoid-item__top">
+                                    <span class="autoid-pill autoid-pill--real">Real</span>
+                                    <div class="autoid-item__serial">${realSerial}</div>
+                                </div>
+                                <div class="autoid-item__meta">${realType} · ${realModel}</div>
+                            </div>
                         </td>
                         <td class="text-end">
-                            <button type="button" class="btn btn-sm btn-outline-secondary fw-bold me-1" onclick="ignoreAutogeneratedDuplicates(['${safeSerialArg}'])">
-                                <i class="bi bi-eye-slash me-1"></i> Ignorar
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="resolveAutogeneratedDuplicates(['${safeSerialArg}'])">
-                                <i class="bi bi-trash3 me-1"></i> Resolver
-                            </button>
+                            <div class="autoid-actions">
+                                <div class="autoid-confidence text-end">
+                                    ${confidenceHtml}
+                                </div>
+                                <div class="autoid-actions__buttons">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" onclick="ignoreAutogeneratedDuplicates(['${safeSerialArg}'])">
+                                        <i class="bi bi-eye-slash me-1"></i> Ocultar este caso
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="resolveAutogeneratedDuplicates(['${safeSerialArg}'])">
+                                        <i class="bi bi-trash3 me-1"></i> Conservar real y borrar Auto-ID
+                                    </button>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -2023,8 +2335,8 @@
         async function resolveAutogeneratedDuplicates(serials) {
             const selectedSerials = Array.isArray(serials) ? serials.filter(Boolean) : [];
             const isBulk = selectedSerials.length === 0;
-            const label = isBulk ? 'todos los componentes autogenerados duplicados detectados' : selectedSerials.join(', ');
-            if (!confirm(`¿Resolver ${label}?\n\nSe eliminarán únicamente componentes autogenerados por el sistema que sigan detectados como duplicados válidos en este momento.`)) return;
+            const label = isBulk ? 'todos los duplicados Auto-ID detectados' : selectedSerials.join(', ');
+            if (!confirm(`¿Conservar la pieza real y borrar el Auto-ID para ${label}?\n\nSe eliminarán solamente las fichas INT-* que en este momento sigan detectadas como duplicado válido. La pieza real patrimonial se conserva.`)) return;
 
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -2043,7 +2355,7 @@
                     await refreshIgnoredAutogeneratedDuplicatesCard();
                     loadComponents();
                 } else {
-                    alert('Error: ' + (data.message || 'No se pudo resolver los duplicados.'));
+                    alert('Error: ' + (data.message || 'No se pudo limpiar los duplicados Auto-ID.'));
                 }
             } catch (error) {
                 alert('Error de red: ' + error.message);
@@ -2053,7 +2365,7 @@
         async function ignoreAutogeneratedDuplicates(serials) {
             const selectedSerials = Array.isArray(serials) ? serials.filter(Boolean) : [];
             if (selectedSerials.length === 0) return;
-            if (!confirm(`¿Ignorar ${selectedSerials.join(', ')}?\n\nEstos componentes autogenerados dejarán de aparecer como sugerencia de limpieza en esta vista.`)) return;
+            if (!confirm(`¿Ocultar este caso para ${selectedSerials.join(', ')}?\n\nLa ficha Auto-ID no se borra. Solo deja de aparecer en esta bandeja hasta que usted la restaure.`)) return;
 
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';

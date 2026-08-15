@@ -511,25 +511,9 @@ def health():
     except Exception:
         return {"status": "error", "db_ok": False}, 500
 
-@bp_api.route("/api/security/<string:pc_name>")
-def api_security(pc_name):
-    """Devuelve las conexiones de red activas (snapshot) desde el JSON completo."""
-    try:
-        with get_db_connection() as conn:
-            row = conn.execute("SELECT full_json_data FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
-            if not row or not row["full_json_data"]:
-                return jsonify({"status": "error", "message": "PC no encontrada o sin datos"}), 404
-            
-            data = json.loads(row["full_json_data"])
-            conns = data.get("Conexiones", [])
-            sec_extra = data.get("Seguridad_Extra", {"Antivirus": "Descargando...", "Startup": []})
-            return jsonify({"status": "success", "data": conns, "seguridad_extra": sec_extra})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
 @bp_api.route("/api/health/<string:pc_name>")
 def api_health(pc_name):
-    """Devuelve el diagnóstico unificado del equipo desde el JSON completo."""
+    """Devuelve un diagnóstico rápido del equipo desde el JSON completo."""
     try:
         with get_db_connection() as conn:
             row = conn.execute("SELECT full_json_data FROM pcs WHERE pc_name = %s", (pc_name,)).fetchone()
@@ -539,13 +523,9 @@ def api_health(pc_name):
             data = json.loads(row["full_json_data"])
             health = data.get("Salud", {})
             sistema = data.get("Sistema", {})
-            conns = data.get("Conexiones", [])
-            sec_extra = data.get("Seguridad_Extra", {"Antivirus": "Descargando...", "Startup": []})
             return jsonify({
                 "status": "success", 
                 "data": health,
-                "conexiones": conns,
-                "seguridad_extra": sec_extra,
                 "extra": {
                     "office": sistema.get("Office", "N/A"),
                     "os": sistema.get("OsName", "N/A")

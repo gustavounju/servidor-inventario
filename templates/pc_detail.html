@@ -176,6 +176,158 @@
       grid-column: 1 / -1;
     }
 
+    .pc-health-mini {
+      align-items: center;
+      background: var(--card-bg, #ffffff);
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 10px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: minmax(220px, 1.2fr) minmax(0, 2fr);
+      margin-bottom: 16px;
+      padding: 12px 14px;
+    }
+    .pc-health-mini--ok {
+      border-left: 4px solid #22c55e;
+      box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.08);
+      background:
+        linear-gradient(90deg, rgba(34, 197, 94, 0.045), transparent 28%),
+        var(--card-bg, #ffffff);
+    }
+    .pc-health-mini--warning {
+      border-left: 4px solid #f59e0b;
+      box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.12);
+      background:
+        linear-gradient(90deg, rgba(245, 158, 11, 0.08), transparent 32%),
+        var(--card-bg, #ffffff);
+    }
+    .pc-health-mini--danger {
+      border-left: 4px solid #ef4444;
+      box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.14);
+      background:
+        linear-gradient(90deg, rgba(239, 68, 68, 0.1), transparent 32%),
+        var(--card-bg, #ffffff);
+    }
+    .pc-health-mini__top {
+      align-items: center;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+    }
+    .pc-health-mini__title {
+      color: var(--text-color, #0f172a);
+      font-size: 0.84rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .pc-health-mini__subtitle {
+      color: var(--text-muted, #64748b);
+      font-size: 0.72rem;
+      margin: 2px 0 0;
+    }
+    .pc-health-mini__status {
+      border-radius: 999px;
+      font-size: 0.64rem;
+      font-weight: 700;
+      padding: 4px 9px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .pc-health-mini--ok .pc-health-mini__status {
+      background: rgba(34, 197, 94, 0.1);
+      color: #15803d;
+    }
+    .pc-health-mini--warning .pc-health-mini__status {
+      background: rgba(245, 158, 11, 0.15);
+      color: #c2410c;
+    }
+    .pc-health-mini--danger .pc-health-mini__status {
+      background: rgba(239, 68, 68, 0.16);
+      color: #b91c1c;
+    }
+    .pc-health-mini__grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    .pc-health-mini__metric {
+      background: var(--table-header-bg, #f1f5f9);
+      border-radius: 8px;
+      border: 1px solid color-mix(in srgb, var(--border-color, #e2e8f0) 82%, transparent);
+      padding: 8px 10px;
+    }
+    .pc-health-mini--ok .pc-health-mini__metric {
+      background: color-mix(in srgb, var(--table-header-bg, #f1f5f9) 88%, rgba(34, 197, 94, 0.08));
+    }
+    .pc-health-mini--warning .pc-health-mini__metric {
+      background: color-mix(in srgb, var(--table-header-bg, #f1f5f9) 84%, rgba(245, 158, 11, 0.11));
+    }
+    .pc-health-mini--danger .pc-health-mini__metric {
+      background: color-mix(in srgb, var(--table-header-bg, #f1f5f9) 82%, rgba(239, 68, 68, 0.12));
+    }
+    .pc-health-mini__metric--action {
+      border: 0;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+      width: 100%;
+    }
+    .pc-health-mini__metric--action:hover {
+      background: color-mix(in srgb, var(--table-header-bg, #f1f5f9) 72%, var(--accent-color, #3b82f6));
+      transform: translateY(-1px);
+    }
+    .pc-health-mini--warning .pc-health-mini__metric--action:hover {
+      background: color-mix(in srgb, rgba(245, 158, 11, 0.16) 46%, var(--table-header-bg, #f1f5f9));
+    }
+    .pc-health-mini--danger .pc-health-mini__metric--action:hover {
+      background: color-mix(in srgb, rgba(239, 68, 68, 0.18) 48%, var(--table-header-bg, #f1f5f9));
+    }
+    .pc-health-mini__metric-label {
+      color: var(--text-muted, #64748b);
+      display: block;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    .pc-health-mini__metric-value {
+      color: var(--text-color, #0f172a);
+      font-family: 'Geist Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .pc-health-mini__metric-hint {
+      color: var(--accent-color, #3b82f6);
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      margin-top: 5px;
+    }
+    @media (max-width: 992px) {
+      .pc-health-mini {
+        grid-template-columns: 1fr;
+      }
+      .pc-health-mini__grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 576px) {
+      .pc-health-mini__top {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .pc-health-mini__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 420px) {
+      .pc-health-mini__grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* Línea de Tiempo de Auditoría (Timeline) */
     .pd-timeline {
       position: relative;
@@ -412,6 +564,33 @@
       {% set printer_missing = not pc.printer_model or pc.printer_model == 'N/A' or 'SIN IMPRESORA' in pc.printer_model | upper %}
       {% set validation_total = validation_comparison | length if validation_comparison else 0 %}
       {% set validation_ok = validation_comparison | selectattr('match') | list | length if validation_comparison else 0 %}
+      {% set quick_health = quick_health if quick_health is defined else {
+        'status': 'warning',
+        'summary_label': 'Sin telemetría disponible',
+        'report_age_days': none,
+        'report_age_label': 'Sin dato',
+        'smart_bad_count': 0,
+        'low_space_count': 0,
+        'critical_event_count': 0,
+        'update_age_days': none,
+        'connectivity_issue_count': 0,
+        'gateway_known': false,
+        'printer_known': false,
+        'os': 'N/A',
+        'office': 'N/A'
+      } %}
+      {% set quick_health_status = quick_health.get('status', 'warning') %}
+      {% set quick_health_summary_label = quick_health.get('summary_label', 'Sin telemetría disponible') %}
+      {% set quick_health_report_age_days = quick_health.get('report_age_days') %}
+      {% set quick_health_report_age_label = quick_health.get('report_age_label', 'Sin dato') %}
+      {% set quick_health_smart_bad_count = quick_health.get('smart_bad_count', 0) %}
+      {% set quick_health_low_space_count = quick_health.get('low_space_count', 0) %}
+      {% set quick_health_critical_event_count = quick_health.get('critical_event_count', 0) %}
+      {% set quick_health_update_age_days = quick_health.get('update_age_days') %}
+      {% set quick_health_connectivity_issue_count = quick_health.get('connectivity_issue_count', 0) %}
+      {% set quick_health_gateway_known = quick_health.get('gateway_known', false) %}
+      {% set quick_health_printer_known = quick_health.get('printer_known', false) %}
+      {% set health_status_class = 'pc-health-mini--' ~ (quick_health_status or 'warning') %}
 
       <section class="pc-decision-grid mb-3" aria-label="Estado general del equipo">
         <article class="pc-status-panel {% if pc.validation_status == 'validado' %}pc-status-panel--ok{% elif pc.validation_status == 'discrepancia' %}pc-status-panel--danger{% else %}pc-status-panel--warning{% endif %}">
@@ -434,11 +613,11 @@
 
         <article class="pc-attention-panel {% if attention.count == 0 %}pc-attention-panel--clear{% endif %}">
           <div class="pc-panel-heading">
-            <span>Requiere atención</span>
+            <span>Pendientes de gestión patrimonial</span>
             <span class="pc-attention-count">{{ attention.count }}</span>
           </div>
           {% if attention.count == 0 %}
-          <div class="pc-empty-attention"><i class="bi bi-check-circle-fill"></i><span>No hay datos críticos pendientes.</span></div>
+          <div class="pc-empty-attention"><i class="bi bi-check-circle-fill"></i><span>No hay pendientes patrimoniales ni de ubicación.</span></div>
           {% else %}
           <div class="pc-attention-list">
             {% if not pc.fuero or pc.fuero | lower in ('desconocido', 'sin fuero', 'n/a') %}
@@ -455,6 +634,101 @@
         </article>
       </section>
 
+      <section class="pc-health-mini {{ health_status_class }}" aria-label="Estado rápido de salud">
+        <div class="pc-health-mini__top">
+          <div>
+            <h3 class="pc-health-mini__title">Estado rápido de salud</h3>
+            <p class="pc-health-mini__subtitle">Lectura técnica breve del último reporte recibido por esta PC.</p>
+          </div>
+          <span class="pc-health-mini__status">{{ quick_health_summary_label }}</span>
+        </div>
+        <div class="pc-health-mini__grid">
+          {% if quick_health_report_age_days is not none and quick_health_report_age_days > 3 %}
+          <button type="button" class="pc-health-mini__metric pc-health-mini__metric--action" onclick="activatePcTab('historial')">
+            <span class="pc-health-mini__metric-label">Último reporte</span>
+            <span class="pc-health-mini__metric-value">{{ quick_health_report_age_label }}</span>
+            <span class="pc-health-mini__metric-hint">Ir a historial</span>
+          </button>
+          {% else %}
+          <div class="pc-health-mini__metric">
+            <span class="pc-health-mini__metric-label">Último reporte</span>
+            <span class="pc-health-mini__metric-value">
+              {{ quick_health_report_age_label }}
+            </span>
+          </div>
+          {% endif %}
+
+          {% if quick_health_smart_bad_count > 0 %}
+          <button type="button" class="pc-health-mini__metric pc-health-mini__metric--action" onclick="activatePcTab('patrimonio')">
+            <span class="pc-health-mini__metric-label">SMART</span>
+            <span class="pc-health-mini__metric-value">{{ quick_health_smart_bad_count }} con fallo</span>
+            <span class="pc-health-mini__metric-hint">Ir a patrimonio</span>
+          </button>
+          {% else %}
+          <div class="pc-health-mini__metric">
+            <span class="pc-health-mini__metric-label">SMART</span>
+            <span class="pc-health-mini__metric-value">{{ quick_health_smart_bad_count }} con fallo</span>
+          </div>
+          {% endif %}
+
+          {% if quick_health_low_space_count > 0 %}
+          <button type="button" class="pc-health-mini__metric pc-health-mini__metric--action" onclick="activatePcTab('operacion')">
+            <span class="pc-health-mini__metric-label">Espacio</span>
+            <span class="pc-health-mini__metric-value">{{ quick_health_low_space_count }} con poco espacio</span>
+            <span class="pc-health-mini__metric-hint">Ir a operación</span>
+          </button>
+          {% else %}
+          <div class="pc-health-mini__metric">
+            <span class="pc-health-mini__metric-label">Espacio</span>
+            <span class="pc-health-mini__metric-value">{{ quick_health_low_space_count }} con poco espacio</span>
+          </div>
+          {% endif %}
+
+          {% if quick_health_critical_event_count > 0 %}
+          <button type="button" class="pc-health-mini__metric pc-health-mini__metric--action" onclick="activatePcTab('historial')">
+            <span class="pc-health-mini__metric-label">Eventos</span>
+            <span class="pc-health-mini__metric-value">{{ quick_health_critical_event_count }} críticos</span>
+            <span class="pc-health-mini__metric-hint">Ir a historial</span>
+          </button>
+          {% else %}
+          <div class="pc-health-mini__metric">
+            <span class="pc-health-mini__metric-label">Eventos</span>
+            <span class="pc-health-mini__metric-value">{{ quick_health_critical_event_count }} críticos</span>
+          </div>
+          {% endif %}
+
+          {% if quick_health_connectivity_issue_count > 0 %}
+          <button type="button" class="pc-health-mini__metric pc-health-mini__metric--action" onclick="activatePcTab('operacion')">
+            <span class="pc-health-mini__metric-label">Red</span>
+            <span class="pc-health-mini__metric-value">{{ quick_health_connectivity_issue_count }} alerta{% if quick_health_connectivity_issue_count != 1 %}s{% endif %}</span>
+            <span class="pc-health-mini__metric-hint">Ir a operación</span>
+          </button>
+          {% else %}
+          <div class="pc-health-mini__metric">
+            <span class="pc-health-mini__metric-label">Red</span>
+            <span class="pc-health-mini__metric-value">
+              {% if quick_health_gateway_known or quick_health_printer_known %}Sin alertas{% else %}Sin dato{% endif %}
+            </span>
+          </div>
+          {% endif %}
+
+          {% if quick_health_update_age_days is not none and quick_health_update_age_days > 45 %}
+          <button type="button" class="pc-health-mini__metric pc-health-mini__metric--action" onclick="activatePcTab('operacion')">
+            <span class="pc-health-mini__metric-label">Parches</span>
+            <span class="pc-health-mini__metric-value">{{ quick_health_update_age_days }} días</span>
+            <span class="pc-health-mini__metric-hint">Ir a operación</span>
+          </button>
+          {% else %}
+          <div class="pc-health-mini__metric">
+            <span class="pc-health-mini__metric-label">Parches</span>
+            <span class="pc-health-mini__metric-value">
+              {% if quick_health_update_age_days is not none %}{{ quick_health_update_age_days }} días{% else %}Sin dato{% endif %}
+            </span>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
       <section class="pc-overview-grid">
         <article class="pc-overview-card">
           <div class="pc-panel-heading"><span>Puesto y conectividad</span><i class="bi bi-diagram-3"></i></div>
@@ -465,7 +739,7 @@
             <div><dt>Ubicación</dt><dd>{{ pc.building or 'Sin edificio' }} · Piso {{ pc.floor or '-' }}</dd></div>
             <div><dt>Red física</dt><dd>{{ pc.switch_name or 'Sin switch' }} · Puerto {{ pc.switch_port or '-' }}</dd></div>
           </dl>
-          <button type="button" class="pc-inline-link" onclick="activatePcTab('operacion')">Ver red y energía <i class="bi bi-arrow-right"></i></button>
+          <button type="button" class="pc-inline-link" onclick="activatePcTab('operacion')">Ver red y ubicación <i class="bi bi-arrow-right"></i></button>
         </article>
 
         <article class="pc-overview-card">
@@ -594,7 +868,7 @@
     <section class="pc-operation-section">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <h5 class="mb-0 fw-bold" style="color:var(--text-color)"><i class="bi bi-diagram-3 me-2 text-primary"></i>Red, ubicación y energía</h5>
+          <h5 class="mb-0 fw-bold" style="color:var(--text-color)"><i class="bi bi-diagram-3 me-2 text-primary"></i>Red y ubicación</h5>
           <p class="text-muted small mb-0">Datos físicos del puesto, cableado y respaldo eléctrico.</p>
         </div>
       </div>

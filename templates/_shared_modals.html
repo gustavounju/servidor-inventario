@@ -737,13 +737,13 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Diagnóstico del Equipo: <span id="healthPcName">...</span></h5>
+                <h5 class="modal-title">Estado rápido del equipo: <span id="healthPcName">...</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body overflow-auto" style="max-height: 80vh;">
                 <div id="healthLoading" class="text-center py-5">
                     <div class="spinner-border text-primary"></div>
-                    <p class="mt-2">Analizando diagnóstico...</p>
+                    <p class="mt-2">Cargando estado operativo...</p>
                 </div>
                 <div id="healthError" class="alert alert-danger d-none"></div>
                 
@@ -759,8 +759,8 @@
                         <div class="col-md-4">
                             <div class="card p-3 text-center h-100 border-0 bg-light shadow-sm">
                                 <h6 class="mb-0 text-success fw-bold" id="healthOffice">...</h6>
-                                <small class="text-muted d-block uppercase tracking-wider">Microsoft Office</small>
-                                <i class="bi bi-microsoft mt-1 text-primary"></i>
+                                <small class="text-muted d-block uppercase tracking-wider">Office detectado</small>
+                                <div class="small text-muted mt-1" id="healthOsName">Sistema operativo</div>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -776,116 +776,6 @@
 
                     <h6 class="fw-bold border-bottom pb-1 mb-2">Eventos Críticos Recientes (System Logs)</h6>
                     <ul id="healthEventsList" class="list-group list-group-flush small"></ul>
-
-                    <h6 class="fw-bold border-bottom pb-1 mt-4 mb-3">Seguridad y Red</h6>
-                    <div class="card border-0 bg-light shadow-sm mb-3">
-                        <div class="card-body">
-                            <h6 class="mb-2 fw-bold"><i class="bi bi-shield-lock-fill text-primary me-1"></i> Software de Protección</h6>
-                            <span id="healthSecurityAntivirus" class="badge fs-6 bg-secondary">Cargando...</span>
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-lg-5">
-                            <h6 class="fw-bold mb-2"><i class="bi bi-lightning-auto text-warning me-1"></i> Programas de Inicio</h6>
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
-                                    <thead class="bg-light">
-                                        <tr><th>Nombre</th><th>Comando</th></tr>
-                                    </thead>
-                                    <tbody id="healthSecurityStartupBody"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="col-lg-7">
-                            <h6 class="fw-bold mb-2"><i class="bi bi-globe text-info me-1"></i> Conexiones Externas Activas</h6>
-                            <div class="table-responsive" style="max-height: 360px;">
-                                <table class="table table-sm table-striped mb-0" style="font-size: 0.8rem;">
-                                    <thead class="bg-light sticky-top">
-                                        <tr><th>Proceso</th><th>PID</th><th>Remoto</th><th>Estado</th></tr>
-                                    </thead>
-                                    <tbody id="healthSecurityTableBody"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Seguridad -->
-<div class="modal fade" id="securityModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Auditoría de Seguridad: <span id="securityPcName">...</span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" style="">
-                <div id="securityLoading" class="text-center py-5">
-                    <div class="spinner-border text-warning"></div>
-                    <p class="mt-2">Extrayendo conexiones y procesos...</p>
-                </div>
-                <div id="securityError" class="alert alert-danger d-none"></div>
-
-                <div id="securityContent" class="d-none">
-                    <div class="card border-0 shadow-sm mb-4">
-                        <div class="card-body">
-                            <div class="row align-items-center">
-                                <div class="col-auto">
-                                    <div class="p-3 bg-primary bg-opacity-10 rounded-circle text-primary">
-                                        <i class="bi bi-shield-lock-fill fs-2"></i>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <h6 class="mb-1 fw-bold">Software de Protección</h6>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span id="securityAntivirus" class="badge fs-6 bg-secondary">Cargando...</span>
-                                        <small class="text-muted">Estado detectado al momento del reporte.</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-lg-5">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-header bg-white border-0 py-3">
-                                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-lightning-auto text-warning me-1"></i> Programas de Inicio (Startup)</h6>
-                                </div>
-                                <div class="card-body p-0">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
-                                            <thead class="bg-light">
-                                                <tr><th>Nombre</th><th>Comando</th></tr>
-                                            </thead>
-                                            <tbody id="securityStartupBody"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-7">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-header bg-white border-0 py-3">
-                                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-globe text-info me-1"></i> Conexiones Externas Activas</h6>
-                                </div>
-                                <div class="card-body p-0">
-                                    <div class="table-responsive" style="max-height: 500px;">
-                                        <table class="table table-sm table-striped mb-0" style="font-size: 0.8rem;">
-                                            <thead class="bg-light sticky-top">
-                                                <tr><th>Proceso</th><th>PID</th><th>Remoto</th><th>Estado</th></tr>
-                                            </thead>
-                                            <tbody id="securityTableBody"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -949,6 +839,7 @@
 
                     // Office
                     document.getElementById('healthOffice').innerText = extra.office || 'N/A';
+                    document.getElementById('healthOsName').innerText = extra.os || 'Sistema operativo no detectado';
 
                     // Uptime
                     const days = h.Uptime_Dias || 0;
@@ -979,13 +870,17 @@
                     // SMART
                     const smartList = document.getElementById('healthSmartList');
                     smartList.innerHTML = '';
-                    (h.Discos_SMART || []).forEach(d => {
-                        let statusColor = d.Status === 'OK' ? 'text-success' : 'text-danger';
-                        smartList.innerHTML += `<li class="list-group-item bg-transparent d-flex justify-content-between p-1">
-                            <span>${d.Model}</span>
-                            <span class="fw-bold ${statusColor}">${d.Status}</span>
-                        </li>`;
-                    });
+                    if (h.Discos_SMART && h.Discos_SMART.length > 0) {
+                        (h.Discos_SMART || []).forEach(d => {
+                            let statusColor = d.Status === 'OK' ? 'text-success' : 'text-danger';
+                            smartList.innerHTML += `<li class="list-group-item bg-transparent d-flex justify-content-between p-1">
+                                <span>${d.Model}</span>
+                                <span class="fw-bold ${statusColor}">${d.Status}</span>
+                            </li>`;
+                        });
+                    } else {
+                        smartList.innerHTML = `<li class="list-group-item bg-transparent text-muted text-center py-2">Sin telemetría SMART disponible</li>`;
+                    }
 
                     // Eventos
                     const eventList = document.getElementById('healthEventsList');
@@ -998,39 +893,6 @@
                         });
                     } else {
                         eventList.innerHTML = `<li class="list-group-item bg-transparent text-muted text-center py-2">Sin errores críticos detectados</li>`;
-                    }
-
-                    // Seguridad
-                    const avBadge = document.getElementById('healthSecurityAntivirus');
-                    const avName = (data.seguridad_extra && data.seguridad_extra.Antivirus) || 'Desconocido';
-                    avBadge.innerText = avName;
-                    avBadge.className = 'badge fs-6 ' + (avName === 'No Detectado' ? 'bg-danger' : 'bg-success');
-
-                    const startupTbody = document.getElementById('healthSecurityStartupBody');
-                    startupTbody.innerHTML = '';
-                    const startups = (data.seguridad_extra && data.seguridad_extra.Startup) || [];
-                    if (startups.length > 0) {
-                        startups.forEach(st => {
-                            startupTbody.innerHTML += `<tr><td class="fw-bold">${st.Name}</td><td class="text-muted"><small>${st.Command}</small></td></tr>`;
-                        });
-                    } else {
-                        startupTbody.innerHTML = `<tr><td colspan="2" class="text-center py-3 text-muted">No se detectaron programas extra de inicio.</td></tr>`;
-                    }
-
-                    const tbody = document.getElementById('healthSecurityTableBody');
-                    tbody.innerHTML = '';
-                    const conns = data.conexiones || [];
-                    if (conns.length > 0) {
-                        conns.forEach(conn => {
-                            tbody.innerHTML += `<tr>
-                                <td class="text-primary fw-bold">${conn.Process || '?'}</td>
-                                <td>${conn.PID || '-'}</td>
-                                <td><code>${conn.Remote}</code></td>
-                                <td><span class="badge ${conn.State === 'ESTABLISHED' ? 'bg-success' : 'bg-warning'}">${conn.State}</span></td>
-                            </tr>`;
-                        });
-                    } else {
-                        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay conexiones externas activas.</td></tr>`;
                     }
 
                 } else {
@@ -1047,66 +909,6 @@
 
     function showSecurity(pcName) {
         showHealth(pcName);
-        return;
-
-        document.getElementById('securityPcName').innerText = pcName;
-        document.getElementById('securityLoading').classList.remove('d-none');
-        document.getElementById('securityContent').classList.add('d-none');
-        document.getElementById('securityError').classList.add('d-none');
-        
-        const modal = new bootstrap.Modal(document.getElementById('securityModal'));
-        modal.show();
-        
-        fetch('/api/security/' + encodeURIComponent(pcName))
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('securityLoading').classList.add('d-none');
-                if (data.status === 'success') {
-                    document.getElementById('securityContent').classList.remove('d-none');
-
-                    // 1. Antivirus
-                    const avBadge = document.getElementById('securityAntivirus');
-                    const avName = (data.seguridad_extra && data.seguridad_extra.Antivirus) || 'Desconocido';
-                    avBadge.innerText = avName;
-                    avBadge.className = 'badge fs-6 ' + (avName === 'No Detectado' ? 'bg-danger' : 'bg-success');
-
-                    // 2. Startup
-                    const startupTbody = document.getElementById('securityStartupBody');
-                    startupTbody.innerHTML = '';
-                    const startups = (data.seguridad_extra && data.seguridad_extra.Startup) || [];
-                    if (startups.length > 0) {
-                        startups.forEach(st => {
-                            startupTbody.innerHTML += `<tr><td class="fw-bold">${st.Name}</td><td class="text-muted"><small>${st.Command}</small></td></tr>`;
-                        });
-                    } else {
-                        startupTbody.innerHTML = `<tr><td colspan="2" class="text-center py-3 text-muted">No se detectaron programas extra de inicio.</td></tr>`;
-                    }
-
-                    // 3. Conexiones
-                    const tbody = document.getElementById('securityTableBody');
-                    tbody.innerHTML = '';
-                    if (data.data && data.data.length > 0) {
-                        data.data.forEach(conn => {
-                            tbody.innerHTML += `<tr>
-                                <td class="text-primary fw-bold">${conn.Process || '?'}</td>
-                                <td>${conn.PID || '-'}</td>
-                                <td><code>${conn.Remote}</code></td>
-                                <td><span class="badge ${conn.State === 'ESTABLISHED' ? 'bg-success' : 'bg-warning'}">${conn.State}</span></td>
-                            </tr>`;
-                        });
-                    } else {
-                        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No hay conexiones externas activas.</td></tr>`;
-                    }
-                } else {
-                    document.getElementById('securityError').innerText = data.message || "Error al cargar auditoría.";
-                    document.getElementById('securityError').classList.remove('d-none');
-                }
-            })
-            .catch(err => {
-                document.getElementById('securityLoading').classList.add('d-none');
-                document.getElementById('securityError').innerText = "Error de red: " + err;
-                document.getElementById('securityError').classList.remove('d-none');
-            });
     }
 
     // Set default date to today (robust local date)

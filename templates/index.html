@@ -108,25 +108,65 @@
             </div>
         </section>
 
-        <!-- RESUMEN OPERATIVO + INVENTARIO A ANCHO COMPLETO -->
+        {% if pending_users_list or unassigned_tasks %}
+        <section class="dashboard-signal-strip" aria-label="Resumen operativo inmediato">
+            {% if pending_users_list %}
+            <button type="button" class="signal-chip signal-chip--action" data-bs-toggle="modal" data-bs-target="#usersModal">
+                <span class="signal-chip__label">Usuarios pendientes</span>
+                <strong class="signal-chip__value">{{ pending_users_list|length }}</strong>
+                <span class="signal-chip__hint">Abrir aprobación rápida</span>
+            </button>
+            {% endif %}
+            {% if unassigned_tasks %}
+            <button type="button" class="signal-chip signal-chip--action" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal">
+                <span class="signal-chip__label">Tareas huérfanas</span>
+                <strong class="signal-chip__value">{{ unassigned_count }}</strong>
+                <span class="signal-chip__hint">Asignar sin salir del tablero</span>
+            </button>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        <!-- RESUMEN OPERATIVO + INVENTARIO -->
         <div class="dashboard-content-stack">
+            <!-- INVENTARIO PRINCIPAL -->
+            <section class="dashboard-inventory-panel" aria-labelledby="inventoryTitle">
+                <div class="dashboard-section-heading dashboard-inventory-panel__heading">
+                    <div class="dashboard-inventory-panel__title-row">
+                        <h2 id="inventoryTitle">Equipos en red</h2>
+                        {% if current_user.get('is_superuser') %}
+                        <button type="button" class="op-btn op-btn--accent dashboard-inline-sync-btn" onclick="doSyncAdPcs(this)" title="Sincronizar fueros de PCs basado en Active Directory">
+                            <i class="bi bi-pc-display me-1"></i> [ SYNC AD EQUIPOS ]
+                        </button>
+                        {% endif %}
+                    </div>
+                    <span class="dashboard-inventory-panel__count">{{ kpi_total_activas }} activos</span>
+                </div>
+                <div>
+                    {% block content %}{% endblock %}
+
+                    {% block dashboard_content %}
+                    {% include '_dashboard_table_region.html' %}
+                    {% endblock %}
+                </div>
+            </section>
+
             <!-- PRIORIDADES Y ALERTAS -->
             <section class="dashboard-attention-panel" aria-labelledby="attentionTitle">
                 <div class="console-panel__title dashboard-section-heading">
-                    <h2 id="attentionTitle">Acción requerida</h2>
-                    <span class="dashboard-section-heading__meta">Total flota: {{ kpi_total_activas }}</span>
+                    <h2 id="attentionTitle">Patrimonio y componentes de red</h2>
                 </div>
                 
                 {% if duplicates_count and duplicates_count > 0 %}
                 <div class="integrated-alert integrated-alert--danger">
                     <div class="integrated-alert__header">
-                        <i class="bi bi-exclamation-triangle-fill"></i> ATENCIÓN CRÍTICA
+                        <i class="bi bi-exclamation-triangle-fill"></i> Equipos duplicados en la red
                     </div>
-                    <div style="font-size: 0.8rem; color: var(--text-color);">
-                        Se han detectado {{ duplicates_count }} nombre(s) de PC duplicado(s): 
-                        <div class="mt-1">
+                    <div class="dashboard-alert-copy">
+                        {{ duplicates_count }} equipo(s) reportan el mismo nombre. Conviene resolverlo antes de validar patrimonio y componentes detectados.
+                        <div class="dashboard-inline-badges mt-1">
                         {% for d_name in duplicate_pc_names %}
-                        <span class="badge bg-danger ms-1" style="font-family: var(--font-mono);">{{ d_name }}</span>
+                        <span class="badge bg-danger" style="font-family: var(--font-mono);">{{ d_name }}</span>
                         {% endfor %}
                         </div>
                     </div>
@@ -136,13 +176,13 @@
                 {% if pending_users_list %}
                 <div class="integrated-alert">
                     <div class="integrated-alert__header">
-                        <i class="bi bi-person-exclamation"></i> Usuarios Pendientes
+                        <i class="bi bi-person-exclamation"></i> Usuarios por vincular
                     </div>
-                    <div style="font-size: 0.8rem; color: var(--text-color); margin-bottom: 12px;">
-                        {{ pending_users_list|length }} usuario(s) esperando aprobación.
+                    <div class="dashboard-alert-copy">
+                        {{ pending_users_list|length }} usuario(s) aún no están habilitados para asociar equipos y movimientos patrimoniales.
                     </div>
-                    <button type="button" class="btn btn-warning btn-sm w-100" data-bs-toggle="modal" data-bs-target="#usersModal" style="border-radius: 4px; font-weight: 600; font-family: var(--font-body);">
-                        <i class="bi bi-person-check-fill me-1"></i> Aprobar Ahora
+                    <button type="button" class="btn btn-warning btn-sm dashboard-compact-cta" data-bs-toggle="modal" data-bs-target="#usersModal">
+                        <i class="bi bi-person-check-fill me-1"></i> Revisar usuarios
                     </button>
                 </div>
                 {% endif %}
@@ -150,7 +190,7 @@
                 <!-- PANEL PATRIMONIAL (FASE 4) -->
                 <div class="integrated-alert dashboard-patrimony-panel">
                     <div class="integrated-alert__header d-flex justify-content-between align-items-center mb-2" style="font-weight: 700; font-size: 0.85rem; color: var(--text-color);">
-                        <span><i class="bi bi-shield-lock-fill me-1 text-info"></i> Gemelos Digitales</span>
+                        <span><i class="bi bi-shield-lock-fill me-1 text-info"></i> Estado patrimonial</span>
                         <span class="badge border" style="font-weight: 600; font-size: 0.7rem; background: var(--bg-color); color: var(--text-color); border-color: var(--border-color) !important;">{{ kpi_pat_total_activos | default(0) }} Activos</span>
                     </div>
                     
@@ -192,50 +232,32 @@
 
                 <a href="{{ url_for('dashboard.dashboard', alerta='critica') }}" class="priority-ticket priority-ticket--critical">
                     <div class="priority-ticket__header">
-                        <span class="priority-ticket__badge">PRIORIDAD MAX</span>
+                        <span class="priority-ticket__badge">Patrimonio crítico</span>
                         <i class="bi bi-arrow-right text-muted"></i>
                     </div>
-                    <h3 class="priority-ticket__title">{{ kpi_criticas }} Equipos Críticos</h3>
-                    <p class="priority-ticket__desc">RAM menor a 8GB, alertas simultáneas o SO obsoleto.</p>
+                    <h3 class="priority-ticket__title">{{ kpi_criticas }} equipos comprometidos</h3>
+                    <p class="priority-ticket__desc">Equipos con fallas de base, telemetría preocupante o hardware fuera de estándar.</p>
                 </a>
 
                 <a href="{{ url_for('dashboard.dashboard', alerta='media') }}" class="priority-ticket priority-ticket--warning">
                     <div class="priority-ticket__header">
-                        <span class="priority-ticket__badge" style="background: rgba(249, 115, 22, 0.1); color: var(--color-warning);">REVISIÓN</span>
+                        <span class="priority-ticket__badge" style="background: rgba(249, 115, 22, 0.1); color: var(--color-warning);">Componentes a revisar</span>
                         <i class="bi bi-arrow-right text-muted"></i>
                     </div>
-                    <h3 class="priority-ticket__title">{{ kpi_alerta_media }} Avisos Medios</h3>
-                    <p class="priority-ticket__desc">Disco lleno, sin impresora, o reinicio pendiente.</p>
+                    <h3 class="priority-ticket__title">{{ kpi_alerta_media }} equipos con observaciones</h3>
+                    <p class="priority-ticket__desc">Componentes o periféricos detectados que conviene revisar antes de escalar a falla crítica.</p>
                 </a>
                 
                 {% if unassigned_tasks %}
                 <button type="button" class="priority-ticket priority-ticket--tasks" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal">
                     <div class="priority-ticket__header">
-                        <span class="priority-ticket__badge" style="background: rgba(250, 204, 21, 0.1); color: var(--accent-color);">TAREAS</span>
+                        <span class="priority-ticket__badge" style="background: rgba(250, 204, 21, 0.1); color: var(--accent-color);">Pendiente de asociar</span>
                         <i class="bi bi-arrow-right text-muted"></i>
                     </div>
-                    <h3 class="priority-ticket__title">{{ unassigned_count }} Tareas Huérfanas</h3>
-                    <p class="priority-ticket__desc">Hay tickets sin técnico asignado. Clic para resolver.</p>
+                    <h3 class="priority-ticket__title">{{ unassigned_count }} tickets sin equipo destino</h3>
+                    <p class="priority-ticket__desc">Hay intervenciones abiertas que todavía no quedaron asociadas a un equipo de la red.</p>
                 </button>
                 {% endif %}
-            </section>
-            
-            <!-- INVENTARIO PRINCIPAL -->
-            <section class="dashboard-inventory-panel" aria-labelledby="inventoryTitle">
-                <div class="dashboard-section-heading dashboard-inventory-panel__heading">
-                    <div>
-                        <h2 id="inventoryTitle">Inventario de equipos</h2>
-                        <p>Busque, filtre y gestione la flota sin salir del tablero.</p>
-                    </div>
-                    <span class="dashboard-inventory-panel__count">{{ kpi_total_activas }} activos</span>
-                </div>
-                <div>
-                    {% block content %}{% endblock %}
-
-                    {% block dashboard_content %}
-                    {% include '_dashboard_table_region.html' %}
-                    {% endblock %}
-                </div>
             </section>
         </div>
 

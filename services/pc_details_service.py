@@ -6,6 +6,8 @@ from services.asset_validation import (
 )
 from database.db_core import get_db_connection
 from utils.auth import list_technician_users
+from datetime import datetime
+import json
 import re
 import unicodedata
 
@@ -199,6 +201,161 @@ def _build_disk_summary_lines(disk_models, disk_speeds):
         lines.append(f"{model_entry} - {kind}")
 
     return lines
+
+
+def _build_quick_health_summary(pc):
+    telemetry_raw = pc.get("telemetry_snapshot") or pc.get("full_json_data")
+    telemetry = {}
+    if telemetry_raw:
+        try:
+            telemetry = json.loads(telemetry_raw)
+        except Exception:
+            telemetry = {}
+
+    health = telemetry.get("Salud", {}) if isinstance(telemetry, dict) else {}
+    system = telemetry.get("Sistema", {}) if isinstance(telemetry, dict) else {}
+
+    report_age_days = None
+    report_age_label = "Sin dato"
+    last_report_raw = pc.get("last_report")
+    if last_report_raw:
+        parsed_last_report = None
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+            try:
+                parsed_last_report = datetime.strptime(str(last_report_raw), fmt)
+                break
+            except Exception:
+                continue
+        if parsed_last_report:
+            delta = datetime.now() - parsed_last_report
+            report_age_days = round(delta.total_seconds() / 86400, 1)
+            if delta.total_seconds() < 3600:
+                minutes = max(1, int(round(delta.total_seconds() / 60)))
+                report_age_label = f"Hace {minutes} min"
+            elif delta.total_seconds() < 86400:
+                hours = max(1, int(round(delta.total_seconds() / 3600)))
+                report_age_label = f"Hace {hours} h"
+            else:
+                days = max(1, int(round(delta.total_seconds() / 86400)))
+                report_age_label = f"Hace {days} d"
+
+    uptime_days = health.get("Uptime_Dias")
+    raw_critical_events = health.get("Eventos_Criticos") or []
+    disks_smart = health.get("Discos_SMART") or []
+    disks_space = health.get("Discos_Espacio") or []
+    updates = health.get("Actualizaciones") or {}
+    connectivity = health.get("Conectividad") or {}
+
+    def _is_noise_event(event):
+        source = (event.get("Source") or "").strip().upper()
+        msg = (event.get("Msg") or "").strip().lower()
+        if source == "DCOM" and "no se encontr" in msg and "descripci" in msg:
+            return True
+        return False
+
+    def _is_real_volume(disk):
+        total_gb = disk.get("TotalGB")
+        try:
+            total_gb = float(total_gb)
+        except Exception:
+            total_gb = 0
+        return total_gb >= 1
+
+    critical_events = [event for event in raw_critical_events if not _is_noise_event(event)]
+    smart_bad = [disk for disk in disks_smart if (disk.get("Status") or "").upper() not in ("OK", "GOOD", "HEALTHY")]
+    meaningful_disks = [disk for disk in disks_space if _is_real_volume(disk)]
+    low_space = [disk for disk in meaningful_disks if (disk.get("FreeGB") or 0) < 15]
+    very_low_space = [disk for disk in meaningful_disks if (disk.get("FreeGB") or 0) < 5]
+
+    update_age_days = updates.get("DiasSinActualizar")
+    try:
+        update_age_days = int(float(update_age_days))
+    except Exception:
+        update_age_days = None
+
+    gateway_target = (connectivity.get("Gateway") or "").strip()
+    printer_target = (connectivity.get("PrinterTarget") or "").strip()
+    gateway_ok = int(connectivity.get("GatewayOk") or 0)
+    printer_ok = int(connectivity.get("PrinterOk") or 0)
+
+    gateway_known = gateway_target not in ("", "N/A")
+    printer_known = printer_target not in ("", "N/A")
+    connectivity_issue_count = 0
+    if gateway_known and not gateway_ok:
+        connectivity_issue_count += 1
+    if printer_known and not printer_ok:
+        connectivity_issue_count += 1
+
+    stale_updates = update_age_days is not None and update_age_days > 90
+    aging_updates = update_age_days is not None and update_age_days > 45
+    stale_report = report_age_days is not None and report_age_days > 7
+    aging_report = report_age_days is not None and report_age_days > 3
+
+    status = "ok"
+    summary_label = "Equipo sano"
+    if pc.get("sin_reporte_30d"):
+        status = "danger"
+        summary_label = "Sin telemetría reciente"
+    elif (
+        pc.get("alerta_nombre_duplicado")
+        or pc.get("alerta_uptime")
+        or smart_bad
+        or very_low_space
+        or stale_updates
+        or connectivity_issue_count >= 2
+        or stale_report
+    ):
+        status = "danger"
+        summary_label = "Revisión técnica recomendada"
+    elif (
+        pc.get("alerta_ram_baja")
+        or pc.get("alerta_sin_impresora")
+        or low_space
+        or critical_events
+        or aging_updates
+        or connectivity_issue_count == 1
+        or aging_report
+    ):
+        status = "warning"
+        summary_label = "Conviene revisar pronto"
+
+    return {
+        "status": status,
+        "summary_label": summary_label,
+        "uptime_days": uptime_days,
+        "critical_event_count": len(critical_events),
+        "smart_bad_count": len(smart_bad),
+        "low_space_count": len(low_space),
+        "report_age_days": report_age_days,
+        "report_age_label": report_age_label,
+        "update_age_days": update_age_days,
+        "connectivity_issue_count": connectivity_issue_count,
+        "gateway_known": gateway_known,
+        "printer_known": printer_known,
+        "office": system.get("Office") or pc.get("office_version") or "N/A",
+        "os": system.get("OsName") or pc.get("os_name") or "N/A",
+        "has_telemetry": bool(telemetry),
+    }
+
+
+def _empty_quick_health_summary():
+    return {
+        "status": "warning",
+        "summary_label": "Sin telemetría disponible",
+        "uptime_days": None,
+        "critical_event_count": 0,
+        "smart_bad_count": 0,
+        "low_space_count": 0,
+        "report_age_days": None,
+        "report_age_label": "Sin dato",
+        "update_age_days": None,
+        "connectivity_issue_count": 0,
+        "gateway_known": False,
+        "printer_known": False,
+        "office": "N/A",
+        "os": "N/A",
+        "has_telemetry": False,
+    }
 
 def _parse_hardware_components(pc):
     """
@@ -731,7 +888,8 @@ def get_pc_detail_context(pc_name):
                     "monitors_detail": mon_list,
                     "hardware_components": {"motherboard": {"model": "N/A", "serial": "N/A"}, "ram_modules": [], "disks": [], "monitors": mon_list, "processor": "N/A"},
                     "oc_list": [c_dict["oc_number"]] if c_dict.get("oc_number") else [],
-                    "invoice_list": [c_dict["invoice_number"]] if c_dict.get("invoice_number") else []
+                    "invoice_list": [c_dict["invoice_number"]] if c_dict.get("invoice_number") else [],
+                    "quick_health": _empty_quick_health_summary(),
                 }
         # Fallback 4: Buscar en build_orders / build_order_items por target_pc_name o pc_name
         if not pc:
@@ -1016,6 +1174,7 @@ def get_pc_detail_context(pc_name):
             ORDER BY num ASC
         """).fetchall()
         all_existing_ocs = sorted(list({r["num"].strip() for r in all_oc_rows if r.get("num") and r["num"].strip()}))
+        quick_health = _build_quick_health_summary(pc)
 
         return {
             "pc": pc, "tareas": tareas, "technicians": technicians, "ad_users_list": ad_users_list,
@@ -1040,6 +1199,7 @@ def get_pc_detail_context(pc_name):
             "invoice_list": invoice_list,
             "all_existing_remitos": all_existing_remitos,
             "all_existing_ocs": all_existing_ocs,
+            "quick_health": quick_health,
             "linked_bo": linked_bo,
             "build_order_action": build_order_action,
         }

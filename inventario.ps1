@@ -86,7 +86,7 @@ function Get-ActiveConnections {
 # -----------------------------------------------------------
 # FUNCIÓN: Obtener Salud del Sistema (WMI / Eventos)
 # -----------------------------------------------------------
-function Get-ComputerHealth {
+function Get-ComputerHealth($printerPort) {
     $health = @{}
     # 1. Estado SMART de Discos
     $diskStatus = @()
@@ -129,20 +129,88 @@ function Get-ComputerHealth {
     }
     catch {}
     $health.Add("Uptime_Dias", $uptimeDays)
-    # 4. Errores Críticos Recientes (Últimas 24hs) - System y Application
+    # 4. Errores Críticos Recientes (Últimas 24hs) - priorizando fuentes realmente útiles
     $recentErrors = @()
     try {
-        # Limitamos a 5 para no saturar JSON
         $yesterday = (Get-Date).AddDays(-1)
-        $evts = Get-EventLog -LogName System -EntryType Error -After $yesterday -Newest 5 -ErrorAction SilentlyContinue
+        $prioritySources = @("Disk", "Ntfs", "volmgr", "storahci", "iaStorA", "iaStorAVC", "WHEA-Logger", "Kernel-Power", "Kernel-Boot")
+        $evts = Get-EventLog -LogName System -EntryType Error -After $yesterday -Newest 20 -ErrorAction SilentlyContinue
         if ($evts) {
             foreach ($e in $evts) {
-                $recentErrors += @{ "Log" = "System"; "Source" = $e.Source; "Msg" = $e.Message.Trim().Substring(0, [math]::Min($e.Message.Length, 100)) }
+                if (($prioritySources -contains $e.Source) -or ($recentErrors.Count -lt 3)) {
+                    $msgText = ""
+                    try { $msgText = $e.Message.Trim() } catch { $msgText = "" }
+                    $recentErrors += @{ "Log" = "System"; "Source" = $e.Source; "Msg" = $msgText.Substring(0, [math]::Min($msgText.Length, 100)) }
+                    if ($recentErrors.Count -ge 5) { break }
+                }
             }
         }
     }
     catch {}
     $health.Add("Eventos_Criticos", $recentErrors)
+
+    # 5. Antiguedad de parches de Windows
+    $updateInfo = @{ "UltimoParche" = "N/A"; "HotfixId" = "N/A"; "DiasSinActualizar" = 0 }
+    try {
+        $hotfixes = Get-HotFix -ErrorAction SilentlyContinue | Sort-Object InstalledOn -Descending
+        $latestHotfix = $hotfixes | Select-Object -First 1
+        if ($latestHotfix -and $latestHotfix.InstalledOn) {
+            $installedOn = [datetime]$latestHotfix.InstalledOn
+            $daysSincePatch = [math]::Round(((Get-Date) - $installedOn).TotalDays, 0)
+            $updateInfo = @{
+                "UltimoParche" = $installedOn.ToString("yyyy-MM-dd")
+                "HotfixId" = [string]$latestHotfix.HotFixID
+                "DiasSinActualizar" = $daysSincePatch
+            }
+        }
+    }
+    catch {}
+    $health.Add("Actualizaciones", $updateInfo)
+
+    # 6. Conectividad util del puesto (gateway e impresora de red)
+    $connectivity = @{
+        "Gateway" = "N/A"
+        "GatewayOk" = 0
+        "GatewayPingMs" = 0
+        "PrinterTarget" = "N/A"
+        "PrinterOk" = 0
+    }
+    try {
+        $netCfg = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled = True" | Select-Object -First 1
+        if ($netCfg -and $netCfg.DefaultIPGateway -and $netCfg.DefaultIPGateway.Count -gt 0) {
+            $gw = [string]$netCfg.DefaultIPGateway[0]
+            $connectivity["Gateway"] = $gw
+            try {
+                $gwPing = Test-Connection -ComputerName $gw -Count 1 -ErrorAction Stop
+                if ($gwPing) {
+                    $connectivity["GatewayOk"] = 1
+                    $connectivity["GatewayPingMs"] = [math]::Round($gwPing.ResponseTime, 0)
+                }
+            }
+            catch {}
+        }
+
+        $printerTarget = "N/A"
+        if ($printerPort -match "(\d{1,3}(\.\d{1,3}){3})") {
+            $printerTarget = $matches[1]
+        }
+        elseif ($printerPort -match "^\\\\([^\\]+)\\") {
+            $printerTarget = $matches[1]
+        }
+        $connectivity["PrinterTarget"] = $printerTarget
+
+        if ($printerTarget -ne "N/A") {
+            try {
+                $prPing = Test-Connection -ComputerName $printerTarget -Count 1 -ErrorAction Stop
+                if ($prPing) {
+                    $connectivity["PrinterOk"] = 1
+                }
+            }
+            catch {}
+        }
+    }
+    catch {}
+    $health.Add("Conectividad", $connectivity)
     return $health
 }
 # -----------------------------------------------------------
@@ -824,7 +892,7 @@ try {
     # 9) Salud y Diagnóstico
     $healthData = @{}
     try {
-        $healthData = Get-ComputerHealth
+        $healthData = Get-ComputerHealth $printerPort
     }
     catch {}
     # 10) Seguridad Extra (Antivirus, Startup)
@@ -929,7 +997,19 @@ try {
         }
     }
     $jsonObj += [string]::Join(",", $evtArr)
-    $jsonObj += "]"
+    $jsonObj += "],"
+    $jsonObj += """Actualizaciones"": {"
+    $jsonObj += """UltimoParche"": ""$(e $healthData.Actualizaciones.UltimoParche)"","
+    $jsonObj += """HotfixId"": ""$(e $healthData.Actualizaciones.HotfixId)"","
+    $jsonObj += """DiasSinActualizar"": $(n $healthData.Actualizaciones.DiasSinActualizar)"
+    $jsonObj += "},"
+    $jsonObj += """Conectividad"": {"
+    $jsonObj += """Gateway"": ""$(e $healthData.Conectividad.Gateway)"","
+    $jsonObj += """GatewayOk"": $(n $healthData.Conectividad.GatewayOk),"
+    $jsonObj += """GatewayPingMs"": $(n $healthData.Conectividad.GatewayPingMs),"
+    $jsonObj += """PrinterTarget"": ""$(e $healthData.Conectividad.PrinterTarget)"","
+    $jsonObj += """PrinterOk"": $(n $healthData.Conectividad.PrinterOk)"
+    $jsonObj += "}"
     $jsonObj += "},"
     $jsonObj += """Seguridad_Extra"": {"
     $jsonObj += """Antivirus"": ""$(e $secExtra.Antivirus)"","
