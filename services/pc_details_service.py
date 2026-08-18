@@ -1095,6 +1095,16 @@ def get_pc_detail_context(pc_name):
         if effective_status != current_status:
             pc = dict(pc)
             pc["validation_status"] = effective_status
+            try:
+                conn.execute(
+                    "UPDATE pcs SET validation_status = %s WHERE pc_name = %s",
+                    (effective_status, pc_name)
+                )
+            except Exception as persist_exc:
+                logger.warning(
+                    "Error persistiendo el estado de validacion efectivo para %s: %s",
+                    pc_name, persist_exc
+                )
         build_order_action = resolve_build_order_action(
             effective_status,
             linked_bo,
