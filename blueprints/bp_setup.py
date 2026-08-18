@@ -78,7 +78,7 @@ def get_quiet_inventory_command(current_base_url=None):
 
     return (
         "Set-ExecutionPolicy Bypass -Scope Process -Force; "
-        "try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}; "
+        "try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true} } catch {}; "
         f"$u='{script_url}'; "
         "$f=Join-Path $env:TEMP 'inv_gold.ps1'; "
         f"$h='{sha256_hash}'; "
