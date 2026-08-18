@@ -372,6 +372,18 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                         JOIN network_printers np ON pnp.printer_id = np.id
                         WHERE pnp.pc_name = p.pc_name
                     ) as assigned_network_printer_id,
+                    (
+                        SELECT COUNT(*) 
+                        FROM build_orders bo 
+                        LEFT JOIN build_order_items boi ON boi.build_order_id = bo.id 
+                        LEFT JOIN components c ON (c.build_order_id = bo.id OR (boi.serial_number IS NOT NULL AND c.serial_number = boi.serial_number))
+                        WHERE bo.status != 'cancelled' 
+                          AND (
+                              LOWER(TRIM(bo.target_pc_name)) = LOWER(TRIM(p.pc_name)) 
+                              OR LOWER(TRIM(boi.pc_name)) = LOWER(TRIM(p.pc_name))
+                              OR LOWER(TRIM(c.assigned_pc)) = LOWER(TRIM(p.pc_name))
+                          )
+                    ) AS has_build_order,
                     0 as detected_printers_count
                 FROM pcs p
                 LEFT JOIN ad_users u ON (

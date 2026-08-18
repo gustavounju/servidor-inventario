@@ -86,7 +86,11 @@
                                         <span class="inventory-mini-badge inventory-mini-badge--task">{{ pc.tareas_pendientes }}</span>
                                         {% endif %}
                                         {% if pc.validation_status == 'validado' %}
-                                        <span class="inventory-validation-badge inventory-validation-badge--ok" title="Gemelo Digital: Hardware validado con activo patrimonial"><i class="bi bi-shield-check"></i> Validado</span>
+                                            {% if not pc.has_build_order %}
+                                            <span class="inventory-validation-badge" style="background-color: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.3); color: #eab308; font-weight: 500;" title="Hardware validado por telemetría, pero no posee Orden de Armado formal (Falta Gemelo Digital)"><i class="bi bi-exclamation-circle-fill"></i> Validado (Sin Orden)</span>
+                                            {% else %}
+                                            <span class="inventory-validation-badge inventory-validation-badge--ok" title="Gemelo Digital: Hardware validado con activo patrimonial"><i class="bi bi-shield-check"></i> Validado</span>
+                                            {% endif %}
                                         {% elif pc.validation_status == 'pendiente' %}
                                         <span class="inventory-validation-badge inventory-validation-badge--pending" title="Gemelo Digital: Asignado, pendiente de sincronización del script"><i class="bi bi-clock"></i> Pendiente</span>
                                         {% elif pc.validation_status == 'discrepancia' %}
@@ -420,7 +424,11 @@
                                         <span>{{ pc.ad_real_name or pc.last_user or 'Sin usuario' }}</span>
                                         <div class="fuero-tree-pc__micro">
                                             {% if pc.validation_status == 'validado' %}
-                                            <span class="fuero-tree-chip fuero-tree-chip--ok"><i class="bi bi-shield-check"></i> Validado</span>
+                                                {% if not pc.has_build_order %}
+                                                <span class="fuero-tree-chip" style="background-color: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.3); color: #eab308; font-weight: 500;" title="Hardware validado, sin Orden de Armado"><i class="bi bi-exclamation-circle-fill"></i> Validado (Sin Orden)</span>
+                                                {% else %}
+                                                <span class="fuero-tree-chip fuero-tree-chip--ok"><i class="bi bi-shield-check"></i> Validado</span>
+                                                {% endif %}
                                             {% elif pc.validation_status == 'pendiente' %}
                                             <span class="fuero-tree-chip fuero-tree-chip--warning"><i class="bi bi-clock-history"></i> Pendiente</span>
                                             {% elif pc.validation_status == 'discrepancia' %}
