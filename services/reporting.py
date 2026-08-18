@@ -65,17 +65,75 @@ class PDFReport(FPDF):
 
 import re
 
-def normalize_ram_spec(spec: str, fallback_gb=None) -> str:
+def round_to_standard_ram(gb: float) -> int:
+    """Redondea una capacidad de RAM a los tamaños estándares de módulos de hardware."""
+    tiers = [1, 2, 4, 6, 8, 12, 16, 24, 32, 64, 128]
+    return min(tiers, key=lambda x: abs(x - gb))
+
+
+def guess_ddr_from_processor(processor: str) -> str:
+    """Infiere la tecnología DDR más probable a partir de la descripción del procesador."""
+    if not processor or str(processor).strip().upper() in ("N/A", "NONE", ""):
+        return "DDR3"
+    
+    proc = str(processor).upper()
+    
+    # AMD Ryzen
+    if "RYZEN" in proc:
+        match = re.search(r"RYZEN\s+\d+\s+(\d)\d{3}", proc)
+        if match and int(match.group(1)) >= 7:
+            return "DDR5"
+        return "DDR4"
+        
+    # Intel Core (i3, i5, i7, i9)
+    if "CORE" in proc or "I3-" in proc or "I5-" in proc or "I7-" in proc or "I9-" in proc:
+        match = re.search(r"I\d-\s*(\d+)", proc)
+        if match:
+            gen_num = match.group(1)
+            # 4 dígitos (ej: 4590 -> 4ta gen -> DDR3)
+            if len(gen_num) == 4:
+                first_digit = int(gen_num[0])
+                if first_digit <= 4:
+                    return "DDR3"
+                else:
+                    return "DDR4"
+            # 5 o más dígitos (ej: 10400 -> 10ma gen -> DDR4; 12400 -> 12va gen)
+            elif len(gen_num) >= 5:
+                first_two = int(gen_num[:2])
+                if first_two >= 12:
+                    return "DDR4" # en ámbito judicial la mayoría de 12va/13va usa DDR4
+                return "DDR4"
+        if "CORE 2" in proc:
+            return "DDR2"
+            
+    # Intel Pentium y Celeron
+    if "PENTIUM" in proc or "CELERON" in proc:
+        if "G" in proc:
+            match = re.search(r"G(\d)", proc)
+            if match:
+                digit = int(match.group(1))
+                if digit >= 4: return "DDR4"
+                return "DDR3"
+        return "DDR2"
+        
+    return "DDR3"
+
+
+def normalize_ram_spec(spec: str, fallback_gb=None, processor: str = None) -> str:
     """
     Normaliza el string de especificación de RAM:
-    1. Redondea capacidades decimales (ej. 7.3 GB -> 8 GB).
-    2. Auto-clasifica DDR (DDR1/2/3/4/5) basándose en la velocidad en MHz si no está especificado.
+    1. Redondea capacidades decimales (ej. 7.3 GB -> 8 GB) a los estándares de hardware.
+    2. Auto-clasifica DDR (DDR1/2/3/4/5) basándose en la velocidad en MHz.
+    3. Si sigue sin clasificar, infiere el tipo DDR a partir del procesador.
     """
+    guessed_type = guess_ddr_from_processor(processor) if processor else "DDR"
+    
     if not spec or str(spec).strip().upper() in ("N/A", "NONE", ""):
         if fallback_gb:
             try:
                 val = float(fallback_gb)
-                return f"{int(round(val))} GB RAM"
+                rounded = round_to_standard_ram(val)
+                return f"{rounded} GB {guessed_type}"
             except Exception:
                 pass
         return "N/D"
@@ -87,7 +145,7 @@ def normalize_ram_spec(spec: str, fallback_gb=None) -> str:
         num_str = match.group(1)
         try:
             val = float(num_str)
-            return f"{int(round(val))}"
+            return f"{round_to_standard_ram(val)}"
         except Exception:
             return match.group(0)
             
@@ -116,6 +174,15 @@ def normalize_ram_spec(spec: str, fallback_gb=None) -> str:
                         spec_str = f"{spec_str} {ram_type}"
             except Exception:
                 pass
+        else:
+            # Si no hay velocidad pero tampoco tiene la palabra DDR, inyectar el DDR adivinado del procesador
+            if "@" in spec_str:
+                parts = spec_str.split("@", 1)
+                spec_str = f"{parts[0].strip()} {guessed_type} @ {parts[1].strip()}"
+            elif "GB" in spec_str:
+                spec_str = spec_str.replace("GB", f"GB {guessed_type}")
+            else:
+                spec_str = f"{spec_str} {guessed_type}"
                 
     return spec_str
 

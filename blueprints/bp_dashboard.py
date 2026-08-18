@@ -19,9 +19,9 @@ from utils.component_status import deployed_component_state
 bp_dashboard = Blueprint('dashboard', __name__)
 
 @bp_dashboard.app_template_filter('normalize_ram_spec')
-def normalize_ram_spec_filter(spec, fallback_gb=None):
+def normalize_ram_spec_filter(spec, fallback_gb=None, processor=None):
     from services.reporting import normalize_ram_spec
-    return normalize_ram_spec(spec, fallback_gb)
+    return normalize_ram_spec(spec, fallback_gb, processor)
 
 
 
