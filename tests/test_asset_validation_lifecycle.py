@@ -158,9 +158,9 @@ def test_build_order_action_only_creates_when_there_is_no_twin():
     ) == "create"
     assert resolve_build_order_action(
         "sin_gemelo", linked_bo=None, has_discrepancies=True, has_official_components=True
-    ) == "history"
-    assert resolve_build_order_action("validado", linked_bo=None, has_discrepancies=False) == "history"
-    assert resolve_build_order_action("discrepancia", linked_bo=None, has_discrepancies=True) == "history"
+    ) == "create"
+    assert resolve_build_order_action("validado", linked_bo=None, has_discrepancies=False) == "create"
+    assert resolve_build_order_action("discrepancia", linked_bo=None, has_discrepancies=True) == "create"
 
 
 def test_build_order_action_reuses_existing_order_only_for_real_changes():

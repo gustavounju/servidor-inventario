@@ -5,6 +5,7 @@ from blueprints.bp_setup import bp_setup
 
 def test_local_qr_endpoint_returns_png():
     app = Flask(__name__)
+    app.config["TESTING"] = True
     app.secret_key = "test_key"
     app.register_blueprint(bp_setup)
 

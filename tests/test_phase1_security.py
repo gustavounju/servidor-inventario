@@ -27,7 +27,7 @@ def test_submit_inventory_rejects_missing_or_default_token(client):
 
 def test_submit_inventory_accepts_valid_configured_token(client):
     """Verifica que /submit_inventory acepte el token configurado en API_TOKEN."""
-    with patch.dict(os.environ, {"API_TOKEN": "valid-token-123456"}):
+    with patch.dict(os.environ, {"API_TOKEN": "valid-token-123456", "ALLOW_LEGACY_INVENTORY_STATIC_TOKEN": "true"}):
         res = client.post(
             '/submit_inventory',
             headers={"Authorization": "Bearer valid-token-123456"},

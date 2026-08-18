@@ -185,11 +185,7 @@ def resolve_build_order_action(
     """
     if linked_bo:
         return "update" if has_discrepancies else "history"
-    if has_official_components:
-        return "history"
-    if (validation_status or "sin_gemelo").strip().lower() == "sin_gemelo":
-        return "create"
-    return "history"
+    return "create"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
