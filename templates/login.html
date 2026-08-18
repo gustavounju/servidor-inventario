@@ -683,7 +683,7 @@
             <button class="btn-ingresar-desktop" onclick="document.getElementById('loginWrapper').classList.add('show')">
                 <i class="bi bi-box-arrow-in-right"></i> Ingresar
             </button>
-            <button class="btn-ingresar-desktop" onclick="copyScript(this)" data-script-url="{{ inventory_script_copy_url }}" title="Copiar Script de Inventario">
+            <button class="btn-ingresar-desktop" onclick="copyScript(this)" data-command="{{ inventory_quiet_command }}" title="Copiar Lanzador Silencioso de Inventario">
                 <i class="bi bi-lightning-charge"></i> Copiar Script
             </button>
             <button class="btn-ingresar-desktop" onclick="window.location.href='{{ url_for('auth.pdf_local_tool') }}'" title="Herramienta PDF Local">
@@ -732,12 +732,12 @@
                 Ejecución Manual
             </div>
             <button type="button" class="script-btn" 
-                    data-script-url="{{ inventory_script_copy_url }}"
-                    onclick="copyScript(this)" title="Copiar Script de Inventario">
+                    data-command="{{ inventory_quiet_command }}"
+                    onclick="copyScript(this)" title="Copiar Lanzador Silencioso de Inventario">
                 <i class="bi bi-lightning-charge"></i> <span>Copiar Script de Inventario</span>
             </button>
             <div class="hint" style="font-size: 0.75rem; text-align: center;">
-                Copiá y pegá el comando en <strong>PowerShell</strong> para informar los datos de este equipo.
+                Copiá y pegá el lanzador en <strong>PowerShell</strong>. El relevamiento se ejecuta en segundo plano para no mostrar toda la secuencia al usuario.
             </div>
             
             <div class="divider"></div>

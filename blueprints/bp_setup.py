@@ -54,6 +54,51 @@ def build_inventory_script_access_url():
     return url_for("setup.get_script", download_token=download_token, submit_token=submit_token)
 
 
+def _build_inventory_script_access():
+    issued_for, issued_by = _script_access_metadata()
+    download_token = generate_inventory_script_download_token(issued_for=issued_for, issued_by=issued_by)
+    submit_token = generate_inventory_submit_token(issued_for=issued_for, issued_by=issued_by)
+    relative_url = url_for("setup.get_script", download_token=download_token, submit_token=submit_token)
+    return {
+        "download_token": download_token,
+        "submit_token": submit_token,
+        "relative_url": relative_url,
+    }
+
+
+def get_quiet_inventory_command(current_base_url=None):
+    current_base_url = current_base_url or get_public_app_base_url()
+    access = _build_inventory_script_access()
+    script_url = f"{current_base_url}{access['relative_url']}"
+
+    with open("inventario.ps1", "r", encoding="utf-8") as f:
+        content = f.read()
+    _, _, modified_content = _rewrite_client_script(content, submit_token=access["submit_token"])
+    sha256_hash = hashlib.sha256(modified_content.encode("utf-8")).hexdigest().upper()
+
+    inner = (
+        f"$u='{script_url}';"
+        "$f=Join-Path $env:TEMP 'inv_gold.ps1';"
+        f"$h='{sha256_hash}';"
+        "try{"
+        "(New-Object System.Net.WebClient).DownloadFile($u,$f);"
+        "$s=[System.IO.File]::OpenRead($f);"
+        "$sha=New-Object System.Security.Cryptography.SHA256Managed;"
+        "$hf=[BitConverter]::ToString($sha.ComputeHash($s)).Replace('-','');"
+        "$s.Close();"
+        "if($hf -eq $h){& $f};"
+        "Remove-Item $f -Force -ErrorAction SilentlyContinue"
+        "}catch{}"
+    )
+
+    escaped_inner = inner.replace('"', '`"')
+    return (
+        "Start-Process powershell.exe "
+        "-WindowStyle Hidden "
+        f"-ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',\"{escaped_inner}\")"
+    )
+
+
 def _has_interactive_script_access():
     if not is_authenticated():
         return False
@@ -111,12 +156,12 @@ def _get_secure_launcher_command(current_base_url, current_fallback_url):
     try:
         with open("inventario.ps1", "r", encoding="utf-8") as f:
             content = f.read()
-        issued_for, issued_by = _script_access_metadata()
-        submit_token = generate_inventory_submit_token(issued_for=issued_for, issued_by=issued_by)
+        access = _build_inventory_script_access()
+        submit_token = access["submit_token"]
         _, _, modified_content = _rewrite_client_script(content, submit_token=submit_token)
         sha256_hash = hashlib.sha256(modified_content.encode("utf-8")).hexdigest().upper()
         cert_sha256 = _certificate_file_sha256()
-        download_url = f"{current_base_url}{build_inventory_script_access_url()}"
+        download_url = f"{current_base_url}{access['relative_url']}"
         cert_url = f"{current_fallback_url}/download-cert"
 
         if current_base_url.startswith("http://"):
