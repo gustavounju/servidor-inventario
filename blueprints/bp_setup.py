@@ -76,26 +76,21 @@ def get_quiet_inventory_command(current_base_url=None):
     _, _, modified_content = _rewrite_client_script(content, submit_token=access["submit_token"])
     sha256_hash = hashlib.sha256(modified_content.encode("utf-8")).hexdigest().upper()
 
-    inner = (
-        f"$u='{script_url}';"
-        "$f=Join-Path $env:TEMP 'inv_gold.ps1';"
-        f"$h='{sha256_hash}';"
-        "try{"
-        "(New-Object System.Net.WebClient).DownloadFile($u,$f);"
-        "$s=[System.IO.File]::OpenRead($f);"
-        "$sha=New-Object System.Security.Cryptography.SHA256Managed;"
-        "$hf=[BitConverter]::ToString($sha.ComputeHash($s)).Replace('-','');"
-        "$s.Close();"
-        "if($hf -eq $h){& $f};"
-        "Remove-Item $f -Force -ErrorAction SilentlyContinue"
-        "}catch{}"
-    )
-
-    escaped_inner = inner.replace('"', '`"')
     return (
-        "Start-Process powershell.exe "
-        "-WindowStyle Hidden "
-        f"-ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',\"{escaped_inner}\")"
+        "Set-ExecutionPolicy Bypass -Scope Process -Force; "
+        "try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}; "
+        f"$u='{script_url}'; "
+        "$f=Join-Path $env:TEMP 'inv_gold.ps1'; "
+        f"$h='{sha256_hash}'; "
+        "try { "
+        "(New-Object System.Net.WebClient).DownloadFile($u, $f); "
+        "$s=[System.IO.File]::OpenRead($f); "
+        "$sha=New-Object System.Security.Cryptography.SHA256Managed; "
+        "$hf=[BitConverter]::ToString($sha.ComputeHash($s)).Replace('-',''); "
+        "$s.Close(); "
+        "if ($hf -eq $h) { & $f } else { Write-Host 'Error de seguridad: hash de script invalido.' -ForegroundColor Red }; "
+        "} catch { Write-Host 'Error al descargar o ejecutar el relevamiento.' -ForegroundColor Red } "
+        "finally { Remove-Item $f -Force -ErrorAction SilentlyContinue }"
     )
 
 
