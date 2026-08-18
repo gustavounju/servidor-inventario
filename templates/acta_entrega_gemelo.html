@@ -278,10 +278,11 @@
     @media print {
       html, body {
         background: #ffffff !important;
-        font-size: 0.72rem !important;
+        font-size: 0.66rem !important;
         margin: 0 !important;
         padding: 0 !important;
         height: 100%;
+        line-height: 1.25 !important;
       }
 
       .action-bar, .no-print {
@@ -298,11 +299,101 @@
 
       .copy-block {
         page-break-inside: avoid !important;
+        padding-bottom: 2px !important;
+      }
+
+      /* Compact header */
+      .official-header-img {
+        max-height: 32px !important;
+        margin-bottom: 3px !important;
+      }
+
+      .acta-header-block {
+        margin-bottom: 4px !important;
+      }
+
+      .acta-title-box {
+        padding: 3px 8px !important;
+        margin-bottom: 4px !important;
+      }
+
+      .acta-title-box h6 {
+        font-size: 0.76rem !important;
+      }
+
+      /* Compact meta grid */
+      .meta-grid {
+        gap: 1px 8px !important;
+        padding: 3px 8px !important;
+      }
+
+      .meta-item .label {
+        font-size: 0.54rem !important;
+      }
+
+      .meta-item .val {
+        font-size: 0.70rem !important;
+      }
+
+      /* Compact QR box */
+      .meta-qr-box {
+        min-width: 85px !important;
+        padding: 2px !important;
+      }
+
+      .meta-qr-img {
+        width: 78px !important;
+        height: 78px !important;
+      }
+
+      /* Compact tables */
+      .table-acta {
+        margin-bottom: 4px !important;
+        font-size: 0.65rem !important;
+      }
+
+      .table-acta th {
+        font-size: 0.58rem !important;
+        padding: 2px 4px !important;
+      }
+
+      .table-acta td {
+        padding: 2px 4px !important;
+      }
+
+      /* Compact signatures */
+      .signatures-row {
+        gap: 12px !important;
+        margin-top: 5px !important;
+      }
+
+      .signature-box p {
+        font-size: 0.62rem !important;
+        margin: 1px 0 !important;
+      }
+
+      .signature-box .sig-title {
+        font-size: 0.66rem !important;
+      }
+
+      .signature-box .sig-field-firma {
+        margin: 8px 0 4px 0 !important;
+        font-size: 0.62rem !important;
+      }
+
+      /* Compact cut line */
+      .cut-line {
+        margin: 4px 0 6px 0 !important;
+        font-size: 0.58rem !important;
+      }
+
+      .cut-line span {
+        top: 4px !important;
       }
 
       @page {
         size: A4 portrait;
-        margin: 4mm 6mm 4mm 6mm;
+        margin: 3mm 5mm 3mm 5mm !important;
       }
     }
   </style>
