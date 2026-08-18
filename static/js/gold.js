@@ -115,9 +115,10 @@ function onFilterClick(type) {
     window.location.href = url.toString();
 }
 
-function copyScript(btn) {
-    const command = btn.getAttribute('data-command') + "\r\n";
-    
+async function copyScript(btn) {
+    const scriptUrl = btn.getAttribute('data-script-url');
+    const command = btn.getAttribute('data-command');
+
     function showSuccess() {
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="bi bi-check-all"></i> <span>¡Copiado!</span>';
@@ -128,12 +129,14 @@ function copyScript(btn) {
         }, 2000);
     }
 
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(command).then(showSuccess);
-    } else {
-        // Fallback for HTTP contexts
+    function copyText(text) {
+        const content = (text || '') + "\r\n";
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(content).then(showSuccess);
+        }
+
         const textArea = document.createElement("textarea");
-        textArea.value = command;
+        textArea.value = content;
         textArea.style.position = "fixed";
         textArea.style.left = "-999999px";
         textArea.style.top = "-999999px";
@@ -143,11 +146,35 @@ function copyScript(btn) {
         try {
             document.execCommand('copy');
             showSuccess();
+            return Promise.resolve();
         } catch (err) {
             console.error('Fallback copy failed', err);
-            alert("No se pudo copiar automáticamente. Por favor, usa la sección de Instalación.");
+            return Promise.reject(err);
+        } finally {
+            textArea.remove();
         }
-        textArea.remove();
+    }
+
+    try {
+        if (scriptUrl) {
+            const response = await fetch(scriptUrl, { credentials: 'same-origin' });
+            if (!response.ok) {
+                throw new Error(`No se pudo obtener el script (${response.status})`);
+            }
+            const scriptContent = await response.text();
+            await copyText(scriptContent);
+            return;
+        }
+
+        if (command) {
+            await copyText(command);
+            return;
+        }
+
+        throw new Error('Botón de script sin origen configurado.');
+    } catch (err) {
+        console.error('copyScript failed', err);
+        alert("No se pudo copiar automáticamente. Por favor, abre la sección de Instalación o /script.");
     }
 }
 

@@ -1,9 +1,11 @@
 import hmac
 import os
+import time
 from utils.settings import get_app_setting
 import secrets
 import hashlib
 from functools import wraps
+from itsdangerous import BadSignature, URLSafeSerializer
 
 from flask import current_app, flash, jsonify, redirect, request, session, url_for
 
@@ -11,6 +13,8 @@ from flask import current_app, flash, jsonify, redirect, request, session, url_f
 AUTH_SESSION_KEY = "auth_user"
 CSRF_SESSION_KEY = "csrf_token"
 PASSWORD_SCHEME = "pbkdf2_sha256"
+INVENTORY_TOKEN_MIN_TTL_SECONDS = 60
+INVENTORY_TOKEN_MAX_TTL_SECONDS = 3600
 
 PERMISSION_COLUMN_MAP = {
     "dashboard": "can_access_dashboard",
@@ -222,36 +226,42 @@ def build_session_user(row, auth_source):
     }
 
 
+def _request_api_token(allow_query=True):
+    auth_header = request.headers.get("Authorization", "").strip()
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
+        if token:
+            return token
+
+    header_token = request.headers.get("X-API-Key", "").strip()
+    if header_token:
+        return header_token
+
+    if allow_query:
+        return request.args.get("api_key", "").strip()
+
+    return ""
+
+
 def _user_from_bearer_token():
     try:
-        from flask import request
         if not request:
             return None
-        auth_header = request.headers.get("Authorization", "").strip()
-        if not auth_header.lower().startswith("bearer "):
-            return None
-        token = auth_header[7:].strip()
+        token = _request_api_token(allow_query=False)
         if not token:
             return None
-
-        valid_tokens = set()
-        for env_key in ["CONTABLE_API_TOKEN", "INVENTARIO_API_TOKEN", "API_KEY"]:
-            t = os.environ.get(env_key, "").strip()
-            if t:
-                valid_tokens.add(t)
-
-        for vt in valid_tokens:
-            if hmac.compare_digest(token, vt):
-                return {
-                    "id": 0,
-                    "username": "api_user",
-                    "display_name": "API System Token",
-                    "role": "administrador",
-                    "is_superuser": True,
-                    "is_active": True,
-                    "permissions": permissions_for_role("administrador", is_superuser=True),
-                    "auth_source": "bearer_token"
-                }
+        token_scopes = resolve_token_scopes(token)
+        if SCOPE_ADMIN_ALL in token_scopes:
+            return {
+                "id": 0,
+                "username": "api_user",
+                "display_name": "API System Token",
+                "role": "administrador",
+                "is_superuser": True,
+                "is_active": True,
+                "permissions": permissions_for_role("administrador", is_superuser=True),
+                "auth_source": "bearer_token"
+            }
     except Exception:
         pass
     return None
@@ -928,17 +938,10 @@ def default_landing_url(user=None):
 
 
 def has_valid_api_token():
-    expected = os.environ.get("INVENTARIO_API_TOKEN", "").strip()
-    if not expected:
+    candidate = _request_api_token(allow_query=False)
+    if not candidate:
         return False
-
-    bearer = request.headers.get("Authorization", "")
-    header_token = request.headers.get("X-API-Key", "")
-    candidate = header_token.strip()
-    if bearer.lower().startswith("bearer "):
-        candidate = bearer[7:].strip()
-
-    return bool(candidate) and hmac.compare_digest(candidate, expected)
+    return SCOPE_ADMIN_ALL in resolve_token_scopes(candidate)
 
 
 def is_public_endpoint(endpoint=None):
@@ -1080,6 +1083,7 @@ def permission_required(permission_name):
 # --- API SCOPES Y DECORADORES SEGÚN ÁMBITO ---
 
 SCOPE_INVENTORY_SUBMIT = "inventory:submit"
+SCOPE_INVENTORY_SCRIPT_DOWNLOAD = "inventory:download_script"
 SCOPE_EXTERNAL_READ_PO = "external:read_purchase_orders"
 SCOPE_EXTERNAL_READ_REMITOS = "external:read_remitos"
 SCOPE_MAINTENANCE_READ = "maintenance:read"
@@ -1087,10 +1091,123 @@ SCOPE_ADMIN_ALL = "admin:*"
 
 DEFAULT_TOKEN_SCOPES = {
     "CONTABLE_API_TOKEN": {SCOPE_EXTERNAL_READ_PO, SCOPE_EXTERNAL_READ_REMITOS},
-    "INVENTARIO_API_TOKEN": {SCOPE_INVENTORY_SUBMIT, SCOPE_EXTERNAL_READ_PO, SCOPE_EXTERNAL_READ_REMITOS, SCOPE_MAINTENANCE_READ},
-    "API_TOKEN": {SCOPE_INVENTORY_SUBMIT, SCOPE_EXTERNAL_READ_PO, SCOPE_EXTERNAL_READ_REMITOS, SCOPE_MAINTENANCE_READ},
-    "API_KEY": {SCOPE_INVENTORY_SUBMIT, SCOPE_EXTERNAL_READ_PO, SCOPE_EXTERNAL_READ_REMITOS, SCOPE_MAINTENANCE_READ},
+    "APP_ADMIN_API_TOKEN": {SCOPE_ADMIN_ALL},
 }
+
+LEGACY_INVENTORY_STATIC_TOKEN_KEYS = (
+    "INVENTARIO_API_TOKEN",
+    "API_TOKEN",
+    "API_KEY",
+)
+
+
+def allow_legacy_inventory_static_token():
+    return os.environ.get("ALLOW_LEGACY_INVENTORY_STATIC_TOKEN", "false").strip().lower() == "true"
+
+
+def inventory_submit_token_ttl_seconds():
+    raw = os.environ.get("INVENTARIO_SCRIPT_TOKEN_TTL_SECONDS", "900").strip()
+    try:
+        ttl = int(raw)
+    except (TypeError, ValueError):
+        ttl = 900
+    return max(INVENTORY_TOKEN_MIN_TTL_SECONDS, min(ttl, INVENTORY_TOKEN_MAX_TTL_SECONDS))
+
+
+def inventory_download_token_ttl_seconds():
+    raw = os.environ.get("INVENTARIO_SCRIPT_DOWNLOAD_TOKEN_TTL_SECONDS", "300").strip()
+    try:
+        ttl = int(raw)
+    except (TypeError, ValueError):
+        ttl = 300
+    return max(INVENTORY_TOKEN_MIN_TTL_SECONDS, min(ttl, INVENTORY_TOKEN_MAX_TTL_SECONDS))
+
+
+def _ephemeral_token_secret():
+    secret = (
+        os.environ.get("INVENTARIO_EPHEMERAL_TOKEN_SECRET", "").strip()
+        or current_app.config.get("SECRET_KEY")
+        or os.environ.get("FLASK_SECRET_KEY", "").strip()
+    )
+    if not secret:
+        raise RuntimeError("Falta secreto para firmar tokens efimeros de inventario.")
+    return secret
+
+
+def _ephemeral_token_serializer():
+    return URLSafeSerializer(_ephemeral_token_secret(), salt="inventario-ephemeral-token")
+
+
+def _mint_ephemeral_scope_token(scope_name, ttl_seconds, metadata=None):
+    now = int(time.time())
+    payload = {
+        "scope": scope_name,
+        "iat": now,
+        "exp": now + max(INVENTORY_TOKEN_MIN_TTL_SECONDS, int(ttl_seconds)),
+        "nonce": secrets.token_urlsafe(12),
+    }
+    if metadata:
+        payload["meta"] = metadata
+    return _ephemeral_token_serializer().dumps(payload)
+
+
+def _decode_ephemeral_scope_token(provided_token):
+    if not provided_token:
+        return None
+
+    try:
+        payload = _ephemeral_token_serializer().loads(provided_token)
+    except BadSignature:
+        return None
+
+    if not isinstance(payload, dict):
+        return None
+
+    scope_name = str(payload.get("scope") or "").strip()
+    expires_at = payload.get("exp")
+    issued_at = payload.get("iat")
+    if scope_name not in {SCOPE_INVENTORY_SUBMIT, SCOPE_INVENTORY_SCRIPT_DOWNLOAD}:
+        return None
+    if not isinstance(expires_at, int) or not isinstance(issued_at, int):
+        return None
+    now = int(time.time())
+    if issued_at > now + 30 or expires_at < now:
+        return None
+
+    return payload
+
+
+def generate_inventory_submit_token(issued_for=None, issued_by=None):
+    metadata = {}
+    if issued_for:
+        metadata["issued_for"] = str(issued_for).strip()
+    if issued_by:
+        metadata["issued_by"] = str(issued_by).strip()
+    return _mint_ephemeral_scope_token(
+        SCOPE_INVENTORY_SUBMIT,
+        inventory_submit_token_ttl_seconds(),
+        metadata=metadata or None,
+    )
+
+
+def generate_inventory_script_download_token(issued_for=None, issued_by=None):
+    metadata = {}
+    if issued_for:
+        metadata["issued_for"] = str(issued_for).strip()
+    if issued_by:
+        metadata["issued_by"] = str(issued_by).strip()
+    return _mint_ephemeral_scope_token(
+        SCOPE_INVENTORY_SCRIPT_DOWNLOAD,
+        inventory_download_token_ttl_seconds(),
+        metadata=metadata or None,
+    )
+
+
+def has_ephemeral_scope_token(provided_token, required_scope):
+    payload = _decode_ephemeral_scope_token(provided_token)
+    if not payload:
+        return False
+    return payload.get("scope") == required_scope
 
 def resolve_token_scopes(provided_token):
     """
@@ -1102,7 +1219,12 @@ def resolve_token_scopes(provided_token):
 
     scopes = set()
 
-    for env_var, default_scopes in DEFAULT_TOKEN_SCOPES.items():
+    token_scope_map = dict(DEFAULT_TOKEN_SCOPES)
+    if allow_legacy_inventory_static_token():
+        for env_var in LEGACY_INVENTORY_STATIC_TOKEN_KEYS:
+            token_scope_map[env_var] = {SCOPE_INVENTORY_SUBMIT}
+
+    for env_var, default_scopes in token_scope_map.items():
         configured_token = os.environ.get(env_var, "").strip()
         if configured_token and hmac.compare_digest(provided_token, configured_token):
             scopes.update(default_scopes)
@@ -1112,6 +1234,10 @@ def resolve_token_scopes(provided_token):
             if custom_scopes_env:
                 custom_set = {s.strip() for s in custom_scopes_env.split(",") if s.strip()}
                 scopes.update(custom_set)
+
+    ephemeral_payload = _decode_ephemeral_scope_token(provided_token)
+    if ephemeral_payload:
+        scopes.add(ephemeral_payload["scope"])
 
     return scopes
 
@@ -1125,12 +1251,7 @@ def require_api_scope(required_scope):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            auth_header = request.headers.get("Authorization", "").strip()
-            provided_token = ""
-            if auth_header.lower().startswith("bearer "):
-                provided_token = auth_header[7:].strip()
-            if not provided_token:
-                provided_token = request.args.get("api_key", "").strip()
+            provided_token = _request_api_token(allow_query=True)
 
             if not provided_token:
                 return jsonify({"status": "error", "message": "Unauthorized. Se requiere token de autorización"}), 401

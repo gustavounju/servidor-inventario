@@ -99,7 +99,7 @@ from utils.auth import allowed_module_links, auth_guard, auth_mode_label, availa
 from utils.crypto import get_required_flask_secret_key
 from utils.network_policy import enforce_browser_local_only, install_outbound_guards
 from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
-from blueprints.bp_setup import _get_secure_launcher_command
+from blueprints.bp_setup import _get_secure_launcher_command, build_inventory_script_access_url
 
 # Inicializar Flask
 app = Flask(__name__)
@@ -200,6 +200,7 @@ def inject_global_vars():
         'available_roles': available_roles(),
         'client_script_base_url': get_public_app_base_url(),
         'client_script_fallback_url': get_public_script_fallback_url(),
+        'inventory_script_copy_url': build_inventory_script_access_url(),
         'secure_launcher_command': _get_secure_launcher_command(get_public_app_base_url(), get_public_script_fallback_url()),
         'total_pages': 1,
         'page': 1,

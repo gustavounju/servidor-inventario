@@ -28,8 +28,6 @@ Write-Log "Iniciando recolección sincronizada..."
 # -----------------------------------------------------------
 try {
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-    add-type "using System.Net; using System.Security.Cryptography.X509Certificates; public class TrustAllCertsPolicy : ICertificatePolicy { public bool CheckValidationResult(ServicePoint srvPoint, X509Certificate certificate, WebRequest request, int certificateProblem) { return true; } }"
-    [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
 } catch {}
 
 # -----------------------------------------------------------
@@ -156,9 +154,10 @@ try {
         ""Salud"": { ""Uptime_Dias"": 0 }
     }"
 
-    $servidor = "__INVENTARIO_SERVER_URL__/submit_inventory?api_key=__API_KEY__"
+    $servidor = "__INVENTARIO_SERVER_URL__/submit_inventory"
     $wc = New-Object System.Net.WebClient
     $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
+    $wc.Headers.Add("Authorization", "Bearer __INVENTORY_BEARER_TOKEN__")
     $wc.Encoding = [System.Text.Encoding]::UTF8
     [void]$wc.UploadString($servidor, "POST", $json)
     

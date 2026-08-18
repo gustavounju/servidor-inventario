@@ -1032,12 +1032,13 @@ try {
     # -----------------------------------------------------------
     # ENVÍO AL SERVIDOR (WEBCLIENT PARA COMPATIBILIDAD)
     # -----------------------------------------------------------
-    $servidor = "__INVENTARIO_SERVER_URL__/submit_inventory?api_key=__API_KEY__"
+    $servidor = "__INVENTARIO_SERVER_URL__/submit_inventory"
     Write-Host "Enviando a $servidor ..."
     try {
         # Usamos System.Net.WebClient porque Invoke-RestMethod no existe en PS 2.0
         $wc = New-Object System.Net.WebClient
         $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
+        $wc.Headers.Add("Authorization", "Bearer __INVENTORY_BEARER_TOKEN__")
         $wc.Encoding = [System.Text.Encoding]::UTF8
         [void]$wc.UploadString($servidor, "POST", $json)
         Write-Host "Inventario enviado EXITOSAMENTE (HTTPS)." -ForegroundColor Green
@@ -1052,6 +1053,7 @@ try {
             $servidorHttp = $servidor.Replace("https://", "http://").Replace(":5000", ":8080")
             $wc = New-Object System.Net.WebClient
             $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
+            $wc.Headers.Add("Authorization", "Bearer __INVENTORY_BEARER_TOKEN__")
             $wc.Encoding = [System.Text.Encoding]::UTF8
             [void]$wc.UploadString($servidorHttp, "POST", $json)
             Write-Host "Inventario enviado EXITOSAMENTE (HTTP)." -ForegroundColor Green

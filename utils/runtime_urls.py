@@ -1,5 +1,4 @@
 import os
-import platform
 
 from flask import request
 
@@ -8,14 +7,20 @@ def _normalize_url(url):
     return (url or "").strip().rstrip("/")
 
 
+def _request_origin():
+    forwarded_proto = (request.headers.get("X-Forwarded-Proto") or "").split(",")[0].strip()
+    forwarded_host = (request.headers.get("X-Forwarded-Host") or "").split(",")[0].strip()
+    scheme = forwarded_proto or request.scheme or "http"
+    host = forwarded_host or request.host
+    return f"{scheme}://{host}".rstrip("/")
+
+
 def get_public_app_base_url():
     configured = _normalize_url(os.environ.get("INVENTARIO_PUBLIC_BASE_URL", ""))
     if configured:
         return configured
 
-    current_host = request.host.split(":")[0]
-    scheme = "http" if platform.system() == "Windows" else "https"
-    return f"{scheme}://{current_host}:5000"
+    return _request_origin()
 
 
 def get_public_script_fallback_url():

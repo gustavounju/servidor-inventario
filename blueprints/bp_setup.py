@@ -5,16 +5,18 @@ import os
 import re
 import hashlib
 from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
+from utils.auth import (
+    current_user,
+    generate_inventory_script_download_token,
+    generate_inventory_submit_token,
+    has_ephemeral_scope_token,
+    is_authenticated,
+    is_superuser,
+    permission_required,
+    login_required,
+)
 
 bp_setup = Blueprint('setup', __name__)
-
-
-def _resolve_inventory_submit_token():
-    for env_key in ("INVENTARIO_API_TOKEN", "API_TOKEN", "API_KEY"):
-        token = os.environ.get(env_key, "").strip()
-        if token:
-            return token
-    return "super-secret-token"
 
 
 def _build_client_base_url():
@@ -22,7 +24,60 @@ def _build_client_base_url():
     return current_host, get_public_app_base_url()
 
 
-def _rewrite_client_script(content):
+def _script_access_metadata():
+    user = current_user() if is_authenticated() else {}
+    issued_for = request.args.get("pc_name", "").strip() or request.remote_addr or "desconocido"
+    issued_by = (
+        user.get("username")
+        or user.get("display_name")
+        or user.get("technician_name")
+        or "launcher"
+    )
+    return issued_for, issued_by
+
+
+def _resolve_script_submit_token(explicit_token=None):
+    provided = (explicit_token or request.args.get("submit_token") or "").strip()
+    if provided:
+        if not has_ephemeral_scope_token(provided, "inventory:submit"):
+            abort(403)
+        return provided
+
+    issued_for, issued_by = _script_access_metadata()
+    return generate_inventory_submit_token(issued_for=issued_for, issued_by=issued_by)
+
+
+def build_inventory_script_access_url():
+    issued_for, issued_by = _script_access_metadata()
+    download_token = generate_inventory_script_download_token(issued_for=issued_for, issued_by=issued_by)
+    submit_token = generate_inventory_submit_token(issued_for=issued_for, issued_by=issued_by)
+    return url_for("setup.get_script", download_token=download_token, submit_token=submit_token)
+
+
+def _has_interactive_script_access():
+    if not is_authenticated():
+        return False
+    user = current_user()
+    return bool(
+        user.get("is_superuser")
+        or user.get("permissions", {}).get("mobile")
+        or user.get("permissions", {}).get("dashboard")
+        or user.get("permissions", {}).get("manage_stock")
+    )
+
+
+def _authorize_script_download():
+    if _has_interactive_script_access():
+        return True
+
+    download_token = (request.args.get("download_token") or "").strip()
+    if has_ephemeral_scope_token(download_token, "inventory:download_script"):
+        return True
+
+    abort(403)
+
+
+def _rewrite_client_script(content, submit_token=None):
     current_host, current_base_url = _build_client_base_url()
 
     replacements = [
@@ -41,19 +96,74 @@ def _rewrite_client_script(content):
 
     modified_content = re.sub(r"https?://(?:\d{1,3}\.){3}\d{1,3}:5000", current_base_url, modified_content)
 
-    api_token = _resolve_inventory_submit_token()
-    modified_content = modified_content.replace("__API_KEY__", api_token)
+    inventory_submit_token = _resolve_script_submit_token(explicit_token=submit_token)
+    modified_content = modified_content.replace("__INVENTORY_BEARER_TOKEN__", inventory_submit_token)
+    modified_content = modified_content.replace("__API_KEY__", inventory_submit_token)
     
     return current_host, current_base_url, modified_content
+
+
+def _certificate_file_sha256():
+    with open("cert.pem", "rb") as cert_file:
+        return hashlib.sha256(cert_file.read()).hexdigest().upper()
 
 def _get_secure_launcher_command(current_base_url, current_fallback_url):
     try:
         with open("inventario.ps1", "r", encoding="utf-8") as f:
             content = f.read()
-        _, _, modified_content = _rewrite_client_script(content)
+        issued_for, issued_by = _script_access_metadata()
+        submit_token = generate_inventory_submit_token(issued_for=issued_for, issued_by=issued_by)
+        _, _, modified_content = _rewrite_client_script(content, submit_token=submit_token)
         sha256_hash = hashlib.sha256(modified_content.encode("utf-8")).hexdigest().upper()
-        
-        cmd = f"Set-ExecutionPolicy Bypass -Scope Process -Force; try {{ [Net.ServicePointManager]::SecurityProtocol = 3072 }} catch {{}}; try {{ Add-Type -TypeDefinition 'using System.Net; using System.Security.Cryptography.X509Certificates; public class T : ICertificatePolicy {{ public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) {{ return true; }} }}' }} catch {{}}; [System.Net.ServicePointManager]::CertificatePolicy = New-Object T; $u='{current_base_url}/script'; $f=$env:TEMP+'\\inv_gold.ps1'; $h='{sha256_hash}'; try {{ (New-Object System.Net.WebClient).DownloadFile($u, $f) }} catch {{ Write-Host 'Fallo HTTPS...' -ForegroundColor Yellow; $u='{current_fallback_url}/script'; (New-Object System.Net.WebClient).DownloadFile($u, $f) }}; if (Test-Path $f) {{ $s=[System.IO.File]::OpenRead($f);$sha=New-Object System.Security.Cryptography.SHA256Managed;$hf=[BitConverter]::ToString($sha.ComputeHash($s)).Replace('-','');$s.Close(); if ($hf -eq $h) {{ Write-Host 'Firma Hash OK.' -ForegroundColor Green; & $f }} else {{ Write-Host 'Error de Seguridad: Hash invalido. MitM bloqueado.' -ForegroundColor Red }}; Remove-Item $f -Force }}"
+        cert_sha256 = _certificate_file_sha256()
+        download_url = f"{current_base_url}{build_inventory_script_access_url()}"
+        cert_url = f"{current_fallback_url}/download-cert"
+
+        if current_base_url.startswith("http://"):
+            cmd = (
+                "Set-ExecutionPolicy Bypass -Scope Process -Force; "
+                f"$scriptUrl='{download_url}'; "
+                "$scriptFile=$env:TEMP+'\\inv_gold.ps1'; "
+                f"$scriptHash='{sha256_hash}'; "
+                "function Get-FileSha256($path) { $stream=[System.IO.File]::OpenRead($path); try { "
+                "$sha=New-Object System.Security.Cryptography.SHA256Managed; "
+                "return [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-','') "
+                "} finally { $stream.Close() } }; "
+                "try { (New-Object System.Net.WebClient).DownloadFile($scriptUrl, $scriptFile) } "
+                "catch { Write-Host 'No se pudo descargar el script por HTTP.' -ForegroundColor Red; exit 1 }; "
+                "if ((Get-FileSha256 $scriptFile) -eq $scriptHash) { "
+                "Write-Host 'Hash OK en modo compatibilidad.' -ForegroundColor Yellow; & $scriptFile } "
+                "else { Write-Host 'Error de seguridad: hash del script invalido.' -ForegroundColor Red }; "
+                "Remove-Item $scriptFile -Force -ErrorAction SilentlyContinue"
+            )
+            return cmd
+
+        cmd = (
+            "Set-ExecutionPolicy Bypass -Scope Process -Force; "
+            "try { [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {}; "
+            f"$certUrl='{cert_url}'; $scriptUrl='{download_url}'; "
+            "$certFile=$env:TEMP+'\\inventario-cert.crt'; $scriptFile=$env:TEMP+'\\inv_gold.ps1'; "
+            f"$certHash='{cert_sha256}'; $scriptHash='{sha256_hash}'; "
+            "function Get-FileSha256($path) { $stream=[System.IO.File]::OpenRead($path); try { "
+            "$sha=New-Object System.Security.Cryptography.SHA256Managed; "
+            "return [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-','') "
+            "} finally { $stream.Close() } }; "
+            "try { (New-Object System.Net.WebClient).DownloadFile($certUrl, $certFile) } "
+            "catch { Write-Host 'No se pudo descargar el certificado del servidor.' -ForegroundColor Red; exit 1 }; "
+            "if ((Get-FileSha256 $certFile) -ne $certHash) { "
+            "Write-Host 'Error de seguridad: certificado inesperado.' -ForegroundColor Red; "
+            "Remove-Item $certFile -Force -ErrorAction SilentlyContinue; exit 1 }; "
+            "try { Import-Certificate -FilePath $certFile -CertStoreLocation Cert:\\CurrentUser\\Root | Out-Null } "
+            "catch { try { certutil -user -addstore Root $certFile | Out-Null } catch { "
+            "Write-Host 'No se pudo instalar el certificado.' -ForegroundColor Red; exit 1 } }; "
+            "try { (New-Object System.Net.WebClient).DownloadFile($scriptUrl, $scriptFile) } "
+            "catch { Write-Host 'Fallo la descarga segura del script por HTTPS.' -ForegroundColor Red; exit 1 }; "
+            "if ((Get-FileSha256 $scriptFile) -eq $scriptHash) { "
+            "Write-Host 'Firma Hash OK.' -ForegroundColor Green; & $scriptFile } "
+            "else { Write-Host 'Error de seguridad: hash del script invalido.' -ForegroundColor Red }; "
+            "Remove-Item $certFile -Force -ErrorAction SilentlyContinue; "
+            "Remove-Item $scriptFile -Force -ErrorAction SilentlyContinue"
+        )
         return cmd
     except Exception as e:
         return f"Write-Host 'Error interno de servidor generando comando: {e}' -ForegroundColor Red"
@@ -86,6 +196,7 @@ def qr_code_image():
 @bp_setup.route("/script")
 def get_script():
     """Devuelve el contenido del script inventario.ps1 modificado con la IP actual para ser copiado."""
+    _authorize_script_download()
     try:
         with open("inventario.ps1", "r", encoding="utf-8") as f:
             content = f.read()
@@ -100,11 +211,13 @@ def get_script():
         return f"Error al leer script: {e}", 500
 
 @bp_setup.route("/install")
+@permission_required("mobile")
 def install_page():
     """Página simple para descargar los scripts del cliente."""
     current_host, current_base_url = _build_client_base_url()
     current_fallback_url = get_public_script_fallback_url()
     secure_cmd = _get_secure_launcher_command(current_base_url, current_fallback_url)
+    raw_script_url = build_inventory_script_access_url()
     
     return f"""
     <html>
@@ -121,31 +234,30 @@ def install_page():
     </head>
     <body>
         <div class="card">
-            <h1>📥 Instalación Cliente</h1>
-            <p>Sigue estos pasos en la PC que quieres inventariar (Windows 7/10/11):</p>
+            <h1>📥 Inventario Manual</h1>
+            <p>Este es el método recomendado para su entorno. No requiere instalar nada ni abrir PowerShell como administrador.</p>
             
             <div class="step">
-                <strong>1. Crea una carpeta</strong> en el Escritorio llamada <code>Inventario</code>.
+                <strong>1. En la PC a inventariar</strong>, abre PowerShell normal.
             </div>
 
             <div class="step">
-                <strong>2. Descarga los archivos</strong> en esa carpeta:
-                <a href="/download/script" class="btn">📄 1. Descargar Script (inventario.ps1)</a>
-                <a href="/download/launcher" class="btn">🚀 2. Descargar Ejecutable (ejecutar_inventario.bat)</a>
-                <a href="/download/gpo" class="btn" style="background:#198754;">🏢 Descargar Script para GPO (inventario_gpo.ps1)</a>
+                <strong>2. Abre el script seguro</strong> desde esta misma sesión:
+                <a href="{raw_script_url}" class="btn">📋 Abrir Script Para Copiar y Pegar</a>
             </div>
 
             <div class="step">
-                <strong>3. Ejecuta</strong> el archivo <code>ejecutar_inventario.bat</code> (doble clic).
+                <strong>3. Copia todo el contenido</strong>, pégalo en PowerShell y presiona Enter.
             </div>
             
-            <hr>
-            <p><small>Si Windows protege la PC, pulsa "Más información" -> "Ejecutar de todas formas".</small></p>
+            <div class="step">
+                <strong>4. El script se autoejecuta</strong> y envía los datos al servidor central usando un token efímero solo para inventario.
+            </div>
         </div>
         
         <div class="card" style="background-color: #e9ecef;">
-            <h2 style="color: #495057; font-size: 1.2rem; margin-top:0;">⚡ Método Rápido (Seguro)</h2>
-            <p style="font-size: 0.9rem; color: #6c757d;">Para técnicos: Ejecuta el inventario validando la integridad del código (SHA-256). Abre <b>PowerShell como Administrador</b>, copia este comando y presiona Enter:</p>
+            <h2 style="color: #495057; font-size: 1.2rem; margin-top:0;">⚡ Método Alternativo</h2>
+            <p style="font-size: 0.9rem; color: #6c757d;">Solo si necesitas automatizar la descarga. Puede requerir PowerShell con más permisos según la PC. El método principal para ustedes sigue siendo copiar y pegar el script manual.</p>
             <div id="cmdText" style="background: #212529; color: #20c20e; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 0.85rem; word-break: break-all; margin-bottom: 15px;">
                 {secure_cmd}
             </div>
@@ -182,11 +294,20 @@ def install_page():
                 }}
             </script>
         </div>
+
+        <div class="card">
+            <h2 style="color: #495057; font-size: 1.2rem; margin-top:0;">Archivos Legacy</h2>
+            <p style="font-size: 0.9rem; color: #6c757d;">Estos accesos quedan disponibles solo por compatibilidad o tareas puntuales.</p>
+            <a href="/download/script" class="btn">📄 Descargar inventario.ps1</a>
+            <a href="/download/launcher" class="btn">🚀 Descargar ejecutar_inventario.bat</a>
+            <a href="/download/gpo" class="btn" style="background:#198754;">🏢 Descargar Script para GPO</a>
+        </div>
     </body>
     </html>
     """
 
 @bp_setup.route("/download/script")
+@permission_required("mobile")
 def download_client_script():
     try:
         with open("inventario.ps1", "r", encoding="utf-8") as f:
@@ -202,6 +323,7 @@ def download_client_script():
         return f"Error: {e}", 404
 
 @bp_setup.route("/download/launcher")
+@permission_required("mobile")
 def download_client_launcher():
     try:
         return send_file("ejecutar_inventario.bat", as_attachment=True, download_name="ejecutar_inventario.bat")
@@ -209,9 +331,16 @@ def download_client_launcher():
         return f"Error: {e}", 404
 
 @bp_setup.route("/download/gpo")
+@permission_required("mobile")
 def download_gpo_script():
     """Devuelve el script inventario_gpo.ps1 con las IPs corregidas para despliegue por GPO."""
     try:
+        if os.environ.get("ALLOW_LEGACY_INVENTORY_STATIC_TOKEN", "false").strip().lower() != "true":
+            return (
+                "El script GPO legado está deshabilitado. "
+                "Activa ALLOW_LEGACY_INVENTORY_STATIC_TOKEN=true solo si necesitas compatibilidad temporal.",
+                503,
+            )
         with open("deployment/inventario_gpo.ps1", "r", encoding="utf-8") as f:
             content = f.read()
         _, _, modified_content = _rewrite_client_script(content)
@@ -335,7 +464,6 @@ def delete_efemeride(ef_id):
         conn.commit()
     return redirect(url_for('setup.view_efemerides'))
 
-from utils.auth import is_superuser, current_user, login_required
 from utils.crypto import encrypt_secret, decrypt_secret
 from utils.settings import get_app_setting
 
