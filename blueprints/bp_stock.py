@@ -2746,7 +2746,10 @@ def manage_build_order(order_id):
                 return jsonify({"status": "error", "message": "No hay campos editables."}), 400
 
             with get_db_connection() as conn:
-                bo = conn.execute("SELECT id, code FROM build_orders WHERE id = %s", (order_id,)).fetchone()
+                bo = conn.execute(
+                    "SELECT id, code, status, target_pc_name, target_user, target_fuero FROM build_orders WHERE id = %s",
+                    (order_id,)
+                ).fetchone()
                 if not bo:
                     return jsonify({"status": "error", "message": "Orden no encontrada."}), 404
 
@@ -2758,6 +2761,39 @@ def manage_build_order(order_id):
                 set_clauses = ", ".join(f"{col} = %s" for col in updates)
                 values = list(updates.values()) + [order_id]
                 conn.execute(f"UPDATE build_orders SET {set_clauses} WHERE id = %s", values)
+
+                # Si la orden ya está completada, sincronizamos el destino en los componentes asignados
+                if bo["status"] == "completed" and ("target_pc_name" in updates or "target_user" in updates or "target_fuero" in updates):
+                    # 1. Obtener ítems escaneados de la orden
+                    items_rows = conn.execute(
+                        "SELECT serial_number FROM build_order_items WHERE build_order_id = %s",
+                        (order_id,)
+                    ).fetchall()
+                    serials = [r["serial_number"] for r in items_rows if r.get("serial_number")]
+                    
+                    # 2. Obtener también componentes que tengan cargado el build_order_id
+                    comp_rows = conn.execute(
+                        "SELECT serial_number FROM components WHERE build_order_id = %s",
+                        (order_id,)
+                    ).fetchall()
+                    for cr in comp_rows:
+                        if cr.get("serial_number") and cr["serial_number"] not in serials:
+                            serials.append(cr["serial_number"])
+
+                    if serials:
+                        new_pc = updates["target_pc_name"] if "target_pc_name" in updates else bo["target_pc_name"]
+                        new_user = updates["target_user"] if "target_user" in updates else bo["target_user"]
+                        new_fuero = updates["target_fuero"] if "target_fuero" in updates else bo["target_fuero"]
+
+                        placeholders = ", ".join(["%s"] * len(serials))
+                        conn.execute(
+                            f"""
+                            UPDATE components
+                            SET assigned_pc = %s, assigned_user = %s, assigned_fuero = %s
+                            WHERE serial_number IN ({placeholders})
+                            """,
+                            [new_pc or None, new_user or None, new_fuero or None] + serials
+                        )
 
                 changes_str = ", ".join(f"{k}={v}" for k, v in updates.items())
                 conn.execute(

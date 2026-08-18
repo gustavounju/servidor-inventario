@@ -150,6 +150,37 @@ class FakeBuildOrderConnection:
             self.audit_logs.append(params)
             return FakeResult(rowcount=1)
 
+        if normalized.startswith("UPDATE build_orders SET"):
+            order_id = params[-1]
+            order = self.orders.get(order_id)
+            if order:
+                import re
+                cols = re.findall(r"(\w+)\s*=\s*%s", normalized)
+                for i, col in enumerate(cols):
+                    if col != "id":
+                        order[col] = params[i]
+            return FakeResult(rowcount=1)
+
+        if normalized.startswith("SELECT serial_number FROM components WHERE build_order_id = %s"):
+            order_id = params[0]
+            return FakeResult([
+                {"serial_number": comp["serial_number"]}
+                for comp in self.components.values()
+                if comp.get("build_order_id") == order_id
+            ])
+
+        if normalized.startswith("UPDATE components SET assigned_pc = %s"):
+            new_pc, new_user, new_fuero = params[:3]
+            serials = params[3:]
+            for s in serials:
+                if s in self.components:
+                    self.components[s].update({
+                        "assigned_pc": new_pc,
+                        "assigned_user": new_user,
+                        "assigned_fuero": new_fuero,
+                    })
+            return FakeResult(rowcount=len(serials))
+
         raise AssertionError(f"SQL no contemplado por el fake: {normalized}")
 
 
@@ -259,6 +290,34 @@ class BuildOrderLifecycleTests(unittest.TestCase):
         self.assertEqual(connection.components["SER-1"]["status"], "Installed")
         self.assertEqual(connection.components["SER-1"]["build_order_id"], 2)
         self.assertEqual(connection.components["SER-1"]["assigned_pc"], "PC-CORRECTA")
+
+
+    def test_editing_completed_order_updates_linked_components(self):
+        connection = FakeBuildOrderConnection(
+            orders=[{"id": 1, "code": "BO-1", "status": "completed", "target_pc_name": "PC-ERRADA", "target_user": "USER-ERRADO", "target_fuero": "FUERO-ERRADO"}],
+            components={"SER-1": {"serial_number": "SER-1", "status": "Installed", "build_order_id": 1, "assigned_pc": "PC-ERRADA", "assigned_user": "USER-ERRADO", "assigned_fuero": "FUERO-ERRADO"}},
+            items=[{"id": 1, "build_order_id": 1, "serial_number": "SER-1"}],
+        )
+
+        response = self._request_with_connection(
+            connection,
+            "PATCH",
+            "/api/build_orders/1",
+            json={
+                "code": "BO-1",
+                "target_pc_name": "PC-CORRECTA",
+                "target_user": "USER-CORRECTO",
+                "target_fuero": "FUERO-CORRECTO"
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(connection.orders[1]["target_pc_name"], "PC-CORRECTA")
+        self.assertEqual(connection.orders[1]["target_user"], "USER-CORRECTO")
+        self.assertEqual(connection.orders[1]["target_fuero"], "FUERO-CORRECTO")
+        self.assertEqual(connection.components["SER-1"]["assigned_pc"], "PC-CORRECTA")
+        self.assertEqual(connection.components["SER-1"]["assigned_user"], "USER-CORRECTO")
+        self.assertEqual(connection.components["SER-1"]["assigned_fuero"], "FUERO-CORRECTO")
 
 
 if __name__ == "__main__":
