@@ -61,3 +61,61 @@ class PDFReport(FPDF):
         self.set_text_color(128)
         ahora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
         self.cell(0, 10, f'Página {self.page_no()}/{{nb}} - Generado el {ahora}', 0, 0, 'C')
+
+
+import re
+
+def normalize_ram_spec(spec: str, fallback_gb=None) -> str:
+    """
+    Normaliza el string de especificación de RAM:
+    1. Redondea capacidades decimales (ej. 7.3 GB -> 8 GB).
+    2. Auto-clasifica DDR (DDR1/2/3/4/5) basándose en la velocidad en MHz si no está especificado.
+    """
+    if not spec or str(spec).strip().upper() in ("N/A", "NONE", ""):
+        if fallback_gb:
+            try:
+                val = float(fallback_gb)
+                return f"{int(round(val))} GB RAM"
+            except Exception:
+                pass
+        return "N/D"
+    
+    spec_str = str(spec).strip()
+    
+    # 1. Redondear números decimales (ej: 7.3 GB -> 8 GB)
+    def replace_decimal(match):
+        num_str = match.group(1)
+        try:
+            val = float(num_str)
+            return f"{int(round(val))}"
+        except Exception:
+            return match.group(0)
+            
+    spec_str = re.sub(r"\b(\d+\.\d+)\b", replace_decimal, spec_str)
+    
+    # 2. Si tiene velocidad en MHz pero no tiene la palabra 'DDR', clasificarla según la velocidad
+    if "DDR" not in spec_str.upper():
+        speed_match = re.search(r"\b(\d{3,4})\s*(?:MHz|mhz)?\b", spec_str)
+        if speed_match:
+            try:
+                speed = int(speed_match.group(1))
+                ram_type = ""
+                if speed > 0:
+                    if speed <= 450: ram_type = "DDR"
+                    elif speed <= 900: ram_type = "DDR2"
+                    elif speed <= 2100: ram_type = "DDR3"
+                    elif speed <= 4200: ram_type = "DDR4"
+                    else: ram_type = "DDR5"
+                
+                if ram_type:
+                    # Insertar el tipo DDR antes de '@' o al final si no hay '@'
+                    if "@" in spec_str:
+                        parts = spec_str.split("@", 1)
+                        spec_str = f"{parts[0].strip()} {ram_type} @ {parts[1].strip()}"
+                    else:
+                        spec_str = f"{spec_str} {ram_type}"
+            except Exception:
+                pass
+                
+    return spec_str
+

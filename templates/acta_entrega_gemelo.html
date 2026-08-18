@@ -487,7 +487,7 @@
             {% for comp in memorias %}
           <tr>
             <td><strong>Memoria RAM</strong></td>
-            <td>{{ comp.brand_model or comp.model or comp.brand or ((pc.ram_gb | float | round | int) if pc.ram_gb else '0') ~ ' GB DDR' }}</td>
+            <td>{{ (comp.brand_model or comp.model or comp.brand or ((pc.ram_gb | float | round | int) if pc.ram_gb else '0') ~ ' GB DDR') | normalize_ram_spec(pc.ram_gb) }}</td>
             <td class="font-mono">
               {{ format_sn_remito_oc(comp, comp.serial_number or pc.ram_sn, global_inv, global_oc) }}
             </td>
@@ -497,11 +497,7 @@
           <tr>
             <td><strong>Memoria RAM</strong></td>
             <td>
-              {% if pc.ram_detalles and pc.ram_detalles.strip() not in ('N/A', 'None', '') %}
-                {{ pc.ram_detalles }}
-              {% else %}
-                {{ (pc.ram_gb | float | round | int) if pc.ram_gb else '0' }} GB DDR
-              {% endif %}
+              {{ pc.ram_detalles | normalize_ram_spec(pc.ram_gb) }}
             </td>
             <td class="font-mono">
               {{ format_sn_remito_oc(None, pc.ram_sn, global_inv, global_oc) }}

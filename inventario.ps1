@@ -322,6 +322,15 @@ try {
                     $ramType = $ramTypeMap[[int]$r.MemoryType]
                 }
 
+                # Fallback heuristic based on speed if WMI didn't report MemoryType
+                if (-not $ramType -and $speed -gt 0) {
+                    if ($speed -le 450) { $ramType = "DDR" }
+                    elseif ($speed -le 900) { $ramType = "DDR2" }
+                    elseif ($speed -le 2100) { $ramType = "DDR3" }
+                    elseif ($speed -le 4200) { $ramType = "DDR4" }
+                    else { $ramType = "DDR5" }
+                }
+
                 $snTag = ""
                 if ($r.SerialNumber) {
                     $cleanSN = [string]($r.SerialNumber).Trim()
