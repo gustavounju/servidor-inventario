@@ -93,6 +93,15 @@ def build_acta_component_groups(components, monitors_detail, hardware_components
         if normalized_serial and normalized_serial not in {"N/A", "SIN S/N", "NONE"}:
             if normalized_serial in existing_disk_serials:
                 continue
+            # Si el serial de telemetría está incluido en el modelo de algún disco ya registrado en la BD, se considera duplicado
+            serial_already_in_model = False
+            for item in groups["discos"]:
+                item_model_upper = (item.get("brand_model") or "").upper()
+                if normalized_serial in item_model_upper:
+                    serial_already_in_model = True
+                    break
+            if serial_already_in_model:
+                continue
         elif normalized_model in existing_disk_models:
             continue
         groups["discos"].append({
