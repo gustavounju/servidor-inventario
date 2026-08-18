@@ -267,10 +267,13 @@
 /* --- 8. Decision-oriented equipment layout --- */
 .vercel-detail .pc-command-bar {
   align-items: center;
-  background: color-mix(in srgb, var(--vercel-bg) 94%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--vercel-accent-soft) 16%, transparent), transparent 52%),
+    color-mix(in srgb, var(--vercel-bg) 95%, transparent);
   backdrop-filter: blur(14px);
   border: 1px solid var(--vercel-border);
-  border-radius: 14px;
+  border-radius: 18px;
+  box-shadow: 0 22px 55px rgba(15, 23, 42, 0.1);
   display: flex;
   gap: 24px;
   justify-content: space-between;
@@ -309,6 +312,16 @@
   font-size: 0.82rem;
   gap: 7px 18px;
   margin-top: 9px;
+}
+
+.vercel-detail .pc-command-bar__meta span {
+  align-items: center;
+  background: color-mix(in srgb, var(--vercel-surface) 88%, transparent);
+  border: 1px solid var(--vercel-border);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 6px;
+  padding: 0.36rem 0.7rem;
 }
 
 .vercel-detail .pc-command-bar__actions {
@@ -359,9 +372,12 @@
 .vercel-detail .pc-status-panel,
 .vercel-detail .pc-attention-panel,
 .vercel-detail .pc-overview-card {
-  background: var(--vercel-bg);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--vercel-surface) 22%, transparent), transparent 42%),
+    var(--vercel-bg);
   border: 1px solid var(--vercel-border);
-  border-radius: 12px;
+  border-radius: 16px;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
   min-width: 0;
   padding: 20px;
 }
@@ -574,6 +590,7 @@
 }
 
 .vercel-detail .pc-inline-link:hover {
+  color: color-mix(in srgb, var(--vercel-accent) 82%, white);
   text-decoration: underline;
 }
 

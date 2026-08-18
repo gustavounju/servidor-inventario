@@ -57,7 +57,7 @@ def _release_local_printer_components(conn, pc_name, printer_sn, request_ip):
     conn.execute(
         f"""
         UPDATE components
-        SET assigned_pc = NULL, status = 'Stock'
+        SET assigned_pc = NULL, status = 'Stock', lifecycle_status = 'stock'
         WHERE id IN ({placeholders})
         """,
         tuple(component_ids),

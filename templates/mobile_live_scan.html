@@ -14,7 +14,7 @@
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}" rel="stylesheet">
     <script defer src="{{ url_for('static', filename='js/gold.js') }}"></script>
-    <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='vendor/zxing/zxing.min.js') }}"></script>
     <style>
         body { background-color: var(--bg-color); color: var(--text-color); font-family: system-ui, -apple-system, sans-serif; }
         .card-dark { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; }

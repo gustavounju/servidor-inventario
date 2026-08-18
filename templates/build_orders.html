@@ -7,19 +7,17 @@
     <script>
       (function(){var p=localStorage.getItem('theme_preference')||localStorage.getItem('theme');if(p!=='light')document.documentElement.setAttribute('data-theme','dark');})();
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
     <style>
-        .bo-table-wrap{border-radius:12px;overflow:hidden;border:1px solid rgba(148,163,184,.18);}
-        .bo-table{width:100%;border-collapse:collapse;font-size:.875rem;color:#e2e8f0;}
-        .bo-table thead th{background:rgba(15,23,42,.85);color:#94a3b8;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:10px 14px;border-bottom:1px solid rgba(148,163,184,.18);white-space:nowrap;}
-        .bo-table tbody tr{background:rgba(30,41,59,.55);border-bottom:1px solid rgba(148,163,184,.1);cursor:pointer;transition:background .12s;}
+        .bo-table-wrap{background:linear-gradient(180deg,color-mix(in srgb,var(--card-bg) 96%, transparent),color-mix(in srgb,var(--table-header-bg) 22%, var(--card-bg)));border-radius:18px;overflow:hidden;border:1px solid color-mix(in srgb,var(--border-color) 86%, transparent);box-shadow:0 20px 50px rgba(15,23,42,.12);}
+        .bo-table{width:100%;border-collapse:collapse;font-size:.875rem;color:var(--text-color);}
+        .bo-table thead th{background:color-mix(in srgb,var(--table-header-bg) 86%, transparent);color:var(--text-muted);font-size:.71rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:12px 14px;border-bottom:1px solid color-mix(in srgb,var(--border-color) 82%, transparent);white-space:nowrap;}
+        .bo-table tbody tr{background:transparent;border-bottom:1px solid color-mix(in srgb,var(--border-color) 80%, transparent);cursor:pointer;transition:background .12s ease,transform .12s ease;}
         .bo-table tbody tr:last-child{border-bottom:none;}
-        .bo-table tbody tr:hover{background:rgba(51,65,85,.75);}
-        .bo-table td{padding:10px 14px;vertical-align:middle;}
+        .bo-table tbody tr:hover{background:color-mix(in srgb,var(--accent-primary) 7%, transparent);}
+        .bo-table td{padding:12px 14px;vertical-align:middle;}
         .bo-badge{display:inline-block;font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;}
         .bo-badge--draft{background:rgba(234,179,8,.15);color:#facc15;border:1px solid rgba(234,179,8,.3);}
         .bo-badge--in_progress{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3);}
@@ -33,13 +31,21 @@
         .bo-detail-table th{color:#64748b;font-size:.72rem;text-transform:uppercase;font-weight:700;padding:6px 10px;border-bottom:1px solid rgba(148,163,184,.15);}
         .bo-detail-table td{padding:8px 10px;border-bottom:1px solid rgba(148,163,184,.08);color:#cbd5e1;}
         .bo-detail-table tbody tr:last-child td{border-bottom:none;}
-        .op-masthead{background:linear-gradient(135deg,rgba(15,23,42,.9) 0%,rgba(30,41,59,.9) 100%);border:1px solid rgba(168,85,247,.25);border-radius:12px;padding:24px;margin-bottom:24px;}
         .modal-content-dark{background:#1e293b;color:#e2e8f0;border:1px solid rgba(148,163,184,.2);}
-        .bo-meta-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(51,65,85,.6);border:1px solid rgba(148,163,184,.18);border-radius:6px;padding:3px 9px;font-size:.78rem;color:#94a3b8;}
-        .bo-meta-chip strong{color:#e2e8f0;}
+        .bo-meta-chip{display:inline-flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--table-header-bg) 72%, transparent);border:1px solid color-mix(in srgb,var(--border-color) 84%, transparent);border-radius:999px;padding:5px 10px;font-size:.78rem;color:var(--text-muted);}
+        .bo-meta-chip strong{color:var(--text-color);}
+        .bo-filter-shell{background:linear-gradient(180deg,color-mix(in srgb,var(--card-bg) 96%, transparent),color-mix(in srgb,var(--accent-primary) 5%, transparent));border:1px solid color-mix(in srgb,var(--border-color) 84%, transparent);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 18px 40px rgba(15,23,42,.08);}
+        .bo-filter-shell .form-label{color:var(--text-muted);font-size:.74rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;}
+        .bo-filter-shell .form-control,
+        .bo-filter-shell .form-select{background:color-mix(in srgb,var(--table-header-bg) 80%, transparent);border-color:color-mix(in srgb,var(--border-color) 82%, transparent);color:var(--text-color);min-height:42px;}
+        .bo-filter-shell .form-control::placeholder{color:color-mix(in srgb,var(--text-muted) 84%, transparent);}
+        .bo-filter-shell .btn{min-height:42px;}
+        .bo-masthead-stats{display:flex;flex-wrap:wrap;gap:.65rem;margin-top:.9rem;}
+        .bo-empty-state{background:linear-gradient(180deg,color-mix(in srgb,var(--card-bg) 96%, transparent),color-mix(in srgb,var(--table-header-bg) 18%, transparent));border:1px dashed color-mix(in srgb,var(--border-color) 76%, transparent);border-radius:18px;}
     </style>
     <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined and csrf_token else '' }}">
     <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}">
 </head>
 <body class="has-fixed-header">
     {% include '_module_switcher.html' %}
@@ -54,34 +60,54 @@
         {% endfor %}{% endif %}
         {% endwith %}
 
-        <div class="op-masthead d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div>
-                <h2 style="font-weight:800;font-family:var(--font-display);color:#f8fafc;margin-bottom:4px;">
-                    <i class="bi bi-box-seam text-warning me-2"></i>Órdenes de Armado
-                    <span class="ms-2" style="font-size:.9rem;font-weight:500;color:#94a3b8;font-family:var(--font-mono);">({{ build_orders|length }} en total)</span>
-                </h2>
-                <div class="d-flex gap-2 align-items-center mt-1 flex-wrap">
-                    <span class="badge bg-success text-white font-mono" style="font-size:0.75rem;padding:4px 9px;" title="Órdenes con Gemelo Digital Validado en red WMI">
-                        <i class="bi bi-patch-check-fill me-1"></i>{{ validados_count if validados_count is defined else 0 }} Gemelos Validados
-                    </span>
-                    <span class="badge bg-warning text-dark font-mono" style="font-size:0.75rem;padding:4px 9px;" title="Órdenes en armado o pendientes de reporte WMI en red">
-                        <i class="bi bi-hourglass-split me-1"></i>{{ pendientes_count if pendientes_count is defined else 0 }} Quedan por validar
-                    </span>
+        <section class="module-masthead mb-4">
+            <div class="module-masthead__body">
+                <div>
+                    <div class="module-kicker"><i class="bi bi-cpu"></i> Taller, armado y validación</div>
+                    <h1 class="module-title">Órdenes de Armado</h1>
+                    <div class="bo-masthead-stats">
+                        <span class="bo-meta-chip"><i class="bi bi-eye"></i><strong><span id="boVisibleCount">{{ build_orders|length }}</span></strong> visibles de {{ build_orders|length }}</span>
+                        <span class="bo-meta-chip" title="Órdenes con Gemelo Digital Validado en red WMI"><i class="bi bi-patch-check-fill text-success"></i><strong>{{ validados_count if validados_count is defined else 0 }}</strong> validadas</span>
+                        <span class="bo-meta-chip" title="Órdenes en armado o pendientes de reporte WMI en red"><i class="bi bi-hourglass-split text-warning"></i><strong>{{ pendientes_count if pendientes_count is defined else 0 }}</strong> pendientes</span>
+                    </div>
+                </div>
+                <div class="module-toolbar">
+                    <button type="button" class="op-btn op-btn--armado" data-bs-toggle="modal" data-bs-target="#newBuildOrderModal">
+                        <i class="bi bi-plus-lg me-1"></i>Nueva orden
+                    </button>
+                    <a href="{{ url_for('stock.stock_view') }}" class="op-btn op-btn--patrimonio">
+                        <i class="bi bi-boxes me-1"></i>Patrimonio
+                    </a>
                 </div>
             </div>
-            <div class="d-flex gap-2 align-items-center">
-                <button type="button" class="op-btn op-btn--armado" data-bs-toggle="modal" data-bs-target="#newBuildOrderModal">
-                    <i class="bi bi-plus-lg me-1"></i>[ + NUEVA ORDEN ]
-                </button>
-                <a href="{{ url_for('stock.stock_view') }}" class="op-btn op-btn--patrimonio">
-                    <i class="bi bi-boxes me-1"></i>[ PATRIMONIO ]
-                </a>
-            </div>
-        </div>
+        </section>
 
         <div class="row"><div class="col-12">
+            <div class="bo-filter-shell">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-8">
+                        <label for="boSearchInput" class="form-label">Buscar orden, PC, usuario, fuero, remito u O.C.</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="boSearchInput" class="form-control" placeholder="Ej: BO-001, DESKTOP-BVVVOGR, Gustavo, remito, proveedor...">
+                            <button type="button" class="btn btn-outline-secondary text-info" onclick="resetBOFilters()" title="Limpiar filtros">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <label for="boStatusFilter" class="form-label">Estado</label>
+                        <select id="boStatusFilter" class="form-select form-select-sm">
+                            <option value="">Todos los estados</option>
+                            <option value="draft">Borrador</option>
+                            <option value="in_progress">En armado</option>
+                            <option value="completed">Completado</option>
+                            <option value="cancelled">Cancelado</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
             {% if not build_orders %}
-            <div class="text-center p-5 rounded" style="background:rgba(30,41,59,.4);border:1px dashed rgba(148,163,184,.3);">
+            <div class="text-center p-5 bo-empty-state">
                 <i class="bi bi-inbox text-muted" style="font-size:3rem;"></i>
                 <h4 class="mt-3 text-light">No hay Órdenes de Armado registradas</h4>
                 <p class="text-muted">Creá una para armar un puesto de trabajo completo con escáner.</p>
@@ -99,7 +125,7 @@
                     </tr></thead>
                     <tbody>
                         {% for bo in build_orders %}
-                        <tr onclick="openBODetailById({{ bo.id }})">
+                        <tr id="bo-row-{{ bo.id }}" data-bo-id="{{ bo.id }}" data-bo-status="{{ bo.status or '' }}" data-bo-search="{{ ((bo.code or '') ~ ' ' ~ (bo.target_pc_name or '') ~ ' ' ~ (bo.target_user or '') ~ ' ' ~ (bo.matched_user or '') ~ ' ' ~ (bo.target_fuero or '') ~ ' ' ~ (bo.invoice_number or '') ~ ' ' ~ (bo.oc_number or '') ~ ' ' ~ (bo.notes or '')) | lower }}" onclick="openBODetailById({{ bo.id }})">
                             <td><span class="font-mono" style="font-weight:700;color:#38bdf8;font-size:.9rem;cursor:pointer;" title="Ver detalle de {{ bo.code }}"><i class="bi bi-box-seam me-1"></i>{{ bo.code }}</span></td>
                             <td>
                                 {% if bo.validation_status == 'validado' %}
@@ -195,6 +221,11 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            <div id="boEmptyFilteredState" class="text-center p-4 rounded mt-3" style="display:none;background:rgba(30,41,59,.4);border:1px dashed rgba(148,163,184,.3);">
+                <i class="bi bi-funnel text-muted" style="font-size:2rem;"></i>
+                <h5 class="mt-3 text-light">No hay órdenes para ese filtro</h5>
+                <p class="text-muted mb-0">Probá con otro código, usuario, PC, remito, O.C. o estado.</p>
             </div>
             {% endif %}
         </div></div>
@@ -422,6 +453,39 @@
 
     <script>
         window.BUILD_ORDERS = {{ build_orders | tojson }};
+        window.BUILD_ORDERS_INITIAL_FILTERS = {{ (initial_build_orders_filters or {}) | tojson }};
+
+        function applyBuildOrderFilters() {
+            const searchEl = document.getElementById('boSearchInput');
+            const statusEl = document.getElementById('boStatusFilter');
+            const countEl = document.getElementById('boVisibleCount');
+            const emptyEl = document.getElementById('boEmptyFilteredState');
+            const query = (searchEl?.value || '').trim().toLowerCase();
+            const status = (statusEl?.value || '').trim().toLowerCase();
+            const rows = document.querySelectorAll('tbody tr[data-bo-id]');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const haystack = row.getAttribute('data-bo-search') || '';
+                const rowStatus = (row.getAttribute('data-bo-status') || '').toLowerCase();
+                const matchesQuery = !query || haystack.includes(query);
+                const matchesStatus = !status || rowStatus === status;
+                const show = matchesQuery && matchesStatus;
+                row.style.display = show ? '' : 'none';
+                if (show) visibleCount += 1;
+            });
+
+            if (countEl) countEl.textContent = String(visibleCount);
+            if (emptyEl) emptyEl.style.display = rows.length > 0 && visibleCount === 0 ? '' : 'none';
+        }
+
+        function resetBOFilters() {
+            const searchEl = document.getElementById('boSearchInput');
+            const statusEl = document.getElementById('boStatusFilter');
+            if (searchEl) searchEl.value = '';
+            if (statusEl) statusEl.value = '';
+            applyBuildOrderFilters();
+        }
 
         async function openBODetailById(id) {
             const list = window.BUILD_ORDERS || [];
@@ -715,6 +779,19 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const init = window.BUILD_ORDERS_INITIAL_FILTERS || {};
+            const searchEl = document.getElementById('boSearchInput');
+            const statusEl = document.getElementById('boStatusFilter');
+            if (searchEl) {
+                searchEl.value = init.q || '';
+                searchEl.addEventListener('input', applyBuildOrderFilters);
+            }
+            if (statusEl) {
+                statusEl.value = init.status || '';
+                statusEl.addEventListener('change', applyBuildOrderFilters);
+            }
+            applyBuildOrderFilters();
+
             const autoOpenId = sessionStorage.getItem('auto_open_bo_id');
             if (autoOpenId && window.BUILD_ORDERS) {
                 sessionStorage.removeItem('auto_open_bo_id');
@@ -728,6 +805,20 @@
                             inp.select();
                         }
                     }, 350);
+                }
+            }
+
+            const focusId = init.bo_id;
+            if (focusId && window.BUILD_ORDERS) {
+                const row = document.getElementById(`bo-row-${focusId}`);
+                if (row) {
+                    row.style.outline = '2px solid rgba(56, 189, 248, 0.8)';
+                    row.style.outlineOffset = '-2px';
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                const bo = window.BUILD_ORDERS.find(b => String(b.id) === String(focusId));
+                if (bo) {
+                    setTimeout(() => openBODetail(bo), 280);
                 }
             }
         });

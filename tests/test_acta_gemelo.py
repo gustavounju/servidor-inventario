@@ -50,10 +50,12 @@ class ActaGemeloValidadoTests(unittest.TestCase):
     def test_acta_gemelo_validado_requires_valid_status(self, mock_get_context):
         from flask import Flask
         from blueprints.bp_dashboard import bp_dashboard
+        from blueprints.bp_setup import bp_setup
 
         app = Flask(__name__, template_folder="../templates")
         app.secret_key = "test_secret"
         app.register_blueprint(bp_dashboard)
+        app.register_blueprint(bp_setup)
 
         # Mock context where validation_status is 'pendiente'
         mock_get_context.return_value = {
@@ -76,10 +78,12 @@ class ActaGemeloValidadoTests(unittest.TestCase):
     def test_acta_gemelo_validado_renders_when_valid(self, mock_get_context):
         from flask import Flask
         from blueprints.bp_dashboard import bp_dashboard
+        from blueprints.bp_setup import bp_setup
 
         app = Flask(__name__, template_folder="../templates")
         app.secret_key = "test_secret"
         app.register_blueprint(bp_dashboard)
+        app.register_blueprint(bp_setup)
 
         # Mock context where validation_status is 'validado'
         mock_get_context.return_value = {
@@ -114,10 +118,12 @@ class ActaGemeloValidadoTests(unittest.TestCase):
     def test_acta_gemelo_validado_lists_all_assigned_processors_and_monitors(self, mock_get_context):
         from flask import Flask
         from blueprints.bp_dashboard import bp_dashboard
+        from blueprints.bp_setup import bp_setup
 
         app = Flask(__name__, template_folder="../templates")
         app.secret_key = "test_secret"
         app.register_blueprint(bp_dashboard)
+        app.register_blueprint(bp_setup)
 
         mock_get_context.return_value = {
             "pc": {
@@ -202,8 +208,10 @@ class ActaGemeloValidadoTests(unittest.TestCase):
             # Verificar que conn.execute fue llamado actualizando alerta_nombre_duplicado = 0
             executed_queries = [str(call[0][0]) for call in mock_conn.execute.call_args_list]
             update_query = next((q for q in executed_queries if "UPDATE pcs" in q), "")
+            insert_query = next((q for q in executed_queries if "INSERT INTO components" in q), "")
             self.assertIn("alerta_nombre_duplicado = 0", update_query)
             self.assertIn("validation_status = 'validado'", update_query)
+            self.assertIn("'Asignado', 'desplegado'", insert_query)
 
     @patch("utils.auth.refresh_session_user", return_value=True)
     @patch("blueprints.bp_dashboard.get_db_connection")

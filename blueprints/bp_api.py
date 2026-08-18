@@ -245,22 +245,6 @@ def process_inventory_data(data):
 
     salud = data.get("Salud", {})
     alerta_disco = 0
-    discos_smart = salud.get("Discos_SMART", [])
-    for d in discos_smart:
-        status = str(d.get("Status", "OK")).upper()
-        if status != "OK":
-            alerta_disco = 1
-            break
-            
-    if alerta_disco == 0:
-        discos_espacio = salud.get("Discos_Espacio", [])
-        for v in discos_espacio:
-            try:
-                free_gb = float(v.get("FreeGB", 100))
-                if free_gb < 5.0:
-                    alerta_disco = 1
-                    break
-            except: pass
 
     alerta_uptime = 0
     uptime_dias = salud.get("Uptime_Dias", 0)
@@ -317,10 +301,10 @@ def process_inventory_data(data):
         if old_pc: old_printer_sn = old_pc["printer_sn"] or "N/A"
 
     sql = """
-    INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, mac_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, office_version, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, is_active, full_json_data, telemetry_snapshot)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, %s, %s)
+    INSERT INTO pcs (pc_name, fuero, os_name, processor, ram_gb, ip_address, mac_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, office_version, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_uptime, alerta_nombre_duplicado, is_active, full_json_data, telemetry_snapshot)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, %s, %s)
     ON DUPLICATE KEY UPDATE
-        fuero=VALUES(fuero), os_name=VALUES(os_name), ip_address=VALUES(ip_address), mac_address=VALUES(mac_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_speeds_rpm=VALUES(disk_speeds_rpm), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), printer_sn=VALUES(printer_sn), office_version=VALUES(office_version), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_disco=VALUES(alerta_disco), alerta_uptime=VALUES(alerta_uptime), alerta_nombre_duplicado=VALUES(alerta_nombre_duplicado), is_active=1, full_json_data=VALUES(full_json_data), telemetry_snapshot=VALUES(telemetry_snapshot),
+        fuero=VALUES(fuero), os_name=VALUES(os_name), ip_address=VALUES(ip_address), mac_address=VALUES(mac_address), last_user=VALUES(last_user), last_report=VALUES(last_report), ram_detalles=VALUES(ram_detalles), disk_speeds_rpm=VALUES(disk_speeds_rpm), monitors=VALUES(monitors), printer_model=VALUES(printer_model), printer_port=VALUES(printer_port), printer_sn=VALUES(printer_sn), office_version=VALUES(office_version), ping_ms=VALUES(ping_ms), ping_loss_pct=VALUES(ping_loss_pct), alerta_ram_baja=VALUES(alerta_ram_baja), alerta_sin_impresora=VALUES(alerta_sin_impresora), alerta_impresora_red=VALUES(alerta_impresora_red), alerta_uptime=VALUES(alerta_uptime), alerta_nombre_duplicado=VALUES(alerta_nombre_duplicado), is_active=1, full_json_data=VALUES(full_json_data), telemetry_snapshot=VALUES(telemetry_snapshot),
         processor = IF(validation_status = 'sin_gemelo' OR processor IS NULL OR processor = '' OR processor = 'N/A', VALUES(processor), processor),
         ram_gb = IF(validation_status = 'sin_gemelo' OR ram_gb IS NULL OR ram_gb = 0, VALUES(ram_gb), ram_gb),
         disk_models = IF(validation_status = 'sin_gemelo' OR disk_models IS NULL OR disk_models = '' OR disk_models = 'N/A', VALUES(disk_models), disk_models),
@@ -328,7 +312,7 @@ def process_inventory_data(data):
     """
     
     with get_db_connection() as conn:
-        conn.execute(sql, (pc_name, fuero_detectado, os_name, processor, ram_gb, ip_address, mac_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, office_version, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_disco, alerta_uptime, alerta_nombre_duplicado, full_json, full_json))
+        conn.execute(sql, (pc_name, fuero_detectado, os_name, processor, ram_gb, ip_address, mac_address, last_user, last_report, ram_detalles, disk_models, disk_speeds_rpm, motherboard_model, monitors, printer_model, printer_port, printer_sn, office_version, ping_ms, ping_loss_pct, alerta_ram_baja, alerta_sin_impresora, alerta_impresora_red, alerta_uptime, alerta_nombre_duplicado, full_json, full_json))
         
         # Sincronización Total: El servidor es un reflejo del script de la PC
         # 1. Limpiamos todas las asignaciones previas para este equipo

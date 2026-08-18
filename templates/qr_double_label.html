@@ -124,7 +124,7 @@
 
             <div class="d-flex gap-2 align-items-center">
                 <div>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code {{ pc_name }}">
+                    <img src="{{ url_for('setup.qr_code_image', data=qr_url, size=150) }}" class="qr-img" alt="QR Code {{ pc_name }}">
                 </div>
                 
                 <div class="flex-grow-1 min-w-0">
@@ -170,7 +170,7 @@
 
                 <div class="d-flex gap-2 align-items-center">
                     <div>
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code Monitor">
+                        <img src="{{ url_for('setup.qr_code_image', data=qr_url, size=150) }}" class="qr-img" alt="QR Code Monitor">
                     </div>
                     <div class="flex-grow-1 min-w-0">
                         <div class="font-mono fw-bold text-dark mb-1" style="font-size: 0.85rem;">{{ pc_name }}</div>
@@ -205,7 +205,7 @@
 
                 <div class="d-flex gap-2 align-items-center">
                     <div>
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img" alt="QR Code Monitor">
+                        <img src="{{ url_for('setup.qr_code_image', data=qr_url, size=150) }}" class="qr-img" alt="QR Code Monitor">
                     </div>
                     <div class="flex-grow-1 min-w-0">
                         <div class="font-mono fw-bold text-dark mb-1" style="font-size: 0.85rem;">{{ pc_name }}</div>

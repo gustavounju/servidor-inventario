@@ -14,22 +14,26 @@ class _Result:
         self._row = row
 
     def fetchone(self):
+        if isinstance(self._row, list):
+            return self._row[0] if self._row else None
         return self._row
 
     def fetchall(self):
+        if isinstance(self._row, list):
+            return list(self._row)
         return self._row or []
 
 
 class _ValidationConnection:
-    def __init__(self, assigned_component, pc_data, build_order_item=None):
-        self.assigned_component = assigned_component
+    def __init__(self, assigned_components, pc_data, build_order_item=None):
+        self.assigned_components = assigned_components
         self.pc_data = pc_data
         self.build_order_item = build_order_item
 
     def execute(self, query, params=None):
         normalized = " ".join(str(query).split())
         if "FROM components" in normalized:
-            return _Result(self.assigned_component)
+            return _Result(self.assigned_components)
         if "FROM build_order_items" in normalized:
             return _Result(self.build_order_item)
         if "FROM pcs" in normalized:
@@ -43,12 +47,14 @@ def test_repeated_report_keeps_validated_twin_validated():
         "Motherboard_Model": "ASUS PRIME H510M",
     }
     conn = _ValidationConnection(
-        assigned_component={
-            "id": 8,
-            "component_type": "Procesador",
-            "brand_model": "Intel Core i5-10400",
-            "serial_number": "CPU-008",
-        },
+        assigned_components=[
+            {
+                "id": 8,
+                "component_type": "Procesador",
+                "brand_model": "Intel Core i5-10400",
+                "serial_number": "CPU-008",
+            }
+        ],
         pc_data={
             "processor": "Intel Core i5-10400",
             "motherboard_model": "ASUS PRIME H510M",
@@ -73,6 +79,77 @@ def test_unexpected_validation_error_does_not_erase_existing_valid_state():
             raise RuntimeError("fallo transitorio")
 
     assert compute_validation_status("PC-VALIDADA", _FailingConnection()) == "validado"
+
+
+def test_validation_detects_storage_mismatch_even_when_cpu_matches():
+    telemetry = {
+        "Sistema": {"Procesador": "Intel Core i5-10400", "RAM (GB)": 16},
+        "Motherboard_Model": "ASUS PRIME H510M",
+        "Disk_Models": "KINGSTON SA400S37240G (224GB) [SN: SSD-001]",
+    }
+    conn = _ValidationConnection(
+        assigned_components=[
+            {
+                "id": 8,
+                "component_type": "Procesador",
+                "brand_model": "Intel Core i5-10400",
+                "serial_number": "CPU-008",
+            },
+            {
+                "id": 9,
+                "component_type": "Disco Rígido / SSD",
+                "brand_model": "WD Blue 1TB",
+                "serial_number": "SSD-999",
+            },
+        ],
+        pc_data={
+            "processor": "Intel Core i5-10400",
+            "motherboard_model": "ASUS PRIME H510M",
+            "ram_gb": 16,
+            "disk_models": "KINGSTON SA400S37240G (224GB) [SN: SSD-001]",
+            "last_report": "2026-08-14 12:00:00",
+            "telemetry_snapshot": json.dumps(telemetry),
+            "full_json_data": None,
+            "validation_status": "validado",
+        },
+    )
+
+    assert compute_validation_status("PC-CON-DISCO-CRUZADO", conn) == "discrepancia"
+
+
+def test_validation_uses_ram_components_instead_of_only_pc_ram_field():
+    telemetry = {
+        "Sistema": {"Procesador": "Intel Core i5-10400", "RAM (GB)": 16},
+        "Motherboard_Model": "ASUS PRIME H510M",
+    }
+    conn = _ValidationConnection(
+        assigned_components=[
+            {
+                "id": 8,
+                "component_type": "Procesador",
+                "brand_model": "Intel Core i5-10400",
+                "serial_number": "CPU-008",
+            },
+            {
+                "id": 10,
+                "component_type": "Memoria RAM",
+                "brand_model": "Kingston DDR4 8GB",
+                "serial_number": "RAM-008",
+            },
+        ],
+        pc_data={
+            "processor": "Intel Core i5-10400",
+            "motherboard_model": "ASUS PRIME H510M",
+            "ram_gb": 16,
+            "disk_models": "Kingston 480GB",
+            "last_report": "2026-08-14 12:00:00",
+            "telemetry_snapshot": json.dumps(telemetry),
+            "full_json_data": None,
+            "validation_status": "validado",
+        },
+    )
+
+    assert compute_validation_status("PC-CON-RAM-CRUZADA", conn) == "discrepancia"
 
 
 def test_build_order_action_only_creates_when_there_is_no_twin():

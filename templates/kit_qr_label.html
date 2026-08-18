@@ -88,7 +88,7 @@
 
             <div class="d-flex gap-3 align-items-start">
                 <div class="text-center">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ qr_url | urlencode }}" class="qr-img mb-1" alt="QR Code">
+                    <img src="{{ url_for('setup.qr_code_image', data=qr_url, size=150) }}" class="qr-img mb-1" alt="QR Code">
                     <div class="text-muted font-mono" style="font-size: 0.65rem;">ESCANEAR CON CELULAR</div>
                 </div>
                 <div class="flex-grow-1">

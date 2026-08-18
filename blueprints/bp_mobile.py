@@ -4,8 +4,10 @@ import os
 import logging
 from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
+from services.local_voice import parse_voice_command_locally
 from services.push_notifications import notify_all_technicians
 from utils.auth import current_technician_identity, current_user, list_technician_users
+from utils.network_policy import local_audio_upload_enabled
 from blueprints.bp_tasks import _attach_task_actions_bulk
 # from voice_processor import process_voice_command # Ensure it handles import cleanly if missing
 
@@ -264,7 +266,7 @@ def api_mobile_parse_voice():
             return jsonify({"status": "success", "data": result})
         except Exception as e:
             logging.error(f"Error in api_mobile_parse_voice: {e}")
-            return jsonify({"status": "success", "data": {"descripcion": text, "solicitante": "", "error_voice": str(e)}})
+            return jsonify({"status": "success", "data": parse_voice_command_locally(text)})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 @bp_mobile.route("/api/mobile/poll_messages", methods=["GET"])
@@ -346,7 +348,13 @@ def api_inbox():
 
 @bp_mobile.route("/api/mobile/voice-upload", methods=["POST"])
 def voice_upload():
-    """Recibe audio, lo guarda temporalmente y usa Gemini para extraer descripcion/solicitante."""
+    """Recibe audio solo si existe un transcriptor local habilitado."""
+    if not local_audio_upload_enabled():
+        return jsonify({
+            "status": "error",
+            "message": "La carga de audio está deshabilitada en modo local. Usa texto o habilita un transcriptor local."
+        }), 503
+
     if 'audio' not in request.files:
         return jsonify({"status": "error", "message": "No audio file"}), 400
     
@@ -366,7 +374,6 @@ def voice_upload():
     try:
         audio_file.save(temp_path)
         from voice_processor import process_voice_command
-        # Gemini multimodal: escucha y entiende
         result = process_voice_command(audio_path=temp_path)
         return jsonify({"status": "success", "result": result})
     except Exception as e:

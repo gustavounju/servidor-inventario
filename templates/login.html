@@ -47,12 +47,8 @@
         .landing-container { display: none; }
         .login-modal-wrapper { display: flex; width: 100%; justify-content: center; }
         .close-login-modal { display: none; }
-        .taller-title-desktop { display: none !important; }
-        .taller-title-mobile { display: inline-block !important; }
 
         @media (min-width: 769px) {
-            .taller-title-desktop { display: inline-block !important; }
-            .taller-title-mobile { display: none !important; }
             .landing-container {
                 display: flex;
                 flex-direction: column;
@@ -282,26 +278,6 @@
             color: var(--muted);
             font-size: 0.88rem;
             line-height: 1.5;
-        }
-
-        .access-preview {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .access-preview span {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 10px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            color: #fff;
-            font-size: 0.78rem;
-            font-weight: 700;
         }
 
         .script-section {
@@ -700,12 +676,6 @@
     {% endif %}
 
     <div class="landing-container">
-        {% if efemeride_actual %}
-        <div style="margin-bottom: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; animation: pulse 2s infinite;" title="{{ efemeride_actual.descripcion }}">
-            <div style="font-size: 70px; line-height: 1; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));">{{ efemeride_actual.icono }}</div>
-            <span style="font-size: 0.95rem; font-weight: 700; color: #fcd34d; letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">{{ efemeride_actual.titulo }}</span>
-        </div>
-        {% endif %}
         <h1 style="font-size: 3.5rem; margin-bottom: 8px;">Departamento de Informática</h1>
         <p style="font-size: 1.4rem; font-weight: 500; opacity: 1; margin-bottom: 40px;">Centro Judicial de San Pedro de Jujuy</p>
         
@@ -727,21 +697,7 @@
         <div class="card" style="position: relative;">
             <button class="close-login-modal" onclick="document.getElementById('loginWrapper').classList.remove('show')" title="Cerrar"><i class="bi bi-x"></i></button>
             <div class="hero">
-            <h1 style="display: flex; align-items: center; gap: 8px;">
-                <span class="taller-title-desktop">Taller SP 🇦🇷</span>
-                <span class="taller-title-mobile">Taller Movil SP 🇦🇷</span>
-            </h1>
-            {% if efemeride_actual %}
-            <p style="color: #fcd34d; font-weight: bold; margin-bottom: 8px; font-size: 0.95rem;" title="{{ efemeride_actual.descripcion }}">{{ efemeride_actual.titulo }} {{ efemeride_actual.icono }}</p>
-            {% endif %}
-            <p>Acceso administrativo para dashboard, infraestructura, stock y panel movil.</p>
-            <p style="margin-top:8px;font-size:0.85rem;opacity:0.85;">Modo de autenticacion: {{ auth_mode_label }}</p>
-            <div class="access-preview">
-                <span>Dashboard</span>
-                <span>Infra</span>
-                <span>Reportes</span>
-                <span>Mobile</span>
-            </div>
+            <h1>Taller SP</h1>
         </div>
         {% if maintenance_mode %}
         <div style="margin: 0 28px; margin-top: 22px; padding: 12px 14px; border-radius: 12px; background: #fffbeb; color: #b45309; font-size: 0.92rem; font-weight: 600; border: 1px solid #fde68a;">

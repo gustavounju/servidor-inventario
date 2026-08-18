@@ -1,4 +1,4 @@
-from flask import Blueprint, request, send_file, render_template, redirect, url_for
+from flask import Blueprint, request, send_file, render_template, redirect, url_for, abort
 from database.db_core import get_db_connection
 from io import BytesIO
 import os
@@ -57,6 +57,31 @@ def _get_secure_launcher_command(current_base_url, current_fallback_url):
         return cmd
     except Exception as e:
         return f"Write-Host 'Error interno de servidor generando comando: {e}' -ForegroundColor Red"
+
+
+@bp_setup.route("/qr-code")
+def qr_code_image():
+    payload = (request.args.get("data") or "").strip()
+    size = max(80, min(int(request.args.get("size", "180")), 512))
+    if not payload:
+        abort(400)
+
+    try:
+        import qrcode
+    except ImportError as exc:
+        return f"Dependencia faltante para QR local: {exc}", 500
+
+    qr = qrcode.QRCode(
+        box_size=max(2, size // 32),
+        border=2,
+    )
+    qr.add_data(payload)
+    qr.make(fit=True)
+    image = qr.make_image(fill_color="black", back_color="white")
+    output = BytesIO()
+    image.save(output, format="PNG")
+    output.seek(0)
+    return send_file(output, mimetype="image/png", max_age=31536000)
 
 @bp_setup.route("/script")
 def get_script():

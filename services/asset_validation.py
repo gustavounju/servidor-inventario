@@ -97,6 +97,67 @@ def _hw_tokens_match(a: str, b: str) -> bool:
     return na == nb or na in nb or nb in na
 
 
+def _normalize_component_type(component_type: str) -> str:
+    return (component_type or "").strip().lower()
+
+
+def _extract_ram_total_gb(components, fallback_ram=None) -> float:
+    total_stock_gb = 0.0
+    for component in components:
+        raw_value = f"{component.get('brand_model') or ''} {component.get('component_type') or ''}"
+        match = re.search(r"(\d+(?:\.\d+)?)\s*GB", raw_value, re.IGNORECASE)
+        if match:
+            total_stock_gb += float(match.group(1))
+    if total_stock_gb > 0:
+        return total_stock_gb
+    try:
+        return float(fallback_ram or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _extract_telemetry_ram_gb(script_ram) -> float:
+    match = re.search(r"[\d.]+", str(script_ram or ""))
+    return float(match.group()) if match else 0.0
+
+
+def _ram_matches(components, script_ram, fallback_ram=None) -> bool:
+    total_stock_gb = _extract_ram_total_gb(components, fallback_ram=fallback_ram)
+    telem_gb = _extract_telemetry_ram_gb(script_ram)
+    if total_stock_gb <= 0 or telem_gb <= 0:
+        return False
+
+    diff = abs(total_stock_gb - telem_gb)
+    if diff <= 2.25 or round(telem_gb) == round(total_stock_gb) or int(round(telem_gb)) == int(total_stock_gb):
+        return True
+
+    for tier in [2, 4, 8, 16, 32, 64, 128]:
+        if telem_gb <= tier and (tier - telem_gb) <= (tier * 0.35) and total_stock_gb == tier:
+            return True
+    return False
+
+
+def _split_hardware_entries(raw_value: str):
+    return [part.strip() for part in str(raw_value or "").split("|") if part.strip()]
+
+
+def _storage_matches(components, script_disks, fallback_disks=None) -> bool:
+    registered_entries = []
+    if components:
+        registered_entries = [str(component.get("brand_model") or "").strip() for component in components if str(component.get("brand_model") or "").strip()]
+    elif fallback_disks:
+        registered_entries = _split_hardware_entries(filter_ignore_devices(fallback_disks))
+
+    telemetry_entries = _split_hardware_entries(filter_ignore_devices(script_disks))
+    if not registered_entries or not telemetry_entries:
+        return False
+
+    return (
+        all(any(_hw_tokens_match(reg_entry, telemetry_entry) for telemetry_entry in telemetry_entries) for reg_entry in registered_entries)
+        and all(any(_hw_tokens_match(telemetry_entry, reg_entry) for reg_entry in registered_entries) for telemetry_entry in telemetry_entries)
+    )
+
+
 def resolve_effective_validation_status(
     validation_status: str,
     has_official_components=False,
@@ -151,24 +212,19 @@ def compute_validation_status(pc_name: str, conn) -> str:
     """
     try:
         # 1. ¿Hay algún activo patrimonial asignado a esta PC (en components o build_orders)?
-        assigned_comp = conn.execute(
+        assigned_components = conn.execute(
             """
             SELECT id, component_type, brand_model, serial_number
             FROM components
             WHERE LOWER(TRIM(assigned_pc)) = LOWER(TRIM(%s))
               AND status NOT IN ('Retirado', 'Scrap')
               AND (lifecycle_status IS NULL OR lifecycle_status NOT IN ('retirado', 'scrap'))
-            ORDER BY CASE
-                WHEN LOWER(TRIM(component_type)) IN ('procesador', 'microprocesador', 'cpu') THEN 0
-                WHEN LOWER(TRIM(component_type)) IN ('placa madre', 'motherboard') THEN 1
-                ELSE 2
-            END
-            LIMIT 1
             """,
             (pc_name,)
-        ).fetchone()
+        ).fetchall()
+        assigned_components = [component for component in assigned_components if not is_ignored_storage_component(component)]
 
-        if not assigned_comp:
+        if not assigned_components:
             assigned_bo = conn.execute(
                 """
                 SELECT boi.id
@@ -191,7 +247,7 @@ def compute_validation_status(pc_name: str, conn) -> str:
 
         if not pc_data or not pc_data.get("last_report"):
             # Activo asignado pero el script no corrió aún
-            return "pendiente"
+                return "pendiente"
 
         # 3. Obtener telemetría del script desde telemetry_snapshot o full_json_data
         telemetry_raw = pc_data.get("telemetry_snapshot") or pc_data.get("full_json_data")
@@ -212,38 +268,49 @@ def compute_validation_status(pc_name: str, conn) -> str:
             except Exception:
                 pass
 
-        # Solo comparar un activo con la telemetría de su mismo tipo. Antes se
-        # intentaba leer una variable inexistente (`cpu_asset`) y cualquier error
-        # degradaba un gemelo validado a `sin_gemelo`.
-        if assigned_comp:
-            asset_model = assigned_comp.get("brand_model") or ""
-            asset_type = (assigned_comp.get("component_type") or "").strip().lower()
-            comparable_value = None
-            if asset_type in ("procesador", "microprocesador", "cpu"):
-                comparable_value = script_processor
-            elif asset_type in ("placa madre", "motherboard"):
-                comparable_value = script_motherboard
+        # 4. Comparar contra el set patrimonial relevante, no contra una sola fila.
+        comp_by_type = {}
+        for component in assigned_components:
+            comp_by_type.setdefault(_normalize_component_type(component.get("component_type")), []).append(component)
 
-            if (comparable_value and comparable_value not in ("N/A", "") and
-                    asset_model and not _hw_tokens_match(asset_model, comparable_value)):
+        cpu_comps = comp_by_type.get("procesador", []) + comp_by_type.get("microprocesador", []) + comp_by_type.get("cpu", []) + comp_by_type.get("micro", [])
+        if script_processor and script_processor not in ("N/A", "") and cpu_comps:
+            if not all(_hw_tokens_match(component.get("brand_model"), script_processor) for component in cpu_comps):
                 return "discrepancia"
 
-        # 4. Verificar RAM registrada vs telemetría si existe registro previo
-        reg_ram = pc_data.get("ram_gb")
-        if reg_ram and float(reg_ram) > 0 and script_ram and float(script_ram) > 0:
-            try:
-                r_ram = float(reg_ram)
-                s_ram = float(script_ram)
-                diff = abs(r_ram - s_ram)
-                is_apu_reserved = False
-                for tier in [2, 4, 8, 16, 32, 64, 128]:
-                    if s_ram <= tier and (tier - s_ram) <= (tier * 0.35) and r_ram == tier:
-                        is_apu_reserved = True
-                        break
-                if diff > 2.25 and not is_apu_reserved:
+        mb_comps = comp_by_type.get("motherboard", []) + comp_by_type.get("placa madre", []) + comp_by_type.get("mother", []) + comp_by_type.get("placa", [])
+        if script_motherboard and script_motherboard not in ("N/A", "") and mb_comps:
+            if not all(_hw_tokens_match(component.get("brand_model"), script_motherboard) for component in mb_comps):
+                return "discrepancia"
+
+        ram_comps = comp_by_type.get("memoria ram", []) + comp_by_type.get("ram", []) + comp_by_type.get("memoria", [])
+        if ram_comps:
+            if not _ram_matches(ram_comps, script_ram, fallback_ram=None):
+                return "discrepancia"
+        else:
+            reg_ram = pc_data.get("ram_gb")
+            if reg_ram and float(reg_ram) > 0 and script_ram and float(script_ram) > 0:
+                if not _ram_matches([], script_ram, fallback_ram=reg_ram):
                     return "discrepancia"
-            except Exception:
-                pass
+
+        disk_comps = (
+            comp_by_type.get("disco rígido", [])
+            + comp_by_type.get("disco rigido", [])
+            + comp_by_type.get("disco ssd", [])
+            + comp_by_type.get("ssd", [])
+            + comp_by_type.get("disco", [])
+            + comp_by_type.get("almacenamiento", [])
+            + comp_by_type.get("disco rígido / ssd", [])
+            + comp_by_type.get("disco rigido / ssd", [])
+        )
+        if script_disks and script_disks not in ("Sin reporte de script", "N/A"):
+            if disk_comps:
+                if not _storage_matches(disk_comps, script_disks):
+                    return "discrepancia"
+            else:
+                fallback_disks = pc_data.get("disk_models")
+                if fallback_disks and not _storage_matches([], script_disks, fallback_disks=fallback_disks):
+                    return "discrepancia"
 
         return "validado"
 

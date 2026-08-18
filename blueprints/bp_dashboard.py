@@ -14,6 +14,7 @@ from services.pc_details_service import get_pc_detail_context
 from services.asset_validation import is_ignored_storage_component
 from services.fuero_service import get_fuero_summary_data, get_fuero_detail_data, recalculate_all_pc_fueros
 from utils.auth import is_authenticated, login_required, permission_required, current_technician_identity, has_permission, current_username
+from utils.component_status import deployed_component_state
 
 bp_dashboard = Blueprint('dashboard', __name__)
 
@@ -705,14 +706,15 @@ def create_bo_from_telemetry(pc_name):
                     if existing:
                         comp_id = existing["id"]
                         clean_sn = existing.get("serial_number") or clean_sn
+                        deployed_status, deployed_lifecycle = deployed_component_state()
                         conn.execute(
                             """
                             UPDATE components 
-                            SET build_order_id = %s, assigned_pc = %s, status = 'Installed', assigned_user = %s, assigned_fuero = %s,
+                            SET build_order_id = %s, assigned_pc = %s, status = %s, lifecycle_status = %s, assigned_user = %s, assigned_fuero = %s,
                                 invoice_number = COALESCE(%s, invoice_number), oc_number = COALESCE(%s, oc_number)
                             WHERE id = %s
                             """,
-                            (bo_id, pc_name, final_user, final_fuero, item_inv, item_oc, comp_id)
+                            (bo_id, pc_name, deployed_status, deployed_lifecycle, final_user, final_fuero, item_inv, item_oc, comp_id)
                         )
 
                 # Componentes WMI sin serie (CPU/RAM) se reconocen por tipo y
@@ -742,12 +744,13 @@ def create_bo_from_telemetry(pc_name):
                     else:
                         from blueprints.bp_stock import generate_internal_serial
                         sn_to_insert = generate_internal_serial(c_type)
+                    deployed_status, deployed_lifecycle = deployed_component_state()
                     conn.execute(
                         """
-                        INSERT INTO components (serial_number, component_type, brand_model, status, assigned_pc, build_order_id, assigned_user, assigned_fuero, invoice_number, oc_number)
-                        VALUES (%s, %s, %s, 'Installed', %s, %s, %s, %s, %s, %s)
+                        INSERT INTO components (serial_number, component_type, brand_model, status, lifecycle_status, assigned_pc, build_order_id, assigned_user, assigned_fuero, invoice_number, oc_number)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """,
-                        (sn_to_insert, c_type, c_model, pc_name, bo_id, final_user, final_fuero, item_inv, item_oc)
+                        (sn_to_insert, c_type, c_model, deployed_status, deployed_lifecycle, pc_name, bo_id, final_user, final_fuero, item_inv, item_oc)
                     )
                     clean_sn = sn_to_insert
 

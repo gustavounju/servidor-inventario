@@ -17,6 +17,7 @@ pypdf
 pytesseract
 pdf2image
 Pillow
+qrcode
 DBUtils
 pytest
 pytest-flask

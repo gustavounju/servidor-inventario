@@ -166,10 +166,9 @@ def migrate_db_v9():
 
 
 def migrate_db_v10():
-    """Migración V10: Agregar columnas de alerta de salud a pcs."""
+    """Migración V10: Asegurar columna alerta_uptime en pcs."""
     print("Verificando migración de DB v10...")
     new_columns = {
-        "alerta_disco": "TINYINT(1) DEFAULT 0",
         "alerta_uptime": "TINYINT(1) DEFAULT 0"
     }
     with get_db_connection() as conn:
@@ -668,6 +667,8 @@ def run_all_migrations():
     migrate_db_v57()
     # Trazabilidad de ignorados Auto-ID
     migrate_db_v58()
+    # Limpieza de alerta_disco obsoleta
+    migrate_db_v59()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1596,3 +1597,23 @@ def migrate_db_v58():
             )
 
     print("Migración V58 verificada.")
+
+
+def migrate_db_v59():
+    """
+    Migración V59: Eliminar alerta_disco de pcs.
+
+    La alerta de disco quedó obsoleta en la operación actual y ya no debe
+    condicionar el dashboard ni persistirse como columna separada.
+    """
+    print("Verificando migración de DB v59 (eliminar alerta_disco)...")
+    with get_db_connection() as conn:
+        if not _table_exists(conn, "pcs"):
+            print("Migración V59: tabla pcs no encontrada. Skip.")
+            return
+
+        if _column_exists(conn, "pcs", "alerta_disco"):
+            print("Aplicando V59: eliminando columna alerta_disco de pcs...")
+            conn.execute("ALTER TABLE pcs DROP COLUMN alerta_disco")
+
+    print("Migración V59 verificada.")

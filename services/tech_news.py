@@ -2,6 +2,7 @@ import requests
 import xml.etree.ElementTree as ET
 import time
 import logging
+from utils.network_policy import allow_external_news, guard_outbound_url
 
 CACHE = {
     'data': None,
@@ -18,12 +19,16 @@ def get_latest_tech_news():
     """
     global CACHE
     now = time.time()
+
+    if not allow_external_news():
+        return []
     
     if CACHE['data'] and (now - CACHE['timestamp']) < CACHE_DURATION:
         return CACHE['data']
         
     try:
         url = "https://www.infobae.com/arc/outboundfeeds/rss/"
+        guard_outbound_url(url, purpose="news")
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }

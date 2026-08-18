@@ -150,7 +150,7 @@
 </div>
 
 <!-- Cargar librería QRCode.js para generar códigos al vuelo -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/qrcodejs/qrcode.min.js') }}"></script>
 <script>
     function submitNewSwitch() {
         const form = document.getElementById('addSwitchForm');

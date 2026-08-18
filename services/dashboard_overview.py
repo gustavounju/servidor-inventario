@@ -295,11 +295,11 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             elif alerta == "red":
                 filter_sql += " AND p.alerta_impresora_red = 1"
             elif alerta == "critica":
-                filter_sql += " AND (p.alerta_ram_baja + IF(p.alerta_sin_impresora = 1 AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + p.alerta_disco + p.alerta_uptime + p.alerta_nombre_duplicado) >= 2"
+                filter_sql += " AND (p.alerta_ram_baja + IF(p.alerta_sin_impresora = 1 AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + p.alerta_uptime + p.alerta_nombre_duplicado) >= 2"
             elif alerta == "media":
-                filter_sql += " AND (p.alerta_ram_baja + IF(p.alerta_sin_impresora = 1 AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + p.alerta_disco + p.alerta_uptime + p.alerta_nombre_duplicado) = 1"
+                filter_sql += " AND (p.alerta_ram_baja + IF(p.alerta_sin_impresora = 1 AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + p.alerta_uptime + p.alerta_nombre_duplicado) = 1"
             elif alerta == "ninguna":
-                filter_sql += " AND p.alerta_ram_baja = 0 AND IF(p.alerta_sin_impresora = 1 AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) = 0 AND p.alerta_disco = 0 AND p.alerta_uptime = 0 AND p.alerta_nombre_duplicado = 0"
+                filter_sql += " AND p.alerta_ram_baja = 0 AND IF(p.alerta_sin_impresora = 1 AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) = 0 AND p.alerta_uptime = 0 AND p.alerta_nombre_duplicado = 0"
             elif alerta == "sin_impresora_inventario":
                 filter_sql += " AND (p.printer_model IS NULL OR p.printer_model = '' OR p.printer_model = 'N/A' OR UPPER(p.printer_model) IN ('NONE', '-') OR UPPER(p.printer_model) LIKE '%%SIN IMPRESORA%%') AND p.pc_name NOT IN (SELECT pc_name FROM pc_network_printers)"
             elif alerta == "pat_validados":
@@ -529,27 +529,6 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                         pc.get("disk_speeds_rpm"),
                     )
 
-                    # Calcular días sin último reporte del script
-                    lr = pc.get('last_report')
-                    lr_dt = None
-                    if lr:
-                        if isinstance(lr, str):
-                            for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d'):
-                                try:
-                                    lr_dt = dt.strptime(lr, fmt)
-                                    break
-                                except ValueError:
-                                    pass
-                        elif hasattr(lr, 'timetuple'):
-                            lr_dt = lr
-                    if lr_dt:
-                        days_diff = (dt.now() - lr_dt).days
-                        pc['dias_sin_reporte'] = days_diff
-                        pc['sin_reporte_30d'] = days_diff > 30
-                    else:
-                        pc['dias_sin_reporte'] = None
-                        pc['sin_reporte_30d'] = False
-
             if estado != "False":
                 fuero_tree = _build_fuero_tree([pc for pc in pcs_data if not _is_auxiliary_pc(pc)])
 
@@ -603,21 +582,21 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 AND pc_name NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
                 AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'
                 AND alerta_ram_baja = 0 AND IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) = 0
-                AND alerta_disco = 0 AND alerta_uptime = 0 AND alerta_nombre_duplicado = 0
+                AND alerta_uptime = 0 AND alerta_nombre_duplicado = 0
             """).fetchone()["c"]
             kpi_alerta_media = conn.execute("""
                 SELECT COUNT(*) as c FROM pcs
                 WHERE is_active = 1
                 AND pc_name NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
                 AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'
-                AND (alerta_ram_baja + IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + alerta_disco + alerta_uptime + alerta_nombre_duplicado) = 1
+                AND (alerta_ram_baja + IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + alerta_uptime + alerta_nombre_duplicado) = 1
             """).fetchone()["c"]
             kpi_criticas = conn.execute("""
                 SELECT COUNT(*) as c FROM pcs
                 WHERE is_active = 1
                 AND pc_name NOT IN ('PC GENERICA', 'INFRAESTRUCTURA', 'PC-GENERICA')
                 AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'
-                AND (alerta_ram_baja + IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + alerta_disco + alerta_uptime + alerta_nombre_duplicado) >= 2
+                AND (alerta_ram_baja + IF(alerta_sin_impresora = 1 AND pc_name NOT IN (SELECT pc_name FROM pc_network_printers), 1, 0) + alerta_uptime + alerta_nombre_duplicado) >= 2
             """).fetchone()["c"]
             kpi_sin_impresora_inventario = conn.execute("""
                 SELECT COUNT(*) as c FROM pcs

@@ -12,10 +12,7 @@
         if (pref !== 'light') document.documentElement.setAttribute('data-theme', 'dark');
       })();
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
 
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
@@ -55,7 +52,48 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+        .dashboard-radar--slim .health-radar {
+            gap: 10px;
+            grid-template-columns: minmax(180px, 1fr) auto;
+            padding: 0;
+            border-radius: 0;
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+        .dashboard-radar--slim .health-radar__bar {
+            height: 6px;
+            border-radius: 999px;
+        }
+        .dashboard-radar--slim .health-radar__legend {
+            gap: 8px;
+        }
+        .dashboard-radar--slim .health-radar__legend-item {
+            gap: 5px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .dashboard-radar--slim .health-radar__legend-item .font-mono {
+            font-family: var(--font-body);
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+        .dashboard-radar--slim .health-radar__legend-dot {
+            width: 6px;
+            height: 6px;
+        }
+        @media (max-width: 768px) {
+            .dashboard-radar--slim .health-radar {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 0;
+            }
+            .dashboard-radar--slim .health-radar__legend {
+                gap: 6px 10px;
+            }
+        }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}">
 </head>
 <!-- FIN BLOQUE 1 -->
 
@@ -89,12 +127,8 @@
         {% if pct_stable < 0 %}{% set pct_stable = 0 %}{% endif %}
 
         <!-- MIDNIGHT RADAR MASTHEAD -->
-        <section class="radar-masthead dashboard-radar" aria-labelledby="fleetHealthTitle">
+        <section class="radar-masthead dashboard-radar dashboard-radar--slim" aria-label="Resumen de salud de flota">
             <div class="health-radar">
-                <div class="health-radar__labels">
-                    <span id="fleetHealthTitle">Estado de flota</span>
-                    <strong>{{ kpi_total_activas }} activos</strong>
-                </div>
                 <div class="health-radar__bar" role="img" aria-label="Flota: {{ pct_stable | round(1) }} por ciento estable, {{ pct_warn | round(1) }} por ciento en advertencia y {{ pct_crit | round(1) }} por ciento en estado crítico">
                     <div class="health-radar__segment health-radar__segment--stable" style="width: {{ pct_stable }}%;" title="Estable: {{ kpi_total_activas - kpi_criticas - kpi_alerta_media }}"></div>
                     <div class="health-radar__segment health-radar__segment--warning" style="width: {{ pct_warn }}%;" title="Advertencia: {{ kpi_alerta_media }}"></div>

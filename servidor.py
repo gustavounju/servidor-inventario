@@ -96,6 +96,8 @@ from blueprints.bp_maps import bp_maps
 from blueprints.bp_maintenance import bp_maintenance
 from blueprints.bp_external_api import bp_external_api
 from utils.auth import allowed_module_links, auth_guard, auth_mode_label, available_roles, csrf_guard, current_user, ensure_default_admin, generate_csrf_token, has_permission, is_authenticated, role_label
+from utils.crypto import get_required_flask_secret_key
+from utils.network_policy import enforce_browser_local_only, install_outbound_guards
 from utils.runtime_urls import get_public_app_base_url, get_public_script_fallback_url
 from blueprints.bp_setup import _get_secure_launcher_command
 
@@ -103,9 +105,7 @@ from blueprints.bp_setup import _get_secure_launcher_command
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000 # 1 year cache for static files
-app.secret_key = os.environ.get('FLASK_SECRET_KEY') or os.environ.get('SECRET_KEY') or 'servidor_inventario_secret_key_prod_2026'
-if not os.environ.get('FLASK_SECRET_KEY'):
-    logger.warning("FLASK_SECRET_KEY no está definida en el .env; usando clave secreta por defecto.")
+app.secret_key = get_required_flask_secret_key()
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -115,6 +115,27 @@ app.config['SESSION_COOKIE_SECURE'] = _is_linux or _secure_env
 from datetime import timedelta
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+install_outbound_guards()
+
+
+@app.after_request
+def apply_local_only_csp(response):
+    if enforce_browser_local_only():
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "base-uri 'self'; "
+            "object-src 'none'; "
+            "frame-ancestors 'self'; "
+            "img-src 'self' data: blob:; "
+            "font-src 'self' data:; "
+            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; "
+            "connect-src 'self'; "
+            "media-src 'self' blob:; "
+            "worker-src 'self' blob:; "
+            "form-action 'self';"
+        )
+    return response
 
 from utils.extensions import limiter
 limiter.init_app(app)

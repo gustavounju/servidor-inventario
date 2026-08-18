@@ -4,6 +4,7 @@ import sys
 
 # Asegurar que el directorio raíz está en el path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+os.environ.setdefault("FLASK_SECRET_KEY", "test-flask-secret-key")
 
 from servidor import app as flask_app
 

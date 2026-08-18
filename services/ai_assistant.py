@@ -5,6 +5,7 @@ import os
 import re
 import unicodedata
 from dotenv import load_dotenv
+from utils.network_policy import allow_external_ai
 
 # Instancia global del clasificador local Naive Bayes
 ai_classifier = SimpleNaiveBayes()
@@ -133,6 +134,8 @@ def _normalize_category(category):
 
 def _get_groq_client():
     global _groq_client
+    if not allow_external_ai():
+        return None
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         return None

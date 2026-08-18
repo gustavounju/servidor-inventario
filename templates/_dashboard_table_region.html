@@ -12,26 +12,26 @@
                     <tr>
                         <th>
                             <a href="{{ url_for('dashboard.dashboard', sort_by='pc_name', order='desc' if sort_by == 'pc_name' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
-                                class="text-dark text-decoration-none">
-                                Nombre PC {% if sort_by == 'pc_name' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                                class="inventory-sort-link">
+                                <span>Nombre PC</span>{% if sort_by == 'pc_name' %}<span class="inventory-sort-link__arrow">{{ '↑' if order == 'asc' else '↓' }}</span>{% endif %}
                             </a>
                         </th>
                         <th>
                             <a href="{{ url_for('dashboard.dashboard', sort_by='last_user', order='desc' if sort_by == 'last_user' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
-                                class="text-dark text-decoration-none">
-                                Usuario {% if sort_by == 'last_user' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                                class="inventory-sort-link">
+                                <span>Usuario</span>{% if sort_by == 'last_user' %}<span class="inventory-sort-link__arrow">{{ '↑' if order == 'asc' else '↓' }}</span>{% endif %}
                             </a>
                         </th>
                         <th>
                             <a href="{{ url_for('dashboard.dashboard', sort_by='processor', order='desc' if sort_by == 'processor' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
-                                class="text-dark text-decoration-none">
-                                Hardware {% if sort_by == 'processor' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                                class="inventory-sort-link">
+                                <span>Hardware</span>{% if sort_by == 'processor' %}<span class="inventory-sort-link__arrow">{{ '↑' if order == 'asc' else '↓' }}</span>{% endif %}
                             </a>
                         </th>
                         <th>
                             <a href="{{ url_for('dashboard.dashboard', sort_by='printer_model', order='desc' if sort_by == 'printer_model' and order == 'asc' else 'asc', q=q, estado=estado, alerta=alerta, os=os_param, filter_tasks=filter_tasks, page=1) }}"
-                                class="text-dark text-decoration-none">
-                                Red / Impresión {% if sort_by == 'printer_model' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}
+                                class="inventory-sort-link">
+                                <span>Red / Impresión</span>{% if sort_by == 'printer_model' %}<span class="inventory-sort-link__arrow">{{ '↑' if order == 'asc' else '↓' }}</span>{% endif %}
                             </a>
                         </th>
                         <th class="text-center">Acciones</th>
@@ -41,17 +41,15 @@
                     {% for pc in pcs %}
                     {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or (pc.printer_model | upper) == 'NONE' or pc.printer_model == '-' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
                     {% set printer_alert_sin_impresora = pc.alerta_sin_impresora and printer_missing %}
-                    {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
+                    {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
                     {% set row_class = [] %}
                     {% set alert_reasons = [] %}
                     
                     {% if pc.alerta_ram_baja %}{% set _ = alert_reasons.append('Tiene menos de 8 GB de RAM. Puede estar lenta para uso diario.') %}{% endif %}
                     {% if printer_alert_sin_impresora %}{% set _ = alert_reasons.append('No se detectó una impresora instalada o asignada a esta PC.') %}{% endif %}
-                    {% if pc.alerta_disco %}{% set _ = alert_reasons.append('Revisar disco: puede tener poco espacio libre o un estado SMART no saludable.') %}{% endif %}
                     {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('La PC lleva más de 15 días encendida sin reiniciar. Conviene reiniciarla.') %}{% endif %}
                     {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Hay otra PC reportando el mismo nombre en la red.') %}{% endif %}
                     {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('Usa Windows 7. Es un sistema viejo y conviene planificar actualización.') %}{% endif %}
-                    {% if pc.sin_reporte_30d %}{% set _ = alert_reasons.append('Sin actividad hace más de 30 días: puede estar apagada o dada de baja.') %}{% endif %}
                     
                     {% set tooltip_text = "Estado: Saludable" if not alert_reasons else "Alertas detectadas:\n• " + alert_reasons|join('\n• ') %}
 
@@ -63,7 +61,6 @@
                     {% elif alerta_count == 1 or (pc.os_name and 'Windows 7' in pc.os_name) %}
                     {% set _ = row_class.append('tr-riesgo-medio') %}
                     {% endif %}
-                    {% if pc.sin_reporte_30d %}{% set _ = row_class.append('tr-sin-actividad') %}{% endif %}
                     <tr class="{{ ' '.join(row_class) }}" 
                         title="{{ tooltip_text }}"
                         data-alerta-ram="{{ pc.alerta_ram_baja | default(0) }}"
@@ -71,10 +68,9 @@
                         data-alerta-impresora-red="{{ pc.alerta_impresora_red | default(0) }}"
                         data-so="{{ pc.os_name | default('') }}"
                         data-estado="{% if pc.is_active == 0 %}baja{% else %}activa{% endif %}"
-                        data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}" style="cursor: pointer;"
+                        data-tareas-pendientes="{{ pc.tareas_pendientes or 0 }}"
                         onclick="if(!event.target.closest('a') && !event.target.closest('button')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
-                        <td
-                            style="white-space: normal; word-wrap: break-word; max-width: 140px; font-weight: 600; font-size: 0.85rem;">
+                        <td class="inventory-pc-cell">
                             <div class="inventory-pc-name d-flex align-items-start justify-content-between">
                                 <div class="flex-grow-1 overflow-hidden">
                                     <div class="text-truncate" title="{{ pc.pc_name }}">{{ pc.pc_name }}</div>
@@ -90,48 +86,36 @@
                                         <span class="inventory-mini-badge inventory-mini-badge--task">{{ pc.tareas_pendientes }}</span>
                                         {% endif %}
                                         {% if pc.validation_status == 'validado' %}
-                                        <span class="badge bg-success bg-opacity-25 text-success border border-success ms-1" style="font-size: 0.6rem; padding: 1px 4px;" title="Gemelo Digital: Hardware validado con activo patrimonial"><i class="bi bi-shield-check"></i> Validado</span>
+                                        <span class="inventory-validation-badge inventory-validation-badge--ok" title="Gemelo Digital: Hardware validado con activo patrimonial"><i class="bi bi-shield-check"></i> Validado</span>
                                         {% elif pc.validation_status == 'pendiente' %}
-                                        <span class="badge bg-warning bg-opacity-25 text-warning border border-warning ms-1" style="font-size: 0.6rem; padding: 1px 4px;" title="Gemelo Digital: Asignado, pendiente de sincronización del script"><i class="bi bi-clock"></i> Pendiente</span>
+                                        <span class="inventory-validation-badge inventory-validation-badge--pending" title="Gemelo Digital: Asignado, pendiente de sincronización del script"><i class="bi bi-clock"></i> Pendiente</span>
                                         {% elif pc.validation_status == 'discrepancia' %}
-                                        <span class="badge bg-danger bg-opacity-25 text-danger border border-danger ms-1" style="font-size: 0.6rem; padding: 1px 4px;" title="Gemelo Digital: Discrepancia detectada entre activo y reporte script"><i class="bi bi-exclamation-triangle"></i> Discrepancia</span>
+                                        <span class="inventory-validation-badge inventory-validation-badge--danger" title="Gemelo Digital: Discrepancia detectada entre activo y reporte script"><i class="bi bi-exclamation-triangle"></i> Discrepancia</span>
                                         {% else %}
-                                        <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary ms-1" style="font-size: 0.6rem; padding: 1px 4px;" title="Gemelo Digital: Sin activo patrimonial registrado"><i class="bi bi-question-circle"></i> Sin Gemelo</span>
+                                        <span class="inventory-validation-badge inventory-validation-badge--muted" title="Gemelo Digital: Sin activo patrimonial registrado"><i class="bi bi-question-circle"></i> Sin Gemelo</span>
                                         {% endif %}
                                     </div>
-                                    {% if pc.last_report %}
-                                    <div style="font-size:0.68rem;margin-top:3px;{% if pc.sin_reporte_30d %}color:#dc2626;font-weight:700;{% elif pc.dias_sin_reporte is not none and pc.dias_sin_reporte > 7 %}color:#d97706;{% else %}color:#9ca3af;{% endif %}">
-                                        <i class="bi bi-clock-history"></i>
-                                        {% if pc.sin_reporte_30d %}
-                                        <span title="Último reporte: {{ pc.last_report }}">⚠ {{ pc.dias_sin_reporte }}d sin actividad</span>
-                                        {% elif pc.dias_sin_reporte is not none %}
-                                        <span title="Último reporte: {{ pc.last_report }}">{{ pc.dias_sin_reporte }}d atrás</span>
-                                        {% endif %}
-                                    </div>
-                                    {% endif %}
                                 </div>
-                                <div class="d-flex flex-column align-items-end ms-1" style="min-width: 42px;">
+                                <div class="inventory-system-stack">
                                     {% if pc.os_name and 'Windows' in pc.os_name %}
-                                    <div class="position-relative mb-1" style="line-height: 1;">
+                                    <div class="inventory-os-chip {% if 'Windows 11' in pc.os_name %}inventory-os-chip--win11{% elif 'Windows 10' in pc.os_name %}inventory-os-chip--win10{% elif 'Windows 7' in pc.os_name %}inventory-os-chip--win7{% else %}inventory-os-chip--generic{% endif %}" title="SO: {{ pc.os_name }}">
                                         {% if 'Windows 11' in pc.os_name %}
-                                        <i class="bi bi-windows text-primary" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
-                                        <span class="badge bg-primary text-white p-0 px-1 position-absolute top-0 start-100 translate-middle" style="font-size: 0.45rem; border-radius: 3px;">11</span>
+                                        <i class="bi bi-windows"></i>
+                                        <span class="inventory-os-chip__version">11</span>
                                         {% elif 'Windows 10' in pc.os_name %}
-                                        <i class="bi bi-windows text-info" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
-                                        <span class="badge bg-info text-dark p-0 px-1 position-absolute top-0 start-100 translate-middle" style="font-size: 0.45rem; border-radius: 3px;">10</span>
+                                        <i class="bi bi-windows"></i>
+                                        <span class="inventory-os-chip__version">10</span>
                                         {% elif 'Windows 7' in pc.os_name %}
-                                        <i class="bi bi-windows text-danger" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
-                                        <span class="badge bg-danger text-white p-0 px-1 position-absolute top-0 start-100 translate-middle" style="font-size: 0.45rem; border-radius: 3px;">7</span>
+                                        <i class="bi bi-windows"></i>
+                                        <span class="inventory-os-chip__version">7</span>
                                         {% else %}
-                                        <i class="bi bi-windows text-secondary" style="font-size: 0.9rem;" title="SO: {{ pc.os_name }}"></i>
+                                        <i class="bi bi-windows"></i>
                                         {% endif %}
                                     </div>
                                     {% endif %}
 
                                     {% if pc.office_version and pc.office_version != 'No detectado' and pc.office_version != 'N/A' %}
-                                    <span class="badge bg-success text-white d-flex align-items-center justify-content-center" 
-                                          style="font-size: 0.55rem; padding: 2px 4px; border-radius: 4px; min-width: 24px;" 
-                                          title="Software: {{ pc.office_version }}">
+                                    <span class="inventory-office-chip" title="Software: {{ pc.office_version }}">
                                         {% if '2016' in pc.office_version %}16
                                         {% elif '2019' in pc.office_version %}19
                                         {% elif '2021' in pc.office_version %}21
@@ -145,7 +129,7 @@
                                     {% endif %}
 
                                     {% if pc.alerta_nombre_duplicado %}
-                                    <span class="badge bg-danger text-white mt-1" style="font-size: 0.5rem;" title="Nombre duplicado">DUP</span>
+                                    <span class="inventory-dup-chip" title="Nombre duplicado">DUP</span>
                                     {% endif %}
                                 </div>
                             </div>
@@ -165,13 +149,13 @@
                             
                             <div class="mb-1">
                                 <span class="badge text-white inventory-fuero-badge"
-                                    style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }}; white-space: normal; text-align: center; display: inline-block; font-size: 0.75rem;">
+                                    style="background-color: {{ fuero_colors.get(pc.fuero, '#6c757d') }}; white-space: normal; text-align: center; display: inline-block;">
                                     {{ pc.fuero or '-' }}
                                 </span>
                             </div>
                             
                             {% if pc.ad_phone %}
-                            <div class="small text-primary mt-1" style="font-size: 0.8rem; font-weight: 500;">
+                            <div class="inventory-phone">
                                 <i class="bi bi-telephone-fw"></i> Teléfono: {{ pc.ad_phone }}
                             </div>
                             {% endif %}
@@ -337,17 +321,11 @@
                                 {% if printer_alert_sin_impresora %}
                                 <div class="inventory-alert-chip inventory-alert-chip--info" title="No se detectó una impresora instalada o asignada a esta PC.">🖨️ Sin impresora</div>
                                 {% endif %}
-                                {% if pc.alerta_disco %}
-                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Revisar disco: puede tener poco espacio libre o un estado SMART no saludable.">💿 Revisar disco</div>
-                                {% endif %}
                                 {% if pc.alerta_uptime %}
                                 <div class="inventory-alert-chip inventory-alert-chip--danger" title="La PC lleva más de 15 días encendida sin reiniciar. Conviene reiniciarla.">⏳ Reiniciar PC</div>
                                 {% endif %}
                                 {% if pc.alerta_nombre_duplicado %}
                                 <div class="inventory-alert-chip inventory-alert-chip--danger" title="Hay otra PC reportando el mismo nombre en la red.">⚠️ Nombre duplicado</div>
-                                {% endif %}
-                                {% if pc.sin_reporte_30d %}
-                                <div class="inventory-alert-chip inventory-alert-chip--danger" title="Esta PC lleva más de 30 días sin enviar datos al servidor. Puede estar apagada, desconectada o dada de baja.">📡 Sin actividad +30d</div>
                                 {% endif %}
                             </div>
 
@@ -398,7 +376,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" style="text-align: center;">Sin datos.</td>
+                        <td colspan="5" style="text-align: center;">Sin datos.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -426,34 +404,37 @@
                         {% for pc in node.pcs %}
                             {% set printer_missing = not pc.assigned_network_printer and (not pc.printer_model or pc.printer_model == 'N/A' or (pc.printer_model | upper) == 'NONE' or pc.printer_model == '-' or 'SIN IMPRESORA' in (pc.printer_model | upper)) %}
                             {% set printer_alert_sin_impresora = pc.alerta_sin_impresora and printer_missing %}
-                            {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_disco|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
+                            {% set alerta_count = (pc.alerta_ram_baja|int) + (printer_alert_sin_impresora|int) + (pc.alerta_uptime|int) + (pc.alerta_nombre_duplicado|int) %}
                             {% set alert_reasons = [] %}
                             {% if pc.alerta_ram_baja %}{% set _ = alert_reasons.append('RAM baja: menos de 8 GB') %}{% endif %}
                             {% if printer_alert_sin_impresora %}{% set _ = alert_reasons.append('No se detectó impresora') %}{% endif %}
-                            {% if pc.alerta_disco %}{% set _ = alert_reasons.append('Revisar disco') %}{% endif %}
                             {% if pc.alerta_uptime %}{% set _ = alert_reasons.append('Reiniciar PC') %}{% endif %}
                             {% if pc.alerta_nombre_duplicado %}{% set _ = alert_reasons.append('Nombre duplicado') %}{% endif %}
                             {% if pc.os_name and 'Windows 7' in pc.os_name %}{% set _ = alert_reasons.append('Actualizar Windows 7') %}{% endif %}
-                            {% if pc.sin_reporte_30d %}{% set _ = alert_reasons.append('Sin actividad +30d') %}{% endif %}
-                            <div class="fuero-tree-pc {% if pc.sin_reporte_30d %}fuero-tree-pc--inactive{% endif %}" title="{{ pc.fuero or 'Sin fuero asignado' }}" onclick="if(!event.target.closest('a') && !event.target.closest('button') && !event.target.closest('.dropdown-menu')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
+                            {% set alert_summary = 'Revisar ' ~ alert_reasons|length if alert_reasons else 'Estable' %}
+                            <div class="fuero-tree-pc" title="{{ pc.fuero or 'Sin fuero asignado' }}" onclick="if(!event.target.closest('a') && !event.target.closest('button') && !event.target.closest('.dropdown-menu')) window.location.href='{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}'">
                                 <div class="fuero-tree-pc__main">
                                     <i class="bi bi-pc-display-horizontal"></i>
                                     <div class="fuero-tree-pc__identity">
                                         <a href="{{ url_for('dashboard.pc_detail', pc_name=pc.pc_name) }}" class="fuero-tree-pc__name" onclick="event.stopPropagation();">{{ pc.pc_name }}</a>
                                         <span>{{ pc.ad_real_name or pc.last_user or 'Sin usuario' }}</span>
+                                        <div class="fuero-tree-pc__micro">
+                                            {% if pc.validation_status == 'validado' %}
+                                            <span class="fuero-tree-chip fuero-tree-chip--ok"><i class="bi bi-shield-check"></i> Validado</span>
+                                            {% elif pc.validation_status == 'pendiente' %}
+                                            <span class="fuero-tree-chip fuero-tree-chip--warning"><i class="bi bi-clock-history"></i> Pendiente</span>
+                                            {% elif pc.validation_status == 'discrepancia' %}
+                                            <span class="fuero-tree-chip fuero-tree-chip--danger"><i class="bi bi-exclamation-triangle"></i> Discrepancia</span>
+                                            {% endif %}
+                                            {% if pc.tareas_pendientes %}
+                                            <span class="fuero-tree-chip fuero-tree-chip--task" title="Tareas pendientes">{{ pc.tareas_pendientes }} tareas</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="fuero-tree-pc__meta">
                                     <span title="IP actual"><i class="bi bi-hdd-network"></i> {{ pc.ip_address or '-' }}</span>
                                     <span title="Sistema operativo"><i class="bi bi-windows"></i> {{ pc.os_name or '-' }}</span>
-                                    {% if pc.last_report %}
-                                    <span title="Último reporte del script de inventario" {% if pc.sin_reporte_30d %}style="color:#dc2626;font-weight:700;"{% elif pc.dias_sin_reporte is not none and pc.dias_sin_reporte > 7 %}style="color:#d97706;"{% endif %}>
-                                        <i class="bi bi-clock-history"></i>
-                                        {% if pc.sin_reporte_30d %}⚠ {{ pc.dias_sin_reporte }}d sin actividad
-                                        {% elif pc.dias_sin_reporte is not none %}{{ pc.dias_sin_reporte }}d atrás
-                                        {% endif %}
-                                    </span>
-                                    {% endif %}
                                     {% if pc.office_version and pc.office_version != 'No detectado' and pc.office_version != 'N/A' %}
                                     <span title="Microsoft Office"><i class="bi bi-microsoft"></i> {{ pc.office_version }}</span>
                                     {% endif %}
@@ -512,13 +493,10 @@
                                         </button>
                                     </form>
                                     {% endif %}
-                                    {% if pc.tareas_pendientes %}
-                                    <span class="fuero-tree-chip fuero-tree-chip--task" title="Tareas pendientes">{{ pc.tareas_pendientes }} tareas</span>
-                                    {% endif %}
                                     {% if alerta_count == 0 and not (pc.os_name and 'Windows 7' in pc.os_name) %}
                                     <span class="fuero-tree-chip fuero-tree-chip--ok">Estable</span>
                                     {% else %}
-                                    <span class="fuero-tree-chip {% if alerta_count >= 2 %}fuero-tree-chip--danger{% else %}fuero-tree-chip--warning{% endif %}" title="{{ alert_reasons|join(', ') }}">{{ alert_reasons|join(', ') }}</span>
+                                    <span class="fuero-tree-chip {% if alerta_count >= 2 %}fuero-tree-chip--danger{% else %}fuero-tree-chip--warning{% endif %}" title="{{ alert_reasons|join(', ') }}">{{ alert_summary }}</span>
                                     {% endif %}
                                 </div>
                                 <div class="fuero-tree-pc__actions" onclick="event.stopPropagation();">

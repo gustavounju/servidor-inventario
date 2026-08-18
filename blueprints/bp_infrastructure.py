@@ -10,6 +10,7 @@ except (ImportError, ModuleNotFoundError):
     SNMP_AVAILABLE = False
     print("WARNING: pysnmp (v5+) not found or incompatible. SNMP features will be disabled.")
 from utils.constants import FUERO_COLORS, clean_hex_string
+from utils.component_status import deployed_component_state, retired_component_state, stock_component_state
 
 bp_infrastructure = Blueprint('infrastructure', __name__, url_prefix='/infra')
 
@@ -255,7 +256,8 @@ def assign_battery_to_ups(ups_id):
             if old_battery_id:
                 old_bat_data = conn.execute("SELECT serial_number FROM components WHERE id = %s", (old_battery_id,)).fetchone()
                 old_bat_sn = old_bat_data['serial_number'] if old_bat_data else str(old_battery_id)
-                conn.execute("UPDATE components SET status = 'Stock' WHERE id = %s", (old_battery_id,))
+                stock_status, stock_lifecycle = stock_component_state()
+                conn.execute("UPDATE components SET status = %s, lifecycle_status = %s WHERE id = %s", (stock_status, stock_lifecycle, old_battery_id))
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                              (f"UPS:{ups['code']}", "Bateria Retirada", old_bat_sn, "None", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
                 
@@ -264,7 +266,8 @@ def assign_battery_to_ups(ups_id):
                 new_bat_data = conn.execute("SELECT serial_number FROM components WHERE id = %s", (battery_id,)).fetchone()
                 new_bat_sn = new_bat_data['serial_number'] if new_bat_data else str(battery_id)
                 conn.execute("UPDATE ups_inventory SET assigned_battery_id = %s WHERE id = %s", (battery_id, ups_id))
-                conn.execute("UPDATE components SET status = 'Instalado' WHERE id = %s", (battery_id,))
+                deployed_status, deployed_lifecycle = deployed_component_state()
+                conn.execute("UPDATE components SET status = %s, lifecycle_status = %s WHERE id = %s", (deployed_status, deployed_lifecycle, battery_id))
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                              (f"UPS:{ups['code']}", "Bateria RAM", "None", new_bat_sn, current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             else:
@@ -326,7 +329,8 @@ def delete_ups(id):
                 
             if ups['assigned_battery_id']:
                 # Liberar bateria
-                conn.execute("UPDATE components SET status = 'Stock' WHERE id = %s", (ups['assigned_battery_id'],))
+                stock_status, stock_lifecycle = stock_component_state()
+                conn.execute("UPDATE components SET status = %s, lifecycle_status = %s WHERE id = %s", (stock_status, stock_lifecycle, ups['assigned_battery_id']))
             
             conn.execute("DELETE FROM ups_inventory WHERE id = %s", (id,))
             conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES ('Infraestructura', 'UPS Eliminada', %s, 'DELETED', %s, 'BORRADO_PERMANENTE', %s)", (ups['code'], current_username(), request.remote_addr))
@@ -376,18 +380,17 @@ def assign_component_to_pc(component_id):
             old_pc = comp['assigned_pc']
             
             if pc_name:
-                conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = 'Instalado', lifecycle_status = 'desplegado', build_order_id = NULL WHERE id = %s", (pc_name, component_id))
+                deployed_status, deployed_lifecycle = deployed_component_state()
+                conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = %s, lifecycle_status = %s, build_order_id = NULL WHERE id = %s", (pc_name, deployed_status, deployed_lifecycle, component_id))
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                              (pc_name, f"{comp['component_type']} Asignado", str(old_pc or 'Stock'), f"{comp['brand_model']} ({comp['serial_number'] or 'Sin S/N'})", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             else:
                 # Retiro / Sustitución
                 if destination == 'scrap':
-                    new_status = 'Retirado'
-                    new_lifecycle = 'scrap'
+                    new_status, new_lifecycle = retired_component_state(scrap=True)
                     dest_label = 'Enviado a Scrap (Baja por Falla)'
                 else:
-                    new_status = 'Stock'
-                    new_lifecycle = 'stock'
+                    new_status, new_lifecycle = stock_component_state()
                     dest_label = 'Devuelto a Stock (Disponible para Reuso)'
                 
                 conn.execute("UPDATE components SET assigned_pc = NULL, assigned_to_component_id = NULL, status = %s, lifecycle_status = %s, build_order_id = NULL WHERE id = %s", (new_status, new_lifecycle, component_id))
@@ -404,7 +407,8 @@ def assign_component_to_pc(component_id):
             if replacement_id and target_pc:
                 rep_comp = conn.execute("SELECT serial_number, component_type, brand_model FROM components WHERE id = %s", (replacement_id,)).fetchone()
                 if rep_comp:
-                    conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = 'Instalado', lifecycle_status = 'desplegado' WHERE id = %s", (target_pc, replacement_id))
+                    deployed_status, deployed_lifecycle = deployed_component_state()
+                    conn.execute("UPDATE components SET assigned_pc = %s, assigned_to_component_id = NULL, status = %s, lifecycle_status = %s WHERE id = %s", (target_pc, deployed_status, deployed_lifecycle, replacement_id))
                     conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                                  (target_pc, f"Reemplazo {rep_comp['component_type']} Instalado", "Sin componente", f"{rep_comp['brand_model']} ({rep_comp['serial_number'] or 'Sin S/N'})", current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             
@@ -428,14 +432,16 @@ def assign_component_to_component(component_id):
                 # Get parent details for log
                 parent = conn.execute("SELECT serial_number, component_type, assigned_pc FROM components WHERE id = %s", (parent_id,)).fetchone()
                 
-                conn.execute("UPDATE components SET assigned_to_component_id = %s, assigned_pc = %s, status = 'Instalado', build_order_id = NULL WHERE id = %s", 
-                             (parent_id, parent['assigned_pc'], component_id))
+                deployed_status, deployed_lifecycle = deployed_component_state()
+                conn.execute("UPDATE components SET assigned_to_component_id = %s, assigned_pc = %s, status = %s, lifecycle_status = %s, build_order_id = NULL WHERE id = %s", 
+                             (parent_id, parent['assigned_pc'], deployed_status, deployed_lifecycle, component_id))
                 
                 pc_context = parent["assigned_pc"] or f"COMP:{parent['serial_number']}"
                 conn.execute("INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
                              (pc_context, f"Sub-componente {comp['component_type']} Asignado a {parent['component_type']}", "None", comp['serial_number'], current_username(), "GESTION_INFRAESTRUCTURA", request.remote_addr))
             else:
-                conn.execute("UPDATE components SET assigned_to_component_id = NULL, assigned_pc = NULL, status = 'Stock', build_order_id = NULL WHERE id = %s", (component_id,))
+                stock_status, stock_lifecycle = stock_component_state()
+                conn.execute("UPDATE components SET assigned_to_component_id = NULL, assigned_pc = NULL, status = %s, lifecycle_status = %s, build_order_id = NULL WHERE id = %s", (stock_status, stock_lifecycle, component_id))
             
             conn.commit()
             flash("Asignación interna de componente actualizada.", "success")
@@ -460,7 +466,8 @@ def delete_component(id):
             conn.execute("UPDATE ups_inventory SET assigned_battery_id = NULL WHERE assigned_battery_id = %s", (id,))
             
             # Check if there are sub-components and release them to stock
-            conn.execute("UPDATE components SET assigned_to_component_id = NULL, status = 'Stock' WHERE assigned_to_component_id = %s", (id,))
+            stock_status, stock_lifecycle = stock_component_state()
+            conn.execute("UPDATE components SET assigned_to_component_id = NULL, status = %s, lifecycle_status = %s WHERE assigned_to_component_id = %s", (stock_status, stock_lifecycle, id))
             
             # Now delete the component
             conn.execute("DELETE FROM components WHERE id = %s", (id,))
