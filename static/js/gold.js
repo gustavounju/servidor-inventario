@@ -174,6 +174,13 @@ async function copyScript(btn) {
         throw new Error('Botón de script sin origen configurado.');
     } catch (err) {
         console.error('copyScript failed', err);
+        if (scriptUrl) {
+            const opened = window.open(scriptUrl, '_blank', 'noopener');
+            if (!opened) {
+                window.location.href = scriptUrl;
+            }
+            return;
+        }
         alert("No se pudo copiar automáticamente. Por favor, abre la sección de Instalación o /script.");
     }
 }
