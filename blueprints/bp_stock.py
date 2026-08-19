@@ -367,15 +367,7 @@ def update_component_patrimony(serial_number):
     """
     PATCH /api/components/<serial>/patrimony
 
-    Actualiza los campos patrimoniales de un activo (Fase 3).
-    Solo acepta los campos patrimoniales nuevos; no toca status ni assigned_*.
-
-    Campos editables:
-      lifecycle_status : stock | en_armado | desplegado | en_reparacion | retirado | scrap
-      purchase_date    : DATE (YYYY-MM-DD) — fecha de compra
-      warranty_until   : DATE (YYYY-MM-DD) — vencimiento de garantia
-      asset_notes      : Texto libre con observaciones del tecnico
-      build_order_id   : INT — ID de la Build Order asociada (opcional)
+    Actualiza los campos patrimoniales e información general de un activo.
     """
     if not check_stock_permission():
         return jsonify({"status": "error", "message": "Acceso denegado."}), 403
@@ -390,12 +382,21 @@ def update_component_patrimony(serial_number):
         updates = {}
         if "lifecycle_status" in data:
             ls = (data["lifecycle_status"] or "").strip().lower()
+            if ls == "installed":
+                ls = "desplegado"
             if ls not in VALID_LIFECYCLE:
                 return jsonify({
                     "status": "error",
                     "message": f"lifecycle_status inválido. Valores: {', '.join(sorted(VALID_LIFECYCLE))}"
                 }), 400
             updates["lifecycle_status"] = ls
+            # También actualizar columna status
+            if ls == "stock":
+                updates["status"] = "Stock"
+            elif ls in ("en_armado", "desplegado"):
+                updates["status"] = "Installed"
+            elif ls == "retirado":
+                updates["status"] = "Retirado"
 
         if "purchase_date" in data:
             pd_val = data["purchase_date"]
@@ -412,11 +413,37 @@ def update_component_patrimony(serial_number):
             bo_id = data["build_order_id"]
             updates["build_order_id"] = int(bo_id) if bo_id else None
 
-        if not updates:
-            return jsonify({"status": "error", "message": "No se enviaron campos a actualizar."}), 400
+        if "patrimonio_code" in data:
+            updates["patrimonio_code"] = (data["patrimonio_code"] or "").strip() or None
 
-        set_clauses = ", ".join(f"{col} = %s" for col in updates)
-        values = list(updates.values()) + [serial_number]
+        if "component_type" in data:
+            ctype = (data["component_type"] or "").strip()
+            if not ctype:
+                return jsonify({"status": "error", "message": "El tipo de componente no puede estar vacío."}), 400
+            updates["component_type"] = ctype
+
+        if "brand_model" in data:
+            updates["brand_model"] = (data["brand_model"] or "").strip() or None
+
+        if "supplier" in data:
+            updates["supplier"] = (data["supplier"] or "").strip() or None
+
+        if "invoice_number" in data:
+            updates["invoice_number"] = (data["invoice_number"] or "").strip() or None
+
+        if "oc_number" in data:
+            updates["oc_number"] = (data["oc_number"] or "").strip() or None
+
+        new_serial = None
+        if "serial_number" in data:
+            ns = (data["serial_number"] or "").strip()
+            if not ns:
+                return jsonify({"status": "error", "message": "El número de serie no puede estar vacío."}), 400
+            if ns != serial_number:
+                new_serial = ns
+
+        if not updates and not new_serial:
+            return jsonify({"status": "error", "message": "No se enviaron campos a actualizar."}), 400
 
         with get_db_connection() as conn:
             comp = conn.execute(
@@ -426,10 +453,27 @@ def update_component_patrimony(serial_number):
             if not comp:
                 return jsonify({"status": "error", "message": "Componente no encontrado."}), 404
 
+            if new_serial:
+                existing = conn.execute("SELECT id FROM components WHERE serial_number = %s", (new_serial,)).fetchone()
+                if existing:
+                    return jsonify({"status": "error", "message": f"El número de serie '{new_serial}' ya existe registrado en el inventario."}), 400
+                updates["serial_number"] = new_serial
+
+            set_clauses = ", ".join(f"{col} = %s" for col in updates)
+            values = list(updates.values()) + [serial_number]
+
             conn.execute(
                 f"UPDATE components SET {set_clauses} WHERE serial_number = %s",
                 values
             )
+
+            # Insertar en catálogos
+            if "component_type" in updates:
+                conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES ('type', %s)", (updates["component_type"],))
+            if "brand_model" in updates and updates["brand_model"]:
+                conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES ('model', %s)", (updates["brand_model"],))
+            if "supplier" in updates and updates["supplier"]:
+                conn.execute("INSERT IGNORE INTO stock_catalogs (category, item_value) VALUES ('supplier', %s)", (updates["supplier"],))
 
             # Registrar en audit_logs
             changes_str = ", ".join(f"{k}={v}" for k, v in updates.items())
@@ -439,7 +483,7 @@ def update_component_patrimony(serial_number):
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
-                    serial_number,
+                    new_serial or serial_number,
                     "PATRIMONY_UPDATE",
                     comp.get("component_type", ""),
                     changes_str,
@@ -447,7 +491,7 @@ def update_component_patrimony(serial_number):
                 )
             )
 
-        return jsonify({"status": "success", "serial_number": serial_number, "updated": updates})
+        return jsonify({"status": "success", "serial_number": new_serial or serial_number, "updated": updates})
     except Exception as e:
         logging.error("Error en update_component_patrimony(%s): %s", serial_number, e)
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -1210,6 +1254,17 @@ def add_component():
         if not serials_input and single_serial:
             serials_input = [single_serial]
 
+        patrimonios_input = data.get("patrimonios") or data.get("patrimonio_codes") or []
+        single_patrimonio = (data.get("patrimonio_code") or "").strip()
+
+        if isinstance(patrimonios_input, str):
+            patrimonios_input = [p.strip() for p in patrimonios_input.replace(',', '\n').split('\n') if p.strip()]
+        elif not isinstance(patrimonios_input, list):
+            patrimonios_input = []
+
+        if not patrimonios_input and single_patrimonio:
+            patrimonios_input = [single_patrimonio]
+
         ctype = (data.get("component_type") or "").strip()
         model = (data.get("brand_model") or "").strip()
         supplier = (data.get("supplier_name") or data.get("supplier") or "").strip() or "STOCK INTERNO / TALLER"
@@ -1253,6 +1308,7 @@ def add_component():
 
             for i in range(quantity):
                 curr_serial = provided_serials[i] if i < len(provided_serials) else ""
+                curr_patrimonio = patrimonios_input[i] if i < len(patrimonios_input) else None
                 is_auto = 0
                 if not curr_serial:
                     while True:
@@ -1275,11 +1331,11 @@ def add_component():
                             """
                             INSERT INTO components (
                                 serial_number, component_type, brand_model, status, lifecycle_status,
-                                supplier, invoice_number, oc_number, assigned_user, assigned_fuero, is_autogenerated_id
+                                supplier, invoice_number, oc_number, assigned_user, assigned_fuero, is_autogenerated_id, patrimonio_code
                             )
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """,
-                            (curr_serial, ctype, model, status, lifecycle_status, supplier, invoice, oc_num, assigned_user or None, assigned_fuero or None, is_auto)
+                            (curr_serial, ctype, model, status, lifecycle_status, supplier, invoice, oc_num, assigned_user or None, assigned_fuero or None, is_auto, curr_patrimonio or None)
                         )
                 except Exception as insert_err:
                     err_str = str(insert_err).lower()
@@ -1354,6 +1410,7 @@ def add_components_batch():
                 ctype = (item.get("component_type") or "").strip()
                 model = (item.get("brand_model") or "").strip()
                 curr_serial = (item.get("serial_number") or "").strip()
+                curr_patrimonio = (item.get("patrimonio_code") or "").strip()
 
                 if not ctype:
                     continue
@@ -1380,11 +1437,11 @@ def add_components_batch():
                             """
                             INSERT INTO components (
                                 serial_number, component_type, brand_model, status, lifecycle_status,
-                                supplier, invoice_number, oc_number, assigned_user, assigned_fuero, is_autogenerated_id
+                                supplier, invoice_number, oc_number, assigned_user, assigned_fuero, is_autogenerated_id, patrimonio_code
                             )
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """,
-                            (curr_serial, ctype, model, status, lifecycle_status, supplier, invoice, oc_num, assigned_user or None, assigned_fuero or None, is_auto)
+                            (curr_serial, ctype, model, status, lifecycle_status, supplier, invoice, oc_num, assigned_user or None, assigned_fuero or None, is_auto, curr_patrimonio or None)
                         )
                 except Exception as insert_err:
                     err_str = str(insert_err).lower()

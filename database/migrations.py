@@ -669,6 +669,8 @@ def run_all_migrations():
     migrate_db_v58()
     # Limpieza de alerta_disco obsoleta
     migrate_db_v59()
+    # Fase 1 — Integración de Impresoras (Código de Patrimonio)
+    migrate_db_v60()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1617,3 +1619,21 @@ def migrate_db_v59():
             conn.execute("ALTER TABLE pcs DROP COLUMN alerta_disco")
 
     print("Migración V59 verificada.")
+
+
+def migrate_db_v60():
+    """
+    Migración V60: Agregar columna patrimonio_code a components.
+    """
+    print("Verificando migración de DB v60 (patrimonio_code en components)...")
+    with get_db_connection() as conn:
+        if _table_exists(conn, "components"):
+            if not _column_exists(conn, "components", "patrimonio_code"):
+                print("Aplicando V60: agregando patrimonio_code a components...")
+                conn.execute(
+                    "ALTER TABLE components ADD COLUMN patrimonio_code VARCHAR(255) DEFAULT NULL"
+                )
+                print("Migración V60 aplicada: columna patrimonio_code agregada.")
+            else:
+                print("Migración V60 verificada.")
+
