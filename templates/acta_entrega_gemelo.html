@@ -653,6 +653,25 @@
             </tr>
           {% endfor %}
 
+          {% if selected_printer %}
+          <tr>
+            <td><strong>Impresora (Activa)</strong></td>
+            <td>
+              {{ selected_printer.printer_model or 'Impresora Detectada' }}
+              {% if selected_printer_ip %}
+                <br><span class="badge bg-secondary" style="font-size: 0.72rem; padding: 2px 6px; background: #e2e8f0; color: #1e293b; border-radius: 4px; display: inline-block; margin-top: 4px;">Impresora de Red (IP: {{ selected_printer_ip }})</span>
+              {% elif selected_printer.printer_port and selected_printer.printer_port.startswith('\\\\') %}
+                <br><span class="badge bg-secondary" style="font-size: 0.72rem; padding: 2px 6px; background: #e2e8f0; color: #1e293b; border-radius: 4px; display: inline-block; margin-top: 4px;">Compartida (Ruta: {{ selected_printer.printer_port }})</span>
+              {% else %}
+                <br><span class="badge bg-light text-dark" style="font-size: 0.72rem; padding: 2px 6px; background: #f1f5f9; color: #334155; border-radius: 4px; display: inline-block; margin-top: 4px; border: 1px solid #cbd5e1;">Local (Puerto: {{ selected_printer.printer_port or 'USB' }})</span>
+              {% endif %}
+            </td>
+            <td class="font-mono">
+              S/N: {{ selected_printer.printer_sn if selected_printer.printer_sn and selected_printer.printer_sn != 'N/A' else 'N/D' }}
+            </td>
+          </tr>
+          {% endif %}
+
           {% for mon in monitores %}
           <tr>
             <td><strong>Monitor / Pantalla</strong></td>

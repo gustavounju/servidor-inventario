@@ -398,7 +398,13 @@ def process_inventory_data(data):
         # --- PROCESAR IMPRESORAS MULTIPLES (Printers_Extra) ---
         printers_extra = data.get("Printers_Extra", [])
         if printers_extra:
-            # Limpiamos todo el buffer de esta PC
+            # 1. Recordar cuál impresora detectada estaba seleccionada como activa
+            selected_prn = conn.execute(
+                "SELECT printer_sn, printer_model, printer_port FROM pc_detected_printers WHERE pc_name = %s AND is_selected = 1",
+                (pc_name,)
+            ).fetchone()
+
+            # 2. Limpiamos todo el buffer de esta PC
             conn.execute("DELETE FROM pc_detected_printers WHERE pc_name = %s", (pc_name,))
             for p in printers_extra:
                 pm_extra = p.get("Model", "N/A")
@@ -409,14 +415,21 @@ def process_inventory_data(data):
                 pm_upper = pm_extra.upper()
                 is_virtual_extra = ("PDF" in pm_upper) or ("XPS" in pm_upper) or ("ONENOTE" in pm_upper) or ("FAX" in pm_upper) or ("SEND TO" in pm_upper) or ("MICROSOFT" in pm_upper and "DOCUMENT" in pm_upper)
                 
+                # Verificar si esta impresora coincide con la activa guardada
+                is_selected = 0
+                if selected_prn:
+                    if (psn_extra != "N/A" and psn_extra == selected_prn["printer_sn"]) or \
+                       (pm_extra == selected_prn["printer_model"] and pp_extra == selected_prn["printer_port"]):
+                        is_selected = 1
+
                 # Insertar en la nueva tabla de impresoras secundarias
                 # Las virtuales se insertan como ignoradas automáticamente
                 conn.execute(
                     """
-                    INSERT INTO pc_detected_printers (pc_name, printer_model, printer_port, printer_sn, is_ignored)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO pc_detected_printers (pc_name, printer_model, printer_port, printer_sn, is_ignored, is_selected)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     """,
-                    (pc_name, pm_extra, pp_extra, psn_extra, 1 if is_virtual_extra else 0)
+                    (pc_name, pm_extra, pp_extra, psn_extra, 1 if is_virtual_extra else 0, is_selected)
                 )
 
         # ─────────────────────────────────────────────────────────────────
@@ -1001,5 +1014,51 @@ def api_admin_sent_messages():
             return jsonify({"status": "success", "data": result})
     except Exception as e:
         print(f"Error fetching admin sent messages: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@bp_api.route("/api/pc/<pc_name>/select_printer/<int:printer_id>", methods=["POST"])
+def api_select_printer(pc_name, printer_id):
+    try:
+        from utils.auth import is_authenticated
+        if not is_authenticated():
+            return jsonify({"status": "error", "message": "No autorizado"}), 401
+            
+        with get_db_connection() as conn:
+            if printer_id == 0:
+                # Desmarcar todas
+                conn.execute(
+                    "UPDATE pc_detected_printers SET is_selected = 0 WHERE pc_name = %s",
+                    (pc_name,)
+                )
+                conn.commit()
+                return jsonify({"status": "success", "message": "Se desmarcaron todas las impresoras"})
+                
+            # Verificar que la impresora detectada pertenezca a la PC indicada
+            printer = conn.execute(
+                "SELECT id FROM pc_detected_printers WHERE id = %s AND pc_name = %s",
+                (printer_id, pc_name)
+            ).fetchone()
+            
+            if not printer:
+                return jsonify({"status": "error", "message": "Impresora no encontrada para este equipo"}), 404
+                
+            # Desmarcar todas las impresoras para esta PC
+            conn.execute(
+                "UPDATE pc_detected_printers SET is_selected = 0 WHERE pc_name = %s",
+                (pc_name,)
+            )
+            
+            # Marcar la seleccionada
+            conn.execute(
+                "UPDATE pc_detected_printers SET is_selected = 1 WHERE id = %s",
+                (printer_id,)
+            )
+            
+            conn.commit()
+            
+        return jsonify({"status": "success", "message": "Impresora activa actualizada correctamente"})
+    except Exception as e:
+        print(f"Error al seleccionar impresora activa: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 

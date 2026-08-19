@@ -952,7 +952,7 @@ def get_pc_detail_context(pc_name):
         ''', (pc_name,)).fetchall()
 
         detected_printers = conn.execute('''
-            SELECT id, printer_model, printer_port, printer_sn
+            SELECT id, printer_model, printer_port, printer_sn, is_selected
             FROM pc_detected_printers
             WHERE pc_name = %s
               AND is_ignored = 0

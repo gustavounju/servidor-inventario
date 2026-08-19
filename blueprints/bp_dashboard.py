@@ -62,6 +62,9 @@ def build_acta_component_groups(components, monitors_detail, hardware_components
 
     for raw_component in components or []:
         component = dict(raw_component)
+        # Omitir impresoras patrimoniales en el acta general para que solo figure la seleccionada activamente
+        if (component.get("component_type") or "").upper() == "IMPRESORA":
+            continue
         bucket = _acta_component_bucket(component.get("component_type"))
         if bucket == "monitores":
             continue
@@ -847,6 +850,27 @@ def acta_gemelo_validado(pc_name):
 
     generated_at = datetime.now().strftime("%d/%m/%Y %H:%M hs")
 
+    # Consultar si hay impresora seleccionada para esta PC
+    selected_printer = None
+    selected_printer_ip = None
+    with get_db_connection() as conn:
+        selected_row = conn.execute(
+            """
+            SELECT printer_model, printer_port, printer_sn 
+            FROM pc_detected_printers 
+            WHERE pc_name = %s AND is_selected = 1 AND is_ignored = 0
+            LIMIT 1
+            """,
+            (pc_name,)
+        ).fetchone()
+        if selected_row:
+            selected_printer = dict(selected_row)
+            # Extraer IP si es de red (ej: 10.15.3.76)
+            import re
+            match = re.search(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', selected_printer.get("printer_port") or "")
+            if match:
+                selected_printer_ip = match.group(1)
+
     scheme = request.headers.get("X-Forwarded-Proto", request.scheme)
     server_host = request.host
     if any(h in server_host for h in ["localhost", "127.0.0.1", "0.0.0.0"]):
@@ -862,7 +886,9 @@ def acta_gemelo_validado(pc_name):
         acta_component_groups=acta_component_groups,
         tecnico_user=tecnico_user,
         generated_at=generated_at,
-        qr_url=qr_url
+        qr_url=qr_url,
+        selected_printer=selected_printer,
+        selected_printer_ip=selected_printer_ip
     )
 
 

@@ -671,6 +671,8 @@ def run_all_migrations():
     migrate_db_v59()
     # Fase 1 — Integración de Impresoras (Código de Patrimonio)
     migrate_db_v60()
+    # Fase 2 — Impresora Activa Seleccionada en pc_detected_printers
+    migrate_db_v61()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1636,4 +1638,21 @@ def migrate_db_v60():
                 print("Migración V60 aplicada: columna patrimonio_code agregada.")
             else:
                 print("Migración V60 verificada.")
+
+
+def migrate_db_v61():
+    """
+    Migración V61: Agregar columna is_selected a pc_detected_printers.
+    """
+    print("Verificando migración de DB v61 (is_selected en pc_detected_printers)...")
+    with get_db_connection() as conn:
+        if _table_exists(conn, "pc_detected_printers"):
+            if not _column_exists(conn, "pc_detected_printers", "is_selected"):
+                print("Aplicando V61: agregando is_selected a pc_detected_printers...")
+                conn.execute(
+                    "ALTER TABLE pc_detected_printers ADD COLUMN is_selected TINYINT(1) NOT NULL DEFAULT 0"
+                )
+                print("Migración V61 aplicada: columna is_selected agregada.")
+            else:
+                print("Migración V61 verificada.")
 
