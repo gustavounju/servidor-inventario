@@ -1209,6 +1209,25 @@ def list_components():
                 bo_map = {b["id"]: b["code"] for b in bo_rows}
             except Exception: pass
 
+            # Mapear relaciones de impresoras de red con PCs
+            net_prn_pcs = {}
+            try:
+                relations = conn.execute(
+                    """
+                    SELECT pnp.pc_name, np.serial_number 
+                    FROM pc_network_printers pnp
+                    JOIN network_printers np ON pnp.printer_id = np.id
+                    """
+                ).fetchall()
+                for rel in relations:
+                    sn_key = rel["serial_number"]
+                    if sn_key:
+                        if sn_key not in net_prn_pcs:
+                            net_prn_pcs[sn_key] = []
+                        net_prn_pcs[sn_key].append(rel["pc_name"])
+            except Exception as e:
+                print(f"Error cargando relaciones de impresoras de red para stock: {e}")
+
             rows = conn.execute("SELECT * FROM components ORDER BY created_at DESC").fetchall()
             comps = []
             for r in rows:
@@ -1222,6 +1241,11 @@ def list_components():
                     item['created_at'] = item['created_at'].strftime("%Y-%m-%d %H:%M:%S")
                 if item.get('build_order_id'):
                     item['bo_code'] = bo_map.get(item['build_order_id'])
+                
+                # Adjuntar lista de PCs asignadas si es impresora de red
+                if item.get("component_type", "").upper() == "IMPRESORA" and item.get("is_network_printer"):
+                    item["assigned_pcs_list"] = net_prn_pcs.get(sn, [])
+                    
                 comps.append(item)
         return jsonify(comps)
     except Exception as e:
@@ -1669,15 +1693,58 @@ def assign_component():
                     )
                     return jsonify({"status": "success", "resolved_fuero": assigned_fuero})
 
-            new_status, new_lifecycle = deployed_component_state()
-            conn.execute(
-                """
-                UPDATE components
-                SET status = %s, assigned_pc = %s, assigned_user = %s, assigned_fuero = %s, lifecycle_status = %s
-                WHERE serial_number = %s
-                """,
-                (new_status, pc_name or None, assigned_user or None, assigned_fuero or None, new_lifecycle, serial)
-            )
+            if comp.get("component_type", "").upper() == "IMPRESORA" and comp.get("is_network_printer"):
+                # Si es impresora de red, asociarla en el catálogo en lugar de atar assigned_pc en components
+                new_status, new_lifecycle = deployed_component_state()
+                conn.execute(
+                    """
+                    UPDATE components
+                    SET status = %s, assigned_pc = NULL, assigned_user = %s, assigned_fuero = %s, lifecycle_status = %s
+                    WHERE serial_number = %s
+                    """,
+                    (new_status, assigned_user or None, assigned_fuero or None, new_lifecycle, serial)
+                )
+                
+                # Asegurar registro en network_printers (catálogo) si tiene IP válida
+                if pc_name and comp.get("network_ip"):
+                    net_prn = conn.execute(
+                        "SELECT id FROM network_printers WHERE serial_number = %s OR ip_address = %s",
+                        (serial, comp["network_ip"])
+                    ).fetchone()
+                    
+                    if not net_prn:
+                        conn.execute(
+                            """
+                            INSERT INTO network_printers (ip_address, brand_model, serial_number, fuero)
+                            VALUES (%s, %s, %s, %s)
+                            """,
+                            (comp["network_ip"], comp["brand_model"], serial, assigned_fuero or None)
+                        )
+                        net_printer_id = conn.execute("SELECT LAST_INSERT_ID()").fetchone()[0]
+                    else:
+                        net_printer_id = net_prn["id"]
+                    
+                    # Vincular a la PC en pc_network_printers
+                    rel_exists = conn.execute(
+                        "SELECT 1 FROM pc_network_printers WHERE pc_name = %s AND printer_id = %s",
+                        (pc_name, net_printer_id)
+                    ).fetchone()
+                    if not rel_exists:
+                        conn.execute(
+                            "INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)",
+                            (pc_name, net_printer_id)
+                        )
+            else:
+                # Flujo normal para componentes estándar
+                new_status, new_lifecycle = deployed_component_state()
+                conn.execute(
+                    """
+                    UPDATE components
+                    SET status = %s, assigned_pc = %s, assigned_user = %s, assigned_fuero = %s, lifecycle_status = %s
+                    WHERE serial_number = %s
+                    """,
+                    (new_status, pc_name or None, assigned_user or None, assigned_fuero or None, new_lifecycle, serial)
+                )
 
             detalles = f"{comp['component_type']} {comp['brand_model']} (S/N: {serial}) -> Usuario: {assigned_user or 'N/A'}, Fuero: {assigned_fuero or 'N/A'}, PC: {pc_name or 'N/A'}"
             target_dest = pc_name or assigned_user or assigned_fuero or "Desconocido"

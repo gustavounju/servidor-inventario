@@ -673,6 +673,8 @@ def run_all_migrations():
     migrate_db_v60()
     # Fase 2 — Impresora Activa Seleccionada en pc_detected_printers
     migrate_db_v61()
+    # Fase 3 — Columnas de red en components para Impresora Activa
+    migrate_db_v62()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1655,4 +1657,25 @@ def migrate_db_v61():
                 print("Migración V61 aplicada: columna is_selected agregada.")
             else:
                 print("Migración V61 verificada.")
+
+
+def migrate_db_v62():
+    """
+    Migración V62: Agregar columnas is_network_printer y network_ip a la tabla components.
+    """
+    print("Verificando migración de DB v62 (is_network_printer y network_ip en components)...")
+    with get_db_connection() as conn:
+        if _table_exists(conn, "components"):
+            if not _column_exists(conn, "components", "is_network_printer"):
+                print("Aplicando V62: agregando is_network_printer a components...")
+                conn.execute(
+                    "ALTER TABLE components ADD COLUMN is_network_printer TINYINT(1) NOT NULL DEFAULT 0"
+                )
+                print("Migración V62 aplicada: columna is_network_printer agregada.")
+            if not _column_exists(conn, "components", "network_ip"):
+                print("Aplicando V62: agregando network_ip a components...")
+                conn.execute(
+                    "ALTER TABLE components ADD COLUMN network_ip VARCHAR(50) DEFAULT NULL"
+                )
+                print("Migración V62 aplicada: columna network_ip agregada.")
 

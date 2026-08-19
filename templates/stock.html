@@ -2274,7 +2274,15 @@
                         }
 
                         let assignedInfo = '-';
-                        if (item.status === 'Reservado' || item.build_order_id) {
+                        if (item.component_type && item.component_type.toUpperCase().includes('IMPRESORA') && item.is_network_printer && item.assigned_pcs_list && item.assigned_pcs_list.length > 0) {
+                            const pcLinks = item.assigned_pcs_list.map(pc => 
+                                `<a href="/pc/${encodeURIComponent(pc)}" class="fw-bold d-block mb-1">🖥 ${escapeHtml(pc)}</a>`
+                            ).join('');
+                            assignedInfo = `<div><span class="badge bg-info bg-opacity-10 text-info border border-info-subtle mb-1" style="font-size:0.68rem;"><i class="bi bi-globe2 me-1"></i>Uso en Red</span></div>${pcLinks}`;
+                            if (item.assigned_user || item.assigned_fuero) {
+                                assignedInfo += `<div class="small text-muted mt-1" style="font-size:0.72rem;">👤 ${escapeHtml(item.assigned_user || '')} · 🏛 ${escapeHtml(item.assigned_fuero || '')}</div>`;
+                            }
+                        } else if (item.status === 'Reservado' || item.build_order_id) {
                             const boLabel = item.bo_code || (item.build_order_id ? ('BO #' + item.build_order_id) : 'Orden de Armado');
                             assignedInfo = `<div><strong class="text-warning font-mono"><i class="bi bi-box-seam me-1"></i>${escapeHtml(boLabel)}</strong></div>`;
                             if (item.assigned_pc || item.assigned_user || item.assigned_fuero) {
@@ -2313,7 +2321,13 @@
                             </td>
                             <td>${serialBadge}</td>
                             <td><span class="fw-600" style="font-size:0.85rem;">${escapeHtml(item.component_type)}</span></td>
-                            <td><div style="font-size:0.85rem;">${escapeHtml(item.brand_model) || '-'}</div></td>
+                            <td>
+                                <div style="font-size:0.85rem;">${escapeHtml(item.brand_model) || '-'}</div>
+                                ${item.is_network_printer ? 
+                                    `<div class="small text-info mt-1" style="font-size:0.72rem;"><i class="bi bi-globe2 me-1"></i>En Red (IP: <code>${escapeHtml(item.network_ip || 'N/A')}</code>)</div>` : 
+                                    ''
+                                }
+                            </td>
                             <td>${extraHtml || '-'}</td>
                             <td>${statusHtml}</td>
                             <td>${assignedInfo}</td>

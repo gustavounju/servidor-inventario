@@ -1036,7 +1036,7 @@ def api_select_printer(pc_name, printer_id):
                 
             # Verificar que la impresora detectada pertenezca a la PC indicada
             printer = conn.execute(
-                "SELECT id FROM pc_detected_printers WHERE id = %s AND pc_name = %s",
+                "SELECT id, printer_model, printer_port, printer_sn FROM pc_detected_printers WHERE id = %s AND pc_name = %s",
                 (printer_id, pc_name)
             ).fetchone()
             
@@ -1055,9 +1055,99 @@ def api_select_printer(pc_name, printer_id):
                 (printer_id,)
             )
             
+            # --- INTEGRACIÓN CON STOCK (TABLA components) ---
+            printer_model = printer["printer_model"]
+            printer_port = printer["printer_port"] or ""
+            printer_sn = (printer["printer_sn"] or "").strip()
+            
+            # Si el serial no es válido, generar uno único autocompletado
+            if not printer_sn or printer_sn == "N/A" or printer_sn == "Sin S/N":
+                clean_model = "".join(c if c.isalnum() else "_" for c in printer_model)
+                printer_sn = f"INT-PRN-{pc_name}-{clean_model}"
+            
+            # Identificar si es una impresora de red buscando una dirección IP
+            import re
+            ip_match = re.search(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', printer_port)
+            is_net = 1 if ip_match else 0
+            network_ip = ip_match.group(1) if ip_match else None
+            
+            # Verificar si ya existe en components
+            existing_comp = conn.execute(
+                "SELECT id FROM components WHERE serial_number = %s",
+                (printer_sn,)
+            ).fetchone()
+            
+            if is_net:
+                # 1. Asegurar inserción en components para el Stock (como impresora de red global)
+                if not existing_comp:
+                    conn.execute(
+                        """
+                        INSERT INTO components (serial_number, component_type, brand_model, status, lifecycle_status, is_network_printer, network_ip, assigned_pc)
+                        VALUES (%s, 'Impresora', %s, 'Installed', 'deployed', 1, %s, NULL)
+                        """,
+                        (printer_sn, printer_model, network_ip)
+                    )
+                else:
+                    conn.execute(
+                        """
+                        UPDATE components 
+                        SET status = 'Installed', lifecycle_status = 'deployed', is_network_printer = 1, network_ip = %s, assigned_pc = NULL
+                        WHERE id = %s
+                        """,
+                        (network_ip, existing_comp["id"])
+                    )
+                
+                # 2. Registrar en network_printers (infraestructura)
+                net_prn = conn.execute(
+                    "SELECT id FROM network_printers WHERE serial_number = %s OR ip_address = %s",
+                    (printer_sn, network_ip)
+                ).fetchone()
+                
+                if not net_prn:
+                    conn.execute(
+                        """
+                        INSERT INTO network_printers (ip_address, brand_model, serial_number)
+                        VALUES (%s, %s, %s)
+                        """,
+                        (network_ip, printer_model, printer_sn)
+                    )
+                    net_printer_id = conn.execute("SELECT LAST_INSERT_ID()").fetchone()[0]
+                else:
+                    net_printer_id = net_prn["id"]
+                
+                # 3. Vincular a la PC en pc_network_printers
+                rel_exists = conn.execute(
+                    "SELECT 1 FROM pc_network_printers WHERE pc_name = %s AND printer_id = %s",
+                    (pc_name, net_printer_id)
+                ).fetchone()
+                if not rel_exists:
+                    conn.execute(
+                        "INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)",
+                        (pc_name, net_printer_id)
+                    )
+            else:
+                # Impresora local: se vincula físicamente a esta PC en components
+                if not existing_comp:
+                    conn.execute(
+                        """
+                        INSERT INTO components (serial_number, component_type, brand_model, status, lifecycle_status, is_network_printer, network_ip, assigned_pc)
+                        VALUES (%s, 'Impresora', %s, 'Installed', 'deployed', 0, NULL, %s)
+                        """,
+                        (printer_sn, printer_model, pc_name)
+                    )
+                else:
+                    conn.execute(
+                        """
+                        UPDATE components 
+                        SET status = 'Installed', lifecycle_status = 'deployed', is_network_printer = 0, network_ip = NULL, assigned_pc = %s
+                        WHERE id = %s
+                        """,
+                        (pc_name, existing_comp["id"])
+                    )
+            
             conn.commit()
             
-        return jsonify({"status": "success", "message": "Impresora activa actualizada correctamente"})
+        return jsonify({"status": "success", "message": "Impresora activa actualizada e ingresada al inventario correctamente"})
     except Exception as e:
         print(f"Error al seleccionar impresora activa: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
