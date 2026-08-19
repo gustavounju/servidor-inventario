@@ -3315,12 +3315,57 @@
         }
 
         let editComponentModal = null;
-        document.addEventListener('DOMContentLoaded', () => {
-            const modalEl = document.getElementById('editComponentModal');
-            if (modalEl) {
-                editComponentModal = new bootstrap.Modal(modalEl);
+        let editFormListenerAttached = false;
+
+        function getOrInitEditModal() {
+            if (!editComponentModal) {
+                const modalEl = document.getElementById('editComponentModal');
+                if (modalEl) {
+                    editComponentModal = new bootstrap.Modal(modalEl);
+                }
             }
-        });
+            return editComponentModal;
+        }
+
+        function attachEditFormListener() {
+            if (editFormListenerAttached) return;
+            const form = document.getElementById('editComponentForm');
+            if (!form) return;
+            editFormListenerAttached = true;
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const oldSerial = document.getElementById('editOldSerial').value;
+                const payload = {
+                    serial_number: document.getElementById('editSerial').value.trim(),
+                    patrimonio_code: document.getElementById('editPatrimonio').value.trim(),
+                    component_type: document.getElementById('editType').value,
+                    brand_model: document.getElementById('editModel').value.trim(),
+                    supplier: document.getElementById('editSupplier').value.trim(),
+                    invoice_number: document.getElementById('editRemito').value.trim(),
+                    oc_number: document.getElementById('editOc').value.trim(),
+                    lifecycle_status: document.getElementById('editLifecycle').value,
+                    asset_notes: document.getElementById('editNotes').value.trim()
+                };
+
+                fetch('/api/components/' + encodeURIComponent(oldSerial) + '/patrimony', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        getOrInitEditModal().hide();
+                        loadComponents();
+                        loadStockCatalog();
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(err => alert("Error de red: " + err));
+            });
+        }
 
         function openEditComponentModal(serial) {
             fetch('/api/components/' + encodeURIComponent(serial))
@@ -3338,8 +3383,9 @@
                         document.getElementById('editOc').value = comp.oc_number || '';
                         document.getElementById('editLifecycle').value = comp.lifecycle_status || 'stock';
                         document.getElementById('editNotes').value = comp.asset_notes || '';
-                        
-                        editComponentModal.show();
+
+                        attachEditFormListener();
+                        getOrInitEditModal().show();
                     } else {
                         alert("No se pudo obtener la información del componente.");
                     }
@@ -3348,39 +3394,6 @@
                     alert("Error consultando componente: " + err);
                 });
         }
-
-        document.getElementById('editComponentForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const oldSerial = document.getElementById('editOldSerial').value;
-            const payload = {
-                serial_number: document.getElementById('editSerial').value.trim(),
-                patrimonio_code: document.getElementById('editPatrimonio').value.trim(),
-                component_type: document.getElementById('editType').value,
-                brand_model: document.getElementById('editModel').value.trim(),
-                supplier: document.getElementById('editSupplier').value.trim(),
-                invoice_number: document.getElementById('editRemito').value.trim(),
-                oc_number: document.getElementById('editOc').value.trim(),
-                lifecycle_status: document.getElementById('editLifecycle').value,
-                asset_notes: document.getElementById('editNotes').value.trim()
-            };
-
-            fetch('/api/components/' + encodeURIComponent(oldSerial) + '/patrimony', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    editComponentModal.hide();
-                    loadComponents();
-                    loadStockCatalog();
-                } else {
-                    alert("Error: " + data.message);
-                }
-            })
-            .catch(err => alert("Error de red: " + err));
-        });
     </script>
 
     <!-- Modal Asignación de Componentes / Combo -->
@@ -3827,6 +3840,13 @@
                         <!-- Spinner o contenido del historial -->
                     </div>
                 </div>
+                <div class="modal-footer border-top" style="border-color: var(--border-color, #333) !important;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Editar Detalles Patrimoniales de Componente -->
     <div class="modal fade" id="editComponentModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -3838,7 +3858,7 @@
                 <form id="editComponentForm">
                     <div class="modal-body p-4">
                         <input type="hidden" id="editOldSerial">
-                        
+
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-slate-300">Código de Patrimonio</label>
                             <input type="text" class="form-control form-control-sm font-monospace bg-dark text-white border-secondary" id="editPatrimonio" placeholder="Ej: PAT-00123 (Opcional)">
