@@ -272,6 +272,39 @@
       color: var(--text-muted);
     }
     .dictation-hint i { color: var(--accent); margin-right: 3px; }
+    .dictation-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 8px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--accent);
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .dictation-button.recording {
+      background: #fff1f2;
+      border-color: #fda4af;
+      color: var(--red);
+    }
+    .dictation-security {
+      display: none;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 10px 14px 0;
+      padding: 10px 12px;
+      border: 1px solid #f3c98b;
+      border-radius: 8px;
+      background: #fff8eb;
+      color: #7c4a03;
+      font-size: 0.74rem;
+      line-height: 1.4;
+    }
+    .dictation-security.show { display: flex; }
     .btn-act-mini {
       background: transparent; border: 1px solid var(--border);
       border-radius: 4px; color: var(--text-muted); padding: 2px 6px;
@@ -517,6 +550,11 @@ function submitMobileTaskAction() {
   </div>
   {% endif %}
 
+  <div id="dictationSecurityNotice" class="dictation-security" role="status" aria-live="polite">
+    <i class="bi bi-shield-exclamation"></i>
+    <span id="dictationSecurityText"></span>
+  </div>
+
   <!-- Content -->
   <div class="content-area">
 
@@ -660,6 +698,7 @@ function submitMobileTaskAction() {
     <div class="input-group-gold">
       <div class="input-label-gold">Descripción *</div>
       <textarea class="gold-input" id="mDesc" rows="3" placeholder="¿Qué hay que resolver?"></textarea>
+      <button type="button" class="dictation-button" onclick="startInlineDictation('mDesc', this)" aria-label="Dictar descripción"><i class="bi bi-mic"></i>Dictar</button>
       <div class="dictation-hint"><i class="bi bi-mic"></i>Podés usar el micrófono del teclado del teléfono.</div>
     </div>
     <div class="input-group-gold">
@@ -695,6 +734,7 @@ function submitMobileTaskAction() {
     <div class="input-group-gold" id="mSolContainer" style="display:none; margin-top:10px;">
       <div class="input-label-gold">Solución</div>
       <textarea class="gold-input" id="mSolucion" rows="3" placeholder="¿Cómo se resolvió?"></textarea>
+      <button type="button" class="dictation-button" onclick="startInlineDictation('mSolucion', this)" aria-label="Dictar solución"><i class="bi bi-mic"></i>Dictar</button>
       <div class="dictation-hint"><i class="bi bi-mic"></i>Podés dictar la solución desde el teclado.</div>
     </div>
 
@@ -785,6 +825,7 @@ function submitMobileTaskAction() {
     <div class="input-group-gold">
       <div class="input-label-gold">Agregar Acción</div>
       <textarea class="gold-input" id="mobileNewTaskAction" rows="3" placeholder="Describe la acción (ej. Llevé la PC al taller)"></textarea>
+      <button type="button" class="dictation-button" onclick="startInlineDictation('mobileNewTaskAction', this)" aria-label="Dictar acción"><i class="bi bi-mic"></i>Dictar</button>
       <div class="dictation-hint"><i class="bi bi-mic"></i>Podés dictar esta acción desde el teclado.</div>
     </div>
 
@@ -813,12 +854,14 @@ function submitMobileTaskAction() {
     <div class="input-group-gold">
       <div class="input-label-gold">Descripción</div>
       <textarea class="gold-input" id="completeDesc" rows="2" placeholder="Descripción de la tarea"></textarea>
+      <button type="button" class="dictation-button" onclick="startInlineDictation('completeDesc', this)" aria-label="Dictar descripción"><i class="bi bi-mic"></i>Dictar</button>
       <div class="dictation-hint"><i class="bi bi-mic"></i>Podés usar el micrófono del teclado.</div>
     </div>
 
     <div class="input-group-gold">
       <div class="input-label-gold">Resolución / Solución</div>
       <textarea class="gold-input" id="completeSolucion" rows="6" style="resize: vertical; min-height: 80px;" placeholder="¿Cómo se solucionó?"></textarea>
+      <button type="button" class="dictation-button" onclick="startInlineDictation('completeSolucion', this)" aria-label="Dictar resolución"><i class="bi bi-mic"></i>Dictar</button>
       <div class="dictation-hint"><i class="bi bi-mic"></i>Podés dictar la resolución desde el teclado.</div>
     </div>
 
@@ -920,6 +963,90 @@ function postJSON(url, body) {
     body: JSON.stringify(body)
   });
 }
+
+// ── Dictado integrado (requiere HTTPS en celulares) ─────────────
+let inlineRecognition = null;
+
+function startInlineDictation(targetId, button) {
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const target = document.getElementById(targetId);
+  if (!target) return;
+
+  if (!Recognition) {
+    alert('Este navegador no ofrece dictado integrado. Usá el micrófono del teclado del teléfono.');
+    target.focus();
+    return;
+  }
+
+  if (inlineRecognition) inlineRecognition.stop();
+
+  const baseText = target.value.trim();
+  let finalText = '';
+  let interimText = '';
+  const originalLabel = button.innerHTML;
+  inlineRecognition = new Recognition();
+  inlineRecognition.lang = 'es-AR';
+  inlineRecognition.continuous = false;
+  inlineRecognition.interimResults = true;
+  inlineRecognition.maxAlternatives = 1;
+
+  button.classList.add('recording');
+  button.innerHTML = '<i class="bi bi-stop-circle"></i> Escuchando…';
+  target.focus();
+
+  inlineRecognition.onresult = (event) => {
+    finalText = '';
+    interimText = '';
+    for (let i = 0; i < event.results.length; i += 1) {
+      const phrase = event.results[i][0].transcript;
+      if (event.results[i].isFinal) finalText += phrase;
+      else interimText += phrase;
+    }
+    const dictated = (finalText + interimText).trim();
+    target.value = [baseText, dictated].filter(Boolean).join(baseText ? ' ' : '');
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  inlineRecognition.onerror = (event) => {
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      alert('Chrome no tiene permiso para usar el micrófono. Verificá HTTPS y el permiso del sitio.');
+    } else if (event.error !== 'no-speech') {
+      alert('No se pudo iniciar el dictado. Podés usar el micrófono del teclado.');
+    }
+  };
+
+  inlineRecognition.onend = () => {
+    button.classList.remove('recording');
+    button.innerHTML = originalLabel;
+    inlineRecognition = null;
+  };
+
+  try {
+    inlineRecognition.start();
+  } catch (error) {
+    inlineRecognition = null;
+    button.classList.remove('recording');
+    button.innerHTML = originalLabel;
+    alert('El dictado ya está ocupado. Esperá un momento y volvé a intentar.');
+  }
+}
+
+function updateDictationSecurityNotice() {
+  const notice = document.getElementById('dictationSecurityNotice');
+  const text = document.getElementById('dictationSecurityText');
+  if (!notice || !text) return;
+
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!window.isSecureContext) {
+    text.textContent = 'El dictado integrado se habilita al abrir esta pantalla con HTTPS. Mientras tanto, usá el micrófono del teclado.';
+    notice.classList.add('show');
+  } else if (!Recognition) {
+    text.textContent = 'Este navegador no ofrece dictado integrado. Podés usar el micrófono del teclado.';
+    notice.classList.add('show');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', updateDictationSecurityNotice);
 
 // ── Audio ──────────────────────────────────────────
 let audioCtx = null;
@@ -1592,8 +1719,76 @@ async function submitManualTask() {
 const voiceInput = document.getElementById('voiceFileInput');
 
 function toggleVoice() {
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition || !window.isSecureContext) {
+    openManualModal();
+    document.getElementById('mDesc').focus();
+    return;
+  }
   if (isListening) return;
-  voiceInput.click(); // Abre grabadora nativa
+
+  const overlay = document.getElementById('voiceOverlay');
+  const status = document.getElementById('voiceStatus');
+  const transcript = document.getElementById('voiceTranscript');
+  const result = document.getElementById('voiceResult');
+  const stopButton = document.getElementById('btnVoiceStop');
+  overlay.classList.add('open');
+  result.classList.remove('show');
+  transcript.textContent = '—';
+  status.textContent = 'Escuchando… hablá con naturalidad';
+  document.getElementById('vfDesc').value = '';
+  document.getElementById('vfSolic').value = '';
+  document.getElementById('vfPc').value = '';
+  document.getElementById('vfDone').checked = false;
+  document.getElementById('vfSolucion').value = '';
+  document.getElementById('vfSolContainer').style.display = 'none';
+  stopButton.disabled = true;
+  stopButton.innerHTML = '<i class="bi bi-mic-fill"></i> Escuchando…';
+  animateWave(true);
+
+  const recognition = new Recognition();
+  recog = recognition;
+  isListening = true;
+  recognition.lang = 'es-AR';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+  let heard = '';
+
+  recognition.onresult = (event) => {
+    heard = Array.from(event.results).map(item => item[0].transcript).join(' ').trim();
+    transcript.textContent = heard || '…';
+  };
+  recognition.onerror = (event) => {
+    if (event.error !== 'no-speech') status.textContent = 'No se pudo usar el micrófono. Podés dictar desde el teclado.';
+  };
+  recognition.onend = () => {
+    isListening = false;
+    recog = null;
+    animateWave(false);
+    if (!heard) {
+      status.textContent = 'No se detectó texto. Podés usar el micrófono del teclado.';
+      stopButton.disabled = false;
+      stopButton.innerHTML = '<i class="bi bi-x-circle"></i> Cerrar';
+      stopButton.onclick = cancelVoice;
+      return;
+    }
+    document.getElementById('vfDesc').value = heard;
+    document.getElementById('voiceResult').classList.add('show');
+    status.textContent = 'Texto capturado. Revisá y completá los datos:';
+    stopButton.disabled = false;
+    stopButton.innerHTML = '<i class="bi bi-save"></i> Guardar Tarea';
+    stopButton.onclick = () => confirmVoiceResult(false);
+  };
+
+  try {
+    recognition.start();
+  } catch (error) {
+    isListening = false;
+    recog = null;
+    animateWave(false);
+    openManualModal();
+  }
 }
 
 voiceInput.onchange = async (e) => {
@@ -1664,6 +1859,10 @@ async function confirmVoiceResult(isDone) {
 }
 
 function cancelVoice() {
+  if (recog) {
+    try { recog.stop(); } catch (error) {}
+    recog = null;
+  }
   document.getElementById('voiceOverlay').classList.remove('open');
   document.getElementById('voiceResult').classList.remove('show');
   isListening = false;

@@ -25,3 +25,23 @@ def test_mobile_text_fields_explain_keyboard_dictation_fallback():
     template = TECHNICIANS_TEMPLATE.read_text(encoding="utf-8")
 
     assert "Podés usar el micrófono del teclado" in template
+
+
+def test_mobile_has_integrated_dictation_controls_for_task_text():
+    template = TECHNICIANS_TEMPLATE.read_text(encoding="utf-8")
+
+    assert "window.SpeechRecognition || window.webkitSpeechRecognition" in template
+    for target_id in ("mDesc", "mSolucion", "mobileNewTaskAction", "completeDesc", "completeSolucion"):
+        assert f"startInlineDictation('{target_id}', this)" in template
+
+
+def test_https_proxy_is_ready_for_internal_mobile_dictation():
+    nginx = (
+        TECHNICIANS_TEMPLATE.parents[1]
+        / "deployment"
+        / "nginx_inventario.conf"
+    ).read_text(encoding="utf-8")
+
+    assert "listen 5000 ssl;" in nginx
+    assert "ssl_certificate /opt/inventario/cert.pem;" in nginx
+    assert "ssl_certificate_key /opt/inventario/key.pem;" in nginx
