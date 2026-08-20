@@ -5,7 +5,12 @@ import logging
 from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.local_voice import parse_voice_command_locally
-from services.push_notifications import notify_all_technicians
+from services.push_notifications import (
+    notify_all_technicians,
+    remove_web_push_subscription,
+    save_web_push_subscription,
+    web_push_enabled,
+)
 from utils.auth import current_technician_identity, current_user, list_technician_users
 from utils.network_policy import local_audio_upload_enabled
 from blueprints.bp_tasks import _attach_task_actions_bulk
@@ -131,6 +136,38 @@ def api_mobile_notifications():
     except Exception as e:
         logging.error(f"Error api_mobile_notifications: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@bp_mobile.route("/api/mobile/push/config")
+def api_mobile_push_config():
+    """Entrega solo la clave pública; la privada nunca sale del servidor."""
+    return jsonify({
+        "enabled": web_push_enabled(),
+        "public_key": os.environ.get("VAPID_PUBLIC_KEY", "") if web_push_enabled() else "",
+    })
+
+
+@bp_mobile.route("/api/mobile/push/subscribe", methods=["POST"])
+def api_mobile_push_subscribe():
+    technician = current_technician_identity()
+    data = request.get_json(silent=True) or {}
+    subscription = data.get("subscription")
+    if not technician or not isinstance(subscription, dict):
+        return jsonify({"status": "error", "message": "Suscripción inválida"}), 400
+    if not save_web_push_subscription(technician, subscription, request.headers.get("User-Agent", "")):
+        return jsonify({"status": "error", "message": "Suscripción inválida"}), 400
+    return jsonify({"status": "success"})
+
+
+@bp_mobile.route("/api/mobile/push/subscribe", methods=["DELETE"])
+def api_mobile_push_unsubscribe():
+    technician = current_technician_identity()
+    data = request.get_json(silent=True) or {}
+    endpoint = data.get("endpoint")
+    if not technician or not endpoint:
+        return jsonify({"status": "error", "message": "Suscripción inválida"}), 400
+    remove_web_push_subscription(technician, endpoint)
+    return jsonify({"status": "success"})
 
 @bp_mobile.route("/api/mobile/create_task", methods=["POST"])
 def api_mobile_create_task():

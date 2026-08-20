@@ -1,6 +1,23 @@
 // Service Worker — Inventario GOLD
 // Maneja instalación PWA
 
+self.addEventListener('push', (event) => {
+    let data = {};
+    try { data = event.data ? event.data.json() : {}; } catch (_) { data = {}; }
+    const title = data.title || 'Inventario';
+    const options = {
+        body: data.body || 'Hay una actualización de tareas.',
+        icon: '/static/icon-192.png',
+        badge: '/static/icon-192.png',
+        tag: data.task_id ? `task-${data.task_id}` : 'inventario-notification',
+        renotify: true,
+        silent: false,
+        vibrate: [120, 80, 120],
+        data: { url: data.url || '/tecnicos' }
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
 // Al hacer clic en la notificación (lanzada por el cliente interno)
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();

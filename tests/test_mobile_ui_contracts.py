@@ -48,3 +48,27 @@ def test_https_proxy_is_ready_for_internal_mobile_dictation():
     assert "listen 5000 ssl;" in nginx
     assert "ssl_certificate /opt/inventario/cert.pem;" in nginx
     assert "ssl_certificate_key /opt/inventario/key.pem;" in nginx
+
+
+def test_mobile_web_push_contract_is_present():
+    template = TECHNICIANS_TEMPLATE.read_text(encoding="utf-8")
+    service_worker = (
+        TECHNICIANS_TEMPLATE.parents[1] / "static" / "sw.js"
+    ).read_text(encoding="utf-8")
+    push_service = (
+        TECHNICIANS_TEMPLATE.parents[1] / "services" / "push_notifications.py"
+    ).read_text(encoding="utf-8")
+    migration = (
+        TECHNICIANS_TEMPLATE.parents[1]
+        / "database"
+        / "migrations"
+        / "002_web_push_subscriptions.sql"
+    ).read_text(encoding="utf-8")
+
+    assert "pushManager.subscribe" in template
+    assert "/api/mobile/push/subscribe" in template
+    assert "self.addEventListener('push'" in service_worker
+    assert "showNotification" in service_worker
+    assert "web_push_subscriptions" in push_service
+    assert "VAPID_PRIVATE_KEY" in push_service
+    assert "CREATE TABLE IF NOT EXISTS web_push_subscriptions" in migration

@@ -561,6 +561,7 @@ function submitMobileTaskAction() {
     </div>
     <div class="minimal-actions">
       <button onclick="refreshData()" title="Refrescar"><i class="bi bi-arrow-clockwise" id="refreshIcon"></i></button>
+      <button onclick="enableAlerts()" id="enableAlertsBtn" title="Activar notificaciones"><i class="bi bi-bell"></i></button>
       <button onclick="openManualModal()" title="Nueva Tarea Manual"><i class="bi bi-plus-lg"></i></button>
       {% if has_access('audit_racks') %}
       <button onclick="openRackAuditModal()" title="Auditar Racks"><i class="bi bi-server text-info"></i></button>
@@ -1688,27 +1689,65 @@ async function submitTask(desc, solic, pcName, isDone, tipo, prio, solucion) {
 }
 
 async function subscribeToPush(requestPermission = false) {
-  // FCM completely removed for internal network compatibility.
-  pushSubscribed = true;
-  updateAlertsButton();
-  if (requestPermission && 'Notification' in window) {
-    if (Notification.permission !== 'granted') {
-      await Notification.requestPermission();
-    }
+  pushSubscribed = false;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || !window.isSecureContext) {
+    updateAlertsButton();
+    return false;
   }
+  try {
+    const configRes = await fetch('/api/mobile/push/config');
+    const config = await configRes.json();
+    if (!config.enabled || !config.public_key) {
+      updateAlertsButton();
+      return false;
+    }
+    if (requestPermission && Notification.permission !== 'granted') {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        updateAlertsButton();
+        return false;
+      }
+    }
+    if (Notification.permission !== 'granted') {
+      updateAlertsButton();
+      return false;
+    }
+    const registration = await navigator.serviceWorker.register('/sw.js');
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(config.public_key),
+      });
+    }
+    const response = await postJSON('/api/mobile/push/subscribe', { subscription: subscription.toJSON() });
+    pushSubscribed = response.ok;
+  } catch (error) {
+    console.warn('No se pudo activar Web Push:', error);
+  }
+  updateAlertsButton();
+  return pushSubscribed;
 }
 
 async function enableAlerts() {
   playTaskAlarm();
-  await subscribeToPush(true);
-  updateAlertsButton();
+  const enabled = await subscribeToPush(true);
+  if (enabled) alert('Notificaciones activadas en este dispositivo.');
+  else if (!window.isSecureContext) alert('Abrí el sistema usando HTTPS para activar notificaciones.');
+  else alert('No se pudieron activar las notificaciones. Revisá el permiso del navegador.');
 }
 
 function updateAlertsButton() {
   const btn = document.getElementById('enableAlertsBtn');
   if (!btn) return;
-  const granted = 'Notification' in window && Notification.permission === 'granted';
-  btn.style.display = granted && pushSubscribed ? 'none' : '';
+  btn.style.display = pushSubscribed ? 'none' : '';
+}
+
+function urlBase64ToUint8Array(value) {
+  const padding = '='.repeat((4 - value.length % 4) % 4);
+  const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
 }
 
 // ── Rack Audit Modal ──────────────────────────────────
