@@ -11,24 +11,49 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
   <style>
     :root {
-      --bg: #09090B;
-      --bg2: #111827;
-      --bg3: #27272A;
-      --card: #18181B;
-      --card-hover: #3F3F46;
-      --border: #3F3F46;
-      --accent: #F59E0B;
-      --accent2: #D97706;
-      --green: #10B981;
-      --yellow: #F59E0B;
-      --red: #EF4444;
-      --text: #FAFAFA;
-      --text-muted: #A1A1AA;
-      --input-bg: rgba(0, 0, 0, 0.4);
-      --radius: 2px;
-      --radius-sm: 0px;
-      --shadow: none;
+      --bg: #f5f7fb;
+      --bg2: #ffffff;
+      --bg3: #eef2f7;
+      --card: #ffffff;
+      --card-hover: #f8fafc;
+      --border: #d9e2ec;
+      --accent: #1f5f8b;
+      --accent2: #174a6d;
+      --green: #218739;
+      --yellow: #a16207;
+      --red: #b42318;
+      --text: #1f2937;
+      --text-muted: #64748b;
+      --input-bg: #f8fafc;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
       --font-mono: 'JetBrains Mono', monospace;
+
+      /* Aliases used by the shared stylesheet. */
+      --bg-color: var(--bg);
+      --text-color: var(--text);
+      --accent-color: var(--accent);
+      --card-bg: var(--card);
+      --border-color: var(--border);
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #09090b;
+      --bg2: #111827;
+      --bg3: #27272a;
+      --card: #18181b;
+      --card-hover: #3f3f46;
+      --border: #3f3f46;
+      --accent: #f59e0b;
+      --accent2: #d97706;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --text: #fafafa;
+      --text-muted: #a1a1aa;
+      --input-bg: rgba(0, 0, 0, 0.4);
+      --shadow: none;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -48,16 +73,16 @@
       justify-content: space-between;
       padding: 14px 20px;
       background: var(--bg2);
-      border-bottom: 1px solid rgba(255,255,255,0.12);
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       gap: 12px;
-      color: #fff;
-      box-shadow: 0 10px 28px rgba(18, 60, 59, 0.2);
+      color: var(--text);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
     }
     .top-bar-brand { display: flex; align-items: center; gap: 10px; }
     .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: #f6c453; box-shadow: 0 0 0 4px rgba(246, 196, 83, 0.16); }
     .brand-name { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; }
-    .brand-sub { font-size: 0.72rem; color: rgba(255,255,255,0.72); font-weight: 400; }
+    .brand-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 400; }
     /* =========================================================
        NUEVO LAYOUT: APP NATIVA (BOTTOM BAR)
        ========================================================= */
@@ -81,7 +106,7 @@
     .bottom-nav-item.active i { transform: scale(1.15); }
     
     .bottom-nav-fab-container { position: relative; top: -20px; }
-    .bottom-nav-fab { width: 56px; height: 56px; border-radius: 4px; background: var(--accent); color: var(--bg); font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg2); transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); transform: rotate(45deg); }
+    .bottom-nav-fab { width: 56px; height: 56px; border-radius: 12px; background: var(--accent); color: #fff; font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg2); transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 6px 14px rgba(31, 95, 139, 0.25); transform: rotate(45deg); }
     .bottom-nav-fab i { transform: rotate(-45deg); }
     .bottom-nav-fab:active { transform: rotate(45deg) scale(0.9); }
     .bottom-nav-fab.recording {
@@ -96,7 +121,7 @@
 
     .bottom-badge {
       position: absolute; top: -2px; right: calc(50% - 18px);
-      background: #ef4444; color: white; border-radius: 10px; padding: 2px 6px;
+      background: #b42318; color: white; border-radius: 10px; padding: 2px 6px;
       font-size: 0.6rem; font-weight: 800; border: 2px solid #0f172a;
     }
 
@@ -107,7 +132,7 @@
     @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     /* --- Modern Task Cards (Industrial) --- */
-    .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 2px; padding: 16px; margin-bottom: 12px; transition: transform 0.1s; position: relative; overflow: hidden; }
+    .task-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; transition: transform 0.1s, box-shadow 0.1s; position: relative; overflow: hidden; box-shadow: var(--shadow); }
     .task-card:active { transform: scale(0.99); background: var(--card-hover); }
     .task-card-accent { 
       position: absolute; left: 0; top: 0; bottom: 0; width: 4px; 
@@ -156,7 +181,7 @@
     .empty-state p { font-size: 0.85rem; }
 
     /* ── Voice Modal ── */
-    .voice-overlay { position: fixed; inset: 0; background: rgba(11, 14, 20, 0.85); display: none; z-index: 200; flex-direction: column; align-items: center; justify-content: flex-end; }
+    .voice-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.38); display: none; z-index: 200; flex-direction: column; align-items: center; justify-content: flex-end; }
     .voice-overlay.open { display: flex; }
     .voice-sheet { background: var(--card); border-radius: 12px 12px 0 0; width: 100%; max-width: 560px; padding: 24px 20px 36px; border-top: 1px solid var(--border); animation: sheet-in .3s ease; }
     @keyframes sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -240,6 +265,13 @@
       color: var(--text); font-size: 0.9rem; font-family: inherit; font-weight: 500;
     }
     .gold-input::placeholder { color: var(--text-muted); font-weight: 400; }
+    .dictation-hint {
+      margin-top: 6px;
+      font-size: 0.7rem;
+      line-height: 1.35;
+      color: var(--text-muted);
+    }
+    .dictation-hint i { color: var(--accent); margin-right: 3px; }
     .btn-act-mini {
       background: transparent; border: 1px solid var(--border);
       border-radius: 4px; color: var(--text-muted); padding: 2px 6px;
@@ -381,8 +413,8 @@
   <script>
     // Anti-FOUC: aplicar tema guardado antes de que el DOM se pinte
     (function() {
-        var pref = localStorage.getItem('theme_preference') || localStorage.getItem('theme') || 'dark';
-        if (pref !== 'light') {
+        var pref = localStorage.getItem('techTheme') || 'default';
+        if (pref === 'dark') {
             document.documentElement.setAttribute('data-theme', 'dark');
         } else {
             document.documentElement.removeAttribute('data-theme');
@@ -628,6 +660,7 @@ function submitMobileTaskAction() {
     <div class="input-group-gold">
       <div class="input-label-gold">Descripción *</div>
       <textarea class="gold-input" id="mDesc" rows="3" placeholder="¿Qué hay que resolver?"></textarea>
+      <div class="dictation-hint"><i class="bi bi-mic"></i>Podés usar el micrófono del teclado del teléfono.</div>
     </div>
     <div class="input-group-gold">
       <div class="input-label-gold">PC / Equipo (opcional)</div>
@@ -662,6 +695,7 @@ function submitMobileTaskAction() {
     <div class="input-group-gold" id="mSolContainer" style="display:none; margin-top:10px;">
       <div class="input-label-gold">Solución</div>
       <textarea class="gold-input" id="mSolucion" rows="3" placeholder="¿Cómo se resolvió?"></textarea>
+      <div class="dictation-hint"><i class="bi bi-mic"></i>Podés dictar la solución desde el teclado.</div>
     </div>
 
 
@@ -671,10 +705,6 @@ function submitMobileTaskAction() {
     </div>
   </div>
 </div>
-
-<audio id="sndNew" preload="auto">
-  <source src="{{ url_for('static', filename='audio/waka.wav') }}" type="audio/wav">
-</audio>
 
 <!-- ── Auditoría de Racks ── -->
 <div class="voice-overlay" id="rackAuditOverlay">
@@ -755,6 +785,7 @@ function submitMobileTaskAction() {
     <div class="input-group-gold">
       <div class="input-label-gold">Agregar Acción</div>
       <textarea class="gold-input" id="mobileNewTaskAction" rows="3" placeholder="Describe la acción (ej. Llevé la PC al taller)"></textarea>
+      <div class="dictation-hint"><i class="bi bi-mic"></i>Podés dictar esta acción desde el teclado.</div>
     </div>
 
     <input type="hidden" id="mobileActionTaskId">
@@ -782,11 +813,13 @@ function submitMobileTaskAction() {
     <div class="input-group-gold">
       <div class="input-label-gold">Descripción</div>
       <textarea class="gold-input" id="completeDesc" rows="2" placeholder="Descripción de la tarea"></textarea>
+      <div class="dictation-hint"><i class="bi bi-mic"></i>Podés usar el micrófono del teclado.</div>
     </div>
 
     <div class="input-group-gold">
       <div class="input-label-gold">Resolución / Solución</div>
       <textarea class="gold-input" id="completeSolucion" rows="6" style="resize: vertical; min-height: 80px;" placeholder="¿Cómo se solucionó?"></textarea>
+      <div class="dictation-hint"><i class="bi bi-mic"></i>Podés dictar la resolución desde el teclado.</div>
     </div>
 
     <div class="voice-actions">
@@ -871,10 +904,7 @@ function toggleTheme() {
   const root = document.documentElement;
   const current = root.getAttribute('data-theme') || 'default';
   
-  let next = 'default';
-  if (current === 'default') next = 'dark';
-  else if (current === 'dark') next = 'femenino';
-  else if (current === 'femenino') next = 'retro';
+  const next = current === 'dark' ? 'default' : 'dark';
 
   if (next === 'default') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', next);
@@ -892,21 +922,7 @@ function postJSON(url, body) {
 }
 
 // ── Audio ──────────────────────────────────────────
-let wakaBuffer = null;
 let audioCtx = null;
-
-// Initialize audio context and load sound immediately
-try {
-  const AC = window.AudioContext || window.webkitAudioContext;
-  if (AC) {
-    audioCtx = new AC();
-    fetch("{{ url_for('static', filename='audio/waka.wav') }}")
-      .then(r => r.arrayBuffer())
-      .then(buf => audioCtx.decodeAudioData(buf))
-      .then(decoded => { wakaBuffer = decoded; })
-      .catch(e => console.log("Waka load error:", e));
-  }
-} catch(e) {}
 
 // Unlock audio on first interaction
 function unlockAudio() {
@@ -919,35 +935,40 @@ function unlockAudio() {
 document.addEventListener('click', unlockAudio);
 document.addEventListener('keydown', unlockAudio);
 
-function playPacmanSound() {
+function playClassicBell() {
   try {
-    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-    if (!audioCtx) return;
+    if (navigator.vibrate) navigator.vibrate(45);
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!audioCtx) audioCtx = new AC();
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    if (wakaBuffer) {
-      const src1 = audioCtx.createBufferSource();
-      src1.buffer = wakaBuffer;
-      src1.connect(audioCtx.destination);
-      src1.start(0);
-      
-      const src2 = audioCtx.createBufferSource();
-      src2.buffer = wakaBuffer;
-      src2.connect(audioCtx.destination);
-      src2.start(audioCtx.currentTime + wakaBuffer.duration);
-    }
+    const now = audioCtx.currentTime;
+    [[880, 0.18, 0.08], [1320, 0.24, 0.06]].forEach(([frequency, duration, volume], index) => {
+      const oscillator = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, now + index * 0.045);
+      gain.gain.exponentialRampToValueAtTime(volume, now + index * 0.045 + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.045 + duration);
+      oscillator.connect(gain);
+      gain.connect(audioCtx.destination);
+      oscillator.start(now + index * 0.045);
+      oscillator.stop(now + index * 0.045 + duration + 0.02);
+    });
   } catch(e) {}
 }
 
 function playBeep(type = 'new') {
-  playPacmanSound();
+  playClassicBell();
 }
 
 function playMessageAlarm() {
-  playPacmanSound();
+  playClassicBell();
 }
 
 function playTaskAlarm() {
-  playPacmanSound();
+  playClassicBell();
 }
 
 // ── Tabs ──────────────────────────────────────────
