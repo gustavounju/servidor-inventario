@@ -831,6 +831,18 @@ def acta_gemelo_validado(pc_name):
         for item in components
         if item
     }
+
+    # Agregar impresoras de red vinculadas (si no están ya en la lista por ser el equipo primario)
+    for np in ctx.get("assigned_network_printers") or []:
+        serial = str(np.get("serial_number") or "").strip().upper()
+        if serial and serial != "N/A" and serial not in known_serials:
+            components.append({
+                "component_type": "Impresora (Red)",
+                "brand_model": np.get("brand_model") or "Impresora genérica",
+                "serial_number": serial,
+                "status": "Installed"
+            })
+            known_serials.add(serial)
     for item in ctx.get("all_unified_components") or []:
         serial = str(item.get("serial_number") or "").strip().upper()
         if is_ignored_storage_component(item) and serial not in known_serials:

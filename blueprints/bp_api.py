@@ -1025,16 +1025,43 @@ def api_select_printer(pc_name, printer_id):
             return jsonify({"status": "error", "message": "No autorizado"}), 401
             
         with get_db_connection() as conn:
-            if printer_id == 0:
-                # Desmarcar todas
-                conn.execute(
-                    "UPDATE pc_detected_printers SET is_selected = 0 WHERE pc_name = %s",
-                    (pc_name,)
-                )
-                conn.commit()
-                return jsonify({"status": "success", "message": "Se desmarcaron todas las impresoras"})
+            # 1. Encontrar las impresoras que estaban seleccionadas actualmente para desenlazarlas del stock
+            old_printers = conn.execute(
+                "SELECT printer_model, printer_port, printer_sn FROM pc_detected_printers WHERE pc_name = %s AND is_selected = 1",
+                (pc_name,)
+            ).fetchall()
+
+            for op in old_printers:
+                op_model = op["printer_model"]
+                op_port = op["printer_port"] or ""
+                op_sn = (op["printer_sn"] or "").strip()
+                if not op_sn or op_sn == "N/A" or op_sn == "Sin S/N":
+                    clean_op_model = "".join(c if c.isalnum() else "_" for c in op_model)
+                    op_sn = f"INT-PRN-{pc_name}-{clean_op_model}"
                 
-            # Verificar que la impresora detectada pertenezca a la PC indicada
+                import re
+                op_ip_match = re.search(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', op_port)
+                if op_ip_match:
+                    # Era de red. Desenlazar de pc_network_printers
+                    op_ip = op_ip_match.group(1)
+                    net_prn = conn.execute("SELECT id FROM network_printers WHERE serial_number = %s OR ip_address = %s", (op_sn, op_ip)).fetchone()
+                    if net_prn:
+                        conn.execute("DELETE FROM pc_network_printers WHERE pc_name = %s AND printer_id = %s", (pc_name, net_prn["id"]))
+                else:
+                    # Era local. Quitar de assigned_pc
+                    conn.execute("UPDATE components SET assigned_pc = NULL WHERE serial_number = %s AND assigned_pc = %s", (op_sn, pc_name))
+
+            # 2. Desmarcar todas en la tabla local
+            conn.execute(
+                "UPDATE pc_detected_printers SET is_selected = 0 WHERE pc_name = %s",
+                (pc_name,)
+            )
+
+            if printer_id == 0:
+                conn.commit()
+                return jsonify({"status": "success", "message": "Impresora deseleccionada y liberada correctamente."})
+                
+            # Verificar que la nueva impresora detectada pertenezca a la PC indicada
             printer = conn.execute(
                 "SELECT id, printer_model, printer_port, printer_sn FROM pc_detected_printers WHERE id = %s AND pc_name = %s",
                 (printer_id, pc_name)
@@ -1042,12 +1069,6 @@ def api_select_printer(pc_name, printer_id):
             
             if not printer:
                 return jsonify({"status": "error", "message": "Impresora no encontrada para este equipo"}), 404
-                
-            # Desmarcar todas las impresoras para esta PC
-            conn.execute(
-                "UPDATE pc_detected_printers SET is_selected = 0 WHERE pc_name = %s",
-                (pc_name,)
-            )
             
             # Marcar la seleccionada
             conn.execute(
@@ -1111,7 +1132,7 @@ def api_select_printer(pc_name, printer_id):
                         """,
                         (network_ip, printer_model, printer_sn)
                     )
-                    net_printer_id = conn.execute("SELECT LAST_INSERT_ID()").fetchone()[0]
+                    net_printer_id = conn.cursor.lastrowid
                 else:
                     net_printer_id = net_prn["id"]
                 
@@ -1150,5 +1171,133 @@ def api_select_printer(pc_name, printer_id):
         return jsonify({"status": "success", "message": "Impresora activa actualizada e ingresada al inventario correctamente"})
     except Exception as e:
         print(f"Error al seleccionar impresora activa: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/network_printer/<int:printer_id>/link_pc", methods=["POST"])
+def api_link_network_printer(printer_id):
+    """Vincula una impresora de red existente a una PC (many-to-many vía pc_network_printers)."""
+    try:
+        from utils.auth import is_authenticated, current_username
+        if not is_authenticated():
+            return jsonify({"status": "error", "message": "No autorizado"}), 401
+
+        data = request.get_json(force=True) or {}
+        pc_name = (data.get("pc_name") or "").strip()
+        if not pc_name:
+            return jsonify({"status": "error", "message": "pc_name requerido"}), 400
+
+        with get_db_connection() as conn:
+            printer = conn.execute(
+                "SELECT id, brand_model, ip_address FROM network_printers WHERE id = %s",
+                (printer_id,)
+            ).fetchone()
+            if not printer:
+                return jsonify({"status": "error", "message": "Impresora no encontrada"}), 404
+
+            pc = conn.execute(
+                "SELECT pc_name FROM pcs WHERE pc_name = %s", (pc_name,)
+            ).fetchone()
+            if not pc:
+                return jsonify({"status": "error", "message": "PC no encontrada"}), 404
+
+            exists = conn.execute(
+                "SELECT 1 FROM pc_network_printers WHERE pc_name = %s AND printer_id = %s",
+                (pc_name, printer_id)
+            ).fetchone()
+            if exists:
+                return jsonify({"status": "info", "message": f"La impresora ya estaba vinculada a {pc_name}"})
+
+            conn.execute(
+                "INSERT INTO pc_network_printers (pc_name, printer_id) VALUES (%s, %s)",
+                (pc_name, printer_id)
+            )
+            conn.execute(
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (pc_name, "Impresora Red Vinculada", "None", printer["ip_address"],
+                 current_username(), "GESTION_INVENTARIO", request.remote_addr)
+            )
+            conn.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": f"Impresora {printer['brand_model']} ({printer['ip_address']}) vinculada a {pc_name}"
+        })
+    except Exception as e:
+        print(f"Error vinculando impresora de red: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/network_printer/<int:printer_id>/link_pc", methods=["DELETE"])
+def api_unlink_network_printer(printer_id):
+    """Desvincula una impresora de red de una PC."""
+    try:
+        from utils.auth import is_authenticated, current_username
+        if not is_authenticated():
+            return jsonify({"status": "error", "message": "No autorizado"}), 401
+
+        data = request.get_json(force=True) or {}
+        pc_name = (data.get("pc_name") or "").strip()
+        if not pc_name:
+            return jsonify({"status": "error", "message": "pc_name requerido"}), 400
+
+        with get_db_connection() as conn:
+            printer = conn.execute(
+                "SELECT id, brand_model, ip_address FROM network_printers WHERE id = %s",
+                (printer_id,)
+            ).fetchone()
+            if not printer:
+                return jsonify({"status": "error", "message": "Impresora no encontrada"}), 404
+
+            conn.execute(
+                "DELETE FROM pc_network_printers WHERE pc_name = %s AND printer_id = %s",
+                (pc_name, printer_id)
+            )
+            conn.execute(
+                "INSERT INTO audit_logs (pc_name, field, old_value, new_value, user_name, action_type, ip_address) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (pc_name, "Impresora Red Desvinculada", printer["ip_address"], "None",
+                 current_username(), "GESTION_INVENTARIO", request.remote_addr)
+            )
+            conn.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": f"Impresora {printer['brand_model']} desvinculada de {pc_name}"
+        })
+    except Exception as e:
+        print(f"Error desvinculando impresora de red: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@bp_api.route("/api/network_printers/list")
+def api_network_printers_list():
+    """Lista todas las impresoras de red del catálogo."""
+    try:
+        from utils.auth import is_authenticated
+        if not is_authenticated():
+            return jsonify({"status": "error", "message": "No autorizado"}), 401
+
+        pc_name = request.args.get("exclude_pc", "").strip()
+        with get_db_connection() as conn:
+            printers = conn.execute(
+                "SELECT id, ip_address, brand_model, serial_number FROM network_printers ORDER BY brand_model"
+            ).fetchall()
+
+            result = []
+            for p in printers:
+                linked_pcs = conn.execute(
+                    "SELECT pc_name FROM pc_network_printers WHERE printer_id = %s",
+                    (p["id"],)
+                ).fetchall()
+                result.append({
+                    "id": p["id"],
+                    "ip_address": p["ip_address"],
+                    "brand_model": p["brand_model"],
+                    "serial_number": p["serial_number"],
+                    "linked_pcs": [r["pc_name"] for r in linked_pcs],
+                    "already_linked": pc_name in [r["pc_name"] for r in linked_pcs]
+                })
+
+        return jsonify({"status": "success", "printers": result})
+    except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 

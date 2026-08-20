@@ -782,6 +782,46 @@
             {% endif %}
           </div>
 
+          {# --- Impresoras de red del catálogo vinculadas a esta PC --- #}
+          <div class="mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="text-muted small fw-bold text-uppercase" style="font-size:0.72rem;"><i class="bi bi-diagram-3 me-1"></i>Impresoras de Red (Catálogo):</span>
+              <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size:0.68rem;" onclick="openLinkNetworkPrinterPanel('{{ pc.pc_name }}')" title="Vincular impresora de red del catálogo">
+                <i class="bi bi-plus-lg"></i> Vincular
+              </button>
+            </div>
+
+            {% if assigned_network_printers %}
+              <div class="d-flex flex-column gap-1">
+                {% for np in assigned_network_printers %}
+                  <div class="d-flex justify-content-between align-items-center p-2 rounded border" style="background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.2) !important; font-size: 0.8rem;">
+                    <div>
+                      <strong style="color:var(--text-color);">{{ np.brand_model }}</strong>
+                      <div class="text-muted small" style="font-size:0.72rem;"><i class="bi bi-wifi me-1"></i><code>{{ np.ip_address }}</code></div>
+                    </div>
+                    <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size:0.68rem; padding:2px 6px;" onclick="unlinkNetworkPrinter({{ np.id }}, '{{ pc.pc_name }}', '{{ np.brand_model }}')" title="Desvincular">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <span class="text-muted small d-block py-1" style="font-size:0.75rem;">Ninguna impresora de red vinculada aún.</span>
+            {% endif %}
+
+            {# Panel inline de vinculación (oculto por defecto) #}
+            <div id="linkNetworkPrinterPanel-{{ pc.pc_name | replace(' ', '_') }}" style="display:none;" class="mt-2 p-2 rounded border" style="border-color: rgba(59,130,246,0.3);">
+              <span class="text-muted small d-block mb-1" style="font-size:0.72rem;">Seleccioná la impresora a vincular:</span>
+              <div class="d-flex gap-2">
+                <select id="networkPrinterSelect-{{ pc.pc_name | replace(' ', '_') }}" class="form-select form-select-sm" style="font-size:0.8rem;">
+                  <option value="">Cargando...</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-primary py-0" style="font-size:0.8rem; white-space:nowrap;" onclick="confirmLinkNetworkPrinter('{{ pc.pc_name }}')">Vincular</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0" style="font-size:0.8rem;" onclick="closeLinkNetworkPrinterPanel('{{ pc.pc_name }}')">Cancelar</button>
+              </div>
+            </div>
+          </div>
+
           {% if printer_pending and not ns_printer.active_detected %}
           <button type="button" class="pc-inline-link mt-2" onclick="promoteToNetworkPrinter('{{ pc.printer_port | replace('\\', '\\\\') }}', '{{ pc.printer_model }}', '{{ pc.pc_name }}', '{{ pc.printer_sn }}')">Catalogar impresora <i class="bi bi-arrow-right"></i></button>
           {% endif %}
@@ -1380,33 +1420,41 @@
     </div>
   </div>
 
-  <!-- Modal Vincular Componente del Stock -->
+  <!-- Modal Vincular Componente / Impresora -->
   <div class="modal fade" id="modalAssignComponent" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form id="formAssignComponent" method="POST" action="">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="pc_name" value="{{ pc.pc_name }}">
-          <div class="modal-header">
-            <h5 class="modal-title fw-bold">Vincular Componente del Stock</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Vincular al Equipo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Tipo de Vinculación:</label>
+            <select class="form-select form-select-sm mb-3" id="assignTypeSelect" onchange="toggleAssignType()">
+              <option value="component">Componente Patrimonial (Monitor, Teclado, etc)</option>
+              <option value="printer">Impresora de Red</option>
+            </select>
           </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Componente Disponible (Stock):</label>
-              <select class="form-select form-select-sm" id="selectComponent" onchange="document.getElementById('formAssignComponent').action='/infra/components/' + this.value + '/assign_pc'" required>
-                <option value="">-- Seleccionar --</option>
-                {% for c in available_components %}
-                <option value="{{ c.id }}">{{ c.component_type }} | {{ c.brand_model }} (SN: {{ c.serial_number }})</option>
-                {% endfor %}
-              </select>
-            </div>
+          
+          <div id="assignComponentDiv">
+            <label class="form-label small fw-semibold">Seleccione un componente en Stock:</label>
+            <select class="form-select form-select-sm" id="selectComponent">
+              <option value="">Cargando componentes...</option>
+            </select>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary btn-sm">Vincular</button>
+
+          <div id="assignPrinterDiv" style="display:none;">
+            <label class="form-label small fw-semibold">Seleccione una Impresora de Red (Catálogo):</label>
+            <select class="form-select form-select-sm" id="selectPrinter">
+              <option value="">Cargando impresoras...</option>
+            </select>
           </div>
-        </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnSubmitVincular" onclick="submitVincular()">Vincular</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2033,6 +2081,153 @@
         alert("Error de conexión con el servidor");
       });
     }
+
+    // ── Vinculación de impresoras de red del catálogo ──────────────────────
+    function _printerPanelKey(pcName) {
+      return pcName.replace(/\s+/g, '_');
+    }
+
+    function openLinkNetworkPrinterPanel(pcName) {
+      const key = _printerPanelKey(pcName);
+      const panel = document.getElementById('linkNetworkPrinterPanel-' + key);
+      const select = document.getElementById('networkPrinterSelect-' + key);
+      if (!panel) return;
+      panel.style.display = 'block';
+
+      // Cargar catálogo de impresoras de red
+      fetch(`/api/network_printers/list?exclude_pc=${encodeURIComponent(pcName)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.status !== 'success') { select.innerHTML = '<option value="">Error al cargar</option>'; return; }
+          const printers = data.printers;
+          if (!printers.length) {
+            select.innerHTML = '<option value="">No hay impresoras en el catálogo</option>';
+            return;
+          }
+          select.innerHTML = printers.map(p => {
+            const linked = p.already_linked ? ' ✓ ya vinculada' : '';
+            return `<option value="${p.id}" ${p.already_linked ? 'disabled' : ''}>${p.brand_model} — ${p.ip_address}${linked}</option>`;
+          }).join('');
+        })
+        .catch(() => { select.innerHTML = '<option value="">Error de conexión</option>'; });
+    }
+
+    function closeLinkNetworkPrinterPanel(pcName) {
+      const panel = document.getElementById('linkNetworkPrinterPanel-' + _printerPanelKey(pcName));
+      if (panel) panel.style.display = 'none';
+    }
+
+    function confirmLinkNetworkPrinter(pcName) {
+      const key = _printerPanelKey(pcName);
+      const select = document.getElementById('networkPrinterSelect-' + key);
+      const printerId = select ? select.value : '';
+      if (!printerId) { alert('Seleccioná una impresora primero.'); return; }
+
+      fetch(`/api/network_printer/${printerId}/link_pc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+        body: JSON.stringify({ pc_name: pcName })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success' || data.status === 'info') {
+          window.location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(() => alert('Error de conexión'));
+    }
+
+    function unlinkNetworkPrinter(printerId, pcName, printerName) {
+      if (!confirm(`¿Desvincular "${printerName}" de ${pcName}? La impresora seguirá en el catálogo.`)) return;
+      fetch(`/api/network_printer/${printerId}/link_pc`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+        body: JSON.stringify({ pc_name: pcName })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success') {
+          window.location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(() => alert('Error de conexión'));
+    }
+
+    // --- Lógica de Vinculación desde Modal ---
+    const pcNameCurrent = "{{ pc.pc_name|default('') }}";
+    
+    document.getElementById('modalAssignComponent')?.addEventListener('show.bs.modal', function () {
+      loadAssignModalData();
+    });
+
+    function toggleAssignType() {
+      const type = document.getElementById('assignTypeSelect').value;
+      document.getElementById('assignComponentDiv').style.display = type === 'component' ? 'block' : 'none';
+      document.getElementById('assignPrinterDiv').style.display = type === 'printer' ? 'block' : 'none';
+    }
+
+    function loadAssignModalData() {
+      // Cargar componentes en stock
+      fetch('/api/components/stock_available')
+      .then(r => r.json())
+      .then(data => {
+        const sel = document.getElementById('selectComponent');
+        sel.innerHTML = '<option value="">-- Seleccionar Componente --</option>';
+        const comps = data.components || data || [];
+        comps.forEach(c => {
+          if (!c.is_network_printer) {
+            sel.innerHTML += `<option value="${c.serial_number}">${c.component_type} | ${c.brand_model || ''} (SN: ${c.serial_number})</option>`;
+          }
+        });
+      }).catch(e => console.error(e));
+
+      // Cargar impresoras de red
+      fetch('/api/network_printers/list')
+      .then(r => r.json())
+      .then(data => {
+        const sel = document.getElementById('selectPrinter');
+        sel.innerHTML = '<option value="">-- Seleccionar Impresora --</option>';
+        const printers = data.printers || [];
+        printers.forEach(p => {
+          sel.innerHTML += `<option value="${p.id}">${p.brand_model || 'Impresora de Red'} (IP: ${p.ip_address})</option>`;
+        });
+      }).catch(e => console.error(e));
+    }
+
+    function submitVincular() {
+      const type = document.getElementById('assignTypeSelect').value;
+      const btn = document.getElementById('btnSubmitVincular');
+      btn.disabled = true;
+
+      if (type === 'component') {
+        const serial = document.getElementById('selectComponent').value;
+        if (!serial) { alert("Seleccione un componente"); btn.disabled = false; return; }
+        fetch('/api/components/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+          body: JSON.stringify({ serial_number: serial, pc_name: pcNameCurrent, assigned_user: '', assigned_fuero: '' })
+        }).then(r => r.json()).then(data => {
+          if (data.status === 'success') window.location.reload();
+          else { alert("Error: " + data.message); btn.disabled = false; }
+        }).catch(e => { alert("Error"); btn.disabled = false; });
+      } else {
+        const pId = document.getElementById('selectPrinter').value;
+        if (!pId) { alert("Seleccione una impresora"); btn.disabled = false; return; }
+        fetch(`/api/network_printer/${pId}/link_pc`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+          body: JSON.stringify({ pc_name: pcNameCurrent })
+        }).then(r => r.json()).then(data => {
+          if (data.status === 'success') window.location.reload();
+          else { alert("Error: " + data.message); btn.disabled = false; }
+        }).catch(e => { alert("Error"); btn.disabled = false; });
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────
   </script>
 </body>
 </html>
