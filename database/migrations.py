@@ -675,6 +675,8 @@ def run_all_migrations():
     migrate_db_v61()
     # Fase 3 — Columnas de red en components para Impresora Activa
     migrate_db_v62()
+    # Fase 4 — Suscripciones Web Push por técnico/dispositivo
+    migrate_db_v63()
     with get_db_connection() as conn:
         migration_v32(conn)
 
@@ -1678,4 +1680,28 @@ def migrate_db_v62():
                     "ALTER TABLE components ADD COLUMN network_ip VARCHAR(50) DEFAULT NULL"
                 )
                 print("Migración V62 aplicada: columna network_ip agregada.")
+
+
+def migrate_db_v63():
+    """Migración V63: almacenar suscripciones Web Push por técnico."""
+    print("Verificando migración de DB v63 (suscripciones Web Push)...")
+    with get_db_connection() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS web_push_subscriptions (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                technician_name VARCHAR(255) NOT NULL,
+                endpoint TEXT NOT NULL,
+                endpoint_hash CHAR(64) NOT NULL,
+                p256dh TEXT NOT NULL,
+                auth TEXT NOT NULL,
+                user_agent VARCHAR(255) DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_web_push_endpoint_hash (endpoint_hash),
+                KEY idx_web_push_technician (technician_name)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            """
+        )
+    print("Migración V63 verificada.")
 
