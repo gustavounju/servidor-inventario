@@ -6,11 +6,14 @@ TECHNICIANS_TEMPLATE = (
 )
 
 
-def test_mobile_technicians_defaults_to_clear_classic_theme():
+def test_mobile_technicians_defaults_to_dark_command_center_theme():
     template = TECHNICIANS_TEMPLATE.read_text(encoding="utf-8")
 
     assert "--bg: #f5f7fb" in template
-    assert "localStorage.getItem('techTheme') || 'default'" in template
+    assert "localStorage.getItem('techTheme') || 'dark'" in template
+    assert 'class="home-voice-button"' in template
+    assert 'id="homeMineCount"' in template
+    assert 'id="homeFreeCount"' in template
 
 
 def test_mobile_notifications_use_local_classic_bell():

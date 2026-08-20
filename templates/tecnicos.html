@@ -271,6 +271,34 @@
       line-height: 1.35;
       color: var(--text-muted);
     }
+
+    /* ── Mobile command center ── */
+    .mobile-home { padding: 22px 16px 30px; }
+    .home-greeting { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 24px; }
+    .home-kicker { color: var(--text-muted); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 5px; }
+    .home-title { font-size: 1.45rem; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; }
+    .home-status { display: inline-flex; align-items: center; gap: 6px; color: var(--green); font-size: .72rem; font-weight: 700; white-space: nowrap; }
+    .home-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 15%, transparent); }
+    .home-voice-zone { display: grid; place-items: center; padding: 4px 0 26px; }
+    .home-voice-button { width: 132px; height: 132px; border-radius: 50%; border: 1px solid rgba(246,196,83,.65); background: radial-gradient(circle at 35% 25%, #ffe49a 0%, #f6c453 38%, #bc8122 100%); color: #17120a; display: grid; place-items: center; gap: 2px; box-shadow: 0 0 0 10px rgba(246,196,83,.08), 0 18px 38px rgba(0,0,0,.35); transition: transform .18s ease, box-shadow .18s ease; }
+    .home-voice-button:active { transform: scale(.95); }
+    .home-voice-button i { font-size: 2.35rem; line-height: 1; }
+    .home-voice-button span { font-size: .76rem; font-weight: 800; }
+    .home-action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 24px; }
+    .home-action { display: flex; align-items: center; gap: 11px; min-height: 70px; padding: 13px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; text-align: left; cursor: pointer; }
+    .home-action:active { background: var(--card-hover); transform: translateY(1px); }
+    .home-action i { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); font-size: 1.1rem; flex: 0 0 auto; }
+    .home-action strong { display: block; font-size: .82rem; margin-bottom: 3px; }
+    .home-action small { display: block; color: var(--text-muted); font-size: .68rem; }
+    .home-action-count { margin-left: auto; color: var(--text); font-size: 1.2rem; font-weight: 800; }
+    .home-section-title { color: var(--text-muted); font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 9px; }
+    .home-recent { padding: 13px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg2); color: var(--text-muted); font-size: .78rem; }
+    .home-recent i { color: var(--green); margin-right: 7px; }
+    .home-recent p + p { margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--border); }
+    .more-menu { display: none; position: fixed; right: 12px; bottom: 82px; z-index: 120; min-width: 180px; padding: 6px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+    .more-menu.open { display: block; }
+    .more-menu a, .more-menu button { display: flex; width: 100%; gap: 10px; align-items: center; padding: 11px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--text); text-decoration: none; font: inherit; font-size: .8rem; text-align: left; }
+    .more-menu a:active, .more-menu button:active { background: var(--card-hover); }
     .dictation-hint i { color: var(--accent); margin-right: 3px; }
     .dictation-button {
       display: inline-flex;
@@ -446,7 +474,7 @@
   <script>
     // Anti-FOUC: aplicar tema guardado antes de que el DOM se pinte
     (function() {
-        var pref = localStorage.getItem('techTheme') || 'default';
+        var pref = localStorage.getItem('techTheme') || 'dark';
         if (pref === 'dark') {
             document.documentElement.setAttribute('data-theme', 'dark');
         } else {
@@ -558,8 +586,43 @@ function submitMobileTaskAction() {
   <!-- Content -->
   <div class="content-area">
 
+    <!-- Panel: Inicio / Centro de mando móvil -->
+    <div class="panel active" id="panel-inicio">
+      <section class="mobile-home">
+        <div class="home-greeting">
+          <div>
+            <div class="home-kicker">Centro de operaciones</div>
+            <h1 class="home-title">Hola, {{ mobile_identity or 'técnico' }}</h1>
+          </div>
+          <span class="home-status">Operativo</span>
+        </div>
+        <div class="home-voice-zone">
+          <button class="home-voice-button" type="button" onclick="toggleVoice()" aria-label="Dictar nueva tarea">
+            <i class="bi bi-mic-fill"></i>
+            <span>Dictar tarea</span>
+          </button>
+        </div>
+        <div class="home-action-grid">
+          <button class="home-action" type="button" onclick="switchTab('mias')">
+            <i class="bi bi-list-task"></i>
+            <span><strong>Mis tareas</strong><small>Asignadas a mí</small></span>
+            <b class="home-action-count" id="homeMineCount">0</b>
+          </button>
+          <button class="home-action" type="button" onclick="switchTab('libres')">
+            <i class="bi bi-inbox"></i>
+            <span><strong>Pendientes</strong><small>Sin asignar</small></span>
+            <b class="home-action-count" id="homeFreeCount">0</b>
+          </button>
+        </div>
+        <div class="home-section-title">Actividad reciente</div>
+        <div class="home-recent" id="homeRecent">
+          <p><i class="bi bi-check-circle"></i><span>Las novedades aparecerán aquí.</span></p>
+        </div>
+      </section>
+    </div>
+
     <!-- Panel: Mis Tareas -->
-    <div class="panel active" id="panel-mias">
+    <div class="panel" id="panel-mias">
       <div id="opsOverview" style="font-family: 'JetBrains Mono', monospace; border: 1px solid #333333; background: #000000; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
         <div style="text-align: center;">
           <div style="color: #666666; font-size: 0.55rem; letter-spacing: 0.1em; margin-bottom: 2px;">PENDIENTES</div>
@@ -596,14 +659,13 @@ function submitMobileTaskAction() {
 
   <!-- Bottom App Bar -->
   <nav class="bottom-app-bar">
-    <a href="#" class="bottom-nav-item active" id="tab-mias" onclick="switchTab('mias')">
+    <a href="#" class="bottom-nav-item active" id="tab-inicio" onclick="switchTab('inicio')">
+      <i class="bi bi-grid-1x2"></i>
+      <span>Inicio</span>
+    </a>
+    <a href="#" class="bottom-nav-item" id="tab-mias" onclick="switchTab('mias')">
       <i class="bi bi-list-task"></i>
       <span>Mis Tareas</span>
-    </a>
-    <a href="#" class="bottom-nav-item" id="tab-libres" onclick="switchTab('libres')">
-      <i class="bi bi-inbox"></i>
-      <span>Libres</span>
-      <span class="bottom-badge" id="badge-libres">0</span>
     </a>
     <div class="bottom-nav-fab-container">
       <button class="bottom-nav-fab" id="fabVoice" onclick="toggleVoice()">
@@ -615,17 +677,19 @@ function submitMobileTaskAction() {
       <span>Mensajes</span>
       <span class="bottom-badge" id="badge-inbox" style="display:none">0</span>
     </a>
-    {% if current_user.role != 'operador' %}
-    <a href="/tecnicos/scanner" class="bottom-nav-item">
-      <i class="bi bi-upc-scan"></i>
-      <span>Scan</span>
-    </a>
-    {% endif %}
-    <a href="#" class="bottom-nav-item" onclick="confirmLogout()">
-      <i class="bi bi-box-arrow-right"></i>
-      <span>Salir</span>
+    <a href="#" class="bottom-nav-item" onclick="toggleMoreMenu(event)">
+      <i class="bi bi-three-dots"></i>
+      <span>Más</span>
     </a>
   </nav>
+
+  <div class="more-menu" id="moreMenu" role="menu">
+    {% if current_user.role != 'operador' %}
+    <a href="/tecnicos/scanner" role="menuitem"><i class="bi bi-upc-scan"></i>Escanear equipo</a>
+    {% endif %}
+    <button type="button" onclick="toggleTheme(); closeMoreMenu()" role="menuitem"><i class="bi bi-circle-half"></i>Cambiar tema</button>
+    <button type="button" onclick="confirmLogout(); closeMoreMenu()" role="menuitem"><i class="bi bi-box-arrow-right"></i>Cerrar sesión</button>
+  </div>
 
 </div>
 
@@ -1110,6 +1174,23 @@ function switchTab(name) {
   if (name === 'avisos') loadNotifications();
 }
 
+function toggleMoreMenu(event) {
+  if (event) event.preventDefault();
+  document.getElementById('moreMenu').classList.toggle('open');
+}
+
+function closeMoreMenu() {
+  const menu = document.getElementById('moreMenu');
+  if (menu) menu.classList.remove('open');
+}
+
+document.addEventListener('click', (event) => {
+  const menu = document.getElementById('moreMenu');
+  if (menu && menu.classList.contains('open') && !menu.contains(event.target) && !event.target.closest('[onclick*="toggleMoreMenu"]')) {
+    closeMoreMenu();
+  }
+});
+
 // ── Logout ────────────────────────────────────────────
 function confirmLogout() {
   if (confirm(`¿Seguro que deseas cerrar sesión${techId ? ', ' + techId : ''}?`)) {
@@ -1210,6 +1291,21 @@ function renderOpsOverview(myTasks, free, done, globalStats) {
   document.getElementById('opsMineCount').textContent = myTasks.length;
   document.getElementById('opsMyDoneCount').textContent = myDoneToday;
   document.getElementById('opsMyTotalCount').textContent = allData.my_historical_total || 0;
+  const homeMine = document.getElementById('homeMineCount');
+  const homeFree = document.getElementById('homeFreeCount');
+  if (homeMine) homeMine.textContent = myTasks.length;
+  if (homeFree) homeFree.textContent = free.length;
+  const recent = document.getElementById('homeRecent');
+  if (recent) {
+    const recentTasks = [...(myTasks || []), ...(done || [])].sort((a, b) => {
+      const da = new Date((a.updated_at || a.completed_at || a.created_at || '').replace(' ', 'T')).getTime() || 0;
+      const db = new Date((b.updated_at || b.completed_at || b.created_at || '').replace(' ', 'T')).getTime() || 0;
+      return db - da;
+    }).slice(0, 2);
+    recent.innerHTML = recentTasks.length
+      ? recentTasks.map(t => `<p><i class="bi bi-${t.completed_at ? 'check-circle' : 'activity'}"></i><span>${escapeHtml(t.descripcion || t.description || 'Tarea actualizada')}</span></p>`).join('')
+      : '<p><i class="bi bi-check-circle"></i><span>Las novedades aparecerán aquí.</span></p>';
+  }
   
   // (Global stats removed from UI)
 }
@@ -1789,6 +1885,12 @@ function toggleVoice() {
     animateWave(false);
     openManualModal();
   }
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  }[char]));
 }
 
 voiceInput.onchange = async (e) => {
