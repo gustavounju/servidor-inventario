@@ -1723,7 +1723,8 @@ async function subscribeToPush(requestPermission = false) {
     }
     let registration;
     try {
-      registration = await navigator.serviceWorker.register(`/sw.js?v=${SW_VERSION}`, { scope: '/' });
+      await navigator.serviceWorker.register(`/sw.js?v=${SW_VERSION}`, { scope: '/' });
+      registration = await navigator.serviceWorker.ready;
     } catch (error) {
       return {
         ok: false,
