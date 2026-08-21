@@ -285,7 +285,7 @@
     .home-voice-button i { font-size: 2.35rem; line-height: 1; }
     .home-voice-button span { font-size: .76rem; font-weight: 800; }
     .home-action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 24px; }
-    .home-action { display: flex; align-items: center; gap: 11px; min-height: 70px; padding: 13px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; text-align: left; cursor: pointer; }
+    .home-action { display: flex; align-items: center; gap: 11px; min-height: 70px; padding: 13px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; text-align: left; text-decoration: none; cursor: pointer; }
     .home-action:active { background: var(--card-hover); transform: translateY(1px); }
     .home-action i { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); font-size: 1.1rem; flex: 0 0 auto; }
     .home-action strong { display: block; font-size: .82rem; margin-bottom: 3px; }
@@ -614,6 +614,10 @@ function submitMobileTaskAction() {
             <span><strong>Pendientes</strong><small>Sin asignar</small></span>
             <b class="home-action-count" id="homeFreeCount">0</b>
           </button>
+          <a class="home-action" href="{{ url_for('setup.download_certificate') }}" download>
+            <i class="bi bi-shield-lock"></i>
+            <span><strong>Certificado</strong><small>Descarga rápida</small></span>
+          </a>
         </div>
         <div class="home-section-title">Actividad reciente</div>
         <div class="home-recent" id="homeRecent">
@@ -688,6 +692,7 @@ function submitMobileTaskAction() {
     {% if current_user.role != 'operador' %}
     <a href="/tecnicos/scanner" role="menuitem"><i class="bi bi-upc-scan"></i>Escanear equipo</a>
     {% endif %}
+    <a href="{{ url_for('setup.download_certificate') }}" download role="menuitem"><i class="bi bi-shield-lock"></i>Descargar certificado</a>
     <button type="button" onclick="toggleTheme(); closeMoreMenu()" role="menuitem"><i class="bi bi-circle-half"></i>Cambiar tema</button>
     <button type="button" onclick="confirmLogout(); closeMoreMenu()" role="menuitem"><i class="bi bi-box-arrow-right"></i>Cerrar sesión</button>
   </div>
