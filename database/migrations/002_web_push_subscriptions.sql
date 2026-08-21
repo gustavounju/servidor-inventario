@@ -1,5 +1,3 @@
--- Suscripciones Web Push por técnico/dispositivo.
--- El endpoint completo no se expone en APIs; endpoint_hash evita duplicados.
 CREATE TABLE IF NOT EXISTS web_push_subscriptions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     technician_name VARCHAR(255) NOT NULL,

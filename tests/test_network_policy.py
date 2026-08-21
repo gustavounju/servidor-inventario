@@ -25,3 +25,17 @@ def test_external_news_can_be_enabled_explicitly(monkeypatch):
 
     guard_outbound_url("https://www.infobae.com/arc/outboundfeeds/rss/", purpose="news")
 
+
+def test_web_push_hosts_are_blocked_by_default(monkeypatch):
+    monkeypatch.delenv("ALLOW_EXTERNAL_NETWORK", raising=False)
+    monkeypatch.delenv("ALLOW_WEB_PUSH", raising=False)
+
+    with pytest.raises(OutboundNetworkBlocked):
+        guard_outbound_url("https://fcm.googleapis.com/fcm/send/example")
+
+
+def test_web_push_hosts_can_be_enabled_explicitly(monkeypatch):
+    monkeypatch.delenv("ALLOW_EXTERNAL_NETWORK", raising=False)
+    monkeypatch.setenv("ALLOW_WEB_PUSH", "true")
+
+    guard_outbound_url("https://fcm.googleapis.com/fcm/send/example")

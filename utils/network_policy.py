@@ -6,6 +6,10 @@ from urllib.parse import urlparse
 
 _TRUTHY = {"1", "true", "yes", "on", "si"}
 _DEFAULT_NEWS_HOSTS = {"www.infobae.com", "infobae.com"}
+_DEFAULT_WEB_PUSH_HOSTS = {
+    "fcm.googleapis.com",
+    "updates.push.services.mozilla.com",
+}
 
 
 class OutboundNetworkBlocked(RuntimeError):
@@ -29,6 +33,10 @@ def allow_external_news() -> bool:
 
 def allow_external_ai() -> bool:
     return _env_flag("ALLOW_EXTERNAL_AI", default=False)
+
+
+def allow_web_push() -> bool:
+    return _env_flag("ALLOW_WEB_PUSH", default=False)
 
 
 def local_voice_enabled() -> bool:
@@ -79,6 +87,8 @@ def is_outbound_url_allowed(url: str, purpose="general") -> bool:
     if is_local_or_private_host(hostname):
         return True
     if purpose == "news" and allow_external_news() and hostname in _DEFAULT_NEWS_HOSTS:
+        return True
+    if allow_web_push() and hostname in _DEFAULT_WEB_PUSH_HOSTS:
         return True
     if allow_external_network():
         allowlist = allowed_external_hosts()

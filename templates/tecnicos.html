@@ -996,6 +996,7 @@ function submitMobileTaskAction() {
 
 const API   = '/api/mobile';
 const CSRF  = '{{ csrf_token() }}';
+const SW_VERSION = '20260820-push-public';
 const isAdmin = {{ (current_user.role == 'administrador')|tojson }};
 let techId  = '{{ mobile_identity }}';
 let allData = {};
@@ -1004,7 +1005,6 @@ let isListening = false;
 let waveTimer   = null;
 let knownNotifIds = new Set();
 let pcPickerTaskId = null;
-const VAPID_PUBLIC_KEY = "BOu99N41agBTHQmpQHo8yrbTdQ7Kb392R1NgXiy8DeK5f7WVvHB-OXmqm-ptw2CpoIqM0cZZOUtYRYGaBdAUufE";
 let pushSubscribed = false;
 
 // Cambiar Tema
@@ -1692,49 +1692,89 @@ async function subscribeToPush(requestPermission = false) {
   pushSubscribed = false;
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || !window.isSecureContext) {
     updateAlertsButton();
-    return false;
+    return { ok: false, reason: 'unsupported_or_insecure' };
   }
   try {
     const configRes = await fetch('/api/mobile/push/config');
+    if (!configRes.ok) {
+      updateAlertsButton();
+      return { ok: false, reason: 'config_unavailable' };
+    }
     const config = await configRes.json();
     if (!config.enabled || !config.public_key) {
       updateAlertsButton();
-      return false;
+      return { ok: false, reason: 'server_not_configured' };
     }
     if (requestPermission && Notification.permission !== 'granted') {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         updateAlertsButton();
-        return false;
+        return { ok: false, reason: 'permission_denied' };
       }
     }
     if (Notification.permission !== 'granted') {
       updateAlertsButton();
-      return false;
+      return { ok: false, reason: 'permission_missing' };
     }
-    const registration = await navigator.serviceWorker.register('/sw.js');
+    let registration;
+    try {
+      registration = await navigator.serviceWorker.register(`/sw.js?v=${SW_VERSION}`, { scope: '/' });
+    } catch (error) {
+      return {
+        ok: false,
+        reason: 'service_worker_failed',
+        detail: `${error.name || 'Error'}: ${error.message || error}`,
+      };
+    }
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(config.public_key),
-      });
+      try {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(config.public_key),
+        });
+      } catch (error) {
+        return {
+          ok: false,
+          reason: 'push_subscription_failed',
+          detail: `${error.name || 'Error'}: ${error.message || error}`,
+        };
+      }
     }
     const response = await postJSON('/api/mobile/push/subscribe', { subscription: subscription.toJSON() });
     pushSubscribed = response.ok;
+    if (!pushSubscribed) {
+      return { ok: false, reason: 'subscribe_failed' };
+    }
   } catch (error) {
     console.warn('No se pudo activar Web Push:', error);
+    updateAlertsButton();
+    return { ok: false, reason: 'browser_error' };
   }
   updateAlertsButton();
-  return pushSubscribed;
+  return { ok: true };
 }
 
 async function enableAlerts() {
   playTaskAlarm();
-  const enabled = await subscribeToPush(true);
-  if (enabled) alert('Notificaciones activadas en este dispositivo.');
-  else if (!window.isSecureContext) alert('Abrí el sistema usando HTTPS para activar notificaciones.');
-  else alert('No se pudieron activar las notificaciones. Revisá el permiso del navegador.');
+  const result = await subscribeToPush(true);
+  if (result.ok) {
+    alert('Notificaciones activadas en este dispositivo.');
+  } else if (result.reason === 'unsupported_or_insecure') {
+    alert('Abrí el sistema usando HTTPS y un navegador compatible para activar notificaciones.');
+  } else if (result.reason === 'server_not_configured') {
+    alert('Web Push no está configurado en el servidor. Faltan las claves VAPID.');
+  } else if (result.reason === 'permission_denied' || result.reason === 'permission_missing') {
+    alert('El navegador no concedió permiso de notificaciones. Revisá los permisos del sitio.');
+  } else if (result.reason === 'config_unavailable') {
+    alert('No se pudo leer la configuración de notificaciones. Volvé a iniciar sesión e intentá de nuevo.');
+  } else if (result.reason === 'service_worker_failed') {
+    alert(`No se pudo instalar el service worker. ${result.detail || ''}`);
+  } else if (result.reason === 'push_subscription_failed') {
+    alert(`El navegador no pudo crear la suscripción push. ${result.detail || ''}`);
+  } else {
+    alert(`No se pudieron activar las notificaciones en este navegador. ${result.detail || ''}`);
+  }
 }
 
 function updateAlertsButton() {

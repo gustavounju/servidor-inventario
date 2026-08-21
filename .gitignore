@@ -10,6 +10,8 @@ venv/
 # Certificados SSL
 cert.pem
 key.pem
+inventario-local-ca.crt
+inventario-local-ca.key
 # Bases de datos y backups
 *.db
 *.db.old

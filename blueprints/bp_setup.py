@@ -144,7 +144,8 @@ def _rewrite_client_script(content, submit_token=None):
 
 
 def _certificate_file_sha256():
-    with open("cert.pem", "rb") as cert_file:
+    cert_path = "inventario-local-ca.crt" if os.path.exists("inventario-local-ca.crt") else "cert.pem"
+    with open(cert_path, "rb") as cert_file:
         return hashlib.sha256(cert_file.read()).hexdigest().upper()
 
 def _get_secure_launcher_command(current_base_url, current_fallback_url):
@@ -397,8 +398,9 @@ def download_gpo_script():
 def download_certificate():
     """Permite descargar el certificado SSL para instalarlo en dispositivos móviles."""
     try:
+        cert_path = "inventario-local-ca.crt" if os.path.exists("inventario-local-ca.crt") else "cert.pem"
         return send_file(
-            "cert.pem",
+            cert_path,
             as_attachment=True,
             download_name="inventario-cert.crt",
             mimetype="application/x-x509-ca-cert"

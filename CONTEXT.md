@@ -120,6 +120,13 @@ GREEN_API_ID_INSTANCE=[TU_ID_INSTANCE]
 GREEN_API_TOKEN_INSTANCE=[TU_TOKEN_INSTANCE]
 GREEN_API_PHONE=[TU_GRUPO_WHATSAPP]@g.us
 
+# Web Push / notificaciones con celular bloqueado
+# Requiere HTTPS confiable en Android y salida del servidor hacia FCM.
+ALLOW_WEB_PUSH=false
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_CLAIMS_EMAIL=mailto:admin@example.invalid
+
 # OCR (Opcional)
 PDF_OCR_LANG=spa+eng
 PDF_OCR_DPI=300
@@ -155,11 +162,13 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 ## 🔮 Próximas Mejoras
 1. Mejora de interfaz móvil
 2. Optimización de consultas a base de datos
-3. Implementación de WebSockets para notificaciones en tiempo real
+3. Evaluar WebSockets solo para vistas abiertas; con celular bloqueado el canal soportado es Web Push.
 4. Sistema de backup automático
 5. **Módulo de Armado de Puestos Completos (Combos), QR Par (CPU+Monitor) y Reemplazo por Falla** (ver detalles completos en [PLAN_GESTION_PUESTOS_Y_REEMPLAZOS.md](file:///g:/unju2025/google%20gravity/ServidorInventario/PLAN_GESTION_PUESTOS_Y_REEMPLAZOS.md)).
 
 ## 🆕 Últimos Cambios (Changelog)
+- **Agosto 2026 (Web Push móvil y certificados locales)**: Se reparó el flujo de notificaciones para técnicos en Android. La vista móvil ahora registra el service worker con cache-busting, muestra errores concretos de permisos/certificado/suscripción y deja públicos `/sw.js` y `/manifest.json` para que el navegador pueda instalarlos antes de autenticarse. Se agregó soporte de certificado local con CA propia mediante `tools/generate_certs.py`; el certificado que se instala en celulares es la CA pública (`inventario-local-ca.crt`), nunca la clave privada. Para que las notificaciones lleguen con el celular bloqueado, producción debe tener `ALLOW_WEB_PUSH=true`, claves VAPID configuradas y salida HTTPS permitida hacia FCM (`fcm.googleapis.com`).
+- **Agosto 2026 (Gestión de usuarios restaurada)**: Se restauró el acceso `[ USUARIOS ]` en la navegación de gestión y se agregó el permiso modular `manage_users`, disponible solo para administradores/superusuarios.
 - **Julio 2026 (Roles y Permisos Modulares - v3.1.0)**: Reestructuración y granulado del sistema de control de accesos. Se implementó una lógica de overrides de permisos a nivel de usuario en base de datos. Se protegieron rutas críticas de backend en `bp_tasks.py` y `bp_dashboard.py`. Se rediseñó el panel de usuarios para incluir edición directa de cuentas y permisos. Se resolvió la evasión del modo móvil en celulares agregando validaciones de dispositivo híbridas (User-Agent en backend y detección de Viewport/UA en cliente mediante script en `_module_switcher.html`).
 - **Julio 2026 (Sincronización AD)**: Se implementó la sincronización de equipos desde Active Directory. La nueva herramienta (ubicada en Infraestructura) extrae la OU (Unidad Organizativa) del `distinguishedName` de cada computadora en el AD y mapea automáticamente el Fuero correspondiente en la tabla local de PCs. Además, el Dashboard ahora cruza correctamente el nombre de sesión (ej. GMURAD) con el nombre real (ej. Gustavo Murad) obtenido de los usuarios del AD, mejorando drásticamente la legibilidad del inventario.
 - **Junio 2026 (UI Mensajes Directos)**: Se unificó el sistema de comunicación directa entre administradores y técnicos en un nuevo *Buzón de Comunicaciones* modal (con diseño premium y protecciones XSS). Se eliminó el botón clásico "[ MSJS ]" y la tarjeta suelta en el visor de tareas, moviendo el acceso principal "[ COMUNICACIÓN ]" directamente al panel superior de navegación.
@@ -210,5 +219,5 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
   7. **Fase 7 (Tests y Release)**: Creación de la suite completa de pruebas automatizadas (`tests/`), logrando alta cobertura de integración para API, lógica y repositorios. Limpieza general del repositorio de scripts temporales y ajuste final de la documentación.
 ---
 
-**Última actualización**: 8 de Agosto 2026  
+**Última actualización**: 21 de Agosto 2026
 **Versión del sistema**: Según APP_VERSION en utils/constants.py

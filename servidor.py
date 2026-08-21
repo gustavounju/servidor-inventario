@@ -402,7 +402,9 @@ def enforce_authentication():
 
 @app.route('/sw.js')
 def serve_sw():
-    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+    response = send_from_directory('static', 'sw.js', mimetype='application/javascript')
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return response
 
 @app.route('/manifest.json')
 def serve_manifest():

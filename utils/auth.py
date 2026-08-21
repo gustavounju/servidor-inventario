@@ -39,6 +39,7 @@ ROLE_PRESETS = {
         "manage_stock": True,
         "funcionario": True,
         "can_manage_stock": True,
+        "manage_users": True,
     },
     "operador": {
         "dashboard": False,
@@ -50,6 +51,7 @@ ROLE_PRESETS = {
         "manage_stock": False,
         "funcionario": False,
         "can_manage_stock": False,
+        "manage_users": False,
     },
     "tecnico": {
         "dashboard": False,
@@ -61,6 +63,7 @@ ROLE_PRESETS = {
         "manage_stock": False,
         "funcionario": False,
         "can_manage_stock": False,
+        "manage_users": False,
     },
     "infraestructura": {
         "dashboard": True,
@@ -71,6 +74,7 @@ ROLE_PRESETS = {
         "audit_racks": True,
         "manage_stock": True,
         "funcionario": True,
+        "manage_users": False,
     },
     "consulta": {
         "dashboard": False,
@@ -81,6 +85,7 @@ ROLE_PRESETS = {
         "audit_racks": False,
         "manage_stock": False,
         "funcionario": False,
+        "manage_users": False,
     },
 }
 
@@ -127,6 +132,13 @@ MODULE_DEFINITIONS = [
         "icon": "bi-headset",
         "active_prefixes": ["operadores."],
     },
+    {
+        "key": "manage_users",
+        "label": "Usuarios",
+        "endpoint": "users.users_admin",
+        "icon": "bi-people-fill",
+        "active_prefixes": ["users."],
+    },
 ]
 
 PUBLIC_ENDPOINTS = {
@@ -150,6 +162,8 @@ PUBLIC_ENDPOINTS = {
     "setup.download_file",
     "setup.descargas_tree",
     "auth.change_password",
+    "serve_sw",
+    "serve_manifest",
     "sw.js",
     "manifest.json",
     "tasks.visor",

@@ -68,6 +68,30 @@ def test_required_permission_for_endpoint():
     assert required_permission_for_endpoint("dashboard.view_cementerio") == "reports"
     assert required_permission_for_endpoint("infrastructure.index") == "infrastructure"
 
+def test_user_management_link_is_available_only_to_admins():
+    from servidor import app
+    from utils.auth import allowed_module_links
+
+    admin_user = {
+        "username": "admin_test",
+        "role": "administrador",
+        "is_superuser": True,
+        "permissions": {},
+    }
+    tech_user = {
+        "username": "tech_test",
+        "role": "tecnico",
+        "is_superuser": False,
+        "permissions": {},
+    }
+
+    with app.test_request_context(path="/"):
+        admin_links = allowed_module_links(user=admin_user)
+        tech_links = allowed_module_links(user=tech_user)
+
+    assert any(link["key"] == "manage_users" and link["url"] == "/admin/users" for link in admin_links)
+    assert all(link["key"] != "manage_users" for link in tech_links)
+
 def test_mobile_user_redirection():
     from utils.auth import auth_guard
     from flask import session

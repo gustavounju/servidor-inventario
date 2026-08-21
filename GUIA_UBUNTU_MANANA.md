@@ -66,6 +66,13 @@ INVENTARIO_API_TOKEN=[CONTRASEÑA_INICIAL_VER_ENV]
 # Dejalo en false si todavia entras por HTTP interno.
 # Cuando consolides HTTPS con Nginx, cambialo a true.
 SESSION_COOKIE_SECURE=false
+
+# Notificaciones Web Push para que suene con el celular bloqueado.
+# Requiere HTTPS confiable y salida del Ubuntu hacia FCM.
+ALLOW_WEB_PUSH=true
+VAPID_PUBLIC_KEY=pegar_clave_publica_vapid
+VAPID_PRIVATE_KEY=pegar_clave_privada_vapid
+VAPID_CLAIMS_EMAIL=mailto:informatica@example.invalid
 ```
 
 Si el `.env` no existe o esta incompleto, editalo antes de reiniciar.
@@ -75,6 +82,13 @@ Importante:
 - `DB_HOST` es la IP del servidor MySQL.
 - `INVENTARIO_PUBLIC_BASE_URL` es la IP o URL del servidor Inventario al que reportan las PCs.
 - Pueden ser maquinas distintas sin problema.
+- Si faltan las claves VAPID, generarlas en Ubuntu con:
+  ```bash
+  cd /opt/inventario
+  source .venv/bin/activate
+  python -m py_vapid --gen --json
+  ```
+  Copiar `public_key` a `VAPID_PUBLIC_KEY` y `private_key` a `VAPID_PRIVATE_KEY`. La clave privada queda solo en `.env`.
 
 ## 4. Instalar dependencias nuevas
 
@@ -82,6 +96,7 @@ Esta version agrega soporte para:
 
 - `gunicorn`
 - `ldap3` para Active Directory futuro
+- `pywebpush` / `py-vapid` para notificaciones Web Push en Android
 
 En Ubuntu ejecuta:
 
@@ -92,6 +107,69 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+## 4 bis. HTTPS local confiable para Android y Xiaomi
+
+Para que Chrome/Android instale el service worker y pueda recibir notificaciones con el celular bloqueado, no alcanza con "aceptar el riesgo" del certificado autofirmado. El telefono debe confiar en una CA local instalada desde Configuracion del sistema.
+
+En Ubuntu, dentro de `/opt/inventario`, genera certificados para la IP real del servidor Inventario:
+
+```bash
+cd /opt/inventario
+source .venv/bin/activate
+python tools/generate_certs.py --ip 10.15.2.251
+```
+
+Eso genera:
+
+- `inventario-local-ca.crt`: certificado publico de la CA local. Este es el que se instala en Android/Xiaomi.
+- `inventario-local-ca.key`: clave privada de la CA local. No se copia a celulares, no se sube a Git, no se comparte.
+- `cert.pem` y `key.pem`: certificado y clave que usa Flask/Gunicorn/Nginx para HTTPS.
+- `inventario-cert.crt`: copia publica compatible con descargas antiguas.
+
+Despues reinicia la app:
+
+```bash
+sudo systemctl restart inventario
+sudo systemctl status inventario
+```
+
+### Instalar en Android / Xiaomi
+
+1. En el celular, entra al sistema por HTTPS desde Chrome: `https://10.15.2.251:5000`.
+2. Descarga el certificado desde la pantalla de setup/descargas del sistema si esta disponible. El archivo debe llamarse `inventario-cert.crt`.
+3. En Xiaomi no se instala desde Chrome: ve a **Configuracion del telefono**.
+4. Busca `certificado`, `credenciales`, `CA` o `instalar certificado`.
+5. Elige instalar como **Certificado de CA**. Si pregunta el uso, elegir **VPN y apps**.
+6. Selecciona el archivo descargado y confirma con PIN/patron.
+
+### Como comprobar que el certificado quedo bien
+
+En el celular:
+
+1. Abre `https://10.15.2.251:5000` en Chrome.
+2. La pagina no debe mostrar advertencia roja de "conexion no privada".
+3. Toca el candado o informacion del sitio. Debe figurar conexion segura/certificado valido.
+4. En la pantalla de tecnicos, toca la campanita.
+5. Si aparece "Notificaciones activadas en este dispositivo", el certificado, el service worker y el permiso del navegador quedaron bien.
+6. Bloquea el celular y crea una tarea nueva desde la PC. Si no suena, revisar permisos de notificaciones de Chrome, modo No molestar, ahorro de bateria Xiaomi y que el servidor tenga salida a `fcm.googleapis.com`.
+
+### Verificacion rapida desde Ubuntu
+
+```bash
+cd /opt/inventario
+source .venv/bin/activate
+python - <<'PY'
+from dotenv import load_dotenv
+load_dotenv()
+from utils.network_policy import is_outbound_url_allowed
+from services.push_notifications import web_push_enabled
+print("web_push_enabled=", web_push_enabled())
+print("fcm_allowed=", is_outbound_url_allowed("https://fcm.googleapis.com/fcm/send/test"))
+PY
+```
+
+Debe imprimir `web_push_enabled= True` y `fcm_allowed= True`.
 
 ## 5. Si ya quieres dejar Gunicorn + Nginx mañana
 
