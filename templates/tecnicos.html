@@ -1001,7 +1001,7 @@ function submitMobileTaskAction() {
 
 const API   = '/api/mobile';
 const CSRF  = '{{ csrf_token() }}';
-const SW_VERSION = '20260820-push-public';
+const SW_VERSION = '20260821-task-format';
 const isAdmin = {{ (current_user.role == 'administrador')|tojson }};
 let techId  = '{{ mobile_identity }}';
 let allData = {};

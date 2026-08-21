@@ -3,7 +3,7 @@ from database.db_core import get_db_connection
 from utils.auth import is_authenticated, current_user, role_label
 import datetime
 from services.ai_assistant import predict_category
-from services.push_notifications import notify_all_technicians
+from services.push_notifications import build_new_task_push, notify_all_technicians
 
 bp_operadores = Blueprint('operadores', __name__)
 
@@ -100,11 +100,16 @@ def api_operadores_create_task():
             conn.commit()
 
         try:
-            notify_all_technicians(
-                title="Nueva tarea de operador",
-                body=f"{solicitante}: {descripcion}",
-                url="/tecnicos"
+            push = build_new_task_push(
+                task_id=task_id,
+                source="operator",
+                solicitante=solicitante,
+                descripcion=descripcion,
+                categoria=categoria,
+                fuero=fuero,
+                operator_name=operator_name,
             )
+            notify_all_technicians(**push)
         except Exception as e:
             print(f"Error notifying operator task: {e}")
 

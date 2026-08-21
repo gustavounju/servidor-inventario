@@ -665,7 +665,7 @@
 
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register('/sw.js?v=20260821-task-format')
                     .then(reg => {
                         console.log('SW Registered', reg);
                         // El SW se registró, pero tal vez el navegador no muestra el prompt por el SSL

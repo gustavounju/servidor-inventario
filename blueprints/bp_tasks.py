@@ -12,7 +12,7 @@ from openpyxl.utils import get_column_letter
 from database.db_core import get_db_connection
 from services.ai_assistant import predict_category
 from services.reporting import PDFReport, format_datetime_es, format_date_es
-from services.push_notifications import notify_all_technicians
+from services.push_notifications import build_new_task_push, notify_all_technicians
 from utils.auth import superuser_required, current_username, list_technician_users
 
 bp_tasks = Blueprint('tasks', __name__)
@@ -457,38 +457,23 @@ def add_task(pc_name):
 
     # Notify technicians
     try:
-        from datetime import datetime as _dt
-        import locale
-        
         phone_info = ""
         with get_db_connection() as conn:
             # Try to match solicitante against real_name or username
             user_row = conn.execute("SELECT phone FROM ad_users WHERE real_name = %s OR username = %s LIMIT 1", (solicitante, solicitante)).fetchone()
             if user_row and user_row["phone"]:
-                phone_info = f"📞 *Teléfono:* {user_row['phone']}\n"
+                phone_info = user_row["phone"]
 
-        
-        # Try to set locale for Spanish dates, fallback if not available
-        try:
-            locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
-        except:
-            try: locale.setlocale(locale.LC_TIME, '') # Try default
-            except: pass
-            
-        fecha_str = _dt.now().strftime("%A %d de %B de %Y").capitalize()
-        
-        cuerpo = f"📅 *Fecha:* {fecha_str}\n"
-        cuerpo += f"🖥️ *PC/Equipo:* {pc_name}\n"
-        cuerpo += f"👤 *Solicitante:* {solicitante}\n"
-        cuerpo += phone_info
-        cuerpo += f"🏷️ *Categoría:* {categoria}\n"
-        cuerpo += f"📝 *Descripción:* {descripcion}\n"
-
-        notify_all_technicians(
-            title="🚨 Nueva Tarea (PC)",
-            body=cuerpo,
-            url="/tecnicos"
+        push = build_new_task_push(
+            task_id=task_id,
+            source="pc",
+            pc_name=pc_name,
+            solicitante=solicitante,
+            descripcion=descripcion,
+            categoria=categoria,
+            phone=phone_info,
         )
+        notify_all_technicians(**push)
     except Exception as e:
         print(f"Error notifying: {e}")
 
@@ -616,42 +601,28 @@ def create_loose_task():
                VALUES (%s, %s, %s, NOW(), %s, %s, %s, 'PC Generica', %s, %s, %s, %s, %s, %s, %s)""",
             (descripcion, solicitante, estado, categoria, assigned_to, fuero, tipo_actividad, prioridad, impacto_valor, resumen_impacto, completed_by, completed_at, solucion)
         )
+        task_id = cursor.lastrowid
         conn.commit()
 
     # Notify technicians
     try:
-        from datetime import datetime as _dt
-        import locale
-        
         phone_info = ""
         with get_db_connection() as conn:
             user_row = conn.execute("SELECT phone FROM ad_users WHERE real_name = %s OR username = %s LIMIT 1", (solicitante, solicitante)).fetchone()
             if user_row and user_row["phone"]:
-                phone_info = f"📞 *Teléfono:* {user_row['phone']}\n"
+                phone_info = user_row["phone"]
 
-        
-        try:
-            locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
-        except:
-            try: locale.setlocale(locale.LC_TIME, '')
-            except: pass
-            
-        fecha_str = _dt.now().strftime("%A %d de %B de %Y").capitalize()
-        
-        cuerpo = f"📅 *Fecha:* {fecha_str}\n"
-        cuerpo += f"âš–ï¸ *Fuero/Ãrea:* {fuero if fuero else 'No especificado'}\n"
-        cuerpo += f"👤 *Solicitante:* {solicitante}\n"
-        cuerpo += phone_info
-        cuerpo += f"🏷️ *Categoría:* {categoria}\n"
-        if assigned_to:
-            cuerpo += f"ðŸ‘¨â€ðŸ”§ *Asignada a:* {assigned_to}\n"
-        cuerpo += f"📝 *Descripción:* {descripcion}\n"
-
-        notify_all_technicians(
-            title="🚨 Nueva Tarea Suelta",
-            body=cuerpo,
-            url="/tecnicos"
+        push = build_new_task_push(
+            task_id=task_id,
+            source="assigned" if assigned_to else "loose",
+            solicitante=solicitante,
+            descripcion=descripcion,
+            categoria=categoria,
+            fuero=fuero if fuero else "No especificado",
+            assigned_to=assigned_to,
+            phone=phone_info,
         )
+        notify_all_technicians(**push)
     except Exception as e:
         print(f"Error notifying: {e}")
 
