@@ -16,112 +16,242 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
     <script defer src="{{ url_for('static', filename='js/gold.js') }}?v={{ app_version }}"></script>
     <style>
-        .hide-past .ef-past {
-            display: none !important;
+        :root {
+            --ef-bg: #101827;
+            --ef-surface: #162033;
+            --ef-surface-soft: #1d2a40;
+            --ef-ink: #f7fbff;
+            --ef-muted: #b8c7dc;
+            --ef-border: rgba(191, 219, 254, 0.18);
+            --ef-blue: #bfdbfe;
+            --ef-mint: #bbf7d0;
+            --ef-amber: #fed7aa;
+            --ef-rose: #fecdd3;
+            --ef-violet: #ddd6fe;
+            --ef-blue-soft: rgba(147, 197, 253, 0.14);
+            --ef-mint-soft: rgba(134, 239, 172, 0.14);
+            --ef-amber-soft: rgba(253, 186, 116, 0.14);
+            --ef-rose-soft: rgba(252, 165, 165, 0.14);
+            --ef-violet-soft: rgba(196, 181, 253, 0.14);
         }
-        
+
+        .hide-past .ef-past { display: none !important; }
+
         body {
-            margin: 0; 
-            padding: 0; 
-            overflow-x: hidden; 
-            background: var(--bg-color); 
-            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background:
+                linear-gradient(180deg, rgba(147, 197, 253, 0.05), rgba(16, 24, 39, 0) 220px),
+                var(--ef-bg);
+            color: var(--ef-ink);
+            font-family: var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
         }
+
+        main.efemerides-workspace { padding: 18px; }
+        .efemerides-inner { padding: 0; }
 
         .ops-panel-dark {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            background: rgba(22, 32, 51, 0.86);
+            border: 1px solid var(--ef-border);
+            border-radius: 16px;
+            padding: 18px;
         }
 
-        .ops-header-dark {
-            border-bottom: 1px solid var(--border-color) !important;
+        .ef-announcement-panel {
+            background: linear-gradient(135deg, rgba(253, 186, 116, 0.12), rgba(22, 32, 51, 0.92));
+            border-color: rgba(253, 186, 116, 0.3);
+        }
+
+        .ops-header-dark { border-bottom: 1px solid var(--ef-border) !important; }
+        .ef-title { color: var(--ef-ink); letter-spacing: 0; }
+        .ef-icon-chip {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: inline-grid;
+            place-items: center;
+            color: var(--ef-blue);
+            background: var(--ef-blue-soft);
+            border: 1px solid rgba(147, 197, 253, 0.28);
+        }
+        .ef-help-row { align-items: flex-start; }
+        .ef-help-text { font-size: 0.85rem; max-width: 74ch; }
+        .text-muted-dark { color: var(--ef-muted) !important; }
+
+        .ef-table-shell {
+            border: 1px solid var(--ef-border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(10, 17, 30, 0.32);
         }
 
         .ops-table-dark {
-            color: var(--text-color);
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--ef-ink);
+            --bs-table-border-color: var(--ef-border);
+            color: var(--ef-ink);
             margin-bottom: 0;
-            background: var(--card-bg);
+            background: transparent;
         }
         .ops-table-dark th {
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
+            color: var(--ef-muted);
+            border-bottom: 1px solid var(--ef-border);
+            font-weight: 700;
             text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            background: var(--table-header-bg);
-            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+            background: rgba(10, 17, 30, 0.5);
+            font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+            padding-top: 12px;
+            padding-bottom: 12px;
         }
         .ops-table-dark td {
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--ef-border);
             vertical-align: middle;
-            color: var(--text-color);
+            color: var(--ef-ink);
             background: transparent;
-            transition: background 0.15s ease;
+            transition: background 0.15s ease, opacity 0.15s ease;
         }
-        .ops-table-dark tr:hover td {
-            background-color: rgba(59, 130, 246, 0.05);
-        }
-        
-        /* State Highlights */
-        .ops-table-dark tr.table-primary td {
-            background-color: rgba(59, 130, 246, 0.1);
-        }
-        .ops-table-dark tr.table-warning td {
-            background-color: rgba(245, 158, 11, 0.1);
-        }
-        .ops-table-dark tr.ef-past td {
-            opacity: 0.45;
-        }
-
-        .text-muted-dark {
-            color: var(--text-muted) !important;
+        .ops-table-dark tr:hover td { background-color: rgba(147, 197, 253, 0.08); }
+        .ops-table-dark tr.table-primary td { background-color: rgba(147, 197, 253, 0.13); }
+        .ops-table-dark tr.table-warning td { background-color: rgba(253, 186, 116, 0.13); }
+        .ops-table-dark tr.ef-past td { opacity: 0.5; }
+        .ef-date-cell { padding-left: 1rem; }
+        .ef-icon-cell { font-size: 1.3rem; text-align: center; }
+        .ef-title-cell strong { color: var(--ef-ink); letter-spacing: 0; }
+        .ef-description { font-size: 0.8rem; line-height: 1.45; }
+        .ef-actions-cell { padding-right: 1rem; }
+        .ef-status-auto {
+            background: rgba(191, 219, 254, 0.1);
+            color: var(--ef-muted);
+            border: 1px solid var(--ef-border);
         }
 
         .modal-content-dark {
-            background: var(--card-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            background: var(--ef-surface);
+            color: var(--ef-ink);
+            border: 1px solid var(--ef-border);
+            border-radius: 16px;
         }
-        
-        .modal-header-dark, .modal-footer-dark {
-            border-color: var(--border-color) !important;
+        .modal-header-dark, .modal-footer-dark { border-color: var(--ef-border) !important; }
+        .modal-header-dark { background: rgba(147, 197, 253, 0.06); }
+        .modal-footer-dark { background: rgba(10, 17, 30, 0.28); }
+
+        .ef-field-label {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--ef-muted) !important;
+            font-weight: 700;
         }
-        
+
         .form-control-dark {
-            background: var(--bg-color) !important;
-            border: 1px solid var(--border-color) !important;
-            color: var(--text-color) !important;
+            background: rgba(10, 17, 30, 0.72) !important;
+            border: 1px solid var(--ef-border) !important;
+            color: var(--ef-ink) !important;
+            border-radius: 10px;
         }
         .form-control-dark:focus {
-            background: var(--bg-color) !important;
-            border-color: var(--accent-color) !important;
-            color: var(--text-color) !important;
-            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.2);
+            background: rgba(10, 17, 30, 0.86) !important;
+            border-color: rgba(147, 197, 253, 0.62) !important;
+            color: var(--ef-ink) !important;
+            box-shadow: 0 0 0 0.18rem rgba(147, 197, 253, 0.14);
         }
-        .form-control-dark::placeholder {
-            color: var(--text-muted) !important;
-            opacity: 0.7;
-        }
+        .form-control-dark::placeholder { color: #93a4bb !important; opacity: 1; }
 
         .toggle-dark {
-            background: var(--table-header-bg) !important;
-            border: 1px solid var(--border-color) !important;
-            color: var(--text-muted) !important;
+            background: rgba(10, 17, 30, 0.42) !important;
+            border: 1px solid var(--ef-border) !important;
+            color: var(--ef-muted) !important;
+        }
+        .form-check-input {
+            background-color: rgba(10, 17, 30, 0.82);
+            border-color: rgba(191, 219, 254, 0.32);
+        }
+        .form-check-input:checked {
+            background-color: #93c5fd;
+            border-color: #93c5fd;
+        }
+        .form-check-input:focus {
+            border-color: rgba(147, 197, 253, 0.62);
+            box-shadow: 0 0 0 0.18rem rgba(147, 197, 253, 0.14);
         }
 
-        .btn-outline-warning-dark {
-            color: #f59e0b;
-            border-color: rgba(245, 158, 11, 0.5);
+        .btn {
+            border-radius: 9px;
+            font-weight: 700;
         }
+        .btn-primary {
+            background: var(--ef-blue) !important;
+            border-color: var(--ef-blue) !important;
+            color: #082f49 !important;
+        }
+        .btn-primary:hover { background: #dbeafe !important; border-color: #dbeafe !important; }
+        .btn-outline-primary {
+            color: var(--ef-blue);
+            border-color: rgba(147, 197, 253, 0.44);
+        }
+        .btn-outline-primary:hover {
+            background: var(--ef-blue-soft);
+            border-color: rgba(147, 197, 253, 0.62);
+            color: #eff6ff;
+        }
+        .btn-outline-info {
+            color: var(--ef-violet);
+            border-color: rgba(196, 181, 253, 0.44);
+        }
+        .btn-outline-info:hover {
+            background: var(--ef-violet-soft);
+            border-color: rgba(196, 181, 253, 0.62);
+            color: #faf5ff;
+        }
+        .btn-outline-danger {
+            color: var(--ef-rose);
+            border-color: rgba(252, 165, 165, 0.44);
+        }
+        .btn-outline-danger:hover {
+            background: var(--ef-rose-soft);
+            border-color: rgba(252, 165, 165, 0.62);
+            color: #fff1f2;
+        }
+        .btn-outline-warning,
+        .btn-outline-warning-dark {
+            color: var(--ef-amber) !important;
+            border-color: rgba(253, 186, 116, 0.5) !important;
+            background: rgba(253, 186, 116, 0.06);
+        }
+        .btn-outline-warning:hover,
         .btn-outline-warning-dark:hover {
-            background: rgba(245, 158, 11, 0.1);
-            color: #f59e0b;
+            background: var(--ef-amber-soft) !important;
+            color: #ffedd5 !important;
+        }
+        .ef-cancel-btn {
+            color: var(--ef-muted) !important;
+            border-color: var(--ef-border) !important;
+            background: rgba(10, 17, 30, 0.34);
+        }
+        .ef-cancel-btn:hover {
+            color: var(--ef-ink) !important;
+            border-color: rgba(191, 219, 254, 0.34) !important;
+        }
+        .badge.bg-danger {
+            color: #450a0a;
+            background-color: var(--ef-rose) !important;
+        }
+        .badge.bg-primary {
+            color: #082f49;
+            background-color: var(--ef-blue) !important;
+        }
+        .ef-empty-state { background: rgba(10, 17, 30, 0.3); }
+        .ef-empty-state i { color: var(--ef-blue); }
+
+        @media (max-width: 760px) {
+            main.efemerides-workspace { padding: 12px; }
+            .ops-panel-dark { padding: 14px; }
+            .ef-help-text { max-width: 100%; }
+            .ef-help-row { align-items: stretch; }
+            .ef-help-row > * { width: 100%; }
         }
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}">
@@ -129,7 +259,7 @@
 
 <body>
 
-    <main class="container-fluid" style="padding: 20px;">
+    <main class="container-fluid efemerides-workspace">
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -141,14 +271,14 @@
         {% endif %}
         {% endwith %}
 
-        <div class="container-fluid mt-2 mb-4">
+        <div class="container-fluid mt-2 mb-4 efemerides-inner">
             
             <!-- Global Custom Message Card -->
             <div class="row fade-in mb-4">
                 <div class="col-12">
-                    <div class="ops-panel-dark" style="border-left: 4px solid var(--color-warning);">
+                    <div class="ops-panel-dark ef-announcement-panel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0 font-display fw-bold text-warning">
+                            <h5 class="mb-0 font-display fw-bold ef-title" style="color: var(--ef-amber);">
                                 <i class="fas fa-exclamation-triangle me-2"></i> Anuncio Global (Override)
                             </h5>
                             <div class="form-check form-switch toggle-dark rounded p-2" style="padding-left: 2.5rem !important;">
@@ -159,7 +289,7 @@
                         <p class="text-muted-dark small mb-2">Si se activa, este mensaje reemplazará las efemérides y noticias regulares en todas las pantallas del sistema, incluyendo la vista móvil de los técnicos.</p>
                         <div class="d-flex gap-2">
                             <input type="text" id="globalMessageText" class="form-control form-control-dark font-mono" placeholder="Ej: ALERTA: Servidor de base de datos en mantenimiento preventivo a las 14:00" value="{{ custom_message.text }}" aria-label="Mensaje global">
-                            <button class="btn btn-outline-warning text-warning" onclick="updateGlobalMessage()" style="border-color: rgba(250, 204, 21, 0.5);"><i class="fas fa-save"></i> Guardar</button>
+                            <button class="btn btn-outline-warning" onclick="updateGlobalMessage()"><i class="fas fa-save"></i> Guardar</button>
                         </div>
                     </div>
                 </div>
@@ -170,7 +300,7 @@
                     <div class="ops-panel-dark">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pb-3 ops-header-dark mb-3">
                             <h5 class="mb-0 font-display fw-bold" style="letter-spacing: -0.02em;">
-                                <i class="fas fa-satellite-dish text-primary me-2"></i> Base de Conocimiento de Efemérides
+                                <span class="ef-icon-chip me-2"><i class="fas fa-satellite-dish"></i></span> Base de Conocimiento de Efemérides
                             </h5>
                             <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddEfemeride">
@@ -185,8 +315,8 @@
                             </div>
                         </div>
                         <div>
-                            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                                <p class="text-muted-dark mb-0" style="font-size: 0.85rem; max-width: 70%;">
+                            <div class="d-flex justify-content-between mb-4 flex-wrap gap-2 ef-help-row">
+                                <p class="text-muted-dark mb-0 ef-help-text">
                                     <i class="fas fa-info-circle me-1"></i> Las efemérides se muestran automáticamente si el día actual coincide con el "Día/Mes". 
                                     Si haces clic en <strong>Forzar Activa</strong>, esa efeméride se mostrará sin importar la fecha actual.
                                 </p>
@@ -196,7 +326,7 @@
                                 </div>
                             </div>
 
-                            <div class="table-responsive" style="border: 1px solid var(--card-border); border-radius: 8px;">
+                            <div class="table-responsive ef-table-shell">
                                 <table class="table ops-table-dark align-middle" style="font-size: 0.85rem;">
                                     <thead>
                                         <tr>
@@ -211,23 +341,23 @@
                                     <tbody id="efemerides-tbody" class="hide-past">
                                         {% for e in efemerides %}
                                         <tr class="efemeride-row {% if e.is_past %}ef-past{% endif %} {% if e.is_active %}table-primary{% elif e.is_today %}table-warning{% endif %}">
-                                            <td class="text-nowrap font-mono" style="padding-left: 1rem;">
+                                            <td class="text-nowrap font-mono ef-date-cell">
                                                 {{ e.dia_mes }}
                                                 {% if e.is_today %}<span class="badge bg-danger ms-1">HOY</span>{% endif %}
                                             </td>
-                                            <td style="font-size: 1.3rem; text-align: center;">{{ e.icono }}</td>
-                                            <td><strong class="font-display" style="letter-spacing: -0.01em;">{{ e.titulo }}</strong></td>
-                                            <td class="text-muted-dark" style="font-size: 0.8rem; line-height: 1.4;">
+                                            <td class="ef-icon-cell">{{ e.icono }}</td>
+                                            <td class="ef-title-cell"><strong class="font-display">{{ e.titulo }}</strong></td>
+                                            <td class="text-muted-dark ef-description">
                                                 {{ e.descripcion }}
                                             </td>
                                             <td>
                                                 {% if e.is_active %}
                                                     <span class="badge bg-primary"><i class="fas fa-check-circle"></i> FORZADA</span>
                                                 {% else %}
-                                                    <span class="badge" style="background: rgba(148, 163, 184, 0.2); color: var(--text-muted);">AUTO</span>
+                                                    <span class="badge ef-status-auto">AUTO</span>
                                                 {% endif %}
                                             </td>
-                                            <td style="padding-right: 1rem;">
+                                            <td class="ef-actions-cell">
                                                 <div class="d-flex gap-1 justify-content-end">
                                                     {% if not e.is_active %}
                                                     <form action="{{ url_for('setup.toggle_efemeride', ef_id=e.id) }}" method="POST" class="m-0" target="_parent">
@@ -267,25 +397,25 @@
                                                                 </div>
                                                                 <div class="modal-body text-start">
                                                                     <div class="mb-3">
-                                                                        <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Día y Mes</label>
+                                                                        <label class="form-label ef-field-label">Día y Mes</label>
                                                                         <input type="text" class="form-control form-control-dark font-mono" name="dia_mes" value="{{ e.dia_mes }}" required placeholder="Ej: 05-25" pattern="[0-1][0-9]-[0-3][0-9]" aria-label="Día y Mes">
                                                                         <div class="form-text text-muted-dark mt-1" style="font-size: 0.75rem;">Formato MM-DD (Ej: 05-25)</div>
                                                                     </div>
                                                                     <div class="mb-3">
-                                                                        <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Título</label>
+                                                                        <label class="form-label ef-field-label">Título</label>
                                                                         <input type="text" class="form-control form-control-dark" name="titulo" value="{{ e.titulo }}" required aria-label="Título">
                                                                     </div>
                                                                     <div class="mb-3">
-                                                                        <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Descripción (Hover)</label>
+                                                                        <label class="form-label ef-field-label">Descripción (Hover)</label>
                                                                         <textarea class="form-control form-control-dark" name="descripcion" rows="2" aria-label="Descripción">{{ e.descripcion }}</textarea>
                                                                     </div>
                                                                     <div class="mb-3">
-                                                                        <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Ícono (Emoji)</label>
+                                                                        <label class="form-label ef-field-label">Ícono (Emoji)</label>
                                                                         <input type="text" class="form-control form-control-dark fs-5" name="icono" value="{{ e.icono }}" required aria-label="Ícono">
                                                                     </div>
                                                                 </div>
                                                                 <div class="modal-footer modal-footer-dark">
-                                                                    <button type="button" class="btn btn-outline-secondary text-white" style="border-color: var(--card-border);" data-bs-dismiss="modal">Cancelar</button>
+                                                                    <button type="button" class="btn btn-outline-secondary ef-cancel-btn" data-bs-dismiss="modal">Cancelar</button>
                                                                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                                                                 </div>
                                                             </form>
@@ -298,8 +428,8 @@
                                     </tbody>
                                 </table>
                                 {% if not efemerides %}
-                                <div class="text-center py-5 text-muted-dark" style="background: rgba(15, 23, 34, 0.3);">
-                                    <i class="fas fa-terminal fs-3 mb-3 opacity-50" style="color: var(--accent-color);"></i>
+                                <div class="text-center py-5 text-muted-dark ef-empty-state">
+                                    <i class="fas fa-terminal fs-3 mb-3 opacity-50"></i>
                                     <p class="font-mono mb-0" style="font-size: 0.85rem;">[SISTEMA] No hay efemérides configuradas en la base de datos.</p>
                                 </div>
                                 {% endif %}
@@ -323,25 +453,25 @@
                     </div>
                     <div class="modal-body text-start">
                         <div class="mb-3">
-                            <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Día y Mes</label>
+                            <label class="form-label ef-field-label">Día y Mes</label>
                             <input type="text" class="form-control form-control-dark font-mono" name="dia_mes" required placeholder="05-25" pattern="[0-1][0-9]-[0-3][0-9]" aria-label="Día y Mes">
                             <div class="form-text text-muted-dark mt-1" style="font-size: 0.75rem;">Formato MM-DD (Ej: 05-25)</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Título</label>
+                            <label class="form-label ef-field-label">Título</label>
                             <input type="text" class="form-control form-control-dark" name="titulo" required placeholder="Ej: Revolución de Mayo" aria-label="Título">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Descripción (Hover)</label>
+                            <label class="form-label ef-field-label">Descripción (Hover)</label>
                             <textarea class="form-control form-control-dark" name="descripcion" rows="2" placeholder="Breve texto informativo..." aria-label="Descripción"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted-dark" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Ícono (Emoji)</label>
+                            <label class="form-label ef-field-label">Ícono (Emoji)</label>
                             <input type="text" class="form-control form-control-dark fs-5" name="icono" value="🇦🇷" required aria-label="Ícono">
                         </div>
                     </div>
                     <div class="modal-footer modal-footer-dark">
-                        <button type="button" class="btn btn-outline-secondary text-white" style="border-color: var(--card-border);" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-outline-secondary ef-cancel-btn" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Registrar</button>
                     </div>
                 </form>

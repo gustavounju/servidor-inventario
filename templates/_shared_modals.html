@@ -41,27 +41,27 @@
 </script>
 
 <!-- Modal Efemérides (Iframe) -->
-<div class="modal fade" id="efemeridesModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="efemeridesModal" tabindex="-1" aria-labelledby="efemeridesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
-        <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color); background: var(--card-bg);">
-            <div style="background: var(--table-header-bg); padding: 0; border-bottom: 1px solid var(--border-color);">
-                <div style="padding: 20px 24px 20px; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
-                            <i class="bi bi-calendar-event" style="color: var(--accent-color); font-size: 1.1rem;"></i>
+        <div class="modal-content ef-modal-shell">
+            <div class="ef-modal-header">
+                <div class="ef-modal-title-row">
+                    <div class="ef-modal-title-lockup">
+                        <div class="ef-modal-title-icon">
+                            <i class="bi bi-calendar-event"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title mb-0 fw-bold" style="font-size: 1.05rem; letter-spacing: -0.02em; color: var(--text-color); font-family: var(--font-display);">Gestión de Efemérides</h5>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; font-family: var(--font-mono);">
+                            <h5 class="modal-title mb-0 fw-bold" id="efemeridesModalLabel">Gestión de Efemérides</h5>
+                            <div class="ef-modal-title-meta">
                                 Configura qué efeméride se muestra en el sistema
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                    <button type="button" class="btn-close btn-close-white ef-close-btn" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
-            <div class="modal-body p-0" style="overflow: hidden; background: var(--bg-color);">
-                <iframe id="efemeridesIframe" src="" style="width: 100%; height: 75vh; border: none; background: transparent;"></iframe>
+            <div class="modal-body p-0 ef-modal-body">
+                <iframe id="efemeridesIframe" src=""></iframe>
             </div>
         </div>
     </div>
@@ -964,6 +964,80 @@
     --um-red-soft: rgba(252, 165, 165, 0.14);
     --um-purple-soft: rgba(196, 181, 253, 0.14);
     --um-pink-soft: rgba(249, 168, 212, 0.14);
+    --ef-bg: #101827;
+    --ef-surface: #162033;
+    --ef-border: rgba(191, 219, 254, 0.18);
+    --ef-ink: #f7fbff;
+    --ef-muted: #b8c7dc;
+    --ef-blue-soft: rgba(147, 197, 253, 0.14);
+}
+
+/* ── Modal Efemérides ── */
+.ef-modal-shell {
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid var(--ef-border);
+    background: var(--ef-bg);
+    color: var(--ef-ink);
+}
+.ef-modal-header {
+    position: relative;
+    z-index: 10;
+    border-bottom: 1px solid var(--ef-border);
+    background: linear-gradient(180deg, rgba(147, 197, 253, 0.08), rgba(16, 24, 39, 0));
+}
+.ef-modal-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 20px 24px 16px;
+}
+.ef-modal-title-lockup {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+.ef-modal-title-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: #dbeafe;
+    background: var(--ef-blue-soft);
+    border: 1px solid rgba(147, 197, 253, 0.28);
+}
+#efemeridesModalLabel {
+    font-size: 1.04rem;
+    letter-spacing: 0;
+    color: var(--ef-ink);
+    font-family: var(--font-display, inherit);
+}
+.ef-modal-title-meta {
+    font-size: 0.74rem;
+    color: var(--ef-muted);
+    margin-top: 2px;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+.ef-close-btn {
+    position: relative;
+    z-index: 1050;
+    cursor: pointer;
+    opacity: 0.72;
+}
+.ef-close-btn:hover { opacity: 1; }
+.ef-modal-body {
+    overflow: hidden;
+    background: var(--ef-bg);
+}
+#efemeridesIframe {
+    width: 100%;
+    height: 75vh;
+    border: none;
+    background: var(--ef-bg);
+    display: block;
 }
 
 /* ── Modal shell ── */
