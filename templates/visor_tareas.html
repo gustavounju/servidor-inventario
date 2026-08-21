@@ -363,23 +363,9 @@
         {% set pct_pend = (pendientes_hoy * 100 / total_radar) | round(1) %}
         {% set pct_asig = 0 %}
 
-        <!-- COMBINED MASTHEAD -->
+        <!-- HEALTH RADAR -->
         <div class="radar-masthead" style="display: flex; flex-direction: row; align-items: center; gap: 2rem;">
-            {% if efemeride_actual %}
-            <!-- MARQUEE (MITAD IZQUIERDA) -->
-            <div class="hide-mobile" style="flex: 1; overflow: hidden; position: relative; color: var(--accent-color); font-size: 0.75rem; white-space: nowrap; padding-right: 1rem; border-right: 1px solid var(--border-color);">
-                <div class="marquee-content {% if efemeride_actual.is_alert %}marquee-fast{% endif %}" style="padding-left: 100%; display: inline-block;">
-                    <span style="font-size: 1.1em; margin-right: 6px;">{{ efemeride_actual.icono }}</span>
-                    {% if efemeride_actual.titulo %}<strong>{{ efemeride_actual.titulo }}</strong>{% endif %}
-                    {% if efemeride_actual.descripcion %}
-                    <span style="color: #94a3b8; font-weight: 400; margin-left: 5px;">{% if efemeride_actual.titulo %}- {% endif %}{{ efemeride_actual.descripcion }}</span>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- HEALTH RADAR (MITAD DERECHA) -->
-            <div class="health-radar" style="flex: 1; margin: 0; padding: 0; border: none; background: transparent; display: flex; align-items: center;">
+            <div class="health-radar" style="flex: 1 1 100%; margin: 0; padding: 0; border: none; background: transparent; display: flex; align-items: center;">
                 <div class="health-radar__bar" style="margin: 0; height: 24px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600;">
                     <div class="health-radar__segment health-radar__segment--stable" style="width: {{ pct_hechas }}%; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);" title="Hechas: {{ hechas_hoy }}">
                         {% if pct_hechas > 10 %}{{ pct_hechas }}% Hechas{% endif %}
