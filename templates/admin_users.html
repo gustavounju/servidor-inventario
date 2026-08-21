@@ -15,6 +15,252 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
     <script defer src="{{ url_for('static', filename='js/gold.js') }}?v={{ app_version }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}">
+    <style>
+        :root {
+            --users-bg: #0f172a;
+            --users-shell: #172238;
+            --users-panel: #1d2a42;
+            --users-panel-soft: #22314d;
+            --users-border: rgba(191, 219, 254, 0.18);
+            --users-ink: #f8fbff;
+            --users-muted: #b8c7dc;
+            --users-blue: #bfdbfe;
+            --users-green: #bbf7d0;
+            --users-amber: #fed7aa;
+            --users-rose: #fecdd3;
+            --users-violet: #ddd6fe;
+            --users-blue-soft: rgba(191, 219, 254, 0.14);
+            --users-green-soft: rgba(187, 247, 208, 0.14);
+            --users-amber-soft: rgba(254, 215, 170, 0.14);
+            --users-rose-soft: rgba(254, 205, 211, 0.14);
+            --users-violet-soft: rgba(221, 214, 254, 0.14);
+        }
+
+        body.has-fixed-header {
+            background:
+                radial-gradient(circle at top left, rgba(191, 219, 254, 0.12), transparent 32rem),
+                var(--users-bg);
+        }
+
+        .users-admin-page {
+            min-height: calc(100vh - 72px);
+            padding: 18px clamp(12px, 2vw, 28px) 28px;
+        }
+
+        .users-admin-dialog {
+            max-width: 1280px;
+            margin: 0 auto;
+            border: 1px solid var(--users-border);
+            border-radius: 18px;
+            overflow: hidden;
+            background: var(--users-shell);
+            color: var(--users-ink);
+        }
+
+        .users-admin-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--users-border);
+            background: linear-gradient(180deg, rgba(191, 219, 254, 0.08), rgba(15, 23, 42, 0));
+        }
+
+        .users-admin-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .users-admin-kicker {
+            color: var(--users-muted);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .users-admin-title {
+            margin: 0;
+            color: var(--users-ink);
+            font-size: 1.24rem;
+            font-weight: 800;
+            letter-spacing: 0;
+        }
+
+        .users-admin-subtitle {
+            margin: 4px 0 0;
+            color: var(--users-muted);
+            font-size: 0.84rem;
+        }
+
+        .users-admin-close {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 11px;
+            border-radius: 10px;
+            border: 1px solid var(--users-border);
+            color: var(--users-blue);
+            background: var(--users-blue-soft);
+            text-decoration: none;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .users-admin-close:hover { color: #082f49; background: var(--users-blue); }
+
+        .users-admin-summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .users-admin-summary .metric-box {
+            background: rgba(29, 42, 66, 0.84);
+            border: 1px solid var(--users-border);
+            border-radius: 10px;
+            padding: 12px;
+            min-height: auto;
+        }
+
+        .users-admin-summary .metric-box__label {
+            color: var(--users-muted);
+            font-size: 0.68rem;
+            letter-spacing: 0.06em;
+        }
+
+        .users-admin-summary .metric-box__value {
+            color: var(--users-blue);
+            font-size: 1.3rem;
+        }
+
+        .users-admin-content { padding: 18px; }
+
+        .console-grid {
+            display: grid;
+            grid-template-columns: minmax(340px, 0.86fr) minmax(460px, 1.14fr);
+            gap: 16px;
+        }
+
+        .console-panel {
+            background: rgba(29, 42, 66, 0.78);
+            border: 1px solid var(--users-border);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .console-panel__title {
+            color: var(--users-blue) !important;
+            border-bottom: 1px solid var(--users-border) !important;
+            padding-bottom: 8px;
+            margin-bottom: 14px;
+            letter-spacing: 0.06em;
+        }
+
+        .priority-ticket {
+            border: 1px solid rgba(254, 215, 170, 0.32) !important;
+            border-left: 0 !important;
+            border-radius: 12px !important;
+            background: var(--users-amber-soft);
+        }
+
+        .priority-ticket__badge {
+            background: var(--users-amber) !important;
+            color: #7c2d12 !important;
+            border-radius: 8px;
+        }
+
+        .priority-ticket__title { color: var(--users-ink); }
+        .priority-ticket__desc { color: var(--users-muted); }
+
+        .integrated-alert {
+            background: rgba(15, 23, 42, 0.34) !important;
+            border-color: var(--users-border) !important;
+            border-radius: 12px !important;
+        }
+
+        .users-option-box {
+            background: rgba(15, 23, 42, 0.34) !important;
+            border: 1px solid var(--users-border) !important;
+            border-radius: 10px !important;
+            padding: 10px !important;
+        }
+
+        .users-option-box .form-check {
+            margin-right: 0;
+            padding: 6px 10px 6px 2rem;
+            border-radius: 8px;
+            background: rgba(191, 219, 254, 0.06);
+        }
+
+        .users-option-box .form-check-label { color: var(--users-ink) !important; }
+        .users-option-box .form-check-input:checked { background-color: #93c5fd; border-color: #93c5fd; }
+
+        .users-save-btn {
+            background: var(--users-green) !important;
+            color: #052e16 !important;
+            border: 0 !important;
+            border-radius: 10px !important;
+            padding: 10px 14px !important;
+            font-family: inherit !important;
+        }
+
+        .users-save-btn:hover { filter: brightness(1.03); }
+
+        .users-admin-page .form-control,
+        .users-admin-page .form-select {
+            background: rgba(15, 23, 42, 0.68) !important;
+            border-color: var(--users-border) !important;
+            color: var(--users-ink) !important;
+            border-radius: 8px !important;
+        }
+
+        .users-admin-page .form-control:focus,
+        .users-admin-page .form-select:focus {
+            border-color: rgba(191, 219, 254, 0.62) !important;
+            box-shadow: 0 0 0 0.18rem rgba(191, 219, 254, 0.14);
+        }
+
+        .users-admin-page .table-responsive {
+            border-color: var(--users-border) !important;
+            border-radius: 12px !important;
+            background: rgba(15, 23, 42, 0.32) !important;
+        }
+
+        .users-admin-page .table-dark {
+            --bs-table-bg: rgba(15, 23, 42, 0.62);
+            --bs-table-hover-bg: rgba(191, 219, 254, 0.09);
+            --bs-table-color: var(--users-ink);
+            --bs-table-border-color: var(--users-border);
+        }
+
+        .users-admin-page thead { background: rgba(191, 219, 254, 0.08) !important; }
+        .users-admin-page .metric-box { border-radius: 10px; }
+        .users-admin-page .tech-pill,
+        .users-admin-page .duration-pill,
+        .users-admin-page .pc-badge,
+        .users-admin-page .inventory-priority {
+            border-radius: 8px;
+            border-color: var(--users-border);
+            background: rgba(191, 219, 254, 0.08);
+        }
+
+        .users-admin-page .btn-outline-info { color: var(--users-blue); border-color: rgba(191, 219, 254, 0.42); }
+        .users-admin-page .btn-outline-warning { color: var(--users-amber); border-color: rgba(254, 215, 170, 0.42); }
+        .users-admin-page .btn-outline-danger { color: var(--users-rose); border-color: rgba(254, 205, 211, 0.42); }
+        .users-admin-page .btn-outline-success { color: var(--users-green); border-color: rgba(187, 247, 208, 0.42); }
+
+        @media (max-width: 1020px) {
+            .console-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 720px) {
+            .users-admin-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .users-admin-title-row { flex-direction: column; }
+            .users-admin-close { width: 100%; justify-content: center; }
+        }
+    </style>
 </head>
 
 <body class="has-fixed-header">
@@ -34,7 +280,7 @@
         {% endwith %}
     </div>
 
-    <main style="padding-top: 0; padding-bottom: 20px;">
+    <main class="users-admin-page">
         {% set total_usuarios = app_users_list | length %}
         {% set total_pendientes = pending_users_list | length %}
         {% set superusuarios = app_users_list | selectattr('is_superuser') | list | length %}
@@ -45,25 +291,40 @@
         {% set pct_activos = (total_usuarios * 100 / radar_total) | round(1) %}
         {% set pct_pendientes = (total_pendientes * 100 / radar_total) | round(1) %}
 
-        <!-- MIDNIGHT RADAR MASTHEAD -->
-        <div class="radar-masthead">
-            <div class="health-radar">
-                <div class="health-radar__labels">
-                    <span>Estado del Directorio</span>
-                    <span>{{ radar_total }} Registros</span>
+        <section class="users-admin-dialog" aria-labelledby="usersAdminTitle">
+            <header class="users-admin-header">
+                <div class="users-admin-title-row">
+                    <div>
+                        <div class="users-admin-kicker">Panel de control</div>
+                        <h1 class="users-admin-title" id="usersAdminTitle">Gestión de Usuarios</h1>
+                        <p class="users-admin-subtitle">Alta, aprobación y permisos del sistema en una vista compacta.</p>
+                    </div>
+                    <a class="users-admin-close" href="{{ url_for('operadores.operadores_view') }}">
+                        <i class="bi bi-arrow-left"></i> Volver a Operadores
+                    </a>
                 </div>
-                <div class="health-radar__bar">
-                    <div class="health-radar__segment health-radar__segment--stable" style="width: {{ pct_activos }}%;" title="Activos: {{ total_usuarios }}"></div>
-                    <div class="health-radar__segment health-radar__segment--warning" style="width: {{ pct_pendientes }}%;" title="Pendientes: {{ total_pendientes }}"></div>
-                </div>
-                <div class="health-radar__legend">
-                    <div class="health-radar__legend-item"><div class="health-radar__legend-dot" style="background: var(--color-stable);"></div> <span class="font-mono">{{ pct_activos }}% Aprobados</span></div>
-                    <div class="health-radar__legend-item"><div class="health-radar__legend-dot" style="background: var(--color-warning);"></div> <span class="font-mono">{{ pct_pendientes }}% Pendientes</span></div>
-                </div>
-            </div>
-        </div>
 
-        <!-- CONSOLE GRID -->
+                <div class="users-admin-summary">
+                    <div class="metric-box">
+                        <div class="metric-box__label">Usuarios</div>
+                        <div class="metric-box__value">{{ total_usuarios }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-box__label">Pendientes</div>
+                        <div class="metric-box__value" style="color: var(--users-amber);">{{ total_pendientes }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-box__label">Superusuarios</div>
+                        <div class="metric-box__value" style="color: var(--users-violet);">{{ superusuarios }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-box__label">Auditoría</div>
+                        <div class="metric-box__value" style="color: var(--users-green);">{{ eventos }}</div>
+                    </div>
+                </div>
+            </header>
+
+        <div class="users-admin-content">
         <div class="console-grid">
             <!-- COLUMNA IZQUIERDA: PENDIENTES Y ALTA -->
             <div class="console-panel">
@@ -163,7 +424,7 @@
                         </div>
 
                         <div class="col-12 mt-3">
-                            <div class="d-flex flex-wrap gap-3 p-2" style="background: rgba(0,0,0,0.3); border-radius: 2px; border: 1px dashed rgba(255,255,255,0.1);">
+                            <div class="d-flex flex-wrap gap-2 users-option-box">
                                 <div class="form-check form-switch form-check-inline">
                                     <input class="form-check-input bg-dark border-secondary" type="checkbox" name="is_active" id="is_active">
                                     <label class="form-check-label text-white small font-mono" for="is_active">ACTIVO</label>
@@ -185,7 +446,7 @@
 
                         <!-- Permisos Finos -->
                         <div class="col-12 mt-2">
-                            <div class="d-flex flex-wrap gap-2 p-2" style="background: rgba(0,0,0,0.3); border-radius: 2px; border: 1px dashed rgba(255,255,255,0.1);">
+                            <div class="d-flex flex-wrap gap-2 users-option-box">
                                 <label class="small text-muted font-mono w-100 mb-1">MÓDULOS PERMITIDOS</label>
                                 <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_dashboard" id="perm_dashboard"> <label class="form-check-label text-white small">Dashboard</label></div>
                                 <div class="form-check form-check-inline"><input class="form-check-input bg-dark border-secondary" type="checkbox" name="perm_mobile" id="perm_mobile"> <label class="form-check-label text-white small">Técnicos</label></div>
@@ -199,7 +460,7 @@
                         </div>
 
                         <div class="col-12 mt-3">
-                            <button type="submit" class="btn btn-sm w-100 fw-bold" style="background: var(--color-stable); color: #fff; border: none; font-family: var(--font-mono);">
+                            <button type="submit" class="btn btn-sm w-100 fw-bold users-save-btn">
                                 <i class="bi bi-hdd-fill me-1"></i> EJECUTAR CAMBIOS
                             </button>
                         </div>
@@ -302,6 +563,8 @@
                 </div>
             </div>
         </div>
+        </div>
+        </section>
     </main>
 
     <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
