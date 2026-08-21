@@ -105,9 +105,9 @@
                 <button type="button" class="op-dropdown-item" style="color: var(--color-warning);" onclick="if(typeof showMsgModal === 'function') { showMsgModal(); } else { const el = document.getElementById('broadcastMsgModal'); if(el) bootstrap.Modal.getOrCreateInstance(el).show(); }">
                     <i class="bi bi-megaphone me-1"></i>[ COMUNICAR ]
                 </button>
-                <a href="{{ url_for('users.users_admin') }}" class="op-dropdown-item {% if request.endpoint and request.endpoint.startswith('users.') %}op-btn--active{% endif %}">
+                <button type="button" class="op-dropdown-item {% if request.endpoint and request.endpoint.startswith('users.') %}op-btn--active{% endif %}" onclick="openUsersManagementModal()">
                     <i class="bi bi-people-fill me-1"></i>[ USUARIOS ]
-                </a>
+                </button>
                 <button type="button" class="op-dropdown-item" style="color: var(--color-stable);" onclick="if(typeof showUploadSwModal === 'function') { showUploadSwModal(); } else { window.location.href='{{ url_for('setup.descargas') }}'; }">
                     <i class="bi bi-cloud-upload me-1"></i>[ SUBIR SW ]
                 </button>
@@ -207,3 +207,14 @@
     <div id="heroDatetime" class="op-telemetry-item" style="color: var(--color-stable); font-weight: bold; font-family: var(--font-mono); font-size: 0.85rem; padding-right: 16px;"></div>
 </div>
 {% endif %}
+
+<script>
+    function openUsersManagementModal() {
+        const modalEl = document.getElementById('usersModal');
+        if (modalEl && window.bootstrap && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            return;
+        }
+        window.location.href = "{{ url_for('users.users_admin') }}";
+    }
+</script>
