@@ -1,4 +1,176 @@
 <!-- Modales Compartidos -->
+<style>
+    :root {
+        --task-console-midnight: #101827;
+        --task-console-panel: #162033;
+        --task-console-panel-2: #1d2a40;
+        --task-console-border: rgba(191, 219, 254, .18);
+        --task-console-ink: #f7fbff;
+        --task-console-muted: #b8c7dc;
+        --task-console-blue: #bfdbfe;
+        --task-console-mint: #bbf7d0;
+        --task-console-amber: #fed7aa;
+        --task-console-rose: #fecdd3;
+        --task-console-violet: #ddd6fe;
+    }
+
+    #pendingTasksModal .modal-content,
+    [id^="auxModal_"] .modal-content {
+        background: var(--task-console-panel) !important;
+        border: 1px solid var(--task-console-border) !important;
+        border-radius: 14px !important;
+        box-shadow: none !important;
+        color: var(--task-console-ink) !important;
+    }
+
+    #pendingTasksModal .modal-content > div:first-child,
+    [id^="auxModal_"] .modal-content > div:first-child {
+        background: linear-gradient(135deg, rgba(22,32,51,.98), rgba(29,42,64,.92)) !important;
+        border-bottom: 1px solid rgba(191, 219, 254, .22) !important;
+    }
+
+    #pendingTasksModal .modal-content > div:first-child > div:first-child > div:first-child > div:first-child,
+    [id^="auxModal_"] .modal-content > div:first-child > div:first-child > div:first-child > div:first-child {
+        background: rgba(191, 219, 254, .1) !important;
+        border: 1px solid rgba(191, 219, 254, .28) !important;
+        border-radius: 12px !important;
+    }
+
+    #pendingTasksModal .modal-title,
+    [id^="auxModal_"] .modal-title {
+        color: var(--task-console-ink) !important;
+    }
+
+    #pendingTasksModal .modal-body,
+    [id^="auxModal_"] .modal-body {
+        background: var(--task-console-midnight) !important;
+        color: var(--task-console-ink) !important;
+    }
+
+    #pendingTasksModal .modal-footer {
+        background: var(--task-console-panel) !important;
+        border-top: 1px solid var(--task-console-border) !important;
+    }
+
+    #pendingTasksModal #ptSearchInput,
+    #pendingTasksModal .input-group-text,
+    [id^="auxModal_"] .form-control,
+    [id^="auxModal_"] .form-select {
+        background: var(--task-console-panel-2) !important;
+        border-color: var(--task-console-border) !important;
+        color: var(--task-console-ink) !important;
+    }
+
+    #pendingTasksModal #ptSearchInput::placeholder {
+        color: rgba(184, 199, 220, .72) !important;
+    }
+
+    #pendingTasksModal .pt-card {
+        background: var(--task-console-panel) !important;
+        border: 1px solid var(--task-console-border) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+    }
+
+    #pendingTasksModal .pt-card:hover {
+        border-color: rgba(191, 219, 254, .42) !important;
+        transform: translateY(-1px);
+    }
+
+    #pendingTasksModal .pt-card::before {
+        background: linear-gradient(180deg, var(--task-console-blue), rgba(191, 219, 254, .18)) !important;
+        width: 2px !important;
+    }
+
+    #pendingTasksModal .pt-card[data-cat="Impresoras"]::before { background: linear-gradient(180deg, var(--task-console-amber), rgba(254,215,170,.18)) !important; }
+    #pendingTasksModal .pt-card[data-cat="Red/Conectividad"]::before { background: linear-gradient(180deg, var(--task-console-violet), rgba(221,214,254,.18)) !important; }
+    #pendingTasksModal .pt-card[data-cat="Hardware"]::before { background: linear-gradient(180deg, var(--task-console-rose), rgba(254,205,211,.18)) !important; }
+    #pendingTasksModal .pt-card[data-cat="Software"]::before { background: linear-gradient(180deg, var(--task-console-mint), rgba(187,247,208,.18)) !important; }
+    #pendingTasksModal .pt-card[data-cat="Audiencias"]::before { background: linear-gradient(180deg, var(--task-console-amber), rgba(254,215,170,.18)) !important; }
+
+    #pendingTasksModal .pt-pc-name,
+    #pendingTasksModal .pt-req-name,
+    #pendingTasksModal .pt-requester-box strong,
+    [id^="auxModal_"] h6,
+    [id^="auxModal_"] .fw-medium {
+        color: var(--task-console-ink) !important;
+    }
+
+    #pendingTasksModal .pt-date,
+    #pendingTasksModal .pt-req-sub,
+    #pendingTasksModal .pt-desc,
+    [id^="auxModal_"] .text-muted,
+    [id^="auxModal_"] td,
+    [id^="auxModal_"] th {
+        color: var(--task-console-muted) !important;
+    }
+
+    #pendingTasksModal .pt-cat-badge,
+    #pendingTasksModal .pt-requester-box,
+    #pendingTasksModal .pt-match-box,
+    #pendingTasksModal .pt-match-chip {
+        background: rgba(29, 42, 64, .68) !important;
+        border-color: var(--task-console-border) !important;
+        color: var(--task-console-ink) !important;
+    }
+
+    #pendingTasksModal .pt-assigned-chip {
+        background: rgba(221, 214, 254, .16) !important;
+        border: 1px solid rgba(221, 214, 254, .34) !important;
+        color: var(--task-console-violet) !important;
+    }
+
+    #pendingTasksModal .btn-pt-confirm {
+        background: rgba(187, 247, 208, .1) !important;
+        border-color: rgba(187, 247, 208, .34) !important;
+        color: var(--task-console-mint) !important;
+    }
+
+    #pendingTasksModal .btn-pt-confirm:hover {
+        background: rgba(187, 247, 208, .18) !important;
+        color: var(--task-console-ink) !important;
+    }
+
+    #pendingTasksModal .btn-pt-delete {
+        background: rgba(254, 205, 211, .1) !important;
+        border-color: rgba(254, 205, 211, .34) !important;
+        color: var(--task-console-rose) !important;
+    }
+
+    [id^="auxModal_"] .table-responsive {
+        background: var(--task-console-panel) !important;
+        border: 1px solid var(--task-console-border) !important;
+        border-radius: 12px !important;
+    }
+
+    [id^="auxModal_"] table {
+        --bs-table-bg: transparent;
+        --bs-table-color: var(--task-console-ink);
+        --bs-table-hover-bg: rgba(191, 219, 254, .07);
+        --bs-table-border-color: rgba(191, 219, 254, .11);
+        color: var(--task-console-ink) !important;
+    }
+
+    [id^="auxModal_"] thead {
+        background: var(--task-console-panel-2) !important;
+        border-color: var(--task-console-border) !important;
+    }
+
+    [id^="auxModal_"] tbody tr {
+        border-color: rgba(191, 219, 254, .11) !important;
+    }
+
+    [id^="auxModal_"] .badge {
+        background: rgba(191, 219, 254, .12) !important;
+        border: 1px solid rgba(191, 219, 254, .25) !important;
+        color: var(--task-console-blue) !important;
+    }
+
+    [id^="auxModal_"] .btn {
+        border-radius: 8px !important;
+        box-shadow: none !important;
+    }
+</style>
 
 <!-- Modal de Topografía (Iframe) -->
 <div class="modal fade" id="topoModal" tabindex="-1" aria-hidden="true">

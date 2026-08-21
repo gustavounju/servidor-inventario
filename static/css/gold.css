@@ -5022,6 +5022,50 @@ body.has-fixed-header {
     color: #f59e0b;
 }
 
+/* Midnight Pastel Console telemetry strip */
+.op-telemetry-bar {
+    background: rgba(16, 24, 39, 0.96) !important;
+    border-bottom: 1px solid rgba(191, 219, 254, 0.18) !important;
+    box-shadow: none !important;
+}
+
+.op-telemetry-item {
+    background: rgba(29, 42, 64, 0.62) !important;
+    border: 1px solid rgba(191, 219, 254, 0.13) !important;
+    border-radius: 8px !important;
+    color: #b8c7dc !important;
+    min-height: 22px;
+    padding: 2px 8px !important;
+}
+
+.op-telemetry-item strong {
+    color: #f7fbff !important;
+}
+
+.op-telemetry-item:hover {
+    background: rgba(191, 219, 254, 0.1) !important;
+    border-color: rgba(191, 219, 254, 0.34) !important;
+    color: #bfdbfe !important;
+}
+
+.op-telemetry-item:hover strong {
+    color: #bfdbfe !important;
+}
+
+.op-telemetry-item--alert {
+    background: rgba(254, 215, 170, 0.12) !important;
+    border-color: rgba(254, 215, 170, 0.32) !important;
+    color: #fed7aa !important;
+}
+
+.op-telemetry-item--alert strong {
+    color: #fed7aa !important;
+}
+
+.op-divider-sub {
+    background: rgba(191, 219, 254, 0.18) !important;
+}
+
 .op-divider-sub {
     width: 1px;
     height: 12px;
