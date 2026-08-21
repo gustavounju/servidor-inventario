@@ -80,45 +80,43 @@
 <!-- Modal Crear Tarea Suelta -->
 <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 950px;">
-        <div class="modal-content console-panel" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color);   max-height: calc(100vh - 2rem);">
-            <form id="formCrearTarea" action="{{ url_for('tasks.create_loose_task') }}" method="POST" style="display: flex; flex-direction: column; min-height: 0; height: 100%;">
+        <div class="modal-content console-panel task-modal-shell">
+            <form id="formCrearTarea" action="{{ url_for('tasks.create_loose_task') }}" method="POST" class="task-modal-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <!-- Header Cyberpunk/Midnight -->
-                <div style=" border-bottom: 1px solid var(--border-color); position: relative; z-index: 10;">
-                    <div style="padding: 24px 28px; display: flex; align-items: center; justify-content: space-between;">
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <div style="width: 46px; height: 46px;  border-radius: 14px; display: flex; align-items: center; justify-content: center; ">
-                                <i class="bi bi-terminal-plus" style="color: var(--neon-blue); font-size: 1.2rem;"></i>
+                <div class="task-modal-header">
+                    <div class="task-modal-title-row">
+                        <div class="task-modal-title-lockup">
+                            <div class="task-modal-title-icon">
+                                <i class="bi bi-terminal-plus"></i>
                             </div>
                             <div>
-                                <h5 class="modal-title mb-0 fw-bold text-white" id="createTaskModalLabel" style="font-size: 1.1rem; letter-spacing: -0.02em; font-family: var(--font-display);">NUEVA TAREA GENERAL</h5>
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; font-family: var(--font-mono);">
+                                <h5 class="modal-title mb-0 fw-bold" id="createTaskModalLabel">NUEVA TAREA GENERAL</h5>
+                                <div class="task-modal-title-meta">
                                     > INGRESO MANUAL _
                                 </div>
                             </div>
                         </div>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.7;"></button>
+                        <button type="button" class="btn-close btn-close-white task-close-btn" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                 </div>
 
-                <div class="modal-body" style="padding: 30px; background: transparent; overflow-y: auto; flex: 1 1 auto; min-height: 0;">
-                    <div class="um-form-grid" style="grid-template-columns: 1fr; gap: 24px; padding: 0;">
+                <div class="modal-body task-modal-body">
+                    <div class="task-form-grid">
                         <div class="row g-4">
                             <!-- Columna Izquierda: Información Principal -->
                             <div class="col-lg-7">
-                                <div class="mb-4 um-field">
-                                    <label class="um-label">Descripción del Problema</label>
-                                    <textarea name="descripcion" class="form-control bg-dark text-white border-secondary" rows="6" 
-                                              style="font-size: 0.9rem; padding: 14px; resize: vertical;"
+                                <div class="mb-4 task-field">
+                                    <label class="task-label">Descripción del Problema</label>
+                                    <textarea name="descripcion" class="form-control task-control" rows="6"
                                               placeholder="Ej: El usuario no puede imprimir en mesa de entradas. El equipo parece estar offline o el driver está corrupto." required></textarea>
                                 </div>
-                                <div class="mb-0 um-field">
-                                    <label class="um-label">Solicitante (Quién realiza el pedido)</label>
+                                <div class="mb-0 task-field">
+                                    <label class="task-label">Solicitante (Quién realiza el pedido)</label>
                                     <div class="input-group">
-                                        <span class="input-group-text" style=" border-color: var(--border-color); color: var(--text-muted); border-right: none;"><i class="bi bi-person"></i></span>
-                                        <input type="text" name="solicitante" id="taskSolicitanteInput" class="form-control bg-dark text-white"
-                                            style="border-color: var(--border-color); border-left: none; font-size: 0.9rem;"
+                                        <span class="input-group-text task-input-addon"><i class="bi bi-person"></i></span>
+                                        <input type="text" name="solicitante" id="taskSolicitanteInput" class="form-control task-control task-control-with-addon"
                                             placeholder="Ej: Juan Pérez / Contabilidad" 
                                             list="usersDatalist" required autocomplete="off"
                                             oninput="searchAdUsersForTaskModal(this.value)"
@@ -131,16 +129,16 @@
                                         {% endfor %}
                                         {% endif %}
                                     </datalist>
-                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; font-family: var(--font-mono);"><i class="bi bi-info-circle me-1"></i>Puedes escribir el nombre completo o el usuario de red.</div>
+                                    <div class="task-field-hint"><i class="bi bi-info-circle me-1"></i>Puedes escribir el nombre completo o el usuario de red.</div>
                                 </div>
                             </div>
 
                             <!-- Columna Derecha: Categorización y Asignación -->
                             <div class="col-lg-5">
                                 <div class="row g-3">
-                                    <div class="col-12 um-field">
-                                        <label class="um-label">Prioridad</label>
-                                        <select name="prioridad" class="form-select bg-dark text-white border-secondary" style="font-size: 0.9rem;">
+                                    <div class="col-12 task-field">
+                                        <label class="task-label">Prioridad</label>
+                                        <select name="prioridad" class="form-select task-control">
                                             <option value="1">1 - Baja</option>
                                             <option value="2">2 - Media</option>
                                             <option value="3">3 - Alta</option>
@@ -148,9 +146,9 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-12 um-field">
-                                        <label class="um-label">Categoría Técnica</label>
-                                        <select name="categoria" class="form-select bg-dark text-white border-secondary" style="font-size: 0.9rem;">
+                                    <div class="col-12 task-field">
+                                        <label class="task-label">Categoría Técnica</label>
+                                        <select name="categoria" class="form-select task-control">
                                             <option value="">-- Detección Automática --</option>
                                             <option value="Audiencias">🎥 Audiencias</option>
                                             <option value="Impresoras">🖨️ Impresoras</option>
@@ -162,11 +160,11 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-12 um-field">
-                                        <label class="um-label">Fuero / Ubicación</label>
+                                    <div class="col-12 task-field">
+                                        <label class="task-label">Fuero / Ubicación</label>
                                         <div class="input-group">
-                                            <span class="input-group-text" style=" border-color: var(--border-color); color: var(--text-muted); border-right: none;"><i class="bi bi-geo-alt"></i></span>
-                                            <select name="fuero" class="form-select bg-dark text-white" style="border-color: var(--border-color); border-left: none; font-size: 0.9rem;">
+                                            <span class="input-group-text task-input-addon"><i class="bi bi-geo-alt"></i></span>
+                                            <select name="fuero" class="form-select task-control task-control-with-addon">
                                                 <option value="">-- No Especificado --</option>
                                                 {% for name in (fueros.values() if fueros is mapping else fueros)|unique|sort %}
                                                 <option value="{{ name }}">{{ name }}</option>
@@ -175,9 +173,9 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-12 um-field">
-                                        <label class="um-label">Asignar a Técnico</label>
-                                        <select name="technician" class="form-select bg-dark text-white border-secondary" style="font-size: 0.9rem;">
+                                    <div class="col-12 task-field">
+                                        <label class="task-label">Asignar a Técnico</label>
+                                        <select name="technician" class="form-select task-control">
                                             <option value="">-- Sin Asignar (Bolsa Global) --</option>
                                             {% for tech in technicians %}
                                             <option value="{{ tech.name }}">{{ tech.name }}</option>
@@ -187,14 +185,13 @@
                                     
 
                                     <div class="col-12 mt-2">
-                                        <div class="form-check form-switch mb-2">
+                                        <div class="form-check form-switch mb-2 task-done-switch">
                                             <input class="form-check-input" type="checkbox" id="is_done_shared" name="is_done">
-                                            <label class="form-check-label um-label mb-0" for="is_done_shared" style="cursor:pointer; color: var(--neon-green);">[ MARCAR COMO RESUELTA ]</label>
+                                            <label class="form-check-label task-label mb-0" for="is_done_shared">[ MARCAR COMO RESUELTA ]</label>
                                         </div>
-                                        <div id="solucion_container_shared" style="display: none;  border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-top: 10px;">
-                                            <label class="um-label" style="color: var(--neon-green);"><i class="bi bi-terminal-check me-1"></i> LOG DE SOLUCIÓN</label>
-                                            <textarea name="solucion" id="solucion_shared" class="form-control bg-dark text-white border-secondary" rows="3" 
-                                                      style="font-size: 0.85rem; padding: 10px; font-family: var(--font-mono);"
+                                        <div id="solucion_container_shared" class="task-resolution-panel">
+                                            <label class="task-label task-resolution-label"><i class="bi bi-terminal-check me-1"></i> LOG DE SOLUCIÓN</label>
+                                            <textarea name="solucion" id="solucion_shared" class="form-control task-control task-resolution-textarea" rows="3"
                                                       placeholder="> Explica brevemente la resolución..."></textarea>
                                         </div>
                                     </div>
@@ -205,9 +202,9 @@
                     </div>
                 </div>
 
-                <div class="modal-footer" style="padding: 16px 30px;  border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; flex: 0 0 auto;">
-                    <button type="button" class="btn btn-link text-decoration-none text-muted fw-bold" data-bs-dismiss="modal" style="font-size: 0.85rem; font-family: var(--font-mono);">[ CANCELAR ]</button>
-                    <button type="submit" class="btn" style=" color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 8px 24px; border-radius: 8px; font-weight: 700; font-family: var(--font-display); letter-spacing: 0.05em;  transition: all 0.2s;">
+                <div class="modal-footer task-modal-footer">
+                    <button type="button" class="btn task-cancel-btn" data-bs-dismiss="modal">[ CANCELAR ]</button>
+                    <button type="submit" class="btn task-submit-btn">
                         <i class="bi bi-send-fill me-2"></i> INICIAR TAREA
                     </button>
                 </div>
@@ -970,6 +967,234 @@
     --ef-ink: #f7fbff;
     --ef-muted: #b8c7dc;
     --ef-blue-soft: rgba(147, 197, 253, 0.14);
+    --task-bg: #101827;
+    --task-surface: #162033;
+    --task-surface-soft: #1d2a40;
+    --task-border: rgba(191, 219, 254, 0.18);
+    --task-ink: #f7fbff;
+    --task-muted: #b8c7dc;
+    --task-blue: #bfdbfe;
+    --task-mint: #bbf7d0;
+    --task-amber: #fed7aa;
+    --task-rose: #fecdd3;
+    --task-violet: #ddd6fe;
+    --task-blue-soft: rgba(147, 197, 253, 0.14);
+    --task-mint-soft: rgba(134, 239, 172, 0.14);
+    --task-amber-soft: rgba(253, 186, 116, 0.14);
+    --task-rose-soft: rgba(252, 165, 165, 0.14);
+    --task-violet-soft: rgba(196, 181, 253, 0.14);
+}
+
+/* ── Modal Nueva Tarea General ── */
+.task-modal-shell {
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid var(--task-border);
+    background: var(--task-bg);
+    color: var(--task-ink);
+    max-height: calc(100vh - 2rem);
+}
+.task-modal-form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+}
+.task-modal-header {
+    position: relative;
+    z-index: 10;
+    border-bottom: 1px solid var(--task-border);
+    background: linear-gradient(180deg, rgba(147, 197, 253, 0.08), rgba(16, 24, 39, 0));
+}
+.task-modal-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 20px 24px 16px;
+}
+.task-modal-title-lockup {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+.task-modal-title-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: var(--task-blue);
+    background: var(--task-blue-soft);
+    border: 1px solid rgba(147, 197, 253, 0.28);
+}
+#createTaskModalLabel {
+    font-size: 1.04rem;
+    letter-spacing: 0;
+    color: var(--task-ink);
+    font-family: var(--font-display, inherit);
+}
+.task-modal-title-meta {
+    font-size: 0.74rem;
+    color: var(--task-muted);
+    margin-top: 2px;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+.task-close-btn { opacity: 0.72; }
+.task-close-btn:hover { opacity: 1; }
+.task-modal-body {
+    padding: 24px;
+    background: linear-gradient(180deg, rgba(16, 24, 39, 0), rgba(147, 197, 253, 0.03));
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.task-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0;
+}
+.task-field {
+    min-width: 0;
+}
+.task-label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--task-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.task-control,
+#createTaskModal .form-control,
+#createTaskModal .form-select,
+#createTaskModal .input-group-text {
+    background: rgba(10, 17, 30, 0.72) !important;
+    color: var(--task-ink) !important;
+    border-color: var(--task-border) !important;
+    border-radius: 10px !important;
+    font-size: 0.9rem;
+}
+.task-control {
+    padding: 10px 12px;
+}
+textarea.task-control {
+    resize: vertical;
+    line-height: 1.45;
+}
+.task-control::placeholder {
+    color: #93a4bb;
+    opacity: 1;
+}
+.task-control:focus,
+#createTaskModal .form-control:focus,
+#createTaskModal .form-select:focus {
+    background: rgba(10, 17, 30, 0.86) !important;
+    border-color: rgba(147, 197, 253, 0.62) !important;
+    box-shadow: 0 0 0 0.18rem rgba(147, 197, 253, 0.14);
+}
+.task-input-addon {
+    color: var(--task-blue) !important;
+    border-right: none !important;
+}
+.task-control-with-addon {
+    border-left: none !important;
+}
+.task-field-hint {
+    margin-top: 6px;
+    color: var(--task-muted);
+    font-size: 0.72rem;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+.task-done-switch {
+    border: 1px solid rgba(134, 239, 172, 0.28);
+    background: var(--task-mint-soft);
+    border-radius: 10px;
+    padding: 8px 10px 8px 2.6rem;
+}
+.task-done-switch .task-label {
+    color: var(--task-mint);
+    cursor: pointer;
+}
+#createTaskModal .form-check-input {
+    background-color: rgba(10, 17, 30, 0.82);
+    border-color: rgba(191, 219, 254, 0.32);
+}
+#createTaskModal .form-check-input:checked {
+    background-color: #86efac;
+    border-color: #86efac;
+}
+#createTaskModal .form-check-input:focus {
+    border-color: rgba(134, 239, 172, 0.58);
+    box-shadow: 0 0 0 0.18rem rgba(134, 239, 172, 0.14);
+}
+.task-resolution-panel {
+    display: none;
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px solid rgba(134, 239, 172, 0.28);
+    border-radius: 12px;
+    background: rgba(10, 17, 30, 0.32);
+}
+.task-resolution-label {
+    color: var(--task-mint);
+}
+.task-resolution-textarea {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 0.85rem;
+}
+.task-modal-footer {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--task-border);
+    background: rgba(10, 17, 30, 0.38);
+}
+.task-cancel-btn {
+    color: var(--task-muted);
+    border: 1px solid transparent;
+    background: transparent;
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+.task-cancel-btn:hover {
+    color: var(--task-ink);
+    border-color: var(--task-border);
+    background: rgba(191, 219, 254, 0.06);
+}
+.task-submit-btn {
+    color: #082f49;
+    border: 1px solid var(--task-blue);
+    background: var(--task-blue);
+    padding: 8px 22px;
+    border-radius: 9px;
+    font-weight: 800;
+    font-family: var(--font-display, inherit);
+    letter-spacing: 0;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.task-submit-btn:hover {
+    color: #082f49;
+    background: #dbeafe;
+    border-color: #dbeafe;
+}
+@media (max-width: 760px) {
+    .task-modal-title-row,
+    .task-modal-body,
+    .task-modal-footer {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+    .task-modal-footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
 }
 
 /* ── Modal Efemérides ── */
