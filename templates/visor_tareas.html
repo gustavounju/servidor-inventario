@@ -79,6 +79,268 @@
         .rack-info h3 { font-size: 0.72rem; font-weight: 800; margin: 0 0 1px 0; white-space: nowrap; color: var(--text-color); }
         .rack-info p { font-size: 0.6rem; color: var(--text-muted); margin: 0; white-space: nowrap; }
 
+        :root {
+            --visor-bg: #101827;
+            --visor-surface: #162033;
+            --visor-surface-soft: #1d2a40;
+            --visor-border: rgba(191, 219, 254, 0.18);
+            --visor-ink: #f7fbff;
+            --visor-muted: #b8c7dc;
+            --visor-blue: #bfdbfe;
+            --visor-mint: #bbf7d0;
+            --visor-amber: #fed7aa;
+            --visor-rose: #fecdd3;
+            --visor-violet: #ddd6fe;
+            --visor-blue-soft: rgba(147, 197, 253, 0.14);
+            --visor-mint-soft: rgba(134, 239, 172, 0.14);
+            --visor-amber-soft: rgba(253, 186, 116, 0.14);
+            --visor-rose-soft: rgba(252, 165, 165, 0.14);
+            --visor-violet-soft: rgba(196, 181, 253, 0.14);
+        }
+
+        body.has-fixed-header {
+            background:
+                linear-gradient(180deg, rgba(147, 197, 253, 0.055), rgba(16, 24, 39, 0) 260px),
+                var(--visor-bg) !important;
+            color: var(--visor-ink);
+        }
+
+        body.has-fixed-header > main {
+            padding: 16px 18px 24px !important;
+        }
+
+        .radar-masthead {
+            margin: 0 0 14px;
+            padding: 12px 16px;
+            border: 1px solid var(--visor-border);
+            border-radius: 14px;
+            background: rgba(22, 32, 51, 0.78);
+            color: var(--visor-ink);
+        }
+
+        .radar-masthead .hide-mobile {
+            color: var(--visor-blue) !important;
+            border-right-color: var(--visor-border) !important;
+        }
+
+        .radar-masthead .hide-mobile span {
+            color: var(--visor-muted) !important;
+        }
+
+        .health-radar__bar {
+            background: rgba(10, 17, 30, 0.72) !important;
+            border: 1px solid var(--visor-border);
+            overflow: hidden;
+        }
+
+        .health-radar__segment--stable {
+            background: var(--visor-mint) !important;
+            color: #052e16 !important;
+            text-shadow: none !important;
+        }
+
+        .health-radar__segment--warning {
+            background: var(--visor-amber) !important;
+            color: #7c2d12 !important;
+        }
+
+        .console-grid {
+            gap: 16px;
+        }
+
+        .console-panel {
+            background: rgba(22, 32, 51, 0.86) !important;
+            border: 1px solid var(--visor-border) !important;
+            border-radius: 16px !important;
+            color: var(--visor-ink);
+        }
+
+        .console-panel__title {
+            color: var(--visor-blue) !important;
+            border-bottom: 1px solid var(--visor-border) !important;
+            letter-spacing: 0.04em;
+        }
+
+        .integrated-alert {
+            background: rgba(10, 17, 30, 0.32) !important;
+            border: 1px solid var(--visor-border) !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+        }
+
+        #filterForm label {
+            color: var(--visor-muted) !important;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        #filterForm .form-control,
+        #filterForm .form-select {
+            background: rgba(10, 17, 30, 0.72) !important;
+            border: 1px solid var(--visor-border) !important;
+            border-radius: 10px !important;
+            color: var(--visor-ink) !important;
+        }
+
+        #filterForm .form-control:focus,
+        #filterForm .form-select:focus {
+            background: rgba(10, 17, 30, 0.86) !important;
+            border-color: rgba(147, 197, 253, 0.62) !important;
+            box-shadow: 0 0 0 0.18rem rgba(147, 197, 253, 0.14);
+        }
+
+        #filterForm .btn:not(.btn-outline-secondary) {
+            background: var(--visor-blue) !important;
+            color: #082f49 !important;
+            border: 1px solid var(--visor-blue) !important;
+            border-radius: 9px !important;
+        }
+
+        #filterForm .btn-outline-secondary,
+        .btn-outline-secondary {
+            color: var(--visor-muted) !important;
+            border-color: var(--visor-border) !important;
+            background: rgba(10, 17, 30, 0.26) !important;
+        }
+
+        #filterForm .btn-outline-secondary:hover,
+        .btn-outline-secondary:hover {
+            color: var(--visor-ink) !important;
+            border-color: rgba(191, 219, 254, 0.36) !important;
+            background: rgba(191, 219, 254, 0.08) !important;
+        }
+
+        .metrics-row {
+            gap: 0.5rem !important;
+        }
+
+        .metric-box {
+            background: rgba(29, 42, 64, 0.82) !important;
+            border: 1px solid var(--visor-border) !important;
+            border-radius: 12px !important;
+            color: var(--visor-ink) !important;
+        }
+
+        .metric-box[onclick] {
+            border-color: rgba(253, 186, 116, 0.38) !important;
+            background: var(--visor-amber-soft) !important;
+        }
+
+        .metric-box__label {
+            color: var(--visor-muted) !important;
+            letter-spacing: 0.04em;
+        }
+
+        .metric-box__value {
+            color: var(--visor-blue) !important;
+        }
+
+        #ticketPendientes,
+        #statPendientes {
+            color: var(--visor-amber) !important;
+        }
+
+        #statHechasHoy {
+            color: var(--visor-mint) !important;
+        }
+
+        .table-responsive {
+            border: 1px solid var(--visor-border) !important;
+            border-radius: 12px !important;
+            background: rgba(10, 17, 30, 0.32) !important;
+        }
+
+        .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--visor-ink);
+            --bs-table-border-color: var(--visor-border);
+            --bs-table-hover-bg: rgba(147, 197, 253, 0.08);
+            color: var(--visor-ink) !important;
+            background: transparent !important;
+        }
+
+        .table thead {
+            background: rgba(10, 17, 30, 0.58) !important;
+            color: var(--visor-muted) !important;
+            border-bottom: 1px solid var(--visor-border) !important;
+        }
+
+        .table th {
+            color: var(--visor-muted) !important;
+            letter-spacing: 0.04em;
+        }
+
+        .table td {
+            border-color: var(--visor-border) !important;
+            color: var(--visor-ink) !important;
+            background: transparent !important;
+        }
+
+        .text-muted,
+        .table .text-muted {
+            color: var(--visor-muted) !important;
+        }
+
+        .pc-badge {
+            background: var(--visor-blue-soft) !important;
+            color: var(--visor-blue) !important;
+            border: 1px solid rgba(147, 197, 253, 0.38) !important;
+            border-radius: 8px;
+        }
+
+        .tech-pill {
+            background: var(--visor-violet-soft) !important;
+            color: var(--visor-violet) !important;
+            border: 1px solid rgba(196, 181, 253, 0.38) !important;
+            border-radius: 8px;
+        }
+
+        .duration-pill {
+            background: var(--visor-amber-soft) !important;
+            border: 1px solid rgba(253, 186, 116, 0.38) !important;
+            color: var(--visor-amber) !important;
+            border-radius: 8px;
+        }
+
+        .btn-outline-info {
+            color: var(--visor-blue) !important;
+            border-color: rgba(147, 197, 253, 0.44) !important;
+            background: rgba(147, 197, 253, 0.05) !important;
+        }
+
+        .btn-outline-info:hover {
+            color: #eff6ff !important;
+            background: var(--visor-blue-soft) !important;
+            border-color: rgba(147, 197, 253, 0.62) !important;
+        }
+
+        .rack-card {
+            background: rgba(22, 32, 51, 0.82) !important;
+            border-color: var(--visor-border) !important;
+            border-radius: 10px;
+            color: var(--visor-ink) !important;
+        }
+
+        .rack-info h3 {
+            color: var(--visor-ink) !important;
+        }
+
+        .rack-info p {
+            color: var(--visor-muted) !important;
+        }
+
+        @media (max-width: 900px) {
+            body.has-fixed-header > main {
+                padding-right: 12px !important;
+                padding-left: 12px !important;
+            }
+            .radar-masthead {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 0.75rem !important;
+            }
+        }
+
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}">
 </head>
