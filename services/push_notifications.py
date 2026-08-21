@@ -68,7 +68,7 @@ def build_new_task_push(
     return {
         "title": title,
         "body": body,
-        "url": "/tecnicos",
+        "url": f"/tecnicos?task_id={task_id}" if task_id else "/tecnicos",
         "task_id": task_id,
         "payload_extra": {
             "kind": "new_task",

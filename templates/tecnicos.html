@@ -134,6 +134,7 @@
     /* --- Modern Task Cards (Industrial) --- */
     .task-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; transition: transform 0.1s, box-shadow 0.1s; position: relative; overflow: hidden; box-shadow: var(--shadow); }
     .task-card:active { transform: scale(0.99); background: var(--card-hover); }
+    .task-card.task-card-target { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(31, 95, 139, 0.18), var(--shadow); }
     .task-card-accent { 
       position: absolute; left: 0; top: 0; bottom: 0; width: 4px; 
       background: var(--border);
@@ -1180,6 +1181,30 @@ function switchTab(name) {
   if (name === 'avisos') loadNotifications();
 }
 
+function getRequestedTaskId() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('task_id') || params.get('task');
+}
+
+let focusedRequestedTaskId = null;
+function focusRequestedTask() {
+  const taskId = getRequestedTaskId();
+  if (!taskId) return;
+  if (focusedRequestedTaskId === String(taskId)) return;
+  const task = (allData.active_tasks || []).find(t => String(t.id) === String(taskId));
+  if (!task) return;
+  focusedRequestedTaskId = String(taskId);
+  const mine = task.assigned_to && task.assigned_to.toLowerCase() === (techId || '').toLowerCase();
+  switchTab(mine ? 'mias' : 'libres');
+  requestAnimationFrame(() => {
+    const card = document.getElementById(`tc-${taskId}`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('task-card-target');
+    setTimeout(() => card.classList.remove('task-card-target'), 5000);
+  });
+}
+
 function toggleMoreMenu(event) {
   if (event) event.preventDefault();
   document.getElementById('moreMenu').classList.toggle('open');
@@ -1215,6 +1240,7 @@ async function refreshData(silent=false) {
     fillPcSelects(data.pcs || []);
     fillRequestersList(data.requesters || []);
     renderAll();
+    focusRequestedTask();
   } catch(e) { console.error(e); }
   if (!silent) document.getElementById('refreshIcon').classList.remove('spin');
 }
@@ -2145,6 +2171,7 @@ async function poll() {
     allData = data;
     fillPcSelects(data.pcs || []);
     renderAll();
+    focusRequestedTask();
   } catch(e) {}
   
   // Poll for internal private/broadcast messages

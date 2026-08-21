@@ -521,10 +521,17 @@ if __name__ == "__main__":
     sistema = platform.system()
     
     if sistema == "Windows":
+        cert_file = 'cert.pem'
+        key_file = 'key.pem'
+        use_ssl = os.path.exists(cert_file) and os.path.exists(key_file)
+
         print("\n" + "="*64)
         print(" MODO DESARROLLO (Windows)")
         print(f" Servidor iniciado en hostname: {socket.gethostname()}")
-        print(" - Principal: http://0.0.0.0:5000")
+        if use_ssl:
+            print(f" - Principal: https://0.0.0.0:5000 (Cert: {cert_file})")
+        else:
+            print(" - Principal: http://0.0.0.0:5000")
         print(" - Fallback:  http://0.0.0.0:8080")
         print("="*64)
         
@@ -536,7 +543,8 @@ if __name__ == "__main__":
         
         threading.Thread(target=run_fallback, daemon=True).start()
         debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
-        app.run(host='0.0.0.0', port=5000, debug=debug_mode, use_reloader=False)
+        ssl_context = (cert_file, key_file) if use_ssl else None
+        app.run(host='0.0.0.0', port=5000, debug=debug_mode, ssl_context=ssl_context, use_reloader=False)
     else:
         print("\n" + "="*64)
         print(" MODO PRODUCCIÓN (Linux)")
