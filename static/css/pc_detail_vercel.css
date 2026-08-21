@@ -678,3 +678,138 @@
     z-index: 1000;
   }
 }
+
+/* Midnight Pastel Console alignment for equipment detail */
+[data-theme="dark"] .vercel-detail {
+  --vercel-bg: #101827;
+  --vercel-surface: #162033;
+  --vercel-surface-hover: #1d2a40;
+  --vercel-border: rgba(191, 219, 254, .18);
+  --vercel-border-strong: #bfdbfe;
+  --vercel-text: #f7fbff;
+  --vercel-text-muted: #b8c7dc;
+  --pc-pastel-blue: #bfdbfe;
+  --pc-pastel-mint: #bbf7d0;
+  --pc-pastel-amber: #fed7aa;
+  --pc-pastel-rose: #fecdd3;
+  --pc-pastel-violet: #ddd6fe;
+  background: #101827;
+}
+
+[data-theme="dark"] .vercel-detail .pc-command-bar,
+[data-theme="dark"] .vercel-detail .pc-status-panel,
+[data-theme="dark"] .vercel-detail .pc-attention-panel,
+[data-theme="dark"] .vercel-detail .pc-overview-card,
+[data-theme="dark"] .vercel-detail .pc-operation-section,
+[data-theme="dark"] .vercel-detail .card {
+  background: #162033 !important;
+  border-color: rgba(191, 219, 254, .18) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .vercel-detail .pd-tabs {
+  background: rgba(22, 32, 51, .74);
+  border: 1px solid rgba(191, 219, 254, .14) !important;
+  border-radius: 12px;
+  gap: 6px !important;
+  padding: 6px;
+}
+
+[data-theme="dark"] .vercel-detail .pd-tab {
+  border-bottom: 0 !important;
+  border-radius: 9px;
+  color: #b8c7dc !important;
+  padding: 8px 12px !important;
+}
+
+[data-theme="dark"] .vercel-detail .pd-tab:hover {
+  background: rgba(191, 219, 254, .08) !important;
+  color: #f7fbff !important;
+}
+
+[data-theme="dark"] .vercel-detail .pd-tab.active {
+  background: rgba(191, 219, 254, .14) !important;
+  color: #bfdbfe !important;
+}
+
+.vercel-detail .pc-connectivity-card { order: 1; }
+.vercel-detail .pc-hardware-card { order: 2; }
+.vercel-detail .pc-printer-card { order: 3; }
+.vercel-detail .pc-storage-card { order: 4; }
+
+@media (min-width: 1180px) {
+  .vercel-detail .pc-overview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .vercel-detail .pc-storage-card {
+    grid-column: span 3;
+  }
+}
+
+.vercel-detail .pc-printer-card {
+  border-color: rgba(191, 219, 254, .26) !important;
+}
+
+[data-theme="dark"] .vercel-detail .pc-printer-card .pc-panel-heading i {
+  color: var(--pc-pastel-blue);
+}
+
+.vercel-detail .pc-printer-sections {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.vercel-detail .pc-printer-section {
+  background: rgba(29, 42, 64, .58);
+  border: 1px solid rgba(191, 219, 254, .13);
+  border-radius: 10px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.vercel-detail .pc-printer-list {
+  max-height: 132px;
+  overflow-y: auto;
+}
+
+.vercel-detail .pc-printer-row {
+  background: rgba(191, 219, 254, .06) !important;
+  border-color: rgba(191, 219, 254, .14) !important;
+  font-size: .8rem;
+}
+
+.vercel-detail .pc-printer-row--network {
+  background: rgba(187, 247, 208, .06) !important;
+  border-color: rgba(187, 247, 208, .18) !important;
+}
+
+.vercel-detail .pc-printer-link-panel {
+  background: rgba(16, 24, 39, .56);
+  border-color: rgba(191, 219, 254, .24) !important;
+}
+
+.vercel-detail .pc-printer-link-actions {
+  align-items: center;
+}
+
+[data-theme="dark"] .vercel-detail .pc-printer-card .badge.bg-light {
+  background: rgba(191, 219, 254, .12) !important;
+  border-color: rgba(191, 219, 254, .24) !important;
+  color: #f7fbff !important;
+}
+
+@media (max-width: 991.98px) {
+  .vercel-detail .pc-printer-sections {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .vercel-detail .pc-printer-link-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

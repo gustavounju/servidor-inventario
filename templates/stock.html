@@ -400,6 +400,190 @@
             margin-bottom: 0.16rem;
             text-transform: uppercase;
         }
+
+        :root {
+            --stock-midnight: #101827;
+            --stock-panel: #162033;
+            --stock-panel-2: #1d2a40;
+            --stock-border: rgba(191, 219, 254, .18);
+            --stock-ink: #f7fbff;
+            --stock-muted: #b8c7dc;
+            --stock-blue: #bfdbfe;
+            --stock-mint: #bbf7d0;
+            --stock-amber: #fed7aa;
+            --stock-rose: #fecdd3;
+            --stock-violet: #ddd6fe;
+        }
+
+        body {
+            background: var(--stock-midnight);
+            color: var(--stock-ink);
+        }
+
+        .stock-masthead {
+            background: linear-gradient(135deg, rgba(22,32,51,.97), rgba(29,42,64,.9));
+            border: 1px solid var(--stock-border);
+            box-shadow: none;
+        }
+
+        .stock-masthead .module-kicker,
+        .stock-masthead .module-kicker i {
+            color: var(--stock-mint);
+        }
+
+        .stock-masthead .module-title {
+            color: var(--stock-ink);
+        }
+
+        .stock-stat-chip {
+            background: rgba(29,42,64,.72);
+            border-color: var(--stock-border);
+            color: var(--stock-muted);
+        }
+
+        .stock-stat-chip strong {
+            color: var(--stock-ink);
+        }
+
+        .stock-stat-chip.text-warning {
+            background: rgba(254,215,170,.12) !important;
+            border-color: rgba(254,215,170,.34) !important;
+            color: var(--stock-amber) !important;
+        }
+
+        .stock-toolbar .op-btn,
+        .stock-toolbar .op-btn--ghost {
+            border-radius: 10px;
+            box-shadow: none;
+        }
+
+        .stock-toolbar .op-btn--ghost {
+            background: rgba(29,42,64,.75);
+            border-color: var(--stock-border);
+            color: var(--stock-ink);
+        }
+
+        .stock-toolbar .op-btn--ghost:hover {
+            background: rgba(191,219,254,.1);
+            border-color: rgba(191,219,254,.38);
+            color: var(--stock-blue);
+        }
+
+        .stock-toolbar__counter {
+            background: rgba(254,215,170,.14);
+            color: var(--stock-amber);
+        }
+
+        .stock-bulk-bar {
+            background: rgba(254,205,211,.1);
+            border-color: rgba(254,205,211,.28);
+            border-radius: 14px;
+            box-shadow: none;
+            color: var(--stock-rose);
+        }
+
+        .stock-bulk-bar__summary strong {
+            color: var(--stock-ink);
+        }
+
+        .stock-badge {
+            border-radius: 8px;
+            letter-spacing: 0.01em;
+        }
+
+        .status-stock {
+            background: rgba(187,247,208,.12);
+            border-color: rgba(187,247,208,.34);
+            color: var(--stock-mint);
+        }
+
+        .status-assigned,
+        .status-installed {
+            background: rgba(191,219,254,.12);
+            border-color: rgba(191,219,254,.34);
+            color: var(--stock-blue);
+        }
+
+        .status-retired {
+            background: rgba(254,205,211,.12);
+            border-color: rgba(254,205,211,.34);
+            color: var(--stock-rose);
+        }
+
+        #stockKitsCard,
+        .container-fluid > .card,
+        .container-fluid > .row > .card,
+        .container-fluid > div.card {
+            background: var(--stock-panel) !important;
+            border: 1px solid var(--stock-border) !important;
+            border-radius: 14px !important;
+            box-shadow: none !important;
+            color: var(--stock-ink);
+        }
+
+        .card-header,
+        .card-footer {
+            background: var(--stock-panel-2) !important;
+            border-color: var(--stock-border) !important;
+            color: var(--stock-ink);
+        }
+
+        .table-gold,
+        .table-gold.table,
+        #stockTable {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--stock-ink);
+            --bs-table-hover-bg: rgba(191,219,254,.07);
+            --bs-table-border-color: rgba(191,219,254,.11);
+            background: transparent;
+            color: var(--stock-ink);
+        }
+
+        #stockTable thead th {
+            background: var(--stock-panel-2) !important;
+            border-color: var(--stock-border) !important;
+            color: var(--stock-muted) !important;
+        }
+
+        #stockTable tbody td {
+            border-color: rgba(191,219,254,.11) !important;
+            color: var(--stock-ink);
+        }
+
+        #filterStatus,
+        #filterRemito,
+        #filterSupplier,
+        #stockSearchInput,
+        .modal .form-control.bg-dark,
+        .modal .form-select.bg-dark,
+        .modal textarea.bg-dark {
+            background: var(--stock-panel-2) !important;
+            border-color: var(--stock-border) !important;
+            color: var(--stock-ink) !important;
+        }
+
+        #stockSearchInput::placeholder,
+        .modal .form-control::placeholder,
+        .modal textarea::placeholder {
+            color: rgba(184,199,220,.72) !important;
+        }
+
+        .modal-content.bg-dark,
+        .modal-content.text-start,
+        .modal-content[style*="background: #0f172a"],
+        .modal-content[style*="background:#111827"],
+        .modal-content[style*="background: var(--card-bg"] {
+            background: var(--stock-panel) !important;
+            border: 1px solid var(--stock-border) !important;
+            border-radius: 14px !important;
+            box-shadow: none !important;
+            color: var(--stock-ink) !important;
+        }
+
+        .modal-header,
+        .modal-footer {
+            border-color: var(--stock-border) !important;
+        }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>

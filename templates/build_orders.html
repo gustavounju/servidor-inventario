@@ -11,37 +11,64 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gold.css') }}">
     <style>
-        .bo-table-wrap{background:linear-gradient(180deg,color-mix(in srgb,var(--card-bg) 96%, transparent),color-mix(in srgb,var(--table-header-bg) 22%, var(--card-bg)));border-radius:18px;overflow:hidden;border:1px solid color-mix(in srgb,var(--border-color) 86%, transparent);box-shadow:0 20px 50px rgba(15,23,42,.12);}
+        :root {
+            --bo-midnight: #101827;
+            --bo-panel: #162033;
+            --bo-panel-2: #1d2a40;
+            --bo-border: rgba(191, 219, 254, .18);
+            --bo-ink: #f7fbff;
+            --bo-muted: #b8c7dc;
+            --bo-blue: #bfdbfe;
+            --bo-mint: #bbf7d0;
+            --bo-amber: #fed7aa;
+            --bo-rose: #fecdd3;
+            --bo-violet: #ddd6fe;
+        }
+
+        body { background: var(--bo-midnight); color: var(--bo-ink); }
+        .module-masthead {
+            background: linear-gradient(135deg, rgba(22,32,51,.96), rgba(29,42,64,.9));
+            border: 1px solid var(--bo-border);
+            box-shadow: none;
+        }
+        .module-kicker { color: var(--bo-blue); }
+        .module-title { color: var(--bo-ink); }
+        .module-toolbar .op-btn {
+            border-radius: 10px;
+            border-color: var(--bo-border);
+            box-shadow: none;
+        }
+        .bo-table-wrap{background:var(--bo-panel);border-radius:14px;overflow:hidden;border:1px solid var(--bo-border);box-shadow:none;}
         .bo-table{width:100%;border-collapse:collapse;font-size:.875rem;color:var(--text-color);}
-        .bo-table thead th{background:color-mix(in srgb,var(--table-header-bg) 86%, transparent);color:var(--text-muted);font-size:.71rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:12px 14px;border-bottom:1px solid color-mix(in srgb,var(--border-color) 82%, transparent);white-space:nowrap;}
-        .bo-table tbody tr{background:transparent;border-bottom:1px solid color-mix(in srgb,var(--border-color) 80%, transparent);cursor:pointer;transition:background .12s ease,transform .12s ease;}
+        .bo-table thead th{background:var(--bo-panel-2);color:var(--bo-muted);font-size:.71rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:12px 14px;border-bottom:1px solid var(--bo-border);white-space:nowrap;}
+        .bo-table tbody tr{background:transparent;border-bottom:1px solid rgba(191,219,254,.11);cursor:pointer;transition:background .12s ease,transform .12s ease;}
         .bo-table tbody tr:last-child{border-bottom:none;}
-        .bo-table tbody tr:hover{background:color-mix(in srgb,var(--accent-primary) 7%, transparent);}
+        .bo-table tbody tr:hover{background:rgba(191,219,254,.07);}
         .bo-table td{padding:12px 14px;vertical-align:middle;}
         .bo-badge{display:inline-block;font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;}
-        .bo-badge--draft{background:rgba(234,179,8,.15);color:#facc15;border:1px solid rgba(234,179,8,.3);}
-        .bo-badge--in_progress{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3);}
-        .bo-badge--completed{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3);}
-        .bo-badge--cancelled{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);}
-        .bo-action-btn{background:transparent;border:1px solid rgba(148,163,184,.25);color:#94a3b8;border-radius:5px;padding:3px 8px;font-size:.75rem;cursor:pointer;transition:all .12s;white-space:nowrap;}
-        .bo-action-btn:hover{background:rgba(148,163,184,.12);color:#e2e8f0;border-color:rgba(148,163,184,.4);}
-        .bo-action-btn.edit:hover{background:rgba(168,85,247,.12);color:#c084fc;border-color:rgba(168,85,247,.4);}
-        .bo-action-btn.danger:hover{background:rgba(239,68,68,.12);color:#f87171;border-color:rgba(239,68,68,.4);}
+        .bo-badge--draft{background:rgba(254,215,170,.12);color:var(--bo-amber);border:1px solid rgba(254,215,170,.32);}
+        .bo-badge--in_progress{background:rgba(191,219,254,.12);color:var(--bo-blue);border:1px solid rgba(191,219,254,.34);}
+        .bo-badge--completed{background:rgba(187,247,208,.12);color:var(--bo-mint);border:1px solid rgba(187,247,208,.34);}
+        .bo-badge--cancelled{background:rgba(254,205,211,.12);color:var(--bo-rose);border:1px solid rgba(254,205,211,.34);}
+        .bo-action-btn{background:rgba(29,42,64,.7);border:1px solid var(--bo-border);color:var(--bo-muted);border-radius:8px;padding:3px 8px;font-size:.75rem;cursor:pointer;transition:all .12s;white-space:nowrap;}
+        .bo-action-btn:hover{background:rgba(191,219,254,.1);color:var(--bo-ink);border-color:rgba(191,219,254,.38);}
+        .bo-action-btn.edit:hover{background:rgba(221,214,254,.12);color:var(--bo-violet);border-color:rgba(221,214,254,.42);}
+        .bo-action-btn.danger:hover{background:rgba(254,205,211,.12);color:var(--bo-rose);border-color:rgba(254,205,211,.42);}
         .bo-detail-table{width:100%;font-size:.83rem;}
         .bo-detail-table th{color:#64748b;font-size:.72rem;text-transform:uppercase;font-weight:700;padding:6px 10px;border-bottom:1px solid rgba(148,163,184,.15);}
         .bo-detail-table td{padding:8px 10px;border-bottom:1px solid rgba(148,163,184,.08);color:#cbd5e1;}
         .bo-detail-table tbody tr:last-child td{border-bottom:none;}
-        .modal-content-dark{background:#1e293b;color:#e2e8f0;border:1px solid rgba(148,163,184,.2);}
-        .bo-meta-chip{display:inline-flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--table-header-bg) 72%, transparent);border:1px solid color-mix(in srgb,var(--border-color) 84%, transparent);border-radius:999px;padding:5px 10px;font-size:.78rem;color:var(--text-muted);}
-        .bo-meta-chip strong{color:var(--text-color);}
-        .bo-filter-shell{background:linear-gradient(180deg,color-mix(in srgb,var(--card-bg) 96%, transparent),color-mix(in srgb,var(--accent-primary) 5%, transparent));border:1px solid color-mix(in srgb,var(--border-color) 84%, transparent);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 18px 40px rgba(15,23,42,.08);}
-        .bo-filter-shell .form-label{color:var(--text-muted);font-size:.74rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;}
+        .modal-content-dark{background:var(--bo-panel);color:var(--bo-ink);border:1px solid var(--bo-border);}
+        .bo-meta-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(29,42,64,.74);border:1px solid var(--bo-border);border-radius:999px;padding:5px 10px;font-size:.78rem;color:var(--bo-muted);}
+        .bo-meta-chip strong{color:var(--bo-ink);}
+        .bo-filter-shell{background:var(--bo-panel);border:1px solid var(--bo-border);border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:none;}
+        .bo-filter-shell .form-label{color:var(--bo-muted);font-size:.74rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;}
         .bo-filter-shell .form-control,
-        .bo-filter-shell .form-select{background:color-mix(in srgb,var(--table-header-bg) 80%, transparent);border-color:color-mix(in srgb,var(--border-color) 82%, transparent);color:var(--text-color);min-height:42px;}
-        .bo-filter-shell .form-control::placeholder{color:color-mix(in srgb,var(--text-muted) 84%, transparent);}
+        .bo-filter-shell .form-select{background:var(--bo-panel-2);border-color:var(--bo-border);color:var(--bo-ink);min-height:42px;}
+        .bo-filter-shell .form-control::placeholder{color:rgba(184,199,220,.72);}
         .bo-filter-shell .btn{min-height:42px;}
         .bo-masthead-stats{display:flex;flex-wrap:wrap;gap:.65rem;margin-top:.9rem;}
-        .bo-empty-state{background:linear-gradient(180deg,color-mix(in srgb,var(--card-bg) 96%, transparent),color-mix(in srgb,var(--table-header-bg) 18%, transparent));border:1px dashed color-mix(in srgb,var(--border-color) 76%, transparent);border-radius:18px;}
+        .bo-empty-state{background:var(--bo-panel);border:1px dashed rgba(191,219,254,.28);border-radius:14px;}
     </style>
     <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined and csrf_token else '' }}">
     <script defer src="{{ url_for('static', filename='js/security.js') }}"></script>
