@@ -291,8 +291,10 @@
 
       .acta-page-wrapper {
         max-width: 100% !important;
+        width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
+        box-sizing: border-box !important;
         box-shadow: none !important;
         border: none !important;
         
@@ -319,8 +321,14 @@
       }
 
       .acta-header-block {
-        gap: 6px !important;
+        gap: 4px !important;
         margin-bottom: 3px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+
+      .header-left-col {
+        min-width: 0 !important;
       }
 
       .acta-title-box {
@@ -354,13 +362,13 @@
 
       /* Compact QR box */
       .meta-qr-box {
-        min-width: 66px !important;
+        min-width: 62px !important;
         padding: 2px !important;
       }
 
       .meta-qr-img {
-        width: 60px !important;
-        height: 60px !important;
+        width: 58px !important;
+        height: 58px !important;
       }
 
       /* Compact tables */
@@ -424,7 +432,7 @@
 
       @page {
         size: A4 portrait;
-        margin: 4mm !important;
+        margin: 4mm 7mm 4mm 4mm !important;
       }
     }
   </style>
