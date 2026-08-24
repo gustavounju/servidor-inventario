@@ -2399,6 +2399,35 @@
             .catch(err => alert("Error de red: " + err));
         }
 
+        function getComponentEffectiveStatus(item) {
+            const rawStatus = (item.status || 'Stock').trim();
+            const status = rawStatus.toLowerCase();
+            const lifecycle = (item.lifecycle_status || '').trim().toLowerCase();
+            const hasDestination = Boolean(
+                item.assigned_pc ||
+                item.assigned_user ||
+                item.assigned_fuero ||
+                item.assigned_to_component_id
+            );
+
+            if (status === 'retirado' || status === 'scrap' || lifecycle === 'retirado' || lifecycle === 'scrap') {
+                return 'Retirado';
+            }
+            if (status === 'reservado' || lifecycle === 'en_armado') {
+                return 'Reservado';
+            }
+            if (status === 'installed' || lifecycle === 'desplegado' || hasDestination) {
+                return 'Installed';
+            }
+            if (item.build_order_id) {
+                return 'Reservado';
+            }
+            if (status === 'stock' || lifecycle === 'stock' || !rawStatus) {
+                return 'Stock';
+            }
+            return rawStatus;
+        }
+
         function loadComponents() {
             fetch('/api/components/list')
                 .then(res => res.json())
@@ -2409,7 +2438,7 @@
                     // Contar impresoras en stock
                     const stockPrinters = data.filter(item => {
                         const isPrinter = (item.component_type || '').toUpperCase().includes('IMPRESORA');
-                        const isStock = item.status === 'Stock';
+                        const isStock = getComponentEffectiveStatus(item) === 'Stock';
                         return isPrinter && isStock;
                     });
                     const statsPrinterCountEl = document.getElementById('statsPrinterCount');
@@ -2427,7 +2456,8 @@
                     const searchFilter = document.getElementById('stockSearchInput').value.toLowerCase();
 
                     const filtered = data.filter(item => {
-                        const matchesStatus = !statusFilter || item.status === statusFilter;
+                        const effectiveStatus = getComponentEffectiveStatus(item);
+                        const matchesStatus = !statusFilter || effectiveStatus === statusFilter;
                         const matchesRemito = !remitoFilter || (item.invoice_number && item.invoice_number === remitoFilter);
                         const matchesSupplier = !supplierFilter || (item.supplier && item.supplier === supplierFilter);
 
@@ -2459,6 +2489,7 @@
                     filtered.forEach(item => {
                         let statusHtml = '';
                         let actionBtn = '';
+                        const effectiveStatus = getComponentEffectiveStatus(item);
                         const safeSerial = item.serial_number.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                         const safeType = item.component_type.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
@@ -2469,26 +2500,26 @@
                         const isNetPrinter = item.is_network_printer ? true : false;
                         const netPrinterId = item.network_printer_id || null;
 
-                        if (item.status === 'Reservado' || item.build_order_id) {
+                        if (effectiveStatus === 'Reservado') {
                             statusHtml = `<span class="badge bg-warning text-dark font-mono" style="padding:4px 8px;"><i class="bi bi-box-seam me-1"></i>Reservado</span>`;
                             actionBtn = `<span class="badge bg-secondary py-1 px-2" title="Asignado a una Orden de Armado activa"><i class="bi bi-lock-fill me-1"></i>En Armado</span> ${editBtn} ${retireBtn} ${deleteBtn}`;
-                        } else if (item.status === 'Stock') {
+                        } else if (effectiveStatus === 'Stock') {
                             statusHtml = `<span class="stock-badge status-stock">✓ En Stock</span>`;
                             let assignCall = netPrinterId ? `openAssignModal('${safeSerial}', '${safeType}', ${netPrinterId})` : `openAssignModal('${safeSerial}', '${safeType}')`;
                             let assignBtnText = netPrinterId ? "Vincular PC" : "Asignar";
                             actionBtn = `<button class="btn btn-sm btn-primary py-0 px-2" onclick="${assignCall}"><i class="bi bi-person-plus me-1"></i>${assignBtnText}</button> ${editBtn} ${retireBtn} ${deleteBtn}`;
-                        } else if (item.status === 'Installed') {
+                        } else if (effectiveStatus === 'Installed') {
                             statusHtml = `<span class="stock-badge status-installed">⚙ Asignado / Instalado</span>`;
                             actionBtn = '';
                             if (isNetPrinter && netPrinterId) {
                                 actionBtn += `<button class="btn btn-sm btn-primary py-0 px-2 me-1" onclick="openAssignModal('${safeSerial}', '${safeType}', ${netPrinterId})"><i class="bi bi-person-plus me-1"></i>Vincular PC</button>`;
                             }
                             actionBtn += `${editBtn} ${retireBtn} ${deleteBtn}`;
-                        } else if (item.status === 'Retirado') {
+                        } else if (effectiveStatus === 'Retirado') {
                             statusHtml = `<span class="stock-badge status-retired">✕ Retirado</span>`;
                             actionBtn = `<button class="btn btn-sm btn-outline-success py-0 px-2" onclick="restoreComponent('${safeSerial}')" title="Reactivar y volver a Stock"><i class="bi bi-arrow-counterclockwise me-1"></i>Volver a Stock</button> ${editBtn} ${deleteBtn}`;
                         } else {
-                            statusHtml = `<span class="stock-badge bg-secondary text-light">${escapeHtml(item.status || 'Stock')}</span>`;
+                            statusHtml = `<span class="stock-badge bg-secondary text-light">${escapeHtml(effectiveStatus || 'Stock')}</span>`;
                             actionBtn = `${editBtn} ${retireBtn} ${deleteBtn}`;
                         }
 
@@ -2501,7 +2532,7 @@
                             if (item.assigned_user || item.assigned_fuero) {
                                 assignedInfo += `<div class="small text-muted mt-1" style="font-size:0.72rem;">👤 ${escapeHtml(item.assigned_user || '')} · 🏛 ${escapeHtml(item.assigned_fuero || '')}</div>`;
                             }
-                        } else if (item.status === 'Reservado' || item.build_order_id) {
+                        } else if (effectiveStatus === 'Reservado') {
                             const boLabel = item.bo_code || (item.build_order_id ? ('BO #' + item.build_order_id) : 'Orden de Armado');
                             assignedInfo = `<div><strong class="text-warning font-mono"><i class="bi bi-box-seam me-1"></i>${escapeHtml(boLabel)}</strong></div>`;
                             if (item.assigned_pc || item.assigned_user || item.assigned_fuero) {
