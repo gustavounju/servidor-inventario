@@ -752,10 +752,11 @@
 
           <div class="pc-printer-sections">
             <div class="pc-printer-section">
-              <span class="text-muted small fw-bold text-uppercase d-block mb-2" style="font-size:0.72rem;"><i class="bi bi-ui-checks-grid me-1"></i>Impresoras en el Puesto:</span>
+              <span class="text-muted small fw-bold text-uppercase d-block mb-2" style="font-size:0.72rem;"><i class="bi bi-ui-checks-grid me-1"></i>Colas detectadas por Windows:</span>
               {% if detected_printers %}
                 <div class="d-flex flex-column gap-1 pc-printer-list">
                   {% for printer in detected_printers %}
+                    {% set printer_disconnected = '[DESCONECTADA]' in ((printer.printer_port or '') | upper) %}
                     <div class="d-flex justify-content-between align-items-center p-2 rounded border pc-printer-row">
                       <div class="pc-printer-row__body">
                         <strong>{{ printer.printer_model }}</strong>
@@ -763,11 +764,18 @@
                           Puerto: <code>{{ printer.printer_port or 'Local' }}</code>
                           {% if printer.printer_sn and printer.printer_sn != 'N/A' %} · S/N: <code>{{ printer.printer_sn }}</code>{% endif %}
                         </div>
+                        {% if printer_disconnected %}
+                          <span class="pc-printer-state pc-printer-state--offline"><i class="bi bi-slash-circle"></i> Desconectada</span>
+                        {% endif %}
                       </div>
                       <div class="pc-printer-row__actions">
                         {% if printer.is_selected %}
                           <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size: 0.68rem; padding: 2px 6px;" onclick="selectActivePrinter('{{ pc.pc_name }}', 0)" title="Deseleccionar">
                             <i class="bi bi-x-lg"></i>
+                          </button>
+                        {% elif printer_disconnected %}
+                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.68rem; padding: 2px 6px;" disabled title="Windows reporta esta cola desconectada">
+                            Inactiva
                           </button>
                         {% else %}
                           <button type="button" class="btn btn-xs btn-outline-info py-0 px-2" style="font-size: 0.68rem; padding: 2px 6px;" onclick="selectActivePrinter('{{ pc.pc_name }}', {{ printer.id }})">

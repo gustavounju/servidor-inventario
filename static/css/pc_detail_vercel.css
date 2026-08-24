@@ -839,6 +839,24 @@
   white-space: nowrap;
 }
 
+.vercel-detail .pc-printer-state {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: .68rem;
+  font-weight: 600;
+  gap: 5px;
+  line-height: 1.2;
+  margin-top: 6px;
+  padding: 4px 8px;
+}
+
+.vercel-detail .pc-printer-state--offline {
+  background: rgba(248, 113, 113, .12);
+  border: 1px solid rgba(248, 113, 113, .24);
+  color: #fca5a5;
+}
+
 .vercel-detail .pc-printer-row--network {
   background: rgba(187, 247, 208, .06) !important;
   border-color: rgba(187, 247, 208, .18) !important;
