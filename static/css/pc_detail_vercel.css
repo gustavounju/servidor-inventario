@@ -757,28 +757,86 @@
 
 .vercel-detail .pc-printer-sections {
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 10px;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  margin-top: 12px;
 }
 
 .vercel-detail .pc-printer-section {
   background: rgba(29, 42, 64, .58);
   border: 1px solid rgba(191, 219, 254, .13);
   border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
-  padding: 10px;
+  padding: 12px;
+}
+
+.vercel-detail .pc-printer-section__header {
+  align-items: flex-start !important;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vercel-detail .pc-printer-section__header > span {
+  line-height: 1.35;
+  min-width: 0;
+  text-wrap: pretty;
+}
+
+.vercel-detail .pc-printer-section__header > .btn {
+  flex: 0 0 auto;
+  min-height: 30px;
 }
 
 .vercel-detail .pc-printer-list {
-  max-height: 132px;
+  max-height: 190px;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
 .vercel-detail .pc-printer-row {
+  align-items: flex-start !important;
   background: rgba(191, 219, 254, .06) !important;
   border-color: rgba(191, 219, 254, .14) !important;
+  display: grid !important;
   font-size: .8rem;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+}
+
+.vercel-detail .pc-printer-row__body {
+  min-width: 0;
+}
+
+.vercel-detail .pc-printer-row__body strong {
+  color: var(--vercel-text);
+  display: block;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.vercel-detail .pc-printer-row__body .text-muted {
+  line-height: 1.35;
+}
+
+.vercel-detail .pc-printer-row__body code {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.vercel-detail .pc-printer-row__actions {
+  align-items: flex-start;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.vercel-detail .pc-printer-row__actions .btn {
+  min-height: 28px;
+  white-space: nowrap;
 }
 
 .vercel-detail .pc-printer-row--network {
@@ -808,6 +866,23 @@
 }
 
 @media (max-width: 575.98px) {
+  .vercel-detail .pc-printer-section__header {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .vercel-detail .pc-printer-section__header > .btn {
+    align-self: flex-start;
+  }
+
+  .vercel-detail .pc-printer-row {
+    grid-template-columns: 1fr;
+  }
+
+  .vercel-detail .pc-printer-row__actions {
+    justify-content: flex-start;
+  }
+
   .vercel-detail .pc-printer-link-actions {
     align-items: stretch;
     flex-direction: column;

@@ -757,14 +757,14 @@
                 <div class="d-flex flex-column gap-1 pc-printer-list">
                   {% for printer in detected_printers %}
                     <div class="d-flex justify-content-between align-items-center p-2 rounded border pc-printer-row">
-                      <div style="max-width: 75%;">
-                        <strong style="color:var(--text-color, #f8fafc);">{{ printer.printer_model }}</strong>
+                      <div class="pc-printer-row__body">
+                        <strong>{{ printer.printer_model }}</strong>
                         <div class="text-muted small" style="font-size: 0.72rem;">
                           Puerto: <code>{{ printer.printer_port or 'Local' }}</code>
                           {% if printer.printer_sn and printer.printer_sn != 'N/A' %} · S/N: <code>{{ printer.printer_sn }}</code>{% endif %}
                         </div>
                       </div>
-                      <div>
+                      <div class="pc-printer-row__actions">
                         {% if printer.is_selected %}
                           <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size: 0.68rem; padding: 2px 6px;" onclick="selectActivePrinter('{{ pc.pc_name }}', 0)" title="Deseleccionar">
                             <i class="bi bi-x-lg"></i>
@@ -785,7 +785,7 @@
 
             {# --- Impresoras de red del catálogo vinculadas a esta PC --- #}
             <div class="pc-printer-section">
-              <div class="d-flex justify-content-between align-items-center mb-1">
+              <div class="d-flex justify-content-between align-items-center mb-1 pc-printer-section__header">
                 <span class="text-muted small fw-bold text-uppercase" style="font-size:0.72rem;"><i class="bi bi-diagram-3 me-1"></i>Impresoras de Red (Catálogo):</span>
                 <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size:0.68rem;" onclick="openLinkNetworkPrinterPanel('{{ pc.pc_name }}')" title="Vincular impresora de red del catálogo">
                   <i class="bi bi-plus-lg"></i> Vincular
@@ -796,13 +796,15 @@
                 <div class="d-flex flex-column gap-1">
                   {% for np in assigned_network_printers %}
                     <div class="d-flex justify-content-between align-items-center p-2 rounded border pc-printer-row pc-printer-row--network">
-                      <div>
-                        <strong style="color:var(--text-color);">{{ np.brand_model }}</strong>
+                      <div class="pc-printer-row__body">
+                        <strong>{{ np.brand_model }}</strong>
                         <div class="text-muted small" style="font-size:0.72rem;"><i class="bi bi-wifi me-1"></i><code>{{ np.ip_address }}</code></div>
                       </div>
-                      <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size:0.68rem; padding:2px 6px;" onclick="unlinkNetworkPrinter({{ np.id }}, '{{ pc.pc_name }}', '{{ np.brand_model }}')" title="Desvincular">
-                        <i class="bi bi-x-lg"></i>
-                      </button>
+                      <div class="pc-printer-row__actions">
+                        <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size:0.68rem; padding:2px 6px;" onclick="unlinkNetworkPrinter({{ np.id }}, '{{ pc.pc_name }}', '{{ np.brand_model }}')" title="Desvincular">
+                          <i class="bi bi-x-lg"></i>
+                        </button>
+                      </div>
                     </div>
                   {% endfor %}
                 </div>
