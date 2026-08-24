@@ -251,6 +251,10 @@
       color: #0f172a;
     }
 
+    .sig-line {
+      display: inline-block;
+    }
+
     /* Marca de Corte */
     .cut-line {
       text-align: center;
@@ -395,7 +399,7 @@
 
       /* Compact signatures */
       .signatures-row {
-        gap: 14px !important;
+        gap: 20px !important;
         margin-top: 5px !important;
       }
 
@@ -414,7 +418,29 @@
 
       .signature-box .sig-field-firma {
         font-size: 0.70rem !important;
-        margin: 5px 0 2px 0 !important;
+        margin: 6px 0 4px 0 !important;
+      }
+
+      .signature-box .sig-field-firma,
+      .signature-box .sig-field-line {
+        display: flex !important;
+        align-items: baseline !important;
+        gap: 7px !important;
+        white-space: nowrap !important;
+      }
+
+      .signature-box .sig-field-firma .sig-label,
+      .signature-box .sig-field-line strong {
+        flex: 0 0 auto !important;
+      }
+
+      .signature-box .sig-line {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        border-bottom: 1px dotted #475569 !important;
+        height: 0.72em !important;
+        color: transparent !important;
+        overflow: hidden !important;
       }
 
       /* Compact cut line */
@@ -432,7 +458,7 @@
 
       @page {
         size: A4 portrait;
-        margin: 4mm 7mm 4mm 4mm !important;
+        margin: 4mm 9mm 4mm 4mm !important;
       }
     }
   </style>
@@ -723,16 +749,16 @@
           <p class="sig-title">Receptor del Equipo</p>
           <p class="sig-dots"><strong>Persona:</strong> {{ receptor_name if receptor_name else '.............................................................' }}</p>
           <div class="sig-field-firma">
-            <span class="sig-label">Firma:</span> ................................................................
+            <span class="sig-label">Firma:</span> <span class="sig-line">................................................................</span>
           </div>
-          <p class="sig-dots"><strong>Aclaración:</strong> .............................................................</p>
+          <p class="sig-dots sig-field-line"><strong>Aclaración:</strong> <span class="sig-line">.............................................................</span></p>
         </div>
         <div class="signature-box">
           <p class="sig-title">Técnico</p>
           <div class="sig-field-firma">
-            <span class="sig-label">Firma:</span> ................................................................
+            <span class="sig-label">Firma:</span> <span class="sig-line">................................................................</span>
           </div>
-          <p class="sig-dots"><strong>Aclaración:</strong> .............................................................</p>
+          <p class="sig-dots sig-field-line"><strong>Aclaración:</strong> <span class="sig-line">.............................................................</span></p>
         </div>
       </div>
     </div>
