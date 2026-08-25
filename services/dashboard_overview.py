@@ -3,7 +3,6 @@ import re
 from datetime import datetime as dt
 
 from database.db_core import get_db_connection
-from services.ad_user_directory import list_requester_users
 from utils.auth import list_app_users, list_technician_users
 
 from services.dashboard_contract import (
@@ -679,7 +678,6 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             else:
                 last_backup_info = "No configurado"
 
-            ad_users_list = list_requester_users(conn)
             app_users_list = list_app_users()
             pending_users_list = [u for u in app_users_list if not u.get("is_active")]
 

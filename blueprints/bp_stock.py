@@ -486,7 +486,7 @@ def stock_view():
             ).fetchall()
             pcs = [dict(r) for r in pcs_rows]
 
-            ad_users = list_requester_users(conn)
+            ad_users = []
 
             bo_map = {}
             try:

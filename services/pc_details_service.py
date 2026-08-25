@@ -5,7 +5,6 @@ from services.asset_validation import (
     resolve_effective_validation_status,
 )
 from database.db_core import get_db_connection
-from services.ad_user_directory import list_requester_users
 from utils.auth import list_technician_users
 from datetime import datetime
 import json
@@ -758,6 +757,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
 
 def get_pc_detail_context(pc_name):
     """Obtiene todo el contexto necesario para renderizar pc_detail.html y public_asset_info.html."""
+    ad_users_list = []
     with get_db_connection() as conn:
         pc = conn.execute("""
             SELECT p.*, COALESCE(u.real_name, au.display_name) as ad_real_name 
@@ -871,8 +871,6 @@ def get_pc_detail_context(pc_name):
             tareas = _attach_task_user_matches(tareas, conn)
         
         technicians = list_technician_users()
-        
-        ad_users_list = list_requester_users(conn)
         
         audit_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = %s ORDER BY changed_at DESC", (pc_name,)).fetchall()
         

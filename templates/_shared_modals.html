@@ -293,13 +293,7 @@
                                             list="usersDatalist" required autocomplete="off"
                                             oninput="searchAdUsersForTaskModal(this.value)">
                                     </div>
-                                    <datalist id="usersDatalist">
-                                        {% if ad_users_list %}
-                                        {% for user in ad_users_list %}
-                                        <option value="{{ user.real_name or user.username or '' }}">{{ user.username or '' }}{% if user.fuero and user.fuero != 'Sin Fuero' %} ({{ user.fuero }}){% endif %}</option>
-                                        {% endfor %}
-                                        {% endif %}
-                                    </datalist>
+                                    <datalist id="usersDatalist"></datalist>
                                     <div class="task-field-hint"><i class="bi bi-info-circle me-1"></i>Puedes escribir el nombre completo o el usuario de red.</div>
                                 </div>
                             </div>
@@ -3759,8 +3753,6 @@ function submitTaskAction() {
     }
 
     const adTaskSearchCache = {};
-    let defaultTaskUsersDatalistHtml = null;
-
     function renderTaskUsersDatalist(users) {
         const datalist = document.getElementById('usersDatalist');
         if (!datalist) return;
@@ -3780,12 +3772,9 @@ function submitTaskAction() {
     function loadAdUsersForTaskModal(query = '') {
         const datalist = document.getElementById('usersDatalist');
         if (!datalist) return;
-        if (defaultTaskUsersDatalistHtml === null) {
-            defaultTaskUsersDatalistHtml = datalist.innerHTML;
-        }
         const cleanQuery = (query || '').trim();
         if (cleanQuery.length < 2) {
-            datalist.innerHTML = defaultTaskUsersDatalistHtml;
+            datalist.innerHTML = '';
             return;
         }
         const cacheKey = cleanQuery.toLowerCase();

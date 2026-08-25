@@ -3695,12 +3695,7 @@
                         </div>
                         <div class="col-md-6" id="containerAssignedUser" style="display: none;">
                             <label class="form-label small fw-bold text-slate-300">Usuario Asignado (AD):</label>
-                            <input type="text" id="bundleAssignedUser" list="bundleAdUserList" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Buscar o desplegar Usuario AD..." autocomplete="off">
-                            <datalist id="bundleAdUserList">
-                                {% for u in ad_users %}
-                                <option value="{{ u.real_name }}">{{ u.real_name }} ({{ u.username }}) - {{ u.fuero or 'Sin fuero' }}</option>
-                                {% endfor %}
-                            </datalist>
+                            <input type="text" id="bundleAssignedUser" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Usuario AD o nombre..." autocomplete="off">
                         </div>
                         <!-- Fuero / Área (Oculto) -->
                         <div class="col-md-4" style="display: none;">
@@ -3888,12 +3883,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label small text-slate-300 fw-bold">Usuario Asignado (AD) (Opcional):</label>
-                        <input type="text" id="deployTargetUser" list="deployAdList" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Ej: Perez Juan (jperez)..." autocomplete="off">
-                        <datalist id="deployAdList">
-                            {% for u in ad_users %}
-                            <option value="{{ u.real_name }}">{{ u.real_name }} ({{ u.username }}) - {{ u.fuero or 'Sin fuero' }}</option>
-                            {% endfor %}
-                        </datalist>
+                        <input type="text" id="deployTargetUser" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Ej: Perez Juan (jperez)..." autocomplete="off">
                     </div>
                     <div class="mb-3">
                         <label class="form-label small text-slate-300 fw-bold">Fuero / Área (Auto-resuelto de AD):</label>
