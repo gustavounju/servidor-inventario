@@ -250,6 +250,42 @@ def dashboard():
         **template_context
     )
 
+
+@bp_dashboard.route("/api/pcs/search", methods=["GET"])
+def search_pcs():
+    query = (request.args.get("q") or "").strip()
+    if len(query) < 2:
+        return jsonify([])
+
+    like_query = f"%{query}%"
+    with get_db_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT p.pc_name, p.fuero, p.last_user, a.real_name
+            FROM pcs p
+            LEFT JOIN ad_users a ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = a.username
+            WHERE (p.is_active = 1 OR p.pc_name IN ('PC Generica', 'Infraestructura', 'PC-GENERICA'))
+              AND (
+                  p.pc_name LIKE %s
+                  OR p.fuero LIKE %s
+                  OR p.last_user LIKE %s
+                  OR a.real_name LIKE %s
+              )
+            ORDER BY
+                CASE
+                    WHEN p.pc_name LIKE 'PC%%GENERICA%%' THEN 0
+                    WHEN p.pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1
+                    WHEN p.pc_name LIKE 'SIGJ%%' THEN 2
+                    ELSE 3
+                END,
+                p.pc_name ASC
+            LIMIT 30
+            """,
+            (like_query, like_query, like_query, like_query),
+        ).fetchall()
+
+    return jsonify([dict(row) for row in rows])
+
 @bp_dashboard.route("/export", methods=["GET", "POST"])
 def export_inventory():
     """GET: muestra formulario. POST: genera Excel con campos seleccionados."""

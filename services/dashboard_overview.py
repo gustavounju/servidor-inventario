@@ -653,14 +653,6 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 # Si la columna aún no existe (instancia pre-V49), los KPIs quedan en 0
                 pass
 
-            all_pcs_dropdown = [dict(row) for row in conn.execute(
-                """SELECT p.pc_name, p.fuero, p.last_user, a.real_name 
-                   FROM pcs p
-                   LEFT JOIN ad_users a ON LOWER(SUBSTRING_INDEX(p.last_user, '\\\\', -1)) = a.username
-                   WHERE (p.is_active = 1 OR p.pc_name IN ('PC Generica', 'Infraestructura', 'PC-GENERICA'))
-                   ORDER BY CASE WHEN p.pc_name LIKE 'PC%%GENERICA%%' THEN 0 WHEN p.pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1 WHEN p.pc_name LIKE 'SIGJ%%' THEN 2 ELSE 3 END, p.pc_name ASC"""
-            ).fetchall()]
-
             backup_dir = os.environ.get("BACKUP_DIR", "/opt/inventario/backups")
             if os.path.exists(backup_dir):
                 try:

@@ -450,7 +450,7 @@
                                 <form id="form-assign-{{ task.id }}" action="{{ url_for('tasks.assign_task') }}" method="POST" class="d-none gap-2 align-items-center justify-content-end">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <input type="hidden" name="task_id" value="{{ task.id }}">
-                                    <input class="form-control form-control-sm" list="datalistOptions" name="pc_name" placeholder="Asignar PC..." required autocomplete="off" style="width: 180px;">
+                                    <input class="form-control form-control-sm" list="datalistOptions" name="pc_name" placeholder="Asignar PC..." required autocomplete="off" style="width: 180px;" oninput="searchDashboardPcs(this.value)" onfocus="searchDashboardPcs(this.value)">
                                     <select name="technician" class="form-select form-select-sm" style="width: 140px;">
                                         <option value="">Técnico...</option>
                                         {% for tech in technicians %}
@@ -611,6 +611,41 @@
             }
         }
 
+        const dashboardPcSearchCache = {};
+
+        function renderDashboardPcDatalist(pcs) {
+            const datalist = document.getElementById('datalistOptions');
+            if (!datalist) return;
+            datalist.innerHTML = '';
+            (pcs || []).forEach((pc) => {
+                if (!pc.pc_name) return;
+                const option = document.createElement('option');
+                option.value = pc.pc_name;
+                option.textContent = `${pc.last_user || '?'} - ${pc.fuero || '?'}`;
+                datalist.appendChild(option);
+            });
+        }
+
+        function searchDashboardPcs(value) {
+            const query = (value || '').trim();
+            if (query.length < 2) {
+                renderDashboardPcDatalist([]);
+                return;
+            }
+            const cacheKey = query.toLowerCase();
+            if (dashboardPcSearchCache[cacheKey]) {
+                renderDashboardPcDatalist(dashboardPcSearchCache[cacheKey]);
+                return;
+            }
+            fetch('/api/pcs/search?q=' + encodeURIComponent(query))
+                .then((res) => res.json())
+                .then((pcs) => {
+                    dashboardPcSearchCache[cacheKey] = Array.isArray(pcs) ? pcs : [];
+                    renderDashboardPcDatalist(dashboardPcSearchCache[cacheKey]);
+                })
+                .catch((err) => console.error('Error buscando PCs:', err));
+        }
+
         // --- KPI Filters Logic moved to gold.js ---
 
         // --- Auto Refresh Logic (Smart) ---
@@ -642,11 +677,7 @@
     <!-- FIN BLOQUE 4 UI -->
 
     <!-- Datalist para asignación de tareas (Busqueda predictiva) -->
-    <datalist id="datalistOptions">
-        {% for pc in all_pcs %}
-        <option value="{{ pc.pc_name }}">{{ pc.last_user or '?' }} - {{ pc.fuero or '?' }}</option>
-        {% endfor %}
-    </datalist>
+    <datalist id="datalistOptions"></datalist>
 </body>
 
 </html>
