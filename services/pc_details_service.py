@@ -593,7 +593,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
             matched_stock = None
             
             # A) Buscar coincidencia exacta por S/N
-            if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N", ""):
+            if _is_real_serial(m_sn_upper):
                 for sm in unassigned_stock_monitors:
                     sm_sn = (sm.get("serial_number") or "").strip().upper()
                     if sm_sn == m_sn_upper:
@@ -604,7 +604,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
             if not matched_stock and unassigned_stock_monitors:
                 for sm in unassigned_stock_monitors:
                     sm_sn = (sm.get("serial_number") or "").strip().upper()
-                    if sm_sn in ("N/A", "SIN S/N", ""):
+                    if not _is_real_serial(sm_sn):
                         matched_stock = sm
                         break
 
@@ -624,7 +624,7 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
 
             # C) Buscar Remito/OC en la tabla `components` si m_sn_upper existe en DB
             matched_db_extra = None
-            if m_sn_upper and m_sn_upper not in ("N/A", "SIN S/N", ""):
+            if _is_real_serial(m_sn_upper):
                 if m_sn_upper in serial_to_db_comp:
                     matched_db_extra = serial_to_db_comp[m_sn_upper]
                 else:

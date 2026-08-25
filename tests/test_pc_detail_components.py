@@ -22,6 +22,14 @@ class _FakeConn:
         return _EmptyResult()
 
 
+class _SerialNumberCollisionConn:
+    def execute(self, query, params=None):
+        sql = str(query)
+        if "FROM components WHERE UPPER(serial_number)" in sql and params and params[0] == "SERIALNUMBER":
+            raise AssertionError("No debe consultar components con el placeholder SerialNumber")
+        return _EmptyResult()
+
+
 class PcDetailComponentFilteringTests(unittest.TestCase):
     def test_hides_zero_gb_usb_reader_from_patimonial_display(self):
         components, _monitors = _filter_display_components_for_pc(
@@ -348,6 +356,31 @@ class PcDetailComponentFilteringTests(unittest.TestCase):
             [monitor["model"] for monitor in hardware["monitors"]],
             ["Philips Philips 241V8", "LG 19EN33"],
         )
+
+    def test_placeholder_monitor_serial_does_not_attach_other_pc_component(self):
+        monitors, _components = _enrich_components_with_remitos(
+            _SerialNumberCollisionConn(),
+            pc_components=[],
+            hardware_components={
+                "motherboard": {"model": "N/A", "serial": "N/A"},
+                "ram_modules": [],
+                "disks": [],
+                "monitors": [
+                    {"model": "Philips Philips 241V8", "serial": "ZA1418003190"},
+                    {"model": "LG 19EN33", "serial": "SerialNumber"},
+                ],
+                "processor": "N/A",
+            },
+        )
+        _components, display_monitors = _filter_display_components_for_pc(
+            components=[],
+            monitors_detail=monitors,
+            pc_name="JCC8SEC1600006",
+        )
+
+        self.assertEqual(len(display_monitors), 2)
+        self.assertEqual(display_monitors[1]["brand_model"], "LG 19EN33")
+        self.assertEqual(display_monitors[1]["serial_number"], "Sin S/N")
 
     def test_does_not_duplicate_single_registered_disk_with_audit_shadow(self):
         _monitors, components = _enrich_components_with_remitos(
