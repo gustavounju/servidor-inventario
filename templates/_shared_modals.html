@@ -2113,6 +2113,7 @@ textarea.task-control {
         }
     });
 </script>
+{% if enable_printer_modals|default(false) %}
     <!-- Modal Ingreso Impresora de Red -->
     <div class="modal fade" id="modalAddNetworkPrinter" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -2546,6 +2547,7 @@ textarea.task-control {
             });
         }
     </script>
+{% endif %}
 
     <!-- Modal Restablecer Clave (Rápido) -->
     <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true" style="z-index: 1100;">

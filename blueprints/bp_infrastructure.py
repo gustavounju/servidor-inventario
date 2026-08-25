@@ -211,7 +211,8 @@ def index():
         components=components,
         network_printers=network_printers,
         infra_logs=infra_logs,
-        fuero_colors=FUERO_COLORS
+        fuero_colors=FUERO_COLORS,
+        enable_printer_modals=True
     )
 
 @bp_infrastructure.route('/ups/add', methods=['POST'])

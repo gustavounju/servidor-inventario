@@ -833,7 +833,7 @@ def pc_detail(pc_name):
     if not ctx:
         from flask import abort
         abort(404)
-    return render_template("pc_detail.html", **ctx, fuero_colors=FUERO_COLORS)
+    return render_template("pc_detail.html", **ctx, fuero_colors=FUERO_COLORS, enable_printer_modals=True)
 
 @bp_dashboard.route("/pc/<pc_name>/acta_gemelo_validado")
 def acta_gemelo_validado(pc_name):
