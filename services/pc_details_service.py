@@ -49,7 +49,10 @@ def _normalize_model_for_match(value):
 
 def _is_real_serial(value):
     serial = (value or "").strip().upper()
-    return bool(serial) and serial not in {"N/A", "SIN S/N", "SIN N/S", "NONE", "NULL"}
+    return bool(serial) and serial not in {
+        "N/A", "SIN S/N", "SIN N/S", "NONE", "NULL", "0", "00000000",
+        "SERIAL", "SERIALNUMBER", "SERIAL NUMBER",
+    }
 
 
 def _models_look_equivalent(left, right):
@@ -205,7 +208,7 @@ def _infer_disk_kind(model, speed_text):
 
 
 def _build_disk_summary_lines(disk_models, disk_speeds):
-    models = [part.strip() for part in (disk_models or "").split("|") if part.strip()]
+    models = [part.strip() for part in dedupe_hardware_entries(disk_models or "").split("|") if part.strip()]
     speed_parts = [part.strip() for part in (disk_speeds or "").split("|") if part.strip()]
     speed_map = {}
 
@@ -223,6 +226,18 @@ def _build_disk_summary_lines(disk_models, disk_speeds):
         lines.append(f"{model_entry} - {kind}")
 
     return lines
+
+
+def _build_monitor_summary(monitors):
+    lines = []
+    for monitor in monitors or []:
+        model = (monitor.get("brand_model") or monitor.get("model") or "Monitor").strip()
+        serial = (monitor.get("serial_number") or monitor.get("serial") or "").strip()
+        if _is_real_serial(serial):
+            lines.append(f"{model} (SN: {serial})")
+        elif model:
+            lines.append(model)
+    return " | ".join(lines)
 
 
 def _build_quick_health_summary(pc):
@@ -1127,6 +1142,9 @@ def get_pc_detail_context(pc_name):
             pc_name,
             linked_bo.get("id") if linked_bo else None,
         )
+        monitor_summary = _build_monitor_summary(
+            display_monitors_detail or monitors_detail or hardware_components.get("monitors")
+        )
 
         # Filtrar componentes inyectados por telemetría (script ps1) para la validación estricta
         official_components = [c for c in display_components if c.get("source") != "audit"]
@@ -1189,6 +1207,7 @@ def get_pc_detail_context(pc_name):
             "validation_comparison": validation_comparison,
             "monitors_detail": monitors_detail,
             "display_monitors_detail": display_monitors_detail,
+            "monitor_summary": monitor_summary,
             "available_components": available_components, "baterias_disponibles": baterias_disponibles,
             "sharing_pc": sharing_pc_data, "clients_using_this_printer": clients_using_this_printer,
             "assigned_network_printers": assigned_network_printers,

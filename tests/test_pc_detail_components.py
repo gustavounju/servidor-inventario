@@ -1,6 +1,7 @@
 import unittest
 
 from services.pc_details_service import (
+    _build_monitor_summary,
     _enrich_components_with_remitos,
     _filter_display_components_for_pc,
     _parse_hardware_components,
@@ -316,6 +317,16 @@ class PcDetailComponentFilteringTests(unittest.TestCase):
         self.assertEqual(len(hardware["monitors"]), 1)
         self.assertEqual(hardware["disks"][0]["serial"], "50026B7785247C4D")
         self.assertEqual(hardware["monitors"][0]["serial"], "ZA12519000256")
+
+    def test_monitor_summary_does_not_print_placeholder_serial_number(self):
+        summary = _build_monitor_summary([
+            {"model": "Philips Philips 241V8", "serial": "ZA1418003190"},
+            {"model": "LG 19EN33", "serial": "SerialNumber"},
+        ])
+
+        self.assertIn("Philips Philips 241V8 (SN: ZA1418003190)", summary)
+        self.assertIn("LG 19EN33", summary)
+        self.assertNotIn("SN: SerialNumber", summary)
 
     def test_does_not_duplicate_single_registered_disk_with_audit_shadow(self):
         _monitors, components = _enrich_components_with_remitos(

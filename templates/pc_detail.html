@@ -702,7 +702,7 @@
           <dl class="pc-fact-list">
             <div><dt>Sistema</dt><dd>{{ pc.os_name or 'No detectado' }}</dd></div>
             <div><dt>Office</dt><dd>{{ pc.office_version or 'No detectado' }}</dd></div>
-            <div><dt>Monitor</dt><dd>{{ pc.monitors or 'No detectado' }}</dd></div>
+            <div><dt>Monitor</dt><dd>{{ monitor_summary or 'No detectado' }}</dd></div>
             <div><dt>Placa madre</dt><dd class="pc-truncate-value" title="{{ pc.motherboard_model or '' }}">{{ pc.motherboard_model or 'No detectada' }}</dd></div>
           </dl>
           <button type="button" class="pc-inline-link" onclick="activatePcTab('patrimonio')">Ver patrimonio completo <i class="bi bi-arrow-right"></i></button>
