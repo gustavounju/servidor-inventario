@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, jsonify, request
 from database.db_core import get_db_connection
+from services.ad_user_directory import list_requester_users
 from utils.auth import is_authenticated, current_user, role_label
 import datetime
 from services.ai_assistant import predict_category
@@ -15,36 +16,7 @@ def _operator_allowed():
 
 def _load_requesters_catalog():
     with get_db_connection() as conn:
-        return [dict(row) for row in conn.execute("""
-            SELECT
-                a.username,
-                a.real_name,
-                a.phone,
-                COALESCE(NULLIF(a.fuero, ''), pc_user.fuero) AS fuero
-            FROM ad_users a
-            LEFT JOIN (
-                SELECT
-                    LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) AS username,
-                    MAX(NULLIF(fuero, '')) AS fuero
-                FROM pcs
-                WHERE last_user IS NOT NULL
-                  AND last_user != ''
-                  AND fuero IS NOT NULL
-                  AND fuero != ''
-                GROUP BY LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1))
-            ) pc_user ON pc_user.username = LOWER(TRIM(a.username))
-            UNION
-            SELECT DISTINCT
-                LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username,
-                last_user as real_name,
-                NULL as phone,
-                fuero
-            FROM pcs
-            WHERE last_user IS NOT NULL
-              AND last_user != ''
-              AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
-            ORDER BY real_name
-        """).fetchall()]
+        return list_requester_users(conn)
 
 @bp_operadores.route("/operadores")
 def operadores_view():

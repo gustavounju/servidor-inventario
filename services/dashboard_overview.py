@@ -3,6 +3,7 @@ import re
 from datetime import datetime as dt
 
 from database.db_core import get_db_connection
+from services.ad_user_directory import list_requester_users
 from utils.auth import list_app_users, list_technician_users
 
 from services.dashboard_contract import (
@@ -678,22 +679,7 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             else:
                 last_backup_info = "No configurado"
 
-            ad_users_query = """
-                SELECT username, real_name, phone, fuero
-                FROM ad_users
-                UNION
-                SELECT DISTINCT
-                    LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username,
-                    last_user as real_name,
-                    NULL as phone,
-                    NULL as fuero
-                FROM pcs
-                WHERE last_user IS NOT NULL
-                  AND last_user != ''
-                  AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
-                ORDER BY real_name
-            """
-            ad_users_list = [dict(row) for row in conn.execute(ad_users_query).fetchall()]
+            ad_users_list = list_requester_users(conn)
             app_users_list = list_app_users()
             pending_users_list = [u for u in app_users_list if not u.get("is_active")]
 

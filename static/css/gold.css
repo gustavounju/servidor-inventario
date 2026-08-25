@@ -1601,25 +1601,6 @@ body {
     padding: 2px 7px;
 }
 
-.fuero-tree-node__pending-printers {
-    align-items: center;
-    background: rgba(139, 92, 246, 0.1);
-    border: 1px solid rgba(139, 92, 246, 0.2);
-    border-radius: 999px;
-    color: #a78bfa;
-    display: inline-flex;
-    font-family: var(--font-mono);
-    font-size: 0.66rem;
-    font-weight: 700;
-    gap: 4px;
-    margin-left: auto;
-    padding: 2px 7px;
-}
-
-.fuero-tree-node__pending-printers + .fuero-tree-node__count {
-    margin-left: 6px;
-}
-
 .fuero-tree-node__body {
     margin-left: 12px;
 }
@@ -1757,46 +1738,14 @@ body {
     white-space: nowrap;
 }
 
-.fuero-tree-printer-group--pending {
-    background: rgba(56, 189, 248, 0.1) !important;
-    border-color: rgba(56, 189, 248, 0.2) !important;
-    color: #38bdf8 !important;
-}
-
-.fuero-tree-printer-group__model,
-.fuero-tree-printer-group__type,
-.fuero-tree-printer-group__action {
+.fuero-tree-printer-group__model {
     align-items: center;
     display: inline-flex;
     gap: 4px;
     min-width: 0;
     padding: 3px 8px;
-}
-
-.fuero-tree-printer-group__model {
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.fuero-tree-printer-group__type {
-    background: rgba(255, 255, 255, 0.05);
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    flex: 0 0 auto;
-}
-
-.fuero-tree-printer-group__action {
-    background: var(--accent-color);
-    border: 0;
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    flex: 0 0 auto;
-    font: inherit;
-    justify-content: center;
-    min-width: 24px;
-}
-
-.fuero-tree-printer-group__action:hover {
-    background: var(--color-stable);
 }
 
 .fuero-tree-fuero-form {
@@ -1829,33 +1778,6 @@ body {
     justify-content: center;
     min-height: 28px;
     width: 32px;
-}
-
-.fuero-tree-detected-printers {
-    align-items: center;
-    background: rgba(139, 92, 246, 0.1) !important;
-    border-color: rgba(139, 92, 246, 0.2) !important;
-    color: #a78bfa !important;
-    display: inline-flex;
-    gap: 5px;
-    max-width: min(100%, 520px) !important;
-    white-space: normal !important;
-}
-
-.fuero-tree-detected-printers__sep {
-    color: var(--text-muted);
-    font-weight: 700;
-}
-
-.fuero-tree-detected-printers small {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    color: #c4b5fd;
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    font-weight: 500;
-    padding: 1px 4px;
 }
 
 .fuero-tree-chip--ok {

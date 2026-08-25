@@ -3,6 +3,7 @@ import datetime
 import os
 import logging
 from database.db_core import get_db_connection
+from services.ad_user_directory import list_requester_users
 from services.ai_assistant import predict_category
 from services.local_voice import parse_voice_command_locally
 from services.push_notifications import (
@@ -84,20 +85,7 @@ def api_mobile_data():
                     my_historical_total = row["c"]
 
             pcs_query = conn.execute("SELECT pc_name, last_user, fuero FROM pcs WHERE (is_active=1 OR pc_name IN ('PC Generica', 'Infraestructura', 'PC-GENERICA', 'SIGJ')) ORDER BY CASE WHEN pc_name LIKE 'PC%%GENERICA%%' THEN 0 WHEN pc_name LIKE 'INFRAESTRUCTURA%%' THEN 1 WHEN pc_name LIKE 'SIGJ%%' THEN 2 ELSE 3 END, pc_name ASC").fetchall()
-            requesters = [dict(r) for r in conn.execute(
-                """
-                SELECT username, real_name, phone
-                FROM ad_users
-                UNION
-                SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, 
-                                last_user as real_name, 
-                                NULL as phone 
-                FROM pcs 
-                WHERE last_user IS NOT NULL AND last_user != '' 
-                  AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
-                ORDER BY real_name
-                """
-            ).fetchall()]
+            requesters = list_requester_users(conn)
             pcs = [{"name": r["pc_name"], "user": r["last_user"] or "Desconocido", "area": r["fuero"] or "Desconocido"} for r in pcs_query]
 
             # Estadísticas globales para el contador del móvil

@@ -5,6 +5,7 @@ from services.asset_validation import (
     resolve_effective_validation_status,
 )
 from database.db_core import get_db_connection
+from services.ad_user_directory import list_requester_users
 from utils.auth import list_technician_users
 from datetime import datetime
 import json
@@ -871,14 +872,7 @@ def get_pc_detail_context(pc_name):
         
         technicians = list_technician_users()
         
-        ad_users_list = [dict(row) for row in conn.execute("""
-            SELECT username, real_name, phone, fuero FROM ad_users
-            UNION
-            SELECT DISTINCT LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) as username, last_user as real_name, NULL as phone, NULL as fuero
-            FROM pcs WHERE last_user IS NOT NULL AND last_user != ''
-              AND LOWER(SUBSTRING_INDEX(last_user, '\\\\', -1)) NOT IN (SELECT username FROM ad_users)
-            ORDER BY real_name
-        """).fetchall()]
+        ad_users_list = list_requester_users(conn)
         
         audit_logs = conn.execute("SELECT * FROM audit_logs WHERE pc_name = %s ORDER BY changed_at DESC", (pc_name,)).fetchall()
         
