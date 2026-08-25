@@ -8,9 +8,9 @@ import os
 import re
 
 from database.db_core import get_db_connection
+from services.asset_validation import compute_validation_status, dedupe_hardware_entries
 from utils.constants import detect_fuero
 from utils.extensions import limiter
-from services.asset_validation import compute_validation_status
 from utils.auth import require_api_scope, SCOPE_INVENTORY_SUBMIT
 from repositories.pc_repository import PcRepository
 from services.audit_service import AuditService
@@ -120,7 +120,9 @@ def process_inventory_data(data):
     mac_address = red[0].get("MACAddress") if red else "N/A"
 
     ram_detalles = data.get("RAM_Detalles", "N/A")
-    disk_models = data.get("Disk_Models", "N/A")
+    disk_models = dedupe_hardware_entries(data.get("Disk_Models", "N/A"))
+    if disk_models:
+        data["Disk_Models"] = disk_models
     disk_speeds_rpm = data.get("Disk_Speeds_RPM", "N/A")
     motherboard_model = data.get("Motherboard_Model", "N/A")
     printer_model = data.get("Printer_Model", "N/A")
@@ -157,9 +159,11 @@ def process_inventory_data(data):
                 if sigla in p:
                     p = p.replace(sigla, nombre)
             translated_parts.append(p)
-        monitors = " | ".join(translated_parts)
+        monitors = dedupe_hardware_entries(" | ".join(translated_parts))
     else:
         monitors = raw_monitors
+    if monitors:
+        data["Monitors"] = monitors
     # ----------------------------------------------------
 
     ping_ms = "N/A"

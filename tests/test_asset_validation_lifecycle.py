@@ -2,6 +2,7 @@ import json
 
 from services.asset_validation import (
     compute_validation_status,
+    dedupe_hardware_entries,
     filter_ignore_devices,
     get_pc_validation_comparison,
     resolve_build_order_action,
@@ -184,6 +185,19 @@ def test_stale_without_twin_status_is_derived_from_existing_patrimony():
 
 def test_filter_ignore_devices_returns_empty_when_every_disk_is_removable():
     assert filter_ignore_devices("Generic USB SD Reader USB Device (0GB)") == ""
+
+
+def test_dedupe_hardware_entries_collapses_repeated_wmi_disks():
+    raw = (
+        "KINGSTON SA400S37240G (224GB) [SN: 50026B7785247C4D] | "
+        "KINGSTON SA400S37240G (224GB) [SN: 50026B7785247C4D] | "
+        "KINGSTON SA400S37240G (224GB)"
+    )
+
+    cleaned = dedupe_hardware_entries(raw)
+
+    assert cleaned.count("KINGSTON SA400S37240G") == 1
+    assert "50026B7785247C4D" in cleaned
 
 
 def test_validated_legacy_twin_uses_pc_record_when_component_rows_are_incomplete():

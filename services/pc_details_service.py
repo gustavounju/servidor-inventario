@@ -1,4 +1,5 @@
 from services.asset_validation import (
+    dedupe_hardware_entries,
     get_pc_validation_comparison,
     is_ignored_storage_component,
     resolve_build_order_action,
@@ -384,6 +385,24 @@ def _parse_single_monitor_entry(m_str):
     return {"model": m_str, "serial": "N/A"}
 
 
+def _dedupe_parsed_hardware_items(items, model_key="model", serial_key="serial"):
+    result = []
+    seen = set()
+    for raw_item in items or []:
+        item = dict(raw_item)
+        serial = (item.get(serial_key) or "").strip().upper()
+        model = _normalize_model_for_match(item.get(model_key))
+        if _is_real_serial(serial):
+            key = ("serial", serial)
+        else:
+            key = ("model", model)
+        if not key[1] or key in seen:
+            continue
+        seen.add(key)
+        result.append(item)
+    return result
+
+
 def _parse_monitors_string(mon_raw, full_json=None):
     mon_list = []
     if full_json and isinstance(full_json, dict):
@@ -399,7 +418,7 @@ def _parse_monitors_string(mon_raw, full_json=None):
                     if parsed: mon_list.append(parsed)
 
     if mon_list:
-        return mon_list
+        return _dedupe_parsed_hardware_items(mon_list)
 
     if not mon_raw or mon_raw in ("N/A", "None", ""):
         if full_json and isinstance(full_json, dict) and full_json.get("Monitors"):
@@ -422,7 +441,7 @@ def _parse_monitors_string(mon_raw, full_json=None):
         if parsed:
             mon_list.append(parsed)
 
-    return mon_list
+    return _dedupe_parsed_hardware_items(mon_list)
 
 
 def _parse_hardware_components(pc):
@@ -467,6 +486,7 @@ def _parse_hardware_components(pc):
 
     # Disks
     disk_list = []
+    disk_raw = dedupe_hardware_entries(disk_raw)
     if disk_raw and disk_raw != "N/A":
         for disk in disk_raw.split("|"):
             d_str = disk.strip()
@@ -479,6 +499,7 @@ def _parse_hardware_components(pc):
             else:
                 model = d_str
             disk_list.append({"model": model, "serial": sn})
+    disk_list = _dedupe_parsed_hardware_items(disk_list)
 
     # Monitors
     mon_raw = pc.get("monitors") or "N/A"

@@ -1,6 +1,10 @@
 import unittest
 
-from services.pc_details_service import _enrich_components_with_remitos, _filter_display_components_for_pc
+from services.pc_details_service import (
+    _enrich_components_with_remitos,
+    _filter_display_components_for_pc,
+    _parse_hardware_components,
+)
 
 
 class _EmptyResult:
@@ -294,6 +298,24 @@ class PcDetailComponentFilteringTests(unittest.TestCase):
         self.assertEqual(len(monitor_components), 1)
         self.assertEqual(monitors[0]["serial_number"], "ZA12519000256")
         self.assertNotIn("ZA12619000256", [m["serial_number"] for m in monitors])
+
+    def test_parse_hardware_components_dedupes_repeated_wmi_disks_and_monitors(self):
+        hardware = _parse_hardware_components({
+            "motherboard_model": "N/A",
+            "ram_detalles": "N/A",
+            "processor": "N/A",
+            "disk_models": (
+                "KINGSTON SA400S37240G (224GB) [SN: 50026B7785247C4D] | "
+                "KINGSTON SA400S37240G (224GB) [SN: 50026B7785247C4D]"
+            ),
+            "monitors": "Philips 193V5 (SN: ZA12519000256) | Philips 193V5 (SN: ZA12519000256)",
+            "full_json_data": None,
+        })
+
+        self.assertEqual(len(hardware["disks"]), 1)
+        self.assertEqual(len(hardware["monitors"]), 1)
+        self.assertEqual(hardware["disks"][0]["serial"], "50026B7785247C4D")
+        self.assertEqual(hardware["monitors"][0]["serial"], "ZA12519000256")
 
     def test_does_not_duplicate_single_registered_disk_with_audit_shadow(self):
         _monitors, components = _enrich_components_with_remitos(
