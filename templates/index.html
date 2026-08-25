@@ -145,11 +145,11 @@
         {% if pending_users_list or unassigned_tasks %}
         <section class="dashboard-signal-strip" aria-label="Resumen operativo inmediato">
             {% if pending_users_list %}
-            <button type="button" class="signal-chip signal-chip--action" data-bs-toggle="modal" data-bs-target="#usersModal">
+            <a class="signal-chip signal-chip--action" href="{{ url_for('users.users_admin') }}">
                 <span class="signal-chip__label">Usuarios pendientes</span>
                 <strong class="signal-chip__value">{{ pending_users_list|length }}</strong>
                 <span class="signal-chip__hint">Abrir aprobación rápida</span>
-            </button>
+            </a>
             {% endif %}
             {% if unassigned_tasks %}
             <button type="button" class="signal-chip signal-chip--action" data-bs-toggle="modal" data-bs-target="#unassignedTasksModal">
@@ -215,9 +215,9 @@
                     <div class="dashboard-alert-copy">
                         {{ pending_users_list|length }} usuario(s) aún no están habilitados para asociar equipos y movimientos patrimoniales.
                     </div>
-                    <button type="button" class="btn btn-warning btn-sm dashboard-compact-cta" data-bs-toggle="modal" data-bs-target="#usersModal">
+                    <a class="btn btn-warning btn-sm dashboard-compact-cta" href="{{ url_for('users.users_admin') }}">
                         <i class="bi bi-person-check-fill me-1"></i> Revisar usuarios
-                    </button>
+                    </a>
                 </div>
                 {% endif %}
 

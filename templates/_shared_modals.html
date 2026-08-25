@@ -378,6 +378,7 @@
     </div>
 </div>
 <!-- Modal Gestión de Usuarios -->
+{% if enable_inline_users_modal|default(false) %}
 <div class="modal fade" id="usersModal" tabindex="-1" aria-labelledby="usersModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1050px;">
         <div class="modal-content console-panel users-modal-shell">
@@ -754,6 +755,7 @@
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
 </div>
+{% endif %}
 
 <!-- Modal Reportes Rápidos -->
 <div class="modal fade" id="reportsModal" tabindex="-1" aria-labelledby="reportsModalLabel" aria-hidden="true">
@@ -2060,8 +2062,9 @@ textarea.task-control {
         });
 
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('manage_users') === '1') {
-            const usersModal = new bootstrap.Modal(document.getElementById('usersModal'));
+        const usersModalEl = document.getElementById('usersModal');
+        if (urlParams.get('manage_users') === '1' && usersModalEl) {
+            const usersModal = new bootstrap.Modal(usersModalEl);
             usersModal.show();
             
             // Opcional: limpiar la URL para no reabrir si se pulsa F5 luego
