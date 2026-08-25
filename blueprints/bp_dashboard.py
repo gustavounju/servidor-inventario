@@ -204,9 +204,11 @@ def dashboard():
 
     try: page = int(request.args.get("page", 1))
     except ValueError: page = 1
+    page = max(page, 1)
     
     try: per_page = int(request.args.get("per_page", 25))
     except ValueError: per_page = 25
+    per_page = min(max(per_page, 10), 100)
     
     try:
         with get_db_connection() as conn:
