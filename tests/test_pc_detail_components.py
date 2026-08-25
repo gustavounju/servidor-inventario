@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from services.pc_details_service import (
@@ -327,6 +328,26 @@ class PcDetailComponentFilteringTests(unittest.TestCase):
         self.assertIn("Philips Philips 241V8 (SN: ZA1418003190)", summary)
         self.assertIn("LG 19EN33", summary)
         self.assertNotIn("SN: SerialNumber", summary)
+
+    def test_parse_hardware_components_merges_monitor_detail_with_raw_monitor_list(self):
+        hardware = _parse_hardware_components({
+            "motherboard_model": "N/A",
+            "ram_detalles": "N/A",
+            "processor": "N/A",
+            "disk_models": "N/A",
+            "monitors": "Philips Philips 241V8 (SN: ZA1418003190) | LG 19EN33 (SN: SerialNumber)",
+            "full_json_data": json.dumps({
+                "Monitors_Detail": [
+                    {"Model": "Philips Philips 241V8", "SerialNumber": "ZA1418003190"}
+                ]
+            }),
+        })
+
+        self.assertEqual(len(hardware["monitors"]), 2)
+        self.assertEqual(
+            [monitor["model"] for monitor in hardware["monitors"]],
+            ["Philips Philips 241V8", "LG 19EN33"],
+        )
 
     def test_does_not_duplicate_single_registered_disk_with_audit_shadow(self):
         _monitors, components = _enrich_components_with_remitos(

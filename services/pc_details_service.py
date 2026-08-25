@@ -432,15 +432,12 @@ def _parse_monitors_string(mon_raw, full_json=None):
                     parsed = _parse_single_monitor_entry(item)
                     if parsed: mon_list.append(parsed)
 
-    if mon_list:
-        return _dedupe_parsed_hardware_items(mon_list)
-
     if not mon_raw or mon_raw in ("N/A", "None", ""):
         if full_json and isinstance(full_json, dict) and full_json.get("Monitors"):
             mon_raw = str(full_json.get("Monitors"))
 
     if not mon_raw or mon_raw in ("N/A", "None", ""):
-        return []
+        return _dedupe_parsed_hardware_items(mon_list)
 
     normalized_raw = mon_raw.replace("\r\n", "|").replace("\n", "|").replace(";", "|")
     
