@@ -1,7 +1,18 @@
 import unittest
 
 from services.dashboard_contract import normalize_alerta, sanitize_sort_column, sanitize_sort_direction
-from services.dashboard_overview import _build_fuero_tree, _split_fuero_path
+from services.dashboard_overview import _build_fuero_tree, _build_technician_users, _split_fuero_path
+
+
+class _FakeConn:
+    def execute(self, *_args, **_kwargs):
+        return self
+
+    def fetchall(self):
+        return [
+            {"name": "Tecnico Legacy"},
+            {"name": "Administrador"},
+        ]
 
 
 class DashboardContractTests(unittest.TestCase):
@@ -82,6 +93,15 @@ class DashboardContractTests(unittest.TestCase):
         self.assertEqual(tree[0]["name"], "Tribunal de Trabajo")
         self.assertEqual(tree[0]["children"][0]["name"], "Sala IV")
         self.assertEqual(tree[0]["children"][0]["count"], 2)
+
+    def test_build_technician_users_reuses_loaded_app_users(self):
+        technicians = _build_technician_users([
+            {"username": "administrador", "display_name": "Administrador", "technician_name": "", "role": "administrador", "is_active": True},
+            {"username": "jdoe", "display_name": "Juan Doe", "technician_name": "Juan D.", "role": "tecnico", "is_active": True},
+            {"username": "off", "display_name": "Inactivo", "technician_name": "Inactivo", "role": "tecnico", "is_active": False},
+        ], _FakeConn())
+
+        self.assertEqual([tech["name"] for tech in technicians], ["Juan D.", "Tecnico Legacy"])
 
 
 if __name__ == "__main__":

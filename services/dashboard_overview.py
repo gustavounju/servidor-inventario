@@ -3,7 +3,7 @@ import re
 from datetime import datetime as dt
 
 from database.db_core import get_db_connection
-from utils.auth import list_app_users, list_technician_users
+from utils.auth import list_app_users
 
 from services.dashboard_contract import (
     normalize_alerta,
@@ -228,6 +228,51 @@ def _is_auxiliary_pc(pc):
     return "GENERICA" in name or name.startswith("INFRAESTRUCTURA") or "SIGJ" in name
 
 
+def _build_technician_users(app_users, conn):
+    users = []
+    seen = set()
+
+    for row in app_users:
+        if not row.get("is_active"):
+            continue
+        if (row.get("username") or "").strip().lower() == "administrador":
+            continue
+
+        display = (row.get("technician_name") or row.get("display_name") or row.get("username") or "").strip()
+        if not display:
+            continue
+
+        key = display.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        users.append({
+            "name": display,
+            "username": row.get("username"),
+            "display_name": row.get("display_name") or display,
+            "role": row.get("role") or "tecnico",
+        })
+
+    try:
+        legacy_rows = conn.execute("SELECT name FROM technicians ORDER BY name ASC").fetchall()
+        for row in legacy_rows:
+            name = (row.get("name") or "").strip()
+            key = name.lower()
+            if name and key not in seen and key != "administrador":
+                seen.add(key)
+                users.append({
+                    "name": name,
+                    "username": name.lower().replace(" ", "."),
+                    "display_name": name,
+                    "role": "tecnico",
+                })
+    except Exception:
+        pass
+
+    users.sort(key=lambda item: item["name"].lower())
+    return users
+
+
 def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_by, order, page, per_page, tipo_actividad=""):
     """Carga el contexto del dashboard para mantener la ruta Flask más delgada."""
     pcs_data = []
@@ -353,7 +398,9 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                 print("Error attaching user matches in dashboard:", e)
                 unassigned_tasks = [dict(row) for row in unassigned_tasks_raw]
             unassigned_count = len(unassigned_tasks)
-            technicians_list = list_technician_users()
+            app_users_list = list_app_users()
+            pending_users_list = [u for u in app_users_list if not u.get("is_active")]
+            technicians_list = _build_technician_users(app_users_list, conn)
 
             base_sql = """
                 SELECT p.*,
@@ -664,9 +711,6 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
                     pass
             else:
                 last_backup_info = "No configurado"
-
-            app_users_list = list_app_users()
-            pending_users_list = [u for u in app_users_list if not u.get("is_active")]
 
             pc_ports_query = conn.execute("SELECT pc_name, printer_port FROM pcs WHERE is_active = 1").fetchall()
             pc_ports = {row["pc_name"].upper(): (row["printer_port"] or "") for row in pc_ports_query}
