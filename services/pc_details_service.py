@@ -644,25 +644,6 @@ def _enrich_components_with_remitos(conn, pc_components, hardware_components):
                 "source": source_type
             })
 
-        for leftover in unassigned_stock_monitors:
-            b_id = leftover.get("build_order_id")
-            b_code = bo_map.get(b_id, {}).get("code") if b_id else None
-            monitors_detail.append({
-                "id": leftover.get("id"),
-                "brand_model": leftover.get("brand_model") or "Monitor Estándar",
-                "serial_number": leftover.get("serial_number") or "Sin S/N",
-                "invoice_number": leftover.get("invoice_number"),
-                "oc_number": leftover.get("oc_number"),
-                "supplier": leftover.get("supplier"),
-                "status": leftover.get("status") or "Stock",
-                "build_order_id": b_id,
-                "bo_code": b_code,
-                "assigned_pc": leftover.get("assigned_pc"),
-                "assigned_user": leftover.get("assigned_user"),
-                "assigned_fuero": leftover.get("assigned_fuero"),
-                "source": "stock"
-            })
-
     # 3. Componentes unificados
     all_unified_components = []
     existing_serials = {(c.get("serial_number") or "").strip().upper() for c in comp_dicts if _is_real_serial(c.get("serial_number"))}
@@ -1127,7 +1108,7 @@ def get_pc_detail_context(pc_name):
         )
 
         # Filtrar componentes inyectados por telemetría (script ps1) para la validación estricta
-        official_components = [c for c in all_unified_components if c.get("source") != "audit"]
+        official_components = [c for c in display_components if c.get("source") != "audit"]
         validation_comparison = get_pc_validation_comparison(pc_name, conn, unified_components=official_components)
         current_status = pc.get("validation_status")
         has_validation_discrepancies = any(
