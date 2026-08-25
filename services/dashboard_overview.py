@@ -552,7 +552,6 @@ def load_dashboard_overview(*, q, estado, alerta, os_param, filter_tasks, sort_b
             auxiliary_pcs = []
             for row in auxiliary_pcs_raw:
                 pc_dict = dict(row)
-                pc_dict["tareas"] = [dict(t) for t in conn.execute("SELECT * FROM tasks WHERE pc_name = %s AND (estado != 'Hecha' OR pc_name LIKE 'PC%%GENERICA%%' OR pc_name LIKE 'INFRAESTRUCTURA%%' OR pc_name LIKE 'SIGJ%%') ORDER BY created_at DESC", (pc_dict["pc_name"],)).fetchall()]
                 auxiliary_pcs.append(pc_dict)
 
             kpi_total_activas = conn.execute("SELECT COUNT(*) as c FROM pcs WHERE is_active = 1 AND pc_name NOT LIKE 'PC-GENERICA%%' AND pc_name NOT LIKE 'PC%%GENERICA%%' AND pc_name NOT LIKE 'INFRAESTRUCTURA%%' AND pc_name NOT LIKE 'SIGJ%%'").fetchone()["c"]

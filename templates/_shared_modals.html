@@ -3064,7 +3064,7 @@ textarea.task-control {
     }
     </script>
 
-{% if auxiliary_pcs %}
+{% if enable_auxiliary_task_modals|default(false) and auxiliary_pcs %}
 {% for pc in auxiliary_pcs %}
 <div class="modal fade" id="auxModal_{{ pc.pc_name | replace(' ', '_') | replace('-', '_') }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 1120px;">
