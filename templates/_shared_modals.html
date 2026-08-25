@@ -291,8 +291,7 @@
                                         <input type="text" name="solicitante" id="taskSolicitanteInput" class="form-control task-control task-control-with-addon"
                                             placeholder="Ej: Juan Pérez / Contabilidad" 
                                             list="usersDatalist" required autocomplete="off"
-                                            oninput="searchAdUsersForTaskModal(this.value)"
-                                            onfocus="searchAdUsersForTaskModal(this.value)">
+                                            oninput="searchAdUsersForTaskModal(this.value)">
                                     </div>
                                     <datalist id="usersDatalist">
                                         {% if ad_users_list %}
@@ -3759,18 +3758,47 @@ function submitTaskAction() {
         });
     }
 
+    const adTaskSearchCache = {};
+    let defaultTaskUsersDatalistHtml = null;
+
+    function renderTaskUsersDatalist(users) {
+        const datalist = document.getElementById('usersDatalist');
+        if (!datalist) return;
+        datalist.innerHTML = '';
+        users.forEach(u => {
+            const name = u.real_name || u.username || '';
+            if (!name) return;
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = u.username
+                ? `${u.username}${u.fuero && u.fuero !== 'Sin Fuero' ? ' (' + u.fuero + ')' : ''}`
+                : name;
+            datalist.appendChild(opt);
+        });
+    }
+
     function loadAdUsersForTaskModal(query = '') {
         const datalist = document.getElementById('usersDatalist');
         if (!datalist) return;
-        fetch('/api/ad_users/search?q=' + encodeURIComponent(query))
+        if (defaultTaskUsersDatalistHtml === null) {
+            defaultTaskUsersDatalistHtml = datalist.innerHTML;
+        }
+        const cleanQuery = (query || '').trim();
+        if (cleanQuery.length < 2) {
+            datalist.innerHTML = defaultTaskUsersDatalistHtml;
+            return;
+        }
+        const cacheKey = cleanQuery.toLowerCase();
+        if (adTaskSearchCache[cacheKey]) {
+            renderTaskUsersDatalist(adTaskSearchCache[cacheKey]);
+            return;
+        }
+        fetch('/api/ad_users/search?q=' + encodeURIComponent(cleanQuery))
             .then(res => res.json())
             .then(users => {
                 if (users && Array.isArray(users)) {
-                    datalist.innerHTML = users.map(u => {
-                        const name = u.real_name || u.username;
-                        const label = u.username ? `${u.username}${u.fuero && u.fuero !== 'Sin Fuero' ? ' (' + u.fuero + ')' : ''}` : name;
-                        return `<option value="${name}">${label}</option>`;
-                    }).join('');
+                    adTaskSearchCache[cacheKey] = users;
+                    renderTaskUsersDatalist(users);
                 }
             })
             .catch(err => console.error("Error cargando usuarios AD para modal de tarea:", err));

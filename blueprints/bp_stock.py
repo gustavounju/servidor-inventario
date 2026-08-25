@@ -82,6 +82,8 @@ def generate_internal_serial(component_type):
 @bp_stock.route("/api/ad_users/search", methods=["GET"])
 def search_ad_users():
     query = request.args.get("q", "").strip().lower()
+    if len(query) < 2:
+        return jsonify([])
     try:
         with get_db_connection() as conn:
             users = list_requester_users(conn, query=query, limit=30)

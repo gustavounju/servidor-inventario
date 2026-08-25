@@ -7,7 +7,6 @@ def _admin_username_pattern():
 
 
 PCS_LAST_USER_SQL = "SUBSTRING_INDEX(last_user, '\\\\', -1)"
-TASK_SOLICITANTE_SQL = "SUBSTRING_INDEX(solicitante, '\\\\', -1)"
 P_LAST_USER_SQL = "SUBSTRING_INDEX(p.last_user, '\\\\', -1)"
 
 
@@ -40,8 +39,7 @@ def requester_users_sql(include_query=False, include_limit=False):
                 a.phone,
                 COALESCE(
                     NULLIF(NULLIF(NULLIF(TRIM(a.fuero), ''), 'Sin Fuero'), 'Desconocido'),
-                    pc_user.fuero,
-                    task_user.fuero
+                    pc_user.fuero
                 ) AS fuero
             FROM ad_users a
             LEFT JOIN (
@@ -54,16 +52,6 @@ def requester_users_sql(include_query=False, include_limit=False):
                   AND {_is_admin_username_sql(PCS_LAST_USER_SQL)}
                 GROUP BY LOWER({PCS_LAST_USER_SQL})
             ) pc_user ON pc_user.username = LOWER(TRIM(a.username))
-            LEFT JOIN (
-                SELECT
-                    LOWER({TASK_SOLICITANTE_SQL}) AS username,
-                    MAX(NULLIF(NULLIF(NULLIF(TRIM(fuero), ''), 'Sin Fuero'), 'Desconocido')) AS fuero
-                FROM tasks
-                WHERE solicitante IS NOT NULL
-                  AND TRIM(solicitante) != ''
-                  AND {_is_admin_username_sql(TASK_SOLICITANTE_SQL)}
-                GROUP BY LOWER({TASK_SOLICITANTE_SQL})
-            ) task_user ON task_user.username = LOWER(TRIM(a.username))
             WHERE {_is_admin_username_sql("a.username")}
 
             UNION ALL
@@ -92,7 +80,6 @@ def requester_users_sql(include_query=False, include_limit=False):
 
 def requester_users_params(query=None, limit=None):
     params = [
-        _admin_username_pattern(),
         _admin_username_pattern(),
         _admin_username_pattern(),
         _admin_username_pattern(),
