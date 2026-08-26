@@ -10,7 +10,12 @@
 			metric: 'WMI + patrimonio + acta',
 			href: resolve('/equipos')
 		},
-		{ name: 'Actas', state: 'Pendiente', metric: 'PDF desde datos reconciliados' },
+		{
+			name: 'Actas',
+			state: 'Primer corte',
+			metric: 'Vista imprimible desde datos reconciliados',
+			href: resolve('/actas')
+		},
 		{
 			name: 'Tareas',
 			state: 'Primer corte',
@@ -98,8 +103,8 @@
 		<ul>
 			<li>Flask sigue como produccion estable.</li>
 			<li>Next empieza leyendo MySQL con escritura deshabilitada por configuracion.</li>
-			<li>Active Directory, TLS y acceso movil quedan como requisitos de plataforma.</li>
-			<li>Los modulos heredados sin uso, como mapas, no entran al nuevo frente.</li>
+			<li>Equipos, usuarios, tareas y actas ya tienen primer flujo navegable.</li>
+			<li>Active Directory, TLS y acceso movil siguen como requisitos de plataforma.</li>
 		</ul>
 	</section>
 
