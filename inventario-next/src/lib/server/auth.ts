@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import type { Cookies } from '@sveltejs/kit';
 import { appConfig } from './config';
 import { getMysqlPool } from './db';
+import { authenticateActiveDirectoryPassword, normalizeAdUsername } from './active-directory';
 import type { RowDataPacket } from 'mysql2';
 import { createHmac, createHash, timingSafeEqual, pbkdf2 as nodePbkdf2 } from 'node:crypto';
 import { promisify } from 'node:util';
@@ -139,6 +140,39 @@ export interface LoginResult {
 	error?: string;
 }
 
+function rowToSessionUser(
+	row: AppUserAuthRow,
+	displayName = row.display_name ?? row.username
+): SessionUser {
+	return {
+		username: row.username,
+		displayName,
+		role: row.role ?? 'usuario',
+		isSuperuser: Boolean(Number(row.is_superuser ?? 0)),
+		isActive: true
+	};
+}
+
+async function loadAppUserForLogin(username: string): Promise<AppUserAuthRow | undefined> {
+	const pool = getMysqlPool();
+	const normalized = normalizeAdUsername(username);
+	const candidates = [...new Set([username.trim(), normalized].filter(Boolean))];
+
+	if (candidates.length === 0) return undefined;
+
+	const placeholders = candidates.map(() => '?').join(', ');
+	const [rows] = await pool.query<AppUserAuthRow[]>(
+		`SELECT username, password_hash, display_name, role, is_superuser, is_active
+		 FROM app_users
+		 WHERE username IN (${placeholders})
+		 ORDER BY FIELD(username, ${placeholders})
+		 LIMIT 1`,
+		[...candidates, ...candidates]
+	);
+
+	return rows[0];
+}
+
 /** Login sin base de datos — solo para desarrollo sin .env configurado. */
 export async function demoLogin(username: string, password: string): Promise<LoginResult> {
 	const DEMO_USER = 'administrador';
@@ -162,20 +196,18 @@ export async function demoLogin(username: string, password: string): Promise<Log
 
 /** Login contra la tabla app_users de MySQL. */
 export async function loginWithMysql(username: string, password: string): Promise<LoginResult> {
-	const pool = getMysqlPool();
-
-	const [rows] = await pool.query<AppUserAuthRow[]>(
-		`SELECT username, password_hash, display_name, role, is_superuser, is_active
-		 FROM app_users
-		 WHERE username = ?
-		 LIMIT 1`,
-		[username.trim()]
-	);
-
-	const row = rows[0];
+	const row = await loadAppUserForLogin(username);
 
 	if (!row) {
-		return { ok: false, error: 'Credenciales incorrectas' };
+		const adUser = await authenticateActiveDirectoryPassword(username, password);
+		if (!adUser) return { ok: false, error: 'Credenciales incorrectas' };
+
+		const adRow = await loadAppUserForLogin(adUser.username);
+		if (!adRow) return { ok: false, error: 'Usuario sin acceso habilitado. Contactá a Sistemas.' };
+		if (!Number(adRow.is_active ?? 1)) {
+			return { ok: false, error: 'Usuario inactivo. Contactá a Sistemas.' };
+		}
+		return { ok: true, user: rowToSessionUser(adRow, adRow.display_name ?? adUser.displayName) };
 	}
 
 	if (!Number(row.is_active ?? 1)) {
@@ -186,12 +218,14 @@ export async function loginWithMysql(username: string, password: string): Promis
 	const valid = hash ? await verifyPassword(password, hash) : false;
 
 	if (!valid) {
-		return { ok: false, error: 'Credenciales incorrectas' };
+		const adUser = await authenticateActiveDirectoryPassword(username, password);
+		if (!adUser) return { ok: false, error: 'Credenciales incorrectas' };
 	}
 
 	// Intentar registrar last_login (solo si no es read-only)
 	if (!appConfig.MYSQL_READ_ONLY) {
 		try {
+			const pool = getMysqlPool();
 			await pool.query(`UPDATE app_users SET last_login = NOW() WHERE username = ?`, [
 				row.username
 			]);
@@ -202,13 +236,7 @@ export async function loginWithMysql(username: string, password: string): Promis
 
 	return {
 		ok: true,
-		user: {
-			username: row.username,
-			displayName: row.display_name ?? row.username,
-			role: row.role ?? 'usuario',
-			isSuperuser: Boolean(Number(row.is_superuser ?? 0)),
-			isActive: true
-		}
+		user: rowToSessionUser(row)
 	};
 }
 

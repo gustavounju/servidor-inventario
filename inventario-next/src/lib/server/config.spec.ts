@@ -35,4 +35,30 @@ describe('createAppConfig', () => {
 		expect(config.MYSQL_USER).toBe('next_user');
 		expect(config.MYSQL_PASSWORD).toBe('next-password');
 	});
+
+	it('builds AD_URL from legacy AD_SERVER using plain LDAP by default', () => {
+		const config = createAppConfig({
+			AD_SERVER: '10.15.0.41'
+		});
+
+		expect(config.AD_URL).toBe('ldap://10.15.0.41:389');
+	});
+
+	it('builds AD_URL from legacy AD_SERVER using LDAPS when AD_USE_SSL is true', () => {
+		const config = createAppConfig({
+			AD_SERVER: 'ad.example.local',
+			AD_USE_SSL: 'true'
+		});
+
+		expect(config.AD_URL).toBe('ldaps://ad.example.local:636');
+	});
+
+	it('keeps explicit AD_URL ahead of legacy AD_SERVER', () => {
+		const config = createAppConfig({
+			AD_URL: 'ldap://configured.example.local:389',
+			AD_SERVER: 'ignored.example.local'
+		});
+
+		expect(config.AD_URL).toBe('ldap://configured.example.local:389');
+	});
 });

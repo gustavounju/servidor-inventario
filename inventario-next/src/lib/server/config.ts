@@ -15,10 +15,15 @@ const envSchema = z.object({
 		.optional()
 		.transform((value) => String(value ?? 'true').toLowerCase() !== 'false'),
 	AD_URL: z.string().default(''),
+	AD_SERVER: z.string().default(''),
 	AD_BASE_DN: z.string().default(''),
 	AD_DOMAIN: z.string().default(''),
 	AD_SYNC_USER: z.string().default(''),
 	AD_SYNC_PASSWORD: z.string().default(''),
+	AD_USE_SSL: z
+		.string()
+		.optional()
+		.transform((value) => String(value ?? 'false').toLowerCase() === 'true'),
 	AD_TLS_REJECT_UNAUTHORIZED: z
 		.string()
 		.optional()
@@ -61,8 +66,28 @@ function withLegacyMysqlAliases(input: EnvInput): EnvInput {
 	};
 }
 
+function legacyAdUrl(input: EnvInput): string | undefined {
+	if (input.AD_URL) return input.AD_URL;
+	const server = input.AD_SERVER?.trim();
+	if (!server) return undefined;
+	if (/^ldaps?:\/\//i.test(server)) return server;
+
+	const useSsl = String(input.AD_USE_SSL ?? 'false').toLowerCase() === 'true';
+	const protocol = useSsl ? 'ldaps' : 'ldap';
+	const hasPort = /:\d+$/.test(server);
+	const port = useSsl ? 636 : 389;
+	return `${protocol}://${server}${hasPort ? '' : `:${port}`}`;
+}
+
+function withLegacyAdAliases(input: EnvInput): EnvInput {
+	return {
+		...input,
+		AD_URL: legacyAdUrl(input) ?? input.AD_URL
+	};
+}
+
 export function createAppConfig(input: EnvInput = {}) {
-	return envSchema.parse(withLegacyMysqlAliases(input));
+	return envSchema.parse(withLegacyAdAliases(withLegacyMysqlAliases(input)));
 }
 
 const parentEnv = process.env.VITEST ? {} : parseEnvFile(resolve(process.cwd(), '..', '.env'));
