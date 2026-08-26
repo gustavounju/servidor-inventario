@@ -36,9 +36,11 @@ export interface ReconciledComponent {
 }
 
 export interface EquipmentDiscrepancy {
+	code: 'registered_missing_in_telemetry' | 'telemetry_missing_in_registry';
 	severity: 'info' | 'warning' | 'danger';
 	componentFamily: ComponentFamily;
 	message: string;
+	recommendedAction: string;
 }
 
 export interface ReconcileEquipmentInput {

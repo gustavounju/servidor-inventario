@@ -181,13 +181,32 @@ function mergeRegistered(
 			inRegistry: true
 		});
 		discrepancies.push({
+			code: 'registered_missing_in_telemetry',
 			severity: 'warning',
 			componentFamily: family,
-			message: `Componente patrimonial sin coincidencia WMI: ${registeredLabel} (${isRealSerial(registeredSerial) ? registeredSerial : 'Sin S/N'})`
+			message: `Componente patrimonial sin coincidencia WMI: ${registeredLabel} (${isRealSerial(registeredSerial) ? registeredSerial : 'Sin S/N'})`,
+			recommendedAction: 'Verificar fisicamente antes de emitir el acta.'
 		});
 	}
 
 	return merged;
+}
+
+function addTelemetryMissingInRegistryDiscrepancies(
+	items: ReconciledComponent[],
+	discrepancies: EquipmentDiscrepancy[]
+) {
+	for (const item of items) {
+		if (item.inRegistry) continue;
+
+		discrepancies.push({
+			code: 'telemetry_missing_in_registry',
+			severity: 'info',
+			componentFamily: item.family,
+			message: `WMI informa componente no registrado en patrimonio: ${item.label} (${item.serialNumber})`,
+			recommendedAction: 'Controlar si debe incorporarse al inventario patrimonial.'
+		});
+	}
 }
 
 export function reconcileEquipment(input: ReconcileEquipmentInput): ReconciledEquipmentDetail {
@@ -207,6 +226,7 @@ export function reconcileEquipment(input: ReconcileEquipmentInput): ReconciledEq
 		'storage',
 		discrepancies
 	);
+	addTelemetryMissingInRegistryDiscrepancies([...monitors, ...storage], discrepancies);
 
 	return {
 		pcName: input.pcName,
