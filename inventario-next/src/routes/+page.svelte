@@ -1,6 +1,13 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+
 	const modules = [
-		{ name: 'Detalle de equipo', state: 'Primer corte', metric: 'WMI + patrimonio + acta' },
+		{
+			name: 'Detalle de equipo',
+			state: 'Primer corte',
+			metric: 'WMI + patrimonio + acta',
+			href: resolve('/equipos')
+		},
 		{ name: 'Actas', state: 'Pendiente', metric: 'PDF desde datos reconciliados' },
 		{ name: 'Dashboard', state: 'Pendiente', metric: 'Lectura MySQL controlada' },
 		{ name: 'Movil tecnicos', state: 'Base lista', metric: 'PWA y certificados' }
@@ -29,13 +36,13 @@
 
 	<section class="status-grid" aria-label="Modulos iniciales">
 		{#each modules as module (module.name)}
-			<article class="module">
+			<svelte:element this={module.href ? 'a' : 'article'} class="module" href={module.href}>
 				<div>
 					<h2>{module.name}</h2>
 					<p>{module.metric}</p>
 				</div>
 				<span>{module.state}</span>
-			</article>
+			</svelte:element>
 		{/each}
 	</section>
 
@@ -146,6 +153,14 @@
 		border: 1px solid #253140;
 		background: rgba(16, 22, 30, 0.94);
 		border-radius: 6px;
+		color: inherit;
+		text-decoration: none;
+	}
+
+	a.module:hover,
+	a.module:focus-visible {
+		border-color: #81d8d0;
+		outline: none;
 	}
 
 	.module h2,
