@@ -24,7 +24,8 @@ const envSchema = z.object({
 		.optional()
 		.transform((value) => String(value ?? 'true').toLowerCase() !== 'false'),
 	TLS_CERT_PATH: z.string().default('../cert.pem'),
-	TLS_KEY_PATH: z.string().default('../key.pem')
+	TLS_KEY_PATH: z.string().default('../key.pem'),
+	AUTH_SECRET: z.string().default('dev-only-secret-change-in-production')
 });
 
 type EnvInput = Record<string, string | undefined>;
