@@ -1,4 +1,6 @@
 import { env } from '$env/dynamic/private';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { z } from 'zod';
 
 const envSchema = z.object({
@@ -25,4 +27,46 @@ const envSchema = z.object({
 	TLS_KEY_PATH: z.string().default('../key.pem')
 });
 
-export const appConfig = envSchema.parse(env);
+type EnvInput = Record<string, string | undefined>;
+
+function parseEnvFile(path: string): EnvInput {
+	if (!existsSync(path)) return {};
+
+	return Object.fromEntries(
+		readFileSync(path, 'utf8')
+			.split(/\r?\n/)
+			.filter((line) => /^\s*[^#][^=]+=/.test(line))
+			.map((line) => {
+				const index = line.indexOf('=');
+				return [
+					line.slice(0, index).trim(),
+					line
+						.slice(index + 1)
+						.trim()
+						.replace(/^['"]|['"]$/g, '')
+				];
+			})
+	);
+}
+
+function withLegacyMysqlAliases(input: EnvInput): EnvInput {
+	return {
+		...input,
+		MYSQL_HOST: input.MYSQL_HOST ?? input.DB_HOST,
+		MYSQL_PORT: input.MYSQL_PORT ?? input.DB_PORT,
+		MYSQL_DATABASE: input.MYSQL_DATABASE ?? input.DB_NAME,
+		MYSQL_USER: input.MYSQL_USER ?? input.DB_USER,
+		MYSQL_PASSWORD: input.MYSQL_PASSWORD ?? input.DB_PASS
+	};
+}
+
+export function createAppConfig(input: EnvInput = {}) {
+	return envSchema.parse(withLegacyMysqlAliases(input));
+}
+
+const parentEnv = parseEnvFile(resolve(process.cwd(), '..', '.env'));
+
+export const appConfig = createAppConfig({
+	...parentEnv,
+	...env
+});
