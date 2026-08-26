@@ -12,6 +12,12 @@
 		},
 		{ name: 'Actas', state: 'Pendiente', metric: 'PDF desde datos reconciliados' },
 		{ name: 'Dashboard', state: 'Pendiente', metric: 'Lectura MySQL controlada' },
+		{
+			name: 'Usuarios',
+			state: 'Primer corte',
+			metric: 'Locales + Active Directory + permisos',
+			href: resolve('/usuarios')
+		},
 		{ name: 'Movil tecnicos', state: 'Base lista', metric: 'PWA y certificados' }
 	];
 
@@ -19,7 +25,7 @@
 		{ label: 'PCs activas', value: data.metrics.activePcs },
 		{ label: 'Componentes asignados', value: data.metrics.assignedComponents },
 		{ label: 'Tareas abiertas', value: data.metrics.openTasks },
-		{ label: 'Validacion pendiente', value: data.metrics.pendingValidation }
+		{ label: 'Usuarios activos', value: data.metrics.activeUsers }
 	]);
 </script>
 
@@ -228,7 +234,7 @@
 
 	.status-grid {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: repeat(5, minmax(0, 1fr));
 		gap: 12px;
 		margin: 24px 0;
 	}

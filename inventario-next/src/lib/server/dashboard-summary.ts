@@ -7,6 +7,7 @@ export interface DashboardMetricSet {
 	assignedComponents: number;
 	openTasks: number;
 	pendingValidation: number;
+	activeUsers: number;
 }
 
 export interface DashboardEfemeride {
@@ -39,7 +40,8 @@ export function demoDashboardSummary(): DashboardSummary {
 			activePcs: 2,
 			assignedComponents: 4,
 			openTasks: 3,
-			pendingValidation: 1
+			pendingValidation: 1,
+			activeUsers: 2
 		},
 		todayEfemerides: [],
 		note: 'Sin .env local: resumen demo, no se consulto MySQL.'
@@ -64,10 +66,11 @@ function todayDiaMes() {
 export async function loadDashboardSummary(): Promise<DashboardSummary> {
 	if (!appConfig.MYSQL_PASSWORD) return demoDashboardSummary();
 
-	const [activePcs, assignedComponents, openTasks, pendingValidation] = await Promise.all([
-		count('SELECT COUNT(*) total FROM pcs WHERE is_active = 1'),
-		count(
-			`
+	const [activePcs, assignedComponents, openTasks, pendingValidation, activeUsers] =
+		await Promise.all([
+			count('SELECT COUNT(*) total FROM pcs WHERE is_active = 1'),
+			count(
+				`
 			SELECT COUNT(*) total
 			FROM components
 			WHERE assigned_pc IS NOT NULL
@@ -76,10 +79,13 @@ export async function loadDashboardSummary(): Promise<DashboardSummary> {
 				OR lifecycle_status IN ('desplegado', 'deployed')
 			  )
 			`
-		),
-		count("SELECT COUNT(*) total FROM tasks WHERE estado IN ('Pendiente', 'Asignada')"),
-		count("SELECT COUNT(*) total FROM pcs WHERE validation_status IN ('pendiente', 'sin_gemelo')")
-	]);
+			),
+			count("SELECT COUNT(*) total FROM tasks WHERE estado IN ('Pendiente', 'Asignada')"),
+			count(
+				"SELECT COUNT(*) total FROM pcs WHERE validation_status IN ('pendiente', 'sin_gemelo')"
+			),
+			count('SELECT COUNT(*) total FROM app_users WHERE COALESCE(is_active, 1) = 1')
+		]);
 
 	const [efemerideRows] = await getMysqlPool().query<EfemerideRow[]>(
 		`
@@ -98,7 +104,8 @@ export async function loadDashboardSummary(): Promise<DashboardSummary> {
 			activePcs,
 			assignedComponents,
 			openTasks,
-			pendingValidation
+			pendingValidation,
+			activeUsers
 		},
 		todayEfemerides: efemerideRows.map((row) => ({
 			title: row.titulo ?? 'Efemeride',

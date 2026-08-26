@@ -11,7 +11,8 @@ describe('demoDashboardSummary', () => {
 				activePcs: expect.any(Number),
 				assignedComponents: expect.any(Number),
 				openTasks: expect.any(Number),
-				pendingValidation: expect.any(Number)
+				pendingValidation: expect.any(Number),
+				activeUsers: expect.any(Number)
 			})
 		);
 		expect(Array.isArray(summary.todayEfemerides)).toBe(true);
