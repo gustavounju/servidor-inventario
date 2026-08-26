@@ -11,6 +11,12 @@
 			href: resolve('/equipos')
 		},
 		{ name: 'Actas', state: 'Pendiente', metric: 'PDF desde datos reconciliados' },
+		{
+			name: 'Tareas',
+			state: 'Primer corte',
+			metric: 'Solicitantes con fuero',
+			href: resolve('/tareas')
+		},
 		{ name: 'Dashboard', state: 'Pendiente', metric: 'Lectura MySQL controlada' },
 		{
 			name: 'Usuarios',
@@ -234,7 +240,7 @@
 
 	.status-grid {
 		display: grid;
-		grid-template-columns: repeat(5, minmax(0, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 12px;
 		margin: 24px 0;
 	}
