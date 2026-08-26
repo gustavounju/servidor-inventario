@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 
+	let { data } = $props();
+
 	const modules = [
 		{
 			name: 'Detalle de equipo',
@@ -12,6 +14,13 @@
 		{ name: 'Dashboard', state: 'Pendiente', metric: 'Lectura MySQL controlada' },
 		{ name: 'Movil tecnicos', state: 'Base lista', metric: 'PWA y certificados' }
 	];
+
+	const metrics = $derived([
+		{ label: 'PCs activas', value: data.metrics.activePcs },
+		{ label: 'Componentes asignados', value: data.metrics.assignedComponents },
+		{ label: 'Tareas abiertas', value: data.metrics.openTasks },
+		{ label: 'Validacion pendiente', value: data.metrics.pendingValidation }
+	]);
 </script>
 
 <svelte:head>
@@ -29,10 +38,33 @@
 			<h1>Inventario Next</h1>
 		</div>
 		<div class="environment">
-			<span>Paralelo</span>
-			<strong>Solo sistemas</strong>
+			<span>Origen</span>
+			<strong>{data.mode}</strong>
 		</div>
 	</section>
+
+	<section class="metric-grid" aria-label="Resumen operativo">
+		{#each metrics as metric (metric.label)}
+			<div class="metric">
+				<strong>{metric.value}</strong>
+				<span>{metric.label}</span>
+			</div>
+		{/each}
+	</section>
+
+	{#if data.todayEfemerides.length}
+		<section class="efemerides" aria-label="Efemerides del dia">
+			{#each data.todayEfemerides as item (item.title)}
+				<article>
+					<span>{item.icon}</span>
+					<div>
+						<h2>{item.title}</h2>
+						<p>{item.description}</p>
+					</div>
+				</article>
+			{/each}
+		</section>
+	{/if}
 
 	<section class="status-grid" aria-label="Modulos iniciales">
 		{#each modules as module (module.name)}
@@ -58,6 +90,8 @@
 			<li>Los modulos heredados sin uso, como mapas, no entran al nuevo frente.</li>
 		</ul>
 	</section>
+
+	<p class="note">{data.note}</p>
 </main>
 
 <style>
@@ -127,15 +161,69 @@
 	}
 
 	.environment span,
+	.metric span,
 	.module p,
 	.console span,
-	.console li {
+	.console li,
+	.note {
 		color: #9aa8b8;
 	}
 
 	.environment strong {
 		color: #f5c451;
 		font-size: 0.95rem;
+		text-transform: uppercase;
+	}
+
+	.metric-grid {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 12px;
+		margin: 24px 0 0;
+	}
+
+	.metric {
+		padding: 16px;
+		border: 1px solid #253140;
+		background: rgba(9, 13, 18, 0.96);
+		border-radius: 6px;
+	}
+
+	.metric strong,
+	.metric span {
+		display: block;
+	}
+
+	.metric strong {
+		color: #eef2f7;
+		font-size: 2rem;
+		line-height: 1;
+	}
+
+	.metric span {
+		margin-top: 8px;
+	}
+
+	.efemerides {
+		margin-top: 12px;
+	}
+
+	.efemerides article {
+		display: flex;
+		gap: 12px;
+		padding: 14px 16px;
+		border: 1px solid #314252;
+		background: rgba(16, 22, 30, 0.94);
+		border-radius: 6px;
+	}
+
+	.efemerides article > span {
+		font-size: 1.4rem;
+	}
+
+	.efemerides p {
+		margin-top: 4px;
+		color: #a9b7c8;
 	}
 
 	.status-grid {
@@ -209,7 +297,12 @@
 		margin-top: 10px;
 	}
 
+	.note {
+		margin-top: 12px;
+	}
+
 	@media (max-width: 900px) {
+		.metric-grid,
 		.status-grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
@@ -229,6 +322,7 @@
 			text-align: left;
 		}
 
+		.metric-grid,
 		.status-grid {
 			grid-template-columns: 1fr;
 		}
