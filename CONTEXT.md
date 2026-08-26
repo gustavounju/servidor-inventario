@@ -8,6 +8,24 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 - **Frontend**: HTML, CSS (gold.css), JavaScript
 - **Base de datos**: MySQL local (dev) / MySQL remoto (prod)
 - **Autenticación**: Sistema propio con roles, futura integración con Active Directory
+- **Proyecto paralelo (Inventario Next)**: SvelteKit 5 + TypeScript en `inventario-next/`,
+  Adapter Node, MySQL por `mysql2`/Drizzle, Active Directory por `ldapts`. Next es una
+  aplicación separada dentro del mismo repo; no reemplaza Flask todavía y empieza en modo
+  lectura (`MYSQL_READ_ONLY=true`).
+
+## 🧪 Inventario Next (Paralelo)
+- **Objetivo**: evolucionar visor, dashboard, detalles de equipo, actas, resúmenes PDF,
+  efemérides y mobile sin interrumpir producción Flask.
+- **Primer módulo recomendado**: detalle de equipo + previsualización de acta, comparando
+  WMI crudo, datos normalizados, patrimonio registrado, discrepancias y componentes finales
+  que salen en PDF/acta.
+- **Convivencia**: Flask sigue siendo producción estable. Next corre en otro puerto/path
+  (`http://127.0.0.1:5173` en local) y solo debe escribir en MySQL después de diseño técnico,
+  revisión de seguridad y confirmación explícita.
+- **Documentos de traspaso**:
+  - `docs/designs/inventario-next.md`
+  - `docs/decisions/ADR-001-inventario-next-paralelo.md`
+  - `docs/ANTIGRAVITY_HANDOFF_INVENTARIO_NEXT.md`
 
 ## 🏛️ Sistema Patrimonial y Gemelos Digitales (Novedad Agosto 2026)
 - **Modelo de Activos**: La verdad del sistema evoluciona de "inventario centrado en scripts" a "Gemelo Digital Patrimonial".
@@ -38,6 +56,7 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 ```
 ServidorInventario/
 ├── servidor.py              # Aplicación principal Flask
+├── inventario-next/         # Aplicación paralela SvelteKit/TypeScript
 ├── blueprints/              # Módulos de la aplicación
 │   ├── bp_dashboard.py      # Dashboard principal
 │   ├── bp_api.py           # API endpoints

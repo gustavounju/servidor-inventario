@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from services.ad_user_directory import requester_users_params, requester_users_sql
+from services.ad_user_directory import list_requester_users, requester_users_params, requester_users_sql
 
 
 class AdUserDirectoryTest(unittest.TestCase):
@@ -29,6 +29,33 @@ class AdUserDirectoryTest(unittest.TestCase):
 
         self.assertEqual(response, [])
         get_db_connection.assert_not_called()
+
+    def test_requester_users_include_display_label_with_fuero(self):
+        class _Rows:
+            def fetchall(self):
+                return [
+                    {
+                        "username": "jperez",
+                        "real_name": "Juan Perez",
+                        "phone": "",
+                        "fuero": "Civil",
+                    },
+                    {
+                        "username": "msosa",
+                        "real_name": "Maria Sosa",
+                        "phone": "",
+                        "fuero": "Sin Fuero",
+                    },
+                ]
+
+        class _Conn:
+            def execute(self, _sql, _params):
+                return _Rows()
+
+        users = list_requester_users(_Conn(), query="pe", limit=30)
+
+        self.assertEqual(users[0]["display_label"], "Juan Perez (Civil)")
+        self.assertEqual(users[1]["display_label"], "Maria Sosa")
 
 
 if __name__ == "__main__":

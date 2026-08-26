@@ -439,7 +439,7 @@ def _parse_monitors_string(mon_raw, full_json=None):
     if not mon_raw or mon_raw in ("N/A", "None", ""):
         return _dedupe_parsed_hardware_items(mon_list)
 
-    normalized_raw = mon_raw.replace("\r\n", "|").replace("\n", "|").replace(";", "|")
+    normalized_raw = dedupe_hardware_entries(mon_raw).replace("\r\n", "|").replace("\n", "|").replace(";", "|")
     
     if "|" not in normalized_raw and "," in normalized_raw:
         if "SN:" in normalized_raw.upper() or "S/N:" in normalized_raw.upper() or normalized_raw.count(",") > 1:

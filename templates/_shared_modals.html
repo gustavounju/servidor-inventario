@@ -3767,9 +3767,8 @@ function submitTaskAction() {
             if (!name) return;
             const opt = document.createElement('option');
             opt.value = name;
-            opt.textContent = u.username
-                ? `${u.username}${u.fuero && u.fuero !== 'Sin Fuero' ? ' (' + u.fuero + ')' : ''}`
-                : name;
+            opt.label = u.display_label || (u.fuero && u.fuero !== 'Sin Fuero' ? `${name} (${u.fuero})` : name);
+            opt.textContent = opt.label;
             datalist.appendChild(opt);
         });
     }

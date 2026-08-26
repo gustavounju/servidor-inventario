@@ -92,10 +92,23 @@ def requester_users_params(query=None, limit=None):
     return tuple(params)
 
 
+def _requester_display_label(user):
+    name = (user.get("real_name") or user.get("username") or "").strip()
+    fuero = (user.get("fuero") or "").strip()
+    if fuero and fuero != "Sin Fuero":
+        return f"{name} ({fuero})"
+    return name
+
+
 def list_requester_users(conn, query=None, limit=None):
     clean_query = (query or "").strip().lower()
     rows = conn.execute(
         requester_users_sql(include_query=bool(clean_query), include_limit=limit is not None),
         requester_users_params(query=clean_query or None, limit=limit),
     ).fetchall()
-    return [dict(row) for row in rows]
+    users = []
+    for row in rows:
+        user = dict(row)
+        user["display_label"] = _requester_display_label(user)
+        users.append(user)
+    return users

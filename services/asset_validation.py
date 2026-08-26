@@ -112,19 +112,24 @@ def dedupe_hardware_entries(raw_value: str, *, separator: str = " | ") -> str:
     if not raw_value or raw_value in ("Sin reporte de script", "N/A"):
         return raw_value or ""
 
-    seen = set()
+    seen_serials = set()
+    seen_identities_with_serial = set()
+    seen_model_only_identities = set()
     cleaned = []
     for entry in _split_hardware_entries(raw_value):
         serial = _extract_embedded_serial(entry)
         serial_key = serial.strip().upper()
         identity_key = _normalize_hw_identity(entry)
         if _is_real_serial(serial_key):
-            key = ("serial", serial_key)
+            if serial_key in seen_serials:
+                continue
+            seen_serials.add(serial_key)
+            if identity_key:
+                seen_identities_with_serial.add(identity_key)
         else:
-            key = ("identity", identity_key)
-        if not key[1] or key in seen:
-            continue
-        seen.add(key)
+            if not identity_key or identity_key in seen_identities_with_serial or identity_key in seen_model_only_identities:
+                continue
+            seen_model_only_identities.add(identity_key)
         cleaned.append(entry)
     return separator.join(cleaned)
 
@@ -236,8 +241,37 @@ def _ram_matches(components, script_ram, fallback_ram=None) -> bool:
     return False
 
 
+def _split_concatenated_serial_entries(raw_value: str):
+    value = str(raw_value or "").strip()
+    if not value:
+        return []
+
+    serial_tags = list(re.finditer(
+        r"[\[\(]\s*(?:SN|S/N|SERIAL|UUID)\s*:\s*[^\]\)]+[\]\)]",
+        value,
+        re.IGNORECASE,
+    ))
+    if len(serial_tags) <= 1:
+        return [value]
+
+    entries = []
+    start = 0
+    for index, match in enumerate(serial_tags):
+        if index < len(serial_tags) - 1:
+            entries.append(value[start:match.end()].strip())
+            start = match.end()
+        else:
+            entries.append(value[start:].strip())
+
+    return [entry for entry in entries if entry]
+
+
 def _split_hardware_entries(raw_value: str):
-    return [part.strip() for part in str(raw_value or "").split("|") if part.strip()]
+    normalized = str(raw_value or "").replace("\r\n", "|").replace("\n", "|").replace(";", "|")
+    entries = []
+    for part in normalized.split("|"):
+        entries.extend(_split_concatenated_serial_entries(part))
+    return [part.strip() for part in entries if part.strip()]
 
 
 def _storage_matches(components, script_disks, fallback_disks=None) -> bool:

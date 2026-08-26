@@ -327,6 +327,31 @@ class PcDetailComponentFilteringTests(unittest.TestCase):
         self.assertEqual(hardware["disks"][0]["serial"], "50026B7785247C4D")
         self.assertEqual(hardware["monitors"][0]["serial"], "ZA12519000256")
 
+    def test_parse_hardware_components_splits_concatenated_wmi_disks_and_monitors(self):
+        hardware = _parse_hardware_components({
+            "motherboard_model": "N/A",
+            "ram_detalles": "N/A",
+            "processor": "N/A",
+            "disk_models": (
+                "KINGSTON SA400S37240G (224GB) [SN: 50026B7785247C4D] "
+                "ST500DM002-1BD142 (466GB) [SN: Z3T4ABCDE]"
+            ),
+            "monitors": (
+                "Philips Philips 241V8 (SN: ZA1418003190) "
+                "LG 19EN33 (SN: LG19123456)"
+            ),
+            "full_json_data": None,
+        })
+
+        self.assertEqual(
+            [disk["serial"] for disk in hardware["disks"]],
+            ["50026B7785247C4D", "Z3T4ABCDE"],
+        )
+        self.assertEqual(
+            [monitor["serial"] for monitor in hardware["monitors"]],
+            ["ZA1418003190", "LG19123456"],
+        )
+
     def test_monitor_summary_does_not_print_placeholder_serial_number(self):
         summary = _build_monitor_summary([
             {"model": "Philips Philips 241V8", "serial": "ZA1418003190"},
