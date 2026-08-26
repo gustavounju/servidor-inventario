@@ -64,7 +64,7 @@ export function createAppConfig(input: EnvInput = {}) {
 	return envSchema.parse(withLegacyMysqlAliases(input));
 }
 
-const parentEnv = parseEnvFile(resolve(process.cwd(), '..', '.env'));
+const parentEnv = process.env.VITEST ? {} : parseEnvFile(resolve(process.cwd(), '..', '.env'));
 
 export const appConfig = createAppConfig({
 	...parentEnv,
