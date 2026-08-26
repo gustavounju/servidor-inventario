@@ -11,9 +11,14 @@ export interface EquipmentUser {
 export interface EquipmentTelemetry {
 	monitors?: string | null;
 	diskModels?: string | null;
+	osName?: string | null;
 	processor?: string | null;
 	motherboardModel?: string | null;
 	ramGb?: number | string | null;
+	ipAddress?: string | null;
+	lastReport?: string | Date | null;
+	officeVersion?: string | null;
+	validationStatus?: string | null;
 }
 
 export interface RegisteredComponent {
@@ -53,6 +58,7 @@ export interface ReconcileEquipmentInput {
 export interface ReconciledEquipmentDetail {
 	pcName: string;
 	user: EquipmentUser;
+	system: EquipmentTelemetry;
 	monitors: ReconciledComponent[];
 	storage: ReconciledComponent[];
 	actaItems: ReconciledComponent[];

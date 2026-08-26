@@ -22,6 +22,7 @@ describe('reconcileEquipment', () => {
 			'50026B7785247C4D',
 			'Z3T4ABCDE'
 		]);
+		expect(detail.system.monitors).toContain('Philips');
 	});
 
 	it('deduplicates repeated WMI entries but keeps equal models with different serials', () => {

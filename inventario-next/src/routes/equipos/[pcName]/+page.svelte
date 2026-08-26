@@ -5,6 +5,28 @@
 	let { data } = $props();
 
 	const detail = $derived(data.detail);
+	const systemRows = $derived(
+		[
+			{ label: 'Sistema', value: detail.system.osName },
+			{ label: 'IP', value: detail.system.ipAddress },
+			{ label: 'Ultimo reporte', value: formatDate(detail.system.lastReport) },
+			{ label: 'Validacion', value: detail.system.validationStatus },
+			{ label: 'Procesador', value: detail.system.processor },
+			{ label: 'RAM', value: detail.system.ramGb ? `${detail.system.ramGb} GB` : '' },
+			{ label: 'Office', value: detail.system.officeVersion },
+			{ label: 'Placa madre', value: detail.system.motherboardModel }
+		].filter((row) => row.value)
+	);
+
+	function formatDate(value: string | Date | null | undefined) {
+		if (!value) return '';
+		const date = new Date(value);
+		if (Number.isNaN(date.getTime())) return String(value);
+		return new Intl.DateTimeFormat('es-AR', {
+			dateStyle: 'short',
+			timeStyle: 'short'
+		}).format(date);
+	}
 </script>
 
 <svelte:head>
@@ -46,6 +68,22 @@
 			<span>{detail.discrepancies.length}</span>
 			<p>Discrepancias</p>
 		</div>
+	</section>
+
+	<section class="panel">
+		<h2>Sistema</h2>
+		{#if systemRows.length}
+			<dl class="system-grid">
+				{#each systemRows as row (row.label)}
+					<div>
+						<dt>{row.label}</dt>
+						<dd>{row.value}</dd>
+					</div>
+				{/each}
+			</dl>
+		{:else}
+			<p class="empty">Sin datos de sistema informados.</p>
+		{/if}
 	</section>
 
 	<section class="columns">
@@ -215,6 +253,32 @@
 		font-size: 1rem;
 	}
 
+	.system-grid {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 10px;
+		margin: 0;
+	}
+
+	.system-grid div {
+		min-width: 0;
+		padding-top: 10px;
+		border-top: 1px solid #253140;
+	}
+
+	.system-grid dt {
+		color: #9aa8b8;
+		font-size: 0.78rem;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+
+	.system-grid dd {
+		margin: 5px 0 0;
+		overflow-wrap: anywhere;
+		color: #eef2f7;
+	}
+
 	.alerts {
 		list-style: none;
 		margin: 0;
@@ -238,6 +302,10 @@
 		}
 
 		.summary-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.system-grid {
 			grid-template-columns: 1fr;
 		}
 

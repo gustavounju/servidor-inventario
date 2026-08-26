@@ -231,6 +231,7 @@ export function reconcileEquipment(input: ReconcileEquipmentInput): ReconciledEq
 	return {
 		pcName: input.pcName,
 		user: input.user ?? {},
+		system: input.telemetry,
 		monitors,
 		storage,
 		actaItems: [...monitors, ...storage].filter((item) => item.inActa),
