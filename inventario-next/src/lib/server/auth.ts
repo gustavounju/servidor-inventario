@@ -3,8 +3,9 @@ import type { Cookies } from '@sveltejs/kit';
 import { appConfig } from './config';
 import { getMysqlPool } from './db';
 import { authenticateActiveDirectoryPassword, normalizeAdUsername } from './active-directory';
+import type { ActiveDirectoryUser } from './active-directory';
 import type { RowDataPacket } from 'mysql2';
-import { createHmac, createHash, timingSafeEqual, pbkdf2 as nodePbkdf2 } from 'node:crypto';
+import { createHmac, randomBytes, timingSafeEqual, pbkdf2 as nodePbkdf2 } from 'node:crypto';
 import { promisify } from 'node:util';
 
 const pbkdf2 = promisify(nodePbkdf2);
@@ -124,12 +125,17 @@ export function getSessionUsername(cookies: Cookies): string | null {
 // ─── Filas de base de datos ───────────────────────────────────────────────────
 
 interface AppUserAuthRow extends RowDataPacket {
+	id?: number;
 	username: string;
 	password_hash?: string | null;
 	display_name?: string | null;
 	role?: string | null;
 	is_superuser?: number | null;
 	is_active?: number | null;
+}
+
+interface AppSettingRow extends RowDataPacket {
+	setting_value: string | null;
 }
 
 // ─── Login ─────────────────────────────────────────────────────────────────────
@@ -153,6 +159,44 @@ function rowToSessionUser(
 	};
 }
 
+async function loadAppSetting(key: string, defaultValue = '') {
+	if (!appConfig.MYSQL_PASSWORD) return defaultValue;
+
+	try {
+		const pool = getMysqlPool();
+		const [rows] = await pool.query<AppSettingRow[]>(
+			`SELECT setting_value
+			 FROM app_settings
+			 WHERE setting_key = ? AND is_active = 1
+			 LIMIT 1`,
+			[key]
+		);
+		const value = rows[0]?.setting_value;
+		return value === null || value === undefined ? defaultValue : String(value).trim();
+	} catch {
+		return defaultValue;
+	}
+}
+
+async function authMode() {
+	const mode = (await loadAppSetting('AUTH_MODE', 'local')).toLowerCase();
+	return mode === 'ad' || mode === 'hybrid' || mode === 'local' ? mode : 'local';
+}
+
+async function adSuperusers() {
+	const raw = await loadAppSetting('AD_SUPERUSERS', '');
+	return new Set(
+		raw
+			.split(',')
+			.map((item) => normalizeAdUsername(item))
+			.filter(Boolean)
+	);
+}
+
+async function adAutoApprove() {
+	return (await loadAppSetting('AD_AUTO_APPROVE', 'false')).toLowerCase() === 'true';
+}
+
 async function loadAppUserForLogin(username: string): Promise<AppUserAuthRow | undefined> {
 	const pool = getMysqlPool();
 	const normalized = normalizeAdUsername(username);
@@ -171,6 +215,73 @@ async function loadAppUserForLogin(username: string): Promise<AppUserAuthRow | u
 	);
 
 	return rows[0];
+}
+
+async function ensureAdShadowUser(
+	adUser: ActiveDirectoryUser
+): Promise<AppUserAuthRow | undefined> {
+	const username = normalizeAdUsername(adUser.username);
+	if (!username) return undefined;
+
+	const existing = await loadAppUserForLogin(username);
+	const superusers = await adSuperusers();
+	const isSuperuser = superusers.has(username);
+	const isActive = isSuperuser || (await adAutoApprove());
+	const displayName = adUser.displayName || username;
+
+	if (existing) {
+		if (!appConfig.MYSQL_READ_ONLY) {
+			try {
+				await getMysqlPool().query(
+					`UPDATE app_users
+					 SET display_name = ?,
+					     is_superuser = ?,
+					     is_active = CASE WHEN ? = 1 THEN 1 ELSE is_active END,
+					     updated_at = CURRENT_TIMESTAMP
+					 WHERE username = ?`,
+					[displayName, isSuperuser ? 1 : 0, isSuperuser ? 1 : 0, existing.username]
+				);
+			} catch {
+				// AD already authenticated; stale local profile data must not block login.
+			}
+		}
+
+		return {
+			...existing,
+			display_name: displayName,
+			is_superuser: isSuperuser ? 1 : existing.is_superuser,
+			is_active: isSuperuser ? 1 : existing.is_active
+		};
+	}
+
+	if (appConfig.MYSQL_READ_ONLY) return undefined;
+
+	const generatedHash = await bcrypt.hash(randomBytes(32).toString('base64url'), 10);
+	await getMysqlPool().query(
+		`INSERT INTO app_users (
+			username, display_name, role, technician_name, password_hash,
+			is_superuser, is_active, must_change_password,
+			can_access_dashboard, can_access_mobile, can_access_infrastructure,
+			can_access_reports, can_access_operadores, can_audit_racks, can_manage_stock
+		)
+		VALUES (?, ?, ?, NULL, ?, ?, ?, 0, ?, 1, ?, ?, ?, ?, ?)`,
+		[
+			username,
+			displayName,
+			isSuperuser ? 'administrador' : 'tecnico',
+			generatedHash,
+			isSuperuser ? 1 : 0,
+			isActive ? 1 : 0,
+			isSuperuser ? 1 : 0,
+			isSuperuser ? 1 : 0,
+			isSuperuser ? 1 : 0,
+			isSuperuser ? 1 : 0,
+			isSuperuser ? 1 : 0,
+			isSuperuser ? 1 : 0
+		]
+	);
+
+	return await loadAppUserForLogin(username);
 }
 
 /** Login sin base de datos — solo para desarrollo sin .env configurado. */
@@ -196,48 +307,52 @@ export async function demoLogin(username: string, password: string): Promise<Log
 
 /** Login contra la tabla app_users de MySQL. */
 export async function loginWithMysql(username: string, password: string): Promise<LoginResult> {
-	const row = await loadAppUserForLogin(username);
+	const normalizedUsername = normalizeAdUsername(username);
+	const mode = await authMode();
 
-	if (!row) {
+	if (normalizedUsername.endsWith('_adm')) {
+		return {
+			ok: false,
+			error:
+				'Por seguridad, no se permite el ingreso con cuentas administrativas (_adm). Usá tu cuenta común de AD.'
+		};
+	}
+
+	const row = await loadAppUserForLogin(normalizedUsername);
+
+	if (row && (mode === 'local' || mode === 'hybrid')) {
+		const hash = row.password_hash ?? '';
+		const valid = hash ? await verifyPassword(password, hash) : false;
+		if (valid) {
+			if (!Number(row.is_active ?? 1)) {
+				return { ok: false, error: 'Usuario inactivo. Contactá a Sistemas.' };
+			}
+			return { ok: true, user: rowToSessionUser(row) };
+		}
+	}
+
+	if (mode === 'ad' || mode === 'hybrid') {
 		const adUser = await authenticateActiveDirectoryPassword(username, password);
 		if (!adUser) return { ok: false, error: 'Credenciales incorrectas' };
 
-		const adRow = await loadAppUserForLogin(adUser.username);
-		if (!adRow) return { ok: false, error: 'Usuario sin acceso habilitado. Contactá a Sistemas.' };
+		const adRow = await ensureAdShadowUser(adUser);
+		if (!adRow) {
+			return {
+				ok: false,
+				error:
+					'AD validó el usuario, pero Inventario Next está en modo solo lectura y no puede crear el usuario local.'
+			};
+		}
 		if (!Number(adRow.is_active ?? 1)) {
-			return { ok: false, error: 'Usuario inactivo. Contactá a Sistemas.' };
+			return {
+				ok: false,
+				error: 'Usuario validado por AD, pendiente de aprobación en Inventario.'
+			};
 		}
 		return { ok: true, user: rowToSessionUser(adRow, adRow.display_name ?? adUser.displayName) };
 	}
 
-	if (!Number(row.is_active ?? 1)) {
-		return { ok: false, error: 'Usuario inactivo. Contactá a Sistemas.' };
-	}
-
-	const hash = row.password_hash ?? '';
-	const valid = hash ? await verifyPassword(password, hash) : false;
-
-	if (!valid) {
-		const adUser = await authenticateActiveDirectoryPassword(username, password);
-		if (!adUser) return { ok: false, error: 'Credenciales incorrectas' };
-	}
-
-	// Intentar registrar last_login (solo si no es read-only)
-	if (!appConfig.MYSQL_READ_ONLY) {
-		try {
-			const pool = getMysqlPool();
-			await pool.query(`UPDATE app_users SET last_login = NOW() WHERE username = ?`, [
-				row.username
-			]);
-		} catch {
-			// No es crítico — continuar de todos modos
-		}
-	}
-
-	return {
-		ok: true,
-		user: rowToSessionUser(row)
-	};
+	return { ok: false, error: 'Credenciales incorrectas' };
 }
 
 /** Punto de entrada unificado: usa MySQL si hay password configurado, si no usa demo. */

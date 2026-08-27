@@ -1,15 +1,99 @@
 import { Client } from 'ldapts';
 import { appConfig } from './config';
+import { getMysqlPool } from './db';
+import type { RowDataPacket } from 'mysql2';
 
 export function isActiveDirectoryConfigured() {
 	return Boolean(appConfig.AD_URL && appConfig.AD_BASE_DN);
 }
 
-export function createActiveDirectoryClient() {
+interface ActiveDirectoryConfig {
+	url: string;
+	baseDn: string;
+	domain: string;
+	tlsRejectUnauthorized: boolean;
+}
+
+interface AppSettingRow extends RowDataPacket {
+	setting_key: string;
+	setting_value: string | null;
+}
+
+const AD_SETTING_KEYS = [
+	'AD_URL',
+	'AD_SERVER',
+	'AD_BASE_DN',
+	'AD_DOMAIN',
+	'AD_USE_SSL',
+	'AD_TLS_REJECT_UNAUTHORIZED'
+] as const;
+
+function parseBoolean(value: string | undefined, defaultValue: boolean) {
+	if (value === undefined) return defaultValue;
+	return value.trim().toLowerCase() === 'true';
+}
+
+function buildAdUrl(server: string, useSsl: boolean) {
+	const trimmed = server.trim();
+	if (!trimmed) return '';
+	if (/^ldaps?:\/\//i.test(trimmed)) return trimmed;
+
+	const protocol = useSsl ? 'ldaps' : 'ldap';
+	const hasPort = /:\d+$/.test(trimmed);
+	const port = useSsl ? 636 : 389;
+	return `${protocol}://${trimmed}${hasPort ? '' : `:${port}`}`;
+}
+
+async function loadLegacyActiveDirectorySettings() {
+	if (!appConfig.MYSQL_PASSWORD) return {};
+
+	try {
+		const placeholders = AD_SETTING_KEYS.map(() => '?').join(', ');
+		const [rows] = await getMysqlPool().query<AppSettingRow[]>(
+			`SELECT setting_key, setting_value
+			 FROM app_settings
+			 WHERE is_active = 1 AND setting_key IN (${placeholders})`,
+			[...AD_SETTING_KEYS]
+		);
+
+		return Object.fromEntries(
+			rows
+				.filter((row) => row.setting_value !== null)
+				.map((row) => [row.setting_key, String(row.setting_value).trim()])
+		) as Partial<Record<(typeof AD_SETTING_KEYS)[number], string>>;
+	} catch {
+		return {};
+	}
+}
+
+export async function resolveActiveDirectoryConfig(): Promise<ActiveDirectoryConfig | null> {
+	const legacySettings =
+		appConfig.AD_URL && appConfig.AD_BASE_DN ? {} : await loadLegacyActiveDirectorySettings();
+	const useSsl = parseBoolean(legacySettings.AD_USE_SSL, appConfig.AD_USE_SSL);
+	const url =
+		appConfig.AD_URL || legacySettings.AD_URL || buildAdUrl(legacySettings.AD_SERVER ?? '', useSsl);
+	const baseDn = appConfig.AD_BASE_DN || legacySettings.AD_BASE_DN || '';
+	const domain = appConfig.AD_DOMAIN || legacySettings.AD_DOMAIN || domainFromBaseDn(baseDn);
+	const tlsRejectUnauthorized = parseBoolean(
+		legacySettings.AD_TLS_REJECT_UNAUTHORIZED,
+		appConfig.AD_TLS_REJECT_UNAUTHORIZED
+	);
+
+	if (!url || !baseDn) return null;
+
+	return {
+		url,
+		baseDn,
+		domain,
+		tlsRejectUnauthorized
+	};
+}
+
+export function createActiveDirectoryClient(config: ActiveDirectoryConfig) {
 	return new Client({
-		url: appConfig.AD_URL,
+		url: config.url,
 		tlsOptions: {
-			rejectUnauthorized: appConfig.AD_TLS_REJECT_UNAUTHORIZED
+			rejectUnauthorized: config.tlsRejectUnauthorized
 		}
 	});
 }
@@ -54,14 +138,10 @@ export function normalizeAdUsername(username: string) {
 export function buildAdBindCandidates(username: string, domain = '') {
 	const trimmed = username.trim();
 	const normalized = normalizeAdUsername(trimmed);
-	const candidates = [];
-
-	if (trimmed.includes('@') || trimmed.includes('\\')) candidates.push(trimmed);
-	if (domain && normalized) candidates.push(`${normalized}@${domain}`);
-	if (normalized) candidates.push(normalized);
-	if (trimmed) candidates.push(trimmed);
-
-	return [...new Set(candidates)];
+	if (trimmed.includes('@') || trimmed.includes('\\')) return [trimmed];
+	if (domain && normalized) return [`${normalized}@${domain}`];
+	if (normalized) return [normalized];
+	return [];
 }
 
 export function domainFromBaseDn(baseDn: string) {
@@ -94,12 +174,11 @@ export function escapeLdapFilterValue(value: string) {
 
 async function loadActiveDirectoryUser(
 	client: ActiveDirectoryClient,
+	config: ActiveDirectoryConfig,
 	username: string
 ): Promise<ActiveDirectoryUser | null> {
-	if (!appConfig.AD_BASE_DN) return null;
-
 	const normalized = normalizeAdUsername(username);
-	const result = await client.search(appConfig.AD_BASE_DN, {
+	const result = await client.search(config.baseDn, {
 		scope: 'sub',
 		filter: `(sAMAccountName=${escapeLdapFilterValue(normalized)})`,
 		attributes: ['sAMAccountName', 'displayName', 'mail']
@@ -119,34 +198,39 @@ async function loadActiveDirectoryUser(
 export async function authenticateActiveDirectoryPassword(
 	username: string,
 	password: string,
-	clientFactory: () => ActiveDirectoryClient = () =>
-		createActiveDirectoryClient() as unknown as ActiveDirectoryClient
+	clientFactory: (config: ActiveDirectoryConfig) => ActiveDirectoryClient = (config) =>
+		createActiveDirectoryClient(config) as unknown as ActiveDirectoryClient
 ): Promise<ActiveDirectoryUser | null> {
-	if (!isActiveDirectoryConfigured() || !username.trim() || !password) return null;
+	if (!username.trim() || !password) return null;
 
-	const domain = appConfig.AD_DOMAIN || domainFromBaseDn(appConfig.AD_BASE_DN);
-	for (const bindUser of buildAdBindCandidates(username, domain)) {
-		const client = clientFactory();
+	const config = await resolveActiveDirectoryConfig();
+	if (!config) return null;
+
+	const bindUser = buildAdBindCandidates(username, config.domain)[0];
+	if (!bindUser) return null;
+
+	const client = clientFactory(config);
+	try {
+		await client.bind(bindUser, password);
 		try {
-			await client.bind(bindUser, password);
-			const user = await loadActiveDirectoryUser(client, username);
-			return (
-				user ?? {
-					username: normalizeAdUsername(username),
-					displayName: normalizeAdUsername(username),
-					mail: null
-				}
-			);
+			const user = await loadActiveDirectoryUser(client, config, username);
+			if (user) return user;
 		} catch {
-			// Try the next bind format without leaking which one failed.
-		} finally {
-			try {
-				await client.unbind();
-			} catch {
-				// Closing a failed LDAP connection is best-effort.
-			}
+			// Authentication already succeeded; a search/config issue must not retry
+			// another bind and create extra failed-login noise in Active Directory.
+		}
+		return {
+			username: normalizeAdUsername(username),
+			displayName: normalizeAdUsername(username),
+			mail: null
+		};
+	} catch {
+		return null;
+	} finally {
+		try {
+			await client.unbind();
+		} catch {
+			// Closing a failed LDAP connection is best-effort.
 		}
 	}
-
-	return null;
 }
