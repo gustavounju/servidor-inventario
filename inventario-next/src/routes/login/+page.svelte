@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let isSubmitting = $state(false);
 </script>
 
 <svelte:head>
@@ -22,7 +24,23 @@
 			</div>
 		{/if}
 
-		<form method="POST" class="login-form" novalidate>
+		<form
+			method="POST"
+			class="login-form"
+			novalidate
+			use:enhance={({ cancel }) => {
+				if (isSubmitting) {
+					cancel();
+					return;
+				}
+
+				isSubmitting = true;
+				return async ({ update }) => {
+					isSubmitting = false;
+					await update();
+				};
+			}}
+		>
 			<input type="hidden" name="next" value={data.next} />
 
 			<div class="field">
@@ -50,7 +68,9 @@
 				/>
 			</div>
 
-			<button type="submit" id="btn-login">Ingresar</button>
+			<button type="submit" id="btn-login" disabled={isSubmitting} aria-busy={isSubmitting}>
+				{isSubmitting ? 'Ingresando...' : 'Ingresar'}
+			</button>
 		</form>
 
 		<p class="footer-note">Inventario · Dpto. de Informática</p>
@@ -81,8 +101,7 @@
 		box-sizing: border-box;
 		background:
 			linear-gradient(90deg, rgba(24, 60, 81, 0.28) 1px, transparent 1px),
-			linear-gradient(0deg, rgba(24, 60, 81, 0.2) 1px, transparent 1px),
-			#0e1116;
+			linear-gradient(0deg, rgba(24, 60, 81, 0.2) 1px, transparent 1px), #0e1116;
 		background-size: 44px 44px;
 	}
 
@@ -190,6 +209,12 @@
 
 	button[type='submit']:hover {
 		background: #a5e5df;
+	}
+
+	button[type='submit']:disabled {
+		cursor: wait;
+		opacity: 0.72;
+		transform: none;
 	}
 
 	button[type='submit']:active {
