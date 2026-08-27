@@ -61,4 +61,38 @@ describe('createAppConfig', () => {
 
 		expect(config.AD_URL).toBe('ldap://configured.example.local:389');
 	});
+
+	it('requires a non-default AUTH_SECRET in production', () => {
+		expect(() =>
+			createAppConfig({
+				APP_ENV: 'production'
+			})
+		).toThrow('AUTH_SECRET must be set');
+	});
+
+	it('accepts an explicit AUTH_SECRET in production', () => {
+		const config = createAppConfig({
+			APP_ENV: 'production',
+			AUTH_SECRET: 'a-long-random-production-secret-32'
+		});
+
+		expect(config.AUTH_SECRET).toBe('a-long-random-production-secret-32');
+	});
+
+	it('requires a long AUTH_SECRET in production', () => {
+		expect(() =>
+			createAppConfig({
+				APP_ENV: 'production',
+				AUTH_SECRET: 'short-secret'
+			})
+		).toThrow('AUTH_SECRET must be set');
+	});
+
+	it('parses TRUST_PROXY as disabled by default', () => {
+		expect(createAppConfig().TRUST_PROXY).toBe(false);
+	});
+
+	it('enables TRUST_PROXY only when explicitly configured', () => {
+		expect(createAppConfig({ TRUST_PROXY: 'true' }).TRUST_PROXY).toBe(true);
+	});
 });

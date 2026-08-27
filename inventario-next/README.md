@@ -26,6 +26,10 @@ Copiar `.env.example` a `.env` y completar valores locales. No commitear secreto
 La bandera `MYSQL_READ_ONLY=true` es obligatoria en las primeras fases: Inventario Next
 debe comenzar leyendo datos, no modificando la base de produccion.
 
+En produccion, `APP_ENV=production` exige `AUTH_SECRET` real de al menos 32 caracteres.
+Si Next corre detras de nginx u otro reverse proxy que sobrescribe `X-Forwarded-For`,
+habilitar `TRUST_PROXY=true` para que el rate limit de login use la IP real del cliente.
+
 ## Primer objetivo
 
 Construir el detalle de equipo nuevo y la previsualizacion de acta desde una estructura

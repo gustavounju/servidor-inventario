@@ -1,5 +1,17 @@
-import { describe, expect, it } from 'vitest';
-import { completeLoginAttempt, resetLoginRateLimit, startLoginAttempt } from './login-rate-limit';
+import { afterEach, describe, expect, it } from 'vitest';
+import { appConfig } from './config';
+import {
+	completeLoginAttempt,
+	loginClientAddress,
+	resetLoginRateLimit,
+	startLoginAttempt
+} from './login-rate-limit';
+
+const originalConfig = { ...appConfig };
+
+afterEach(() => {
+	Object.assign(appConfig, originalConfig);
+});
 
 describe('login rate limit', () => {
 	it('rejects a second login while the same user and client are already authenticating', () => {
@@ -68,5 +80,25 @@ describe('login rate limit', () => {
 		completeLoginAttempt(success, true, 1011);
 
 		expect(startLoginAttempt('10.0.0.8', 'gmurad', 1012).allowed).toBe(true);
+	});
+});
+
+describe('loginClientAddress', () => {
+	it('ignores forwarded headers unless TRUST_PROXY is enabled', () => {
+		Object.assign(appConfig, { TRUST_PROXY: false });
+		const request = new Request('http://inventario.local/login', {
+			headers: { 'x-forwarded-for': '10.0.0.8' }
+		});
+
+		expect(loginClientAddress(request, '127.0.0.1')).toBe('127.0.0.1');
+	});
+
+	it('uses the first forwarded client address when TRUST_PROXY is enabled', () => {
+		Object.assign(appConfig, { TRUST_PROXY: true });
+		const request = new Request('http://inventario.local/login', {
+			headers: { 'x-forwarded-for': '10.0.0.8, 127.0.0.1' }
+		});
+
+		expect(loginClientAddress(request, '127.0.0.1')).toBe('10.0.0.8');
 	});
 });

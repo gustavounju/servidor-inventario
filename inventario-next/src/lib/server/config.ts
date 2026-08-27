@@ -28,6 +28,10 @@ const envSchema = z.object({
 		.string()
 		.optional()
 		.transform((value) => String(value ?? 'true').toLowerCase() !== 'false'),
+	TRUST_PROXY: z
+		.string()
+		.optional()
+		.transform((value) => String(value ?? 'false').toLowerCase() === 'true'),
 	TLS_CERT_PATH: z.string().default('../cert.pem'),
 	TLS_KEY_PATH: z.string().default('../key.pem'),
 	AUTH_SECRET: z.string().default('dev-only-secret-change-in-production')
@@ -87,7 +91,21 @@ function withLegacyAdAliases(input: EnvInput): EnvInput {
 }
 
 export function createAppConfig(input: EnvInput = {}) {
-	return envSchema.parse(withLegacyAdAliases(withLegacyMysqlAliases(input)));
+	const config = envSchema.parse(withLegacyAdAliases(withLegacyMysqlAliases(input)));
+	const isProduction = config.APP_ENV.trim().toLowerCase() === 'production';
+
+	if (
+		isProduction &&
+		(!config.AUTH_SECRET ||
+			config.AUTH_SECRET === 'dev-only-secret-change-in-production' ||
+			config.AUTH_SECRET.length < 32)
+	) {
+		throw new Error(
+			'AUTH_SECRET must be set to a non-default value of at least 32 characters in production'
+		);
+	}
+
+	return config;
 }
 
 const parentEnv = process.env.VITEST ? {} : parseEnvFile(resolve(process.cwd(), '..', '.env'));

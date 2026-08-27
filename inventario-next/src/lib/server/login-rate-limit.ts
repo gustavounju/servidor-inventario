@@ -1,4 +1,5 @@
 import { normalizeAdUsername } from './active-directory';
+import { appConfig } from './config';
 
 const WINDOW_MS = 5 * 60 * 1000;
 const LOCK_MS = 5 * 60 * 1000;
@@ -25,6 +26,23 @@ const attempts = new Map<string, LoginAttemptState>();
 
 function normalizeClient(clientAddress: string) {
 	return clientAddress.trim().toLowerCase() || 'unknown-client';
+}
+
+function firstForwardedAddress(header: string | null) {
+	return header
+		?.split(',')
+		.map((address) => address.trim())
+		.find(Boolean);
+}
+
+export function loginClientAddress(request: Request, fallbackAddress: string) {
+	if (!appConfig.TRUST_PROXY) return fallbackAddress;
+
+	return (
+		firstForwardedAddress(request.headers.get('x-forwarded-for')) ??
+		request.headers.get('x-real-ip')?.trim() ??
+		fallbackAddress
+	);
 }
 
 function rateLimitKey(clientAddress: string, username: string) {

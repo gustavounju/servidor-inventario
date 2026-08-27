@@ -1,9 +1,27 @@
-import { describe, expect, it } from 'vitest';
-import { verifyPassword, demoLogin } from './auth';
+import type { Cookies } from '@sveltejs/kit';
+import { afterEach, describe, expect, it } from 'vitest';
+import { appConfig } from './config';
+import { createSession, demoLogin, verifyPassword } from './auth';
 
 // Acceso a las funciones internas para tests (re-exportadas abajo en un bloque separado)
 // Como sign/unsign son funciones privadas del módulo, las testamos de forma indirecta
 // a través del comportamiento observable de login/session.
+
+const originalConfig = { ...appConfig };
+
+afterEach(() => {
+	Object.assign(appConfig, originalConfig);
+});
+
+function captureCookieOptions() {
+	const calls: unknown[][] = [];
+	const cookies = {
+		set: (...args: unknown[]) => calls.push(args)
+	} as unknown as Cookies;
+
+	createSession(cookies, 'gmurad');
+	return calls[0]?.[2] as { secure?: boolean } | undefined;
+}
 
 describe('verifyPassword', () => {
 	it('returns true for a matching bcrypt hash', async () => {
@@ -62,5 +80,19 @@ describe('demoLogin', () => {
 
 	it('never throws even with empty inputs', async () => {
 		await expect(demoLogin('', '')).resolves.toMatchObject({ ok: false });
+	});
+});
+
+describe('createSession', () => {
+	it('marks the session cookie as secure in production', () => {
+		Object.assign(appConfig, { APP_ENV: 'production' });
+
+		expect(captureCookieOptions()?.secure).toBe(true);
+	});
+
+	it('keeps the session cookie usable for local development', () => {
+		Object.assign(appConfig, { APP_ENV: 'local' });
+
+		expect(captureCookieOptions()?.secure).toBe(false);
 	});
 });

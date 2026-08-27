@@ -1,7 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { login, createSession } from '$lib/server/auth';
-import { completeLoginAttempt, startLoginAttempt } from '$lib/server/login-rate-limit';
+import {
+	completeLoginAttempt,
+	loginClientAddress,
+	startLoginAttempt
+} from '$lib/server/login-rate-limit';
 
 export const load: PageServerLoad = async ({ cookies, url }) => {
 	// Si ya tiene sesión, redirigir al inicio
@@ -23,7 +27,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Completá usuario y contraseña.', username });
 		}
 
-		const attempt = startLoginAttempt(getClientAddress(), username);
+		const attempt = startLoginAttempt(loginClientAddress(request, getClientAddress()), username);
 		if (!attempt.allowed) {
 			return fail(attempt.status ?? 429, {
 				error: attempt.error ?? 'Demasiados intentos. Probá de nuevo en unos minutos.',

@@ -25,6 +25,10 @@ export interface SessionUser {
 const COOKIE_NAME = 'inventario_next_session';
 const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 horas
 
+function isProduction() {
+	return appConfig.APP_ENV.trim().toLowerCase() === 'production';
+}
+
 // ─── Firma de cookie ───────────────────────────────────────────────────────────
 
 // Exportadas solo para tests
@@ -99,7 +103,7 @@ export function createSession(cookies: Cookies, username: string): void {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'strict',
-		secure: false, // true en producción con HTTPS
+		secure: isProduction(),
 		maxAge: COOKIE_MAX_AGE
 	});
 }
