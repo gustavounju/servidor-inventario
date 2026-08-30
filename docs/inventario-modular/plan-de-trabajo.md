@@ -42,15 +42,18 @@ Resultado esperado:
 
 ## Fase 2: Modelo de seguridad modular
 
+Estado: primer corte en codigo sin persistencia.
+
 Tareas:
 
-- Crear tablas de usuarios internos.
-- Crear tablas de roles.
-- Crear tablas de permisos.
-- Crear tablas de modulos.
+- Crear tablas de usuarios internos. Pendiente.
+- Crear tablas de roles. Pendiente.
+- Crear tablas de permisos. Pendiente.
+- Crear tablas de modulos. Pendiente.
 - Crear relacion usuario-rol.
 - Crear relacion rol-permiso-modulo.
-- Crear seed inicial de modulos.
+- Crear seed inicial de modulos. Primer corte completado como catalogo estable en codigo
+  expuesto por `GET /api/v1/modules`; falta persistirlo con Flyway.
 
 Resultado esperado:
 
@@ -72,13 +75,17 @@ Resultado esperado:
 
 ## Fase 4: API-first
 
+Estado: iniciada.
+
 Tareas:
 
-- Crear API versionada `/api/v1`.
+- Crear API versionada `/api/v1`. Iniciada con `/api/v1/health` y `/api/v1/modules`.
 - Crear endpoint de login.
 - Crear endpoint de usuario actual.
-- Crear endpoint de modulos permitidos.
-- Crear respuestas 401 y 403 consistentes.
+- Crear endpoint de modulos permitidos. Primer contrato de catalogo creado; falta cruzarlo
+  con usuario/roles cuando exista persistencia.
+- Crear respuestas 401 y 403 consistentes. Iniciado: `/api/v1/modules` devuelve 401 sin
+  autenticacion.
 
 Resultado esperado:
 
@@ -125,4 +132,4 @@ Tareas futuras:
 
 Crear la base local `inventario_modular`, agregar la configuracion local de datasource con
 placeholders y crear las primeras migraciones Flyway para usuarios, roles, permisos y
-modulos.
+modulos. Luego reemplazar el catalogo en memoria por lectura persistida desde MySQL.

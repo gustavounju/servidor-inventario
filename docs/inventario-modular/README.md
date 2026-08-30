@@ -46,6 +46,17 @@ El endpoint inicial responde:
 {"status":"ok","service":"inventario-modular"}
 ```
 
+Primer endpoint protegido del nucleo modular:
+
+```text
+GET /api/v1/modules
+```
+
+Devuelve el catalogo estable de modulos previstos (`EQUIPOS`, `ACTAS`, `MUEBLES`,
+`PATRIMONIO`, `STOCK`, `COMPONENTES`, `USUARIOS`, `REPORTES`, `TAREAS`). El endpoint ya
+requiere autenticacion: sin usuario responde 401; con usuario autenticado devuelve
+`{"data":[...]}`.
+
 Por ahora el arranque local excluye temporalmente DataSource, JPA y Flyway hasta configurar
 la base `inventario_modular` y las migraciones iniciales. No se conecta a produccion.
 

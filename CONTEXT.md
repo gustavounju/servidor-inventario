@@ -23,6 +23,9 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 - **URL local de red**: `http://192.168.1.8:8081/` y
   `http://192.168.1.8:8081/api/v1/health`.
 - **Primer endpoint**: `/api/v1/health` responde `{"status":"ok","service":"inventario-modular"}`.
+- **Primer endpoint protegido**: `/api/v1/modules` expone el catalogo estable de modulos
+  (`EQUIPOS`, `ACTAS`, `MUEBLES`, `PATRIMONIO`, `STOCK`, `COMPONENTES`, `USUARIOS`,
+  `REPORTES`, `TAREAS`) y responde 401 si no hay usuario autenticado.
 - **Convivencia**: el inventario viejo Flask sigue siendo el sistema operativo real. Modular
   no se conecta a producción y todavía excluye temporalmente DataSource/JPA/Flyway hasta
   crear la base local `inventario_modular` y las migraciones iniciales.
@@ -115,6 +118,7 @@ pedido explícito.
 
 ### Inventario Modular (rutas locales)
 1. **Health Modular** (`http://192.168.1.8:8081/` y `/api/v1/health`): endpoint inicial de arranque.
+2. **Catálogo de módulos** (`/api/v1/modules`): endpoint protegido con el listado base de módulos activables.
 
 ## 🔄 Flujo de Despliegue (Workflow)
 1. **Desarrollo local** en Windows (casa/oficina)
@@ -204,6 +208,10 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
   localmente en `0.0.0.0:8081` y expone `/api/v1/health`, probado con `.\mvnw.cmd test`.
   El arranque local no se conecta a producción y deja DataSource/JPA/Flyway temporalmente
   excluidos hasta crear la base `inventario_modular` y las migraciones iniciales.
+- **Agosto 2026 (Inventario Modular - Catálogo de módulos)**: Se agregó el primer contrato
+  de módulos activables en `inventario-modular/src/main/java/.../modules`. El endpoint
+  protegido `GET /api/v1/modules` devuelve el catálogo base y la suite Java verifica orden,
+  unicidad, formato de códigos y respuesta 401 para acceso anónimo.
 - **Agosto 2026 (Web Push móvil y certificados locales)**: Se reparó el flujo de notificaciones para técnicos en Android. La vista móvil ahora registra el service worker con cache-busting, muestra errores concretos de permisos/certificado/suscripción y deja públicos `/sw.js` y `/manifest.json` para que el navegador pueda instalarlos antes de autenticarse. Se agregó soporte de certificado local con CA propia mediante `tools/generate_certs.py`; el certificado que se instala en celulares es la CA pública (`inventario-local-ca.crt`), nunca la clave privada. Para que las notificaciones lleguen con el celular bloqueado, producción debe tener `ALLOW_WEB_PUSH=true`, claves VAPID configuradas y salida HTTPS permitida hacia FCM (`fcm.googleapis.com`).
 - **Agosto 2026 (Gestión de usuarios restaurada)**: Se restauró el acceso `[ USUARIOS ]` en la navegación de gestión y se agregó el permiso modular `manage_users`, disponible solo para administradores/superusuarios.
 - **Julio 2026 (Roles y Permisos Modulares - v3.1.0)**: Reestructuración y granulado del sistema de control de accesos. Se implementó una lógica de overrides de permisos a nivel de usuario en base de datos. Se protegieron rutas críticas de backend en `bp_tasks.py` y `bp_dashboard.py`. Se rediseñó el panel de usuarios para incluir edición directa de cuentas y permisos. Se resolvió la evasión del modo móvil en celulares agregando validaciones de dispositivo híbridas (User-Agent en backend y detección de Viewport/UA en cliente mediante script en `_module_switcher.html`).
