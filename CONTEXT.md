@@ -15,10 +15,14 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 
 ## 🧪 Inventario Next (Paralelo)
 - **Objetivo**: evolucionar visor, dashboard, detalles de equipo, actas, resúmenes PDF,
-  efemérides y mobile sin interrumpir producción Flask.
+  stock, efemérides y mobile sin interrumpir producción Flask.
 - **Primer módulo recomendado**: detalle de equipo + previsualización de acta, comparando
   WMI crudo, datos normalizados, patrimonio registrado, discrepancias y componentes finales
   que salen en PDF/acta.
+- **Módulos con primer flujo navegable**: dashboard inicial, equipos, detalle de equipo,
+  actas, tareas, usuarios y stock. El módulo Stock de Next vive en `/stock`, lee
+  `components` en modo lectura, clasifica disponibilidad por `status`, `lifecycle_status`,
+  asignaciones y `build_order_id`, y permite filtrar por búsqueda, estado y tipo.
 - **Convivencia**: Flask sigue siendo producción estable. Next corre en otro puerto/path
   (`http://127.0.0.1:5173` en local) y solo debe escribir en MySQL después de diseño técnico,
   revisión de seguridad y confirmación explícita.
@@ -103,6 +107,14 @@ ServidorInventario/
 6. **Tareas** (`/tasks/`): Visor y gestión de tareas técnicas
 7. **Setup** (`/setup/`): Configuración del sistema
 
+### Inventario Next (rutas locales)
+1. **Inicio Next** (`http://127.0.0.1:5173/`): tablero inicial de módulos y métricas.
+2. **Equipos Next** (`/equipos` y `/equipos/[pcName]`): búsqueda y detalle reconciliado.
+3. **Actas Next** (`/actas` y `/actas/[pcName]`): previsualización imprimible desde datos reconciliados.
+4. **Tareas Next** (`/tareas`): tablero de tareas con solicitantes enriquecidos por fuero.
+5. **Usuarios Next** (`/usuarios`): lectura unificada de usuarios locales y Active Directory.
+6. **Stock Next** (`/stock`): tablero de componentes por remito, OC, proveedor, destino y estado patrimonial.
+
 ## 🔄 Flujo de Despliegue (Workflow)
 1. **Desarrollo local** en Windows (casa/oficina)
 2. **Pruebas** con MySQL local
@@ -186,6 +198,12 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 5. **Módulo de Armado de Puestos Completos (Combos), QR Par (CPU+Monitor) y Reemplazo por Falla** (ver detalles completos en [PLAN_GESTION_PUESTOS_Y_REEMPLAZOS.md](file:///g:/unju2025/google%20gravity/ServidorInventario/PLAN_GESTION_PUESTOS_Y_REEMPLAZOS.md)).
 
 ## 🆕 Últimos Cambios (Changelog)
+- **Agosto 2026 (Inventario Next - Stock)**: Se agregó el primer flujo navegable de Stock
+  en SvelteKit (`inventario-next/src/routes/stock`). La pantalla funciona en modo demo sin
+  `.env` y, con MySQL configurado, lee la tabla `components` sin escribir datos. Incluye
+  resumen de componentes disponibles, asignados, reservados y retirados; filtros por texto,
+  estado patrimonial y tipo; y tests unitarios para la clasificación de estado en
+  `stock-board.spec.ts`.
 - **Agosto 2026 (Web Push móvil y certificados locales)**: Se reparó el flujo de notificaciones para técnicos en Android. La vista móvil ahora registra el service worker con cache-busting, muestra errores concretos de permisos/certificado/suscripción y deja públicos `/sw.js` y `/manifest.json` para que el navegador pueda instalarlos antes de autenticarse. Se agregó soporte de certificado local con CA propia mediante `tools/generate_certs.py`; el certificado que se instala en celulares es la CA pública (`inventario-local-ca.crt`), nunca la clave privada. Para que las notificaciones lleguen con el celular bloqueado, producción debe tener `ALLOW_WEB_PUSH=true`, claves VAPID configuradas y salida HTTPS permitida hacia FCM (`fcm.googleapis.com`).
 - **Agosto 2026 (Gestión de usuarios restaurada)**: Se restauró el acceso `[ USUARIOS ]` en la navegación de gestión y se agregó el permiso modular `manage_users`, disponible solo para administradores/superusuarios.
 - **Julio 2026 (Roles y Permisos Modulares - v3.1.0)**: Reestructuración y granulado del sistema de control de accesos. Se implementó una lógica de overrides de permisos a nivel de usuario en base de datos. Se protegieron rutas críticas de backend en `bp_tasks.py` y `bp_dashboard.py`. Se rediseñó el panel de usuarios para incluir edición directa de cuentas y permisos. Se resolvió la evasión del modo móvil en celulares agregando validaciones de dispositivo híbridas (User-Agent en backend y detección de Viewport/UA en cliente mediante script en `_module_switcher.html`).
