@@ -21,6 +21,34 @@ Inventario Modular se disena como una aplicacion **API-first**:
 - Cliente web administrativo solo cuando sea necesario.
 - Futura app movil consumiendo la misma API.
 
+## Estado actual
+
+El proyecto base ya existe en `inventario-modular/` y usa Java 21 con Maven Wrapper
+(`mvnw.cmd`), por lo que no depende de tener `mvn` instalado globalmente.
+
+Primer arranque local:
+
+```powershell
+cd inventario-modular
+.\mvnw.cmd spring-boot:run
+```
+
+Servidor local:
+
+```text
+http://192.168.1.8:8081/
+http://192.168.1.8:8081/api/v1/health
+```
+
+El endpoint inicial responde:
+
+```json
+{"status":"ok","service":"inventario-modular"}
+```
+
+Por ahora el arranque local excluye temporalmente DataSource, JPA y Flyway hasta configurar
+la base `inventario_modular` y las migraciones iniciales. No se conecta a produccion.
+
 ## Documentos
 
 - [Instalacion desde cero](./instalacion-desde-cero.md)

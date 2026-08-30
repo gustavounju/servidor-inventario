@@ -8,28 +8,29 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 - **Frontend**: HTML, CSS (gold.css), JavaScript
 - **Base de datos**: MySQL local (dev) / MySQL remoto (prod)
 - **Autenticación**: Sistema propio con roles, futura integración con Active Directory
-- **Proyecto paralelo (Inventario Next)**: SvelteKit 5 + TypeScript en `inventario-next/`,
-  Adapter Node, MySQL por `mysql2`/Drizzle, Active Directory por `ldapts`. Next es una
-  aplicación separada dentro del mismo repo; no reemplaza Flask todavía y empieza en modo
-  lectura (`MYSQL_READ_ONLY=true`).
+- **Inventario Modular (nuevo foco)**: proyecto Java/Spring Boot API-first en
+  `inventario-modular/`, pensado para reemplazo progresivo por módulos sin apagar el Flask
+  actual. Corre localmente en `0.0.0.0:8081` y expone `/api/v1/health`.
+- **Inventario Next**: experimento SvelteKit en `inventario-next/`. Queda pausado y no es
+  el foco activo; no debe levantarse salvo pedido explícito.
 
-## 🧪 Inventario Next (Paralelo)
-- **Objetivo**: evolucionar visor, dashboard, detalles de equipo, actas, resúmenes PDF,
-  stock, efemérides y mobile sin interrumpir producción Flask.
-- **Primer módulo recomendado**: detalle de equipo + previsualización de acta, comparando
-  WMI crudo, datos normalizados, patrimonio registrado, discrepancias y componentes finales
-  que salen en PDF/acta.
-- **Módulos con primer flujo navegable**: dashboard inicial, equipos, detalle de equipo,
-  actas, tareas, usuarios y stock. El módulo Stock de Next vive en `/stock`, lee
-  `components` en modo lectura, clasifica disponibilidad por `status`, `lifecycle_status`,
-  asignaciones y `build_order_id`, y permite filtrar por búsqueda, estado y tipo.
-- **Convivencia**: Flask sigue siendo producción estable. Next corre en otro puerto/path
-  (`http://127.0.0.1:5173` en local) y solo debe escribir en MySQL después de diseño técnico,
-  revisión de seguridad y confirmación explícita.
+## 🧪 Inventario Modular (Java, API-first)
+- **Objetivo**: construir un sistema modular nuevo en Java, limpio y API-first, manteniendo
+  Flask como producción estable hasta validar cada reemplazo.
+- **Estado actual**: proyecto base creado en `inventario-modular/` con Spring Boot 4.0.0,
+  Java 21, Maven Wrapper, Spring Web MVC, Security, Validation, JPA, LDAP, MySQL y Flyway.
+- **Arranque local**: `cd inventario-modular && .\mvnw.cmd spring-boot:run`.
+- **URL local de red**: `http://192.168.1.8:8081/` y
+  `http://192.168.1.8:8081/api/v1/health`.
+- **Primer endpoint**: `/api/v1/health` responde `{"status":"ok","service":"inventario-modular"}`.
+- **Convivencia**: el inventario viejo Flask sigue siendo el sistema operativo real. Modular
+  no se conecta a producción y todavía excluye temporalmente DataSource/JPA/Flyway hasta
+  crear la base local `inventario_modular` y las migraciones iniciales.
 - **Documentos de traspaso**:
-  - `docs/designs/inventario-next.md`
-  - `docs/decisions/ADR-001-inventario-next-paralelo.md`
-  - `docs/ANTIGRAVITY_HANDOFF_INVENTARIO_NEXT.md`
+  - `docs/inventario-modular/README.md`
+  - `docs/inventario-modular/requerimientos-sistema.md`
+  - `docs/inventario-modular/plan-de-trabajo.md`
+  - `docs/decisions/ADR-002-inventario-modular-api-first.md`
 
 ## 🏛️ Sistema Patrimonial y Gemelos Digitales (Novedad Agosto 2026)
 - **Modelo de Activos**: La verdad del sistema evoluciona de "inventario centrado en scripts" a "Gemelo Digital Patrimonial".
@@ -60,7 +61,8 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 ```
 ServidorInventario/
 ├── servidor.py              # Aplicación principal Flask
-├── inventario-next/         # Aplicación paralela SvelteKit/TypeScript
+├── inventario-modular/      # Aplicación Java/Spring Boot API-first en desarrollo
+├── inventario-next/         # Experimento SvelteKit pausado
 ├── blueprints/              # Módulos de la aplicación
 │   ├── bp_dashboard.py      # Dashboard principal
 │   ├── bp_api.py           # API endpoints
@@ -108,12 +110,11 @@ ServidorInventario/
 7. **Setup** (`/setup/`): Configuración del sistema
 
 ### Inventario Next (rutas locales)
-1. **Inicio Next** (`http://127.0.0.1:5173/`): tablero inicial de módulos y métricas.
-2. **Equipos Next** (`/equipos` y `/equipos/[pcName]`): búsqueda y detalle reconciliado.
-3. **Actas Next** (`/actas` y `/actas/[pcName]`): previsualización imprimible desde datos reconciliados.
-4. **Tareas Next** (`/tareas`): tablero de tareas con solicitantes enriquecidos por fuero.
-5. **Usuarios Next** (`/usuarios`): lectura unificada de usuarios locales y Active Directory.
-6. **Stock Next** (`/stock`): tablero de componentes por remito, OC, proveedor, destino y estado patrimonial.
+Next queda pausado/deshabilitado como foco de trabajo. No levantar `inventario-next` salvo
+pedido explícito.
+
+### Inventario Modular (rutas locales)
+1. **Health Modular** (`http://192.168.1.8:8081/` y `/api/v1/health`): endpoint inicial de arranque.
 
 ## 🔄 Flujo de Despliegue (Workflow)
 1. **Desarrollo local** en Windows (casa/oficina)
@@ -198,6 +199,11 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 5. **Módulo de Armado de Puestos Completos (Combos), QR Par (CPU+Monitor) y Reemplazo por Falla** (ver detalles completos en [PLAN_GESTION_PUESTOS_Y_REEMPLAZOS.md](file:///g:/unju2025/google%20gravity/ServidorInventario/PLAN_GESTION_PUESTOS_Y_REEMPLAZOS.md)).
 
 ## 🆕 Últimos Cambios (Changelog)
+- **Agosto 2026 (Inventario Modular - Proyecto base)**: Se creó el proyecto
+  `inventario-modular/` con Spring Boot 4.0.0, Java 21 y Maven Wrapper. El servidor corre
+  localmente en `0.0.0.0:8081` y expone `/api/v1/health`, probado con `.\mvnw.cmd test`.
+  El arranque local no se conecta a producción y deja DataSource/JPA/Flyway temporalmente
+  excluidos hasta crear la base `inventario_modular` y las migraciones iniciales.
 - **Agosto 2026 (Inventario Next - Stock)**: Se agregó el primer flujo navegable de Stock
   en SvelteKit (`inventario-next/src/routes/stock`). La pantalla funciona en modo demo sin
   `.env` y, con MySQL configurado, lee la tabla `components` sin escribir datos. Incluye

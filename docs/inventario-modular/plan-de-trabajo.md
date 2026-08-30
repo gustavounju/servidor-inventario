@@ -4,12 +4,12 @@ Plan inicial para construir Inventario Modular Java desde cero.
 
 ## Fase 0: Preparacion del entorno
 
-Estado: en curso.
+Estado: parcialmente completada.
 
 Tareas:
 
-- Instalar JDK 21 LTS.
-- Instalar Maven.
+- Instalar JDK 21 LTS. Completado: Java 21 esta en PATH.
+- Instalar Maven. Pendiente global, pero el proyecto ya incluye Maven Wrapper (`mvnw.cmd`).
 - Verificar Java y Maven en PATH.
 - Verificar MySQL local.
 - Crear base local `inventario_modular`.
@@ -20,19 +20,24 @@ Resultado esperado:
 
 ## Fase 1: Proyecto base
 
+Estado: primer corte creado.
+
 Tareas:
 
-- Crear carpeta limpia `inventario-modular`.
-- Crear proyecto Spring Boot.
-- Configurar estructura de paquetes.
+- Crear carpeta limpia `inventario-modular`. Completado.
+- Crear proyecto Spring Boot. Completado con Spring Boot 4.0.0 y Java 21.
+- Configurar estructura de paquetes. Completado con paquete base
+  `ar.gob.justicia.sanpedro.inventario`.
 - Configurar perfiles `local`, `test` y futuro `prod`.
-- Configurar conexion MySQL local.
-- Configurar Flyway.
+- Configurar conexion MySQL local. Pendiente.
+- Configurar Flyway. Pendiente; dependencia agregada, auto-config temporalmente excluida
+  hasta crear la base y migraciones.
+- Configurar puerto local `8081` y healthcheck `/api/v1/health`. Completado.
 
 Resultado esperado:
 
-- `mvn test` funciona.
-- `mvn spring-boot:run` inicia localmente.
+- `.\mvnw.cmd test` funciona.
+- `.\mvnw.cmd spring-boot:run` inicia localmente.
 - No hay dependencia con produccion.
 
 ## Fase 2: Modelo de seguridad modular
@@ -118,18 +123,6 @@ Tareas futuras:
 
 ## Proxima accion recomendada
 
-Instalar Maven con:
-
-```powershell
-choco install maven -y
-```
-
-Luego verificar:
-
-```powershell
-java -version
-mvn -version
-```
-
-Si ambos comandos funcionan, crear la base local `inventario_modular` y generar el
-proyecto Spring Boot limpio.
+Crear la base local `inventario_modular`, agregar la configuracion local de datasource con
+placeholders y crear las primeras migraciones Flyway para usuarios, roles, permisos y
+modulos.
