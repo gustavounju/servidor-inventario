@@ -22,12 +22,6 @@
 			metric: 'Solicitantes con fuero',
 			href: resolve('/tareas')
 		},
-		{
-			name: 'Stock',
-			state: 'Primer corte',
-			metric: 'Remitos, OC y estado patrimonial',
-			href: resolve('/stock')
-		},
 		{ name: 'Dashboard', state: 'Pendiente', metric: 'Lectura MySQL controlada' },
 		{
 			name: 'Usuarios',
@@ -109,7 +103,7 @@
 		<ul>
 			<li>Flask sigue como produccion estable.</li>
 			<li>Next empieza leyendo MySQL con escritura deshabilitada por configuracion.</li>
-			<li>Equipos, usuarios, tareas, stock y actas ya tienen primer flujo navegable.</li>
+			<li>Equipos, usuarios, tareas y actas ya tienen primer flujo navegable.</li>
 			<li>Active Directory, TLS y acceso movil siguen como requisitos de plataforma.</li>
 		</ul>
 	</section>
