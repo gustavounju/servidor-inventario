@@ -97,8 +97,11 @@ Estado: iniciada.
 
 Tareas:
 
-- Crear login visual. Completado como shell inicial en `/login`; falta conectar el submit
-  al modulo de autenticacion Active Directory.
+- Crear login visual. Completado en `/login`.
+- Crear login local de administrador. Completado con credenciales tomadas de entorno o
+  `.env` (`BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD`).
+- Preparar opcion de login por dominio. Iniciado; queda pendiente conectar LDAP/Active
+  Directory en la red del trabajo.
 - Crear pantalla de usuarios.
 - Crear pantalla de roles.
 - Crear pantalla de permisos por modulo.
@@ -133,7 +136,7 @@ Tareas futuras:
 
 ## Proxima accion recomendada
 
-Implementar el modulo de autenticacion: configurar LDAP/Active Directory por variables de
-entorno, crear el endpoint de login y emitir una sesion/token usable por el frontend. En
-paralelo, crear la base local `inventario_modular`, agregar datasource con placeholders y
-las primeras migraciones Flyway para usuarios, roles, permisos y modulos.
+Implementar la autenticacion de dominio: configurar LDAP/Active Directory por variables de
+entorno y conectar la opcion Dominio del login. En paralelo, crear la base local
+`inventario_modular`, agregar datasource con placeholders y las primeras migraciones
+Flyway para usuarios, roles, permisos y modulos.

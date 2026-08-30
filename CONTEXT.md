@@ -24,8 +24,9 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 - **URL local de red**: `http://192.168.1.8:8081/` y
   `http://192.168.1.8:8081/login`; health tecnico en
   `http://192.168.1.8:8081/api/v1/health`.
-- **Login inicial**: `/` redirige a `/login`; la pantalla ya existe como shell visual.
-  La autenticacion real contra Active Directory queda como siguiente modulo.
+- **Login inicial**: `/` redirige a `/login`; el modo local autentica al administrador
+  configurado por `BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD`. La opcion
+  Dominio queda preparada y pendiente de conectar con Active Directory.
 - **Primer endpoint**: `/api/v1/health` responde `{"status":"ok","service":"inventario-modular"}`.
 - **Primer endpoint protegido**: `/api/v1/modules` expone el catalogo estable de modulos
   (`EQUIPOS`, `ACTAS`, `MUEBLES`, `PATRIMONIO`, `STOCK`, `COMPONENTES`, `USUARIOS`,
@@ -122,9 +123,10 @@ Next queda pausado/deshabilitado como foco de trabajo. No levantar `inventario-n
 pedido explícito.
 
 ### Inventario Modular (rutas locales)
-1. **Login Modular** (`http://192.168.1.8:8081/` y `/login`): shell visual inicial del nuevo sistema.
+1. **Login Modular** (`http://192.168.1.8:8081/` y `/login`): login local del nuevo sistema con opcion Dominio pendiente.
 2. **Health Modular** (`/api/v1/health`): endpoint tecnico de arranque.
-3. **Catálogo de módulos** (`/api/v1/modules`): endpoint protegido con el listado base de módulos activables.
+3. **Panel Modular** (`/app`): primer panel interno con listado de modulos disponibles.
+4. **Catálogo de módulos** (`/api/v1/modules`): endpoint protegido con el listado base de módulos activables.
 
 ## 🔄 Flujo de Despliegue (Workflow)
 1. **Desarrollo local** en Windows (casa/oficina)
@@ -218,9 +220,10 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
   de módulos activables en `inventario-modular/src/main/java/.../modules`. El endpoint
   protegido `GET /api/v1/modules` devuelve el catálogo base y la suite Java verifica orden,
   unicidad, formato de códigos y respuesta 401 para acceso anónimo.
-- **Agosto 2026 (Inventario Modular - login shell)**: `/` redirige a `/login`, que muestra
-  una pantalla inicial de acceso del Inventario Modular. La autenticacion real queda
-  pendiente para el modulo Active Directory. Se documentaron procedimientos de arranque,
+- **Agosto 2026 (Inventario Modular - login local)**: `/` redirige a `/login`, que permite
+  ingresar en modo Local con el administrador configurado por entorno o `.env`. La sesion
+  habilita `/app` y permite consultar `/api/v1/modules`; la opcion Dominio queda pendiente
+  para el modulo Active Directory. Se documentaron procedimientos de arranque,
   verificacion, pruebas y push a GitHub en `docs/inventario-modular/procedimientos.md`.
 - **Agosto 2026 (Web Push móvil y certificados locales)**: Se reparó el flujo de notificaciones para técnicos en Android. La vista móvil ahora registra el service worker con cache-busting, muestra errores concretos de permisos/certificado/suscripción y deja públicos `/sw.js` y `/manifest.json` para que el navegador pueda instalarlos antes de autenticarse. Se agregó soporte de certificado local con CA propia mediante `tools/generate_certs.py`; el certificado que se instala en celulares es la CA pública (`inventario-local-ca.crt`), nunca la clave privada. Para que las notificaciones lleguen con el celular bloqueado, producción debe tener `ALLOW_WEB_PUSH=true`, claves VAPID configuradas y salida HTTPS permitida hacia FCM (`fcm.googleapis.com`).
 - **Agosto 2026 (Gestión de usuarios restaurada)**: Se restauró el acceso `[ USUARIOS ]` en la navegación de gestión y se agregó el permiso modular `manage_users`, disponible solo para administradores/superusuarios.

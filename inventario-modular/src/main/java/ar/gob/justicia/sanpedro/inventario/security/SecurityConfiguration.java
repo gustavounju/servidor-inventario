@@ -4,13 +4,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 class SecurityConfiguration {
 
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain securityFilterChain(HttpSecurity http, SessionAuthenticationFilter sessionAuthenticationFilter) throws Exception {
 		return http
 				.authorizeHttpRequests((requests) -> requests
 						.requestMatchers("/", "/login", "/api/v1/health", "/favicon.ico", "/error").permitAll()
@@ -21,6 +24,14 @@ class SecurityConfiguration {
 						.authenticationEntryPoint((request, response, authException) ->
 								response.sendError(HttpStatus.UNAUTHORIZED.value())))
 				.csrf((csrf) -> csrf.disable())
+				.addFilterBefore(sessionAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 				.build();
+	}
+
+	@Bean
+	UserDetailsService userDetailsService() {
+		return (username) -> {
+			throw new UsernameNotFoundException(username);
+		};
 	}
 }

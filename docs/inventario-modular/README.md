@@ -41,9 +41,9 @@ http://192.168.1.8:8081/login
 http://192.168.1.8:8081/api/v1/health
 ```
 
-La raiz `/` redirige a `/login`. La pantalla de login ya esta disponible como shell
-visual inicial; todavia no autentica usuarios porque el siguiente modulo pendiente es la
-integracion real con Active Directory.
+La raiz `/` redirige a `/login`. El login local ya esta operativo con el administrador
+configurado por `BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD`; la opcion Dominio
+queda visible pero pendiente de conectar cuando haya red Active Directory disponible.
 
 El endpoint tecnico de salud responde:
 
@@ -61,6 +61,14 @@ Devuelve el catalogo estable de modulos previstos (`EQUIPOS`, `ACTAS`, `MUEBLES`
 `PATRIMONIO`, `STOCK`, `COMPONENTES`, `USUARIOS`, `REPORTES`, `TAREAS`). El endpoint ya
 requiere autenticacion: sin usuario responde 401; con usuario autenticado devuelve
 `{"data":[...]}`.
+
+Entrada post-login:
+
+```text
+GET /app
+```
+
+Muestra el primer panel interno con los modulos disponibles para el administrador local.
 
 Por ahora el arranque local excluye temporalmente DataSource, JPA y Flyway hasta configurar
 la base `inventario_modular` y las migraciones iniciales. No se conecta a produccion.

@@ -64,9 +64,13 @@ Invoke-WebRequest -UseBasicParsing 'http://192.168.1.8:8081/api/v1/health' -Time
 Resultado esperado:
 
 - `/` redirige y termina mostrando la pantalla de login.
-- `/login` responde HTML con `Inventario Modular`.
+- `/login` responde HTML con `Inventario Modular`, campos de usuario/clave habilitados y
+  selector `Local` / `Dominio`.
+- El modo `Local` permite ingresar con el administrador configurado por
+  `BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD`.
 - `/api/v1/health` responde JSON con `status: ok`.
 - `/api/v1/modules` responde `401` sin autenticacion.
+- `/api/v1/modules` responde `200` si se consulta con una sesion autenticada.
 
 ## Ejecutar pruebas
 

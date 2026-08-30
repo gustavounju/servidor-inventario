@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 @Service
-class ModuleCatalogService {
+public class ModuleCatalogService {
 
 	private static final List<ModuleDefinition> INITIAL_MODULES = List.of(
 			new ModuleDefinition("EQUIPOS", "Equipos", "Inventario tecnico de PCs y puestos."),
@@ -18,7 +18,7 @@ class ModuleCatalogService {
 			new ModuleDefinition("REPORTES", "Reportes", "Consultas, exportaciones y reportes operativos."),
 			new ModuleDefinition("TAREAS", "Tareas", "Solicitudes y trabajos tecnicos."));
 
-	List<ModuleDefinition> listModules() {
+	public List<ModuleDefinition> listModules() {
 		return INITIAL_MODULES;
 	}
 }
