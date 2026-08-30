@@ -37,10 +37,15 @@ Servidor local:
 
 ```text
 http://192.168.1.8:8081/
+http://192.168.1.8:8081/login
 http://192.168.1.8:8081/api/v1/health
 ```
 
-El endpoint inicial responde:
+La raiz `/` redirige a `/login`. La pantalla de login ya esta disponible como shell
+visual inicial; todavia no autentica usuarios porque el siguiente modulo pendiente es la
+integracion real con Active Directory.
+
+El endpoint tecnico de salud responde:
 
 ```json
 {"status":"ok","service":"inventario-modular"}
@@ -65,6 +70,7 @@ la base `inventario_modular` y las migraciones iniciales. No se conecta a produc
 - [Instalacion desde cero](./instalacion-desde-cero.md)
 - [Requerimientos del sistema](./requerimientos-sistema.md)
 - [Plan de trabajo](./plan-de-trabajo.md)
+- [Procedimientos operativos](./procedimientos.md)
 - [Decision tecnica API-first y app movil](../decisions/ADR-002-inventario-modular-api-first.md)
 
 ## Alcance inicial

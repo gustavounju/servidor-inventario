@@ -93,9 +93,12 @@ Resultado esperado:
 
 ## Fase 5: Panel administrativo minimo
 
+Estado: iniciada.
+
 Tareas:
 
-- Crear login visual.
+- Crear login visual. Completado como shell inicial en `/login`; falta conectar el submit
+  al modulo de autenticacion Active Directory.
 - Crear pantalla de usuarios.
 - Crear pantalla de roles.
 - Crear pantalla de permisos por modulo.
@@ -130,6 +133,7 @@ Tareas futuras:
 
 ## Proxima accion recomendada
 
-Crear la base local `inventario_modular`, agregar la configuracion local de datasource con
-placeholders y crear las primeras migraciones Flyway para usuarios, roles, permisos y
-modulos. Luego reemplazar el catalogo en memoria por lectura persistida desde MySQL.
+Implementar el modulo de autenticacion: configurar LDAP/Active Directory por variables de
+entorno, crear el endpoint de login y emitir una sesion/token usable por el frontend. En
+paralelo, crear la base local `inventario_modular`, agregar datasource con placeholders y
+las primeras migraciones Flyway para usuarios, roles, permisos y modulos.

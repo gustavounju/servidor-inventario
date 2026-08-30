@@ -10,7 +10,8 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 - **Autenticación**: Sistema propio con roles, futura integración con Active Directory
 - **Inventario Modular (nuevo foco)**: proyecto Java/Spring Boot API-first en
   `inventario-modular/`, pensado para reemplazo progresivo por módulos sin apagar el Flask
-  actual. Corre localmente en `0.0.0.0:8081` y expone `/api/v1/health`.
+  actual. Corre localmente en `0.0.0.0:8081`, muestra el login inicial en `/login` y
+  expone `/api/v1/health`.
 - **Inventario Next**: experimento SvelteKit en `inventario-next/`. Queda pausado y no es
   el foco activo; no debe levantarse salvo pedido explícito.
 
@@ -21,7 +22,10 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
   Java 21, Maven Wrapper, Spring Web MVC, Security, Validation, JPA, LDAP, MySQL y Flyway.
 - **Arranque local**: `cd inventario-modular && .\mvnw.cmd spring-boot:run`.
 - **URL local de red**: `http://192.168.1.8:8081/` y
+  `http://192.168.1.8:8081/login`; health tecnico en
   `http://192.168.1.8:8081/api/v1/health`.
+- **Login inicial**: `/` redirige a `/login`; la pantalla ya existe como shell visual.
+  La autenticacion real contra Active Directory queda como siguiente modulo.
 - **Primer endpoint**: `/api/v1/health` responde `{"status":"ok","service":"inventario-modular"}`.
 - **Primer endpoint protegido**: `/api/v1/modules` expone el catalogo estable de modulos
   (`EQUIPOS`, `ACTAS`, `MUEBLES`, `PATRIMONIO`, `STOCK`, `COMPONENTES`, `USUARIOS`,
@@ -33,6 +37,7 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
   - `docs/inventario-modular/README.md`
   - `docs/inventario-modular/requerimientos-sistema.md`
   - `docs/inventario-modular/plan-de-trabajo.md`
+  - `docs/inventario-modular/procedimientos.md`
   - `docs/decisions/ADR-002-inventario-modular-api-first.md`
 
 ## 🏛️ Sistema Patrimonial y Gemelos Digitales (Novedad Agosto 2026)
@@ -117,8 +122,9 @@ Next queda pausado/deshabilitado como foco de trabajo. No levantar `inventario-n
 pedido explícito.
 
 ### Inventario Modular (rutas locales)
-1. **Health Modular** (`http://192.168.1.8:8081/` y `/api/v1/health`): endpoint inicial de arranque.
-2. **Catálogo de módulos** (`/api/v1/modules`): endpoint protegido con el listado base de módulos activables.
+1. **Login Modular** (`http://192.168.1.8:8081/` y `/login`): shell visual inicial del nuevo sistema.
+2. **Health Modular** (`/api/v1/health`): endpoint tecnico de arranque.
+3. **Catálogo de módulos** (`/api/v1/modules`): endpoint protegido con el listado base de módulos activables.
 
 ## 🔄 Flujo de Despliegue (Workflow)
 1. **Desarrollo local** en Windows (casa/oficina)
@@ -212,6 +218,10 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
   de módulos activables en `inventario-modular/src/main/java/.../modules`. El endpoint
   protegido `GET /api/v1/modules` devuelve el catálogo base y la suite Java verifica orden,
   unicidad, formato de códigos y respuesta 401 para acceso anónimo.
+- **Agosto 2026 (Inventario Modular - login shell)**: `/` redirige a `/login`, que muestra
+  una pantalla inicial de acceso del Inventario Modular. La autenticacion real queda
+  pendiente para el modulo Active Directory. Se documentaron procedimientos de arranque,
+  verificacion, pruebas y push a GitHub en `docs/inventario-modular/procedimientos.md`.
 - **Agosto 2026 (Web Push móvil y certificados locales)**: Se reparó el flujo de notificaciones para técnicos en Android. La vista móvil ahora registra el service worker con cache-busting, muestra errores concretos de permisos/certificado/suscripción y deja públicos `/sw.js` y `/manifest.json` para que el navegador pueda instalarlos antes de autenticarse. Se agregó soporte de certificado local con CA propia mediante `tools/generate_certs.py`; el certificado que se instala en celulares es la CA pública (`inventario-local-ca.crt`), nunca la clave privada. Para que las notificaciones lleguen con el celular bloqueado, producción debe tener `ALLOW_WEB_PUSH=true`, claves VAPID configuradas y salida HTTPS permitida hacia FCM (`fcm.googleapis.com`).
 - **Agosto 2026 (Gestión de usuarios restaurada)**: Se restauró el acceso `[ USUARIOS ]` en la navegación de gestión y se agregó el permiso modular `manage_users`, disponible solo para administradores/superusuarios.
 - **Julio 2026 (Roles y Permisos Modulares - v3.1.0)**: Reestructuración y granulado del sistema de control de accesos. Se implementó una lógica de overrides de permisos a nivel de usuario en base de datos. Se protegieron rutas críticas de backend en `bp_tasks.py` y `bp_dashboard.py`. Se rediseñó el panel de usuarios para incluir edición directa de cuentas y permisos. Se resolvió la evasión del modo móvil en celulares agregando validaciones de dispositivo híbridas (User-Agent en backend y detección de Viewport/UA en cliente mediante script en `_module_switcher.html`).

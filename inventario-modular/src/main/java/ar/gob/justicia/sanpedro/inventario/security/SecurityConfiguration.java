@@ -13,7 +13,7 @@ class SecurityConfiguration {
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		return http
 				.authorizeHttpRequests((requests) -> requests
-						.requestMatchers("/", "/api/v1/health").permitAll()
+						.requestMatchers("/", "/login", "/api/v1/health", "/favicon.ico", "/error").permitAll()
 						.anyRequest().authenticated())
 				.formLogin((form) -> form.disable())
 				.httpBasic((basic) -> basic.disable())
