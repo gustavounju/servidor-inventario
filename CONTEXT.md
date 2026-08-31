@@ -11,8 +11,6 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 - **Inventario Modular (nuevo foco)**: proyecto Java/Spring Boot API-first en
   `inventario-modular/`, pensado para reemplazo progresivo por módulos sin apagar el Flask
   actual. Corre localmente en `0.0.0.0:8081` y expone `/api/v1/health`.
-- **Inventario Next**: experimento SvelteKit en `inventario-next/`. Queda pausado y no es
-  el foco activo; no debe levantarse salvo pedido explícito.
 
 ## 🧪 Inventario Modular (Java, API-first)
 - **Objetivo**: construir un sistema modular nuevo en Java, limpio y API-first, manteniendo
@@ -24,8 +22,8 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
   `http://192.168.1.8:8081/api/v1/health`.
 - **Primer endpoint**: `/api/v1/health` responde `{"status":"ok","service":"inventario-modular"}`.
 - **Convivencia**: el inventario viejo Flask sigue siendo el sistema operativo real. Modular
-  no se conecta a producción y todavía excluye temporalmente DataSource/JPA/Flyway hasta
-  crear la base local `inventario_modular` y las migraciones iniciales.
+  ya fue levantado en producción como servicio separado para validación progresiva, con
+  MySQL remoto `10.15.0.62:3306/inventario_modular` y puerto directo `8081`.
 - **Documentos de traspaso**:
   - `docs/inventario-modular/README.md`
   - `docs/inventario-modular/requerimientos-sistema.md`
@@ -53,16 +51,18 @@ Sistema de inventario para el Departamento de Informática del Centro Judicial (
 - **Puerto**: 3306
 
 ### Producción (Centro Judicial)
-- **Host**: 10.15.2.251
-- **Usuario/Contraseña**: Por configurar
-- **Puerto**: 3306
+- **Servidor Ubuntu de aplicaciones**: 10.15.2.251
+- **MySQL remoto Inventario Modular**: 10.15.0.62
+- **Base modular**: inventario_modular
+- **Usuario modular**: inventario_modular_app
+- **Contraseña modular**: [OCULTA], ver `INVENTARIO_DB_PASSWORD` en `/etc/inventario-modular/inventario-modular.env`
+- **Puerto MySQL**: 3306
 
 ## 📁 Estructura del Proyecto
 ```
 ServidorInventario/
 ├── servidor.py              # Aplicación principal Flask
 ├── inventario-modular/      # Aplicación Java/Spring Boot API-first en desarrollo
-├── inventario-next/         # Experimento SvelteKit pausado
 ├── blueprints/              # Módulos de la aplicación
 │   ├── bp_dashboard.py      # Dashboard principal
 │   ├── bp_api.py           # API endpoints
@@ -108,10 +108,6 @@ ServidorInventario/
 5. **Mobile** (`/mobile/`): Soporte para dispositivos móviles
 6. **Tareas** (`/tasks/`): Visor y gestión de tareas técnicas
 7. **Setup** (`/setup/`): Configuración del sistema
-
-### Inventario Next (rutas locales)
-Next queda pausado/deshabilitado como foco de trabajo. No levantar `inventario-next` salvo
-pedido explícito.
 
 ### Inventario Modular (rutas locales)
 1. **Health Modular** (`http://192.168.1.8:8081/` y `/api/v1/health`): endpoint inicial de arranque.
@@ -202,9 +198,10 @@ python servidor.py (modo HTTP en puerto 8080 para móviles)
 - **Agosto 2026 (Inventario Modular - Proyecto base)**: Se creó el proyecto
   `inventario-modular/` con Spring Boot 4.0.0, Java 21 y Maven Wrapper. El servidor corre
   localmente en `0.0.0.0:8081` y expone `/api/v1/health`, probado con `.\mvnw.cmd test`.
-  El arranque local no se conecta a producción y deja DataSource/JPA/Flyway temporalmente
-  excluidos hasta crear la base `inventario_modular` y las migraciones iniciales.
+  El entorno casa/desarrollo usa MySQL local y producción usa MySQL remoto mediante
+  variables de systemd.
 - **Agosto 2026 (Incidente de deploy Inventario Modular en producción)**: Se documentó el runbook correcto para actualizar `/opt/inventario-modular` desde GitLab, diferenciándolo explícitamente del Flask legado en `/opt/inventario`. Producción modular usa el servicio `inventario-modular.service`, Java 21, repo `git@gitlab.com:gustavoeliasm/inventario-modular.git`, rama `primeros-pasos` y base MySQL `inventario_modular` en `10.15.0.62` con usuario de aplicación `inventario_modular_app`. El backup debe usar las credenciales del `EnvironmentFile` `/etc/inventario-modular/inventario-modular.env` y `mysqldump --single-transaction --skip-lock-tables --no-tablespaces` porque el usuario de aplicación no tiene privilegios `PROCESS` ni `LOCK TABLES`. También se registró el desajuste de variables entre `INVENTARIO_DB_PASSWORD` y la propiedad esperada por `DataSourceConfig.java` (`inventario.datasource.primary.password`), que en systemd debe exponerse como `INVENTARIO_DATASOURCE_PRIMARY_PASSWORD` para evitar `using password: NO`. Pendiente funcional: la administración modular debe incorporar un buscador de usuarios de dominio para autorizar usuarios AD y asignarles módulos sin cargar un listado completo. Ver `docs/inventario-modular/actualizacion-produccion-incidente-2026-08-31.md`.
+- **Agosto 2026 (Retiro definitivo del experimento frontend paralelo)**: Se eliminó el subproyecto frontend experimental y su documentación asociada. A partir de este punto, el foco único de modernización es `inventario-modular` Java/Spring Boot.
 - **Agosto 2026 (Web Push móvil y certificados locales)**: Se reparó el flujo de notificaciones para técnicos en Android. La vista móvil ahora registra el service worker con cache-busting, muestra errores concretos de permisos/certificado/suscripción y deja públicos `/sw.js` y `/manifest.json` para que el navegador pueda instalarlos antes de autenticarse. Se agregó soporte de certificado local con CA propia mediante `tools/generate_certs.py`; el certificado que se instala en celulares es la CA pública (`inventario-local-ca.crt`), nunca la clave privada. Para que las notificaciones lleguen con el celular bloqueado, producción debe tener `ALLOW_WEB_PUSH=true`, claves VAPID configuradas y salida HTTPS permitida hacia FCM (`fcm.googleapis.com`).
 - **Agosto 2026 (Gestión de usuarios restaurada)**: Se restauró el acceso `[ USUARIOS ]` en la navegación de gestión y se agregó el permiso modular `manage_users`, disponible solo para administradores/superusuarios.
 - **Julio 2026 (Roles y Permisos Modulares - v3.1.0)**: Reestructuración y granulado del sistema de control de accesos. Se implementó una lógica de overrides de permisos a nivel de usuario en base de datos. Se protegieron rutas críticas de backend en `bp_tasks.py` y `bp_dashboard.py`. Se rediseñó el panel de usuarios para incluir edición directa de cuentas y permisos. Se resolvió la evasión del modo móvil en celulares agregando validaciones de dispositivo híbridas (User-Agent en backend y detección de Viewport/UA en cliente mediante script en `_module_switcher.html`).

@@ -6,7 +6,7 @@ Informatica del Centro Judicial San Pedro.
 ## Objetivo
 
 Crear un sistema nuevo, limpio y modular en Java, sin arrastrar codigo heredado del
-inventario original ni del experimento Inventario Next. El sistema debe conservar la
+inventario original ni de experimentos frontend descartados. El sistema debe conservar la
 logica operativa que si funciona hoy, pero con una arquitectura preparada para crecer por
 modulos y para exponer una futura app movil sin rehacer el backend.
 

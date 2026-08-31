@@ -2,9 +2,9 @@
 
 ## Dolor real
 
-La migracion experimental a Inventario Next no resolvio el problema principal de
-autenticacion con Active Directory y genero friccion operativa con administradores de base
-de datos y servidores. El sistema original sigue funcionando para flujos importantes como
+La migracion experimental de frontend no resolvio el problema principal de autenticacion
+con Active Directory y genero friccion operativa con administradores de base de datos y
+servidores. El sistema original sigue funcionando para flujos importantes como
 equipos, actas y OVMelos, pero arrastra deuda tecnica y no ofrece una base modular clara
 para crecer hacia muebles, patrimonio, componentes, stock, usuarios y reportes.
 

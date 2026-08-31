@@ -14,10 +14,10 @@ El inventario original sigue funcionando para flujos importantes como equipos, a
 operaciones tecnicas. Sin embargo, tiene deuda tecnica y no ofrece una arquitectura modular
 limpia para crecer hacia muebles, patrimonio, componentes, stock, usuarios y reportes.
 
-El experimento Inventario Next modernizo parte del stack, pero no resolvio de forma
-confiable la autenticacion con Active Directory y genero friccion operativa. El nuevo
-sistema debe construirse desde cero en Java, alineado con la formacion universitaria del
-responsable y con tecnologias defendibles en un entorno institucional.
+El intento previo de modernizar el frontend no resolvio de forma confiable la autenticacion
+con Active Directory y genero friccion operativa. El nuevo sistema debe construirse desde
+cero en Java, alineado con la formacion universitaria del responsable y con tecnologias
+defendibles en un entorno institucional.
 
 Existe ademas un requerimiento futuro importante: tecnicos y usuarios operativos podrian
 usar una app movil. La arquitectura no debe obligar a rehacer el backend cuando llegue esa
@@ -103,4 +103,6 @@ Decision: aceptada.
 - Usar Spring Security para autenticacion/autorizacion.
 - Integrar Active Directory mediante LDAP.
 - No guardar claves de dominio.
-- No conectar con produccion en la primera etapa.
+- En desarrollo/casa, usar MySQL local `inventario_modular`.
+- En produccion, usar MySQL remoto `10.15.0.62:3306/inventario_modular` mediante el
+  `EnvironmentFile` de systemd, sin versionar secretos.
