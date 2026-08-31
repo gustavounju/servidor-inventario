@@ -22,6 +22,19 @@ stock y tareas. Corre en producción real, en infraestructura del Poder Judicial
   (que todavía tiene el boilerplate default de GitLab). Cualquier skill que actualice
   documentación debe mantener `CONTEXT.md` al día, no solo el README.
 
+## Nota crítica: Inventario Modular en producción
+
+Hay dos aplicaciones distintas en el Ubuntu de producción. No mezclarlas:
+
+- Flask legado: `/opt/inventario`, repo `servidorinventario.git`, servicio `inventario.service`.
+- Java/Spring modular: `/opt/inventario-modular`, repo `inventario-modular.git`, servicio `inventario-modular.service`, puerto `8081`.
+
+Si el usuario pide trabajar sobre `inventario-modular`, leer antes:
+
+- `docs/inventario-modular/actualizacion-produccion-incidente-2026-08-31.md`
+
+Dato operativo confirmado del modular: la app corre en `10.15.2.251`, pero la base MySQL esta en `10.15.0.62`, base `inventario_modular`, usuario `inventario_modular_app`. La clave no se versiona; vive en `/etc/inventario-modular/inventario-modular.env`.
+
 ## Reglas que SIEMPRE aplican (no negociables)
 
 1. **Nunca generes ni commitees secretos reales.** `.env.example` debe quedar siempre con
@@ -29,8 +42,8 @@ stock y tareas. Corre en producción real, en infraestructura del Poder Judicial
    archivo que no sea `.env` o `.gitignore`'d, tratalo como un hallazgo crítico de seguridad,
    no como un detalle de estilo.
 2. **Esto es producción judicial real, no un proyecto de juguete.** Cualquier comando que
-   pueda afectar la base de datos remota (host real confirmado: `10.15.2.251`, base
-   `inventario_prod`), borrar backups, tocar
+   pueda afectar una base de datos remota (Flask legado: confirmar contra `.env`; modular:
+   host `10.15.0.62`, base `inventario_modular`), borrar backups, tocar
    `deployment/`, `nginx_inventario.conf`, `inventario.service`, o los scripts de deploy
    (`deploy_ubuntu.sh`, `update_server.sh/.bat`) requiere confirmación explícita antes de
    ejecutarse. Ver los skills `/guard` y `/deploy`.
