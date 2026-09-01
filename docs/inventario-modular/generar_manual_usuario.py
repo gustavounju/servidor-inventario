@@ -60,6 +60,20 @@ def styles():
             spaceBefore=8,
             spaceAfter=5,
         ),
+        "case": ParagraphStyle(
+            "case",
+            parent=base["BodyText"],
+            fontName="Helvetica-Bold",
+            fontSize=10.5,
+            leading=14,
+            textColor=colors.HexColor("#23405f"),
+            backColor=colors.HexColor("#eef5fb"),
+            borderColor=colors.HexColor("#b8cadc"),
+            borderWidth=0.5,
+            borderPadding=6,
+            spaceBefore=5,
+            spaceAfter=7,
+        ),
         "body": ParagraphStyle(
             "body",
             parent=base["BodyText"],
@@ -77,6 +91,14 @@ def styles():
             fontSize=8.5,
             leading=12,
             textColor=colors.HexColor("#526475"),
+        ),
+        "table_header": ParagraphStyle(
+            "table_header",
+            parent=base["BodyText"],
+            fontName="Helvetica-Bold",
+            fontSize=8.5,
+            leading=12,
+            textColor=colors.white,
         ),
         "code": ParagraphStyle(
             "code",
@@ -131,6 +153,25 @@ def info_table(rows):
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("LEFTPADDING", (0, 0), (-1, -1), 7),
         ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    return table
+
+
+def workflow_table(rows):
+    table = Table(rows, colWidths=[1.2 * cm, 4.2 * cm, 10.1 * cm], repeatRows=1)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#23405f")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#ffffff")),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTNAME", (0, 1), (0, -1), "Helvetica"),
+        ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
+        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#f6f8fa")),
+        ("GRID", (0, 0), (-1, -1), 0.45, colors.HexColor("#d9e0e7")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
         ("TOPPADDING", (0, 0), (-1, -1), 6),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
@@ -192,7 +233,44 @@ def build():
         p("El script de inventario es el camino ideal para PCs reales porque captura informacion tecnica automaticamente. La carga manual queda para completar datos, corregir ubicacion o activar/desactivar equipos."),
     ])
 
-    story += section("3. Alta de usuarios", [
+    story += section("3. Caso de estudio: trabajar con un equipo", [
+        p("Caso: Mesa de Entradas informa que la PC <b>PC-INF-001</b> quedo lenta y se planifica instalar un SSD de 480GB y confirmar la memoria instalada.", "case"),
+        p("Objetivo operativo: dejar trazabilidad completa desde la busqueda del equipo hasta la evidencia exportable, sin depender de notas sueltas."),
+        workflow_table([
+            [p("Paso", "table_header"), p("Pantalla", "table_header"), p("Accion esperada", "table_header")],
+            [p("1", "small"), p("/admin/equipos", "small"), p("Buscar <b>PC-INF-001</b>. Si no aparece, revisar si llego por script o cargar el alta manual minima.", "small")],
+            [p("2", "small"), p("/admin/equipos/{id}", "small"), p("Abrir el detalle y confirmar nombre, ultimo usuario, fuero, IP, sistema operativo, RAM, discos y perifericos.", "small")],
+            [p("3", "small"), p("/admin/stock", "small"), p("Verificar que exista el SSD disponible. Si es nuevo, cargarlo con tipo DISCO, marca, modelo, serial, capacidad y ubicacion.", "small")],
+            [p("4", "small"), p("/admin/ordenes-armado", "small"), p("Crear una orden para PC-INF-001 con descripcion clara: instalar SSD 480GB y revisar RAM.", "small")],
+            [p("5", "small"), p("/admin/ordenes-armado", "small"), p("Agregar el SSD como componente esperado. Si sale realmente del deposito, confirmar salida desde la orden.", "small")],
+            [p("6", "small"), p("/login", "small"), p("Copiar el comando PowerShell del script, ejecutarlo en la PC y esperar que reporte al endpoint de inventario.", "small")],
+            [p("7", "small"), p("/admin/equipos/{id}", "small"), p("Volver al detalle del equipo y comparar componentes esperados contra detectados en el gemelo digital.", "small")],
+            [p("8", "small"), p("/admin/dashboard-diferencias", "small"), p("Filtrar por equipo o por estado. Si aparece FALTA, SOBRA o REVISAR, abrir el equipo y corregir la informacion.", "small")],
+            [p("9", "small"), p("/admin/tareas", "small"), p("Crear una tarea tecnica si queda trabajo pendiente, por ejemplo clonar disco, cambiar cable SATA o validar rendimiento.", "small")],
+            [p("10", "small"), p("/admin/actas", "small"), p("Emitir acta de entrega o intervencion cuando el equipo vuelva al usuario o quede formalmente intervenido.", "small")],
+        ]),
+        Spacer(1, 7),
+        p("Criterio para interpretar diferencias:"),
+        info_table([
+            [p("Resultado", "small"), p("Decision operativa", "small")],
+            [p("COINCIDE", "small"), p("El componente esperado fue detectado. Puede cerrarse la revision de esa pieza.", "small")],
+            [p("FALTA", "small"), p("La orden esperaba la pieza, pero el reporte no la ve. Revisar instalacion fisica, serial o si el script corrio antes del cambio.", "small")],
+            [p("SOBRA", "small"), p("La PC detecta una pieza no prevista. Registrar si pertenece al equipo o si debe corregirse stock/patrimonio.", "small")],
+            [p("REVISAR", "small"), p("Hay coincidencia parcial. Confirmar serial, modelo o capacidad antes de darla por correcta.", "small")],
+        ]),
+        Spacer(1, 7),
+        p("Evidencia para cerrar el caso:"),
+        *bullets([
+            "Descargar CSV del dashboard de diferencias filtrado por PC-INF-001.",
+            "Consultar auditoria filtrando por usuario, modulo STOCK, ORDENES_ARMADO, COMPONENTES o ACTAS segun el cambio que se quiere revisar.",
+            "Descargar CSV de auditoria si se necesita adjuntar trazabilidad a un informe interno.",
+            "Guardar el numero de acta o tarea asociada en las observaciones del equipo cuando corresponda.",
+        ]),
+        p("Resultado esperado: el equipo queda actualizado, la salida de stock queda registrada, las diferencias quedan resueltas o justificadas, y la intervencion se puede reconstruir desde auditoria, tareas y actas."),
+        PageBreak(),
+    ])
+
+    story += section("4. Alta de usuarios", [
         p("Inventario Modular separa autenticacion y autorizacion: Active Directory valida la identidad, pero MySQL decide que modulos puede usar cada persona."),
         p("<b>Ruta:</b> /admin/usuarios"),
         p("Hay dos tipos de usuario:"),
@@ -218,7 +296,7 @@ def build():
         ]),
     ])
 
-    story += section("4. Stock y ordenes de armado", [
+    story += section("5. Stock y ordenes de armado", [
         p("El circuito de ordenes sirve para planificar armado o mejora de un equipo. Trabaja junto con Stock y el gemelo digital."),
         p("<b>Rutas:</b> /admin/stock y /admin/ordenes-armado"),
         p("Conceptos principales:"),
@@ -242,7 +320,7 @@ def build():
         ]),
     ])
 
-    story += section("5. Que significa Diferencias", [
+    story += section("6. Que significa Diferencias", [
         p("<b>Diferencias</b> es el tablero que compara lo esperado contra lo detectado en el gemelo digital del equipo."),
         p("<b>Ruta:</b> /admin/dashboard-diferencias"),
         p("Sirve para responder rapido: que falta, que sobra, que coincide y que requiere revision."),
@@ -254,10 +332,10 @@ def build():
             [p("COINCIDE", "small"), p("Lo esperado y lo detectado coinciden segun tipo y datos fuertes.", "small")],
         ]),
         Spacer(1, 7),
-        p("Uso diario: filtrar por estado, equipo o fuero; abrir el equipo afectado; revisar el detalle y corregir el dato o cerrar la accion tecnica correspondiente."),
+        p("Uso diario: filtrar por estado, equipo o fuero; abrir el equipo afectado; revisar el detalle y corregir el dato o cerrar la accion tecnica correspondiente. La vista tambien puede exportarse como CSV desde el boton de la pantalla."),
     ])
 
-    story += section("6. Tareas tecnicas", [
+    story += section("7. Tareas tecnicas", [
         p("El modulo <b>Tareas</b> registra trabajo operativo del equipo de Informatica. Puede asociarse a una PC o quedar como tarea general."),
         p("<b>Ruta:</b> /admin/tareas"),
         p("Proceso de uso:"),
@@ -272,7 +350,7 @@ def build():
         p("Las tareas ayudan a no perder seguimientos que antes quedaban en mensajes, memoria personal o papel suelto."),
     ])
 
-    story += section("7. Muebles, patrimonio y reportes", [
+    story += section("8. Muebles, patrimonio y reportes", [
         p("<b>Muebles</b> registra mobiliario fisico: escritorios, sillas, mesas, racks y otros bienes de oficina."),
         p("<b>Ruta:</b> /admin/muebles"),
         p("<b>Patrimonio</b> registra bienes con numero patrimonial, custodio, ubicacion y relacion opcional con equipos."),
@@ -283,10 +361,11 @@ def build():
             "En Muebles, buscar antes de cargar para evitar codigos repetidos.",
             "En Patrimonio, usar el numero patrimonial como identificador principal.",
             "En Reportes, descargar CSV solo si el usuario tiene permiso REPORTES:EXPORTAR.",
+            "En Auditoria, usar filtros por usuario, modulo y accion para reconstruir quien hizo cada cambio.",
         ]),
     ])
 
-    story += section("8. Reglas practicas de seguridad", [
+    story += section("9. Reglas practicas de seguridad", [
         *bullets([
             "Cada persona debe usar su propio usuario.",
             "No compartir claves locales temporales.",
@@ -296,7 +375,7 @@ def build():
         ]),
     ])
 
-    story += section("9. Comandos Ubuntu por PuTTY", [
+    story += section("10. Comandos Ubuntu por PuTTY", [
         p("Actualizar despues de que GitLab tenga la rama principal al dia:"),
         p("""cd /opt/inventario-modular
 git fetch origin
