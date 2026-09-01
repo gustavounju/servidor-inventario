@@ -92,10 +92,48 @@ class ActaControllerTests {
 	}
 
 	@Test
+	void sugiereYCreaNumeroAutomaticoDeActa() throws Exception {
+		String crearSinNumero = """
+				{
+				  "tipo": "ENTREGA",
+				  "equipoId": 1,
+				  "fechaEmision": "2026-09-01",
+				  "destinatario": "Informatica",
+				  "responsableEntrega": "admin.local",
+				  "responsableRecepcion": "soporte",
+				  "detalle": "Intervencion tecnica con numeracion automatica.",
+				  "estado": "BORRADOR",
+				  "activo": true
+				}
+				""";
+
+		mockMvc.perform(get("/api/v1/actas/proximo-numero")
+				.param("fechaEmision", "2026-09-01")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.numero").value("ACT-2026-0001"));
+
+		mockMvc.perform(post("/api/v1/actas")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(crearSinNumero))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.numero").value("ACT-2026-0001"));
+
+		mockMvc.perform(get("/api/v1/actas/proximo-numero")
+				.param("fechaEmision", "2026-09-01")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.numero").value("ACT-2026-0002"));
+	}
+
+	@Test
 	void muestraPantallaDeActas() throws Exception {
 		mockMvc.perform(get("/admin/actas").with(user(adminLocal())))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("Actas registradas")))
+			.andExpect(content().string(containsString("ACT-2026-0001")))
 			.andExpect(content().string(containsString("ACT-SEED-001")));
 	}
 

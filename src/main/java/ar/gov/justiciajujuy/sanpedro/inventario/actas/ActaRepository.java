@@ -11,6 +11,8 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
 
 	Optional<Acta> findByNumeroIgnoreCase(String numero);
 
+	List<Acta> findTop20ByNumeroStartingWithOrderByNumeroDesc(String prefijo);
+
 	@Query("""
 			SELECT a
 			FROM Acta a

@@ -53,7 +53,7 @@ public class ActaPageController {
 			@RequestParam(required = false) EstadoActa estado,
 			@RequestParam(required = false) String creado) {
 		exigirPermiso(userDetails, PERMISO_VER);
-		prepararModelo(model, userDetails, new ActaForm(), query, tipo, estado);
+		prepararModelo(model, userDetails, ActaForm.nueva(actaService.proximoNumero(LocalDate.now())), query, tipo, estado);
 		model.addAttribute("creado", "1".equals(creado));
 		return "admin/actas";
 	}
@@ -114,7 +114,6 @@ public class ActaPageController {
 
 	public static class ActaForm {
 
-		@NotBlank
 		@Size(max = 80)
 		private String numero;
 
@@ -146,6 +145,12 @@ public class ActaPageController {
 		private String observaciones;
 
 		private boolean activo = true;
+
+		static ActaForm nueva(String numeroSugerido) {
+			ActaForm form = new ActaForm();
+			form.setNumero(numeroSugerido);
+			return form;
+		}
 
 		GuardarActaCommand toCommand() {
 			return new GuardarActaCommand(numero, tipo, equipoId, fechaEmision, destinatario, responsableEntrega,

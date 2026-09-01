@@ -56,6 +56,13 @@ public class ActaController {
 		return actaService.buscar(query, tipo, estado);
 	}
 
+	@GetMapping("/proximo-numero")
+	public ProximoNumeroActa proximoNumero(@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam(required = false) LocalDate fechaEmision) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		return new ProximoNumeroActa(actaService.proximoNumero(fechaEmision));
+	}
+
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public ActaDetalle crear(@AuthenticationPrincipal UserDetails userDetails,
@@ -93,7 +100,7 @@ public class ActaController {
 	}
 
 	public record GuardarActaRequest(
-			@NotBlank @Size(max = 80) String numero,
+			@Size(max = 80) String numero,
 			TipoActa tipo,
 			Long equipoId,
 			LocalDate fechaEmision,
@@ -109,5 +116,8 @@ public class ActaController {
 			return new GuardarActaCommand(numero, tipo, equipoId, fechaEmision, destinatario, responsableEntrega,
 					responsableRecepcion, detalle, estado, observaciones, activo);
 		}
+	}
+
+	public record ProximoNumeroActa(String numero) {
 	}
 }

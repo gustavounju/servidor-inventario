@@ -2,6 +2,7 @@ package ar.gov.justiciajujuy.sanpedro.inventario.actas;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.auditoria.AuditoriaService;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.Equipo;
@@ -31,16 +32,24 @@ public class ActaService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public String proximoNumero(LocalDate fechaEmision) {
+		return generarNumeroDisponible(fechaEmision == null ? LocalDate.now() : fechaEmision);
+	}
+
 	@Transactional
 	public ActaDetalle crear(GuardarActaCommand command) {
-		String numero = textoRequerido(command.numero(), "numero");
+		String numero = textoOpcional(command.numero());
+		if (numero == null) {
+			numero = generarNumeroDisponible(command.fechaEmision() == null ? LocalDate.now() : command.fechaEmision());
+		}
 		exigirNumeroDisponible(numero, null);
 		Acta acta = new Acta(
 				numero,
 				command.tipo() == null ? TipoActa.ENTREGA : command.tipo(),
 				textoRequerido(command.destinatario(), "destinatario"),
 				textoRequerido(command.detalle(), "detalle"));
-		aplicar(acta, command);
+		aplicar(acta, command, numero);
 		Acta guardada = actaRepository.save(acta);
 		auditoriaService.registrar("ACTAS", "CREAR", "Acta", guardada.getId(),
 				"Acta " + guardada.getNumero() + " creada.");
@@ -51,7 +60,7 @@ public class ActaService {
 	public ActaDetalle actualizar(Long id, GuardarActaCommand command) {
 		Acta acta = actaRepository.findById(id).orElseThrow(() -> new ActaNoEncontradaException(id));
 		exigirNumeroDisponible(textoRequerido(command.numero(), "numero"), id);
-		aplicar(acta, command);
+		aplicar(acta, command, textoRequerido(command.numero(), "numero"));
 		Acta guardada = actaRepository.save(acta);
 		auditoriaService.registrar("ACTAS", "ACTUALIZAR", "Acta", guardada.getId(),
 				"Acta " + guardada.getNumero() + " actualizada.");
@@ -62,9 +71,9 @@ public class ActaService {
 		return actaRepository.count();
 	}
 
-	private void aplicar(Acta acta, GuardarActaCommand command) {
+	private void aplicar(Acta acta, GuardarActaCommand command, String numero) {
 		acta.actualizar(
-				textoRequerido(command.numero(), "numero"),
+				numero,
 				command.tipo() == null ? TipoActa.ENTREGA : command.tipo(),
 				equipoOpcional(command.equipoId()),
 				command.fechaEmision(),
@@ -119,6 +128,32 @@ public class ActaService {
 				.ifPresent(acta -> {
 					throw new ActaDuplicadaException(numero);
 				});
+	}
+
+	private String generarNumeroDisponible(LocalDate fechaEmision) {
+		String prefijo = "ACT-" + fechaEmision.getYear() + "-";
+		int siguiente = actaRepository.findTop20ByNumeroStartingWithOrderByNumeroDesc(prefijo).stream()
+				.map(Acta::getNumero)
+				.map(numero -> numero.substring(prefijo.length()))
+				.map(this::numeroEntero)
+				.flatMap(Optional::stream)
+				.max(Integer::compareTo)
+				.orElse(0) + 1;
+		String candidato = prefijo + String.format("%04d", siguiente);
+		while (actaRepository.findByNumeroIgnoreCase(candidato).isPresent()) {
+			siguiente++;
+			candidato = prefijo + String.format("%04d", siguiente);
+		}
+		return candidato;
+	}
+
+	private Optional<Integer> numeroEntero(String valor) {
+		try {
+			return Optional.of(Integer.parseInt(valor));
+		}
+		catch (NumberFormatException ex) {
+			return Optional.empty();
+		}
 	}
 
 	public record GuardarActaCommand(String numero, TipoActa tipo, Long equipoId, LocalDate fechaEmision,

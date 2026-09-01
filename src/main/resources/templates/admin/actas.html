@@ -183,7 +183,7 @@
 					<div class="form-grid">
 						<label>
 							<span>Numero</span>
-							<input th:field="*{numero}" maxlength="80" required>
+							<input th:field="*{numero}" maxlength="80" placeholder="Se genera automaticamente">
 							<small class="field-error" th:if="${#fields.hasErrors('numero')}" th:errors="*{numero}">Error</small>
 						</label>
 						<label>

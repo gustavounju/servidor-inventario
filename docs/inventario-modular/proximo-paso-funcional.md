@@ -279,6 +279,8 @@ Primera version implementada:
 - Auditoria al crear y actualizar.
 - Conteos en Reportes.
 - Exportaciones CSV de actas y ubicaciones.
+- Numeracion automatica de actas por anio con formato `ACT-AAAA-0001`.
+- API de sugerencia en `/api/v1/actas/proximo-numero`.
 - Respuestas `409 Conflict` para duplicados de muebles, patrimonio, actas y ubicaciones.
 - Tests de API, pantalla, permisos, menu y reportes.
 
@@ -306,7 +308,7 @@ Pendiente siguiente:
 
 - Generar PDF/impresion formal de cada acta.
 - Usar ubicaciones como selector en equipos, muebles, patrimonio y stock.
-- Numeracion automatica de actas.
+- Evaluar numeracion de actas por dependencia si el circuito administrativo lo requiere.
 - Reportes por ubicacion/fuero.
 
 ## No comenzar todavia por

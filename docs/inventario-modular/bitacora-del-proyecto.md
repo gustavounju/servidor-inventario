@@ -2173,6 +2173,8 @@ Al cierre de esta bitacora, Inventario Modular cuenta con:
 - Modulo `ACTAS`.
 - Pantalla `/admin/actas`.
 - API de actas en `/api/v1/actas`.
+- Sugerencia de proximo numero de acta en `/api/v1/actas/proximo-numero`.
+- Numeracion automatica de actas con formato `ACT-AAAA-0001`.
 - Respuesta `409 Conflict` para numero de acta duplicado.
 - Exportacion CSV de actas en `/api/v1/reportes/actas.csv`.
 - Modulo `UBICACIONES`.
@@ -2224,7 +2226,7 @@ Pendientes de muebles, patrimonio y reportes:
 Pendientes de actas y ubicaciones:
 
 - Generar PDF/impresion formal de actas.
-- Numeracion automatica de actas por anio o dependencia.
+- Evaluar numeracion de actas por dependencia si el circuito administrativo lo requiere.
 - Usar ubicaciones como selector en equipos, muebles, patrimonio y stock.
 - Reportes por ubicacion/fuero.
 

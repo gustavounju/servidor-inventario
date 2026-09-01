@@ -12,6 +12,7 @@ recepciones, devoluciones, traslados, bajas u otras actuaciones internas.
 
 ```text
 GET  /api/v1/actas
+GET  /api/v1/actas/proximo-numero
 POST /api/v1/actas
 PUT  /api/v1/actas/{id}
 ```
@@ -24,6 +25,9 @@ PUT  /api/v1/actas/{id}
 
 - Filtros por texto, tipo y estado.
 - Alta y edicion desde pantalla si el usuario tiene `ACTAS:EDITAR`.
+- Numeracion automatica por anio con formato `ACT-AAAA-0001` cuando se crea un acta sin
+  numero manual.
+- Sugerencia de proximo numero en pantalla y API.
 - Asociacion opcional a un equipo existente.
 - Auditoria al crear y actualizar.
 - CSV desde Reportes:
@@ -54,6 +58,6 @@ OTRA
 ## Pendientes
 
 - Generar PDF/impresion formal de cada acta.
-- Numeracion automatica por anio o dependencia.
+- Evaluar numeracion por dependencia si el circuito administrativo lo requiere.
 - Adjuntos y firmas.
 - Vincular actas con bienes patrimoniales y componentes, no solo con equipos.
