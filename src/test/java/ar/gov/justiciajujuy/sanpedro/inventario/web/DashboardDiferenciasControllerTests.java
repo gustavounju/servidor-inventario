@@ -66,6 +66,19 @@ class DashboardDiferenciasControllerTests {
 	}
 
 	@Test
+	void exportaDiferenciasFiltradasComoCsv() throws Exception {
+		mockMvc.perform(get("/api/v1/gemelo-digital/dashboard-diferencias.csv")
+				.param("estado", "FALTA")
+				.param("equipo", "inf")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("equipo,fuero,tipo,resultado,esperado,detectado,observacion")))
+			.andExpect(content().string(containsString("PC-INF-001")))
+			.andExpect(content().string(containsString("FALTA")))
+			.andExpect(content().string(not(containsString("SOBRA"))));
+	}
+
+	@Test
 	void muestraPantallaDeDiferenciasConAccesoAlEquipo() throws Exception {
 		mockMvc.perform(get("/admin/dashboard-diferencias").with(user(adminLocal())))
 			.andExpect(status().isOk())
@@ -74,6 +87,7 @@ class DashboardDiferenciasControllerTests {
 			.andExpect(content().string(containsString("name=\"equipo\"")))
 			.andExpect(content().string(containsString("name=\"fuero\"")))
 			.andExpect(content().string(containsString("name=\"estado\"")))
+			.andExpect(content().string(containsString("/api/v1/gemelo-digital/dashboard-diferencias.csv")))
 			.andExpect(content().string(containsString("PC-INF-001")))
 			.andExpect(content().string(containsString("href=\"/admin/equipos/1\"")));
 	}

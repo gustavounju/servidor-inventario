@@ -66,6 +66,22 @@ class AuditoriaControllerTests {
 			.andExpect(jsonPath("$[0].modulo").value("STOCK"))
 			.andExpect(jsonPath("$[0].accion").value("CREAR"))
 			.andExpect(jsonPath("$[0].entidadTipo").value("StockComponente"));
+
+		mockMvc.perform(get("/api/v1/auditoria/eventos")
+				.param("usuario", "admin")
+				.param("modulo", "STOCK")
+				.param("accion", "CREAR")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$", hasSize(1)))
+			.andExpect(jsonPath("$[0].modulo").value("STOCK"));
+
+		mockMvc.perform(get("/api/v1/auditoria/eventos.csv")
+				.param("modulo", "STOCK")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(org.hamcrest.Matchers.containsString("id,fecha,usuario,modulo,accion,entidadTipo,entidadId,detalle")))
+			.andExpect(content().string(org.hamcrest.Matchers.containsString("admin.local,STOCK,CREAR,StockComponente")));
 	}
 
 	@Test
@@ -73,7 +89,11 @@ class AuditoriaControllerTests {
 		mockMvc.perform(get("/admin/auditoria").with(user(adminLocal())))
 			.andExpect(status().isOk())
 			.andExpect(view().name("admin/auditoria"))
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("Eventos recientes")));
+			.andExpect(content().string(org.hamcrest.Matchers.containsString("Eventos recientes")))
+			.andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"usuario\"")))
+			.andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"modulo\"")))
+			.andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"accion\"")))
+			.andExpect(content().string(org.hamcrest.Matchers.containsString("/api/v1/auditoria/eventos.csv")));
 	}
 
 	@Test

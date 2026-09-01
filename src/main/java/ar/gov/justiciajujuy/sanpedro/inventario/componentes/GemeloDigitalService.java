@@ -154,6 +154,25 @@ public class GemeloDigitalService {
 		return new DashboardDiferencias(conteo, equiposConDiferencias);
 	}
 
+	@Transactional(readOnly = true)
+	public String dashboardDiferenciasCsv(String equipoQuery, String fuero, EstadoComparacion estado) {
+		StringBuilder csv = new StringBuilder("equipo,fuero,tipo,resultado,esperado,detectado,observacion\n");
+		DashboardDiferencias dashboard = dashboardDiferencias(equipoQuery, fuero, estado);
+		for (EquipoConDiferencias equipo : dashboard.equipos()) {
+			for (DiferenciaDetalle diferencia : equipo.diferencias()) {
+				csv.append(fila(List.of(
+						equipo.equipoNombre(),
+						valor(equipo.fuero()),
+						String.valueOf(diferencia.tipo()),
+						String.valueOf(diferencia.resultado()),
+						diferencia.esperado(),
+						diferencia.detectado(),
+						diferencia.observacion())));
+			}
+		}
+		return csv.toString();
+	}
+
 	private boolean coincideEquipo(Equipo equipo, String equipoFiltro, String fueroFiltro) {
 		return contiene(equipo.getNombre(), equipoFiltro) && contiene(equipo.getFuero(), fueroFiltro);
 	}
@@ -269,6 +288,22 @@ public class GemeloDigitalService {
 			partes.add(componente.getCapacidad());
 		}
 		return String.join(" / ", partes);
+	}
+
+	private String valor(String valor) {
+		return valor == null ? "" : valor;
+	}
+
+	private String fila(List<String> valores) {
+		return valores.stream()
+				.map(this::csv)
+				.reduce((a, b) -> a + "," + b)
+				.orElse("") + "\n";
+	}
+
+	private String csv(String valor) {
+		String limpio = valor == null ? "" : valor.replace("\"", "\"\"");
+		return limpio.contains(",") || limpio.contains("\"") || limpio.contains("\n") ? "\"" + limpio + "\"" : limpio;
 	}
 
 	public record ComparacionComponente(

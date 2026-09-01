@@ -43,6 +43,7 @@
 				<div class="form-actions">
 					<button class="primary-action" type="submit">Filtrar</button>
 					<a class="secondary-action" th:href="@{/admin/dashboard-diferencias}">Limpiar</a>
+					<a class="secondary-action" th:href="@{/api/v1/gemelo-digital/dashboard-diferencias.csv(equipo=${equipoFiltro},fuero=${fueroFiltro},estado=${estadoFiltro})}">Exportar CSV</a>
 				</div>
 			</form>
 

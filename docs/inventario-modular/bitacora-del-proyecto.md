@@ -2152,6 +2152,8 @@ Al cierre de esta bitacora, Inventario Modular cuenta con:
 - Modulo `AUDITORIA`.
 - Tabla `auditoria_eventos`.
 - API de eventos recientes en `/api/v1/auditoria/eventos`.
+- Filtros de auditoria por usuario, modulo y accion.
+- Exportacion CSV de auditoria en `/api/v1/auditoria/eventos.csv`.
 - Pantalla `/admin/auditoria`.
 - Registro transversal de cambios en componentes, stock y ordenes de armado.
 - Modulo `TAREAS`.
@@ -2174,6 +2176,8 @@ Al cierre de esta bitacora, Inventario Modular cuenta con:
 - Pantalla `/admin/ubicaciones`.
 - API de ubicaciones en `/api/v1/ubicaciones`.
 - Exportacion CSV de ubicaciones en `/api/v1/reportes/ubicaciones.csv`.
+- Exportacion CSV del dashboard de diferencias en
+  `/api/v1/gemelo-digital/dashboard-diferencias.csv`.
 - Script Windows de inventario servido por la app.
 - Verificacion SHA-256 del script.
 - Documentacion de actualizacion de produccion.
@@ -2200,8 +2204,6 @@ Pendientes del modulo Equipos:
 
 Pendientes del gemelo digital:
 
-- Exportacion CSV del dashboard de diferencias.
-- Filtros y exportacion de auditoria.
 - Auditoria especifica de cambios de usuarios, roles y autorizaciones AD.
 
 Pendientes del modulo Tareas:
@@ -2214,7 +2216,6 @@ Pendientes de muebles, patrimonio y reportes:
 
 - Respuestas HTTP 409 claras para codigos o numeros patrimoniales duplicados.
 - Paginacion y filtros avanzados cuando crezca el volumen de datos.
-- Exportacion CSV del dashboard de diferencias.
 - Reportes administrativos mas completos.
 
 Pendientes de actas y ubicaciones:

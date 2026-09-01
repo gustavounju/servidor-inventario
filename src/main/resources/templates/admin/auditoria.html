@@ -22,6 +22,26 @@
 				</nav>
 			</header>
 
+			<form class="search-form dashboard-filter-form" th:action="@{/admin/auditoria}" method="get">
+				<label>
+					<span>Usuario</span>
+					<input type="search" name="usuario" th:value="${usuarioFiltro}" placeholder="admin.local">
+				</label>
+				<label>
+					<span>Modulo</span>
+					<input type="search" name="modulo" th:value="${moduloFiltro}" placeholder="STOCK">
+				</label>
+				<label>
+					<span>Accion</span>
+					<input type="search" name="accion" th:value="${accionFiltro}" placeholder="CREAR">
+				</label>
+				<div class="form-actions">
+					<button class="primary-action" type="submit">Filtrar</button>
+					<a class="secondary-action" th:href="@{/admin/auditoria}">Limpiar</a>
+					<a class="secondary-action" th:href="@{/api/v1/auditoria/eventos.csv(usuario=${usuarioFiltro},modulo=${moduloFiltro},accion=${accionFiltro})}">Exportar CSV</a>
+				</div>
+			</form>
+
 			<section class="modules-section" aria-labelledby="eventos-title">
 				<div class="section-header">
 					<div>

@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 @Controller
@@ -25,11 +26,19 @@ public class AuditoriaPageController {
 	}
 
 	@GetMapping("/admin/auditoria")
-	public String auditoria(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+	public String auditoria(
+			Model model,
+			@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam(required = false) String usuario,
+			@RequestParam(required = false) String modulo,
+			@RequestParam(required = false) String accion) {
 		if (!authorizationService.tienePermiso(userDetails, MODULO_AUDITORIA, PERMISO_VER)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para ver auditoria.");
 		}
-		model.addAttribute("eventos", auditoriaService.listarRecientes());
+		model.addAttribute("eventos", auditoriaService.buscar(usuario, modulo, accion));
+		model.addAttribute("usuarioFiltro", usuario);
+		model.addAttribute("moduloFiltro", modulo);
+		model.addAttribute("accionFiltro", accion);
 		return "admin/auditoria";
 	}
 }

@@ -14,10 +14,19 @@ Primera version implementada:
 - API `GET /api/v1/reportes/tareas.csv`.
 - API `GET /api/v1/reportes/actas.csv`.
 - API `GET /api/v1/reportes/ubicaciones.csv`.
+- API `GET /api/v1/gemelo-digital/dashboard-diferencias.csv`.
+- API `GET /api/v1/auditoria/eventos.csv`.
 - Pantalla `/admin/reportes`.
 - Resumen de equipos, muebles, bienes patrimoniales, tareas, actas y ubicaciones.
 - Descarga CSV protegida por `REPORTES:EXPORTAR`.
 - Permiso de pantalla `REPORTES:VER`.
+
+Exportaciones transversales:
+
+- El CSV del dashboard de diferencias queda protegido por `COMPONENTES:VER` y respeta
+  filtros por equipo, fuero y estado.
+- El CSV de auditoria queda protegido por `AUDITORIA:VER` y respeta filtros por usuario,
+  modulo y accion.
 
 ## Verificacion local
 

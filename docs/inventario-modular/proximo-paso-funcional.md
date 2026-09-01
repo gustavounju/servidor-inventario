@@ -194,8 +194,7 @@ Orden confirmado de trabajo:
 
 Pendiente siguiente:
 
-- Exportacion CSV del dashboard de diferencias.
-- Filtros y exportacion de auditoria.
+- Auditoria especifica de cambios de usuarios, roles y autorizaciones AD.
 
 ### Sprint 5: Tareas tecnicas
 
@@ -281,6 +280,26 @@ Primera version implementada:
 - Conteos en Reportes.
 - Exportaciones CSV de actas y ubicaciones.
 - Tests de API, pantalla, permisos, menu y reportes.
+
+### Sprint 8: Exportaciones y filtros transversales
+
+Estado: primera version implementada.
+
+Motivo:
+
+- El dashboard de diferencias ya permitia filtrar por estado, equipo y fuero, pero faltaba
+  sacar esa vista a CSV para control operativo.
+- Auditoria ya registraba eventos recientes, pero necesitaba filtros basicos para
+  investigar cambios sin depender de consultas SQL.
+
+Primera version implementada:
+
+- Exportacion CSV del dashboard de diferencias en
+  `/api/v1/gemelo-digital/dashboard-diferencias.csv`.
+- La exportacion respeta filtros por equipo, fuero y estado.
+- Filtros de auditoria por usuario, modulo y accion en API y pantalla.
+- Exportacion CSV de auditoria en `/api/v1/auditoria/eventos.csv`.
+- Tests de API y pantalla.
 
 Pendiente siguiente:
 
