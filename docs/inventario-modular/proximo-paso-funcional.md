@@ -279,6 +279,7 @@ Primera version implementada:
 - Auditoria al crear y actualizar.
 - Conteos en Reportes.
 - Exportaciones CSV de actas y ubicaciones.
+- Respuestas `409 Conflict` para duplicados de muebles, patrimonio, actas y ubicaciones.
 - Tests de API, pantalla, permisos, menu y reportes.
 
 ### Sprint 8: Exportaciones y filtros transversales

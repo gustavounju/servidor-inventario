@@ -28,6 +28,13 @@ Exportaciones transversales:
 - El CSV de auditoria queda protegido por `AUDITORIA:VER` y respeta filtros por usuario,
   modulo y accion.
 
+Validaciones administrativas relacionadas:
+
+- Muebles responde `409 Conflict` si se intenta repetir un codigo existente.
+- Patrimonio responde `409 Conflict` si se intenta repetir un numero patrimonial.
+- Actas responde `409 Conflict` si se intenta repetir un numero de acta.
+- Ubicaciones responde `409 Conflict` si se intenta repetir un codigo existente.
+
 ## Verificacion local
 
 ```powershell

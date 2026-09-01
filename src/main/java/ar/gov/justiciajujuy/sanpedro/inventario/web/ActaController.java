@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaService;
+import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaService.ActaDuplicadaException;
 import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaService.ActaDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaService.ActaNoEncontradaException;
 import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaService.EquipoNoEncontradoParaActaException;
@@ -79,6 +80,11 @@ public class ActaController {
 	@ExceptionHandler(ActaNoEncontradaException.class)
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	void noEncontrada() {
+	}
+
+	@ExceptionHandler(ActaDuplicadaException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	void duplicada() {
 	}
 
 	@ExceptionHandler(EquipoNoEncontradoParaActaException.class)

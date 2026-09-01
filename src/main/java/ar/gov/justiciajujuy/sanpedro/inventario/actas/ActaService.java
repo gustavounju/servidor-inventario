@@ -33,8 +33,10 @@ public class ActaService {
 
 	@Transactional
 	public ActaDetalle crear(GuardarActaCommand command) {
+		String numero = textoRequerido(command.numero(), "numero");
+		exigirNumeroDisponible(numero, null);
 		Acta acta = new Acta(
-				textoRequerido(command.numero(), "numero"),
+				numero,
 				command.tipo() == null ? TipoActa.ENTREGA : command.tipo(),
 				textoRequerido(command.destinatario(), "destinatario"),
 				textoRequerido(command.detalle(), "detalle"));
@@ -48,6 +50,7 @@ public class ActaService {
 	@Transactional
 	public ActaDetalle actualizar(Long id, GuardarActaCommand command) {
 		Acta acta = actaRepository.findById(id).orElseThrow(() -> new ActaNoEncontradaException(id));
+		exigirNumeroDisponible(textoRequerido(command.numero(), "numero"), id);
 		aplicar(acta, command);
 		Acta guardada = actaRepository.save(acta);
 		auditoriaService.registrar("ACTAS", "ACTUALIZAR", "Acta", guardada.getId(),
@@ -110,6 +113,14 @@ public class ActaService {
 		return valor.trim();
 	}
 
+	private void exigirNumeroDisponible(String numero, Long idActual) {
+		actaRepository.findByNumeroIgnoreCase(numero)
+				.filter(acta -> idActual == null || !acta.getId().equals(idActual))
+				.ifPresent(acta -> {
+					throw new ActaDuplicadaException(numero);
+				});
+	}
+
 	public record GuardarActaCommand(String numero, TipoActa tipo, Long equipoId, LocalDate fechaEmision,
 			String destinatario, String responsableEntrega, String responsableRecepcion, String detalle,
 			EstadoActa estado, String observaciones, boolean activo) {
@@ -123,6 +134,12 @@ public class ActaService {
 	public static class ActaNoEncontradaException extends RuntimeException {
 		public ActaNoEncontradaException(Long id) {
 			super("Acta no encontrada: " + id);
+		}
+	}
+
+	public static class ActaDuplicadaException extends RuntimeException {
+		public ActaDuplicadaException(String numero) {
+			super("Ya existe un acta con numero: " + numero);
 		}
 	}
 

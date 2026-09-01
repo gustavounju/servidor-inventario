@@ -5,6 +5,7 @@ import java.util.List;
 import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.EstadoBienPatrimonial;
 import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.PatrimonioService;
 import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.PatrimonioService.BienPatrimonialDetalle;
+import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.PatrimonioService.BienPatrimonialDuplicadoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.PatrimonioService.BienPatrimonialNoEncontradoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.PatrimonioService.EquipoNoEncontradoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.PatrimonioService.GuardarBienPatrimonialCommand;
@@ -75,6 +76,11 @@ public class PatrimonioController {
 	@ExceptionHandler({BienPatrimonialNoEncontradoException.class, EquipoNoEncontradoException.class})
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	void noEncontrado() {
+	}
+
+	@ExceptionHandler(BienPatrimonialDuplicadoException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	void duplicado() {
 	}
 
 	public record GuardarBienPatrimonialRequest(

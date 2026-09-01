@@ -27,8 +27,10 @@ public class UbicacionService {
 
 	@Transactional
 	public UbicacionDetalle crear(GuardarUbicacionCommand command) {
+		String codigo = textoRequerido(command.codigo(), "codigo");
+		exigirCodigoDisponible(codigo, null);
 		Ubicacion ubicacion = new Ubicacion(
-				textoRequerido(command.codigo(), "codigo"),
+				codigo,
 				textoRequerido(command.nombre(), "nombre"),
 				command.tipo() == null ? TipoUbicacion.OFICINA : command.tipo());
 		aplicar(ubicacion, command);
@@ -41,6 +43,7 @@ public class UbicacionService {
 	@Transactional
 	public UbicacionDetalle actualizar(Long id, GuardarUbicacionCommand command) {
 		Ubicacion ubicacion = ubicacionRepository.findById(id).orElseThrow(() -> new UbicacionNoEncontradaException(id));
+		exigirCodigoDisponible(textoRequerido(command.codigo(), "codigo"), id);
 		aplicar(ubicacion, command);
 		Ubicacion guardada = ubicacionRepository.save(ubicacion);
 		auditoriaService.registrar("UBICACIONES", "ACTUALIZAR", "Ubicacion", guardada.getId(),
@@ -92,6 +95,14 @@ public class UbicacionService {
 		return valor.trim();
 	}
 
+	private void exigirCodigoDisponible(String codigo, Long idActual) {
+		ubicacionRepository.findByCodigoIgnoreCase(codigo)
+				.filter(ubicacion -> idActual == null || !ubicacion.getId().equals(idActual))
+				.ifPresent(ubicacion -> {
+					throw new UbicacionDuplicadaException(codigo);
+				});
+	}
+
 	public record GuardarUbicacionCommand(String codigo, String nombre, TipoUbicacion tipo, String fuero,
 			String responsable, String edificio, String piso, EstadoUbicacion estado, String observaciones,
 			boolean activo) {
@@ -105,6 +116,12 @@ public class UbicacionService {
 	public static class UbicacionNoEncontradaException extends RuntimeException {
 		public UbicacionNoEncontradaException(Long id) {
 			super("Ubicacion no encontrada: " + id);
+		}
+	}
+
+	public static class UbicacionDuplicadaException extends RuntimeException {
+		public UbicacionDuplicadaException(String codigo) {
+			super("Ya existe una ubicacion con codigo: " + codigo);
 		}
 	}
 }

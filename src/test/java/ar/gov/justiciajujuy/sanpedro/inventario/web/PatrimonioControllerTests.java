@@ -93,6 +93,26 @@ class PatrimonioControllerTests {
 			.andExpect(status().isForbidden());
 	}
 
+	@Test
+	void respondeConflictCuandoElNumeroPatrimonialYaExiste() throws Exception {
+		String duplicado = """
+				{
+				  "numeroPatrimonial": "PAT-SEED-001",
+				  "categoria": "PC",
+				  "descripcion": "Bien duplicado",
+				  "estado": "EN_USO",
+				  "activo": true
+				}
+				""";
+
+		mockMvc.perform(post("/api/v1/patrimonio/bienes")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(duplicado))
+			.andExpect(status().isConflict());
+	}
+
 	private ActiveDirectoryUserDetails adminLocal() {
 		return new ActiveDirectoryUserDetails("admin.local", "unused", List.of(new SimpleGrantedAuthority("ROLE_USER")),
 				"Administrador Local", "Desarrollo local", Map.of("origen", List.of("LOCAL_SIMULADO")));

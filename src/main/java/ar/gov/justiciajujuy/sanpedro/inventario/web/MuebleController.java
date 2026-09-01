@@ -5,6 +5,7 @@ import java.util.List;
 import ar.gov.justiciajujuy.sanpedro.inventario.muebles.EstadoMueble;
 import ar.gov.justiciajujuy.sanpedro.inventario.muebles.MuebleService;
 import ar.gov.justiciajujuy.sanpedro.inventario.muebles.MuebleService.GuardarMuebleCommand;
+import ar.gov.justiciajujuy.sanpedro.inventario.muebles.MuebleService.MuebleDuplicadoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.muebles.MuebleService.MuebleDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.muebles.MuebleService.MuebleNoEncontradoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
@@ -75,6 +76,11 @@ public class MuebleController {
 	@ExceptionHandler(MuebleNoEncontradoException.class)
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	void noEncontrado() {
+	}
+
+	@ExceptionHandler(MuebleDuplicadoException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	void duplicado() {
 	}
 
 	public record GuardarMuebleRequest(

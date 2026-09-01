@@ -105,6 +105,28 @@ class ActaControllerTests {
 			.andExpect(status().isForbidden());
 	}
 
+	@Test
+	void respondeConflictCuandoElNumeroDeActaYaExiste() throws Exception {
+		String duplicada = """
+				{
+				  "numero": "ACT-SEED-001",
+				  "tipo": "ENTREGA",
+				  "fechaEmision": "2026-09-01",
+				  "destinatario": "Mesa de Entradas",
+				  "detalle": "Acta duplicada.",
+				  "estado": "BORRADOR",
+				  "activo": true
+				}
+				""";
+
+		mockMvc.perform(post("/api/v1/actas")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(duplicada))
+			.andExpect(status().isConflict());
+	}
+
 	private ActiveDirectoryUserDetails adminLocal() {
 		return new ActiveDirectoryUserDetails("admin.local", "unused", List.of(new SimpleGrantedAuthority("ROLE_USER")),
 				"Administrador Local", "Desarrollo local", Map.of("origen", List.of("LOCAL_SIMULADO")));

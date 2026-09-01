@@ -91,6 +91,26 @@ class MuebleControllerTests {
 			.andExpect(status().isForbidden());
 	}
 
+	@Test
+	void respondeConflictCuandoElCodigoDeMuebleYaExiste() throws Exception {
+		String duplicado = """
+				{
+				  "codigo": "MUE-SEED-001",
+				  "tipo": "SILLA",
+				  "descripcion": "Silla duplicada",
+				  "estado": "ACTIVO",
+				  "activo": true
+				}
+				""";
+
+		mockMvc.perform(post("/api/v1/muebles")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(duplicado))
+			.andExpect(status().isConflict());
+	}
+
 	private ActiveDirectoryUserDetails adminLocal() {
 		return new ActiveDirectoryUserDetails("admin.local", "unused", List.of(new SimpleGrantedAuthority("ROLE_USER")),
 				"Administrador Local", "Desarrollo local", Map.of("origen", List.of("LOCAL_SIMULADO")));

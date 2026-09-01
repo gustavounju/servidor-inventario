@@ -103,6 +103,26 @@ class UbicacionControllerTests {
 			.andExpect(status().isForbidden());
 	}
 
+	@Test
+	void respondeConflictCuandoElCodigoDeUbicacionYaExiste() throws Exception {
+		String duplicada = """
+				{
+				  "codigo": "UBI-SEED-001",
+				  "nombre": "Oficina duplicada",
+				  "tipo": "OFICINA",
+				  "estado": "ACTIVA",
+				  "activo": true
+				}
+				""";
+
+		mockMvc.perform(post("/api/v1/ubicaciones")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(duplicada))
+			.andExpect(status().isConflict());
+	}
+
 	private ActiveDirectoryUserDetails adminLocal() {
 		return new ActiveDirectoryUserDetails("admin.local", "unused", List.of(new SimpleGrantedAuthority("ROLE_USER")),
 				"Administrador Local", "Desarrollo local", Map.of("origen", List.of("LOCAL_SIMULADO")));

@@ -32,8 +32,10 @@ public class PatrimonioService {
 
 	@Transactional
 	public BienPatrimonialDetalle crear(GuardarBienPatrimonialCommand command) {
+		String numeroPatrimonial = textoRequerido(command.numeroPatrimonial(), "numeroPatrimonial");
+		exigirNumeroDisponible(numeroPatrimonial, null);
 		BienPatrimonial bien = new BienPatrimonial(
-				textoRequerido(command.numeroPatrimonial(), "numeroPatrimonial"),
+				numeroPatrimonial,
 				textoRequerido(command.categoria(), "categoria"),
 				textoRequerido(command.descripcion(), "descripcion"));
 		aplicar(bien, command);
@@ -47,6 +49,7 @@ public class PatrimonioService {
 	public BienPatrimonialDetalle actualizar(Long id, GuardarBienPatrimonialCommand command) {
 		BienPatrimonial bien = bienPatrimonialRepository.findById(id)
 				.orElseThrow(() -> new BienPatrimonialNoEncontradoException(id));
+		exigirNumeroDisponible(textoRequerido(command.numeroPatrimonial(), "numeroPatrimonial"), id);
 		aplicar(bien, command);
 		BienPatrimonial guardado = bienPatrimonialRepository.save(bien);
 		auditoriaService.registrar("PATRIMONIO", "ACTUALIZAR", "BienPatrimonial", guardado.getId(),
@@ -107,6 +110,14 @@ public class PatrimonioService {
 		return valor.trim();
 	}
 
+	private void exigirNumeroDisponible(String numeroPatrimonial, Long idActual) {
+		bienPatrimonialRepository.findByNumeroPatrimonialIgnoreCase(numeroPatrimonial)
+				.filter(bien -> idActual == null || !bien.getId().equals(idActual))
+				.ifPresent(bien -> {
+					throw new BienPatrimonialDuplicadoException(numeroPatrimonial);
+				});
+	}
+
 	public record GuardarBienPatrimonialCommand(String numeroPatrimonial, String categoria, String descripcion,
 			String ubicacion, String fuero, String custodio, EstadoBienPatrimonial estado, Long equipoId,
 			String observaciones, boolean activo) {
@@ -120,6 +131,12 @@ public class PatrimonioService {
 	public static class BienPatrimonialNoEncontradoException extends RuntimeException {
 		public BienPatrimonialNoEncontradoException(Long id) {
 			super("Bien patrimonial no encontrado: " + id);
+		}
+	}
+
+	public static class BienPatrimonialDuplicadoException extends RuntimeException {
+		public BienPatrimonialDuplicadoException(String numeroPatrimonial) {
+			super("Ya existe un bien patrimonial con numero: " + numeroPatrimonial);
 		}
 	}
 

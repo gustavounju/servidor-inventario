@@ -27,8 +27,10 @@ public class MuebleService {
 
 	@Transactional
 	public MuebleDetalle crear(GuardarMuebleCommand command) {
+		String codigo = textoRequerido(command.codigo(), "codigo");
+		exigirCodigoDisponible(codigo, null);
 		Mueble mueble = new Mueble(
-				textoRequerido(command.codigo(), "codigo"),
+				codigo,
 				textoRequerido(command.tipo(), "tipo"),
 				textoRequerido(command.descripcion(), "descripcion"));
 		aplicar(mueble, command);
@@ -41,6 +43,7 @@ public class MuebleService {
 	@Transactional
 	public MuebleDetalle actualizar(Long id, GuardarMuebleCommand command) {
 		Mueble mueble = muebleRepository.findById(id).orElseThrow(() -> new MuebleNoEncontradoException(id));
+		exigirCodigoDisponible(textoRequerido(command.codigo(), "codigo"), id);
 		aplicar(mueble, command);
 		Mueble guardado = muebleRepository.save(mueble);
 		auditoriaService.registrar("MUEBLES", "ACTUALIZAR", "Mueble", guardado.getId(),
@@ -90,6 +93,14 @@ public class MuebleService {
 		return valor.trim();
 	}
 
+	private void exigirCodigoDisponible(String codigo, Long idActual) {
+		muebleRepository.findByCodigoIgnoreCase(codigo)
+				.filter(mueble -> idActual == null || !mueble.getId().equals(idActual))
+				.ifPresent(mueble -> {
+					throw new MuebleDuplicadoException(codigo);
+				});
+	}
+
 	public record GuardarMuebleCommand(String codigo, String tipo, String descripcion, String ubicacion, String fuero,
 			String responsable, EstadoMueble estado, String observaciones, boolean activo) {
 	}
@@ -101,6 +112,12 @@ public class MuebleService {
 	public static class MuebleNoEncontradoException extends RuntimeException {
 		public MuebleNoEncontradoException(Long id) {
 			super("Mueble no encontrado: " + id);
+		}
+	}
+
+	public static class MuebleDuplicadoException extends RuntimeException {
+		public MuebleDuplicadoException(String codigo) {
+			super("Ya existe un mueble con codigo: " + codigo);
 		}
 	}
 }

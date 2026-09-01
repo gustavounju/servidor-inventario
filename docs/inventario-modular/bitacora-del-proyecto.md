@@ -2162,19 +2162,23 @@ Al cierre de esta bitacora, Inventario Modular cuenta con:
 - Modulo `MUEBLES`.
 - Pantalla `/admin/muebles`.
 - API de muebles en `/api/v1/muebles`.
+- Respuesta `409 Conflict` para codigo de mueble duplicado.
 - Modulo `PATRIMONIO`.
 - Pantalla `/admin/patrimonio`.
 - API de bienes patrimoniales en `/api/v1/patrimonio/bienes`.
+- Respuesta `409 Conflict` para numero patrimonial duplicado.
 - Modulo `REPORTES`.
 - Pantalla `/admin/reportes`.
 - API de resumen y CSV en `/api/v1/reportes`.
 - Modulo `ACTAS`.
 - Pantalla `/admin/actas`.
 - API de actas en `/api/v1/actas`.
+- Respuesta `409 Conflict` para numero de acta duplicado.
 - Exportacion CSV de actas en `/api/v1/reportes/actas.csv`.
 - Modulo `UBICACIONES`.
 - Pantalla `/admin/ubicaciones`.
 - API de ubicaciones en `/api/v1/ubicaciones`.
+- Respuesta `409 Conflict` para codigo de ubicacion duplicado.
 - Exportacion CSV de ubicaciones en `/api/v1/reportes/ubicaciones.csv`.
 - Exportacion CSV del dashboard de diferencias en
   `/api/v1/gemelo-digital/dashboard-diferencias.csv`.
@@ -2214,7 +2218,6 @@ Pendientes del modulo Tareas:
 
 Pendientes de muebles, patrimonio y reportes:
 
-- Respuestas HTTP 409 claras para codigos o numeros patrimoniales duplicados.
 - Paginacion y filtros avanzados cuando crezca el volumen de datos.
 - Reportes administrativos mas completos.
 

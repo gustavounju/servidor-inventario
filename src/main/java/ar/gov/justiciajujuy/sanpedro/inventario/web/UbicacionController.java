@@ -7,6 +7,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.EstadoUbicacion;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.TipoUbicacion;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService.GuardarUbicacionCommand;
+import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService.UbicacionDuplicadaException;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService.UbicacionDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService.UbicacionNoEncontradaException;
 import jakarta.validation.Valid;
@@ -77,6 +78,11 @@ public class UbicacionController {
 	@ExceptionHandler(UbicacionNoEncontradaException.class)
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	void noEncontrada() {
+	}
+
+	@ExceptionHandler(UbicacionDuplicadaException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	void duplicada() {
 	}
 
 	public record GuardarUbicacionRequest(
