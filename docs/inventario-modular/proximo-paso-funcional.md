@@ -212,16 +212,17 @@ Primera version implementada:
 - Entidad, repositorio y servicio de tareas tecnicas.
 - API `GET /api/v1/tareas-tecnicas` con filtros por estado, equipo y responsable.
 - API `POST /api/v1/tareas-tecnicas`.
+- API `PUT /api/v1/tareas-tecnicas/{id}`.
 - API `PATCH /api/v1/tareas-tecnicas/{id}/estado`.
 - Pantalla `/admin/tareas`.
 - Alta de tareas desde la pantalla.
+- Edicion completa de tareas existentes desde API y pantalla.
 - Cambio de estado desde la pantalla.
-- Auditoria al crear y cambiar estado.
+- Auditoria al crear, editar y cambiar estado.
 - Tests de API y pantalla.
 
 Pendiente siguiente:
 
-- Edicion completa de tareas existentes.
 - Comentarios/historial por tarea.
 - Vistas por responsable y fuero.
 - Exportacion CSV.

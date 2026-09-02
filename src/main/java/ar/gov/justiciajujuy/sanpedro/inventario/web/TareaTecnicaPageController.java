@@ -76,6 +76,24 @@ public class TareaTecnicaPageController {
 		return "redirect:/admin/tareas";
 	}
 
+	@PostMapping("/admin/tareas/{id}")
+	public String actualizar(
+			Model model,
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			@Valid @ModelAttribute("tareaForm") TareaForm tareaForm,
+			BindingResult bindingResult,
+			RedirectAttributes redirectAttributes) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		if (bindingResult.hasErrors()) {
+			prepararModelo(model, userDetails, tareaForm, null, null, null);
+			return "admin/tareas";
+		}
+		tareaTecnicaService.actualizar(id, tareaForm.toCommand());
+		redirectAttributes.addAttribute("creado", "1");
+		return "redirect:/admin/tareas";
+	}
+
 	@PostMapping("/admin/tareas/{id}/estado")
 	public String cambiarEstado(
 			@AuthenticationPrincipal UserDetails userDetails,

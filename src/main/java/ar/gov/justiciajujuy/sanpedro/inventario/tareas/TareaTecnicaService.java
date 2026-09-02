@@ -53,6 +53,21 @@ public class TareaTecnicaService {
 	}
 
 	@Transactional
+	public TareaTecnicaDetalle actualizar(Long id, GuardarTareaTecnicaCommand command) {
+		TareaTecnica tarea = tareaTecnicaRepository.findById(id)
+				.orElseThrow(() -> new TareaTecnicaNoEncontradaException(id));
+		tarea.actualizarDatos(
+				buscarEquipoOpcional(command.equipoId()),
+				textoRequerido(command.titulo(), "titulo"),
+				textoOpcional(command.descripcion()),
+				command.prioridad() == null ? PrioridadTareaTecnica.MEDIA : command.prioridad(),
+				textoOpcional(command.responsable()));
+		auditoriaService.registrar("TAREAS", "ACTUALIZAR", "TareaTecnica", tarea.getId(),
+				"Tarea tecnica " + tarea.getId() + " actualizada.");
+		return toDetalle(tarea);
+	}
+
+	@Transactional
 	public TareaTecnicaDetalle cambiarEstado(Long id, CambiarEstadoTareaCommand command) {
 		TareaTecnica tarea = tareaTecnicaRepository.findById(id)
 				.orElseThrow(() -> new TareaTecnicaNoEncontradaException(id));

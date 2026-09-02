@@ -2159,6 +2159,7 @@ Al cierre de esta bitacora, Inventario Modular cuenta con:
 - Modulo `TAREAS`.
 - Pantalla `/admin/tareas`.
 - API de tareas tecnicas en `/api/v1/tareas-tecnicas`.
+- Edicion completa de tareas tecnicas desde API y pantalla.
 - Modulo `MUEBLES`.
 - Pantalla `/admin/muebles`.
 - API de muebles en `/api/v1/muebles`.
@@ -2215,7 +2216,6 @@ Pendientes del gemelo digital:
 
 Pendientes del modulo Tareas:
 
-- Edicion completa de tareas existentes.
 - Comentarios/historial por tarea.
 - Vistas por responsable y fuero.
 

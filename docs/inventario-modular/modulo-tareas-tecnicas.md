@@ -13,12 +13,14 @@ asociados a un equipo concreto o quedar como tarea general.
 - Modulo de permisos `TAREAS`.
 - API `GET /api/v1/tareas-tecnicas`.
 - API `POST /api/v1/tareas-tecnicas`.
+- API `PUT /api/v1/tareas-tecnicas/{id}`.
 - API `PATCH /api/v1/tareas-tecnicas/{id}/estado`.
 - Pantalla administrativa `/admin/tareas`.
 - Filtros por estado, equipo y responsable.
 - Alta de tareas desde la pantalla.
+- Edicion de titulo, descripcion, equipo, prioridad y responsable desde la pantalla.
 - Cambio de estado desde la pantalla.
-- Auditoria al crear y cambiar estado.
+- Auditoria al crear, editar y cambiar estado.
 
 ## Modelo inicial
 
@@ -53,7 +55,6 @@ URGENTE
 
 ## Pendientes naturales
 
-- Editar titulo, descripcion, prioridad y responsable de una tarea existente.
 - Historial de cambios por tarea en la pantalla.
 - Comentarios o novedades por tarea.
 - Adjuntar actas, fotos o comprobantes.

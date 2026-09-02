@@ -84,6 +84,35 @@ class TareaTecnicaPageControllerTests {
 	}
 
 	@Test
+	void editaTareaDesdePantalla() throws Exception {
+		mockMvc.perform(post("/admin/tareas")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.param("equipoId", "1")
+				.param("titulo", "Revisar cableado")
+				.param("descripcion", "Control inicial")
+				.param("prioridad", "MEDIA")
+				.param("responsable", "mesa"))
+			.andExpect(status().is3xxRedirection());
+
+		mockMvc.perform(post("/admin/tareas/1")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.param("titulo", "Revisar cableado de red")
+				.param("descripcion", "Se agenda visita tecnica")
+				.param("prioridad", "ALTA")
+				.param("responsable", "gmurad"))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrlPattern("/admin/tareas?creado=*"));
+
+		mockMvc.perform(get("/admin/tareas").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("Revisar cableado de red")))
+			.andExpect(content().string(containsString("Se agenda visita tecnica")))
+			.andExpect(content().string(containsString("gmurad")));
+	}
+
+	@Test
 	void bloqueaPantallaSinPermiso() throws Exception {
 		mockMvc.perform(get("/admin/tareas").with(user(usuarioSinPermisos())))
 			.andExpect(status().isForbidden());

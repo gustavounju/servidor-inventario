@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -63,6 +64,15 @@ public class TareaTecnicaController {
 			@Valid @RequestBody GuardarTareaTecnicaRequest request) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
 		return tareaTecnicaService.crear(request.toCommand());
+	}
+
+	@PutMapping("/{id}")
+	public TareaTecnicaDetalle actualizar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			@Valid @RequestBody GuardarTareaTecnicaRequest request) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		return tareaTecnicaService.actualizar(id, request.toCommand());
 	}
 
 	@PatchMapping("/{id}/estado")

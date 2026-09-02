@@ -87,6 +87,21 @@
 								</td>
 								<td data-label="Responsable" th:text="${tarea.responsable ?: 'Sin asignar'}">gmurad</td>
 								<td data-label="Cambio" th:if="${puedeEditarTareas}">
+									<form class="inline-action-form" th:action="@{/admin/tareas/{id}(id=${tarea.id})}" method="post">
+										<select name="equipoId">
+											<option value="">Sin equipo</option>
+											<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}"
+													th:selected="${equipo.id == tarea.equipoId}">PC-INF-001</option>
+										</select>
+										<select name="prioridad">
+											<option th:each="prioridad : ${prioridadesTarea}" th:value="${prioridad}" th:text="${prioridad}"
+													th:selected="${prioridad == tarea.prioridad}">MEDIA</option>
+										</select>
+										<input name="responsable" th:value="${tarea.responsable}" maxlength="120" placeholder="Responsable">
+										<input name="titulo" th:value="${tarea.titulo}" maxlength="180" required placeholder="Titulo">
+										<input name="descripcion" th:value="${tarea.descripcion}" maxlength="1000" placeholder="Descripcion">
+										<button class="secondary-action" type="submit">Editar</button>
+									</form>
 									<form class="inline-action-form" th:action="@{/admin/tareas/{id}/estado(id=${tarea.id})}" method="post">
 										<select name="estado">
 											<option th:each="estado : ${estadosTarea}" th:value="${estado}" th:text="${estado}"

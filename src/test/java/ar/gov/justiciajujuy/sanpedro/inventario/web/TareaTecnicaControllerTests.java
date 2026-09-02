@@ -6,6 +6,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -74,6 +75,47 @@ class TareaTecnicaControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.estado").value("CERRADA"))
 			.andExpect(jsonPath("$.observacionesCierre").value("Se cambio la fuente y se verifico encendido."));
+	}
+
+	@Test
+	void actualizaDatosDeTareaTecnica() throws Exception {
+		String tarea = """
+				{
+				  "equipoId": 1,
+				  "titulo": "Revisar equipo",
+				  "descripcion": "Pendiente de diagnostico.",
+				  "prioridad": "MEDIA",
+				  "responsable": "mesa"
+				}
+				""";
+		String actualizacion = """
+				{
+				  "equipoId": null,
+				  "titulo": "Revisar equipo y perifericos",
+				  "descripcion": "Se agrega control de teclado y monitor.",
+				  "prioridad": "ALTA",
+				  "responsable": "gmurad"
+				}
+				""";
+
+		mockMvc.perform(post("/api/v1/tareas-tecnicas")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(tarea))
+			.andExpect(status().isCreated());
+
+		mockMvc.perform(put("/api/v1/tareas-tecnicas/1")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(actualizacion))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.titulo").value("Revisar equipo y perifericos"))
+			.andExpect(jsonPath("$.descripcion").value("Se agrega control de teclado y monitor."))
+			.andExpect(jsonPath("$.prioridad").value("ALTA"))
+			.andExpect(jsonPath("$.responsable").value("gmurad"))
+			.andExpect(jsonPath("$.equipoId").doesNotExist());
 	}
 
 	@Test
