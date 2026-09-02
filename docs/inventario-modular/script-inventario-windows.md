@@ -184,7 +184,7 @@ Compatibilidad esperada:
 - Windows 7 con PowerShell 3.0 o superior: mejor compatibilidad para CIM, aunque el script
   conserva fallback WMI.
 
-## Respaldo local, no reenvio automatico
+## Respaldo local y reenvio automatico
 
 Si el servidor no responde, el script guarda el JSON en:
 
@@ -194,12 +194,18 @@ C:\ProgramData\InventarioModular
 
 Ese archivo permite reenviar o analizar el reporte cuando vuelva la conectividad.
 
-El "reenvio automatico" seria un paso posterior: el script podria revisar esa carpeta al
-arrancar y mandar al servidor los reportes que quedaron pendientes. Todavia no se implementa
-para mantener este primer flujo simple y visible.
+Cuando el script vuelve a ejecutarse y el servidor esta disponible, primero intenta reenviar
+los archivos `inventario-*.json` pendientes de esa carpeta. Cada archivo enviado correctamente
+se mueve a:
+
+```text
+C:\ProgramData\InventarioModular\enviados
+```
+
+Si un archivo pendiente vuelve a fallar, queda en la carpeta principal para reintentarlo en la
+proxima ejecucion. El reporte actual tambien se guarda como pendiente si no puede enviarse.
 
 ## Pendiente
 
-- definir cola de reenvio automatico de reportes pendientes;
 - rotar el token de laboratorio antes de usarlo fuera de casa;
 - separar permisos de maquina por sede o segmento de red si se instala masivamente.

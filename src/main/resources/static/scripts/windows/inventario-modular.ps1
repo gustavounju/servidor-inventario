@@ -246,6 +246,48 @@ function Save-InventoryBackup {
     return $Path
 }
 
+function Send-InventoryJson {
+    param(
+        [string]$Json
+    )
+    $Client = New-Object System.Net.WebClient
+    $Client.Headers.Add("Content-Type", "application/json; charset=utf-8")
+    $Client.Headers.Add("Authorization", "Bearer $Token")
+    $Client.Encoding = [System.Text.Encoding]::UTF8
+    return $Client.UploadString($ServerUrl, "POST", $Json)
+}
+
+function Send-PendingBackups {
+    if (-not (Test-Path $BackupDirectory)) {
+        return
+    }
+    $PendingFiles = Get-ChildItem -Path $BackupDirectory -Filter "inventario-*.json" -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.PSIsContainer } |
+        Sort-Object Name
+    if ($null -eq $PendingFiles) {
+        return
+    }
+    $SentDirectory = Join-Path $BackupDirectory "enviados"
+    foreach ($PendingFile in $PendingFiles) {
+        try {
+            $PendingJson = [System.IO.File]::ReadAllText($PendingFile.FullName, [System.Text.Encoding]::UTF8)
+            [void](Send-InventoryJson -Json $PendingJson)
+            if (-not (Test-Path $SentDirectory)) {
+                New-Item -ItemType Directory -Path $SentDirectory | Out-Null
+            }
+            $SentPath = Join-Path $SentDirectory $PendingFile.Name
+            if (Test-Path $SentPath) {
+                $SentPath = Join-Path $SentDirectory ("reenviado-" + (Get-Date -Format "yyyyMMdd-HHmmss") + "-" + $PendingFile.Name)
+            }
+            Move-Item -Path $PendingFile.FullName -Destination $SentPath
+            Write-Host "Reporte pendiente reenviado: $($PendingFile.Name)" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Queda pendiente $($PendingFile.Name): $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+}
+
 $ComputerSystem = Get-InventoryClass -ClassName "Win32_ComputerSystem"
 $OperatingSystem = Get-InventoryClass -ClassName "Win32_OperatingSystem"
 $Processor = Get-InventoryClass -ClassName "Win32_Processor" | Select-Object -First 1
@@ -293,11 +335,8 @@ if ($DryRun) {
 Write-Host "Enviando inventario de $ComputerName a $ServerUrl ..."
 
 try {
-    $Client = New-Object System.Net.WebClient
-    $Client.Headers.Add("Content-Type", "application/json; charset=utf-8")
-    $Client.Headers.Add("Authorization", "Bearer $Token")
-    $Client.Encoding = [System.Text.Encoding]::UTF8
-    $Response = $Client.UploadString($ServerUrl, "POST", $Json)
+    Send-PendingBackups
+    $Response = Send-InventoryJson -Json $Json
     Write-Host "Inventario enviado correctamente." -ForegroundColor Green
     Write-Host $Response
 }

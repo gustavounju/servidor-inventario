@@ -24,7 +24,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
-	@Value("${inventario.security.report-token:dev-token-123456}")
+	@Value("${inventario.security.report-token:}")
 	private String reportToken;
 
 	@Bean
