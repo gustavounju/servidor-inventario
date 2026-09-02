@@ -123,6 +123,7 @@ Payload:
   "nombre": "pc-nueva-003",
   "ultimoUsuario": "jlopez",
   "fuero": "Informatica",
+  "ubicacion": "Oficina Informatica",
   "ip": "10.15.2.12",
   "sistemaOperativo": "Windows 11 Pro",
   "procesador": "AMD Ryzen 5",
@@ -169,6 +170,26 @@ Comportamiento:
 - marca `monitoreo` como `REPORTADO`;
 - registra `ultimo_reporte_en`.
 
+### Importar inventario viejo
+
+```http
+POST /api/v1/equipos/importar-viejo
+Content-Type: text/csv
+```
+
+Requiere `EQUIPOS:EDITAR`. Acepta CSV con coma o punto y coma. Encabezados admitidos:
+`nombre` o `PC_Nombre`, `ultimoUsuario` o `Usuario_Actual`, `fuero`, `ubicacion`,
+`ip` o `IPAddress`, `sistemaOperativo` u `OsName`, `procesador`, `ramMb`, `RAM (GB)`,
+`RAM_Detalles`, `RAM_Serials`, `Disk_Models`, `Disk_Serials`, `Motherboard_Model`,
+`Motherboard_SN`, `Monitors`, `Keyboard_Model`, `Mouse_Model` y `Printer_Model`.
+
+Ejemplo:
+
+```csv
+PC_Nombre;Usuario_Actual;fuero;ubicacion;IPAddress;OsName;Procesador;RAM (GB)
+pc-vieja-010;mrojas;Informatica;Oficina Informatica;10.15.2.40;Windows 7 Pro;Intel Core i3;4
+```
+
 ## Pantalla
 
 La pantalla inicial esta en:
@@ -179,8 +200,9 @@ La pantalla inicial esta en:
 
 Se muestra desde `/admin` solo cuando el usuario tiene permiso `EQUIPOS:VER`.
 
-Incluye buscador por PC, usuario o fuero, listado tabular, estado de monitoreo y datos
-basicos: equipo, ultimo usuario, fuero, IP y sistema operativo.
+Incluye buscador por PC, usuario o fuero, importacion CSV del inventario viejo, listado
+tabular, estado de monitoreo y datos basicos: equipo, ultimo usuario, fuero, IP y sistema
+operativo.
 
 El detalle visual esta en:
 
@@ -201,6 +223,7 @@ La autorizacion se resuelve con `AuthorizationService`:
 - `GET /api/v1/equipos/{id}`: `EQUIPOS:VER`;
 - `PUT /api/v1/equipos/{id}`: `EQUIPOS:EDITAR`;
 - `POST /api/v1/equipos/inventario`: `EQUIPOS:EDITAR`;
+- `POST /api/v1/equipos/importar-viejo`: `EQUIPOS:EDITAR`;
 - `/admin/equipos`: `EQUIPOS:VER`.
 - `/admin/equipos/{id}`: `EQUIPOS:VER` para detalle y `EQUIPOS:EDITAR` para guardar.
 
@@ -224,7 +247,4 @@ mvn "-Dtest=EquipoControllerTests,EquipoPageControllerTests,AdminControllerTests
 
 ## Pendiente
 
-- Agregar importacion inicial desde el inventario viejo.
 - Incorporar relacion futura con stock, componentes, ubicaciones y actas.
-- Definir si se implementa reenvio automatico de reportes pendientes cuando una PC no
-  puede conectarse al servidor.

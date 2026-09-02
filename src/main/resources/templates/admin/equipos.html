@@ -28,6 +28,11 @@
 					<span class="count-badge" th:text="${equipos.paginacion.totalItems} + ' equipos'">0 equipos</span>
 				</div>
 
+				<div class="success-message" th:if="${importacionResultado != null}">
+					<span th:text="'Importacion: ' + ${importacionResultado.importados} + '/' + ${importacionResultado.procesados} + ' filas importadas.'">Importacion completada.</span>
+					<span th:each="error : ${importacionResultado.errores}" th:text="${error}">Fila 2: error</span>
+				</div>
+
 				<form class="search-form" th:action="@{/admin/equipos}" method="get" role="search">
 					<label>
 						<span>Buscar</span>
@@ -69,6 +74,24 @@
 						</tbody>
 					</table>
 				</div>
+			</section>
+
+			<section class="attributes-section" th:if="${puedeEditar}" aria-labelledby="importar-viejo-title">
+				<div class="section-header">
+					<div>
+						<h2 id="importar-viejo-title">Importar inventario viejo</h2>
+						<p class="section-note">CSV con encabezados como nombre, PC_Nombre, Usuario_Actual, fuero, ubicacion, ip, OsName, Procesador, RAM (GB), RAM_Detalles y Disk_Serials.</p>
+					</div>
+				</div>
+				<form class="equipment-form" th:action="@{/admin/equipos/importar-viejo}" method="post">
+					<label>
+						<span>CSV</span>
+						<textarea name="contenidoCsv" maxlength="50000" rows="8" required></textarea>
+					</label>
+					<div class="form-actions">
+						<button class="primary-action" type="submit">Importar equipos</button>
+					</div>
+				</form>
 			</section>
 		</section>
 	</main>

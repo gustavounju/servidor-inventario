@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -39,6 +40,7 @@ class EquipoPageControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(view().name("admin/equipos"))
 			.andExpect(content().string(containsString("Inventario tecnico")))
+			.andExpect(content().string(containsString("Importar inventario viejo")))
 			.andExpect(content().string(containsString("PC-INF-001")))
 			.andExpect(content().string(containsString("Windows 11 Pro")));
 	}
@@ -132,6 +134,28 @@ class EquipoPageControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("PC-INF-001-EDITADA")))
 			.andExpect(content().string(containsString("Windows 11 Enterprise")));
+	}
+
+	@Test
+	void importaInventarioViejoDesdePantalla() throws Exception {
+		String csv = """
+				nombre,ultimoUsuario,fuero,ubicacion,ip,sistemaOperativo,procesador,ramMb
+				pc-vieja-web-020,mesa,Informatica,Oficina Informatica,10.15.2.50,Windows 7 Pro,Intel Core 2 Duo,4096
+				""";
+
+		mockMvc.perform(post("/admin/equipos/importar-viejo")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.param("contenidoCsv", csv))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/admin/equipos"));
+
+		mockMvc.perform(get("/admin/equipos")
+				.param("q", "pc-vieja-web-020")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("PC-VIEJA-WEB-020")))
+			.andExpect(content().string(containsString("Windows 7 Pro")));
 	}
 
 	@Test

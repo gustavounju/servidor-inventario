@@ -262,6 +262,31 @@ class EquipoControllerTests {
 	}
 
 	@Test
+	void importaInventarioViejoDesdeCsv() throws Exception {
+		String csv = """
+				PC_Nombre;Usuario_Actual;fuero;ubicacion;IPAddress;OsName;Procesador;RAM (GB);RAM_Detalles;RAM_Serials;Disk_Models;Disk_Serials
+				pc-vieja-010;mrojas;Informatica;Oficina Informatica;10.15.2.40;Windows 7 Pro;Intel Core i3;4;4GB DDR3;RAM-OLD-010;WD HDD;DISK-OLD-010
+				""";
+
+		mockMvc.perform(post("/api/v1/equipos/importar-viejo")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.contentType(MediaType.parseMediaType("text/csv"))
+				.content(csv))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.procesados").value(1))
+			.andExpect(jsonPath("$.importados").value(1))
+			.andExpect(jsonPath("$.errores", hasSize(0)));
+
+		mockMvc.perform(get("/api/v1/equipos")
+				.param("q", "pc-vieja-010")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.equipos[0].nombre").value("PC-VIEJA-010"))
+			.andExpect(jsonPath("$.equipos[0].ubicacion").value("Oficina Informatica"));
+	}
+
+	@Test
 	void bloqueaUsuariosSinPermisoParaVerEquipos() throws Exception {
 		mockMvc.perform(get("/api/v1/equipos").with(user(usuarioSinPermisos())))
 			.andExpect(status().isForbidden());

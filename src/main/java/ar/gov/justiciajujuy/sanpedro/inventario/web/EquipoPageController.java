@@ -10,6 +10,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.ActualizarEquipoCommand;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoDuplicadoException;
+import ar.gov.justiciajujuy.sanpedro.inventario.equipos.InventarioViejoImportService;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
 import jakarta.validation.Valid;
@@ -46,15 +47,17 @@ public class EquipoPageController {
 	private final ComponenteService componenteService;
 	private final GemeloDigitalService gemeloDigitalService;
 	private final UbicacionService ubicacionService;
+	private final InventarioViejoImportService inventarioViejoImportService;
 
 	public EquipoPageController(AuthorizationService authorizationService, EquipoService equipoService,
 			ComponenteService componenteService, GemeloDigitalService gemeloDigitalService,
-			UbicacionService ubicacionService) {
+			UbicacionService ubicacionService, InventarioViejoImportService inventarioViejoImportService) {
 		this.authorizationService = authorizationService;
 		this.equipoService = equipoService;
 		this.componenteService = componenteService;
 		this.gemeloDigitalService = gemeloDigitalService;
 		this.ubicacionService = ubicacionService;
+		this.inventarioViejoImportService = inventarioViejoImportService;
 	}
 
 	@GetMapping("/admin/equipos")
@@ -67,6 +70,7 @@ public class EquipoPageController {
 		}
 		model.addAttribute("query", q == null ? "" : q.trim());
 		model.addAttribute("equipos", equipoService.listar(q, 0, 50));
+		model.addAttribute("puedeEditar", authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR));
 		return "admin/equipos";
 	}
 
@@ -110,6 +114,18 @@ public class EquipoPageController {
 		}
 		redirectAttributes.addAttribute("actualizado", "1");
 		return "redirect:/admin/equipos/{id}";
+	}
+
+	@PostMapping("/admin/equipos/importar-viejo")
+	public String importarInventarioViejo(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam String contenidoCsv,
+			RedirectAttributes redirectAttributes) {
+		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para editar equipos.");
+		}
+		redirectAttributes.addFlashAttribute("importacionResultado", inventarioViejoImportService.importarCsv(contenidoCsv));
+		return "redirect:/admin/equipos";
 	}
 
 	private void prepararDetalle(Model model, UserDetails userDetails, EquipoDetalle equipo, EquipoForm equipoForm) {

@@ -8,6 +8,8 @@ import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoDeta
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoNoEncontradoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoPagina;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.ReporteInventarioCommand;
+import ar.gov.justiciajujuy.sanpedro.inventario.equipos.InventarioViejoImportService;
+import ar.gov.justiciajujuy.sanpedro.inventario.equipos.InventarioViejoImportService.ImportacionInventarioViejoResultado;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -41,11 +43,14 @@ public class EquipoController {
 	private final AuthorizationService authorizationService;
 	private final EquipoService equipoService;
 	private final ComponenteService componenteService;
+	private final InventarioViejoImportService inventarioViejoImportService;
 
-	public EquipoController(AuthorizationService authorizationService, EquipoService equipoService, ComponenteService componenteService) {
+	public EquipoController(AuthorizationService authorizationService, EquipoService equipoService,
+			ComponenteService componenteService, InventarioViejoImportService inventarioViejoImportService) {
 		this.authorizationService = authorizationService;
 		this.equipoService = equipoService;
 		this.componenteService = componenteService;
+		this.inventarioViejoImportService = inventarioViejoImportService;
 	}
 
 	@GetMapping
@@ -85,6 +90,14 @@ public class EquipoController {
 			@Valid @RequestBody ActualizarEquipoRequest request) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
 		return equipoService.actualizarManualmente(id, request.toCommand());
+	}
+
+	@PostMapping(value = "/importar-viejo", consumes = {"text/csv", "text/plain"})
+	public ImportacionInventarioViejoResultado importarInventarioViejo(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@RequestBody String contenidoCsv) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		return inventarioViejoImportService.importarCsv(contenidoCsv);
 	}
 
 	private void exigirPermiso(UserDetails userDetails, String permiso) {

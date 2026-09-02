@@ -25,6 +25,7 @@ PUT  /api/v1/ubicaciones/{id}
 
 - Filtros por texto, tipo y estado.
 - Alta y edicion desde pantalla si el usuario tiene `UBICACIONES:EDITAR`.
+- Selectores de ubicacion en equipos, componentes, muebles, patrimonio y stock.
 - Auditoria al crear y actualizar.
 - CSV desde Reportes:
 
@@ -51,7 +52,6 @@ OTRA
 
 ## Pendientes
 
-- Usar ubicaciones como selector en equipos, muebles, patrimonio y stock.
 - Definir jerarquia edificio/piso/oficina si el mapa interno crece.
 - Agregar conteos por ubicacion.
 - Exportar mapa operativo por fuero o dependencia.
