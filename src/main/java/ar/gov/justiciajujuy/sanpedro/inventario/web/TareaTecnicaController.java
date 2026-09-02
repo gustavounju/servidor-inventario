@@ -6,9 +6,11 @@ import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.EstadoTareaTecnica;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.PrioridadTareaTecnica;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService;
+import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.AgregarComentarioTareaCommand;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.CambiarEstadoTareaCommand;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.EquipoNoEncontradoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.GuardarTareaTecnicaCommand;
+import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.TareaComentarioDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.TareaTecnicaDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.TareaTecnicaNoEncontradaException;
 import jakarta.validation.Valid;
@@ -84,6 +86,24 @@ public class TareaTecnicaController {
 		return tareaTecnicaService.cambiarEstado(id, request.toCommand());
 	}
 
+	@GetMapping("/{id}/comentarios")
+	public List<TareaComentarioDetalle> comentarios(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id) {
+		exigirPermiso(userDetails, PERMISO_VER);
+		return tareaTecnicaService.comentarios(id);
+	}
+
+	@PostMapping("/{id}/comentarios")
+	@ResponseStatus(HttpStatus.CREATED)
+	public TareaComentarioDetalle comentar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			@Valid @RequestBody AgregarComentarioTareaRequest request) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		return tareaTecnicaService.comentar(id, request.toCommand(userDetails.getUsername()));
+	}
+
 	private void exigirPermiso(UserDetails userDetails, String permiso) {
 		if (!authorizationService.tienePermiso(userDetails, MODULO_TAREAS, permiso)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para operar tareas tecnicas.");
@@ -113,6 +133,14 @@ public class TareaTecnicaController {
 
 		private CambiarEstadoTareaCommand toCommand() {
 			return new CambiarEstadoTareaCommand(estado, observacionesCierre);
+		}
+	}
+
+	public record AgregarComentarioTareaRequest(
+			@NotBlank @Size(max = 1000) String comentario) {
+
+		private AgregarComentarioTareaCommand toCommand(String autor) {
+			return new AgregarComentarioTareaCommand(autor, comentario);
 		}
 	}
 }

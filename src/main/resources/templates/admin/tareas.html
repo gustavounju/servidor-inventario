@@ -78,6 +78,10 @@
 									<strong th:text="${tarea.titulo}">Revisar fuente</strong>
 									<span class="table-subtext" th:text="${tarea.descripcion ?: 'Sin descripcion'}">Detalle</span>
 									<span class="table-subtext" th:if="${tarea.observacionesCierre}" th:text="${tarea.observacionesCierre}">Cierre</span>
+									<div class="comment-thread" th:if="${comentariosPorTarea[tarea.id] != null and !#lists.isEmpty(comentariosPorTarea[tarea.id])}">
+										<span class="table-subtext" th:each="comentario : ${comentariosPorTarea[tarea.id]}"
+												th:text="${comentario.autor + ': ' + comentario.comentario}">admin.local: Se reviso cableado</span>
+									</div>
 								</td>
 								<td data-label="Equipo" th:text="${tarea.equipoNombre ?: 'Sin equipo'}">PC-INF-001</td>
 								<td data-label="Prioridad" th:text="${tarea.prioridad}">MEDIA</td>
@@ -109,6 +113,10 @@
 										</select>
 										<input name="observacionesCierre" maxlength="1000" placeholder="Observaciones">
 										<button class="secondary-action" type="submit">Guardar</button>
+									</form>
+									<form class="inline-action-form" th:action="@{/admin/tareas/{id}/comentarios(id=${tarea.id})}" method="post">
+										<input name="comentario" maxlength="1000" required placeholder="Comentario">
+										<button class="secondary-action" type="submit">Comentar</button>
 									</form>
 								</td>
 							</tr>

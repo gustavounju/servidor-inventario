@@ -40,6 +40,7 @@ class TareaTecnicaPageControllerTests {
 			.andExpect(view().name("admin/tareas"))
 			.andExpect(content().string(containsString("Tareas tecnicas")))
 			.andExpect(content().string(containsString("Texto")))
+			.andExpect(content().string(containsString("Comentario inicial de seguimiento.")))
 			.andExpect(content().string(containsString("Nueva tarea")));
 
 		mockMvc.perform(post("/admin/tareas")
@@ -111,6 +112,20 @@ class TareaTecnicaPageControllerTests {
 			.andExpect(content().string(containsString("Revisar cableado de red")))
 			.andExpect(content().string(containsString("Se agenda visita tecnica")))
 			.andExpect(content().string(containsString("gmurad")));
+	}
+
+	@Test
+	void agregaComentarioDesdePantalla() throws Exception {
+		mockMvc.perform(post("/admin/tareas/1/comentarios")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.param("comentario", "Se agenda visita con el responsable."))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrlPattern("/admin/tareas?creado=*"));
+
+		mockMvc.perform(get("/admin/tareas").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("Se agenda visita con el responsable.")));
 	}
 
 	@Test

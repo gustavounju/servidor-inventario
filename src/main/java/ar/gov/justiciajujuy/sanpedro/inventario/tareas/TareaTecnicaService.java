@@ -14,14 +14,17 @@ import org.springframework.util.StringUtils;
 public class TareaTecnicaService {
 
 	private final TareaTecnicaRepository tareaTecnicaRepository;
+	private final TareaTecnicaComentarioRepository comentarioRepository;
 	private final EquipoRepository equipoRepository;
 	private final AuditoriaService auditoriaService;
 
 	public TareaTecnicaService(
 			TareaTecnicaRepository tareaTecnicaRepository,
+			TareaTecnicaComentarioRepository comentarioRepository,
 			EquipoRepository equipoRepository,
 			AuditoriaService auditoriaService) {
 		this.tareaTecnicaRepository = tareaTecnicaRepository;
+		this.comentarioRepository = comentarioRepository;
 		this.equipoRepository = equipoRepository;
 		this.auditoriaService = auditoriaService;
 	}
@@ -35,6 +38,14 @@ public class TareaTecnicaService {
 
 	public long contar() {
 		return tareaTecnicaRepository.count();
+	}
+
+	@Transactional(readOnly = true)
+	public List<TareaComentarioDetalle> comentarios(Long tareaId) {
+		validarExistencia(tareaId);
+		return comentarioRepository.findByTareaIdOrderByCreadoEnDescIdDesc(tareaId).stream()
+				.map(this::toComentarioDetalle)
+				.toList();
 	}
 
 	@Transactional
@@ -78,12 +89,31 @@ public class TareaTecnicaService {
 		return toDetalle(tarea);
 	}
 
+	@Transactional
+	public TareaComentarioDetalle comentar(Long id, AgregarComentarioTareaCommand command) {
+		TareaTecnica tarea = tareaTecnicaRepository.findById(id)
+				.orElseThrow(() -> new TareaTecnicaNoEncontradaException(id));
+		TareaTecnicaComentario comentario = comentarioRepository.save(new TareaTecnicaComentario(
+				tarea,
+				textoRequerido(command.autor(), "autor"),
+				textoRequerido(command.comentario(), "comentario")));
+		auditoriaService.registrar("TAREAS", "COMENTAR", "TareaTecnica", tarea.getId(),
+				"Comentario agregado a tarea tecnica " + tarea.getId() + ".");
+		return toComentarioDetalle(comentario);
+	}
+
 	private Equipo buscarEquipoOpcional(Long equipoId) {
 		if (equipoId == null) {
 			return null;
 		}
 		return equipoRepository.findById(equipoId)
 				.orElseThrow(() -> new EquipoNoEncontradoException(equipoId));
+	}
+
+	private void validarExistencia(Long tareaId) {
+		if (!tareaTecnicaRepository.existsById(tareaId)) {
+			throw new TareaTecnicaNoEncontradaException(tareaId);
+		}
 	}
 
 	private TareaTecnicaDetalle toDetalle(TareaTecnica tarea) {
@@ -100,6 +130,15 @@ public class TareaTecnicaService {
 				tarea.getObservacionesCierre(),
 				tarea.getCreadoEn(),
 				tarea.getCerradoEn());
+	}
+
+	private TareaComentarioDetalle toComentarioDetalle(TareaTecnicaComentario comentario) {
+		return new TareaComentarioDetalle(
+				comentario.getId(),
+				comentario.getTarea().getId(),
+				comentario.getAutor(),
+				comentario.getComentario(),
+				comentario.getCreadoEn());
 	}
 
 	private String textoOpcional(String valor) {
@@ -126,6 +165,11 @@ public class TareaTecnicaService {
 			String observacionesCierre) {
 	}
 
+	public record AgregarComentarioTareaCommand(
+			String autor,
+			String comentario) {
+	}
+
 	public record TareaTecnicaDetalle(
 			Long id,
 			Long equipoId,
@@ -138,6 +182,14 @@ public class TareaTecnicaService {
 			String observacionesCierre,
 			LocalDateTime creadoEn,
 			LocalDateTime cerradoEn) {
+	}
+
+	public record TareaComentarioDetalle(
+			Long id,
+			Long tareaId,
+			String autor,
+			String comentario,
+			LocalDateTime creadoEn) {
 	}
 
 	public static class TareaTecnicaNoEncontradaException extends RuntimeException {

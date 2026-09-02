@@ -123,6 +123,29 @@ class TareaTecnicaControllerTests {
 	}
 
 	@Test
+	void agregaYListaComentariosDeTareaTecnica() throws Exception {
+		String comentario = """
+				{
+				  "comentario": "Se coordino visita con mesa de entradas."
+				}
+				""";
+
+		mockMvc.perform(post("/api/v1/tareas-tecnicas/1/comentarios")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(comentario))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.tareaId").value(1))
+			.andExpect(jsonPath("$.autor").value("admin.local"))
+			.andExpect(jsonPath("$.comentario").value("Se coordino visita con mesa de entradas."));
+
+		mockMvc.perform(get("/api/v1/tareas-tecnicas/1/comentarios").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[?(@.comentario == 'Se coordino visita con mesa de entradas.')]", hasSize(1)));
+	}
+
+	@Test
 	void bloqueaTareasSinPermiso() throws Exception {
 		mockMvc.perform(get("/api/v1/tareas-tecnicas").with(user(usuarioSinPermisos())))
 			.andExpect(status().isForbidden());

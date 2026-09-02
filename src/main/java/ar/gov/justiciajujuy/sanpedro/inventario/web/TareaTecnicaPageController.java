@@ -1,12 +1,19 @@
 package ar.gov.justiciajujuy.sanpedro.inventario.web;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoRepository;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.EstadoTareaTecnica;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.PrioridadTareaTecnica;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService;
+import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.AgregarComentarioTareaCommand;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.CambiarEstadoTareaCommand;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.GuardarTareaTecnicaCommand;
+import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.TareaComentarioDetalle;
+import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.TareaTecnicaDetalle;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -107,9 +114,25 @@ public class TareaTecnicaPageController {
 		return "redirect:/admin/tareas";
 	}
 
+	@PostMapping("/admin/tareas/{id}/comentarios")
+	public String comentar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			@RequestParam @NotBlank @Size(max = 1000) String comentario,
+			RedirectAttributes redirectAttributes) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		tareaTecnicaService.comentar(id, new AgregarComentarioTareaCommand(userDetails.getUsername(), comentario));
+		redirectAttributes.addAttribute("creado", "1");
+		return "redirect:/admin/tareas";
+	}
+
 	private void prepararModelo(Model model, UserDetails userDetails, TareaForm tareaForm,
 			EstadoTareaTecnica estado, Long equipoId, String responsable) {
-		model.addAttribute("tareas", tareaTecnicaService.buscar(estado, equipoId, responsable));
+		List<TareaTecnicaDetalle> tareas = tareaTecnicaService.buscar(estado, equipoId, responsable);
+		Map<Long, List<TareaComentarioDetalle>> comentariosPorTarea = tareas.stream()
+				.collect(Collectors.toMap(TareaTecnicaDetalle::id, tarea -> tareaTecnicaService.comentarios(tarea.id())));
+		model.addAttribute("tareas", tareas);
+		model.addAttribute("comentariosPorTarea", comentariosPorTarea);
 		model.addAttribute("tareaForm", tareaForm);
 		model.addAttribute("equipos", equipoRepository.buscar(null, org.springframework.data.domain.Pageable.unpaged()).getContent());
 		model.addAttribute("estadosTarea", EstadoTareaTecnica.values());

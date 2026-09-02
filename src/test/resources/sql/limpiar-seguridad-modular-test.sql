@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS stock_componentes;
 DROP TABLE IF EXISTS componentes;
 DROP TABLE IF EXISTS actas;
 DROP TABLE IF EXISTS ubicaciones;
+DROP TABLE IF EXISTS tareas_tecnicas_comentarios;
 DROP TABLE IF EXISTS tareas_tecnicas;
 DROP TABLE IF EXISTS bienes_patrimoniales;
 DROP TABLE IF EXISTS muebles;
