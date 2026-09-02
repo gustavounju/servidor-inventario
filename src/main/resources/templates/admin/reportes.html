@@ -88,12 +88,23 @@
 					<span class="count-badge" th:if="${puedeExportarReportes}">Requiere REPORTES:EXPORTAR</span>
 				</div>
 
+				<form class="search-form dashboard-filter-form" th:action="@{/admin/reportes}" method="get">
+					<label>
+						<span>Filtro CSV</span>
+						<input type="search" name="query" th:value="${filtroQuery}" maxlength="120" placeholder="Fuero, ubicacion, custodio o responsable">
+					</label>
+					<div class="form-actions">
+						<button class="primary-action" type="submit">Aplicar</button>
+						<a class="secondary-action" th:href="@{/admin/reportes}">Limpiar</a>
+					</div>
+				</form>
+
 				<div class="admin-actions" th:if="${puedeExportarReportes}">
-					<a class="primary-action" th:href="@{/api/v1/reportes/muebles.csv}">Muebles CSV</a>
-					<a class="secondary-action" th:href="@{/api/v1/reportes/patrimonio.csv}">Patrimonio CSV</a>
-					<a class="secondary-action" th:href="@{/api/v1/reportes/tareas.csv}">Tareas CSV</a>
-					<a class="secondary-action" th:href="@{/api/v1/reportes/actas.csv}">Actas CSV</a>
-					<a class="secondary-action" th:href="@{/api/v1/reportes/ubicaciones.csv}">Ubicaciones CSV</a>
+					<a class="primary-action" th:href="@{/api/v1/reportes/muebles.csv(query=${filtroQuery})}">Muebles CSV</a>
+					<a class="secondary-action" th:href="@{/api/v1/reportes/patrimonio.csv(query=${filtroQuery})}">Patrimonio CSV</a>
+					<a class="secondary-action" th:href="@{/api/v1/reportes/tareas.csv(query=${filtroQuery})}">Tareas CSV</a>
+					<a class="secondary-action" th:href="@{/api/v1/reportes/actas.csv(query=${filtroQuery})}">Actas CSV</a>
+					<a class="secondary-action" th:href="@{/api/v1/reportes/ubicaciones.csv(query=${filtroQuery})}">Ubicaciones CSV</a>
 				</div>
 
 				<p class="empty-state" th:if="${!puedeExportarReportes}">El usuario actual puede ver reportes, pero no exportarlos.</p>

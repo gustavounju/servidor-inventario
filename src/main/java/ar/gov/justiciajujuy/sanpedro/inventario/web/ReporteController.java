@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -37,33 +38,38 @@ public class ReporteController {
 	}
 
 	@GetMapping(value = "/muebles.csv", produces = "text/csv")
-	public ResponseEntity<String> mueblesCsv(@AuthenticationPrincipal UserDetails userDetails) {
+	public ResponseEntity<String> mueblesCsv(@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam(required = false) String query) {
 		exigirPermiso(userDetails, PERMISO_EXPORTAR);
-		return csv("muebles.csv", reporteService.mueblesCsv());
+		return csv("muebles.csv", reporteService.mueblesCsv(query));
 	}
 
 	@GetMapping(value = "/patrimonio.csv", produces = "text/csv")
-	public ResponseEntity<String> patrimonioCsv(@AuthenticationPrincipal UserDetails userDetails) {
+	public ResponseEntity<String> patrimonioCsv(@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam(required = false) String query) {
 		exigirPermiso(userDetails, PERMISO_EXPORTAR);
-		return csv("patrimonio.csv", reporteService.patrimonioCsv());
+		return csv("patrimonio.csv", reporteService.patrimonioCsv(query));
 	}
 
 	@GetMapping(value = "/tareas.csv", produces = "text/csv")
-	public ResponseEntity<String> tareasCsv(@AuthenticationPrincipal UserDetails userDetails) {
+	public ResponseEntity<String> tareasCsv(@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam(required = false) String query) {
 		exigirPermiso(userDetails, PERMISO_EXPORTAR);
-		return csv("tareas.csv", reporteService.tareasCsv());
+		return csv("tareas.csv", reporteService.tareasCsv(query));
 	}
 
 	@GetMapping(value = "/actas.csv", produces = "text/csv")
-	public ResponseEntity<String> actasCsv(@AuthenticationPrincipal UserDetails userDetails) {
+	public ResponseEntity<String> actasCsv(@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam(required = false) String query) {
 		exigirPermiso(userDetails, PERMISO_EXPORTAR);
-		return csv("actas.csv", reporteService.actasCsv());
+		return csv("actas.csv", reporteService.actasCsv(query));
 	}
 
 	@GetMapping(value = "/ubicaciones.csv", produces = "text/csv")
-	public ResponseEntity<String> ubicacionesCsv(@AuthenticationPrincipal UserDetails userDetails) {
+	public ResponseEntity<String> ubicacionesCsv(@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam(required = false) String query) {
 		exigirPermiso(userDetails, PERMISO_EXPORTAR);
-		return csv("ubicaciones.csv", reporteService.ubicacionesCsv());
+		return csv("ubicaciones.csv", reporteService.ubicacionesCsv(query));
 	}
 
 	private ResponseEntity<String> csv(String nombre, String contenido) {

@@ -245,15 +245,14 @@ Primera version implementada:
 - API y pantalla `/admin/patrimonio`.
 - API y pantalla `/admin/reportes`.
 - Exportaciones CSV de muebles, patrimonio y tareas.
+- Filtro transversal `query` para exportaciones CSV.
 - Resumen operativo con conteos de equipos, muebles, patrimonio y tareas.
 - Tests de API, pantalla y permisos.
 
 Pendiente siguiente:
 
-- Evitar duplicados con respuestas HTTP 409 mas claras.
 - Paginacion en listados cuando crezcan los datos.
-- Exportacion CSV del dashboard de diferencias.
-- Filtros avanzados por fuero, custodio y ubicacion.
+- Filtros avanzados especificos por modulo cuando el uso real los justifique.
 
 ### Sprint 7: Actas y Ubicaciones
 

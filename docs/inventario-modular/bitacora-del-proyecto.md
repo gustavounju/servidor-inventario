@@ -2170,6 +2170,7 @@ Al cierre de esta bitacora, Inventario Modular cuenta con:
 - Modulo `REPORTES`.
 - Pantalla `/admin/reportes`.
 - API de resumen y CSV en `/api/v1/reportes`.
+- Filtro transversal `query` para exportaciones CSV de reportes.
 - Modulo `ACTAS`.
 - Pantalla `/admin/actas`.
 - API de actas en `/api/v1/actas`.
@@ -2220,7 +2221,8 @@ Pendientes del modulo Tareas:
 
 Pendientes de muebles, patrimonio y reportes:
 
-- Paginacion y filtros avanzados cuando crezca el volumen de datos.
+- Paginacion cuando crezca el volumen de datos.
+- Filtros avanzados especificos por modulo cuando el uso real los justifique.
 - Reportes administrativos mas completos.
 
 Pendientes de actas y ubicaciones:

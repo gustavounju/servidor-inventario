@@ -47,9 +47,9 @@ public class ReporteService {
 				ubicacionService.contar());
 	}
 
-	public String mueblesCsv() {
+	public String mueblesCsv(String query) {
 		StringBuilder csv = new StringBuilder("codigo,tipo,descripcion,ubicacion,fuero,responsable,estado,activo\n");
-		for (MuebleDetalle mueble : muebleService.buscar(null, null)) {
+		for (MuebleDetalle mueble : muebleService.buscar(query, null)) {
 			csv.append(fila(Arrays.asList(
 					mueble.codigo(),
 					mueble.tipo(),
@@ -63,9 +63,9 @@ public class ReporteService {
 		return csv.toString();
 	}
 
-	public String patrimonioCsv() {
+	public String patrimonioCsv(String query) {
 		StringBuilder csv = new StringBuilder("numeroPatrimonial,categoria,descripcion,ubicacion,fuero,custodio,estado,equipoNombre,activo\n");
-		for (BienPatrimonialDetalle bien : patrimonioService.buscar(null, null)) {
+		for (BienPatrimonialDetalle bien : patrimonioService.buscar(query, null)) {
 			csv.append(fila(Arrays.asList(
 					bien.numeroPatrimonial(),
 					bien.categoria(),
@@ -80,9 +80,9 @@ public class ReporteService {
 		return csv.toString();
 	}
 
-	public String tareasCsv() {
+	public String tareasCsv(String query) {
 		StringBuilder csv = new StringBuilder("id,titulo,equipoNombre,estado,prioridad,responsable\n");
-		for (TareaTecnicaDetalle tarea : tareaTecnicaService.buscar(null, null, null)) {
+		for (TareaTecnicaDetalle tarea : tareaTecnicaService.buscar(null, null, query)) {
 			csv.append(fila(Arrays.asList(
 					String.valueOf(tarea.id()),
 					tarea.titulo(),
@@ -94,9 +94,9 @@ public class ReporteService {
 		return csv.toString();
 	}
 
-	public String actasCsv() {
+	public String actasCsv(String query) {
 		StringBuilder csv = new StringBuilder("numero,tipo,equipoNombre,fechaEmision,destinatario,responsableEntrega,responsableRecepcion,estado,activo\n");
-		for (ActaDetalle acta : actaService.buscar(null, null, null)) {
+		for (ActaDetalle acta : actaService.buscar(query, null, null)) {
 			csv.append(fila(Arrays.asList(
 					acta.numero(),
 					String.valueOf(acta.tipo()),
@@ -111,9 +111,9 @@ public class ReporteService {
 		return csv.toString();
 	}
 
-	public String ubicacionesCsv() {
+	public String ubicacionesCsv(String query) {
 		StringBuilder csv = new StringBuilder("codigo,nombre,tipo,fuero,responsable,edificio,piso,estado,activo\n");
-		for (UbicacionDetalle ubicacion : ubicacionService.buscar(null, null, null)) {
+		for (UbicacionDetalle ubicacion : ubicacionService.buscar(query, null, null)) {
 			csv.append(fila(Arrays.asList(
 					ubicacion.codigo(),
 					ubicacion.nombre(),

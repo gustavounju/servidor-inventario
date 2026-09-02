@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 @Controller
@@ -26,9 +27,11 @@ public class ReportePageController {
 	}
 
 	@GetMapping("/admin/reportes")
-	public String reportes(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+	public String reportes(Model model, @AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam(required = false) String query) {
 		exigirPermiso(userDetails, PERMISO_VER);
 		model.addAttribute("resumen", reporteService.resumen());
+		model.addAttribute("filtroQuery", query);
 		model.addAttribute("puedeExportarReportes", authorizationService.tienePermiso(userDetails, MODULO_REPORTES, PERMISO_EXPORTAR));
 		return "admin/reportes";
 	}

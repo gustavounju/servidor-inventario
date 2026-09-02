@@ -63,6 +63,40 @@ class ReporteControllerTests {
 	}
 
 	@Test
+	void exportaCsvOperativoConFiltroTransversal() throws Exception {
+		mockMvc.perform(get("/api/v1/reportes/muebles.csv")
+				.param("query", "Informatica")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("MUE-SEED-001")));
+
+		mockMvc.perform(get("/api/v1/reportes/muebles.csv")
+				.param("query", "Sin coincidencia")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("codigo,tipo,descripcion,ubicacion,fuero,responsable,estado,activo")))
+			.andExpect(content().string(org.hamcrest.Matchers.not(containsString("MUE-SEED-001"))));
+
+		mockMvc.perform(get("/api/v1/reportes/patrimonio.csv")
+				.param("query", "admin.local")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("PAT-SEED-001")));
+
+		mockMvc.perform(get("/api/v1/reportes/actas.csv")
+				.param("query", "Mesa")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("ACT-SEED-001")));
+
+		mockMvc.perform(get("/api/v1/reportes/ubicaciones.csv")
+				.param("query", "Centro Judicial")
+				.with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("UBI-SEED-001")));
+	}
+
+	@Test
 	void bloqueaReportesSinPermiso() throws Exception {
 		mockMvc.perform(get("/api/v1/reportes/resumen").with(user(usuarioSinPermisos())))
 			.andExpect(status().isForbidden());

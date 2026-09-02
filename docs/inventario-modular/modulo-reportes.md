@@ -19,6 +19,8 @@ Primera version implementada:
 - Pantalla `/admin/reportes`.
 - Resumen de equipos, muebles, bienes patrimoniales, tareas, actas y ubicaciones.
 - Descarga CSV protegida por `REPORTES:EXPORTAR`.
+- Filtro transversal `query` en pantalla y exportaciones CSV para buscar por fuero,
+  ubicacion, custodio, responsable, destinatario u otros textos de cada modulo.
 - Permiso de pantalla `REPORTES:VER`.
 
 Exportaciones transversales:
