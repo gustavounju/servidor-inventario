@@ -210,7 +210,7 @@ Primera version implementada:
 
 - Migracion Flyway para tabla `tareas_tecnicas`.
 - Entidad, repositorio y servicio de tareas tecnicas.
-- API `GET /api/v1/tareas-tecnicas` con filtros por estado, equipo y responsable.
+- API `GET /api/v1/tareas-tecnicas` con filtros por estado, equipo y texto operativo.
 - API `POST /api/v1/tareas-tecnicas`.
 - API `PUT /api/v1/tareas-tecnicas/{id}`.
 - API `PATCH /api/v1/tareas-tecnicas/{id}/estado`.

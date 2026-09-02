@@ -16,7 +16,7 @@ asociados a un equipo concreto o quedar como tarea general.
 - API `PUT /api/v1/tareas-tecnicas/{id}`.
 - API `PATCH /api/v1/tareas-tecnicas/{id}/estado`.
 - Pantalla administrativa `/admin/tareas`.
-- Filtros por estado, equipo y responsable.
+- Filtros por estado, equipo y texto operativo.
 - Alta de tareas desde la pantalla.
 - Edicion de titulo, descripcion, equipo, prioridad y responsable desde la pantalla.
 - Cambio de estado desde la pantalla.

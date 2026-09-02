@@ -39,6 +39,7 @@ class TareaTecnicaPageControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(view().name("admin/tareas"))
 			.andExpect(content().string(containsString("Tareas tecnicas")))
+			.andExpect(content().string(containsString("Texto")))
 			.andExpect(content().string(containsString("Nueva tarea")));
 
 		mockMvc.perform(post("/admin/tareas")

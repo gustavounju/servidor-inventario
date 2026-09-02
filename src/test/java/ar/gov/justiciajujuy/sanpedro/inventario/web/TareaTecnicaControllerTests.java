@@ -67,6 +67,10 @@ class TareaTecnicaControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[?(@.titulo == 'Revisar fuente de PC-INF-001')]", hasSize(1)));
 
+		mockMvc.perform(get("/api/v1/tareas-tecnicas?responsable=apagados").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[?(@.titulo == 'Revisar fuente de PC-INF-001')]", hasSize(1)));
+
 		mockMvc.perform(patch("/api/v1/tareas-tecnicas/1/estado")
 				.with(user(adminLocal()))
 				.with(csrf())

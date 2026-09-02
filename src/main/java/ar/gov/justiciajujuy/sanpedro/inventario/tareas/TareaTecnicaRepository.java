@@ -14,7 +14,11 @@ public interface TareaTecnicaRepository extends JpaRepository<TareaTecnica, Long
 			LEFT JOIN FETCH t.equipo e
 			WHERE (:estado IS NULL OR t.estado = :estado)
 			  AND (:equipoId IS NULL OR e.id = :equipoId)
-			  AND (:responsable IS NULL OR LOWER(COALESCE(t.responsable, '')) LIKE LOWER(CONCAT('%', :responsable, '%')))
+			  AND (:responsable IS NULL
+			    OR LOWER(t.titulo) LIKE LOWER(CONCAT('%', :responsable, '%'))
+			    OR LOWER(COALESCE(t.descripcion, '')) LIKE LOWER(CONCAT('%', :responsable, '%'))
+			    OR LOWER(COALESCE(t.responsable, '')) LIKE LOWER(CONCAT('%', :responsable, '%'))
+			    OR LOWER(COALESCE(e.nombre, '')) LIKE LOWER(CONCAT('%', :responsable, '%')))
 			ORDER BY t.id DESC
 			""")
 	List<TareaTecnica> buscar(

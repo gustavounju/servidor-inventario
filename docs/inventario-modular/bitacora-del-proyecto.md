@@ -2160,6 +2160,7 @@ Al cierre de esta bitacora, Inventario Modular cuenta con:
 - Pantalla `/admin/tareas`.
 - API de tareas tecnicas en `/api/v1/tareas-tecnicas`.
 - Edicion completa de tareas tecnicas desde API y pantalla.
+- Busqueda textual de tareas por titulo, descripcion, responsable o equipo.
 - Modulo `MUEBLES`.
 - Pantalla `/admin/muebles`.
 - API de muebles en `/api/v1/muebles`.
