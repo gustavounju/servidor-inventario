@@ -1030,3 +1030,79 @@ dialog::backdrop {
 .logout-pill-btn svg {
 	stroke: currentColor;
 }
+
+/* ==========================================================================
+   Navigation Bar & Tabs (Estilo Unificado)
+   ========================================================================== */
+
+.admin-nav-bar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	width: 100%;
+	margin-top: 6px;
+	padding-top: 10px;
+}
+
+.nav-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 13px;
+	border-radius: 8px;
+	border: 1px solid #e2e8f0;
+	background: #ffffff;
+	color: #475569;
+	font-size: 0.84rem;
+	font-weight: 600;
+	text-decoration: none;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.nav-tab:hover {
+	background: #f1f5f9;
+	color: #1e293b;
+	border-color: #cbd5e1;
+}
+
+.nav-tab.is-active {
+	background: #1e3a8a;
+	color: #ffffff;
+	border-color: #1e3a8a;
+	box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+}
+
+.nav-tab.is-active:hover {
+	background: #172554;
+	border-color: #172554;
+}
+
+.nav-tab svg {
+	stroke: currentColor;
+}
+
+.btn-deactivate {
+	color: #b91c1c !important;
+	border-color: #fecaca !important;
+	background: #fff5f5 !important;
+}
+
+.btn-deactivate:hover {
+	background: #fee2e2 !important;
+	border-color: #fca5a5 !important;
+	color: #991b1b !important;
+}
+
+.btn-activate {
+	color: #15803d !important;
+	border-color: #bbf7d0 !important;
+	background: #f0fdf4 !important;
+}
+
+.btn-activate:hover {
+	background: #dcfce7 !important;
+	border-color: #86efac !important;
+	color: #166534 !important;
+}

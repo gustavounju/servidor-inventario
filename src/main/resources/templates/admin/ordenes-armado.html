@@ -9,19 +9,7 @@
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="ordenes-title">
-			<header class="panel-header">
-				<div>
-					<p class="eyebrow">Gemelo digital planificado</p>
-					<h1 id="ordenes-title">Ordenes de Armado</h1>
-				</div>
-				<nav class="admin-actions" aria-label="Acciones administrativas">
-					<a class="secondary-action" th:href="@{/admin}">Volver</a>
-					<a class="secondary-action" th:href="@{/admin/stock}">Stock</a>
-					<form class="logout-form" th:action="@{/logout}" method="post">
-						<button type="submit">Salir</button>
-					</form>
-				</nav>
-			</header>
+			<header th:replace="~{admin/nav :: topbar('Modulo funcional', 'Ordenes de Armado', 'ordenes')}"></header>
 
 			<p class="success-message" th:if="${creado}">Operacion de orden registrada correctamente.</p>
 

@@ -104,6 +104,37 @@ class UsuarioAdminPageControllerTests {
 			.andExpect(content().string(containsString("AD")));
 	}
 
+	@Test
+	void editaUsuarioDesdeFormularioWeb() throws Exception {
+		mockMvc.perform(post("/admin/usuarios/editar")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.param("id", "2")
+				.param("activo", "true")
+				.param("roles", "ADMINISTRADOR"))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/admin/usuarios?actualizado=true"));
+
+		mockMvc.perform(get("/admin/usuarios?actualizado=true").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("Usuario actualizado correctamente.")));
+	}
+
+	@Test
+	void cambiaClaveLocalDesdeFormularioWeb() throws Exception {
+		mockMvc.perform(post("/admin/usuarios/cambiar-clave")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.param("id", "1")
+				.param("password", "NuevaClaveSuperSegura123!"))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/admin/usuarios?claveCambiada=true"));
+
+		mockMvc.perform(get("/admin/usuarios?claveCambiada=true").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("Clave del usuario modificada correctamente.")));
+	}
+
 	private ActiveDirectoryUserDetails adminLocal() {
 		return new ActiveDirectoryUserDetails(
 				"admin.local",
