@@ -85,8 +85,6 @@ class SystemStatusControllerTests {
 			.andExpect(content().string(org.hamcrest.Matchers.containsString("Gustavo Elias Murad")))
 			.andExpect(content().string(org.hamcrest.Matchers.containsString("gmurad")))
 			.andExpect(content().string(org.hamcrest.Matchers.containsString("Informatica")))
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("displayName")))
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("mail")))
 			.andExpect(content().string(org.hamcrest.Matchers.containsString("Salir")));
 	}
 }

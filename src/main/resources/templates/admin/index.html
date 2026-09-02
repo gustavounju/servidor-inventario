@@ -10,9 +10,36 @@
 	<main class="shell">
 		<section class="status-panel" aria-labelledby="system-title">
 			<header class="panel-header">
-				<div>
-					<p class="eyebrow">Centro Judicial San Pedro</p>
-					<h1 id="system-title" th:text="${applicationName}">Inventario Modular</h1>
+				<div class="panel-topbar">
+					<div class="panel-branding">
+						<p class="eyebrow">Centro Judicial San Pedro</p>
+						<h1 id="system-title" th:text="${applicationName}">Inventario Modular</h1>
+					</div>
+					<div class="user-session-pill" title="Sesión activa">
+						<div class="user-avatar" aria-hidden="true">
+							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+								<circle cx="12" cy="7" r="4"></circle>
+							</svg>
+						</div>
+						<div class="user-meta">
+							<span class="user-name" th:text="${displayName != null and !displayName.isEmpty() ? displayName : username}">Gustavo Elias Murad</span>
+							<span class="user-subtext">
+								<span class="user-account" th:text="'@' + ${username}">@gmurad</span>
+								<span class="user-badge" th:if="${fuero != null and !#strings.isEmpty(fuero)}" th:text="${fuero}">Informática</span>
+							</span>
+						</div>
+						<form class="logout-form" th:action="@{/logout}" method="post">
+							<button type="submit" class="logout-pill-btn" title="Cerrar sesión" aria-label="Cerrar sesión">
+								<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+									<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+									<polyline points="16 17 21 12 16 7"></polyline>
+									<line x1="21" y1="12" x2="9" y2="12"></line>
+								</svg>
+								<span>Salir</span>
+							</button>
+						</form>
+					</div>
 				</div>
 				<nav class="admin-actions" aria-label="Acciones administrativas">
 					<a class="secondary-action" th:if="${canViewEquipos}" th:href="@{/admin/equipos}">Equipos</a>
@@ -27,9 +54,6 @@
 					<a class="secondary-action" th:if="${canViewTareas}" th:href="@{/admin/tareas}">Tareas</a>
 					<a class="secondary-action" th:if="${canViewAuditoria}" th:href="@{/admin/auditoria}">Auditoria</a>
 					<a class="secondary-action" th:if="${canManageUsers}" th:href="@{/admin/usuarios}">Usuarios</a>
-					<form class="logout-form" th:action="@{/logout}" method="post">
-						<button type="submit">Salir</button>
-					</form>
 				</nav>
 			</header>
 			<div class="status-row">
@@ -64,20 +88,6 @@
 					Modo local/fallback: se usan usuarios locales y base local disponible.
 				</p>
 			</section>
-			<dl class="identity-grid" aria-label="Usuario autenticado">
-				<div>
-					<dt>Usuario</dt>
-					<dd th:text="${displayName}">Gustavo Elias Murad</dd>
-				</div>
-				<div>
-					<dt>Cuenta</dt>
-					<dd th:text="${username}">gmurad</dd>
-				</div>
-				<div>
-					<dt>Fuero</dt>
-					<dd th:text="${fuero}">Informatica</dd>
-				</div>
-			</dl>
 			<section class="modules-section" aria-labelledby="modules-title">
 				<div class="section-header">
 					<h2 id="modules-title">Modulos habilitados</h2>
@@ -97,18 +107,6 @@
 							<span th:each="permission : ${module.permisos}" th:text="${permission}">VER</span>
 						</div>
 					</article>
-				</div>
-			</section>
-			<section class="attributes-section" aria-labelledby="ad-attributes-title">
-				<h2 id="ad-attributes-title">Datos de identidad de la sesion</h2>
-				<p class="empty-state" th:if="${#maps.isEmpty(adAttributes)}">
-					Sin atributos adicionales para mostrar en esta sesion.
-				</p>
-				<div class="attributes-table" th:if="${!#maps.isEmpty(adAttributes)}">
-					<div class="attribute-row" th:each="attribute : ${adAttributes}">
-						<div class="attribute-name" th:text="${attribute.key}">displayName</div>
-						<div class="attribute-value" th:text="${#strings.listJoin(attribute.value, ', ')}">Gustavo Elias Murad</div>
-					</div>
 				</div>
 			</section>
 			<p class="version">Version <span th:text="${version}">0.0.1-SNAPSHOT</span></p>

@@ -906,3 +906,127 @@ dialog::backdrop {
 	background: rgba(15, 23, 42, 0.45);
 	backdrop-filter: blur(2.5px);
 }
+
+/* ==========================================================================
+   User Session Pill & Topbar (Estilo 1)
+   ========================================================================== */
+
+.panel-topbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	gap: 16px;
+	flex-wrap: wrap;
+	padding-bottom: 14px;
+	border-bottom: 1px solid #eef2f6;
+}
+
+.panel-branding {
+	min-width: 0;
+}
+
+.user-session-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 12px;
+	padding: 6px 8px 6px 12px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 9999px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	transition: all 0.2s ease;
+}
+
+.user-session-pill:hover {
+	border-color: #cbd5e1;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+	background: #ffffff;
+}
+
+.user-avatar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #1e3a8a, #2563eb);
+	color: #ffffff;
+	flex-shrink: 0;
+}
+
+.user-avatar svg {
+	width: 18px;
+	height: 18px;
+}
+
+.user-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.user-name {
+	font-size: 0.88rem;
+	font-weight: 700;
+	color: #0f172a;
+	line-height: 1.2;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 220px;
+}
+
+.user-subtext {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.75rem;
+	line-height: 1.2;
+}
+
+.user-account {
+	color: #64748b;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.72rem;
+}
+
+.user-badge {
+	display: inline-block;
+	padding: 1px 6px;
+	border-radius: 4px;
+	background: #e0f2fe;
+	color: #0369a1;
+	font-weight: 600;
+	font-size: 0.68rem;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.logout-pill-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 9999px;
+	color: #b91c1c;
+	font: inherit;
+	font-size: 0.78rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.logout-pill-btn:hover {
+	background: #fef2f2;
+	border-color: #fca5a5;
+	color: #991b1b;
+}
+
+.logout-pill-btn svg {
+	stroke: currentColor;
+}

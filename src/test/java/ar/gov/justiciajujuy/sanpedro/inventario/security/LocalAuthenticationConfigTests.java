@@ -49,7 +49,6 @@ class LocalAuthenticationConfigTests {
 		mockMvc.perform(get("/admin").session((org.springframework.mock.web.MockHttpSession) login.getRequest().getSession(false)))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("Administrador Local")))
-			.andExpect(content().string(containsString("LOCAL_SIMULADO")))
 			.andExpect(content().string(containsString("Equipos")))
 			.andExpect(content().string(containsString("Usuarios")));
 	}
