@@ -8,7 +8,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if ([string]::IsNullOrWhiteSpace($Token)) {
+function Test-HasText {
+    param($Value)
+    if ($null -eq $Value) {
+        return $false
+    }
+    return ([string]$Value).Trim().Length -gt 0
+}
+
+if (-not (Test-HasText $Token)) {
     $Token = "dev-token-123456"
 }
 
@@ -33,12 +41,12 @@ function Get-InventoryClass {
         [string]$Filter = ""
     )
     if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
-        if ([string]::IsNullOrWhiteSpace($Filter)) {
+        if (-not (Test-HasText $Filter)) {
             return Get-CimInstance -ClassName $ClassName
         }
         return Get-CimInstance -ClassName $ClassName -Filter $Filter
     }
-    if ([string]::IsNullOrWhiteSpace($Filter)) {
+    if (-not (Test-HasText $Filter)) {
         return Get-WmiObject -Class $ClassName
     }
     return Get-WmiObject -Class $ClassName -Filter $Filter
@@ -114,12 +122,12 @@ function Get-RamDetails {
             }
             $Part = @()
             if ($CapacityGb -gt 0) { $Part += "$($CapacityGb)GB" }
-            if (-not [string]::IsNullOrWhiteSpace($TypeName)) { $Part += $TypeName }
-            if (-not [string]::IsNullOrWhiteSpace($Speed)) { $Part += $Speed }
+            if (Test-HasText $TypeName) { $Part += $TypeName }
+            if (Test-HasText $Speed) { $Part += $Speed }
             if ($Part.Count -gt 0) { $Details += [string]::Join(" ", $Part) }
 
             $Serial = ([string]$Memory.SerialNumber).Trim()
-            if (-not [string]::IsNullOrWhiteSpace($Serial) -and $Serial -notmatch "^(0+|None|To be filled by O\.E\.M\.)$") {
+            if ((Test-HasText $Serial) -and $Serial -notmatch "^(0+|None|To be filled by O\.E\.M\.)$") {
                 $Serials += $Serial
             }
         }
@@ -140,11 +148,11 @@ function Get-DiskDetails {
         $Serials = @()
         foreach ($Disk in $Disks) {
             $Model = ([string]$Disk.Model).Trim()
-            if (-not [string]::IsNullOrWhiteSpace($Model)) {
+            if (Test-HasText $Model) {
                 $Models += $Model
             }
             $Serial = ([string]$Disk.SerialNumber).Trim()
-            if (-not [string]::IsNullOrWhiteSpace($Serial) -and $Serial -notmatch "^(0+|None|To be filled by O\.E\.M\.)$") {
+            if ((Test-HasText $Serial) -and $Serial -notmatch "^(0+|None|To be filled by O\.E\.M\.)$") {
                 $Serials += $Serial
             }
         }
@@ -175,14 +183,19 @@ function Get-MotherboardDetails {
 
 function Get-MonitorDetails {
     try {
-        $MonitorItems = Get-CimInstance -Namespace root\WMI -ClassName WmiMonitorID -ErrorAction Stop
+        if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
+            $MonitorItems = Get-CimInstance -Namespace root\WMI -ClassName WmiMonitorID -ErrorAction Stop
+        }
+        else {
+            $MonitorItems = Get-WmiObject -Namespace root\WMI -Class WmiMonitorID -ErrorAction Stop
+        }
         $Monitors = @()
         foreach ($Monitor in $MonitorItems) {
             $Manufacturer = -join ($Monitor.ManufacturerName | Where-Object { $_ -ne 0 } | ForEach-Object { [char]$_ })
             $Name = -join ($Monitor.UserFriendlyName | Where-Object { $_ -ne 0 } | ForEach-Object { [char]$_ })
             $Serial = -join ($Monitor.SerialNumberID | Where-Object { $_ -ne 0 } | ForEach-Object { [char]$_ })
             $Text = ([string]"$Manufacturer $Name $Serial").Trim()
-            if (-not [string]::IsNullOrWhiteSpace($Text)) {
+            if (Test-HasText $Text) {
                 $Monitors += $Text
             }
         }
@@ -193,7 +206,7 @@ function Get-MonitorDetails {
             $MonitorItems = Get-InventoryClass -ClassName "Win32_DesktopMonitor"
             $Names = @()
             foreach ($Monitor in $MonitorItems) {
-                if (-not [string]::IsNullOrWhiteSpace($Monitor.Name)) {
+                if (Test-HasText $Monitor.Name) {
                     $Names += $Monitor.Name
                 }
             }

@@ -88,13 +88,13 @@ http://192.168.1.8:8081/api/v1/equipos/inventario
 Con la app levantada en la misma maquina:
 
 ```powershell
-$u='http://localhost:8081'; $p="$env:TEMP\inventario-modular.ps1"; $h=(iwr "$u/scripts/windows/inventario-modular.ps1.sha256" -UseBasicParsing).Content.Trim(); iwr "$u/scripts/windows/inventario-modular.ps1" -UseBasicParsing -OutFile $p; $sha=[System.Security.Cryptography.SHA256]::Create(); $fs=[System.IO.File]::OpenRead($p); try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()}; if($a -ne $h){throw "SHA-256 invalido. Script descargado no coincide con el publicado por el servidor."}; powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"
+$u='http://localhost:8081'; $p="$env:TEMP\inventario-modular.ps1"; $wc=New-Object Net.WebClient; $h=$wc.DownloadString("$u/scripts/windows/inventario-modular.ps1.sha256").Trim(); $wc.DownloadFile("$u/scripts/windows/inventario-modular.ps1",$p); $sha=[System.Security.Cryptography.SHA256]::Create(); $fs=[System.IO.File]::OpenRead($p); try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()}; if($a -ne $h){throw "SHA-256 invalido. Script descargado no coincide con el publicado por el servidor."}; powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"
 ```
 
 Para apuntar a la IP LAN de la maquina de Gustavo:
 
 ```powershell
-$u='http://192.168.1.8:8081'; $p="$env:TEMP\inventario-modular.ps1"; $h=(iwr "$u/scripts/windows/inventario-modular.ps1.sha256" -UseBasicParsing).Content.Trim(); iwr "$u/scripts/windows/inventario-modular.ps1" -UseBasicParsing -OutFile $p; $sha=[System.Security.Cryptography.SHA256]::Create(); $fs=[System.IO.File]::OpenRead($p); try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()}; if($a -ne $h){throw "SHA-256 invalido. Script descargado no coincide con el publicado por el servidor."}; powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"
+$u='http://192.168.1.8:8081'; $p="$env:TEMP\inventario-modular.ps1"; $wc=New-Object Net.WebClient; $h=$wc.DownloadString("$u/scripts/windows/inventario-modular.ps1.sha256").Trim(); $wc.DownloadFile("$u/scripts/windows/inventario-modular.ps1",$p); $sha=[System.Security.Cryptography.SHA256]::Create(); $fs=[System.IO.File]::OpenRead($p); try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()}; if($a -ne $h){throw "SHA-256 invalido. Script descargado no coincide con el publicado por el servidor."}; powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"
 ```
 
 Para probar sin enviar:
@@ -159,6 +159,30 @@ powershell -ExecutionPolicy Bypass -NoProfile -File "$env:TEMP\inventario-modula
 - El uso normal usa `ExecutionPolicy Bypass` solo para el proceso actual de PowerShell,
   despues de validar el SHA-256 publicado por el servidor. No modifica la politica
   permanente de Windows.
+- El comando de descarga usa `System.Net.WebClient` para evitar depender de
+  `Invoke-WebRequest`, que no esta disponible en PowerShell 2.0 de Windows 7.
+
+## Firewall, antivirus y Windows 7
+
+El script debe ejecutarse de forma visible y administrada, no ocultarse del firewall ni del
+antivirus. La forma correcta de evitar bloqueos falsos es:
+
+- publicar el servidor en una IP/puerto permitidos por la red;
+- preferir HTTP/HTTPS saliente hacia el servidor, sin abrir puertos en las PCs;
+- crear una regla administrada de salida hacia `IP_DEL_SERVIDOR:8081` o mover el servicio a
+  80/443 detras de un reverse proxy;
+- usar token real de reporte fuera de git;
+- validar siempre el SHA-256 del script descargado;
+- firmar el script con certificado interno si se va a desplegar masivamente;
+- registrar en documentacion interna que el script usa WMI/CIM y envia un POST de inventario.
+
+Compatibilidad esperada:
+
+- Windows 10/11: compatible con PowerShell moderno.
+- Windows 7 con PowerShell 2.0: compatible en modo basico por WMI y `WebClient`; algunas
+  lecturas de hardware pueden venir incompletas segun permisos, drivers o version de WMI.
+- Windows 7 con PowerShell 3.0 o superior: mejor compatibilidad para CIM, aunque el script
+  conserva fallback WMI.
 
 ## Respaldo local, no reenvio automatico
 

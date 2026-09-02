@@ -46,8 +46,9 @@
 			const command = [
 				"$u='" + origin + "';",
 				"$p=\"$env:TEMP\\inventario-modular.ps1\";",
-				"$h=(iwr \"$u/scripts/windows/inventario-modular.ps1.sha256\" -UseBasicParsing).Content.Trim();",
-				"iwr \"$u/scripts/windows/inventario-modular.ps1\" -UseBasicParsing -OutFile $p;",
+				"$wc=New-Object Net.WebClient;",
+				"$h=$wc.DownloadString(\"$u/scripts/windows/inventario-modular.ps1.sha256\").Trim();",
+				"$wc.DownloadFile(\"$u/scripts/windows/inventario-modular.ps1\",$p);",
 				"$sha=[System.Security.Cryptography.SHA256]::Create();",
 				"$fs=[System.IO.File]::OpenRead($p);",
 				"try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()};",

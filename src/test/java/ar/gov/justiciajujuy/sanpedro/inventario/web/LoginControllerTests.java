@@ -35,6 +35,8 @@ class LoginControllerTests {
 			.andExpect(content().string(containsString("Copiar comando")))
 			.andExpect(content().string(containsString("/scripts/windows/inventario-modular.ps1")))
 			.andExpect(content().string(containsString("/scripts/windows/inventario-modular.ps1.sha256")))
+			.andExpect(content().string(containsString("New-Object Net.WebClient")))
+			.andExpect(content().string(org.hamcrest.Matchers.not(containsString("iwr"))))
 			.andExpect(content().string(containsString("SHA-256 invalido")))
 			.andExpect(content().string(containsString("-ExecutionPolicy Bypass")))
 			.andExpect(content().string(containsString("/api/v1/equipos/inventario")));
@@ -45,6 +47,8 @@ class LoginControllerTests {
 		mockMvc.perform(get("/scripts/windows/inventario-modular.ps1"))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("param(")))
+			.andExpect(content().string(containsString("Get-WmiObject")))
+			.andExpect(content().string(containsString("Test-HasText")))
 			.andExpect(content().string(containsString("discosModelos")))
 			.andExpect(content().string(containsString("motherboardSerial")));
 	}
