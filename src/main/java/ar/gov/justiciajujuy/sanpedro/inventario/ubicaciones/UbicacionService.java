@@ -25,6 +25,11 @@ public class UbicacionService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public List<UbicacionDetalle> activas() {
+		return buscar(null, null, EstadoUbicacion.ACTIVA);
+	}
+
 	@Transactional
 	public UbicacionDetalle crear(GuardarUbicacionCommand command) {
 		String codigo = textoRequerido(command.codigo(), "codigo");

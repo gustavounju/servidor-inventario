@@ -13,6 +13,7 @@ recepciones, devoluciones, traslados, bajas u otras actuaciones internas.
 ```text
 GET  /api/v1/actas
 GET  /api/v1/actas/proximo-numero
+GET  /api/v1/actas/{id}/pdf
 POST /api/v1/actas
 PUT  /api/v1/actas/{id}
 ```
@@ -30,6 +31,7 @@ PUT  /api/v1/actas/{id}
 - Sugerencia de proximo numero en pantalla y API.
 - Asociacion opcional a un equipo existente.
 - Auditoria al crear y actualizar.
+- PDF/impresion formal de cada acta desde la pantalla y la API.
 - CSV desde Reportes:
 
 ```text
@@ -57,7 +59,6 @@ OTRA
 
 ## Pendientes
 
-- Generar PDF/impresion formal de cada acta.
 - Evaluar numeracion por dependencia si el circuito administrativo lo requiere.
 - Adjuntos y firmas.
 - Vincular actas con bienes patrimoniales y componentes, no solo con equipos.

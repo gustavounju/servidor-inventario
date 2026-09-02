@@ -4,6 +4,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.muebles.EstadoMueble;
 import ar.gov.justiciajujuy.sanpedro.inventario.muebles.MuebleService;
 import ar.gov.justiciajujuy.sanpedro.inventario.muebles.MuebleService.GuardarMuebleCommand;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
+import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,10 +32,13 @@ public class MueblePageController {
 
 	private final AuthorizationService authorizationService;
 	private final MuebleService muebleService;
+	private final UbicacionService ubicacionService;
 
-	public MueblePageController(AuthorizationService authorizationService, MuebleService muebleService) {
+	public MueblePageController(AuthorizationService authorizationService, MuebleService muebleService,
+			UbicacionService ubicacionService) {
 		this.authorizationService = authorizationService;
 		this.muebleService = muebleService;
+		this.ubicacionService = ubicacionService;
 	}
 
 	@GetMapping("/admin/muebles")
@@ -89,6 +93,7 @@ public class MueblePageController {
 		model.addAttribute("muebles", muebleService.buscar(query, estado));
 		model.addAttribute("muebleForm", muebleForm);
 		model.addAttribute("estadosMueble", EstadoMueble.values());
+		model.addAttribute("ubicacionesActivas", ubicacionService.activas());
 		model.addAttribute("filtroQuery", query);
 		model.addAttribute("filtroEstado", estado);
 		model.addAttribute("puedeEditarMuebles", authorizationService.tienePermiso(userDetails, MODULO_MUEBLES, PERMISO_EDITAR));

@@ -76,6 +76,7 @@ public class LegacyInventarioController {
 				nombre,
 				ultimoUsuario,
 				null, // Fuero will be automatically detected or preserved in Service
+				null,
 				ip,
 				osName,
 				procesador,

@@ -5,6 +5,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
 import ar.gov.justiciajujuy.sanpedro.inventario.stock.EstadoStockComponente;
 import ar.gov.justiciajujuy.sanpedro.inventario.stock.StockService;
 import ar.gov.justiciajujuy.sanpedro.inventario.stock.StockService.GuardarStockComponenteCommand;
+import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -32,10 +33,13 @@ public class StockPageController {
 
 	private final AuthorizationService authorizationService;
 	private final StockService stockService;
+	private final UbicacionService ubicacionService;
 
-	public StockPageController(AuthorizationService authorizationService, StockService stockService) {
+	public StockPageController(AuthorizationService authorizationService, StockService stockService,
+			UbicacionService ubicacionService) {
 		this.authorizationService = authorizationService;
 		this.stockService = stockService;
+		this.ubicacionService = ubicacionService;
 	}
 
 	@GetMapping("/admin/stock")
@@ -89,6 +93,7 @@ public class StockPageController {
 		model.addAttribute("stockForm", stockForm);
 		model.addAttribute("tiposComponente", TipoComponente.values());
 		model.addAttribute("estadosStock", EstadoStockComponente.values());
+		model.addAttribute("ubicacionesActivas", ubicacionService.activas());
 		model.addAttribute("puedeEditarStock", authorizationService.tienePermiso(userDetails, MODULO_STOCK, PERMISO_EDITAR));
 	}
 

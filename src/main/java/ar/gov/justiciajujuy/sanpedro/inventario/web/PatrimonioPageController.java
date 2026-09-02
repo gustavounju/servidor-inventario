@@ -5,6 +5,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.EstadoBienPatrimonial
 import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.PatrimonioService;
 import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.PatrimonioService.GuardarBienPatrimonialCommand;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
+import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -34,12 +35,14 @@ public class PatrimonioPageController {
 	private final AuthorizationService authorizationService;
 	private final PatrimonioService patrimonioService;
 	private final EquipoRepository equipoRepository;
+	private final UbicacionService ubicacionService;
 
 	public PatrimonioPageController(AuthorizationService authorizationService, PatrimonioService patrimonioService,
-			EquipoRepository equipoRepository) {
+			EquipoRepository equipoRepository, UbicacionService ubicacionService) {
 		this.authorizationService = authorizationService;
 		this.patrimonioService = patrimonioService;
 		this.equipoRepository = equipoRepository;
+		this.ubicacionService = ubicacionService;
 	}
 
 	@GetMapping("/admin/patrimonio")
@@ -96,6 +99,7 @@ public class PatrimonioPageController {
 		model.addAttribute("patrimonioForm", patrimonioForm);
 		model.addAttribute("equipos", equipoRepository.buscar(null, Pageable.unpaged()).getContent());
 		model.addAttribute("estadosPatrimonio", EstadoBienPatrimonial.values());
+		model.addAttribute("ubicacionesActivas", ubicacionService.activas());
 		model.addAttribute("filtroQuery", query);
 		model.addAttribute("filtroEstado", estado);
 		model.addAttribute("puedeEditarPatrimonio", authorizationService.tienePermiso(userDetails, MODULO_PATRIMONIO, PERMISO_EDITAR));

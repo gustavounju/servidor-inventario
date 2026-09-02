@@ -122,7 +122,12 @@
 							</label>
 							<label>
 								<span>Ubicacion</span>
-								<input name="ubicacion" th:value="${componente.ubicacion}" maxlength="120">
+								<select name="ubicacion">
+									<option value="">Sin ubicacion</option>
+									<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
+											th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}"
+											th:selected="${ubicacion.nombre == componente.ubicacion}">Oficina Informatica</option>
+								</select>
 							</label>
 						</div>
 						<label>
@@ -183,7 +188,11 @@
 						</label>
 						<label>
 							<span>Ubicacion</span>
-							<input th:field="*{ubicacion}" maxlength="120">
+							<select th:field="*{ubicacion}">
+								<option value="">Sin ubicacion</option>
+								<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
+										th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Oficina Informatica</option>
+							</select>
 						</label>
 					</div>
 					<label>

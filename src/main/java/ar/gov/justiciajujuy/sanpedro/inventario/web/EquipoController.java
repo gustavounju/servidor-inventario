@@ -115,6 +115,9 @@ public class EquipoController {
 			@Size(max = 120)
 			String fuero,
 
+			@Size(max = 180)
+			String ubicacion,
+
 			@Size(max = 45)
 			String ip,
 
@@ -165,6 +168,7 @@ public class EquipoController {
 					nombre,
 					ultimoUsuario,
 					fuero,
+					ubicacion,
 					ip,
 					sistemaOperativo,
 					procesador,
@@ -195,6 +199,9 @@ public class EquipoController {
 			@NotBlank
 			@Size(max = 120)
 			String fuero,
+
+			@Size(max = 180)
+			String ubicacion,
 
 			@Size(max = 45)
 			String ip,
@@ -246,6 +253,7 @@ public class EquipoController {
 					nombre,
 					ultimoUsuario,
 					fuero,
+					ubicacion,
 					ip,
 					sistemaOperativo,
 					procesador,

@@ -2,6 +2,7 @@ package ar.gov.justiciajujuy.sanpedro.inventario.web;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -11,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -134,7 +136,17 @@ class ActaControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("Actas registradas")))
 			.andExpect(content().string(containsString("ACT-2026-0001")))
-			.andExpect(content().string(containsString("ACT-SEED-001")));
+			.andExpect(content().string(containsString("ACT-SEED-001")))
+			.andExpect(content().string(containsString("/api/v1/actas/1/pdf")));
+	}
+
+	@Test
+	void generaPdfFormalDeActa() throws Exception {
+		mockMvc.perform(get("/api/v1/actas/1/pdf").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().contentType("application/pdf"))
+			.andExpect(result -> assertThat(result.getResponse().getContentAsByteArray())
+					.startsWith("%PDF-".getBytes(StandardCharsets.ISO_8859_1)));
 	}
 
 	@Test

@@ -37,6 +37,13 @@ public class ActaService {
 		return generarNumeroDisponible(fechaEmision == null ? LocalDate.now() : fechaEmision);
 	}
 
+	@Transactional(readOnly = true)
+	public ActaDetalle obtener(Long id) {
+		return actaRepository.findById(id)
+				.map(this::toDetalle)
+				.orElseThrow(() -> new ActaNoEncontradaException(id));
+	}
+
 	@Transactional
 	public ActaDetalle crear(GuardarActaCommand command) {
 		String numero = textoOpcional(command.numero());

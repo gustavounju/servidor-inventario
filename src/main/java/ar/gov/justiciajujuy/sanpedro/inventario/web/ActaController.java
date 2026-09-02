@@ -9,6 +9,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaService.ActaDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaService.ActaNoEncontradaException;
 import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaService.EquipoNoEncontradoParaActaException;
 import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaService.GuardarActaCommand;
+import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaPdfService;
 import ar.gov.justiciajujuy.sanpedro.inventario.actas.EstadoActa;
 import ar.gov.justiciajujuy.sanpedro.inventario.actas.TipoActa;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
@@ -16,6 +17,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,10 +44,13 @@ public class ActaController {
 
 	private final AuthorizationService authorizationService;
 	private final ActaService actaService;
+	private final ActaPdfService actaPdfService;
 
-	public ActaController(AuthorizationService authorizationService, ActaService actaService) {
+	public ActaController(AuthorizationService authorizationService, ActaService actaService,
+			ActaPdfService actaPdfService) {
 		this.authorizationService = authorizationService;
 		this.actaService = actaService;
+		this.actaPdfService = actaPdfService;
 	}
 
 	@GetMapping
@@ -76,6 +83,16 @@ public class ActaController {
 			@Valid @RequestBody GuardarActaRequest request) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
 		return actaService.actualizar(id, request.toCommand());
+	}
+
+	@GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+	public ResponseEntity<byte[]> pdf(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
+		exigirPermiso(userDetails, PERMISO_VER);
+		ActaDetalle acta = actaService.obtener(id);
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"acta-" + acta.numero() + ".pdf\"")
+				.contentType(MediaType.APPLICATION_PDF)
+				.body(actaPdfService.generar(acta));
 	}
 
 	private void exigirPermiso(UserDetails userDetails, String permiso) {

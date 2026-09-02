@@ -73,7 +73,10 @@
 						</thead>
 						<tbody>
 							<tr th:each="acta : ${actas}">
-								<td data-label="Numero" th:text="${acta.numero}">ACT-001</td>
+								<td data-label="Numero">
+									<span th:text="${acta.numero}">ACT-001</span>
+									<a class="secondary-action" th:href="@{/api/v1/actas/{id}/pdf(id=${acta.id})}">PDF</a>
+								</td>
 								<td data-label="Acta">
 									<strong th:text="${acta.tipo}">ENTREGA</strong>
 									<span class="table-subtext" th:text="${acta.destinatario}">Destinatario</span>

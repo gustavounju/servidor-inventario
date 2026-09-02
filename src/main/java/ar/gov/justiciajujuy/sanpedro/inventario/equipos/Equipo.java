@@ -26,6 +26,9 @@ public class Equipo {
 	@Column(nullable = false, length = 120)
 	private String fuero;
 
+	@Column(length = 180)
+	private String ubicacion;
+
 	@Column(length = 45)
 	private String ip;
 
@@ -107,6 +110,10 @@ public class Equipo {
 		return fuero;
 	}
 
+	public String getUbicacion() {
+		return ubicacion;
+	}
+
 	public String getIp() {
 		return ip;
 	}
@@ -178,6 +185,7 @@ public class Equipo {
 	public void actualizarDesdeReporte(
 			String ultimoUsuario,
 			String fuero,
+			String ubicacion,
 			String ip,
 			String sistemaOperativo,
 			String procesador,
@@ -196,6 +204,7 @@ public class Equipo {
 			LocalDateTime reportadoEn) {
 		this.ultimoUsuario = ultimoUsuario;
 		this.fuero = fuero;
+		this.ubicacion = ubicacion;
 		this.ip = ip;
 		this.sistemaOperativo = sistemaOperativo;
 		this.procesador = procesador;
@@ -219,6 +228,7 @@ public class Equipo {
 			String nombre,
 			String ultimoUsuario,
 			String fuero,
+			String ubicacion,
 			String ip,
 			String sistemaOperativo,
 			String procesador,
@@ -237,6 +247,7 @@ public class Equipo {
 		this.nombre = nombre;
 		this.ultimoUsuario = ultimoUsuario;
 		this.fuero = fuero;
+		this.ubicacion = ubicacion;
 		this.ip = ip;
 		this.sistemaOperativo = sistemaOperativo;
 		this.procesador = procesador;

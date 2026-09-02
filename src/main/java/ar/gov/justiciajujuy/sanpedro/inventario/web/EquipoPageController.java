@@ -11,6 +11,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.Actualizar
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoDuplicadoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
+import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -44,13 +45,16 @@ public class EquipoPageController {
 	private final EquipoService equipoService;
 	private final ComponenteService componenteService;
 	private final GemeloDigitalService gemeloDigitalService;
+	private final UbicacionService ubicacionService;
 
 	public EquipoPageController(AuthorizationService authorizationService, EquipoService equipoService,
-			ComponenteService componenteService, GemeloDigitalService gemeloDigitalService) {
+			ComponenteService componenteService, GemeloDigitalService gemeloDigitalService,
+			UbicacionService ubicacionService) {
 		this.authorizationService = authorizationService;
 		this.equipoService = equipoService;
 		this.componenteService = componenteService;
 		this.gemeloDigitalService = gemeloDigitalService;
+		this.ubicacionService = ubicacionService;
 	}
 
 	@GetMapping("/admin/equipos")
@@ -121,6 +125,7 @@ public class EquipoPageController {
 		model.addAttribute("tiposComponente", TipoComponente.values());
 		model.addAttribute("origenesComponente", OrigenComponente.values());
 		model.addAttribute("estadosComparacion", EstadoComparacion.values());
+		model.addAttribute("ubicacionesActivas", ubicacionService.activas());
 	}
 
 	@PostMapping("/admin/equipos/{id}/componentes")
@@ -172,6 +177,9 @@ public class EquipoPageController {
 		@Size(max = 120)
 		private String fuero;
 
+		@Size(max = 180)
+		private String ubicacion;
+
 		@Size(max = 45)
 		private String ip;
 
@@ -222,6 +230,7 @@ public class EquipoPageController {
 			form.nombre = equipo.nombre();
 			form.ultimoUsuario = equipo.ultimoUsuario();
 			form.fuero = equipo.fuero();
+			form.ubicacion = equipo.ubicacion();
 			form.ip = equipo.ip();
 			form.sistemaOperativo = equipo.sistemaOperativo();
 			form.procesador = equipo.procesador();
@@ -245,6 +254,7 @@ public class EquipoPageController {
 					nombre,
 					ultimoUsuario,
 					fuero,
+					ubicacion,
 					ip,
 					sistemaOperativo,
 					procesador,
@@ -284,6 +294,14 @@ public class EquipoPageController {
 
 		public void setFuero(String fuero) {
 			this.fuero = fuero;
+		}
+
+		public String getUbicacion() {
+			return ubicacion;
+		}
+
+		public void setUbicacion(String ubicacion) {
+			this.ubicacion = ubicacion;
 		}
 
 		public String getIp() {
