@@ -80,12 +80,12 @@ public class ComponenteService {
 					equipo,
 					detectado.getTipo(),
 					OrigenComponente.RELEVAMIENTO_INICIAL,
-					EstadoComparacion.DETECTADO,
+					EstadoComparacion.ESPERADO,
 					detectado.getDescripcion());
 			relevado.actualizar(
 					detectado.getTipo(),
 					OrigenComponente.RELEVAMIENTO_INICIAL,
-					EstadoComparacion.DETECTADO,
+					EstadoComparacion.ESPERADO,
 					detectado.getDescripcion(),
 					detectado.getMarca(),
 					detectado.getModelo(),

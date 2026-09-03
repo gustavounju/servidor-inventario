@@ -207,12 +207,12 @@ public class GemeloDigitalService {
 	private boolean esEsperado(Componente componente) {
 		return componente.getEstadoComparacion() == EstadoComparacion.ESPERADO ||
 				componente.getOrigen() == OrigenComponente.ORDEN_ARMADO ||
-				componente.getOrigen() == OrigenComponente.STOCK;
+				componente.getOrigen() == OrigenComponente.STOCK ||
+				componente.getOrigen() == OrigenComponente.RELEVAMIENTO_INICIAL;
 	}
 
 	private boolean esDetectado(Componente componente) {
-		return componente.getOrigen() == OrigenComponente.SCRIPT ||
-				componente.getOrigen() == OrigenComponente.RELEVAMIENTO_INICIAL;
+		return componente.getOrigen() == OrigenComponente.SCRIPT;
 	}
 
 	private boolean coincideConCerteza(Componente esperado, Componente detectado) {
