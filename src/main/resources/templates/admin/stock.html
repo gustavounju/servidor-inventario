@@ -52,76 +52,52 @@
 				</div>
 			</div>
 
-			<!-- Stepper Visual del Circuito de Stock (Guía Paso a Paso) -->
-			<section class="workflow-stepper" aria-label="Circuito de Stock de Componentes">
-				<!-- Paso 1: Recepción e Ingreso -->
-				<div class="workflow-step" th:classappend="${totalStock > 0} ? ' is-done' : ' is-current'">
-					<div class="step-header">
-						<span class="step-badge">1</span>
-						<span class="authorization-badge" th:classappend="${totalStock > 0} ? ' is-authorized' : ' is-pending'"
-							  th:text="${totalStock > 0} ? 'INGRESADO ✅' : 'PENDIENTE ⚠️'">
-							PENDIENTE
-						</span>
+			<!-- 🚀 GUÍA COMPACTA Y CLARA: Cómo funciona el circuito de Stock -->
+			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
+				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+					<div style="display: flex; align-items: center; gap: 12px;">
+						<span style="font-size: 1.6rem;">📦</span>
+						<div>
+							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Depósito Informático: Circuito de componentes paso a paso</strong>
+							<span style="font-size: 0.85rem; color: #475569;">Gestiona las piezas físicas de repuesto y su asignación en las computadoras del parque:</span>
+						</div>
 					</div>
-					<h3 class="step-title">1. Ingreso a Depósito</h3>
-					<p class="step-desc">
-						Recepción de memorias RAM, discos rígidos/SSD o periféricos con serial, marca y modelo.
-					</p>
-					<div class="step-action-area">
-						<button type="button" class="primary-action" th:if="${puedeEditarStock}" onclick="switchTab('nuevo')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
-							➕ Ingresar Nueva Pieza
-						</button>
-					</div>
+					<span class="authorization-badge is-authorized">FLUJO DE DEPÓSITO</span>
 				</div>
 
-				<!-- Paso 2: Disponibilidad en Depósito -->
-				<div class="workflow-step" th:classappend="${disponiblesCount > 0} ? ' is-done' : ''">
-					<div class="step-header">
-						<span class="step-badge">2</span>
-						<span class="count-badge" th:text="${disponiblesCount} + ' disponibles'">0 disponibles</span>
+				<!-- 3 Pasos Compactos del Depósito -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+					<!-- Paso 1 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
+							<strong style="color: #1e3a8a; font-size: 0.9rem;">Ingreso a Depósito</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Registra memorias RAM, discos SSD o fuentes recibidas con su marca, modelo y número de serie único.
+						</p>
 					</div>
-					<h3 class="step-title">2. Stock Disponible</h3>
-					<p class="step-desc">
-						Piezas físicas en el taller/depósito listas para ser utilizadas en reemplazos o armados.
-					</p>
-					<div class="step-action-area">
-						<button type="button" class="secondary-action" onclick="switchTab('disponibles')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
-							🔍 Ver Disponibles
-						</button>
-					</div>
-				</div>
 
-				<!-- Paso 3: Reserva para Ensamble -->
-				<div class="workflow-step" th:classappend="${reservadosCount > 0} ? ' is-current' : ''">
-					<div class="step-header">
-						<span class="step-badge">3</span>
-						<span class="count-badge" th:text="${reservadosCount} + ' reservadas'">0 reservadas</span>
+					<!-- Paso 2 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
+							<strong style="color: #0369a1; font-size: 0.9rem;">Stock Disponible en Taller</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Las piezas quedan listas en el estante para ser asignadas a reparaciones o ampliaciones de hardware.
+						</p>
 					</div>
-					<h3 class="step-title">3. Reserva en Orden</h3>
-					<p class="step-desc">
-						La pieza se vincula a una PC mediante una Orden de Armado para evitar asignaciones duplicadas.
-					</p>
-					<div class="step-action-area">
-						<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
-							🛠️ Ver Órdenes de Armado
-						</a>
-					</div>
-				</div>
 
-				<!-- Paso 4: Salida Física y Asignación -->
-				<div class="workflow-step" th:classappend="${asignadosCount > 0} ? ' is-done' : ''">
-					<div class="step-header">
-						<span class="step-badge">4</span>
-						<span class="authorization-badge is-authorized">INSTALADO 🖥️</span>
-					</div>
-					<h3 class="step-title">4. Salida y Montaje</h3>
-					<p class="step-desc">
-						El técnico confirma la salida física. Al encender la PC, el Gemelo Digital audita el montaje.
-					</p>
-					<div class="step-action-area">
-						<a class="secondary-action" th:if="${puedeVerDiferencias}" th:href="@{/admin/dashboard-diferencias}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
-							📊 Auditar Diferencias
-						</a>
+					<!-- Paso 3 -->
+					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
+							<strong style="color: #15803d; font-size: 0.9rem;">Asignar en Orden de Armado</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Al retirar la pieza física se vincula a una PC. Al encender la máquina, el Gemelo Digital audita la instalación.
+						</p>
 					</div>
 				</div>
 			</section>
