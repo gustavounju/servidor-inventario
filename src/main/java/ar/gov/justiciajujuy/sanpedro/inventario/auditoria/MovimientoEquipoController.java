@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/admin/equipos/{equipoId}/auditoria")
-public class AuditoriaController {
+public class MovimientoEquipoController {
 
     private final AuditoriaService auditoriaService;
     private final EquipoRepository equipoRepository;
 
-    public AuditoriaController(AuditoriaService auditoriaService, EquipoRepository equipoRepository) {
+    public MovimientoEquipoController(AuditoriaService auditoriaService, EquipoRepository equipoRepository) {
         this.auditoriaService = auditoriaService;
         this.equipoRepository = equipoRepository;
     }

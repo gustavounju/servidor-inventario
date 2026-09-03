@@ -29,6 +29,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ * Controlador web para la gestión del flujo de Órdenes de Armado y Ensamble.
+ * <p>
+ * Coordina el ciclo de vida del ensamblaje técnico:
+ * <ol>
+ *   <li><b>Paso 1 (Plan):</b> Creación de la orden de trabajo para el equipo.</li>
+ *   <li><b>Paso 2 (Reserva):</b> Asignación de componentes desde stock (estado RESERVADO).</li>
+ *   <li><b>Paso 3 (Salida):</b> Confirmación física del retiro de almacén (estado ASIGNADO).</li>
+ *   <li><b>Paso 4 (Gemelo):</b> Verificación de componentes esperados en el gemelo digital.</li>
+ * </ol>
+ */
 @Controller
 public class OrdenArmadoPageController {
 
@@ -167,8 +178,21 @@ public class OrdenArmadoPageController {
 		if (componenteEsperadoForm.getOrdenId() == null && !ordenes.isEmpty()) {
 			componenteEsperadoForm.setOrdenId(ordenes.getFirst().id());
 		}
+		var equipoSeleccionado = seleccionado != null ? equipoService.obtener(seleccionado) : null;
+		long piezasReservadas = componentesOrden.values().stream()
+				.flatMap(java.util.List::stream)
+				.filter(c -> c.estadoStock() != null && "RESERVADO".equals(c.estadoStock().name()))
+				.count();
+		long piezasAsignadas = componentesOrden.values().stream()
+				.flatMap(java.util.List::stream)
+				.filter(c -> c.estadoStock() != null && "ASIGNADO".equals(c.estadoStock().name()))
+				.count();
+
 		model.addAttribute("equipos", equipos);
 		model.addAttribute("equipoSeleccionadoId", seleccionado);
+		model.addAttribute("equipoSeleccionado", equipoSeleccionado);
+		model.addAttribute("piezasReservadas", piezasReservadas);
+		model.addAttribute("piezasAsignadas", piezasAsignadas);
 		model.addAttribute("ordenes", ordenes);
 		model.addAttribute("componentesOrden", componentesOrden);
 		model.addAttribute("ordenForm", ordenForm);

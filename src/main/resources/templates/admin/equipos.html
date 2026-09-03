@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,23 +9,26 @@
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="equipos-title">
-			<header th:replace="~{admin/nav :: topbar('Modulo funcional', 'Equipos', 'equipos')}"></header>
+			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Inventario de Equipos', 'equipos')}"></header>
 
 			<section class="modules-section" aria-labelledby="equipos-list-title">
 				<div class="section-header">
-					<h2 id="equipos-list-title">Inventario tecnico</h2>
+					<div>
+						<h2 id="equipos-list-title">Inventario tecnico</h2>
+						<p class="section-note">Catálogo de equipos monitoreados, sus usuarios y acceso directo a su gemelo digital y órdenes.</p>
+					</div>
 					<span class="count-badge" th:text="${equipos.paginacion.totalItems} + ' equipos'">0 equipos</span>
 				</div>
 
 				<div class="success-message" th:if="${importacionResultado != null}">
-					<span th:text="'Importacion: ' + ${importacionResultado.importados} + '/' + ${importacionResultado.procesados} + ' filas importadas.'">Importacion completada.</span>
+					<span th:text="'Importacion: ' + ${importacionResultado.importados} + '/' + ${importacionResultado.procesados} + ' filas importadas.'">Importación completada.</span>
 					<span th:each="error : ${importacionResultado.errores}" th:text="${error}">Fila 2: error</span>
 				</div>
 
 				<form class="search-form" th:action="@{/admin/equipos}" method="get" role="search">
 					<label>
 						<span>Buscar</span>
-						<input name="q" type="search" maxlength="120" th:value="${query}" placeholder="PC, usuario o fuero">
+						<input name="q" type="search" maxlength="120" th:value="${query}" placeholder="Buscar por PC, usuario, fuero o IP...">
 					</label>
 					<button class="primary-action" type="submit">Buscar</button>
 				</form>
@@ -40,24 +43,36 @@
 							<tr>
 								<th scope="col">Equipo</th>
 								<th scope="col">Usuario</th>
-								<th scope="col">Fuero</th>
+								<th scope="col">Fuero / Ubicación</th>
 								<th scope="col">IP</th>
 								<th scope="col">Sistema</th>
 								<th scope="col">Estado</th>
+								<th scope="col">Acciones</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr th:each="equipo : ${equipos.equipos}">
 								<td data-label="Equipo">
-									<a th:href="@{/admin/equipos/{id}(id=${equipo.id})}" th:text="${equipo.nombre}" style="font-weight: bold; color: #23405f; text-decoration: none;">PC-001</a>
+									<a th:href="@{/admin/equipos/{id}(id=${equipo.id})}" th:text="${equipo.nombre}" style="font-weight: 700; color: #1e3a8a; text-decoration: none; font-size: 0.98rem;">PC-001</a>
+									<span class="table-subtext" th:text="${equipo.ubicacion ?: 'Sin ubicación'}">Oficina</span>
 								</td>
 								<td data-label="Usuario" th:text="${equipo.ultimoUsuario ?: 'Sin dato'}">gmurad</td>
-								<td data-label="Fuero" th:text="${equipo.fuero}">Informatica</td>
+								<td data-label="Fuero / Ubicación" th:text="${equipo.fuero}">Informatica</td>
 								<td data-label="IP" th:text="${equipo.ip ?: 'Sin dato'}">10.15.2.20</td>
 								<td data-label="Sistema" th:text="${equipo.sistemaOperativo ?: 'Sin dato'}">Windows 11</td>
 								<td data-label="Estado">
 									<span class="authorization-badge" th:classappend="${equipo.activo} ? ' is-authorized' : ' is-pending'"
 											th:text="${equipo.activo} ? equipo.monitoreo : 'INACTIVO'">REPORTADO</span>
+								</td>
+								<td data-label="Acciones">
+									<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+										<a class="secondary-action" th:href="@{/admin/equipos/{id}(id=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
+											🔍 Gemelo
+										</a>
+										<a class="secondary-action" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
+											🛠️ Órdenes
+										</a>
+									</div>
 								</td>
 							</tr>
 						</tbody>
@@ -65,23 +80,27 @@
 				</div>
 			</section>
 
-			<section class="attributes-section" th:if="${puedeEditar}" aria-labelledby="importar-viejo-title">
-				<div class="section-header">
-					<div>
-						<h2 id="importar-viejo-title">Importar inventario viejo</h2>
-						<p class="section-note">CSV con encabezados como nombre, PC_Nombre, Usuario_Actual, fuero, ubicacion, ip, OsName, Procesador, RAM (GB), RAM_Detalles y Disk_Serials.</p>
-					</div>
+			<!-- Opciones Avanzadas de Importación Colapsadas para evitar confusión -->
+			<details class="collapsible-card" th:if="${puedeEditar}">
+				<summary class="collapsible-summary">
+					<h2 id="importar-viejo-title" style="margin: 0; font-size: 0.95rem; font-weight: 700;">Importar inventario viejo (CSV)</h2>
+					<span class="count-badge">Opcional</span>
+				</summary>
+				<div class="collapsible-body">
+					<p class="section-note" style="margin-top: 0;">
+						CSV con encabezados como nombre, PC_Nombre, Usuario_Actual, fuero, ubicacion, ip, OsName, Procesador, RAM (GB), RAM_Detalles y Disk_Serials.
+					</p>
+					<form class="equipment-form" th:action="@{/admin/equipos/importar-viejo}" method="post">
+						<label>
+							<span>CSV</span>
+							<textarea name="contenidoCsv" maxlength="50000" rows="6" required></textarea>
+						</label>
+						<div class="form-actions">
+							<button class="primary-action" type="submit">Importar equipos</button>
+						</div>
+					</form>
 				</div>
-				<form class="equipment-form" th:action="@{/admin/equipos/importar-viejo}" method="post">
-					<label>
-						<span>CSV</span>
-						<textarea name="contenidoCsv" maxlength="50000" rows="8" required></textarea>
-					</label>
-					<div class="form-actions">
-						<button class="primary-action" type="submit">Importar equipos</button>
-					</div>
-				</form>
-			</section>
+			</details>
 		</section>
 	</main>
 </body>

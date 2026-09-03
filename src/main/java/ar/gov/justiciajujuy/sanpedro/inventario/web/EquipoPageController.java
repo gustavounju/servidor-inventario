@@ -1,5 +1,6 @@
 package ar.gov.justiciajujuy.sanpedro.inventario.web;
 
+import ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoService;
 import ar.gov.justiciajujuy.sanpedro.inventario.componentes.ComponenteService;
 import ar.gov.justiciajujuy.sanpedro.inventario.componentes.ComponenteService.GuardarComponenteCommand;
 import ar.gov.justiciajujuy.sanpedro.inventario.componentes.EstadoComparacion;
@@ -34,6 +35,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Controlador web para la gestión de Equipos y Gemelos Digitales.
+ * <p>
+ * Implementa el patrón "Modern Guided Card-Based Admin Shell", soportando el circuito:
+ * <ol>
+ *   <li><b>Línea Base:</b> Consolidación del relevamiento inicial reportado por el script.</li>
+ *   <li><b>Órdenes de Armado:</b> Consulta de intervenciones técnicas y reservas de stock.</li>
+ *   <li><b>Gemelo Digital:</b> Comparación en tiempo real de hardware físico vs esperado.</li>
+ * </ol>
+ */
 @Controller
 public class EquipoPageController {
 
@@ -48,16 +59,19 @@ public class EquipoPageController {
 	private final GemeloDigitalService gemeloDigitalService;
 	private final UbicacionService ubicacionService;
 	private final InventarioViejoImportService inventarioViejoImportService;
+	private final OrdenArmadoService ordenArmadoService;
 
 	public EquipoPageController(AuthorizationService authorizationService, EquipoService equipoService,
 			ComponenteService componenteService, GemeloDigitalService gemeloDigitalService,
-			UbicacionService ubicacionService, InventarioViejoImportService inventarioViejoImportService) {
+			UbicacionService ubicacionService, InventarioViejoImportService inventarioViejoImportService,
+			OrdenArmadoService ordenArmadoService) {
 		this.authorizationService = authorizationService;
 		this.equipoService = equipoService;
 		this.componenteService = componenteService;
 		this.gemeloDigitalService = gemeloDigitalService;
 		this.ubicacionService = ubicacionService;
 		this.inventarioViejoImportService = inventarioViejoImportService;
+		this.ordenArmadoService = ordenArmadoService;
 	}
 
 	@GetMapping("/admin/equipos")
@@ -79,13 +93,15 @@ public class EquipoPageController {
 			Model model,
 			@AuthenticationPrincipal UserDetails userDetails,
 			@PathVariable Long id,
-			@RequestParam(required = false) String actualizado) {
+			@RequestParam(required = false) String actualizado,
+			@RequestParam(required = false) String relevamiento) {
 		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_VER)) {
 			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para ver equipos.");
 		}
 		EquipoDetalle equipo = equipoService.obtener(id);
 		prepararDetalle(model, userDetails, equipo, EquipoForm.desde(equipo));
-		model.addAttribute("actualizado", "1".equals(actualizado));
+		model.addAttribute("actualizado", "1".equals(actualizado) || "relevamiento".equals(actualizado));
+		model.addAttribute("relevamientoConsolidado", "relevamiento".equals(actualizado) || "1".equals(relevamiento));
 		return "admin/equipo-detalle";
 	}
 
@@ -130,18 +146,33 @@ public class EquipoPageController {
 
 	private void prepararDetalle(Model model, UserDetails userDetails, EquipoDetalle equipo, EquipoForm equipoForm) {
 		boolean puedeVerComponentes = authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_VER);
+		boolean puedeVerOrdenes = authorizationService.tienePermiso(userDetails, "ORDENES_ARMADO", PERMISO_VER);
+		var listaComponentes = puedeVerComponentes ? componenteService.listarPorEquipo(equipo.id()) : java.util.List.<ComponenteService.ComponenteDetalle>of();
+		var comparaciones = puedeVerComponentes ? gemeloDigitalService.compararEquipo(equipo.id()) : java.util.List.<GemeloDigitalService.ComparacionComponente>of();
+		boolean tieneRelevamientoInicial = listaComponentes.stream()
+				.anyMatch(c -> c.origen() == OrigenComponente.RELEVAMIENTO_INICIAL);
+		long diferenciasCount = comparaciones.stream()
+				.filter(c -> c.resultado() != EstadoComparacion.COINCIDE)
+				.count();
+
 		model.addAttribute("equipo", equipo);
 		model.addAttribute("equipoForm", equipoForm);
 		model.addAttribute("puedeEditar", authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR));
 		model.addAttribute("puedeVerComponentes", puedeVerComponentes);
 		model.addAttribute("puedeEditarComponentes", authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_EDITAR));
-		model.addAttribute("componentes", puedeVerComponentes ? componenteService.listarPorEquipo(equipo.id()) : java.util.List.of());
-		model.addAttribute("comparacionGemelo", puedeVerComponentes ? gemeloDigitalService.compararEquipo(equipo.id()) : java.util.List.of());
+		model.addAttribute("componentes", listaComponentes);
+		model.addAttribute("comparacionGemelo", comparaciones);
+		model.addAttribute("tieneRelevamientoInicial", tieneRelevamientoInicial);
+		model.addAttribute("diferenciasCount", diferenciasCount);
+		model.addAttribute("puedeVerOrdenes", puedeVerOrdenes);
+		model.addAttribute("ordenesArmado", puedeVerOrdenes ? ordenArmadoService.listarPorEquipo(equipo.id()) : java.util.List.of());
 		model.addAttribute("componenteForm", new ComponenteForm());
 		model.addAttribute("tiposComponente", TipoComponente.values());
 		model.addAttribute("origenesComponente", OrigenComponente.values());
 		model.addAttribute("estadosComparacion", EstadoComparacion.values());
 		model.addAttribute("ubicacionesActivas", ubicacionService.activas());
+		model.addAttribute("actualizado", false);
+		model.addAttribute("relevamientoConsolidado", false);
 	}
 
 	@PostMapping("/admin/equipos/{id}/componentes")
@@ -176,6 +207,7 @@ public class EquipoPageController {
 		}
 		componenteService.consolidarRelevamientoInicial(id);
 		redirectAttributes.addAttribute("actualizado", "1");
+		redirectAttributes.addAttribute("relevamiento", "1");
 		return "redirect:/admin/equipos/{id}";
 	}
 

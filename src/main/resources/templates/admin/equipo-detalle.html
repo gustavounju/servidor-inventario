@@ -3,423 +3,683 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Detalle de Equipo - Inventario Modular</title>
+	<title th:text="'Equipo: ' + ${equipo.nombre} + ' - Inventario Modular'">Detalle de Equipo - Inventario Modular</title>
 	<link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="equipo-title">
-			<header th:replace="~{admin/nav :: topbar('Detalle tecnico', 'Equipo: ' + ${equipo.nombre}, 'equipos')}"></header>
+			<header th:replace="~{admin/nav :: topbar('Ficha de Equipo y Gemelo Digital', 'Equipo: ' + ${equipo.nombre}, 'equipos')}"></header>
 
-            <nav class="admin-actions" aria-label="Acciones administrativas" style="margin-bottom: 1.5rem; display: flex; gap: 1rem;">
-                <a class="secondary-action" th:href="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}">Auditoría y Movimientos</a>
-                <a class="secondary-action" th:href="@{/admin/equipos}">Volver al listado</a>
-            </nav>
+			<!-- Barra de Acciones Rápidas y Navegación -->
+			<nav class="quick-nav-bar" aria-label="Acciones del equipo">
+				<div class="quick-nav-group">
+					<a class="secondary-action" th:href="@{/admin/equipos}" title="Volver a la lista de equipos">
+						⬅ Volver al listado
+					</a>
+					<a class="secondary-action" th:href="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}">
+						📜 Auditoría y Movimientos
+					</a>
+					<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
+						🛠️ Órdenes de Armado (<span th:text="${#lists.size(ordenesArmado)}">0</span>)
+					</a>
+					<a class="secondary-action" th:href="@{/admin/dashboard-diferencias}">
+						📊 Tablero de Diferencias
+					</a>
+					<a class="secondary-action" th:href="@{/admin/actas}">
+						📋 Actas
+					</a>
+				</div>
+				<div class="quick-nav-group">
+					<span class="authorization-badge" th:classappend="${equipo.activo} ? ' is-authorized' : ' is-pending'"
+						  th:text="${equipo.activo} ? ('ESTADO: ' + ${equipo.monitoreo}) : 'ESTADO: INACTIVO'">
+						ESTADO: REPORTADO
+					</span>
+				</div>
+			</nav>
 
-			<p class="success-message" th:if="${actualizado}">
+			<!-- Banner Contextual de Éxito / Próximos Pasos tras Consolidar Relevamiento -->
+			<div class="workflow-banner" th:if="${relevamientoConsolidado}">
+				<div class="workflow-banner-icon">🎉</div>
+				<div class="workflow-banner-content">
+					<strong>¡Relevamiento inicial consolidado con éxito!</strong>
+					<p>
+						Los componentes detectados actualmente por el script han quedado registrados como la <strong>Línea Base Oficial (Esperada)</strong> para este equipo.
+					</p>
+					<div class="workflow-next-actions">
+						<span>👉 <strong>¿Cómo continuar ahora?</strong></span>
+						<a class="primary-action" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
+							🛠️ Crear o Asignar Orden de Armado
+						</a>
+						<button type="button" class="secondary-action" onclick="switchTab('gemelo')">
+							🤖 Ver Estado del Gemelo Digital
+						</button>
+						<a class="secondary-action" th:href="@{/admin/dashboard-diferencias}">
+							📊 Ver Tablero General de Diferencias
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Mensaje de confirmación estándar si se editó manualmente -->
+			<p class="success-message" th:if="${actualizado == true and relevamientoConsolidado != true}">
 				Equipo actualizado correctamente.
 			</p>
 
-			<div class="status-row" th:if="${equipo.activo}">
-				<span class="status-dot" aria-hidden="true"></span>
-				<span th:text="'Estado: ' + ${equipo.monitoreo}">REPORTADO</span>
-			</div>
-			<div class="status-row" th:unless="${equipo.activo}" style="color: #82071e;">
-				<span class="status-dot" style="background: #dc3545; box-shadow: 0 0 0 5px rgba(220, 53, 69, 0.16);" aria-hidden="true"></span>
-				<span>Estado: INACTIVO</span>
-			</div>
+			<!-- Guía Visual del Circuito (Workflow Stepper de 3 Pasos) -->
+			<section class="workflow-stepper" aria-label="Circuito de Gestión del Equipo">
+				<!-- Paso 1: Relevamiento Inicial -->
+				<div class="workflow-step" th:classappend="${tieneRelevamientoInicial} ? ' is-done' : ' is-current'">
+					<div class="step-header">
+						<span class="step-badge">1</span>
+						<span class="authorization-badge" th:classappend="${tieneRelevamientoInicial} ? ' is-authorized' : ' is-pending'"
+							  th:text="${tieneRelevamientoInicial} ? 'CONSOLIDADO ✅' : 'PENDIENTE ⚠️'">
+							PENDIENTE
+						</span>
+					</div>
+					<h3 class="step-title">Relevamiento Inicial</h3>
+					<p class="step-desc" th:if="${tieneRelevamientoInicial}">
+						Línea base fijada. El hardware reportado es la configuración esperada del equipo.
+					</p>
+					<p class="step-desc" th:unless="${tieneRelevamientoInicial}">
+						El equipo tiene lectura de hardware pero aún no se fijó como su configuración oficial esperada.
+					</p>
+					<div class="step-action-area">
+						<form th:if="${puedeEditarComponentes}" th:action="@{/admin/equipos/{id}/componentes/consolidar-relevamiento-inicial(id=${equipo.id})}" method="post" style="margin:0; width:100%;">
+							<button class="primary-action" type="submit" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+								Consolidar lectura como relevamiento inicial
+							</button>
+						</form>
+					</div>
+				</div>
 
-			<section class="summary-grid" aria-label="Resumen del equipo">
+				<!-- Paso 2: Orden de Armado -->
+				<div class="workflow-step" th:classappend="${!#lists.isEmpty(ordenesArmado)} ? ' is-done' : ''">
+					<div class="step-header">
+						<span class="step-badge">2</span>
+						<span class="count-badge" th:text="${#lists.size(ordenesArmado)} + ' órdenes'">0 órdenes</span>
+					</div>
+					<h3 class="step-title">Órdenes de Armado</h3>
+					<p class="step-desc">
+						Planifica cambios de hardware, salidas de Stock de componentes y armado para este equipo.
+					</p>
+					<div class="step-action-area">
+						<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
+							🛠️ Gestionar Órdenes
+						</a>
+					</div>
+				</div>
+
+				<!-- Paso 3: Gemelo Digital y Comparación -->
+				<div class="workflow-step" th:classappend="${diferenciasCount == 0} ? ' is-done' : ' is-current'">
+					<div class="step-header">
+						<span class="step-badge">3</span>
+						<span class="authorization-badge" th:classappend="${diferenciasCount == 0} ? ' is-authorized' : ' is-pending'"
+							  th:text="${diferenciasCount == 0} ? 'COINCIDE 100%' : (${diferenciasCount} + ' DIFERENCIAS')">
+							COINCIDE
+						</span>
+					</div>
+					<h3 class="step-title">Gemelo Digital</h3>
+					<p class="step-desc">
+						Cruce automático: lo esperado (relevamiento + órdenes) vs lo detectado por el script en vivo.
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="secondary-action" onclick="switchTab('gemelo')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							🔍 Ver Comparación
+						</button>
+					</div>
+				</div>
+			</section>
+
+			<!-- Resumen Rápido de Datos Clave -->
+			<section class="summary-grid" aria-label="Resumen rápido del equipo">
 				<div>
-					<span>Fuero</span>
+					<span>Fuero / Área</span>
 					<strong th:text="${equipo.fuero}">Informatica</strong>
 				</div>
 				<div>
-					<span>Ubicacion</span>
-					<strong th:text="${equipo.ubicacion ?: 'Sin ubicacion'}">Oficina Informatica</strong>
+					<span>Ubicación Física</span>
+					<strong th:text="${equipo.ubicacion ?: 'Sin ubicación'}">Oficina Informatica</strong>
 				</div>
 				<div>
-					<span>Usuario</span>
+					<span>Último Usuario</span>
 					<strong th:text="${equipo.ultimoUsuario ?: 'Sin reportar'}">gmurad</strong>
 				</div>
 				<div>
-					<span>IP</span>
+					<span>Dirección IP</span>
 					<strong th:text="${equipo.ip ?: 'Sin reportar'}">10.15.2.20</strong>
 				</div>
 				<div>
-					<span>RAM</span>
-					<strong th:text="${equipo.ramMb != null} ? (${equipo.ramMb} + ' MB') : 'Sin reportar'">16384 MB</strong>
+					<span>Memoria RAM</span>
+					<strong th:text="${equipo.ramMb != null} ? (${equipo.ramMb} + ' MB (' + (${equipo.ramMb} / 1024) + ' GB)') : 'Sin reportar'">16384 MB</strong>
 				</div>
 			</section>
 
-			<section class="attributes-section">
-				<h2>Información de Identidad</h2>
-				<div class="attributes-table">
-					<div class="attribute-row">
-						<div class="attribute-name">Nombre de Equipo</div>
-						<div class="attribute-value" th:text="${equipo.nombre}">PC-001</div>
+			<!-- Navegación por Pestañas Claras (Tabs) -->
+			<ul class="subnav-tabs" role="tablist">
+				<li>
+					<button type="button" class="subnav-tab is-active" id="tab-btn-ficha" onclick="switchTab('ficha')" role="tab" aria-selected="true" aria-controls="pane-ficha">
+						📋 Ficha Técnica y Hardware
+					</button>
+				</li>
+				<li>
+					<button type="button" class="subnav-tab" id="tab-btn-gemelo" onclick="switchTab('gemelo')" role="tab" aria-selected="false" aria-controls="pane-gemelo">
+						🤖 Gemelo digital / Componentes
+						<span class="tab-badge" th:text="${#lists.size(componentes)}">0</span>
+					</button>
+				</li>
+				<li>
+					<button type="button" class="subnav-tab" id="tab-btn-ordenes" onclick="switchTab('ordenes')" role="tab" aria-selected="false" aria-controls="pane-ordenes">
+						🛠️ Órdenes de Armado
+						<span class="tab-badge" th:text="${#lists.size(ordenesArmado)}">0</span>
+					</button>
+				</li>
+				<li th:if="${puedeEditar}">
+					<button type="button" class="subnav-tab" id="tab-btn-editar" onclick="switchTab('editar')" role="tab" aria-selected="false" aria-controls="pane-editar">
+						✏️ Edición Manual
+					</button>
+				</li>
+			</ul>
+
+			<!-- ==========================================================
+			     PESTAÑA 1: Ficha Técnica y Hardware
+			     ========================================================== -->
+			<div class="tab-pane is-active" id="pane-ficha" role="tabpanel" aria-labelledby="tab-btn-ficha">
+				<div class="attribute-card-grid">
+					<!-- Tarjeta 1: Identidad y Conectividad -->
+					<div class="attribute-card">
+						<h3 class="attribute-card-title">🖥️ Identidad y Red</h3>
+						<div class="attribute-row">
+							<span class="attribute-name">Nombre de Equipo</span>
+							<span class="attribute-value" th:text="${equipo.nombre}">PC-001</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Fuero / Área</span>
+							<span class="attribute-value" th:text="${equipo.fuero}">Informatica</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Ubicación</span>
+							<span class="attribute-value" th:text="${equipo.ubicacion ?: 'Sin ubicación'}">Oficina Informatica</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Último Usuario</span>
+							<span class="attribute-value" th:text="${equipo.ultimoUsuario ?: 'Sin reportar'}">gmurad</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Dirección IP</span>
+							<span class="attribute-value" th:text="${equipo.ip ?: 'Sin reportar'}">10.15.2.20</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Último Reporte Recibido</span>
+							<span class="attribute-value" th:text="${equipo.ultimoReporteEn != null} ? ${#temporals.format(equipo.ultimoReporteEn, 'dd/MM/yyyy HH:mm')} : 'Sin fecha'">Reciente</span>
+						</div>
 					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Fuero / Área</div>
-						<div class="attribute-value" th:text="${equipo.fuero}">Informatica</div>
+
+					<!-- Tarjeta 2: Sistema y Procesamiento -->
+					<div class="attribute-card">
+						<h3 class="attribute-card-title">⚙️ Sistema y Procesador</h3>
+						<div class="attribute-row">
+							<span class="attribute-name">Sistema Operativo</span>
+							<span class="attribute-value" th:text="${equipo.sistemaOperativo ?: 'Sin reportar'}">Windows 11</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Procesador</span>
+							<span class="attribute-value" th:text="${equipo.procesador ?: 'Sin reportar'}">Intel Core i5</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Motherboard Modelo</span>
+							<span class="attribute-value" th:text="${equipo.motherboardModelo ?: 'Sin reportar'}">Dell 0ABC</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Motherboard Serial</span>
+							<span class="attribute-value" th:text="${equipo.motherboardSerial ?: 'Sin reportar'}">MB-001</span>
+						</div>
 					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Ubicacion</div>
-						<div class="attribute-value" th:text="${equipo.ubicacion ?: 'Sin ubicacion'}">Oficina Informatica</div>
+
+					<!-- Tarjeta 3: Memorias y Discos -->
+					<div class="attribute-card">
+						<h3 class="attribute-card-title">💾 Memoria y Almacenamiento</h3>
+						<div class="attribute-row">
+							<span class="attribute-name">Memoria RAM Total</span>
+							<span class="attribute-value" th:text="${equipo.ramMb != null} ? (${equipo.ramMb} + ' MB') : 'Sin reportar'">16384 MB</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Detalle RAM</span>
+							<span class="attribute-value" th:text="${equipo.ramDetalles ?: 'Sin reportar'}">2x8GB DDR4</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Seriales RAM</span>
+							<span class="attribute-value" th:text="${equipo.ramSeriales ?: 'Sin reportar'}">RAMSN-001</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Discos Instalados</span>
+							<span class="attribute-value" th:text="${equipo.discosModelos ?: 'Sin reportar'}">KINGSTON SA400</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Seriales de Disco</span>
+							<span class="attribute-value" th:text="${equipo.discosSeriales ?: 'Sin reportar'}">DISK-001</span>
+						</div>
 					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Último Usuario</div>
-						<div class="attribute-value" th:text="${equipo.ultimoUsuario ?: 'Sin reportar'}">gmurad</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Dirección IP</div>
-						<div class="attribute-value" th:text="${equipo.ip ?: 'Sin reportar'}">10.15.2.20</div>
+
+					<!-- Tarjeta 4: Periféricos y Accesorios -->
+					<div class="attribute-card">
+						<h3 class="attribute-card-title">🖱️ Periféricos y Dispositivos</h3>
+						<div class="attribute-row">
+							<span class="attribute-name">Monitores</span>
+							<span class="attribute-value" th:text="${equipo.monitores ?: 'Sin reportar'}">Dell 22</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Teclado</span>
+							<span class="attribute-value" th:text="${equipo.teclado ?: 'Sin reportar'}">Logitech Keyboard</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Mouse</span>
+							<span class="attribute-value" th:text="${equipo.mouse ?: 'Sin reportar'}">Logitech Mouse</span>
+						</div>
+						<div class="attribute-row">
+							<span class="attribute-name">Impresora Vinculada</span>
+							<span class="attribute-value" th:text="${equipo.impresora ?: 'Sin impresora vinculada'}">HP LaserJet</span>
+						</div>
 					</div>
 				</div>
-			</section>
+			</div>
 
-			<section class="attributes-section">
-				<h2>Hardware y Software</h2>
-				<div class="attributes-table">
-					<div class="attribute-row">
-						<div class="attribute-name">Sistema Operativo</div>
-						<div class="attribute-value" th:text="${equipo.sistemaOperativo ?: 'Sin reportar'}">Windows 11</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Procesador</div>
-						<div class="attribute-value" th:text="${equipo.procesador ?: 'Sin reportar'}">Intel Core i5</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Memoria RAM</div>
-						<div class="attribute-value" th:text="${equipo.ramMb != null} ? (${equipo.ramMb} + ' MB (' + ${equipo.ramMb / 1024} + ' GB)') : 'Sin reportar'">16384 MB</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Detalle RAM</div>
-						<div class="attribute-value" th:text="${equipo.ramDetalles ?: 'Sin reportar'}">2x8GB DDR4</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Seriales RAM</div>
-						<div class="attribute-value" th:text="${equipo.ramSeriales ?: 'Sin reportar'}">RAMSN-001</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Discos</div>
-						<div class="attribute-value" th:text="${equipo.discosModelos ?: 'Sin reportar'}">KINGSTON SSD</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Seriales de Disco</div>
-						<div class="attribute-value" th:text="${equipo.discosSeriales ?: 'Sin reportar'}">DISK-001</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Motherboard</div>
-						<div class="attribute-value" th:text="${equipo.motherboardModelo ?: 'Sin reportar'}">Dell 0ABC</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Serial Motherboard</div>
-						<div class="attribute-value" th:text="${equipo.motherboardSerial ?: 'Sin reportar'}">MB-001</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Monitores</div>
-						<div class="attribute-value" th:text="${equipo.monitores ?: 'Sin reportar'}">Dell 22</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Teclado</div>
-						<div class="attribute-value" th:text="${equipo.teclado ?: 'Sin reportar'}">Logitech Keyboard</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Mouse</div>
-						<div class="attribute-value" th:text="${equipo.mouse ?: 'Sin reportar'}">Logitech Mouse</div>
-					</div>
-					<div class="attribute-row">
-						<div class="attribute-name">Impresora Vinculada</div>
-						<div class="attribute-value" th:text="${equipo.impresora ?: 'Sin impresora vinculada'}">HP LaserJet</div>
-					</div>
-				</div>
-			</section>
-
-			<p class="version" style="font-size: 0.8rem;" th:if="${equipo.ultimoReporteEn != null}" 
-			   th:text="'Último reporte recibido: ' + ${#temporals.format(equipo.ultimoReporteEn, 'dd/MM/yyyy HH:mm:ss')}">
-				Último reporte recibido: 30/08/2026 18:00:00
-			</p>
-
-			<section class="attributes-section" th:if="${puedeVerComponentes}" aria-labelledby="componentes-title">
-				<div class="section-header">
-					<div>
-						<h2 id="componentes-title">Gemelo digital / Componentes</h2>
-						<p class="section-note">Componentes detectados, esperados o cargados manualmente para comparar el equipo real contra la orden de armado.</p>
-					</div>
-					<span class="count-badge" th:text="${#lists.size(componentes)} + ' componentes'">0 componentes</span>
-				</div>
-
-				<form class="inline-action-form" th:if="${puedeEditarComponentes}" th:action="@{/admin/equipos/{id}/componentes/consolidar-relevamiento-inicial(id=${equipo.id})}" method="post">
-					<button class="secondary-action" type="submit">Consolidar lectura como relevamiento inicial</button>
-				</form>
-
-				<p class="empty-state" th:if="${#lists.isEmpty(componentes)}">
-					Todavia no hay componentes asociados a este equipo.
-				</p>
-
-				<div class="responsive-table" th:if="${!#lists.isEmpty(componentes)}">
-					<table>
-						<thead>
-							<tr>
-								<th scope="col">Tipo</th>
-								<th scope="col">Componente</th>
-								<th scope="col">Origen</th>
-								<th scope="col">Comparacion</th>
-								<th scope="col">Serial</th>
-								<th scope="col">Ubicacion</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr th:each="componente : ${componentes}">
-								<td data-label="Tipo" th:text="${componente.tipo}">RAM</td>
-								<td data-label="Componente">
-									<strong th:text="${componente.descripcion}">Modulo RAM instalado</strong>
-									<span class="table-subtext">
-										<span th:text="${componente.marca ?: ''}">Kingston</span>
-										<span th:text="${componente.modelo ?: ''}">DDR4</span>
-										<span th:text="${componente.capacidad ?: ''}">8GB</span>
-									</span>
-								</td>
-								<td data-label="Origen" th:text="${componente.origen}">SCRIPT</td>
-								<td data-label="Comparacion">
-									<span class="authorization-badge" th:classappend="${componente.estadoComparacion.name() == 'COINCIDE'} ? ' is-authorized' : ' is-pending'"
-											th:text="${componente.estadoComparacion}">COINCIDE</span>
-								</td>
-								<td data-label="Serial" th:text="${componente.serial ?: 'Sin serial'}">RAMSN-001</td>
-								<td data-label="Ubicacion" th:text="${componente.ubicacion ?: 'Sin ubicacion'}">Slot 1</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-
-				<form class="equipment-form component-form" th:if="${puedeEditarComponentes}" th:action="@{/admin/equipos/{id}/componentes(id=${equipo.id})}" th:object="${componenteForm}" method="post">
+			<!-- ==========================================================
+			     PESTAÑA 2: Gemelo Digital y Componentes
+			     ========================================================== -->
+			<div class="tab-pane" id="pane-gemelo" role="tabpanel" aria-labelledby="tab-btn-gemelo">
+				<!-- Sección Comparación Esperado vs Detectado -->
+				<section class="attributes-section" th:if="${puedeVerComponentes}" aria-labelledby="comparacion-title">
 					<div class="section-header">
-						<h2>Cargar componente</h2>
-						<span class="count-badge">Requiere COMPONENTES:EDITAR</span>
-					</div>
-					<div class="form-grid">
-						<label>
-							<span>Tipo</span>
-							<select th:field="*{tipo}">
-								<option th:each="tipo : ${tiposComponente}" th:value="${tipo}" th:text="${tipo}">RAM</option>
-							</select>
-						</label>
-						<label>
-							<span>Origen</span>
-							<select th:field="*{origen}">
-								<option th:each="origen : ${origenesComponente}" th:value="${origen}" th:text="${origen}">MANUAL</option>
-							</select>
-						</label>
-						<label>
-							<span>Comparacion</span>
-							<select th:field="*{estadoComparacion}">
-								<option th:each="estado : ${estadosComparacion}" th:value="${estado}" th:text="${estado}">REVISAR</option>
-							</select>
-						</label>
-						<label>
-							<span>Descripcion</span>
-							<input th:field="*{descripcion}" maxlength="255" required>
-							<small class="field-error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}">Error</small>
-						</label>
-						<label>
-							<span>Marca</span>
-							<input th:field="*{marca}" maxlength="120">
-						</label>
-						<label>
-							<span>Modelo</span>
-							<input th:field="*{modelo}" maxlength="180">
-						</label>
-						<label>
-							<span>Serial</span>
-							<input th:field="*{serial}" maxlength="180">
-						</label>
-						<label>
-							<span>Capacidad</span>
-							<input th:field="*{capacidad}" maxlength="120">
-						</label>
-						<label>
-							<span>Ubicacion</span>
-							<select th:field="*{ubicacion}">
-								<option value="">Sin ubicacion</option>
-								<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
-										th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Oficina Informatica</option>
-							</select>
-						</label>
-					</div>
-					<label>
-						<span>Observaciones</span>
-						<textarea th:field="*{observaciones}" maxlength="500" rows="3"></textarea>
-					</label>
-					<label class="checkbox-row">
-						<input th:field="*{activo}" type="checkbox">
-						<span>Componente activo</span>
-					</label>
-					<div class="form-actions">
-						<button class="primary-action" type="submit">Agregar componente</button>
-					</div>
-				</form>
-			</section>
-
-			<section class="attributes-section" th:if="${puedeVerComponentes}" aria-labelledby="comparacion-title">
-				<div class="section-header">
-					<div>
-						<h2 id="comparacion-title">Comparacion del gemelo digital</h2>
-						<p class="section-note">Cruce entre componentes esperados por stock/orden y componentes detectados por script o relevamiento inicial.</p>
-					</div>
-					<span class="count-badge" th:text="${#lists.size(comparacionGemelo)} + ' diferencias'">0 diferencias</span>
-				</div>
-
-				<p class="empty-state" th:if="${#lists.isEmpty(comparacionGemelo)}">
-					Todavia no hay datos suficientes para comparar esperado contra detectado.
-				</p>
-
-				<div class="responsive-table" th:if="${!#lists.isEmpty(comparacionGemelo)}">
-					<table>
-						<thead>
-							<tr>
-								<th scope="col">Tipo</th>
-								<th scope="col">Esperado</th>
-								<th scope="col">Detectado</th>
-								<th scope="col">Resultado</th>
-								<th scope="col">Observacion</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr th:each="fila : ${comparacionGemelo}">
-								<td data-label="Tipo" th:text="${fila.tipo}">RAM</td>
-								<td data-label="Esperado" th:text="${fila.esperado}">RAM esperada</td>
-								<td data-label="Detectado" th:text="${fila.detectado}">RAM detectada</td>
-								<td data-label="Resultado">
-									<span class="authorization-badge" th:classappend="${fila.resultado.name() == 'COINCIDE'} ? ' is-authorized' : ' is-pending'"
-											th:text="${fila.resultado}">COINCIDE</span>
-								</td>
-								<td data-label="Observacion" th:text="${fila.observacion}">Coincide</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</section>
-
-			<section class="attributes-section" th:if="${puedeEditar}" aria-labelledby="equipo-edit-title">
-				<div class="section-header">
-					<h2 id="equipo-edit-title">Edicion manual controlada</h2>
-					<span class="count-badge">Requiere EQUIPOS:EDITAR</span>
-				</div>
-
-				<form class="equipment-form" th:action="@{/admin/equipos/{id}(id=${equipo.id})}" th:object="${equipoForm}" method="post">
-					<div class="form-grid">
-						<label>
-							<span>Nombre de equipo</span>
-							<input th:field="*{nombre}" maxlength="120" required pattern="[a-zA-Z0-9._-]+">
-							<small class="field-error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}">Error</small>
-						</label>
-						<label>
-							<span>Fuero / Area</span>
-							<input th:field="*{fuero}" maxlength="120" required>
-							<small class="field-error" th:if="${#fields.hasErrors('fuero')}" th:errors="*{fuero}">Error</small>
-						</label>
-						<label>
-							<span>Ubicacion</span>
-							<select th:field="*{ubicacion}">
-								<option value="">Sin ubicacion</option>
-								<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
-										th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Oficina Informatica</option>
-							</select>
-							<small class="field-error" th:if="${#fields.hasErrors('ubicacion')}" th:errors="*{ubicacion}">Error</small>
-						</label>
-						<label>
-							<span>Ultimo usuario</span>
-							<input th:field="*{ultimoUsuario}" maxlength="120">
-							<small class="field-error" th:if="${#fields.hasErrors('ultimoUsuario')}" th:errors="*{ultimoUsuario}">Error</small>
-						</label>
-						<label>
-							<span>Direccion IP</span>
-							<input th:field="*{ip}" maxlength="45">
-							<small class="field-error" th:if="${#fields.hasErrors('ip')}" th:errors="*{ip}">Error</small>
-						</label>
-						<label>
-							<span>Sistema operativo</span>
-							<input th:field="*{sistemaOperativo}" maxlength="180">
-							<small class="field-error" th:if="${#fields.hasErrors('sistemaOperativo')}" th:errors="*{sistemaOperativo}">Error</small>
-						</label>
-						<label>
-							<span>Procesador</span>
-							<input th:field="*{procesador}" maxlength="255">
-							<small class="field-error" th:if="${#fields.hasErrors('procesador')}" th:errors="*{procesador}">Error</small>
-						</label>
-						<label>
-							<span>RAM en MB</span>
-							<input th:field="*{ramMb}" type="number" min="0" max="1048576">
-							<small class="field-error" th:if="${#fields.hasErrors('ramMb')}" th:errors="*{ramMb}">Error</small>
-						</label>
-						<label>
-							<span>Impresora</span>
-							<input th:field="*{impresora}" maxlength="180">
-							<small class="field-error" th:if="${#fields.hasErrors('impresora')}" th:errors="*{impresora}">Error</small>
-						</label>
+						<div>
+							<h2 id="comparacion-title">Comparacion del gemelo digital</h2>
+							<p class="section-note">
+								Cruce entre componentes esperados (por relevamiento inicial u orden de armado) y componentes detectados en la máquina real por el script.
+							</p>
+						</div>
+						<span class="count-badge" th:text="${diferenciasCount} + ' diferencias'">0 diferencias</span>
 					</div>
 
-					<div class="form-grid form-grid-wide">
-						<label>
-							<span>Detalle RAM</span>
-							<textarea th:field="*{ramDetalles}" maxlength="500" rows="3"></textarea>
-							<small class="field-error" th:if="${#fields.hasErrors('ramDetalles')}" th:errors="*{ramDetalles}">Error</small>
-						</label>
-						<label>
-							<span>Seriales RAM</span>
-							<textarea th:field="*{ramSeriales}" maxlength="500" rows="3"></textarea>
-							<small class="field-error" th:if="${#fields.hasErrors('ramSeriales')}" th:errors="*{ramSeriales}">Error</small>
-						</label>
-						<label>
-							<span>Modelos de discos</span>
-							<textarea th:field="*{discosModelos}" maxlength="500" rows="3"></textarea>
-							<small class="field-error" th:if="${#fields.hasErrors('discosModelos')}" th:errors="*{discosModelos}">Error</small>
-						</label>
-						<label>
-							<span>Seriales de discos</span>
-							<textarea th:field="*{discosSeriales}" maxlength="500" rows="3"></textarea>
-							<small class="field-error" th:if="${#fields.hasErrors('discosSeriales')}" th:errors="*{discosSeriales}">Error</small>
-						</label>
-						<label>
-							<span>Modelo motherboard</span>
-							<input th:field="*{motherboardModelo}" maxlength="255">
-							<small class="field-error" th:if="${#fields.hasErrors('motherboardModelo')}" th:errors="*{motherboardModelo}">Error</small>
-						</label>
-						<label>
-							<span>Serial motherboard</span>
-							<input th:field="*{motherboardSerial}" maxlength="255">
-							<small class="field-error" th:if="${#fields.hasErrors('motherboardSerial')}" th:errors="*{motherboardSerial}">Error</small>
-						</label>
-						<label>
-							<span>Monitores</span>
-							<textarea th:field="*{monitores}" maxlength="500" rows="3"></textarea>
-							<small class="field-error" th:if="${#fields.hasErrors('monitores')}" th:errors="*{monitores}">Error</small>
-						</label>
-						<label>
-							<span>Teclado</span>
-							<input th:field="*{teclado}" maxlength="180">
-							<small class="field-error" th:if="${#fields.hasErrors('teclado')}" th:errors="*{teclado}">Error</small>
-						</label>
-						<label>
-							<span>Mouse</span>
-							<input th:field="*{mouse}" maxlength="180">
-							<small class="field-error" th:if="${#fields.hasErrors('mouse')}" th:errors="*{mouse}">Error</small>
-						</label>
+					<p class="empty-state" th:if="${#lists.isEmpty(comparacionGemelo)}">
+						Todavía no hay datos suficientes para comparar esperado contra detectado. Ejecuta el script de relevamiento o consolida la lectura inicial.
+					</p>
+
+					<div class="responsive-table" th:if="${!#lists.isEmpty(comparacionGemelo)}">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Tipo</th>
+									<th scope="col">Esperado (Línea Base / Orden)</th>
+									<th scope="col">Detectado (Script en Vivo)</th>
+									<th scope="col">Estado</th>
+									<th scope="col">Observación</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="fila : ${comparacionGemelo}">
+									<td data-label="Tipo" th:text="${fila.tipo}">RAM</td>
+									<td data-label="Esperado">
+										<strong th:text="${fila.esperado}">RAM esperada</strong>
+									</td>
+									<td data-label="Detectado" th:text="${fila.detectado}">RAM detectada</td>
+									<td data-label="Estado">
+										<span class="authorization-badge" th:classappend="${fila.resultado.name() == 'COINCIDE'} ? ' is-authorized' : ' is-pending'"
+											  th:text="${fila.resultado}">COINCIDE</span>
+									</td>
+									<td data-label="Observación" th:text="${fila.observacion}">Coincide</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
+				<!-- Listado de Componentes Registrados -->
+				<section class="attributes-section" th:if="${puedeVerComponentes}" aria-labelledby="componentes-title" style="margin-top: 24px;">
+					<div class="section-header">
+						<div>
+							<h2 id="componentes-title">Gemelo digital / Componentes</h2>
+							<p class="section-note">Todos los componentes asociados al equipo y su origen de registro.</p>
+						</div>
+						<span class="count-badge" th:text="${#lists.size(componentes)} + ' componentes'">0 componentes</span>
 					</div>
 
-					<label class="checkbox-row">
-						<input th:field="*{activo}" type="checkbox">
-						<span>Equipo activo</span>
-					</label>
+					<p class="empty-state" th:if="${#lists.isEmpty(componentes)}">
+						Todavía no hay componentes asociados a este equipo.
+					</p>
 
-					<div class="form-actions">
-						<button class="primary-action" type="submit">Guardar cambios</button>
-						<a class="secondary-action" th:href="@{/admin/equipos/{id}(id=${equipo.id})}">Cancelar</a>
+					<div class="responsive-table" th:if="${!#lists.isEmpty(componentes)}">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Tipo</th>
+									<th scope="col">Componente</th>
+									<th scope="col">Origen</th>
+									<th scope="col">Comparación</th>
+									<th scope="col">Serial</th>
+									<th scope="col">Ubicación</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="componente : ${componentes}">
+									<td data-label="Tipo" th:text="${componente.tipo}">RAM</td>
+									<td data-label="Componente">
+										<strong th:text="${componente.descripcion}">Modulo RAM instalado</strong>
+										<span class="table-subtext">
+											<span th:text="${componente.marca ?: ''}">Kingston</span>
+											<span th:text="${componente.modelo ?: ''}">DDR4</span>
+											<span th:text="${componente.capacidad ?: ''}">8GB</span>
+										</span>
+									</td>
+									<td data-label="Origen">
+										<span class="count-badge" th:text="${componente.origen}">SCRIPT</span>
+									</td>
+									<td data-label="Comparación">
+										<span class="authorization-badge" th:classappend="${componente.estadoComparacion.name() == 'COINCIDE'} ? ' is-authorized' : ' is-pending'"
+											  th:text="${componente.estadoComparacion}">COINCIDE</span>
+									</td>
+									<td data-label="Serial" th:text="${componente.serial ?: 'Sin serial'}">RAMSN-001</td>
+									<td data-label="Ubicación" th:text="${componente.ubicacion ?: 'Sin ubicación'}">Slot 1</td>
+								</tr>
+							</tbody>
+						</table>
 					</div>
-				</form>
-			</section>
+
+					<!-- Formulario Colapsable para Cargar Componente Manualmente -->
+					<details class="collapsible-card" th:if="${puedeEditarComponentes}">
+						<summary class="collapsible-summary">
+							<span>➕ Cargar nuevo componente manual a este equipo</span>
+							<span class="count-badge">Opcional</span>
+						</summary>
+						<div class="collapsible-body">
+							<form class="equipment-form component-form" th:action="@{/admin/equipos/{id}/componentes(id=${equipo.id})}" th:object="${componenteForm}" method="post">
+								<div class="form-grid">
+									<label>
+										<span>Tipo</span>
+										<select th:field="*{tipo}">
+											<option th:each="tipo : ${tiposComponente}" th:value="${tipo}" th:text="${tipo}">RAM</option>
+										</select>
+									</label>
+									<label>
+										<span>Origen</span>
+										<select th:field="*{origen}">
+											<option th:each="origen : ${origenesComponente}" th:value="${origen}" th:text="${origen}">MANUAL</option>
+										</select>
+									</label>
+									<label>
+										<span>Comparación</span>
+										<select th:field="*{estadoComparacion}">
+											<option th:each="estado : ${estadosComparacion}" th:value="${estado}" th:text="${estado}">REVISAR</option>
+										</select>
+									</label>
+									<label>
+										<span>Descripción</span>
+										<input th:field="*{descripcion}" maxlength="255" required>
+										<small class="field-error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}">Error</small>
+									</label>
+									<label>
+										<span>Marca</span>
+										<input th:field="*{marca}" maxlength="120">
+									</label>
+									<label>
+										<span>Modelo</span>
+										<input th:field="*{modelo}" maxlength="180">
+									</label>
+									<label>
+										<span>Serial</span>
+										<input th:field="*{serial}" maxlength="180">
+									</label>
+									<label>
+										<span>Capacidad</span>
+										<input th:field="*{capacidad}" maxlength="120">
+									</label>
+									<label>
+										<span>Ubicación prevista</span>
+										<select th:field="*{ubicacion}">
+											<option value="">Sin ubicación</option>
+											<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
+													th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Oficina Informatica</option>
+										</select>
+									</label>
+								</div>
+								<label>
+									<span>Observaciones</span>
+									<textarea th:field="*{observaciones}" maxlength="500" rows="2"></textarea>
+								</label>
+								<label class="checkbox-row">
+									<input th:field="*{activo}" type="checkbox">
+									<span>Componente activo</span>
+								</label>
+								<div class="form-actions">
+									<button class="primary-action" type="submit">Agregar componente</button>
+								</div>
+							</form>
+						</div>
+					</details>
+				</section>
+			</div>
+
+			<!-- ==========================================================
+			     PESTAÑA 3: Órdenes de Armado de este Equipo
+			     ========================================================== -->
+			<div class="tab-pane" id="pane-ordenes" role="tabpanel" aria-labelledby="tab-btn-ordenes">
+				<section class="attributes-section" aria-labelledby="ordenes-title">
+					<div class="section-header">
+						<div>
+							<h2 id="ordenes-title">Órdenes de Armado vinculadas</h2>
+							<p class="section-note">
+								Aquí puedes ver todas las órdenes de trabajo y ensamblaje planificadas para este equipo.
+							</p>
+						</div>
+						<a class="primary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
+							➕ Crear / Asignar Orden de Armado
+						</a>
+					</div>
+
+					<p class="empty-state" th:if="${#lists.isEmpty(ordenesArmado)}">
+						Este equipo no tiene órdenes de armado registradas actualmente. Si necesitas sustituir componentes, instalar memorias o discos desde el stock, crea una orden de armado.
+					</p>
+
+					<div class="responsive-table" th:if="${!#lists.isEmpty(ordenesArmado)}">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">ID</th>
+									<th scope="col">Descripción</th>
+									<th scope="col">Estado</th>
+									<th scope="col">Observaciones</th>
+									<th scope="col">Acción</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="orden : ${ordenesArmado}">
+									<td data-label="ID" th:text="${orden.id}">1</td>
+									<td data-label="Descripción">
+										<strong th:text="${orden.descripcion}">Armado y ampliación RAM</strong>
+									</td>
+									<td data-label="Estado">
+										<span class="authorization-badge" th:classappend="${orden.estado.name() == 'COMPLETADA'} ? ' is-authorized' : ' is-pending'"
+											  th:text="${orden.estado}">EN_ARMADO</span>
+									</td>
+									<td data-label="Observaciones" th:text="${orden.observaciones ?: 'Sin observaciones'}">Observaciones</td>
+									<td data-label="Acción">
+										<a class="secondary-action" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
+											Ver componentes de orden ➡
+										</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+
+			<!-- ==========================================================
+			     PESTAÑA 4: Edición Manual Controlada
+			     ========================================================== -->
+			<div class="tab-pane" id="pane-editar" role="tabpanel" aria-labelledby="tab-btn-editar" th:if="${puedeEditar}">
+				<section class="attributes-section" aria-labelledby="equipo-edit-title">
+					<div class="section-header">
+						<div>
+							<h2 id="equipo-edit-title">Edicion manual controlada</h2>
+							<p class="section-note">Permite corregir o completar manualmente datos administrativos y técnicos del equipo.</p>
+						</div>
+						<span class="count-badge">Requiere EQUIPOS:EDITAR</span>
+					</div>
+
+					<form class="equipment-form" th:action="@{/admin/equipos/{id}(id=${equipo.id})}" th:object="${equipoForm}" method="post">
+						<div class="form-grid">
+							<label>
+								<span>Nombre de equipo</span>
+								<input th:field="*{nombre}" maxlength="120" required pattern="[a-zA-Z0-9._-]+">
+								<small class="field-error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}">Error</small>
+							</label>
+							<label>
+								<span>Fuero / Area</span>
+								<input th:field="*{fuero}" maxlength="120" required>
+								<small class="field-error" th:if="${#fields.hasErrors('fuero')}" th:errors="*{fuero}">Error</small>
+							</label>
+							<label>
+								<span>Ubicacion</span>
+								<select th:field="*{ubicacion}">
+									<option value="">Sin ubicacion</option>
+									<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
+											th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Oficina Informatica</option>
+								</select>
+								<small class="field-error" th:if="${#fields.hasErrors('ubicacion')}" th:errors="*{ubicacion}">Error</small>
+							</label>
+							<label>
+								<span>Ultimo usuario</span>
+								<input th:field="*{ultimoUsuario}" maxlength="120">
+								<small class="field-error" th:if="${#fields.hasErrors('ultimoUsuario')}" th:errors="*{ultimoUsuario}">Error</small>
+							</label>
+							<label>
+								<span>Direccion IP</span>
+								<input th:field="*{ip}" maxlength="45">
+								<small class="field-error" th:if="${#fields.hasErrors('ip')}" th:errors="*{ip}">Error</small>
+							</label>
+							<label>
+								<span>Sistema operativo</span>
+								<input th:field="*{sistemaOperativo}" maxlength="180">
+								<small class="field-error" th:if="${#fields.hasErrors('sistemaOperativo')}" th:errors="*{sistemaOperativo}">Error</small>
+							</label>
+							<label>
+								<span>Procesador</span>
+								<input th:field="*{procesador}" maxlength="255">
+								<small class="field-error" th:if="${#fields.hasErrors('procesador')}" th:errors="*{procesador}">Error</small>
+							</label>
+							<label>
+								<span>RAM en MB</span>
+								<input th:field="*{ramMb}" type="number" min="0" max="1048576">
+								<small class="field-error" th:if="${#fields.hasErrors('ramMb')}" th:errors="*{ramMb}">Error</small>
+							</label>
+							<label>
+								<span>Impresora</span>
+								<input th:field="*{impresora}" maxlength="180">
+								<small class="field-error" th:if="${#fields.hasErrors('impresora')}" th:errors="*{impresora}">Error</small>
+							</label>
+						</div>
+
+						<div class="form-grid form-grid-wide">
+							<label>
+								<span>Detalle RAM</span>
+								<textarea th:field="*{ramDetalles}" maxlength="500" rows="3"></textarea>
+								<small class="field-error" th:if="${#fields.hasErrors('ramDetalles')}" th:errors="*{ramDetalles}">Error</small>
+							</label>
+							<label>
+								<span>Seriales RAM</span>
+								<textarea th:field="*{ramSeriales}" maxlength="500" rows="3"></textarea>
+								<small class="field-error" th:if="${#fields.hasErrors('ramSeriales')}" th:errors="*{ramSeriales}">Error</small>
+							</label>
+							<label>
+								<span>Modelos de discos</span>
+								<textarea th:field="*{discosModelos}" maxlength="500" rows="3"></textarea>
+								<small class="field-error" th:if="${#fields.hasErrors('discosModelos')}" th:errors="*{discosModelos}">Error</small>
+							</label>
+							<label>
+								<span>Seriales de discos</span>
+								<textarea th:field="*{discosSeriales}" maxlength="500" rows="3"></textarea>
+								<small class="field-error" th:if="${#fields.hasErrors('discosSeriales')}" th:errors="*{discosSeriales}">Error</small>
+							</label>
+							<label>
+								<span>Modelo motherboard</span>
+								<input th:field="*{motherboardModelo}" maxlength="255">
+								<small class="field-error" th:if="${#fields.hasErrors('motherboardModelo')}" th:errors="*{motherboardModelo}">Error</small>
+							</label>
+							<label>
+								<span>Serial motherboard</span>
+								<input th:field="*{motherboardSerial}" maxlength="255">
+								<small class="field-error" th:if="${#fields.hasErrors('motherboardSerial')}" th:errors="*{motherboardSerial}">Error</small>
+							</label>
+							<label>
+								<span>Monitores</span>
+								<textarea th:field="*{monitores}" maxlength="500" rows="3"></textarea>
+								<small class="field-error" th:if="${#fields.hasErrors('monitores')}" th:errors="*{monitores}">Error</small>
+							</label>
+							<label>
+								<span>Teclado</span>
+								<input th:field="*{teclado}" maxlength="180">
+								<small class="field-error" th:if="${#fields.hasErrors('teclado')}" th:errors="*{teclado}">Error</small>
+							</label>
+							<label>
+								<span>Mouse</span>
+								<input th:field="*{mouse}" maxlength="180">
+								<small class="field-error" th:if="${#fields.hasErrors('mouse')}" th:errors="*{mouse}">Error</small>
+							</label>
+						</div>
+
+						<label class="checkbox-row">
+							<input th:field="*{activo}" type="checkbox">
+							<span>Equipo activo</span>
+						</label>
+
+						<div class="form-actions">
+							<button class="primary-action" type="submit">Guardar cambios</button>
+							<a class="secondary-action" th:href="@{/admin/equipos/{id}(id=${equipo.id})}">Cancelar</a>
+						</div>
+					</form>
+				</section>
+			</div>
+
 		</section>
 	</main>
+
+	<!-- Script de Pestañas Interactivas Liviano y Accesible -->
+	<script>
+		function switchTab(tabId) {
+			const tabs = ['ficha', 'gemelo', 'ordenes', 'editar'];
+			tabs.forEach(function(id) {
+				const btn = document.getElementById('tab-btn-' + id);
+				const pane = document.getElementById('pane-' + id);
+				if (btn && pane) {
+					if (id === tabId) {
+						btn.classList.add('is-active');
+						btn.setAttribute('aria-selected', 'true');
+						pane.classList.add('is-active');
+					} else {
+						btn.classList.remove('is-active');
+						btn.setAttribute('aria-selected', 'false');
+						pane.classList.remove('is-active');
+					}
+				}
+			});
+			if (history.replaceState) {
+				history.replaceState(null, null, '#tab-' + tabId);
+			}
+		}
+
+		// Leer hash inicial al cargar la página si existe
+		window.addEventListener('DOMContentLoaded', function() {
+			const hash = window.location.hash;
+			if (hash === '#tab-gemelo') {
+				switchTab('gemelo');
+			} else if (hash === '#tab-ordenes') {
+				switchTab('ordenes');
+			} else if (hash === '#tab-editar') {
+				switchTab('editar');
+			} else if (hash === '#tab-ficha') {
+				switchTab('ficha');
+			}
+		});
+	</script>
 </body>
 </html>
