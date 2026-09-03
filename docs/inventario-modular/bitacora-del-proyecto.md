@@ -2190,6 +2190,21 @@ Al cierre de esta bitacora, Inventario Modular cuenta con:
 - Script Windows de inventario servido por la app.
 - Verificacion SHA-256 del script.
 - Documentacion de actualizacion de produccion.
+- Modernizacion de interfaz: Brujula del Operador en `/admin`, guias compactas de 3 pasos y solapas interactivas sin scroll infinito en Equipos, Ordenes, Stock, Diferencias, Patrimonio, Actas, Muebles, Ubicaciones, Reportes y Tareas.
+- Script PowerShell actualizado con soporte para parametro `-Servidor` (alias de `-ServerUrl`) y normalizacion automatica de endpoint `/api/v1/equipos/inventario`.
+- Funcion de copiado universal compatible con HTTP en red local sin SSL.
+- Flujo guiado de Gemelo Digital: consolidacion como linea base oficial y uso de ordenes para cambios de taller y reingreso de piezas a stock.
+
+## Estado de la arquitectura visual y guiada
+
+Durante esta etapa se unifico la experiencia de usuario:
+
+1. **Equipos (`/admin/equipos`):** Guia compacta de 3 pasos (ejecutar script en PC -> aparece en tabla como `REPORTADO` -> hacer clic en `👉 Abrir Ficha` para consolidar relevamiento). Boton de copiado de comando compatible con HTTP.
+2. **Ordenes de Armado (`/admin/ordenes-armado`):** Taller tecnico enfocado en upgrades/reparaciones (seleccionar equipo -> reservar pieza de stock -> confirmar salida fisica -> auditar en Gemelo Digital).
+3. **Stock (`/admin/stock`):** Circuito de deposito de componentes (alta de repuestos nuevos o de desarme -> disponibilidad en taller -> asignacion en orden).
+4. **Diferencias (`/admin/dashboard-diferencias`):** Auditoria del Gemelo Digital con explicacion clara de estados (`FALTA`, `SOBRA/REVISAR`, `COINCIDE`).
+5. **Muebles, Ubicaciones, Reportes y Tareas:** Pestañas `subnav-tabs` que eliminan el scroll vertical excesivo y organizan la interaccion en fichas limpias.
+6. **Panel Principal (`/admin`):** Incorporacion de la Brujula Operativa con las 3 rutas naturales del Centro Judicial: Circuito Tecnico, Circuito Patrimonial y Circuito de Soporte/Deposito.
 
 ## Pendientes principales
 
