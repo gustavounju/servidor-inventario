@@ -11,7 +11,7 @@
 		<section class="status-panel admin-users-panel" aria-labelledby="equipos-title">
 			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Inventario de Equipos', 'equipos')}"></header>
 
-			<!-- Barra de Acciones Rápidas y Navegación Cruzada -->
+			<!-- Barra Superior de Accesos Rápidos -->
 			<nav class="quick-nav-bar" aria-label="Navegación rápida de equipos">
 				<div class="quick-nav-group">
 					<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}">
@@ -32,100 +32,76 @@
 				</div>
 			</nav>
 
-			<!-- Guía Visual del Circuito Natural del Parque Informático (Stepper 4 Pasos) -->
-			<section class="workflow-stepper" aria-label="Circuito Natural de un Equipo Informático">
-				<!-- Paso 1: Detección -->
-				<div class="workflow-step is-current">
-					<div class="step-header">
-						<span class="step-badge">1</span>
-						<span class="authorization-badge is-pending">AUTOMÁTICO ⚡</span>
+			<!-- 🚀 GUÍA COMPACTA Y CLARA: Pasos a seguir para subir e incorporar una PC -->
+			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
+				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+					<div style="display: flex; align-items: center; gap: 12px;">
+						<span style="font-size: 1.6rem;">🚀</span>
+						<div>
+							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Guía Rápida: Qué hacer cuando ingresas una PC</strong>
+							<span style="font-size: 0.85rem; color: #475569;">Sigue estos 3 sencillos pasos naturales para que el equipo quede registrado y monitoreado:</span>
+						</div>
 					</div>
-					<h3 class="step-title">1. Detección en Vivo</h3>
-					<p class="step-desc">
-						El script PowerShell se ejecuta en la PC y envía automáticamente componentes físicos reales (CPU, RAM, Discos, Seriales).
-					</p>
-					<div class="step-action-area">
-						<button type="button" class="secondary-action" onclick="toggleScriptGuide()" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
-							💻 Ver Comando PowerShell
-						</button>
+					<span class="authorization-badge is-authorized">FLUJO PASO A PASO</span>
+				</div>
+
+				<!-- Los 3 Pasos Naturales en Tarjetas Claras -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px;">
+					<!-- Paso 1 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
+							<strong style="color: #1e3a8a; font-size: 0.9rem;">Ejecutar el script en la PC</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Copia el comando de abajo y pégalo en <strong>PowerShell</strong> en la máquina cliente. Enviará los componentes reales automáticamente.
+						</p>
+					</div>
+
+					<!-- Paso 2 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
+							<strong style="color: #0369a1; font-size: 0.9rem;">Aparece en la tabla abajo</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Al terminar el script, el equipo aparecerá inmediatamente en el listado inferior en estado <span class="authorization-badge is-authorized" style="font-size: 0.72rem; padding: 2px 6px;">REPORTADO</span>.
+						</p>
+					</div>
+
+					<!-- Paso 3 -->
+					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
+							<strong style="color: #15803d; font-size: 0.9rem;">Hacer clic en "👉 Abrir Ficha"</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Haz clic en el botón azul de la fila para entrar y presionar <strong>"Consolidar relevamiento"</strong>. ¡Eso fija la configuración oficial esperada!
+						</p>
 					</div>
 				</div>
 
-				<!-- Paso 2: Consolidación -->
-				<div class="workflow-step">
-					<div class="step-header">
-						<span class="step-badge">2</span>
-						<span class="authorization-badge is-authorized">LÍNEA BASE 📌</span>
+				<!-- Barra de Comando PowerShell con Copiado Infalible -->
+				<div style="background: #0f172a; border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+					<div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 280px;">
+						<span style="color: #38bdf8; font-family: monospace; font-size: 0.85rem; font-weight: 700;">PowerShell:</span>
+						<input id="ps-cmd-input" type="text" readonly onclick="this.select();"
+							   style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 4px; padding: 6px 10px; font-family: monospace; font-size: 0.82rem; width: 100%; outline: none;"
+							   value='Invoke-WebRequest -Uri "http://10.15.0.62:8081/scripts/windows/inventario-modular.ps1" -OutFile "$env:TEMP\inventario.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\inventario.ps1" -Servidor "http://10.15.0.62:8081"'>
 					</div>
-					<h3 class="step-title">2. Consolidar Relevamiento</h3>
-					<p class="step-desc">
-						Entra a la ficha de la PC y presiona <strong>"Consolidar relevamiento inicial"</strong> para fijar qué hardware debe tener.
-					</p>
-					<div class="step-action-area">
-						<span class="table-subtext">Se realiza en la ficha [🔍 Gemelo]</span>
-					</div>
-				</div>
-
-				<!-- Paso 3: Órdenes de Trabajo -->
-				<div class="workflow-step">
-					<div class="step-header">
-						<span class="step-badge">3</span>
-						<span class="count-badge">TALLER 🛠️</span>
-					</div>
-					<h3 class="step-title">3. Órdenes y Stock</h3>
-					<p class="step-desc">
-						Para ampliar RAM o cambiar disco, crea una Orden de Armado y reserva las piezas del depósito.
-					</p>
-					<div class="step-action-area">
-						<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
-							🛠️ Ir a Órdenes
-						</a>
-					</div>
-				</div>
-
-				<!-- Paso 4: Gemelo Digital y Actas -->
-				<div class="workflow-step">
-					<div class="step-header">
-						<span class="step-badge">4</span>
-						<span class="authorization-badge is-authorized">AUDITORÍA 🤖</span>
-					</div>
-					<h3 class="step-title">4. Gemelo y Actas</h3>
-					<p class="step-desc">
-						Al reiniciar la PC, el Gemelo Digital audita el 100% de coincidencia y permite generar el Acta de Entrega en PDF.
-					</p>
-					<div class="step-action-area">
-						<a class="secondary-action" th:if="${puedeVerDiferencias}" th:href="@{/admin/dashboard-diferencias}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
-							📊 Ver Diferencias
-						</a>
-					</div>
+					<button id="btn-copiar-cmd" type="button" onclick="copiarComandoScript()" class="primary-action"
+							style="background: #2563eb; color: #ffffff; padding: 8px 16px; font-size: 0.85rem; font-weight: 700; white-space: nowrap; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;">
+						📋 Copiar Comando
+					</button>
 				</div>
 			</section>
 
-			<!-- Guía Desplegable: Comando de Subida de PC vía Script -->
-			<div id="script-guide-box" class="workflow-banner" style="display: none; margin-bottom: 24px;">
-				<div class="workflow-banner-icon">💻</div>
-				<div class="workflow-banner-content" style="width: 100%;">
-					<strong>¿Cómo subir una PC al inventario con el script?</strong>
-					<p>
-						Abre <strong>PowerShell</strong> como Administrador en la PC cliente y ejecuta la siguiente instrucción de una línea para reportar el hardware en vivo:
-					</p>
-					<div style="background: #0f172a; color: #f8fafc; padding: 12px 16px; border-radius: 6px; font-family: monospace; font-size: 0.88rem; overflow-x: auto; margin: 10px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-						<code id="ps-command-text">Invoke-WebRequest -Uri "http://10.15.0.62:8081/scripts/windows/inventario-modular.ps1" -OutFile "$env:TEMP\inventario.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\inventario.ps1" -Servidor "http://10.15.0.62:8081"</code>
-						<button type="button" class="secondary-action" onclick="copiarComandoScript()" style="white-space: nowrap; font-size: 0.8rem; padding: 5px 10px; background: #334155; color: #fff; border: none;">
-							📋 Copiar
-						</button>
-					</div>
-					<div class="workflow-next-actions">
-						<span>👉 <strong>Una vez ejecutado:</strong> La PC aparecerá inmediatamente en el listado debajo en estado <code>REPORTADO</code>. El siguiente paso es abrir su <strong>[🔍 Gemelo]</strong> y consolidarla.</span>
-					</div>
-				</div>
-			</div>
-
+			<!-- Catálogo de Equipos -->
 			<section class="modules-section" aria-labelledby="equipos-list-title">
 				<div class="section-header">
 					<div>
 						<h2 id="equipos-list-title">Inventario tecnico</h2>
-						<p class="section-note">Equipos relevados y monitoreados. Utiliza los botones de acción para auditar su gemelo digital o gestionar sus intervenciones técnicas.</p>
+						<p class="section-note">Listado de equipos del parque judicial. Haz clic en <strong>"👉 Abrir Ficha"</strong> para ver sus componentes o consolidar su configuración.</p>
 					</div>
 					<span class="count-badge" th:text="${equipos.paginacion.totalItems} + ' equipos'">0 equipos</span>
 				</div>
@@ -144,7 +120,7 @@
 				</form>
 
 				<p class="empty-state" th:if="${#lists.isEmpty(equipos.equipos)}">
-					Todavía no hay equipos para mostrar con los filtros aplicados. Ejecuta el script PowerShell en una PC para comenzar.
+					Todavía no hay equipos para mostrar con los filtros aplicados. Ejecuta el script PowerShell en una PC para que aparezca aquí.
 				</p>
 
 				<div class="responsive-table" th:if="${!#lists.isEmpty(equipos.equipos)}">
@@ -157,7 +133,7 @@
 								<th scope="col">IP</th>
 								<th scope="col">Sistema Operativo</th>
 								<th scope="col">Estado</th>
-								<th scope="col">Siguiente Acción</th>
+								<th scope="col">Paso Siguiente</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -174,10 +150,10 @@
 									<span class="authorization-badge" th:classappend="${equipo.activo} ? ' is-authorized' : ' is-pending'"
 											th:text="${equipo.activo} ? equipo.monitoreo : 'INACTIVO'">REPORTADO</span>
 								</td>
-								<td data-label="Siguiente Acción">
-									<div style="display: flex; gap: 6px; flex-wrap: wrap;">
-										<a class="primary-action" th:href="@{/admin/equipos/{id}(id=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
-											🔍 Ficha y Gemelo
+								<td data-label="Paso Siguiente">
+									<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+										<a class="primary-action" th:href="@{/admin/equipos/{id}(id=${equipo.id})}" style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700;">
+											👉 Abrir Ficha
 										</a>
 										<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
 											🛠️ Órdenes
@@ -190,7 +166,7 @@
 				</div>
 			</section>
 
-			<!-- Opciones Avanzadas de Importación Colapsadas -->
+			<!-- Opciones de Importación Colapsadas -->
 			<details class="collapsible-card" th:if="${puedeEditar}">
 				<summary class="collapsible-summary">
 					<h2 id="importar-viejo-title" style="margin: 0; font-size: 0.95rem; font-weight: 700;">📂 Importar inventario viejo (CSV)</h2>
@@ -214,31 +190,77 @@
 		</section>
 	</main>
 
+	<!-- Script de Copiado Robusto (Compatible con HTTP y HTTPS en redes locales) -->
 	<script>
-		function toggleScriptGuide() {
-			const box = document.getElementById('script-guide-box');
-			if (box) {
-				box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'flex' : 'none';
-				if (box.style.display === 'flex') {
-					box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-				}
+		function copiarComandoScript() {
+			var input = document.getElementById('ps-cmd-input');
+			if (!input) return;
+			var cmd = input.value;
+
+			// Método 1: Fallback clásico para navegadores en HTTP (no HTTPS)
+			var textarea = document.createElement('textarea');
+			textarea.value = cmd;
+			textarea.setAttribute('readonly', '');
+			textarea.style.position = 'fixed';
+			textarea.style.top = '0';
+			textarea.style.left = '0';
+			textarea.style.opacity = '0';
+			document.body.appendChild(textarea);
+			textarea.focus();
+			textarea.select();
+
+			var copiado = false;
+			try {
+				copiado = document.execCommand('copy');
+			} catch (err) {
+				copiado = false;
+			}
+			document.body.removeChild(textarea);
+
+			// Método 2: API moderna de portapapeles si está disponible
+			if (!copiado && navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(cmd).then(function() {
+					mostrarFeedbackCopia();
+				}).catch(function() {
+					input.focus();
+					input.select();
+					alert('Comando seleccionado. Presiona Ctrl+C para copiar.');
+				});
+				return;
+			}
+
+			if (copiado) {
+				mostrarFeedbackCopia();
+			} else {
+				input.focus();
+				input.select();
+				prompt('Copia este comando con Ctrl+C:', cmd);
 			}
 		}
 
-		function copiarComandoScript() {
-			const host = window.location.host;
-			const proto = window.location.protocol;
-			const baseUrl = proto + '//' + host;
-			const cmd = 'Invoke-WebRequest -Uri "' + baseUrl + '/scripts/windows/inventario-modular.ps1" -OutFile "$env:TEMP\\inventario.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\\inventario.ps1" -Servidor "' + baseUrl + '"';
-			navigator.clipboard.writeText(cmd).then(function() {
-				alert('¡Comando copiado al portapapeles! Pégalo en PowerShell en la PC a relevar.');
-			}).catch(function() {
-				const el = document.getElementById('ps-command-text');
-				if (el) {
-					prompt('Copia este comando:', el.innerText);
-				}
-			});
+		function mostrarFeedbackCopia() {
+			var btn = document.getElementById('btn-copiar-cmd');
+			if (btn) {
+				var textoOriginal = btn.innerHTML;
+				btn.innerHTML = '✅ ¡Comando Copiado!';
+				btn.style.backgroundColor = '#16a34a';
+				setTimeout(function() {
+					btn.innerHTML = textoOriginal;
+					btn.style.backgroundColor = '#2563eb';
+				}, 3000);
+			}
 		}
+
+		// Rellenar automáticamente la IP/Host actual del servidor
+		window.addEventListener('DOMContentLoaded', function() {
+			var input = document.getElementById('ps-cmd-input');
+			if (input) {
+				var host = window.location.host;
+				var proto = window.location.protocol;
+				var baseUrl = proto + '//' + host;
+				input.value = 'Invoke-WebRequest -Uri "' + baseUrl + '/scripts/windows/inventario-modular.ps1" -OutFile "$env:TEMP\\inventario.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\\inventario.ps1" -Servidor "' + baseUrl + '"';
+			}
+		});
 	</script>
 </body>
 </html>
