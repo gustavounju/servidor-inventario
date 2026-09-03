@@ -95,7 +95,16 @@ public class PatrimonioPageController {
 
 	private void prepararModelo(Model model, UserDetails userDetails, PatrimonioForm patrimonioForm,
 			String query, EstadoBienPatrimonial estado) {
-		model.addAttribute("bienes", patrimonioService.buscar(query, estado));
+		var bienes = patrimonioService.buscar(query, estado);
+		long enUsoCount = bienes.stream().filter(b -> b.estado() == EstadoBienPatrimonial.EN_USO).count();
+		long enDepositoCount = bienes.stream().filter(b -> b.estado() == EstadoBienPatrimonial.EN_DEPOSITO).count();
+		long vinculadosCount = bienes.stream().filter(b -> b.equipoId() != null).count();
+
+		model.addAttribute("bienes", bienes);
+		model.addAttribute("totalBienes", bienes.size());
+		model.addAttribute("enUsoCount", enUsoCount);
+		model.addAttribute("enDepositoCount", enDepositoCount);
+		model.addAttribute("vinculadosCount", vinculadosCount);
 		model.addAttribute("patrimonioForm", patrimonioForm);
 		model.addAttribute("equipos", equipoRepository.buscar(null, Pageable.unpaged()).getContent());
 		model.addAttribute("estadosPatrimonio", EstadoBienPatrimonial.values());
@@ -103,6 +112,9 @@ public class PatrimonioPageController {
 		model.addAttribute("filtroQuery", query);
 		model.addAttribute("filtroEstado", estado);
 		model.addAttribute("puedeEditarPatrimonio", authorizationService.tienePermiso(userDetails, MODULO_PATRIMONIO, PERMISO_EDITAR));
+		model.addAttribute("puedeVerActas", authorizationService.tienePermiso(userDetails, "ACTAS", PERMISO_VER));
+		model.addAttribute("puedeVerEquipos", authorizationService.tienePermiso(userDetails, "EQUIPOS", PERMISO_VER));
+		model.addAttribute("puedeVerReportes", authorizationService.tienePermiso(userDetails, "REPORTES", "VER"));
 	}
 
 	private void exigirPermiso(UserDetails userDetails, String permiso) {

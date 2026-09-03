@@ -85,6 +85,10 @@ public class EquipoPageController {
 		model.addAttribute("query", q == null ? "" : q.trim());
 		model.addAttribute("equipos", equipoService.listar(q, 0, 50));
 		model.addAttribute("puedeEditar", authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR));
+		model.addAttribute("puedeVerOrdenes", authorizationService.tienePermiso(userDetails, "ORDENES_ARMADO", PERMISO_VER));
+		model.addAttribute("puedeVerStock", authorizationService.tienePermiso(userDetails, "STOCK", PERMISO_VER));
+		model.addAttribute("puedeVerActas", authorizationService.tienePermiso(userDetails, "ACTAS", PERMISO_VER));
+		model.addAttribute("puedeVerDiferencias", authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_VER));
 		return "admin/equipos";
 	}
 

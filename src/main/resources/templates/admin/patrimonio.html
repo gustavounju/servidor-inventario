@@ -9,218 +9,429 @@
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="patrimonio-title">
-			<header th:replace="~{admin/nav :: topbar('Modulo funcional', 'Patrimonio', 'patrimonio')}"></header>
+			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Gestión Patrimonial y Bienes', 'patrimonio')}"></header>
 
-			<p class="success-message" th:if="${creado}">Bien patrimonial actualizado correctamente.</p>
+			<!-- Barra de Acciones Rápidas y Navegación Contextual -->
+			<nav class="quick-nav-bar" aria-label="Navegación contextual de patrimonio">
+				<div class="quick-nav-group">
+					<a class="secondary-action" th:if="${puedeVerActas}" th:href="@{/admin/actas}">
+						📋 Actas de Entrega y Resguardo
+					</a>
+					<a class="secondary-action" th:if="${puedeVerEquipos}" th:href="@{/admin/equipos}">
+						🖥️ Catálogo de Equipos
+					</a>
+					<a class="secondary-action" th:if="${puedeVerReportes}" th:href="@{/admin/reportes}">
+						📊 Reportes Patrimoniales (CSV)
+					</a>
+					<a class="secondary-action" th:href="@{/admin/ubicaciones}">
+						📍 Oficinas y Sedes
+					</a>
+				</div>
+				<div class="quick-nav-group">
+					<span class="count-badge" th:text="${totalBienes} + ' bienes registrados'">0 bienes registrados</span>
+				</div>
+			</nav>
 
-			<form class="search-form dashboard-filter-form" th:action="@{/admin/patrimonio}" method="get">
-				<label>
-					<span>Buscar</span>
-					<input type="search" name="query" th:value="${filtroQuery}" maxlength="120">
-				</label>
-				<label>
-					<span>Estado</span>
-					<select name="estado">
-						<option value="">Todos</option>
-						<option th:each="estado : ${estadosPatrimonio}" th:value="${estado}" th:text="${estado}"
-								th:selected="${estado == filtroEstado}">EN_USO</option>
-					</select>
-				</label>
-				<button class="secondary-action" type="submit">Filtrar</button>
-			</form>
-
-			<section class="modules-section" aria-labelledby="patrimonio-list-title">
-				<div class="section-header">
-					<div>
-						<h2 id="patrimonio-list-title">Bienes patrimoniales</h2>
-						<p class="section-note">Numeros patrimoniales, custodios y relacion opcional con equipos tecnicos.</p>
+			<!-- Banner Contextual de Siguientes Pasos tras Operación Exitosa -->
+			<div class="workflow-banner" th:if="${creado}">
+				<div class="workflow-banner-icon">🎉</div>
+				<div class="workflow-banner-content">
+					<strong>¡Operación patrimonial guardada correctamente!</strong>
+					<p>
+						El bien patrimonial ha quedado registrado en la base de datos oficial del Centro Judicial San Pedro.
+					</p>
+					<div class="workflow-next-actions">
+						<span>👉 <strong>Siguiente paso natural recomendado:</strong></span>
+						<a class="primary-action" th:if="${puedeVerActas}" th:href="@{/admin/actas}">
+							📋 Generar Acta Formal de Entrega (PDF)
+						</a>
+						<button type="button" class="secondary-action" onclick="switchTab('catalogo')">
+							📋 Ver Catálogo Completo
+						</button>
+						<button type="button" class="secondary-action" th:if="${puedeEditarPatrimonio}" onclick="switchTab('nuevo')">
+							➕ Registrar Otro Bien
+						</button>
 					</div>
-					<span class="count-badge" th:text="${#lists.size(bienes)} + ' bienes'">0 bienes</span>
+				</div>
+			</div>
+
+			<!-- Stepper Visual del Circuito de Vida Patrimonial (Guía Paso a Paso) -->
+			<section class="workflow-stepper" aria-label="Circuito de Gestión Patrimonial">
+				<!-- Paso 1: Alta Patrimonial -->
+				<div class="workflow-step" th:classappend="${totalBienes > 0} ? ' is-done' : ' is-current'">
+					<div class="step-header">
+						<span class="step-badge">1</span>
+						<span class="authorization-badge" th:classappend="${totalBienes > 0} ? ' is-authorized' : ' is-pending'"
+							  th:text="${totalBienes > 0} ? 'REGISTRADO ✅' : 'PENDIENTE ⚠️'">
+							PENDIENTE
+						</span>
+					</div>
+					<h3 class="step-title">1. Alta del Bien</h3>
+					<p class="step-desc">
+						Identificación mediante chapa/número patrimonial único, categoría (PC, Monitor, Impresora) y descripción.
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="primary-action" th:if="${puedeEditarPatrimonio}" onclick="switchTab('nuevo')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							➕ Cargar Nuevo Bien
+						</button>
+					</div>
 				</div>
 
-				<p class="empty-state" th:if="${#lists.isEmpty(bienes)}">Todavia no hay bienes patrimoniales con esos filtros.</p>
+				<!-- Paso 2: Custodio y Fuero -->
+				<div class="workflow-step" th:classappend="${enUsoCount > 0} ? ' is-done' : ''">
+					<div class="step-header">
+						<span class="step-badge">2</span>
+						<span class="count-badge" th:text="${enUsoCount} + ' en uso'">0 en uso</span>
+					</div>
+					<h3 class="step-title">2. Asignación y Custodio</h3>
+					<p class="step-desc">
+						Asigna el funcionario responsable directo y el fuero judicial o dependencia donde presta servicio el bien.
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="secondary-action" onclick="switchTab('catalogo')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							👤 Ver Custodios
+						</button>
+					</div>
+				</div>
 
-				<div class="responsive-table" th:if="${!#lists.isEmpty(bienes)}">
-					<table>
-						<thead>
-							<tr>
-								<th scope="col">Numero</th>
-								<th scope="col">Bien</th>
-								<th scope="col">Ubicacion</th>
-								<th scope="col">Custodio</th>
-								<th scope="col">Equipo</th>
-								<th scope="col">Estado</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr th:each="bien : ${bienes}">
-								<td data-label="Numero" th:text="${bien.numeroPatrimonial}">PJ-001</td>
-								<td data-label="Bien">
-									<strong th:text="${bien.descripcion}">PC administrativa</strong>
-									<span class="table-subtext" th:text="${bien.categoria}">PC</span>
-									<span class="table-subtext" th:if="${bien.observaciones}" th:text="${bien.observaciones}">Observaciones</span>
-								</td>
-								<td data-label="Ubicacion">
-									<span th:text="${bien.ubicacion ?: 'Sin ubicacion'}">Informatica</span>
-									<span class="table-subtext" th:text="${bien.fuero ?: 'Sin fuero'}">Civil</span>
-								</td>
-								<td data-label="Custodio" th:text="${bien.custodio ?: 'Sin custodio'}">gmurad</td>
-								<td data-label="Equipo" th:text="${bien.equipoNombre ?: 'Sin equipo'}">PC-INF-001</td>
-								<td data-label="Estado">
-									<span class="authorization-badge" th:classappend="${bien.activo} ? ' is-authorized' : ' is-pending'"
-											th:text="${bien.estado}">EN_USO</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
+				<!-- Paso 3: Vinculación a PC -->
+				<div class="workflow-step" th:classappend="${vinculadosCount > 0} ? ' is-done' : ''">
+					<div class="step-header">
+						<span class="step-badge">3</span>
+						<span class="count-badge" th:text="${vinculadosCount} + ' vinculados a PC'">0 vinculados</span>
+					</div>
+					<h3 class="step-title">3. Vinculación Técnica</h3>
+					<p class="step-desc">
+						Conecta el número patrimonial con la PC física monitoreada en el catálogo técnico de equipos.
+					</p>
+					<div class="step-action-area">
+						<a class="secondary-action" th:if="${puedeVerEquipos}" th:href="@{/admin/equipos}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
+							🖥️ Ver Catálogo de Equipos
+						</a>
+					</div>
+				</div>
+
+				<!-- Paso 4: Acta y Resguardo -->
+				<div class="workflow-step">
+					<div class="step-header">
+						<span class="step-badge">4</span>
+						<span class="authorization-badge is-authorized">RESGUARDO 📋</span>
+					</div>
+					<h3 class="step-title">4. Acta de Resguardo</h3>
+					<p class="step-desc">
+						Emisión oficial del Acta en formato PDF con detalle de bienes entregados para firma del custodio.
+					</p>
+					<div class="step-action-area">
+						<a class="secondary-action" th:if="${puedeVerActas}" th:href="@{/admin/actas}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
+							📋 Ir al Módulo de Actas
+						</a>
+					</div>
 				</div>
 			</section>
 
-			<section class="attributes-section" th:if="${puedeEditarPatrimonio and !#lists.isEmpty(bienes)}" aria-labelledby="patrimonio-edit-title">
-				<div class="section-header">
-					<div>
-						<h2 id="patrimonio-edit-title">Editar bienes cargados</h2>
-						<p class="section-note">Mantenga actualizado custodio, ubicacion y equipo relacionado.</p>
-					</div>
+			<!-- Resumen Estadístico de Bienes -->
+			<section class="summary-grid" aria-label="Resumen rápido de bienes patrimoniales">
+				<div>
+					<span>Total Registrados</span>
+					<strong th:text="${totalBienes}">0</strong>
 				</div>
+				<div>
+					<span>En Uso (Operativos)</span>
+					<strong th:text="${enUsoCount}">0</strong>
+				</div>
+				<div>
+					<span>En Depósito</span>
+					<strong th:text="${enDepositoCount}">0</strong>
+				</div>
+				<div>
+					<span>Vinculados a PCs</span>
+					<strong th:text="${vinculadosCount}">0</strong>
+				</div>
+			</section>
 
-				<div class="edit-stack">
-					<form class="equipment-form inline-edit-card" th:each="bien : ${bienes}"
-							th:action="@{/admin/patrimonio/bienes/{id}(id=${bien.id})}" method="post">
-						<div class="section-header">
-							<h2 th:text="${bien.numeroPatrimonial}">PJ-001</h2>
-							<span class="count-badge" th:text="'ID ' + ${bien.id}">ID 1</span>
+			<!-- Pestañas de Navegación Limpia (Subnav Tabs) -->
+			<nav class="subnav-tabs" role="tablist" aria-label="Secciones de Gestión Patrimonial">
+				<button type="button" id="tab-btn-catalogo" class="subnav-tab is-active" role="tab" aria-selected="true" aria-controls="pane-catalogo" onclick="switchTab('catalogo')">
+					📋 Catálogo de Bienes (<span th:text="${totalBienes}">0</span>)
+				</button>
+				<button type="button" id="tab-btn-nuevo" class="subnav-tab" th:if="${puedeEditarPatrimonio}" role="tab" aria-selected="false" aria-controls="pane-nuevo" onclick="switchTab('nuevo')">
+					➕ Registrar Nuevo Bien
+				</button>
+				<button type="button" id="tab-btn-edicion" class="subnav-tab" th:if="${puedeEditarPatrimonio and !#lists.isEmpty(bienes)}" role="tab" aria-selected="false" aria-controls="pane-edicion" onclick="switchTab('edicion')">
+					✏️ Edición Rápida de Bienes
+				</button>
+			</nav>
+
+			<!-- Panel 1: Catálogo de Bienes -->
+			<div id="pane-catalogo" class="tab-pane is-active" role="tabpanel" aria-labelledby="tab-btn-catalogo">
+				<form class="search-form dashboard-filter-form" th:action="@{/admin/patrimonio}" method="get" role="search">
+					<label>
+						<span>Buscar</span>
+						<input type="search" name="query" th:value="${filtroQuery}" placeholder="Buscar por número patrimonial, custodio, fuero o descripción..." maxlength="120">
+					</label>
+					<label>
+						<span>Estado</span>
+						<select name="estado">
+							<option value="">Todos los estados</option>
+							<option th:each="estado : ${estadosPatrimonio}" th:value="${estado}" th:text="${estado}"
+									th:selected="${estado == filtroEstado}">EN_USO</option>
+						</select>
+					</label>
+					<button class="primary-action" type="submit">Filtrar</button>
+				</form>
+
+				<section class="modules-section" aria-labelledby="patrimonio-list-title">
+					<div class="section-header">
+						<div>
+							<h2 id="patrimonio-list-title">Catálogo Oficial de Bienes</h2>
+							<p class="section-note">Número de inventario patrimonial, ubicación física, custodio responsable y equipo asociado.</p>
 						</div>
+						<span class="count-badge" th:text="${#lists.size(bienes)} + ' bienes listados'">0 bienes</span>
+					</div>
+
+					<p class="empty-state" th:if="${#lists.isEmpty(bienes)}">
+						Todavía no hay bienes patrimoniales que coincidan con la búsqueda. Puedes registrar uno nuevo desde la pestaña <strong>"➕ Registrar Nuevo Bien"</strong>.
+					</p>
+
+					<div class="responsive-table" th:if="${!#lists.isEmpty(bienes)}">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">N° Patrimonial</th>
+									<th scope="col">Bien / Categoría</th>
+									<th scope="col">Ubicación y Fuero</th>
+									<th scope="col">Custodio Responsable</th>
+									<th scope="col">Equipo Vinculado</th>
+									<th scope="col">Estado</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="bien : ${bienes}">
+									<td data-label="N° Patrimonial">
+										<strong style="color: #1e3a8a; font-size: 0.95rem;" th:text="${bien.numeroPatrimonial}">PJ-001</strong>
+									</td>
+									<td data-label="Bien / Categoría">
+										<strong th:text="${bien.descripcion}">PC de escritorio</strong>
+										<span class="table-subtext" th:text="'Categoría: ' + ${bien.categoria}">PC</span>
+										<span class="table-subtext" th:if="${bien.observaciones}" th:text="${bien.observaciones}">Observaciones</span>
+									</td>
+									<td data-label="Ubicación y Fuero">
+										<span th:text="${bien.ubicacion ?: 'Sin ubicación'}">Informática</span>
+										<span class="table-subtext" th:text="${bien.fuero ?: 'Sin fuero'}">Civil</span>
+									</td>
+									<td data-label="Custodio Responsable">
+										<strong th:text="${bien.custodio ?: 'Sin custodio asignado'}">gmurad</strong>
+									</td>
+									<td data-label="Equipo Vinculado">
+										<a th:if="${bien.equipoId != null}" th:href="@{/admin/equipos/{id}(id=${bien.equipoId})}"
+										   th:text="${bien.equipoNombre ?: 'Ver Equipo'}" class="secondary-action" style="font-size: 0.8rem; padding: 4px 8px;">
+											PC-INF-001
+										</a>
+										<span th:if="${bien.equipoId == null}" class="table-subtext">No vinculado</span>
+									</td>
+									<td data-label="Estado">
+										<span class="authorization-badge" th:classappend="${bien.activo} ? ' is-authorized' : ' is-pending'"
+												th:text="${bien.estado}">EN_USO</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+
+			<!-- Panel 2: Registrar Nuevo Bien -->
+			<div id="pane-nuevo" class="tab-pane" th:if="${puedeEditarPatrimonio}" role="tabpanel" aria-labelledby="tab-btn-nuevo">
+				<section class="attributes-section" aria-labelledby="patrimonio-form-title">
+					<div class="section-header">
+						<div>
+							<h2 id="patrimonio-form-title">Cargar bien patrimonial</h2>
+							<p class="section-note">Completa los datos del bien para incorporarlo al inventario y asignarlo a una dependencia judicial.</p>
+						</div>
+						<span class="count-badge">Formulario Guiado</span>
+					</div>
+
+					<form class="equipment-form" th:action="@{/admin/patrimonio/bienes}" th:object="${patrimonioForm}" method="post">
 						<div class="form-grid">
 							<label>
-								<span>Numero</span>
-								<input name="numeroPatrimonial" th:value="${bien.numeroPatrimonial}" maxlength="80" required>
+								<span>N° Patrimonial (Chapa única) *</span>
+								<input th:field="*{numeroPatrimonial}" placeholder="Ej: PJ-10492" maxlength="80" required>
+								<small class="field-error" th:if="${#fields.hasErrors('numeroPatrimonial')}" th:errors="*{numeroPatrimonial}">Error</small>
 							</label>
 							<label>
-								<span>Categoria</span>
-								<input name="categoria" th:value="${bien.categoria}" maxlength="80" required>
+								<span>Categoría de Bien *</span>
+								<input th:field="*{categoria}" placeholder="Ej: Computadora, Monitor, Impresora, Switch..." maxlength="80" required>
+								<small class="field-error" th:if="${#fields.hasErrors('categoria')}" th:errors="*{categoria}">Error</small>
+							</label>
+							<label style="grid-column: 1 / -1;">
+								<span>Descripción Detallada *</span>
+								<input th:field="*{descripcion}" placeholder="Ej: PC Dell OptiPlex 7070 SFF Core i7 16GB RAM" maxlength="255" required>
+								<small class="field-error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}">Error</small>
 							</label>
 							<label>
-								<span>Descripcion</span>
-								<input name="descripcion" th:value="${bien.descripcion}" maxlength="255" required>
-							</label>
-							<label>
-								<span>Estado</span>
-								<select name="estado">
-									<option th:each="estado : ${estadosPatrimonio}" th:value="${estado}" th:text="${estado}"
-											th:selected="${estado == bien.estado}">EN_USO</option>
+								<span>Estado Operativo</span>
+								<select th:field="*{estado}">
+									<option th:each="estado : ${estadosPatrimonio}" th:value="${estado}" th:text="${estado}">EN_USO</option>
 								</select>
 							</label>
 							<label>
-								<span>Equipo</span>
-								<select name="equipoId">
-									<option value="">Sin equipo</option>
-									<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}"
-											th:selected="${equipo.id == bien.equipoId}">PC-INF-001</option>
+								<span>Vincular a Equipo Informático (Opcional)</span>
+								<select th:field="*{equipoId}">
+									<option value="">Sin equipo asignado</option>
+									<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}">PC-INF-001</option>
 								</select>
 							</label>
 							<label>
-								<span>Ubicacion</span>
-								<select name="ubicacion">
-									<option value="">Sin ubicacion</option>
+								<span>Ubicación / Sede</span>
+								<select th:field="*{ubicacion}">
+									<option value="">Sin ubicación específica</option>
 									<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
-											th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}"
-											th:selected="${ubicacion.nombre == bien.ubicacion}">Oficina Informatica</option>
+											th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Oficina Informática</option>
 								</select>
 							</label>
 							<label>
-								<span>Fuero</span>
-								<input name="fuero" th:value="${bien.fuero}" maxlength="120">
+								<span>Fuero / Dependencia</span>
+								<input th:field="*{fuero}" placeholder="Ej: Informática, Civil y Comercial, Penal..." maxlength="120">
 							</label>
-							<label>
-								<span>Custodio</span>
-								<input name="custodio" th:value="${bien.custodio}" maxlength="120">
+							<label style="grid-column: 1 / -1;">
+								<span>Custodio Responsable</span>
+								<input th:field="*{custodio}" placeholder="Nombre y apellido o legajo del funcionario responsable" maxlength="120">
 							</label>
 						</div>
 						<label>
-							<span>Observaciones</span>
-							<textarea name="observaciones" maxlength="500" rows="2" th:text="${bien.observaciones}"></textarea>
+							<span>Observaciones Adicionales</span>
+							<textarea th:field="*{observaciones}" placeholder="Detalles de procedencia, número de serie de fábrica, estado de conservación..." maxlength="500" rows="3"></textarea>
 						</label>
 						<label class="checkbox-row">
 							<input name="_activo" type="hidden" value="on">
-							<input name="activo" type="checkbox" value="true" th:checked="${bien.activo}">
-							<span>Bien activo</span>
+							<input th:field="*{activo}" type="checkbox">
+							<span>Bien activo en el sistema</span>
 						</label>
 						<div class="form-actions">
-							<button class="secondary-action" type="submit">Guardar cambios</button>
+							<button class="primary-action" type="submit">💾 Guardar Bien Patrimonial</button>
+							<button type="button" class="secondary-action" onclick="switchTab('catalogo')">Cancelar</button>
 						</div>
 					</form>
-				</div>
-			</section>
+				</section>
+			</div>
 
-			<section class="attributes-section" th:if="${puedeEditarPatrimonio}" aria-labelledby="patrimonio-form-title">
-				<div class="section-header">
-					<h2 id="patrimonio-form-title">Cargar bien patrimonial</h2>
-					<span class="count-badge">Requiere PATRIMONIO:EDITAR</span>
-				</div>
+			<!-- Panel 3: Edición Rápida de Bienes -->
+			<div id="pane-edicion" class="tab-pane" th:if="${puedeEditarPatrimonio and !#lists.isEmpty(bienes)}" role="tabpanel" aria-labelledby="tab-btn-edicion">
+				<section class="attributes-section" aria-labelledby="patrimonio-edit-title">
+					<div class="section-header">
+						<div>
+							<h2 id="patrimonio-edit-title">Modificar Bienes Existentes</h2>
+							<p class="section-note">Actualiza rápidamente custodio, estado operativo o vinculación técnica de cada bien cargado.</p>
+						</div>
+					</div>
 
-				<form class="equipment-form" th:action="@{/admin/patrimonio/bienes}" th:object="${patrimonioForm}" method="post">
-					<div class="form-grid">
-						<label>
-							<span>Numero</span>
-							<input th:field="*{numeroPatrimonial}" maxlength="80" required>
-							<small class="field-error" th:if="${#fields.hasErrors('numeroPatrimonial')}" th:errors="*{numeroPatrimonial}">Error</small>
-						</label>
-						<label>
-							<span>Categoria</span>
-							<input th:field="*{categoria}" maxlength="80" required>
-							<small class="field-error" th:if="${#fields.hasErrors('categoria')}" th:errors="*{categoria}">Error</small>
-						</label>
-						<label>
-							<span>Descripcion</span>
-							<input th:field="*{descripcion}" maxlength="255" required>
-							<small class="field-error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}">Error</small>
-						</label>
-						<label>
-							<span>Estado</span>
-							<select th:field="*{estado}">
-								<option th:each="estado : ${estadosPatrimonio}" th:value="${estado}" th:text="${estado}">EN_USO</option>
-							</select>
-						</label>
-						<label>
-							<span>Equipo</span>
-							<select th:field="*{equipoId}">
-								<option value="">Sin equipo</option>
-								<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}">PC-INF-001</option>
-							</select>
-						</label>
-						<label>
-							<span>Ubicacion</span>
-							<select th:field="*{ubicacion}">
-								<option value="">Sin ubicacion</option>
-								<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
-										th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Oficina Informatica</option>
-							</select>
-						</label>
-						<label>
-							<span>Fuero</span>
-							<input th:field="*{fuero}" maxlength="120">
-						</label>
-						<label>
-							<span>Custodio</span>
-							<input th:field="*{custodio}" maxlength="120">
-						</label>
+					<div class="edit-stack">
+						<form class="equipment-form inline-edit-card" th:each="bien : ${bienes}"
+								th:action="@{/admin/patrimonio/bienes/{id}(id=${bien.id})}" method="post">
+							<div class="section-header">
+								<h2 th:text="${bien.numeroPatrimonial}">PJ-001</h2>
+								<span class="count-badge" th:text="'ID ' + ${bien.id}">ID 1</span>
+							</div>
+							<div class="form-grid">
+								<label>
+									<span>N° Patrimonial</span>
+									<input name="numeroPatrimonial" th:value="${bien.numeroPatrimonial}" maxlength="80" required>
+								</label>
+								<label>
+									<span>Categoría</span>
+									<input name="categoria" th:value="${bien.categoria}" maxlength="80" required>
+								</label>
+								<label style="grid-column: 1 / -1;">
+									<span>Descripción</span>
+									<input name="descripcion" th:value="${bien.descripcion}" maxlength="255" required>
+								</label>
+								<label>
+									<span>Estado</span>
+									<select name="estado">
+										<option th:each="estado : ${estadosPatrimonio}" th:value="${estado}" th:text="${estado}"
+												th:selected="${estado == bien.estado}">EN_USO</option>
+									</select>
+								</label>
+								<label>
+									<span>Equipo Vinculado</span>
+									<select name="equipoId">
+										<option value="">Sin equipo</option>
+										<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}"
+												th:selected="${equipo.id == bien.equipoId}">PC-INF-001</option>
+									</select>
+								</label>
+								<label>
+									<span>Ubicación</span>
+									<select name="ubicacion">
+										<option value="">Sin ubicación</option>
+										<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
+												th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}"
+												th:selected="${ubicacion.nombre == bien.ubicacion}">Oficina Informática</option>
+									</select>
+								</label>
+								<label>
+									<span>Fuero</span>
+									<input name="fuero" th:value="${bien.fuero}" maxlength="120">
+								</label>
+								<label style="grid-column: 1 / -1;">
+									<span>Custodio</span>
+									<input name="custodio" th:value="${bien.custodio}" maxlength="120">
+								</label>
+							</div>
+							<label>
+								<span>Observaciones</span>
+								<textarea name="observaciones" maxlength="500" rows="2" th:text="${bien.observaciones}"></textarea>
+							</label>
+							<label class="checkbox-row">
+								<input name="_activo" type="hidden" value="on">
+								<input name="activo" type="checkbox" value="true" th:checked="${bien.activo}">
+								<span>Bien activo</span>
+							</label>
+							<div class="form-actions">
+								<button class="secondary-action" type="submit">💾 Guardar Cambios</button>
+							</div>
+						</form>
 					</div>
-					<label>
-						<span>Observaciones</span>
-						<textarea th:field="*{observaciones}" maxlength="500" rows="3"></textarea>
-					</label>
-					<label class="checkbox-row">
-						<input name="_activo" type="hidden" value="on">
-						<input th:field="*{activo}" type="checkbox">
-						<span>Bien activo</span>
-					</label>
-					<div class="form-actions">
-						<button class="primary-action" type="submit">Guardar bien</button>
-					</div>
-				</form>
-			</section>
+				</section>
+			</div>
+
 		</section>
 	</main>
+
+	<!-- Script de Pestañas Interactivas Liviano y Accesible -->
+	<script>
+		function switchTab(tabId) {
+			const tabs = ['catalogo', 'nuevo', 'edicion'];
+			tabs.forEach(function(id) {
+				const btn = document.getElementById('tab-btn-' + id);
+				const pane = document.getElementById('pane-' + id);
+				if (btn && pane) {
+					if (id === tabId) {
+						btn.classList.add('is-active');
+						btn.setAttribute('aria-selected', 'true');
+						pane.classList.add('is-active');
+					} else {
+						btn.classList.remove('is-active');
+						btn.setAttribute('aria-selected', 'false');
+						pane.classList.remove('is-active');
+					}
+				}
+			});
+			if (history.replaceState) {
+				history.replaceState(null, null, '#tab-' + tabId);
+			}
+		}
+
+		window.addEventListener('DOMContentLoaded', function() {
+			const hash = window.location.hash;
+			if (hash === '#tab-nuevo') {
+				switchTab('nuevo');
+			} else if (hash === '#tab-edicion') {
+				switchTab('edicion');
+			} else if (hash === '#tab-catalogo') {
+				switchTab('catalogo');
+			}
+		});
+	</script>
 </body>
 </html>

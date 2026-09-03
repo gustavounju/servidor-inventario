@@ -3,237 +3,433 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Actas - Inventario Modular</title>
+	<title>Actas y Movimientos - Inventario Modular</title>
 	<link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="actas-title">
-			<header th:replace="~{admin/nav :: topbar('Modulo funcional', 'Actas', 'actas')}"></header>
+			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Actas y Documentación Oficial', 'actas')}"></header>
 
-			<p class="success-message" th:if="${creado}">Acta actualizada correctamente.</p>
+			<!-- Barra de Acciones Rápidas y Navegación Contextual -->
+			<nav class="quick-nav-bar" aria-label="Navegación rápida de actas">
+				<div class="quick-nav-group">
+					<a class="secondary-action" th:if="${puedeVerEquipos}" th:href="@{/admin/equipos}">
+						🖥️ Catálogo de Equipos
+					</a>
+					<a class="secondary-action" th:if="${puedeVerPatrimonio}" th:href="@{/admin/patrimonio}">
+						🏛️ Bienes Patrimoniales
+					</a>
+					<a class="secondary-action" th:href="@{/admin/reportes}">
+						📊 Reportes (CSV)
+					</a>
+				</div>
+				<div class="quick-nav-group">
+					<span class="count-badge" th:text="${totalActas} + ' actas registradas'">0 actas</span>
+				</div>
+			</nav>
 
-			<form class="search-form dashboard-filter-form" th:action="@{/admin/actas}" method="get">
-				<label>
-					<span>Buscar</span>
-					<input type="search" name="query" th:value="${filtroQuery}" maxlength="120">
-				</label>
-				<label>
-					<span>Tipo</span>
-					<select name="tipo">
-						<option value="">Todos</option>
-						<option th:each="tipo : ${tiposActa}" th:value="${tipo}" th:text="${tipo}"
-								th:selected="${tipo == filtroTipo}">ENTREGA</option>
-					</select>
-				</label>
-				<label>
-					<span>Estado</span>
-					<select name="estado">
-						<option value="">Todos</option>
-						<option th:each="estado : ${estadosActa}" th:value="${estado}" th:text="${estado}"
-								th:selected="${estado == filtroEstado}">BORRADOR</option>
-					</select>
-				</label>
-				<button class="secondary-action" type="submit">Filtrar</button>
-			</form>
-
-			<section class="modules-section" aria-labelledby="actas-list-title">
-				<div class="section-header">
-					<div>
-						<h2 id="actas-list-title">Actas registradas</h2>
-						<p class="section-note">Constancias de entrega, recepcion, devolucion, traslado o baja.</p>
+			<!-- Banner Contextual de Siguientes Pasos tras Operación Exitosa -->
+			<div class="workflow-banner" th:if="${creado}">
+				<div class="workflow-banner-icon">📄</div>
+				<div class="workflow-banner-content">
+					<strong>¡Acta registrada correctamente!</strong>
+					<p>
+						El documento administrativo ha sido guardado. Ahora puedes descargar la versión oficial en PDF para ser impresa y firmada.
+					</p>
+					<div class="workflow-next-actions">
+						<span>👉 <strong>Siguiente paso natural recomendado:</strong></span>
+						<button type="button" class="primary-action" onclick="switchTab('listado')">
+							📋 Ver Lista y Descargar PDF
+						</button>
+						<button type="button" class="secondary-action" th:if="${puedeEditarActas}" onclick="switchTab('nueva')">
+							➕ Emitir Otra Acta
+						</button>
+						<a class="secondary-action" th:if="${puedeVerEquipos}" th:href="@{/admin/equipos}">
+							🖥️ Volver a Equipos
+						</a>
 					</div>
-					<span class="count-badge" th:text="${#lists.size(actas)} + ' actas'">0 actas</span>
+				</div>
+			</div>
+
+			<!-- Stepper Visual del Circuito Documental de Actas (3 Pasos) -->
+			<section class="workflow-stepper" aria-label="Circuito Documental de Actas">
+				<!-- Paso 1: Selección y Tipo -->
+				<div class="workflow-step" th:classappend="${totalActas > 0} ? ' is-done' : ' is-current'">
+					<div class="step-header">
+						<span class="step-badge">1</span>
+						<span class="authorization-badge" th:classappend="${totalActas > 0} ? ' is-authorized' : ' is-pending'"
+							  th:text="${totalActas > 0} ? 'ORIGEN DEFINIDO ✅' : 'PENDIENTE ⚠️'">
+							PENDIENTE
+						</span>
+					</div>
+					<h3 class="step-title">1. Selección y Tipo</h3>
+					<p class="step-desc">
+						Define el tipo de movimiento (ENTREGA, DEVOLUCIÓN, TRASLADO o BAJA) y el equipo o bienes involucrados.
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="primary-action" th:if="${puedeEditarActas}" onclick="switchTab('nueva')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							➕ Redactar Nueva Acta
+						</button>
+					</div>
 				</div>
 
-				<p class="empty-state" th:if="${#lists.isEmpty(actas)}">Todavia no hay actas con esos filtros.</p>
+				<!-- Paso 2: Intervinientes y Fuero -->
+				<div class="workflow-step" th:classappend="${emitidasCount > 0} ? ' is-done' : ''">
+					<div class="step-header">
+						<span class="step-badge">2</span>
+						<span class="count-badge" th:text="${emitidasCount} + ' emitidas'">0 emitidas</span>
+					</div>
+					<h3 class="step-title">2. Responsables y Destino</h3>
+					<p class="step-desc">
+						Identifica el funcionario que entrega (Área Técnica) y el agente judicial que recibe en destino.
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="secondary-action" onclick="switchTab('listado')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							👥 Ver Intervinientes
+						</button>
+					</div>
+				</div>
 
-				<div class="responsive-table" th:if="${!#lists.isEmpty(actas)}">
-					<table>
-						<thead>
-							<tr>
-								<th scope="col">Numero</th>
-								<th scope="col">Acta</th>
-								<th scope="col">Equipo</th>
-								<th scope="col">Responsables</th>
-								<th scope="col">Estado</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr th:each="acta : ${actas}">
-								<td data-label="Numero">
-									<span th:text="${acta.numero}">ACT-001</span>
-									<a class="secondary-action" th:href="@{/api/v1/actas/{id}/pdf(id=${acta.id})}">PDF</a>
-								</td>
-								<td data-label="Acta">
-									<strong th:text="${acta.tipo}">ENTREGA</strong>
-									<span class="table-subtext" th:text="${acta.destinatario}">Destinatario</span>
-									<span class="table-subtext" th:text="${acta.fechaEmision ?: 'Sin fecha'}">2026-09-01</span>
-								</td>
-								<td data-label="Equipo" th:text="${acta.equipoNombre ?: 'Sin equipo'}">PC-INF-001</td>
-								<td data-label="Responsables">
-									<span th:text="${acta.responsableEntrega ?: 'Sin entrega'}">admin.local</span>
-									<span class="table-subtext" th:text="${acta.responsableRecepcion ?: 'Sin recepcion'}">mesa.entrada</span>
-								</td>
-								<td data-label="Estado">
-									<span class="authorization-badge" th:classappend="${acta.activo} ? ' is-authorized' : ' is-pending'"
-											th:text="${acta.estado}">BORRADOR</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
+				<!-- Paso 3: Emisión y Descarga PDF -->
+				<div class="workflow-step">
+					<div class="step-header">
+						<span class="step-badge">3</span>
+						<span class="authorization-badge is-authorized">DOCUMENTO OFICIAL 🖨️</span>
+					</div>
+					<h3 class="step-title">3. Emisión y Descarga PDF</h3>
+					<p class="step-desc">
+						Generación automática del PDF institucional listo para impresión, firma hológrafa y archivo.
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="secondary-action" onclick="switchTab('listado')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							📥 Descargar Actas en PDF
+						</button>
+					</div>
 				</div>
 			</section>
 
-			<section class="attributes-section" th:if="${puedeEditarActas and !#lists.isEmpty(actas)}" aria-labelledby="actas-edit-title">
-				<div class="section-header">
-					<div>
-						<h2 id="actas-edit-title">Editar actas cargadas</h2>
-						<p class="section-note">Ajuste estado, destinatario, equipo asociado o responsables.</p>
-					</div>
+			<!-- Resumen Estadístico de Actas -->
+			<section class="summary-grid" aria-label="Resumen rápido de actas">
+				<div>
+					<span>Total Actas</span>
+					<strong th:text="${totalActas}">0</strong>
 				</div>
+				<div>
+					<span>Actas Emitidas</span>
+					<strong th:text="${emitidasCount}">0</strong>
+				</div>
+				<div>
+					<span>En Borrador</span>
+					<strong th:text="${borradorCount}">0</strong>
+				</div>
+				<div>
+					<span>Equipos Monitoreados</span>
+					<strong th:text="${#lists.size(equipos)}">0</strong>
+				</div>
+			</section>
 
-				<div class="edit-stack">
-					<form class="equipment-form inline-edit-card" th:each="acta : ${actas}"
-							th:action="@{/admin/actas/{id}(id=${acta.id})}" method="post">
-						<div class="section-header">
-							<h2 th:text="${acta.numero}">ACT-001</h2>
-							<span class="count-badge" th:text="'ID ' + ${acta.id}">ID 1</span>
+			<!-- Pestañas de Navegación Limpia (Subnav Tabs) -->
+			<nav class="subnav-tabs" role="tablist" aria-label="Secciones de Actas">
+				<button type="button" id="tab-btn-listado" class="subnav-tab is-active" role="tab" aria-selected="true" aria-controls="pane-listado" onclick="switchTab('listado')">
+					📋 Actas Registradas (<span th:text="${totalActas}">0</span>)
+				</button>
+				<button type="button" id="tab-btn-nueva" class="subnav-tab" th:if="${puedeEditarActas}" role="tab" aria-selected="false" aria-controls="pane-nueva" onclick="switchTab('nueva')">
+					➕ Emitir Nueva Acta
+				</button>
+				<button type="button" id="tab-btn-edicion" class="subnav-tab" th:if="${puedeEditarActas and !#lists.isEmpty(actas)}" role="tab" aria-selected="false" aria-controls="pane-edicion" onclick="switchTab('edicion')">
+					✏️ Modificar Actas
+				</button>
+			</nav>
+
+			<!-- Panel 1: Lista de Actas Registradas -->
+			<div id="pane-listado" class="tab-pane is-active" role="tabpanel" aria-labelledby="tab-btn-listado">
+				<form class="search-form dashboard-filter-form" th:action="@{/admin/actas}" method="get" role="search">
+					<label>
+						<span>Buscar</span>
+						<input type="search" name="query" th:value="${filtroQuery}" placeholder="Buscar por número, destinatario o responsable..." maxlength="120">
+					</label>
+					<label>
+						<span>Tipo</span>
+						<select name="tipo">
+							<option value="">Todos los tipos</option>
+							<option th:each="tipo : ${tiposActa}" th:value="${tipo}" th:text="${tipo}"
+									th:selected="${tipo == filtroTipo}">ENTREGA</option>
+						</select>
+					</label>
+					<label>
+						<span>Estado</span>
+						<select name="estado">
+							<option value="">Todos los estados</option>
+							<option th:each="estado : ${estadosActa}" th:value="${estado}" th:text="${estado}"
+									th:selected="${estado == filtroEstado}">BORRADOR</option>
+						</select>
+					</label>
+					<button class="primary-action" type="submit">Filtrar</button>
+				</form>
+
+				<section class="modules-section" aria-labelledby="actas-list-title">
+					<div class="section-header">
+						<div>
+							<h2 id="actas-list-title">Actas registradas</h2>
+							<p class="section-note">Historial oficial de entregas, devoluciones, traslados y bajas con enlace de descarga en PDF.</p>
 						</div>
+						<span class="count-badge" th:text="${#lists.size(actas)} + ' actas'">0 actas</span>
+					</div>
+
+					<p class="empty-state" th:if="${#lists.isEmpty(actas)}">
+						Todavía no hay actas registradas con los filtros seleccionados. Emite una nueva constancia desde la pestaña <strong>"➕ Emitir Nueva Acta"</strong>.
+					</p>
+
+					<div class="responsive-table" th:if="${!#lists.isEmpty(actas)}">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">N° Acta y PDF</th>
+									<th scope="col">Tipo y Fecha</th>
+									<th scope="col">Equipo Vinculado</th>
+									<th scope="col">Destinatario y Oficina</th>
+									<th scope="col">Intervinientes</th>
+									<th scope="col">Estado</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="acta : ${actas}">
+									<td data-label="N° Acta y PDF">
+										<strong style="color: #1e3a8a; font-size: 0.95rem;" th:text="${acta.numero}">ACT-001</strong>
+										<div style="margin-top: 5px;">
+											<a class="primary-action" th:href="@{/api/v1/actas/{id}/pdf(id=${acta.id})}" target="_blank" style="font-size: 0.78rem; padding: 4px 8px;">
+												📥 Descargar PDF
+											</a>
+										</div>
+									</td>
+									<td data-label="Tipo y Fecha">
+										<strong th:text="${acta.tipo}">ENTREGA</strong>
+										<span class="table-subtext" th:text="${acta.fechaEmision ?: 'Sin fecha'}">2026-09-01</span>
+									</td>
+									<td data-label="Equipo Vinculado">
+										<a th:if="${acta.equipoId != null}" th:href="@{/admin/equipos/{id}(id=${acta.equipoId})}"
+										   th:text="${acta.equipoNombre ?: 'Ver Equipo'}" class="secondary-action" style="font-size: 0.8rem; padding: 4px 8px;">
+											PC-INF-001
+										</a>
+										<span th:if="${acta.equipoId == null}" class="table-subtext">Sin equipo específico</span>
+									</td>
+									<td data-label="Destinatario y Oficina">
+										<strong th:text="${acta.destinatario}">Juzgado de Instrucción</strong>
+										<span class="table-subtext" th:if="${acta.detalle}" th:text="${acta.detalle}">Detalle de bienes</span>
+									</td>
+									<td data-label="Intervinientes">
+										<div><small>Entrega:</small> <strong th:text="${acta.responsableEntrega ?: 'Área Técnica'}">Técnico</strong></div>
+										<div><small>Recibe:</small> <strong th:text="${acta.responsableRecepcion ?: 'Funcionario'}">Funcionario</strong></div>
+									</td>
+									<td data-label="Estado">
+										<span class="authorization-badge" th:classappend="${acta.estado.name() == 'EMITIDA'} ? ' is-authorized' : ' is-pending'"
+												th:text="${acta.estado}">EMITIDA</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+
+			<!-- Panel 2: Emitir Nueva Acta -->
+			<div id="pane-nueva" class="tab-pane" th:if="${puedeEditarActas}" role="tabpanel" aria-labelledby="tab-btn-nueva">
+				<section class="attributes-section" aria-labelledby="actas-form-title">
+					<div class="section-header">
+						<div>
+							<h2 id="actas-form-title">Emisión de Nueva Acta</h2>
+							<p class="section-note">Genera el documento legal de movimiento para respaldar la entrega física del equipamiento.</p>
+						</div>
+						<span class="count-badge">Formulario Guiado</span>
+					</div>
+
+					<form class="equipment-form" th:action="@{/admin/actas}" th:object="${actaForm}" method="post">
 						<div class="form-grid">
 							<label>
-								<span>Numero</span>
-								<input name="numero" th:value="${acta.numero}" maxlength="80" required>
+								<span>N° de Acta Oficial *</span>
+								<input th:field="*{numero}" placeholder="Ej: ACT-2026-0001" maxlength="80" required>
+								<small class="field-error" th:if="${#fields.hasErrors('numero')}" th:errors="*{numero}">Error</small>
 							</label>
 							<label>
-								<span>Tipo</span>
-								<select name="tipo">
-									<option th:each="tipo : ${tiposActa}" th:value="${tipo}" th:text="${tipo}"
-											th:selected="${tipo == acta.tipo}">ENTREGA</option>
+								<span>Tipo de Movimiento *</span>
+								<select th:field="*{tipo}">
+									<option th:each="tipo : ${tiposActa}" th:value="${tipo}" th:text="${tipo}">ENTREGA</option>
 								</select>
 							</label>
 							<label>
-								<span>Equipo</span>
-								<select name="equipoId">
-									<option value="">Sin equipo</option>
-									<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}"
-											th:selected="${equipo.id == acta.equipoId}">PC-INF-001</option>
+								<span>Equipo Informático (Opcional)</span>
+								<select th:field="*{equipoId}">
+									<option value="">Ninguno / Varios equipos</option>
+									<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}">PC-INF-001</option>
 								</select>
 							</label>
 							<label>
-								<span>Fecha</span>
-								<input type="date" name="fechaEmision" th:value="${acta.fechaEmision}">
+								<span>Fecha de Emisión *</span>
+								<input th:field="*{fechaEmision}" type="date" required>
+							</label>
+							<label style="grid-column: 1 / -1;">
+								<span>Destinatario (Fuero, Juzgado u Oficina) *</span>
+								<input th:field="*{destinatario}" placeholder="Ej: Juzgado de Control N° 1 - Sede San Pedro" maxlength="180" required>
+								<small class="field-error" th:if="${#fields.hasErrors('destinatario')}" th:errors="*{destinatario}">Error</small>
 							</label>
 							<label>
-								<span>Destinatario</span>
-								<input name="destinatario" th:value="${acta.destinatario}" maxlength="180" required>
+								<span>Responsable de Entrega (Técnico / Emisor) *</span>
+								<input th:field="*{responsableEntrega}" placeholder="Nombre del técnico responsable" maxlength="120" required>
 							</label>
 							<label>
-								<span>Entrega</span>
-								<input name="responsableEntrega" th:value="${acta.responsableEntrega}" maxlength="120">
+								<span>Responsable de Recepción (Funcionario que recibe) *</span>
+								<input th:field="*{responsableRecepcion}" placeholder="Nombre del funcionario que firma la recepción" maxlength="120" required>
 							</label>
 							<label>
-								<span>Recepcion</span>
-								<input name="responsableRecepcion" th:value="${acta.responsableRecepcion}" maxlength="120">
-							</label>
-							<label>
-								<span>Estado</span>
-								<select name="estado">
-									<option th:each="estado : ${estadosActa}" th:value="${estado}" th:text="${estado}"
-											th:selected="${estado == acta.estado}">BORRADOR</option>
+								<span>Estado del Acta</span>
+								<select th:field="*{estado}">
+									<option th:each="estado : ${estadosActa}" th:value="${estado}" th:text="${estado}">EMITIDA</option>
 								</select>
 							</label>
 						</div>
 						<label>
-							<span>Detalle</span>
-							<textarea name="detalle" maxlength="1000" rows="3" required th:text="${acta.detalle}"></textarea>
+							<span>Detalle de Bienes y Componentes Entregados *</span>
+							<textarea th:field="*{detalle}" placeholder="Especificar marca, modelo, número de serie, memoria RAM, periféricos (monitor, teclado, mouse)..." maxlength="2000" rows="4" required></textarea>
+							<small class="field-error" th:if="${#fields.hasErrors('detalle')}" th:errors="*{detalle}">Error</small>
 						</label>
 						<label>
-							<span>Observaciones</span>
-							<textarea name="observaciones" maxlength="500" rows="2" th:text="${acta.observaciones}"></textarea>
+							<span>Observaciones Adicionales</span>
+							<textarea th:field="*{observaciones}" placeholder="Condiciones de entrega, motivos del traslado o cambio..." maxlength="500" rows="2"></textarea>
 						</label>
 						<label class="checkbox-row">
 							<input name="_activo" type="hidden" value="on">
-							<input name="activo" type="checkbox" value="true" th:checked="${acta.activo}">
-							<span>Acta activa</span>
+							<input th:field="*{activo}" type="checkbox">
+							<span>Acta activa en el sistema</span>
 						</label>
 						<div class="form-actions">
-							<button class="secondary-action" type="submit">Guardar cambios</button>
+							<button class="primary-action" type="submit">💾 Guardar y Emitir Acta</button>
+							<button type="button" class="secondary-action" onclick="switchTab('listado')">Cancelar</button>
 						</div>
 					</form>
-				</div>
-			</section>
+				</section>
+			</div>
 
-			<section class="attributes-section" th:if="${puedeEditarActas}" aria-labelledby="acta-form-title">
-				<div class="section-header">
-					<h2 id="acta-form-title">Cargar acta</h2>
-					<span class="count-badge">Requiere ACTAS:EDITAR</span>
-				</div>
+			<!-- Panel 3: Modificar Actas Existentes -->
+			<div id="pane-edicion" class="tab-pane" th:if="${puedeEditarActas and !#lists.isEmpty(actas)}" role="tabpanel" aria-labelledby="tab-btn-edicion">
+				<section class="attributes-section" aria-labelledby="actas-edit-title">
+					<div class="section-header">
+						<div>
+							<h2 id="actas-edit-title">Modificar Actas Cargadas</h2>
+							<p class="section-note">Ajuste estado, destinatario, equipo asociado o responsables intervinientes.</p>
+						</div>
+					</div>
 
-				<form class="equipment-form" th:action="@{/admin/actas}" th:object="${actaForm}" method="post">
-					<div class="form-grid">
-						<label>
-							<span>Numero</span>
-							<input th:field="*{numero}" maxlength="80" placeholder="Se genera automaticamente">
-							<small class="field-error" th:if="${#fields.hasErrors('numero')}" th:errors="*{numero}">Error</small>
-						</label>
-						<label>
-							<span>Tipo</span>
-							<select th:field="*{tipo}">
-								<option th:each="tipo : ${tiposActa}" th:value="${tipo}" th:text="${tipo}">ENTREGA</option>
-							</select>
-						</label>
-						<label>
-							<span>Equipo</span>
-							<select th:field="*{equipoId}">
-								<option value="">Sin equipo</option>
-								<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}">PC-INF-001</option>
-							</select>
-						</label>
-						<label>
-							<span>Fecha</span>
-							<input type="date" th:field="*{fechaEmision}">
-						</label>
-						<label>
-							<span>Destinatario</span>
-							<input th:field="*{destinatario}" maxlength="180" required>
-							<small class="field-error" th:if="${#fields.hasErrors('destinatario')}" th:errors="*{destinatario}">Error</small>
-						</label>
-						<label>
-							<span>Entrega</span>
-							<input th:field="*{responsableEntrega}" maxlength="120">
-						</label>
-						<label>
-							<span>Recepcion</span>
-							<input th:field="*{responsableRecepcion}" maxlength="120">
-						</label>
-						<label>
-							<span>Estado</span>
-							<select th:field="*{estado}">
-								<option th:each="estado : ${estadosActa}" th:value="${estado}" th:text="${estado}">BORRADOR</option>
-							</select>
-						</label>
+					<div class="edit-stack">
+						<form class="equipment-form inline-edit-card" th:each="acta : ${actas}"
+								th:action="@{/admin/actas/{id}(id=${acta.id})}" method="post">
+							<div class="section-header">
+								<h2 th:text="${acta.numero}">ACT-001</h2>
+								<span class="count-badge" th:text="'ID ' + ${acta.id}">ID 1</span>
+							</div>
+							<div class="form-grid">
+								<label>
+									<span>N° Acta</span>
+									<input name="numero" th:value="${acta.numero}" maxlength="80" required>
+								</label>
+								<label>
+									<span>Tipo</span>
+									<select name="tipo">
+										<option th:each="tipo : ${tiposActa}" th:value="${tipo}" th:text="${tipo}"
+												th:selected="${tipo == acta.tipo}">ENTREGA</option>
+									</select>
+								</label>
+								<label>
+									<span>Equipo</span>
+									<select name="equipoId">
+										<option value="">Sin equipo</option>
+										<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}"
+												th:selected="${equipo.id == acta.equipoId}">PC-INF-001</option>
+									</select>
+								</label>
+								<label>
+									<span>Fecha de Emisión</span>
+									<input name="fechaEmision" type="date" th:value="${acta.fechaEmision}" required>
+								</label>
+								<label style="grid-column: 1 / -1;">
+									<span>Destinatario</span>
+									<input name="destinatario" th:value="${acta.destinatario}" maxlength="180" required>
+								</label>
+								<label>
+									<span>Responsable Entrega</span>
+									<input name="responsableEntrega" th:value="${acta.responsableEntrega}" maxlength="120" required>
+								</label>
+								<label>
+									<span>Responsable Recepción</span>
+									<input name="responsableRecepcion" th:value="${acta.responsableRecepcion}" maxlength="120" required>
+								</label>
+								<label>
+									<span>Estado</span>
+									<select name="estado">
+										<option th:each="estado : ${estadosActa}" th:value="${estado}" th:text="${estado}"
+												th:selected="${estado == acta.estado}">EMITIDA</option>
+									</select>
+								</label>
+							</div>
+							<label>
+								<span>Detalle</span>
+								<textarea name="detalle" maxlength="2000" rows="3" required th:text="${acta.detalle}"></textarea>
+							</label>
+							<label>
+								<span>Observaciones</span>
+								<textarea name="observaciones" maxlength="500" rows="2" th:text="${acta.observaciones}"></textarea>
+							</label>
+							<label class="checkbox-row">
+								<input name="_activo" type="hidden" value="on">
+								<input name="activo" type="checkbox" value="true" th:checked="${acta.activo}">
+								<span>Acta activa</span>
+							</label>
+							<div class="form-actions">
+								<button class="secondary-action" type="submit">💾 Guardar Cambios</button>
+								<a class="primary-action" th:href="@{/api/v1/actas/{id}/pdf(id=${acta.id})}" target="_blank">📥 Descargar PDF</a>
+							</div>
+						</form>
 					</div>
-					<label>
-						<span>Detalle</span>
-						<textarea th:field="*{detalle}" maxlength="1000" rows="4" required></textarea>
-						<small class="field-error" th:if="${#fields.hasErrors('detalle')}" th:errors="*{detalle}">Error</small>
-					</label>
-					<label>
-						<span>Observaciones</span>
-						<textarea th:field="*{observaciones}" maxlength="500" rows="3"></textarea>
-					</label>
-					<label class="checkbox-row">
-						<input name="_activo" type="hidden" value="on">
-						<input th:field="*{activo}" type="checkbox">
-						<span>Acta activa</span>
-					</label>
-					<div class="form-actions">
-						<button class="primary-action" type="submit">Guardar acta</button>
-					</div>
-				</form>
-			</section>
+				</section>
+			</div>
+
 		</section>
 	</main>
+
+	<!-- Script de Pestañas Interactivas Liviano y Accesible -->
+	<script>
+		function switchTab(tabId) {
+			const tabs = ['listado', 'nueva', 'edicion'];
+			tabs.forEach(function(id) {
+				const btn = document.getElementById('tab-btn-' + id);
+				const pane = document.getElementById('pane-' + id);
+				if (btn && pane) {
+					if (id === tabId) {
+						btn.classList.add('is-active');
+						btn.setAttribute('aria-selected', 'true');
+						pane.classList.add('is-active');
+					} else {
+						btn.classList.remove('is-active');
+						btn.setAttribute('aria-selected', 'false');
+						pane.classList.remove('is-active');
+					}
+				}
+			});
+			if (history.replaceState) {
+				history.replaceState(null, null, '#tab-' + tabId);
+			}
+		}
+
+		window.addEventListener('DOMContentLoaded', function() {
+			const hash = window.location.hash;
+			if (hash === '#tab-nueva') {
+				switchTab('nueva');
+			} else if (hash === '#tab-edicion') {
+				switchTab('edicion');
+			} else if (hash === '#tab-listado') {
+				switchTab('listado');
+			}
+		});
+	</script>
 </body>
 </html>

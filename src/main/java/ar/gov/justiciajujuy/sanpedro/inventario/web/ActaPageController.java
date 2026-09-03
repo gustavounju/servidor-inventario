@@ -95,7 +95,14 @@ public class ActaPageController {
 
 	private void prepararModelo(Model model, UserDetails userDetails, ActaForm actaForm, String query, TipoActa tipo,
 			EstadoActa estado) {
-		model.addAttribute("actas", actaService.buscar(query, tipo, estado));
+		var actas = actaService.buscar(query, tipo, estado);
+		long emitidasCount = actas.stream().filter(a -> a.estado() == EstadoActa.EMITIDA).count();
+		long borradorCount = actas.stream().filter(a -> a.estado() == EstadoActa.BORRADOR).count();
+
+		model.addAttribute("actas", actas);
+		model.addAttribute("totalActas", actas.size());
+		model.addAttribute("emitidasCount", emitidasCount);
+		model.addAttribute("borradorCount", borradorCount);
 		model.addAttribute("actaForm", actaForm);
 		model.addAttribute("tiposActa", TipoActa.values());
 		model.addAttribute("estadosActa", EstadoActa.values());
@@ -104,6 +111,8 @@ public class ActaPageController {
 		model.addAttribute("filtroTipo", tipo);
 		model.addAttribute("filtroEstado", estado);
 		model.addAttribute("puedeEditarActas", authorizationService.tienePermiso(userDetails, MODULO_ACTAS, PERMISO_EDITAR));
+		model.addAttribute("puedeVerEquipos", authorizationService.tienePermiso(userDetails, "EQUIPOS", PERMISO_VER));
+		model.addAttribute("puedeVerPatrimonio", authorizationService.tienePermiso(userDetails, "PATRIMONIO", PERMISO_VER));
 	}
 
 	private void exigirPermiso(UserDetails userDetails, String permiso) {

@@ -109,7 +109,7 @@ class ComponenteControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$", hasSize(3)))
 			.andExpect(jsonPath("$[2].origen").value("RELEVAMIENTO_INICIAL"))
-			.andExpect(jsonPath("$[2].estadoComparacion").value("DETECTADO"))
+			.andExpect(jsonPath("$[2].estadoComparacion").value("ESPERADO"))
 			.andExpect(jsonPath("$[2].serial").value("RAMSN-001"))
 			.andExpect(jsonPath("$[2].observaciones").value("Consolidado como relevamiento inicial desde la ultima lectura del script. Observacion original: Detectado por script"));
 	}

@@ -11,21 +11,131 @@
 		<section class="status-panel admin-users-panel" aria-labelledby="equipos-title">
 			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Inventario de Equipos', 'equipos')}"></header>
 
+			<!-- Barra de Acciones Rápidas y Navegación Cruzada -->
+			<nav class="quick-nav-bar" aria-label="Navegación rápida de equipos">
+				<div class="quick-nav-group">
+					<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}">
+						🛠️ Órdenes de Armado
+					</a>
+					<a class="secondary-action" th:if="${puedeVerStock}" th:href="@{/admin/stock}">
+						📦 Stock de Depósito
+					</a>
+					<a class="secondary-action" th:if="${puedeVerDiferencias}" th:href="@{/admin/dashboard-diferencias}">
+						📊 Tablero de Diferencias
+					</a>
+					<a class="secondary-action" th:if="${puedeVerActas}" th:href="@{/admin/actas}">
+						📋 Actas y Movimientos
+					</a>
+				</div>
+				<div class="quick-nav-group">
+					<span class="count-badge" th:text="${equipos.paginacion.totalItems} + ' equipos en catálogo'">0 equipos en catálogo</span>
+				</div>
+			</nav>
+
+			<!-- Guía Visual del Circuito Natural del Parque Informático (Stepper 4 Pasos) -->
+			<section class="workflow-stepper" aria-label="Circuito Natural de un Equipo Informático">
+				<!-- Paso 1: Detección -->
+				<div class="workflow-step is-current">
+					<div class="step-header">
+						<span class="step-badge">1</span>
+						<span class="authorization-badge is-pending">AUTOMÁTICO ⚡</span>
+					</div>
+					<h3 class="step-title">1. Detección en Vivo</h3>
+					<p class="step-desc">
+						El script PowerShell se ejecuta en la PC y envía automáticamente componentes físicos reales (CPU, RAM, Discos, Seriales).
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="secondary-action" onclick="toggleScriptGuide()" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							💻 Ver Comando PowerShell
+						</button>
+					</div>
+				</div>
+
+				<!-- Paso 2: Consolidación -->
+				<div class="workflow-step">
+					<div class="step-header">
+						<span class="step-badge">2</span>
+						<span class="authorization-badge is-authorized">LÍNEA BASE 📌</span>
+					</div>
+					<h3 class="step-title">2. Consolidar Relevamiento</h3>
+					<p class="step-desc">
+						Entra a la ficha de la PC y presiona <strong>"Consolidar relevamiento inicial"</strong> para fijar qué hardware debe tener.
+					</p>
+					<div class="step-action-area">
+						<span class="table-subtext">Se realiza en la ficha [🔍 Gemelo]</span>
+					</div>
+				</div>
+
+				<!-- Paso 3: Órdenes de Trabajo -->
+				<div class="workflow-step">
+					<div class="step-header">
+						<span class="step-badge">3</span>
+						<span class="count-badge">TALLER 🛠️</span>
+					</div>
+					<h3 class="step-title">3. Órdenes y Stock</h3>
+					<p class="step-desc">
+						Para ampliar RAM o cambiar disco, crea una Orden de Armado y reserva las piezas del depósito.
+					</p>
+					<div class="step-action-area">
+						<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
+							🛠️ Ir a Órdenes
+						</a>
+					</div>
+				</div>
+
+				<!-- Paso 4: Gemelo Digital y Actas -->
+				<div class="workflow-step">
+					<div class="step-header">
+						<span class="step-badge">4</span>
+						<span class="authorization-badge is-authorized">AUDITORÍA 🤖</span>
+					</div>
+					<h3 class="step-title">4. Gemelo y Actas</h3>
+					<p class="step-desc">
+						Al reiniciar la PC, el Gemelo Digital audita el 100% de coincidencia y permite generar el Acta de Entrega en PDF.
+					</p>
+					<div class="step-action-area">
+						<a class="secondary-action" th:if="${puedeVerDiferencias}" th:href="@{/admin/dashboard-diferencias}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
+							📊 Ver Diferencias
+						</a>
+					</div>
+				</div>
+			</section>
+
+			<!-- Guía Desplegable: Comando de Subida de PC vía Script -->
+			<div id="script-guide-box" class="workflow-banner" style="display: none; margin-bottom: 24px;">
+				<div class="workflow-banner-icon">💻</div>
+				<div class="workflow-banner-content" style="width: 100%;">
+					<strong>¿Cómo subir una PC al inventario con el script?</strong>
+					<p>
+						Abre <strong>PowerShell</strong> como Administrador en la PC cliente y ejecuta la siguiente instrucción de una línea para reportar el hardware en vivo:
+					</p>
+					<div style="background: #0f172a; color: #f8fafc; padding: 12px 16px; border-radius: 6px; font-family: monospace; font-size: 0.88rem; overflow-x: auto; margin: 10px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+						<code id="ps-command-text">Invoke-WebRequest -Uri "http://10.15.0.62:8081/scripts/windows/inventario-modular.ps1" -OutFile "$env:TEMP\inventario.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\inventario.ps1" -Servidor "http://10.15.0.62:8081"</code>
+						<button type="button" class="secondary-action" onclick="copiarComandoScript()" style="white-space: nowrap; font-size: 0.8rem; padding: 5px 10px; background: #334155; color: #fff; border: none;">
+							📋 Copiar
+						</button>
+					</div>
+					<div class="workflow-next-actions">
+						<span>👉 <strong>Una vez ejecutado:</strong> La PC aparecerá inmediatamente en el listado debajo en estado <code>REPORTADO</code>. El siguiente paso es abrir su <strong>[🔍 Gemelo]</strong> y consolidarla.</span>
+					</div>
+				</div>
+			</div>
+
 			<section class="modules-section" aria-labelledby="equipos-list-title">
 				<div class="section-header">
 					<div>
 						<h2 id="equipos-list-title">Inventario tecnico</h2>
-						<p class="section-note">Catálogo de equipos monitoreados, sus usuarios y acceso directo a su gemelo digital y órdenes.</p>
+						<p class="section-note">Equipos relevados y monitoreados. Utiliza los botones de acción para auditar su gemelo digital o gestionar sus intervenciones técnicas.</p>
 					</div>
 					<span class="count-badge" th:text="${equipos.paginacion.totalItems} + ' equipos'">0 equipos</span>
 				</div>
 
 				<div class="success-message" th:if="${importacionResultado != null}">
-					<span th:text="'Importacion: ' + ${importacionResultado.importados} + '/' + ${importacionResultado.procesados} + ' filas importadas.'">Importación completada.</span>
+					<span th:text="'Importación: ' + ${importacionResultado.importados} + '/' + ${importacionResultado.procesados} + ' filas importadas.'">Importación completada.</span>
 					<span th:each="error : ${importacionResultado.errores}" th:text="${error}">Fila 2: error</span>
 				</div>
 
-				<form class="search-form" th:action="@{/admin/equipos}" method="get" role="search">
+				<form class="search-form dashboard-filter-form" th:action="@{/admin/equipos}" method="get" role="search">
 					<label>
 						<span>Buscar</span>
 						<input name="q" type="search" maxlength="120" th:value="${query}" placeholder="Buscar por PC, usuario, fuero o IP...">
@@ -34,7 +144,7 @@
 				</form>
 
 				<p class="empty-state" th:if="${#lists.isEmpty(equipos.equipos)}">
-					Todavia no hay equipos para mostrar.
+					Todavía no hay equipos para mostrar con los filtros aplicados. Ejecuta el script PowerShell en una PC para comenzar.
 				</p>
 
 				<div class="responsive-table" th:if="${!#lists.isEmpty(equipos.equipos)}">
@@ -42,34 +152,34 @@
 						<thead>
 							<tr>
 								<th scope="col">Equipo</th>
-								<th scope="col">Usuario</th>
+								<th scope="col">Usuario Actual</th>
 								<th scope="col">Fuero / Ubicación</th>
 								<th scope="col">IP</th>
-								<th scope="col">Sistema</th>
+								<th scope="col">Sistema Operativo</th>
 								<th scope="col">Estado</th>
-								<th scope="col">Acciones</th>
+								<th scope="col">Siguiente Acción</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr th:each="equipo : ${equipos.equipos}">
 								<td data-label="Equipo">
 									<a th:href="@{/admin/equipos/{id}(id=${equipo.id})}" th:text="${equipo.nombre}" style="font-weight: 700; color: #1e3a8a; text-decoration: none; font-size: 0.98rem;">PC-001</a>
-									<span class="table-subtext" th:text="${equipo.ubicacion ?: 'Sin ubicación'}">Oficina</span>
+									<span class="table-subtext" th:text="${equipo.ubicacion ?: 'Sin ubicación asignada'}">Oficina</span>
 								</td>
-								<td data-label="Usuario" th:text="${equipo.ultimoUsuario ?: 'Sin dato'}">gmurad</td>
-								<td data-label="Fuero / Ubicación" th:text="${equipo.fuero}">Informatica</td>
+								<td data-label="Usuario Actual" th:text="${equipo.ultimoUsuario ?: 'Sin dato'}">gmurad</td>
+								<td data-label="Fuero / Ubicación" th:text="${equipo.fuero}">Informática</td>
 								<td data-label="IP" th:text="${equipo.ip ?: 'Sin dato'}">10.15.2.20</td>
-								<td data-label="Sistema" th:text="${equipo.sistemaOperativo ?: 'Sin dato'}">Windows 11</td>
+								<td data-label="Sistema Operativo" th:text="${equipo.sistemaOperativo ?: 'Sin dato'}">Windows 11</td>
 								<td data-label="Estado">
 									<span class="authorization-badge" th:classappend="${equipo.activo} ? ' is-authorized' : ' is-pending'"
 											th:text="${equipo.activo} ? equipo.monitoreo : 'INACTIVO'">REPORTADO</span>
 								</td>
-								<td data-label="Acciones">
+								<td data-label="Siguiente Acción">
 									<div style="display: flex; gap: 6px; flex-wrap: wrap;">
-										<a class="secondary-action" th:href="@{/admin/equipos/{id}(id=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
-											🔍 Gemelo
+										<a class="primary-action" th:href="@{/admin/equipos/{id}(id=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
+											🔍 Ficha y Gemelo
 										</a>
-										<a class="secondary-action" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
+										<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
 											🛠️ Órdenes
 										</a>
 									</div>
@@ -80,28 +190,55 @@
 				</div>
 			</section>
 
-			<!-- Opciones Avanzadas de Importación Colapsadas para evitar confusión -->
+			<!-- Opciones Avanzadas de Importación Colapsadas -->
 			<details class="collapsible-card" th:if="${puedeEditar}">
 				<summary class="collapsible-summary">
-					<h2 id="importar-viejo-title" style="margin: 0; font-size: 0.95rem; font-weight: 700;">Importar inventario viejo (CSV)</h2>
+					<h2 id="importar-viejo-title" style="margin: 0; font-size: 0.95rem; font-weight: 700;">📂 Importar inventario viejo (CSV)</h2>
 					<span class="count-badge">Opcional</span>
 				</summary>
 				<div class="collapsible-body">
 					<p class="section-note" style="margin-top: 0;">
-						CSV con encabezados como nombre, PC_Nombre, Usuario_Actual, fuero, ubicacion, ip, OsName, Procesador, RAM (GB), RAM_Detalles y Disk_Serials.
+						Permite cargar equipamiento histórico desde un CSV con columnas: nombre, PC_Nombre, Usuario_Actual, fuero, ubicacion, ip, OsName, Procesador, RAM, etc.
 					</p>
 					<form class="equipment-form" th:action="@{/admin/equipos/importar-viejo}" method="post">
 						<label>
-							<span>CSV</span>
-							<textarea name="contenidoCsv" maxlength="50000" rows="6" required></textarea>
+							<span>Contenido CSV</span>
+							<textarea name="contenidoCsv" maxlength="50000" rows="5" placeholder="Pegue las filas CSV aquí..." required></textarea>
 						</label>
 						<div class="form-actions">
-							<button class="primary-action" type="submit">Importar equipos</button>
+							<button class="secondary-action" type="submit">Importar equipos</button>
 						</div>
 					</form>
 				</div>
 			</details>
 		</section>
 	</main>
+
+	<script>
+		function toggleScriptGuide() {
+			const box = document.getElementById('script-guide-box');
+			if (box) {
+				box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'flex' : 'none';
+				if (box.style.display === 'flex') {
+					box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				}
+			}
+		}
+
+		function copiarComandoScript() {
+			const host = window.location.host;
+			const proto = window.location.protocol;
+			const baseUrl = proto + '//' + host;
+			const cmd = 'Invoke-WebRequest -Uri "' + baseUrl + '/scripts/windows/inventario-modular.ps1" -OutFile "$env:TEMP\\inventario.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\\inventario.ps1" -Servidor "' + baseUrl + '"';
+			navigator.clipboard.writeText(cmd).then(function() {
+				alert('¡Comando copiado al portapapeles! Pégalo en PowerShell en la PC a relevar.');
+			}).catch(function() {
+				const el = document.getElementById('ps-command-text');
+				if (el) {
+					prompt('Copia este comando:', el.innerText);
+				}
+			});
+		}
+	</script>
 </body>
 </html>

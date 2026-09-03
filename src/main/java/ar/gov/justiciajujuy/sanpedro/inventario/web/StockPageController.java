@@ -89,12 +89,24 @@ public class StockPageController {
 	}
 
 	private void prepararModelo(Model model, UserDetails userDetails, StockForm stockForm) {
-		model.addAttribute("componentesStock", stockService.listarDisponiblesYActivos());
+		var componentes = stockService.listarDisponiblesYActivos();
+		long disponiblesCount = componentes.stream().filter(c -> c.estado() == EstadoStockComponente.DISPONIBLE).count();
+		long reservadosCount = componentes.stream().filter(c -> c.estado() == EstadoStockComponente.RESERVADO).count();
+		long asignadosCount = componentes.stream().filter(c -> c.estado() == EstadoStockComponente.ASIGNADO).count();
+
+		model.addAttribute("componentesStock", componentes);
+		model.addAttribute("totalStock", componentes.size());
+		model.addAttribute("disponiblesCount", disponiblesCount);
+		model.addAttribute("reservadosCount", reservadosCount);
+		model.addAttribute("asignadosCount", asignadosCount);
 		model.addAttribute("stockForm", stockForm);
 		model.addAttribute("tiposComponente", TipoComponente.values());
 		model.addAttribute("estadosStock", EstadoStockComponente.values());
 		model.addAttribute("ubicacionesActivas", ubicacionService.activas());
 		model.addAttribute("puedeEditarStock", authorizationService.tienePermiso(userDetails, MODULO_STOCK, PERMISO_EDITAR));
+		model.addAttribute("puedeVerOrdenes", authorizationService.tienePermiso(userDetails, "ORDENES_ARMADO", PERMISO_VER));
+		model.addAttribute("puedeVerEquipos", authorizationService.tienePermiso(userDetails, "EQUIPOS", PERMISO_VER));
+		model.addAttribute("puedeVerDiferencias", authorizationService.tienePermiso(userDetails, "COMPONENTES", PERMISO_VER));
 	}
 
 	private void exigirPermiso(UserDetails userDetails, String permiso) {

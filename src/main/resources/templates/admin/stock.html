@@ -3,200 +3,411 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Stock - Inventario Modular</title>
+	<title>Stock de Componentes - Inventario Modular</title>
 	<link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="stock-title">
-			<header th:replace="~{admin/nav :: topbar('Modulo funcional', 'Stock de Componentes', 'stock')}"></header>
+			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Stock de Componentes', 'stock')}"></header>
 
-			<p class="success-message" th:if="${creado}">Componente de stock cargado correctamente.</p>
+			<!-- Barra de Acciones Rápidas y Navegación Contextual -->
+			<nav class="quick-nav-bar" aria-label="Navegación contextual de stock">
+				<div class="quick-nav-group">
+					<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}">
+						🛠️ Órdenes de Armado y Ensamble
+					</a>
+					<a class="secondary-action" th:if="${puedeVerEquipos}" th:href="@{/admin/equipos}">
+						🖥️ Catálogo de Equipos
+					</a>
+					<a class="secondary-action" th:if="${puedeVerDiferencias}" th:href="@{/admin/dashboard-diferencias}">
+						📊 Tablero de Diferencias
+					</a>
+				</div>
+				<div class="quick-nav-group">
+					<span class="count-badge" th:text="${totalStock} + ' componentes en depósito'">0 componentes</span>
+				</div>
+			</nav>
 
-			<section class="modules-section" aria-labelledby="stock-list-title">
-				<div class="section-header">
-					<div>
-						<h2 id="stock-list-title">Componentes disponibles</h2>
-						<p class="section-note">Piezas sueltas que despues pueden reservarse desde una orden de armado.</p>
+			<!-- Banner Contextual de Siguientes Pasos tras Guardar Componente -->
+			<div class="workflow-banner" th:if="${creado}">
+				<div class="workflow-banner-icon">📦</div>
+				<div class="workflow-banner-content">
+					<strong>¡Componente de stock registrado correctamente!</strong>
+					<p>
+						La pieza ya está registrada en el depósito informático y disponible para ser reservada en una orden de trabajo.
+					</p>
+					<div class="workflow-next-actions">
+						<span>👉 <strong>Siguiente paso natural recomendado:</strong></span>
+						<a class="primary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}">
+							🛠️ Asignar a una Orden de Armado
+						</a>
+						<button type="button" class="secondary-action" onclick="switchTab('disponibles')">
+							📋 Ver Lista de Stock
+						</button>
+						<button type="button" class="secondary-action" th:if="${puedeEditarStock}" onclick="switchTab('nuevo')">
+							➕ Ingresar Otra Pieza
+						</button>
 					</div>
-					<span class="count-badge" th:text="${#lists.size(componentesStock)} + ' componentes'">0 componentes</span>
+				</div>
+			</div>
+
+			<!-- Stepper Visual del Circuito de Stock (Guía Paso a Paso) -->
+			<section class="workflow-stepper" aria-label="Circuito de Stock de Componentes">
+				<!-- Paso 1: Recepción e Ingreso -->
+				<div class="workflow-step" th:classappend="${totalStock > 0} ? ' is-done' : ' is-current'">
+					<div class="step-header">
+						<span class="step-badge">1</span>
+						<span class="authorization-badge" th:classappend="${totalStock > 0} ? ' is-authorized' : ' is-pending'"
+							  th:text="${totalStock > 0} ? 'INGRESADO ✅' : 'PENDIENTE ⚠️'">
+							PENDIENTE
+						</span>
+					</div>
+					<h3 class="step-title">1. Ingreso a Depósito</h3>
+					<p class="step-desc">
+						Recepción de memorias RAM, discos rígidos/SSD o periféricos con serial, marca y modelo.
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="primary-action" th:if="${puedeEditarStock}" onclick="switchTab('nuevo')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							➕ Ingresar Nueva Pieza
+						</button>
+					</div>
 				</div>
 
-				<p class="empty-state" th:if="${#lists.isEmpty(componentesStock)}">Todavia no hay componentes cargados en stock.</p>
+				<!-- Paso 2: Disponibilidad en Depósito -->
+				<div class="workflow-step" th:classappend="${disponiblesCount > 0} ? ' is-done' : ''">
+					<div class="step-header">
+						<span class="step-badge">2</span>
+						<span class="count-badge" th:text="${disponiblesCount} + ' disponibles'">0 disponibles</span>
+					</div>
+					<h3 class="step-title">2. Stock Disponible</h3>
+					<p class="step-desc">
+						Piezas físicas en el taller/depósito listas para ser utilizadas en reemplazos o armados.
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="secondary-action" onclick="switchTab('disponibles')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							🔍 Ver Disponibles
+						</button>
+					</div>
+				</div>
 
-				<div class="responsive-table" th:if="${!#lists.isEmpty(componentesStock)}">
-					<table>
-						<thead>
-							<tr>
-								<th scope="col">Tipo</th>
-								<th scope="col">Componente</th>
-								<th scope="col">Estado</th>
-								<th scope="col">Serial</th>
-								<th scope="col">Ubicacion</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr th:each="componente : ${componentesStock}">
-								<td data-label="Tipo" th:text="${componente.tipo}">RAM</td>
-								<td data-label="Componente">
-									<strong th:text="${componente.descripcion}">Memoria RAM</strong>
-									<span class="table-subtext">
-										<span th:text="${componente.marca ?: ''}">Kingston</span>
-										<span th:text="${componente.modelo ?: ''}">DDR4</span>
-										<span th:text="${componente.capacidad ?: ''}">8GB</span>
-									</span>
-								</td>
-								<td data-label="Estado">
-									<span class="authorization-badge" th:classappend="${componente.estado.name() == 'DISPONIBLE'} ? ' is-authorized' : ' is-pending'"
-											th:text="${componente.estado}">DISPONIBLE</span>
-								</td>
-								<td data-label="Serial" th:text="${componente.serial ?: 'Sin serial'}">SN-001</td>
-								<td data-label="Ubicacion" th:text="${componente.ubicacion ?: 'Sin ubicacion'}">Deposito</td>
-							</tr>
-						</tbody>
-					</table>
+				<!-- Paso 3: Reserva para Ensamble -->
+				<div class="workflow-step" th:classappend="${reservadosCount > 0} ? ' is-current' : ''">
+					<div class="step-header">
+						<span class="step-badge">3</span>
+						<span class="count-badge" th:text="${reservadosCount} + ' reservadas'">0 reservadas</span>
+					</div>
+					<h3 class="step-title">3. Reserva en Orden</h3>
+					<p class="step-desc">
+						La pieza se vincula a una PC mediante una Orden de Armado para evitar asignaciones duplicadas.
+					</p>
+					<div class="step-action-area">
+						<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
+							🛠️ Ver Órdenes de Armado
+						</a>
+					</div>
+				</div>
+
+				<!-- Paso 4: Salida Física y Asignación -->
+				<div class="workflow-step" th:classappend="${asignadosCount > 0} ? ' is-done' : ''">
+					<div class="step-header">
+						<span class="step-badge">4</span>
+						<span class="authorization-badge is-authorized">INSTALADO 🖥️</span>
+					</div>
+					<h3 class="step-title">4. Salida y Montaje</h3>
+					<p class="step-desc">
+						El técnico confirma la salida física. Al encender la PC, el Gemelo Digital audita el montaje.
+					</p>
+					<div class="step-action-area">
+						<a class="secondary-action" th:if="${puedeVerDiferencias}" th:href="@{/admin/dashboard-diferencias}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
+							📊 Auditar Diferencias
+						</a>
+					</div>
 				</div>
 			</section>
 
-			<section class="attributes-section" th:if="${puedeEditarStock and !#lists.isEmpty(componentesStock)}" aria-labelledby="stock-edit-title">
-				<div class="section-header">
-					<div>
-						<h2 id="stock-edit-title">Editar stock cargado</h2>
-						<p class="section-note">Corrija datos de componentes sueltos antes de reservarlos o asignarlos.</p>
-					</div>
+			<!-- Resumen Estadístico de Stock -->
+			<section class="summary-grid" aria-label="Resumen rápido de componentes en stock">
+				<div>
+					<span>Total Componentes</span>
+					<strong th:text="${totalStock}">0</strong>
 				</div>
+				<div>
+					<span>Disponibles en Depósito</span>
+					<strong th:text="${disponiblesCount}">0</strong>
+				</div>
+				<div>
+					<span>Reservados para Armado</span>
+					<strong th:text="${reservadosCount}">0</strong>
+				</div>
+				<div>
+					<span>Asignados / En PC</span>
+					<strong th:text="${asignadosCount}">0</strong>
+				</div>
+			</section>
 
-				<div class="edit-stack">
-					<form class="equipment-form inline-edit-card" th:each="componente : ${componentesStock}"
-							th:action="@{/admin/stock/componentes/{id}(id=${componente.id})}" method="post">
-						<div class="section-header">
-							<h2 th:text="${componente.descripcion}">Memoria RAM</h2>
-							<span class="count-badge" th:text="'ID ' + ${componente.id}">ID 1</span>
+			<!-- Pestañas de Navegación Limpia (Subnav Tabs) -->
+			<nav class="subnav-tabs" role="tablist" aria-label="Secciones de Stock">
+				<button type="button" id="tab-btn-disponibles" class="subnav-tab is-active" role="tab" aria-selected="true" aria-controls="pane-disponibles" onclick="switchTab('disponibles')">
+					📦 Componentes en Stock (<span th:text="${totalStock}">0</span>)
+				</button>
+				<button type="button" id="tab-btn-nuevo" class="subnav-tab" th:if="${puedeEditarStock}" role="tab" aria-selected="false" aria-controls="pane-nuevo" onclick="switchTab('nuevo')">
+					➕ Ingresar Nueva Pieza
+				</button>
+				<button type="button" id="tab-btn-edicion" class="subnav-tab" th:if="${puedeEditarStock and !#lists.isEmpty(componentesStock)}" role="tab" aria-selected="false" aria-controls="pane-edicion" onclick="switchTab('edicion')">
+					✏️ Modificar Piezas Cargadas
+				</button>
+			</nav>
+
+			<!-- Panel 1: Lista de Componentes Disponibles -->
+			<div id="pane-disponibles" class="tab-pane is-active" role="tabpanel" aria-labelledby="tab-btn-disponibles">
+				<section class="modules-section" aria-labelledby="stock-list-title">
+					<div class="section-header">
+						<div>
+							<h2 id="stock-list-title">Componentes disponibles</h2>
+							<p class="section-note">Piezas listas para ser reservadas e instaladas en los equipos mediante órdenes de armado.</p>
 						</div>
+						<span class="count-badge" th:text="${#lists.size(componentesStock)} + ' piezas'">0 piezas</span>
+					</div>
+
+					<p class="empty-state" th:if="${#lists.isEmpty(componentesStock)}">
+						Todavía no hay componentes cargados en stock. Utiliza la pestaña <strong>"➕ Ingresar Nueva Pieza"</strong> para dar de alta discos, memorias o periféricos.
+					</p>
+
+					<div class="responsive-table" th:if="${!#lists.isEmpty(componentesStock)}">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Tipo</th>
+									<th scope="col">Descripción Técnica</th>
+									<th scope="col">Marca / Modelo / Capacidad</th>
+									<th scope="col">N° Serial</th>
+									<th scope="col">Ubicación Física</th>
+									<th scope="col">Estado</th>
+									<th scope="col">Siguiente Acción</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="componente : ${componentesStock}">
+									<td data-label="Tipo">
+										<span class="step-badge" style="width: auto; height: auto; padding: 3px 8px; border-radius: 4px;" th:text="${componente.tipo}">RAM</span>
+									</td>
+									<td data-label="Descripción">
+										<strong th:text="${componente.descripcion}">Memoria RAM</strong>
+										<span class="table-subtext" th:if="${componente.observaciones}" th:text="${componente.observaciones}">Observaciones</span>
+									</td>
+									<td data-label="Marca / Modelo">
+										<span th:text="${componente.marca ?: 'Genérico'}">Kingston</span>
+										<span class="table-subtext" th:text="${(componente.modelo ?: '') + ' ' + (componente.capacidad ?: '')}">DDR4 8GB</span>
+									</td>
+									<td data-label="N° Serial">
+										<code th:text="${componente.serial ?: 'Sin serial'}" style="font-size: 0.85rem; color: #1e3a8a;">SN-001</code>
+									</td>
+									<td data-label="Ubicación" th:text="${componente.ubicacion ?: 'Depósito'}">Depósito</td>
+									<td data-label="Estado">
+										<span class="authorization-badge" th:classappend="${componente.estado.name() == 'DISPONIBLE'} ? ' is-authorized' : ' is-pending'"
+												th:text="${componente.estado}">DISPONIBLE</span>
+									</td>
+									<td data-label="Siguiente Acción">
+										<a th:if="${puedeVerOrdenes}" class="secondary-action" th:href="@{/admin/ordenes-armado}" style="font-size: 0.8rem; padding: 5px 9px;">
+											🛠️ Asignar a Orden
+										</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+
+			<!-- Panel 2: Ingresar Nuevo Componente -->
+			<div id="pane-nuevo" class="tab-pane" th:if="${puedeEditarStock}" role="tabpanel" aria-labelledby="tab-btn-nuevo">
+				<section class="attributes-section" aria-labelledby="stock-form-title">
+					<div class="section-header">
+						<div>
+							<h2 id="stock-form-title">Alta de Componente en Stock</h2>
+							<p class="section-note">Registra una pieza física que ingresa al depósito o taller para que esté disponible en armado.</p>
+						</div>
+						<span class="count-badge">Depósito Central</span>
+					</div>
+
+					<form class="equipment-form" th:action="@{/admin/stock/componentes}" th:object="${stockForm}" method="post">
 						<div class="form-grid">
 							<label>
-								<span>Tipo</span>
-								<select name="tipo">
-									<option th:each="tipo : ${tiposComponente}" th:value="${tipo}" th:text="${tipo}"
-											th:selected="${tipo == componente.tipo}">RAM</option>
+								<span>Tipo de Componente *</span>
+								<select th:field="*{tipo}">
+									<option th:each="tipo : ${tiposComponente}" th:value="${tipo}" th:text="${tipo}">RAM</option>
 								</select>
 							</label>
 							<label>
-								<span>Estado</span>
-								<select name="estado">
-									<option th:each="estado : ${estadosStock}" th:value="${estado}" th:text="${estado}"
-											th:selected="${estado == componente.estado}">DISPONIBLE</option>
+								<span>Estado Inicial</span>
+								<select th:field="*{estado}">
+									<option th:each="estado : ${estadosStock}" th:value="${estado}" th:text="${estado}">DISPONIBLE</option>
 								</select>
 							</label>
-							<label>
-								<span>Descripcion</span>
-								<input name="descripcion" th:value="${componente.descripcion}" maxlength="255" required>
+							<label style="grid-column: 1 / -1;">
+								<span>Descripción *</span>
+								<input th:field="*{descripcion}" placeholder="Ej: Disco SSD NVMe M.2 Kingston NV2" maxlength="255" required>
+								<small class="field-error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}">Error</small>
 							</label>
 							<label>
 								<span>Marca</span>
-								<input name="marca" th:value="${componente.marca}" maxlength="120">
+								<input th:field="*{marca}" placeholder="Ej: Kingston, Crucial, Corsair..." maxlength="120">
 							</label>
 							<label>
 								<span>Modelo</span>
-								<input name="modelo" th:value="${componente.modelo}" maxlength="180">
+								<input th:field="*{modelo}" placeholder="Ej: SA400, ValueRAM, BarraCuda..." maxlength="180">
 							</label>
 							<label>
-								<span>Serial</span>
-								<input name="serial" th:value="${componente.serial}" maxlength="180">
+								<span>N° Serial de Fábrica</span>
+								<input th:field="*{serial}" placeholder="Ej: 50026B7685D..." maxlength="180">
 							</label>
 							<label>
-								<span>Capacidad</span>
-								<input name="capacidad" th:value="${componente.capacidad}" maxlength="120">
+								<span>Capacidad / Frecuencia</span>
+								<input th:field="*{capacidad}" placeholder="Ej: 16GB 3200MHz, 480GB, 1TB..." maxlength="120">
 							</label>
-							<label>
-								<span>Ubicacion</span>
-								<select name="ubicacion">
-									<option value="">Sin ubicacion</option>
+							<label style="grid-column: 1 / -1;">
+								<span>Ubicación Física en Depósito</span>
+								<select th:field="*{ubicacion}">
+									<option value="">Depósito Central</option>
 									<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
-											th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}"
-											th:selected="${ubicacion.nombre == componente.ubicacion}">Oficina Informatica</option>
+											th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Estante Taller</option>
 								</select>
 							</label>
 						</div>
 						<label>
-							<span>Observaciones</span>
-							<textarea name="observaciones" maxlength="500" rows="2" th:text="${componente.observaciones}"></textarea>
+							<span>Observaciones Técnicas</span>
+							<textarea th:field="*{observaciones}" placeholder="Procedencia, estado de conservación, garantía, detalles de prueba..." maxlength="500" rows="3"></textarea>
 						</label>
 						<label class="checkbox-row">
-							<input name="activo" type="checkbox" value="true" th:checked="${componente.activo}">
-							<span>Componente activo</span>
+							<input name="_activo" type="hidden" value="on">
+							<input th:field="*{activo}" type="checkbox">
+							<span>Pieza activa en el sistema</span>
 						</label>
 						<div class="form-actions">
-							<button class="secondary-action" type="submit">Guardar cambios</button>
+							<button class="primary-action" type="submit">💾 Guardar Pieza en Depósito</button>
+							<button type="button" class="secondary-action" onclick="switchTab('disponibles')">Cancelar</button>
 						</div>
 					</form>
-				</div>
-			</section>
+				</section>
+			</div>
 
-			<section class="attributes-section" th:if="${puedeEditarStock}" aria-labelledby="stock-form-title">
-				<div class="section-header">
-					<h2 id="stock-form-title">Cargar componente suelto</h2>
-					<span class="count-badge">Requiere STOCK:EDITAR</span>
-				</div>
+			<!-- Panel 3: Modificar Stock Existente -->
+			<div id="pane-edicion" class="tab-pane" th:if="${puedeEditarStock and !#lists.isEmpty(componentesStock)}" role="tabpanel" aria-labelledby="tab-btn-edicion">
+				<section class="attributes-section" aria-labelledby="stock-edit-title">
+					<div class="section-header">
+						<div>
+							<h2 id="stock-edit-title">Modificar Componentes Cargados</h2>
+							<p class="section-note">Corrija datos de componentes sueltos antes de reservarlos o asignarlos a una máquina.</p>
+						</div>
+					</div>
 
-				<form class="equipment-form" th:action="@{/admin/stock/componentes}" th:object="${stockForm}" method="post">
-					<div class="form-grid">
-						<label>
-							<span>Tipo</span>
-							<select th:field="*{tipo}">
-								<option th:each="tipo : ${tiposComponente}" th:value="${tipo}" th:text="${tipo}">RAM</option>
-							</select>
-						</label>
-						<label>
-							<span>Estado</span>
-							<select th:field="*{estado}">
-								<option th:each="estado : ${estadosStock}" th:value="${estado}" th:text="${estado}">DISPONIBLE</option>
-							</select>
-						</label>
-						<label>
-							<span>Descripcion</span>
-							<input th:field="*{descripcion}" maxlength="255" required>
-							<small class="field-error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}">Error</small>
-						</label>
-						<label>
-							<span>Marca</span>
-							<input th:field="*{marca}" maxlength="120">
-						</label>
-						<label>
-							<span>Modelo</span>
-							<input th:field="*{modelo}" maxlength="180">
-						</label>
-						<label>
-							<span>Serial</span>
-							<input th:field="*{serial}" maxlength="180">
-						</label>
-						<label>
-							<span>Capacidad</span>
-							<input th:field="*{capacidad}" maxlength="120">
-						</label>
-						<label>
-							<span>Ubicacion</span>
-							<select th:field="*{ubicacion}">
-								<option value="">Sin ubicacion</option>
-								<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
-										th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Oficina Informatica</option>
-							</select>
-						</label>
+					<div class="edit-stack">
+						<form class="equipment-form inline-edit-card" th:each="componente : ${componentesStock}"
+								th:action="@{/admin/stock/componentes/{id}(id=${componente.id})}" method="post">
+							<div class="section-header">
+								<h2 th:text="${componente.descripcion}">Memoria RAM</h2>
+								<span class="count-badge" th:text="'ID ' + ${componente.id}">ID 1</span>
+							</div>
+							<div class="form-grid">
+								<label>
+									<span>Tipo</span>
+									<select name="tipo">
+										<option th:each="tipo : ${tiposComponente}" th:value="${tipo}" th:text="${tipo}"
+												th:selected="${tipo == componente.tipo}">RAM</option>
+									</select>
+								</label>
+								<label>
+									<span>Estado</span>
+									<select name="estado">
+										<option th:each="estado : ${estadosStock}" th:value="${estado}" th:text="${estado}"
+												th:selected="${estado == componente.estado}">DISPONIBLE</option>
+									</select>
+								</label>
+								<label style="grid-column: 1 / -1;">
+									<span>Descripción</span>
+									<input name="descripcion" th:value="${componente.descripcion}" maxlength="255" required>
+								</label>
+								<label>
+									<span>Marca</span>
+									<input name="marca" th:value="${componente.marca}" maxlength="120">
+								</label>
+								<label>
+									<span>Modelo</span>
+									<input name="modelo" th:value="${componente.modelo}" maxlength="180">
+								</label>
+								<label>
+									<span>N° Serial</span>
+									<input name="serial" th:value="${componente.serial}" maxlength="180">
+								</label>
+								<label>
+									<span>Capacidad</span>
+									<input name="capacidad" th:value="${componente.capacidad}" maxlength="120">
+								</label>
+								<label style="grid-column: 1 / -1;">
+									<span>Ubicación</span>
+									<select name="ubicacion">
+										<option value="">Depósito Central</option>
+										<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
+												th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}"
+												th:selected="${ubicacion.nombre == componente.ubicacion}">Depósito</option>
+									</select>
+								</label>
+							</div>
+							<label>
+								<span>Observaciones</span>
+								<textarea name="observaciones" maxlength="500" rows="2" th:text="${componente.observaciones}"></textarea>
+							</label>
+							<label class="checkbox-row">
+								<input name="_activo" type="hidden" value="on">
+								<input name="activo" type="checkbox" value="true" th:checked="${componente.activo}">
+								<span>Pieza activa</span>
+							</label>
+							<div class="form-actions">
+								<button class="secondary-action" type="submit">💾 Guardar Cambios</button>
+							</div>
+						</form>
 					</div>
-					<label>
-						<span>Observaciones</span>
-						<textarea th:field="*{observaciones}" maxlength="500" rows="3"></textarea>
-					</label>
-					<label class="checkbox-row">
-						<input th:field="*{activo}" type="checkbox">
-						<span>Componente activo</span>
-					</label>
-					<div class="form-actions">
-						<button class="primary-action" type="submit">Guardar stock</button>
-					</div>
-				</form>
-			</section>
+				</section>
+			</div>
+
 		</section>
 	</main>
+
+	<!-- Script de Pestañas Interactivas Liviano y Accesible -->
+	<script>
+		function switchTab(tabId) {
+			const tabs = ['disponibles', 'nuevo', 'edicion'];
+			tabs.forEach(function(id) {
+				const btn = document.getElementById('tab-btn-' + id);
+				const pane = document.getElementById('pane-' + id);
+				if (btn && pane) {
+					if (id === tabId) {
+						btn.classList.add('is-active');
+						btn.setAttribute('aria-selected', 'true');
+						pane.classList.add('is-active');
+					} else {
+						btn.classList.remove('is-active');
+						btn.setAttribute('aria-selected', 'false');
+						pane.classList.remove('is-active');
+					}
+				}
+			});
+			if (history.replaceState) {
+				history.replaceState(null, null, '#tab-' + tabId);
+			}
+		}
+
+		window.addEventListener('DOMContentLoaded', function() {
+			const hash = window.location.hash;
+			if (hash === '#tab-nuevo') {
+				switchTab('nuevo');
+			} else if (hash === '#tab-edicion') {
+				switchTab('edicion');
+			} else if (hash === '#tab-disponibles') {
+				switchTab('disponibles');
+			}
+		});
+	</script>
 </body>
 </html>
