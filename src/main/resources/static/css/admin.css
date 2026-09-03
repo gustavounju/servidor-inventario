@@ -1,8 +1,13 @@
+/**
+ * Arquitectura Visual: Modern Card-Based Admin Shell
+ * Esquema de Color: Soft Corporate Light
+ * Objetivo: UI limpia, orientada a datos y escalable.
+ */
 :root {
 	color-scheme: light;
 	font-family: Arial, Helvetica, sans-serif;
-	background: #f6f7f9;
-	color: #1d252d;
+	background: #f6f7f9; /* Fondo general suave */
+	color: #1d252d; /* Texto principal oscuro */
 }
 
 * {
@@ -15,6 +20,7 @@ body {
 	background: #f6f7f9;
 }
 
+/* Contenedor principal de disposición (Grid) */
 .shell {
 	display: grid;
 	min-height: 100vh;
@@ -27,6 +33,7 @@ body {
 	place-items: start center;
 }
 
+/* Tarjeta base: Efecto de elevación y bordes sutiles */
 .status-panel {
 	width: min(100%, 1040px);
 	border: 1px solid #d9e0e7;
@@ -122,6 +129,7 @@ h1 {
 	box-shadow: 0 0 0 5px rgba(46, 160, 67, 0.16);
 }
 
+/* Grillas de metadatos (Semántica con dt y dd) */
 .identity-grid {
 	display: grid;
 	gap: 14px;
@@ -739,6 +747,7 @@ h1 {
 	white-space: nowrap;
 }
 
+/* Tablas responsivas: Transformación a Mobile-friendly */
 .responsive-table {
 	border: 1px solid #e1e7ee;
 	border-radius: 8px;

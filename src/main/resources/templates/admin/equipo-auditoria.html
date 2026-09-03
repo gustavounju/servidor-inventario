@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría de Equipo</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<div class="shell">
+    <div class="status-panel admin-users-panel">
+        <header class="panel-header">
+            <div>
+                <p class="eyebrow">Auditoría y Movimientos</p>
+                <h1 th:text="'Equipo: ' + ${equipo.nombre}">Equipo</h1>
+            </div>
+            <div class="admin-actions">
+                <a th:href="@{/admin/equipos}" class="secondary-action">Volver</a>
+            </div>
+        </header>
+
+        <section class="modules-section">
+            <div class="section-header">
+                <h2>Registrar Nuevo Movimiento</h2>
+            </div>
+            <form th:action="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}" method="post" class="user-form">
+                <div class="inline-action-form" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+                    <label>
+                        <span>Tipo de Movimiento</span>
+                        <select name="tipoMovimiento" required>
+                            <option value="ENTREGA">Entrega</option>
+                            <option value="DEVOLUCION">Devolución</option>
+                            <option value="REUBICACION">Reubicación</option>
+                            <option value="MANTENIMIENTO">Mantenimiento</option>
+                            <option value="OTRO">Otro</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Usuario Destino / Responsable</span>
+                        <input type="text" name="usuarioDestino">
+                    </label>
+                    <label>
+                        <span>Ubicación Origen</span>
+                        <input type="text" name="ubicacionOrigen">
+                    </label>
+                    <label>
+                        <span>Ubicación Destino</span>
+                        <input type="text" name="ubicacionDestino">
+                    </label>
+                </div>
+                <label style="margin-top:14px;">
+                    <span>Observaciones</span>
+                    <input type="text" name="observaciones">
+                </label>
+                <div style="margin-top: 14px;">
+                    <button type="submit" class="primary-action">Registrar Movimiento</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="attributes-section">
+            <h2>Historial de Movimientos</h2>
+            <div th:if="${historial.empty}" class="empty-state">No hay movimientos registrados.</div>
+            <div th:unless="${historial.empty}" class="responsive-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Usuario / Destino</th>
+                            <th>Origen -> Destino</th>
+                            <th>Registró</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="mov : ${historial}">
+                            <td data-label="Fecha" th:text="${#temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td data-label="Tipo">
+                                <span class="role-chip" th:text="${mov.tipoMovimiento}"></span>
+                            </td>
+                            <td data-label="Usuario" th:text="${mov.usuarioDestino}"></td>
+                            <td data-label="Ubicación">
+                                <span th:text="${mov.ubicacionOrigen}"></span> &rarr; <span th:text="${mov.ubicacionDestino}"></span>
+                            </td>
+                            <td data-label="Registró" th:text="${mov.registradoPor}"></td>
+                            <td data-label="Acciones">
+                                <a th:href="@{/admin/equipos/{id}/auditoria/{movId}/pdf(id=${equipo.id}, movId=${mov.id})}" target="_blank" class="secondary-action" style="padding: 4px 8px; font-size:0.8rem;">PDF</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+</body>
+</html>

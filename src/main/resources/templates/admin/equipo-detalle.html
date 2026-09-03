@@ -11,6 +11,11 @@
 		<section class="status-panel admin-users-panel" aria-labelledby="equipo-title">
 			<header th:replace="~{admin/nav :: topbar('Detalle tecnico', 'Equipo: ' + ${equipo.nombre}, 'equipos')}"></header>
 
+            <nav class="admin-actions" aria-label="Acciones administrativas" style="margin-bottom: 1.5rem; display: flex; gap: 1rem;">
+                <a class="secondary-action" th:href="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}">Auditoría y Movimientos</a>
+                <a class="secondary-action" th:href="@{/admin/equipos}">Volver al listado</a>
+            </nav>
+
 			<p class="success-message" th:if="${actualizado}">
 				Equipo actualizado correctamente.
 			</p>
