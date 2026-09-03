@@ -3,157 +3,298 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Tareas tecnicas - Inventario Modular</title>
+	<title>Tareas técnicas - Inventario Modular</title>
 	<link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="tareas-title">
-			<header th:replace="~{admin/nav :: topbar('Modulo operativo', 'Tareas Tecnicas', 'tareas')}"></header>
+			<header th:replace="~{admin/nav :: topbar('Módulo operativo', 'Tareas Técnicas', 'tareas')}"></header>
 
-			<p class="success-message" th:if="${creado}">Tarea tecnica actualizada correctamente.</p>
+			<!-- Barra de Acciones Rápidas y Navegación Cruzada -->
+			<nav class="quick-nav-bar" aria-label="Navegación rápida de tareas">
+				<div class="quick-nav-group">
+					<a class="secondary-action" th:href="@{/admin/equipos}">
+						🖥️ Catálogo de Equipos
+					</a>
+					<a class="secondary-action" th:href="@{/admin/ordenes-armado}">
+						🛠️ Órdenes de Armado
+					</a>
+					<a class="secondary-action" th:href="@{/admin/stock}">
+						📦 Stock de Depósito
+					</a>
+					<a class="secondary-action" th:href="@{/admin/dashboard-diferencias}">
+						📊 Diferencias
+					</a>
+				</div>
+				<div class="quick-nav-group">
+					<span class="count-badge" th:text="${#lists.size(tareas)} + ' tareas en seguimiento'">0 tareas</span>
+				</div>
+			</nav>
 
-			<form class="search-form dashboard-filter-form" th:action="@{/admin/tareas}" method="get">
-				<label>
-					<span>Estado</span>
-					<select name="estado">
-						<option value="">Todos</option>
-						<option th:each="estado : ${estadosTarea}" th:value="${estado}" th:text="${estado}"
-								th:selected="${estado == filtroEstado}">PENDIENTE</option>
-					</select>
-				</label>
-				<label>
-					<span>Equipo</span>
-					<select name="equipoId">
-						<option value="">Todos</option>
-						<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}"
-								th:selected="${equipo.id == filtroEquipoId}">PC-INF-001</option>
-					</select>
-				</label>
-				<label>
-					<span>Texto</span>
-					<input type="search" name="responsable" th:value="${filtroResponsable}" maxlength="120">
-				</label>
-				<button class="secondary-action" type="submit">Filtrar</button>
-			</form>
+			<!-- Mensaje de Éxito -->
+			<p class="success-message" th:if="${creado}">Tarea técnica actualizada o registrada correctamente.</p>
 
-			<section class="modules-section" aria-labelledby="tareas-list-title">
-				<div class="section-header">
-					<div>
-						<h2 id="tareas-list-title">Seguimiento</h2>
-						<p class="section-note">Tareas asociadas al inventario, con equipo opcional y cierre registrado.</p>
+			<!-- 🚀 GUÍA COMPACTA Y CLARA: Ciclo de Resolución Técnica -->
+			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
+				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+					<div style="display: flex; align-items: center; gap: 12px;">
+						<span style="font-size: 1.6rem;">🔧</span>
+						<div>
+							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Mesa de Ayuda Técnica: Circuito de resolución paso a paso</strong>
+							<span style="font-size: 0.85rem; color: #475569;">Flujo operativo para soporte, reparaciones y mantenimiento de equipamiento judicial:</span>
+						</div>
 					</div>
-					<span class="count-badge" th:text="${#lists.size(tareas)} + ' tareas'">0 tareas</span>
+					<span class="authorization-badge is-authorized">SOPORTE TÉCNICO</span>
 				</div>
 
-				<p class="empty-state" th:if="${#lists.isEmpty(tareas)}">Todavia no hay tareas tecnicas con esos filtros.</p>
+				<!-- 3 Pasos del Circuito -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+					<!-- Paso 1 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
+							<strong style="color: #1e3a8a; font-size: 0.9rem;">Apertura e Incidente</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Registra el desperfecto, vincula la PC afectada y asigna la prioridad (Baja, Media o Alta).
+						</p>
+					</div>
 
-				<div class="responsive-table" th:if="${!#lists.isEmpty(tareas)}">
-					<table>
-						<thead>
-							<tr>
-								<th scope="col">Tarea</th>
-								<th scope="col">Equipo</th>
-								<th scope="col">Prioridad</th>
-								<th scope="col">Estado</th>
-								<th scope="col">Responsable</th>
-								<th scope="col" th:if="${puedeEditarTareas}">Cambio</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr th:each="tarea : ${tareas}">
-								<td data-label="Tarea">
-									<strong th:text="${tarea.titulo}">Revisar fuente</strong>
-									<span class="table-subtext" th:text="${tarea.descripcion ?: 'Sin descripcion'}">Detalle</span>
-									<span class="table-subtext" th:if="${tarea.observacionesCierre}" th:text="${tarea.observacionesCierre}">Cierre</span>
-									<div class="comment-thread" th:if="${comentariosPorTarea[tarea.id] != null and !#lists.isEmpty(comentariosPorTarea[tarea.id])}">
-										<span class="table-subtext" th:each="comentario : ${comentariosPorTarea[tarea.id]}"
-												th:text="${comentario.autor + ': ' + comentario.comentario}">admin.local: Se reviso cableado</span>
-									</div>
-								</td>
-								<td data-label="Equipo" th:text="${tarea.equipoNombre ?: 'Sin equipo'}">PC-INF-001</td>
-								<td data-label="Prioridad" th:text="${tarea.prioridad}">MEDIA</td>
-								<td data-label="Estado">
-									<span class="authorization-badge" th:classappend="${tarea.estado.name() == 'CERRADA'} ? ' is-authorized' : ' is-pending'"
-											th:text="${tarea.estado}">PENDIENTE</span>
-								</td>
-								<td data-label="Responsable" th:text="${tarea.responsable ?: 'Sin asignar'}">gmurad</td>
-								<td data-label="Cambio" th:if="${puedeEditarTareas}">
-									<form class="inline-action-form" th:action="@{/admin/tareas/{id}(id=${tarea.id})}" method="post">
-										<select name="equipoId">
-											<option value="">Sin equipo</option>
-											<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}"
-													th:selected="${equipo.id == tarea.equipoId}">PC-INF-001</option>
-										</select>
-										<select name="prioridad">
-											<option th:each="prioridad : ${prioridadesTarea}" th:value="${prioridad}" th:text="${prioridad}"
-													th:selected="${prioridad == tarea.prioridad}">MEDIA</option>
-										</select>
-										<input name="responsable" th:value="${tarea.responsable}" maxlength="120" placeholder="Responsable">
-										<input name="titulo" th:value="${tarea.titulo}" maxlength="180" required placeholder="Titulo">
-										<input name="descripcion" th:value="${tarea.descripcion}" maxlength="1000" placeholder="Descripcion">
-										<button class="secondary-action" type="submit">Editar</button>
-									</form>
-									<form class="inline-action-form" th:action="@{/admin/tareas/{id}/estado(id=${tarea.id})}" method="post">
-										<select name="estado">
-											<option th:each="estado : ${estadosTarea}" th:value="${estado}" th:text="${estado}"
-													th:selected="${estado == tarea.estado}">PENDIENTE</option>
-										</select>
-										<input name="observacionesCierre" maxlength="1000" placeholder="Observaciones">
-										<button class="secondary-action" type="submit">Guardar</button>
-									</form>
-									<form class="inline-action-form" th:action="@{/admin/tareas/{id}/comentarios(id=${tarea.id})}" method="post">
-										<input name="comentario" maxlength="1000" required placeholder="Comentario">
-										<button class="secondary-action" type="submit">Comentar</button>
-									</form>
-								</td>
-							</tr>
-						</tbody>
-					</table>
+					<!-- Paso 2 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
+							<strong style="color: #0369a1; font-size: 0.9rem;">Intervención y Bitácora</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							El técnico a cargo añade comentarios de avance sobre las acciones realizadas en la máquina.
+						</p>
+					</div>
+
+					<!-- Paso 3 -->
+					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
+							<strong style="color: #15803d; font-size: 0.9rem;">Cierre y Conformidad</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Cambio de estado a <code>CERRADA</code> con detalle del trabajo finalizado para archivo histórico.
+						</p>
+					</div>
 				</div>
 			</section>
 
-			<section class="attributes-section" th:if="${puedeEditarTareas}" aria-labelledby="tarea-form-title">
-				<div class="section-header">
-					<h2 id="tarea-form-title">Nueva tarea</h2>
-					<span class="count-badge">Requiere TAREAS:EDITAR</span>
-				</div>
+			<!-- Pestañas de Navegación Limpias -->
+			<ul class="subnav-tabs" role="tablist">
+				<li>
+					<button type="button" class="subnav-tab is-active" id="tab-btn-seguimiento" onclick="switchTab('seguimiento')" role="tab" aria-selected="true" aria-controls="pane-seguimiento">
+						📋 Tareas tecnicas y Seguimiento
+						<span class="tab-badge" th:text="${#lists.size(tareas)}">0</span>
+					</button>
+				</li>
+				<li th:if="${puedeEditarTareas}">
+					<button type="button" class="subnav-tab" id="tab-btn-nuevo" onclick="switchTab('nuevo')" role="tab" aria-selected="false" aria-controls="pane-nuevo">
+						➕ Nueva tarea
+					</button>
+				</li>
+			</ul>
 
-				<form class="equipment-form" th:action="@{/admin/tareas}" th:object="${tareaForm}" method="post">
-					<div class="form-grid">
-						<label>
-							<span>Equipo</span>
-							<select th:field="*{equipoId}">
-								<option value="">Sin equipo</option>
-								<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}">PC-INF-001</option>
-							</select>
-						</label>
-						<label>
-							<span>Prioridad</span>
-							<select th:field="*{prioridad}">
-								<option th:each="prioridad : ${prioridadesTarea}" th:value="${prioridad}" th:text="${prioridad}">MEDIA</option>
-							</select>
-						</label>
-						<label>
-							<span>Responsable</span>
-							<input th:field="*{responsable}" maxlength="120">
-						</label>
-						<label>
-							<span>Titulo</span>
-							<input th:field="*{titulo}" maxlength="180" required>
-							<small class="field-error" th:if="${#fields.hasErrors('titulo')}" th:errors="*{titulo}">Error</small>
-						</label>
-					</div>
+			<!-- ==========================================================
+			     PESTAÑA 1: Seguimiento de Tareas y Filtros
+			     ========================================================== -->
+			<div class="tab-pane is-active" id="pane-seguimiento" role="tabpanel" aria-labelledby="tab-btn-seguimiento">
+				<form class="search-form dashboard-filter-form" th:action="@{/admin/tareas}" method="get" role="search"
+					  style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
 					<label>
-						<span>Descripcion</span>
-						<textarea th:field="*{descripcion}" maxlength="1000" rows="3"></textarea>
+						<span>Estado</span>
+						<select name="estado">
+							<option value="">Todos</option>
+							<option th:each="estado : ${estadosTarea}" th:value="${estado}" th:text="${estado}"
+									th:selected="${estado == filtroEstado}">PENDIENTE</option>
+						</select>
+					</label>
+					<label>
+						<span>Equipo</span>
+						<select name="equipoId">
+							<option value="">Todos los equipos</option>
+							<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}"
+									th:selected="${equipo.id == filtroEquipoId}">PC-INF-001</option>
+						</select>
+					</label>
+					<label>
+						<span>Texto</span>
+						<input type="search" name="responsable" th:value="${filtroResponsable}" maxlength="120" placeholder="Buscar por responsable o título...">
 					</label>
 					<div class="form-actions">
-						<button class="primary-action" type="submit">Guardar tarea</button>
+						<button class="primary-action" type="submit">🔍 Filtrar</button>
 					</div>
 				</form>
-			</section>
+
+				<section class="modules-section" aria-labelledby="tareas-list-title">
+					<div class="section-header">
+						<div>
+							<h2 id="tareas-list-title" style="margin: 0; font-size: 1.1rem;">Seguimiento</h2>
+							<p class="section-note">Tareas técnicas asociadas al inventario, con equipo opcional y bitácora de comentarios.</p>
+						</div>
+						<button type="button" class="primary-action" th:if="${puedeEditarTareas}" onclick="switchTab('nuevo')" style="font-size: 0.85rem; padding: 7px 14px;">
+							➕ Nueva tarea
+						</button>
+					</div>
+
+					<p class="empty-state" th:if="${#lists.isEmpty(tareas)}">
+						Todavía no hay tareas técnicas con esos filtros.
+						<a href="#tab-nuevo" onclick="switchTab('nuevo')" th:if="${puedeEditarTareas}" style="color: #2563eb; font-weight: 700; text-decoration: underline;">Haz clic aquí para abrir una nueva tarea técnica.</a>
+					</p>
+
+					<div class="responsive-table" th:if="${!#lists.isEmpty(tareas)}">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Tarea y Seguimiento</th>
+									<th scope="col">Equipo</th>
+									<th scope="col">Prioridad</th>
+									<th scope="col">Estado</th>
+									<th scope="col">Responsable</th>
+									<th scope="col" th:if="${puedeEditarTareas}">Cambio y Comentarios</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="tarea : ${tareas}">
+									<td data-label="Tarea">
+										<strong th:text="${tarea.titulo}" style="color: #0f172a; font-size: 0.95rem;">Revisar fuente</strong>
+										<span class="table-subtext" th:text="${tarea.descripcion ?: 'Sin descripción'}">Detalle</span>
+										<span class="table-subtext" th:if="${tarea.observacionesCierre}" th:text="'Cierre: ' + ${tarea.observacionesCierre}" style="color: #166534; font-weight: 600;">Cierre</span>
+										<div class="comment-thread" th:if="${comentariosPorTarea[tarea.id] != null and !#lists.isEmpty(comentariosPorTarea[tarea.id])}"
+											 style="margin-top: 8px; border-left: 2px solid #cbd5e1; padding-left: 8px;">
+											<span class="table-subtext" th:each="comentario : ${comentariosPorTarea[tarea.id]}"
+													th:text="${comentario.autor + ': ' + comentario.comentario}" style="display: block; margin-bottom: 2px;">admin.local: Se revisó cableado</span>
+										</div>
+									</td>
+									<td data-label="Equipo">
+										<span th:if="${tarea.equipoId != null}">
+											<a th:href="@{/admin/equipos/{id}(id=${tarea.equipoId})}" th:text="${tarea.equipoNombre ?: 'PC'}"
+											   style="font-weight: 700; color: #1e3a8a; text-decoration: none;">PC-INF-001</a>
+										</span>
+										<span th:unless="${tarea.equipoId != null}" class="table-subtext">Sin equipo</span>
+									</td>
+									<td data-label="Prioridad">
+										<span class="count-badge" th:text="${tarea.prioridad}">MEDIA</span>
+									</td>
+									<td data-label="Estado">
+										<span class="authorization-badge" th:classappend="${tarea.estado.name() == 'CERRADA'} ? ' is-authorized' : ' is-pending'"
+												th:text="${tarea.estado}">PENDIENTE</span>
+									</td>
+									<td data-label="Responsable" th:text="${tarea.responsable ?: 'Sin asignar'}">gmurad</td>
+									<td data-label="Cambio" th:if="${puedeEditarTareas}">
+										<div style="display: flex; flex-direction: column; gap: 8px;">
+											<!-- Formulario para cambiar estado -->
+											<form class="inline-action-form" th:action="@{/admin/tareas/{id}/estado(id=${tarea.id})}" method="post" style="display: flex; gap: 6px; align-items: center;">
+												<select name="estado" style="font-size: 0.8rem; padding: 4px;">
+													<option th:each="estado : ${estadosTarea}" th:value="${estado}" th:text="${estado}"
+															th:selected="${estado == tarea.estado}">PENDIENTE</option>
+												</select>
+												<input name="observacionesCierre" maxlength="1000" placeholder="Nota de cierre..." style="font-size: 0.8rem; padding: 4px; flex: 1;">
+												<button class="primary-action" type="submit" style="font-size: 0.78rem; padding: 4px 8px;">Actualizar</button>
+											</form>
+											<!-- Formulario para agregar comentario -->
+											<form class="inline-action-form" th:action="@{/admin/tareas/{id}/comentarios(id=${tarea.id})}" method="post" style="display: flex; gap: 6px; align-items: center;">
+												<input name="comentario" maxlength="1000" required placeholder="Agregar nota de avance..." style="font-size: 0.8rem; padding: 4px; flex: 1;">
+												<button class="secondary-action" type="submit" style="font-size: 0.78rem; padding: 4px 8px;">Comentar</button>
+											</form>
+										</div>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+
+			<!-- ==========================================================
+			     PESTAÑA 2: Cargar Nueva Tarea
+			     ========================================================== -->
+			<div class="tab-pane" id="pane-nuevo" role="tabpanel" aria-labelledby="tab-btn-nuevo" th:if="${puedeEditarTareas}">
+				<section class="attributes-section" aria-labelledby="tarea-form-title">
+					<div class="section-header">
+						<div>
+							<h2 id="tarea-form-title" style="margin: 0; font-size: 1.1rem;">Nueva tarea</h2>
+							<p class="section-note">Apertura de incidente o mantenimiento técnico en el parque informático.</p>
+						</div>
+					</div>
+
+					<form class="equipment-form" th:action="@{/admin/tareas}" th:object="${tareaForm}" method="post">
+						<div class="form-grid">
+							<label>
+								<span>Equipo afectado (opcional)</span>
+								<select th:field="*{equipoId}">
+									<option value="">Sin equipo (incidente general)</option>
+									<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}">PC-INF-001</option>
+								</select>
+							</label>
+							<label>
+								<span>Prioridad del requerimiento</span>
+								<select th:field="*{prioridad}">
+									<option th:each="prioridad : ${prioridadesTarea}" th:value="${prioridad}" th:text="${prioridad}">MEDIA</option>
+								</select>
+							</label>
+							<label>
+								<span>Técnico responsable</span>
+								<input th:field="*{responsable}" maxlength="120" placeholder="Ej: gmurad / soporte">
+							</label>
+							<label style="grid-column: 1 / -1;">
+								<span>Título del requerimiento *</span>
+								<input th:field="*{titulo}" maxlength="180" placeholder="Ej: Revisar impresora compartida o cambio de fuente" required>
+								<small class="field-error" th:if="${#fields.hasErrors('titulo')}" th:errors="*{titulo}">Error</small>
+							</label>
+						</div>
+						<label>
+							<span>Descripción detallada del desperfecto</span>
+							<textarea th:field="*{descripcion}" maxlength="1000" rows="3" placeholder="Síntomas observados, horario en que ocurrió, usuario que lo reportó..."></textarea>
+						</label>
+						<div class="form-actions" style="margin-top: 16px;">
+							<button class="primary-action" type="submit">Guardar tarea</button>
+							<button type="button" class="secondary-action" onclick="switchTab('seguimiento')">Volver al Seguimiento</button>
+						</div>
+					</form>
+				</section>
+			</div>
 		</section>
 	</main>
+
+	<!-- Script de Pestañas Interactivas -->
+	<script>
+		function switchTab(tabId) {
+			const tabs = ['seguimiento', 'nuevo'];
+			tabs.forEach(function(id) {
+				const btn = document.getElementById('tab-btn-' + id);
+				const pane = document.getElementById('pane-' + id);
+				if (btn && pane) {
+					if (id === tabId) {
+						btn.classList.add('is-active');
+						btn.setAttribute('aria-selected', 'true');
+						pane.classList.add('is-active');
+					} else {
+						btn.classList.remove('is-active');
+						btn.setAttribute('aria-selected', 'false');
+						pane.classList.remove('is-active');
+					}
+				}
+			});
+			if (history.replaceState) {
+				history.replaceState(null, null, '#tab-' + tabId);
+			}
+		}
+
+		// Leer hash inicial al cargar
+		window.addEventListener('DOMContentLoaded', function() {
+			const hash = window.location.hash;
+			if (hash === '#tab-nuevo') {
+				switchTab('nuevo');
+			} else if (hash === '#tab-seguimiento') {
+				switchTab('seguimiento');
+			}
+		});
+	</script>
 </body>
 </html>

@@ -9,201 +9,366 @@
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="muebles-title">
-			<header th:replace="~{admin/nav :: topbar('Modulo funcional', 'Muebles', 'muebles')}"></header>
+			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Muebles y Mobiliario Judicial', 'muebles')}"></header>
 
-			<p class="success-message" th:if="${creado}">Mueble actualizado correctamente.</p>
+			<!-- Barra de Acciones Rápidas y Navegación Cruzada -->
+			<nav class="quick-nav-bar" aria-label="Navegación contextual de muebles">
+				<div class="quick-nav-group">
+					<a class="secondary-action" th:href="@{/admin/patrimonio}">
+						🏛️ Bienes Patrimoniales
+					</a>
+					<a class="secondary-action" th:href="@{/admin/actas}">
+						📋 Actas y Movimientos
+					</a>
+					<a class="secondary-action" th:href="@{/admin/ubicaciones}">
+						🏢 Sedes y Ubicaciones
+					</a>
+					<a class="secondary-action" th:href="@{/admin/equipos}">
+						🖥️ Equipos
+					</a>
+				</div>
+				<div class="quick-nav-group">
+					<span class="count-badge" th:text="${#lists.size(muebles)} + ' muebles registrados'">0 muebles</span>
+				</div>
+			</nav>
 
-			<form class="search-form dashboard-filter-form" th:action="@{/admin/muebles}" method="get">
-				<label>
-					<span>Buscar</span>
-					<input type="search" name="query" th:value="${filtroQuery}" maxlength="120">
-				</label>
-				<label>
-					<span>Estado</span>
-					<select name="estado">
-						<option value="">Todos</option>
-						<option th:each="estado : ${estadosMueble}" th:value="${estado}" th:text="${estado}"
-								th:selected="${estado == filtroEstado}">ACTIVO</option>
-					</select>
-				</label>
-				<button class="secondary-action" type="submit">Filtrar</button>
-			</form>
+			<!-- Mensaje de Éxito -->
+			<p class="success-message" th:if="${creado}">Mueble actualizado o registrado correctamente.</p>
 
-			<section class="modules-section" aria-labelledby="muebles-list-title">
-				<div class="section-header">
-					<div>
-						<h2 id="muebles-list-title">Listado de muebles</h2>
-						<p class="section-note">Mesas, sillas, escritorios, racks y mobiliario tecnico asignado.</p>
+			<!-- 🚀 GUÍA COMPACTA Y CLARA: Gestión de Mobiliario Judicial -->
+			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
+				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+					<div style="display: flex; align-items: center; gap: 12px;">
+						<span style="font-size: 1.6rem;">🪑</span>
+						<div>
+							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Mobiliario Judicial: Circuito paso a paso</strong>
+							<span style="font-size: 0.85rem; color: #475569;">Registro, asignación física y control de mesas, escritorios, armarios y racks:</span>
+						</div>
 					</div>
-					<span class="count-badge" th:text="${#lists.size(muebles)} + ' muebles'">0 muebles</span>
+					<span class="authorization-badge is-authorized">GESTIÓN DE BIENES</span>
 				</div>
 
-				<p class="empty-state" th:if="${#lists.isEmpty(muebles)}">Todavia no hay muebles con esos filtros.</p>
+				<!-- 3 Pasos del Circuito -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+					<!-- Paso 1 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
+							<strong style="color: #1e3a8a; font-size: 0.9rem;">Alta e Identificación</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Ingresa el mueble con su código único (ej: <code>MUE-001</code>), tipo (escritorio, silla, rack) y descripción.
+						</p>
+					</div>
 
-				<div class="responsive-table" th:if="${!#lists.isEmpty(muebles)}">
-					<table>
-						<thead>
-							<tr>
-								<th scope="col">Codigo</th>
-								<th scope="col">Mueble</th>
-								<th scope="col">Ubicacion</th>
-								<th scope="col">Responsable</th>
-								<th scope="col">Estado</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr th:each="mueble : ${muebles}">
-								<td data-label="Codigo" th:text="${mueble.codigo}">MUE-001</td>
-								<td data-label="Mueble">
-									<strong th:text="${mueble.descripcion}">Escritorio</strong>
-									<span class="table-subtext" th:text="${mueble.tipo}">ESCRITORIO</span>
-									<span class="table-subtext" th:if="${mueble.observaciones}" th:text="${mueble.observaciones}">Observaciones</span>
-								</td>
-								<td data-label="Ubicacion">
-									<span th:text="${mueble.ubicacion ?: 'Sin ubicacion'}">Informatica</span>
-									<span class="table-subtext" th:text="${mueble.fuero ?: 'Sin fuero'}">Civil</span>
-								</td>
-								<td data-label="Responsable" th:text="${mueble.responsable ?: 'Sin responsable'}">admin.local</td>
-								<td data-label="Estado">
-									<span class="authorization-badge" th:classappend="${mueble.activo} ? ' is-authorized' : ' is-pending'"
-											th:text="${mueble.estado}">ACTIVO</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
+					<!-- Paso 2 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
+							<strong style="color: #0369a1; font-size: 0.9rem;">Ubicación y Despacho</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Asigna la oficina judicial donde prestará servicio y el funcionario responsable de su custodia.
+						</p>
+					</div>
+
+					<!-- Paso 3 -->
+					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
+							<strong style="color: #15803d; font-size: 0.9rem;">Acta y Resguardo</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Emite el acta de entrega formal en PDF desde el módulo de Actas para que el responsable firme su recepción.
+						</p>
+					</div>
 				</div>
 			</section>
 
-			<section class="attributes-section" th:if="${puedeEditarMuebles and !#lists.isEmpty(muebles)}" aria-labelledby="muebles-edit-title">
-				<div class="section-header">
-					<div>
-						<h2 id="muebles-edit-title">Editar muebles cargados</h2>
-						<p class="section-note">Ajuste ubicacion, responsable o estado sin salir del listado.</p>
-					</div>
-				</div>
+			<!-- Pestañas de Navegación Limpias (Sin scroll infinito) -->
+			<ul class="subnav-tabs" role="tablist">
+				<li>
+					<button type="button" class="subnav-tab is-active" id="tab-btn-catalogo" onclick="switchTab('catalogo')" role="tab" aria-selected="true" aria-controls="pane-catalogo">
+						📋 Catálogo de Muebles
+						<span class="tab-badge" th:text="${#lists.size(muebles)}">0</span>
+					</button>
+				</li>
+				<li th:if="${puedeEditarMuebles}">
+					<button type="button" class="subnav-tab" id="tab-btn-nuevo" onclick="switchTab('nuevo')" role="tab" aria-selected="false" aria-controls="pane-nuevo">
+						➕ Cargar mueble
+					</button>
+				</li>
+				<li th:if="${puedeEditarMuebles and !#lists.isEmpty(muebles)}">
+					<button type="button" class="subnav-tab" id="tab-btn-editar" onclick="switchTab('editar')" role="tab" aria-selected="false" aria-controls="pane-editar">
+						✏️ Editar muebles cargados
+					</button>
+				</li>
+			</ul>
 
-				<div class="edit-stack">
-					<form class="equipment-form inline-edit-card" th:each="mueble : ${muebles}"
-							th:action="@{/admin/muebles/{id}(id=${mueble.id})}" method="post">
-						<div class="section-header">
-							<h2 th:text="${mueble.codigo}">MUE-001</h2>
-							<span class="count-badge" th:text="'ID ' + ${mueble.id}">ID 1</span>
-						</div>
-						<div class="form-grid">
-							<label>
-								<span>Codigo</span>
-								<input name="codigo" th:value="${mueble.codigo}" maxlength="80" required>
-							</label>
-							<label>
-								<span>Tipo</span>
-								<input name="tipo" th:value="${mueble.tipo}" maxlength="80" required>
-							</label>
-							<label>
-								<span>Descripcion</span>
-								<input name="descripcion" th:value="${mueble.descripcion}" maxlength="255" required>
-							</label>
-							<label>
-								<span>Estado</span>
-								<select name="estado">
-									<option th:each="estado : ${estadosMueble}" th:value="${estado}" th:text="${estado}"
-											th:selected="${estado == mueble.estado}">ACTIVO</option>
-								</select>
-							</label>
-							<label>
-								<span>Ubicacion</span>
-								<select name="ubicacion">
-									<option value="">Sin ubicacion</option>
-									<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
-											th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}"
-											th:selected="${ubicacion.nombre == mueble.ubicacion}">Oficina Informatica</option>
-								</select>
-							</label>
-							<label>
-								<span>Fuero</span>
-								<input name="fuero" th:value="${mueble.fuero}" maxlength="120">
-							</label>
-							<label>
-								<span>Responsable</span>
-								<input name="responsable" th:value="${mueble.responsable}" maxlength="120">
-							</label>
-						</div>
-						<label>
-							<span>Observaciones</span>
-							<textarea name="observaciones" maxlength="500" rows="2" th:text="${mueble.observaciones}"></textarea>
-						</label>
-						<label class="checkbox-row">
-							<input name="_activo" type="hidden" value="on">
-							<input name="activo" type="checkbox" value="true" th:checked="${mueble.activo}">
-							<span>Mueble activo</span>
-						</label>
-						<div class="form-actions">
-							<button class="secondary-action" type="submit">Guardar cambios</button>
-						</div>
-					</form>
-				</div>
-			</section>
-
-			<section class="attributes-section" th:if="${puedeEditarMuebles}" aria-labelledby="mueble-form-title">
-				<div class="section-header">
-					<h2 id="mueble-form-title">Cargar mueble</h2>
-					<span class="count-badge">Requiere MUEBLES:EDITAR</span>
-				</div>
-
-				<form class="equipment-form" th:action="@{/admin/muebles}" th:object="${muebleForm}" method="post">
-					<div class="form-grid">
-						<label>
-							<span>Codigo</span>
-							<input th:field="*{codigo}" maxlength="80" required>
-							<small class="field-error" th:if="${#fields.hasErrors('codigo')}" th:errors="*{codigo}">Error</small>
-						</label>
-						<label>
-							<span>Tipo</span>
-							<input th:field="*{tipo}" maxlength="80" required>
-							<small class="field-error" th:if="${#fields.hasErrors('tipo')}" th:errors="*{tipo}">Error</small>
-						</label>
-						<label>
-							<span>Descripcion</span>
-							<input th:field="*{descripcion}" maxlength="255" required>
-							<small class="field-error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}">Error</small>
-						</label>
-						<label>
-							<span>Estado</span>
-							<select th:field="*{estado}">
-								<option th:each="estado : ${estadosMueble}" th:value="${estado}" th:text="${estado}">ACTIVO</option>
-							</select>
-						</label>
-						<label>
-							<span>Ubicacion</span>
-							<select th:field="*{ubicacion}">
-								<option value="">Sin ubicacion</option>
-								<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
-										th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Oficina Informatica</option>
-							</select>
-						</label>
-						<label>
-							<span>Fuero</span>
-							<input th:field="*{fuero}" maxlength="120">
-						</label>
-						<label>
-							<span>Responsable</span>
-							<input th:field="*{responsable}" maxlength="120">
-						</label>
-					</div>
+			<!-- ==========================================================
+			     PESTAÑA 1: Catálogo de Muebles y Filtros
+			     ========================================================== -->
+			<div class="tab-pane is-active" id="pane-catalogo" role="tabpanel" aria-labelledby="tab-btn-catalogo">
+				<form class="search-form dashboard-filter-form" th:action="@{/admin/muebles}" method="get" role="search"
+					  style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
 					<label>
-						<span>Observaciones</span>
-						<textarea th:field="*{observaciones}" maxlength="500" rows="3"></textarea>
+						<span>Buscar</span>
+						<input type="search" name="query" th:value="${filtroQuery}" maxlength="120" placeholder="Código, descripción, fuero o responsable...">
 					</label>
-					<label class="checkbox-row">
-						<input name="_activo" type="hidden" value="on">
-						<input th:field="*{activo}" type="checkbox">
-						<span>Mueble activo</span>
+					<label>
+						<span>Estado</span>
+						<select name="estado">
+							<option value="">Todos los estados</option>
+							<option th:each="estado : ${estadosMueble}" th:value="${estado}" th:text="${estado}"
+									th:selected="${estado == filtroEstado}">ACTIVO</option>
+						</select>
 					</label>
 					<div class="form-actions">
-						<button class="primary-action" type="submit">Guardar mueble</button>
+						<button class="primary-action" type="submit">🔍 Filtrar</button>
+						<a class="secondary-action" th:href="@{/admin/muebles}">Limpiar</a>
 					</div>
 				</form>
-			</section>
+
+				<section class="modules-section" aria-labelledby="muebles-list-title">
+					<div class="section-header">
+						<div>
+							<h2 id="muebles-list-title" style="margin: 0; font-size: 1.1rem;">Listado de muebles</h2>
+							<p class="section-note">Mesas, sillas, escritorios, estanterías, racks y mobiliario judicial asignado.</p>
+						</div>
+						<button type="button" class="primary-action" th:if="${puedeEditarMuebles}" onclick="switchTab('nuevo')" style="font-size: 0.85rem; padding: 7px 14px;">
+							➕ Cargar mueble
+						</button>
+					</div>
+
+					<p class="empty-state" th:if="${#lists.isEmpty(muebles)}">
+						Todavía no hay muebles con los filtros aplicados.
+						<a href="#tab-nuevo" onclick="switchTab('nuevo')" th:if="${puedeEditarMuebles}" style="color: #2563eb; font-weight: 700; text-decoration: underline;">Haz clic aquí para dar de alta el primero.</a>
+					</p>
+
+					<div class="responsive-table" th:if="${!#lists.isEmpty(muebles)}">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Código</th>
+									<th scope="col">Mueble / Tipo</th>
+									<th scope="col">Ubicación y Fuero</th>
+									<th scope="col">Responsable</th>
+									<th scope="col">Estado</th>
+									<th scope="col" th:if="${puedeEditarMuebles}">Acción</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="mueble : ${muebles}">
+									<td data-label="Código">
+										<code th:text="${mueble.codigo}" style="font-weight: 700; font-size: 0.92rem; color: #1e3a8a;">MUE-001</code>
+									</td>
+									<td data-label="Mueble">
+										<strong th:text="${mueble.descripcion}">Escritorio</strong>
+										<span class="table-subtext" th:text="${mueble.tipo}">ESCRITORIO</span>
+										<span class="table-subtext" th:if="${mueble.observaciones}" th:text="${mueble.observaciones}">Observaciones</span>
+									</td>
+									<td data-label="Ubicación">
+										<span th:text="${mueble.ubicacion ?: 'Sin ubicación'}">Informática</span>
+										<span class="table-subtext" th:text="${mueble.fuero ?: 'Sin fuero'}">Civil</span>
+									</td>
+									<td data-label="Responsable" th:text="${mueble.responsable ?: 'Sin responsable'}">admin.local</td>
+									<td data-label="Estado">
+										<span class="authorization-badge" th:classappend="${mueble.activo} ? ' is-authorized' : ' is-pending'"
+												th:text="${mueble.estado}">ACTIVO</span>
+									</td>
+									<td data-label="Acción" th:if="${puedeEditarMuebles}">
+										<button type="button" class="secondary-action" onclick="switchTab('editar')" style="font-size: 0.8rem; padding: 5px 9px;">
+											✏️ Modificar
+										</button>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+
+			<!-- ==========================================================
+			     PESTAÑA 2: Cargar Nuevo Mueble
+			     ========================================================== -->
+			<div class="tab-pane" id="pane-nuevo" role="tabpanel" aria-labelledby="tab-btn-nuevo" th:if="${puedeEditarMuebles}">
+				<section class="attributes-section" aria-labelledby="mueble-form-title">
+					<div class="section-header">
+						<div>
+							<h2 id="mueble-form-title" style="margin: 0; font-size: 1.1rem;">Cargar mueble</h2>
+							<p class="section-note">Ingreso de nuevo mobiliario al inventario institucional del Poder Judicial.</p>
+						</div>
+					</div>
+
+					<form class="equipment-form" th:action="@{/admin/muebles}" th:object="${muebleForm}" method="post">
+						<div class="form-grid">
+							<label>
+								<span>Código identificador *</span>
+								<input th:field="*{codigo}" maxlength="80" placeholder="Ej: MUE-001 / SILLA-04" required>
+								<small class="field-error" th:if="${#fields.hasErrors('codigo')}" th:errors="*{codigo}">Error</small>
+							</label>
+							<label>
+								<span>Tipo de mueble *</span>
+								<input th:field="*{tipo}" maxlength="80" placeholder="Ej: ESCRITORIO, SILLA, ARMARIO, RACK" required>
+								<small class="field-error" th:if="${#fields.hasErrors('tipo')}" th:errors="*{tipo}">Error</small>
+							</label>
+							<label style="grid-column: 1 / -1;">
+								<span>Descripción detallada *</span>
+								<input th:field="*{descripcion}" maxlength="255" placeholder="Ej: Escritorio de madera con 3 cajones y cerradura" required>
+								<small class="field-error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}">Error</small>
+							</label>
+							<label>
+								<span>Estado operativo</span>
+								<select th:field="*{estado}">
+									<option th:each="estado : ${estadosMueble}" th:value="${estado}" th:text="${estado}">ACTIVO</option>
+								</select>
+							</label>
+							<label>
+								<span>Ubicación / Dependencia</span>
+								<select th:field="*{ubicacion}">
+									<option value="">Sin ubicación asignada</option>
+									<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
+											th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}">Oficina Informática</option>
+								</select>
+							</label>
+							<label>
+								<span>Fuero judicial</span>
+								<input th:field="*{fuero}" maxlength="120" placeholder="Ej: Penal, Civil, Informática">
+							</label>
+							<label>
+								<span>Funcionario responsable</span>
+								<input th:field="*{responsable}" maxlength="120" placeholder="Ej: Dra. García / gmurad">
+							</label>
+						</div>
+						<label>
+							<span>Observaciones y estado físico</span>
+							<textarea th:field="*{observaciones}" maxlength="500" rows="3" placeholder="Detalles de conservación, número de inventario previo o notas..."></textarea>
+						</label>
+						<label class="checkbox-row" style="margin-top: 10px;">
+							<input name="_activo" type="hidden" value="on">
+							<input th:field="*{activo}" type="checkbox" checked>
+							<span>Mueble activo en el sistema</span>
+						</label>
+						<div class="form-actions" style="margin-top: 16px;">
+							<button class="primary-action" type="submit">Guardar mueble</button>
+							<button type="button" class="secondary-action" onclick="switchTab('catalogo')">Volver al Catálogo</button>
+						</div>
+					</form>
+				</section>
+			</div>
+
+			<!-- ==========================================================
+			     PESTAÑA 3: Editar Muebles Cargados
+			     ========================================================== -->
+			<div class="tab-pane" id="pane-editar" role="tabpanel" aria-labelledby="tab-btn-editar" th:if="${puedeEditarMuebles and !#lists.isEmpty(muebles)}">
+				<section class="attributes-section" aria-labelledby="muebles-edit-title">
+					<div class="section-header">
+						<div>
+							<h2 id="muebles-edit-title" style="margin: 0; font-size: 1.1rem;">Editar muebles cargados</h2>
+							<p class="section-note">Ajusta responsable, ubicación, fuero o estado operativo de cada bien.</p>
+						</div>
+					</div>
+
+					<div class="edit-stack">
+						<form class="equipment-form inline-edit-card" th:each="mueble : ${muebles}"
+								th:action="@{/admin/muebles/{id}(id=${mueble.id})}" method="post"
+								style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+							<div class="section-header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">
+								<h3 th:text="${mueble.codigo} + ' - ' + ${mueble.descripcion}" style="margin: 0; font-size: 1.05rem; color: #1e3a8a;">MUE-001</h3>
+								<span class="count-badge" th:text="'ID ' + ${mueble.id}">ID 1</span>
+							</div>
+							<div class="form-grid">
+								<label>
+									<span>Código</span>
+									<input name="codigo" th:value="${mueble.codigo}" maxlength="80" required>
+								</label>
+								<label>
+									<span>Tipo</span>
+									<input name="tipo" th:value="${mueble.tipo}" maxlength="80" required>
+								</label>
+								<label style="grid-column: 1 / -1;">
+									<span>Descripción</span>
+									<input name="descripcion" th:value="${mueble.descripcion}" maxlength="255" required>
+								</label>
+								<label>
+									<span>Estado</span>
+									<select name="estado">
+										<option th:each="estado : ${estadosMueble}" th:value="${estado}" th:text="${estado}"
+												th:selected="${estado == mueble.estado}">ACTIVO</option>
+									</select>
+								</label>
+								<label>
+									<span>Ubicación</span>
+									<select name="ubicacion">
+										<option value="">Sin ubicación</option>
+										<option th:each="ubicacion : ${ubicacionesActivas}" th:value="${ubicacion.nombre}"
+												th:text="${ubicacion.nombre + ' (' + ubicacion.codigo + ')'}"
+												th:selected="${ubicacion.nombre == mueble.ubicacion}">Oficina Informática</option>
+									</select>
+								</label>
+								<label>
+									<span>Fuero</span>
+									<input name="fuero" th:value="${mueble.fuero}" maxlength="120">
+								</label>
+								<label>
+									<span>Responsable</span>
+									<input name="responsable" th:value="${mueble.responsable}" maxlength="120">
+								</label>
+							</div>
+							<label>
+								<span>Observaciones</span>
+								<textarea name="observaciones" maxlength="500" rows="2" th:text="${mueble.observaciones}"></textarea>
+							</label>
+							<label class="checkbox-row" style="margin-top: 8px;">
+								<input name="_activo" type="hidden" value="on">
+								<input name="activo" type="checkbox" value="true" th:checked="${mueble.activo}">
+								<span>Mueble activo</span>
+							</label>
+							<div class="form-actions" style="margin-top: 12px;">
+								<button class="secondary-action" type="submit">Guardar cambios</button>
+							</div>
+						</form>
+					</div>
+				</section>
+			</div>
 		</section>
 	</main>
+
+	<!-- Script de Pestañas Interactivas -->
+	<script>
+		function switchTab(tabId) {
+			const tabs = ['catalogo', 'nuevo', 'editar'];
+			tabs.forEach(function(id) {
+				const btn = document.getElementById('tab-btn-' + id);
+				const pane = document.getElementById('pane-' + id);
+				if (btn && pane) {
+					if (id === tabId) {
+						btn.classList.add('is-active');
+						btn.setAttribute('aria-selected', 'true');
+						pane.classList.add('is-active');
+					} else {
+						btn.classList.remove('is-active');
+						btn.setAttribute('aria-selected', 'false');
+						pane.classList.remove('is-active');
+					}
+				}
+			});
+			if (history.replaceState) {
+				history.replaceState(null, null, '#tab-' + tabId);
+			}
+		}
+
+		// Leer hash inicial al cargar
+		window.addEventListener('DOMContentLoaded', function() {
+			const hash = window.location.hash;
+			if (hash === '#tab-nuevo') {
+				switchTab('nuevo');
+			} else if (hash === '#tab-editar') {
+				switchTab('editar');
+			} else if (hash === '#tab-catalogo') {
+				switchTab('catalogo');
+			}
+		});
+	</script>
 </body>
 </html>

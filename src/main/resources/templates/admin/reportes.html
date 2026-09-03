@@ -9,93 +9,236 @@
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="reportes-title">
-			<header th:replace="~{admin/nav :: topbar('Modulo transversal', 'Reportes', 'reportes')}"></header>
+			<header th:replace="~{admin/nav :: topbar('Módulo transversal', 'Reportes y Exportaciones', 'reportes')}"></header>
 
-			<section class="modules-section" aria-labelledby="reportes-resumen-title">
-				<div class="section-header">
-					<div>
-						<h2 id="reportes-resumen-title">Resumen operativo</h2>
-						<p class="section-note">Conteos principales del inventario modular para control diario.</p>
+			<!-- Barra de Acciones Rápidas y Navegación Cruzada -->
+			<nav class="quick-nav-bar" aria-label="Navegación rápida de reportes">
+				<div class="quick-nav-group">
+					<a class="secondary-action" th:href="@{/admin/equipos}">
+						🖥️ Equipos
+					</a>
+					<a class="secondary-action" th:href="@{/admin/patrimonio}">
+						🏛️ Patrimonio
+					</a>
+					<a class="secondary-action" th:href="@{/admin/actas}">
+						📋 Actas
+					</a>
+					<a class="secondary-action" th:href="@{/admin/stock}">
+						📦 Stock
+					</a>
+				</div>
+				<div class="quick-nav-group">
+					<span class="count-badge" th:if="${puedeExportarReportes}">Descargas Habilitadas</span>
+				</div>
+			</nav>
+
+			<!-- 🚀 GUÍA COMPACTA Y CLARA: Informes y Auditoría -->
+			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
+				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+					<div style="display: flex; align-items: center; gap: 12px;">
+						<span style="font-size: 1.6rem;">📊</span>
+						<div>
+							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Centro de Reportes: Información ejecutiva y planillas</strong>
+							<span style="font-size: 0.85rem; color: #475569;">Supervisión global del inventario y exportación directa para auditoría judicial o contable:</span>
+						</div>
 					</div>
+					<span class="authorization-badge is-authorized">REPORTES OFICIALES</span>
 				</div>
 
-				<div class="modules-grid">
-					<article class="module-card">
-						<span class="module-icon">PC</span>
-						<div>
-							<h2>Equipos</h2>
-							<p th:text="${resumen.equipos}">0</p>
+				<!-- 3 Pasos del Módulo -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+					<!-- Paso 1 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
+							<strong style="color: #1e3a8a; font-size: 0.9rem;">Métricas Consolidadas</strong>
 						</div>
-					</article>
-					<article class="module-card">
-						<span class="module-icon">MU</span>
-						<div>
-							<h2>Muebles</h2>
-							<p th:text="${resumen.muebles}">0</p>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Visualiza en vivo la cantidad de computadoras, muebles, bienes patrimoniales, actas y tareas abiertas.
+						</p>
+					</div>
+
+					<!-- Paso 2 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
+							<strong style="color: #0369a1; font-size: 0.9rem;">Filtrado por Dependencia</strong>
 						</div>
-					</article>
-					<article class="module-card">
-						<span class="module-icon">PA</span>
-						<div>
-							<h2>Patrimonio</h2>
-							<p th:text="${resumen.bienesPatrimoniales}">0</p>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Filtra por fuero, custodio o juzgado para obtener planillas acotadas a una secretaría o sede.
+						</p>
+					</div>
+
+					<!-- Paso 3 -->
+					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
+							<strong style="color: #15803d; font-size: 0.9rem;">Descarga Inmediata en CSV</strong>
 						</div>
-					</article>
-					<article class="module-card">
-						<span class="module-icon">TA</span>
-						<div>
-							<h2>Tareas</h2>
-							<p th:text="${resumen.tareas}">0</p>
-						</div>
-					</article>
-					<article class="module-card">
-						<span class="module-icon">AC</span>
-						<div>
-							<h2>Actas</h2>
-							<p th:text="${resumen.actas}">0</p>
-						</div>
-					</article>
-					<article class="module-card">
-						<span class="module-icon">UB</span>
-						<div>
-							<h2>Ubicaciones</h2>
-							<p th:text="${resumen.ubicaciones}">0</p>
-						</div>
-					</article>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Exporta archivos livianos listos para abrir en Excel o enviar a superintendencia y administración.
+						</p>
+					</div>
 				</div>
 			</section>
 
-			<section class="attributes-section" aria-labelledby="reportes-export-title">
-				<div class="section-header">
-					<div>
-						<h2 id="reportes-export-title">Exportaciones CSV</h2>
-						<p class="section-note">Archivos livianos para abrir en planillas o enviar a administracion.</p>
+			<!-- Pestañas de Navegación Limpias -->
+			<ul class="subnav-tabs" role="tablist">
+				<li>
+					<button type="button" class="subnav-tab is-active" id="tab-btn-resumen" onclick="switchTab('resumen')" role="tab" aria-selected="true" aria-controls="pane-resumen">
+						📊 Resumen operativo
+					</button>
+				</li>
+				<li>
+					<button type="button" class="subnav-tab" id="tab-btn-exportar" onclick="switchTab('exportar')" role="tab" aria-selected="false" aria-controls="pane-exportar">
+						📥 Exportaciones CSV
+					</button>
+				</li>
+			</ul>
+
+			<!-- ==========================================================
+			     PESTAÑA 1: Resumen Operativo y Tarjetas de Métricas
+			     ========================================================== -->
+			<div class="tab-pane is-active" id="pane-resumen" role="tabpanel" aria-labelledby="tab-btn-resumen">
+				<section class="modules-section" aria-labelledby="reportes-resumen-title">
+					<div class="section-header">
+						<div>
+							<h2 id="reportes-resumen-title" style="margin: 0; font-size: 1.1rem;">Resumen operativo</h2>
+							<p class="section-note">Conteos principales del inventario modular para control diario y toma de decisiones.</p>
+						</div>
 					</div>
-					<span class="count-badge" th:if="${puedeExportarReportes}">Requiere REPORTES:EXPORTAR</span>
-				</div>
 
-				<form class="search-form dashboard-filter-form" th:action="@{/admin/reportes}" method="get">
-					<label>
-						<span>Filtro CSV</span>
-						<input type="search" name="query" th:value="${filtroQuery}" maxlength="120" placeholder="Fuero, ubicacion, custodio o responsable">
-					</label>
-					<div class="form-actions">
-						<button class="primary-action" type="submit">Aplicar</button>
-						<a class="secondary-action" th:href="@{/admin/reportes}">Limpiar</a>
+					<div class="modules-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+						<article class="module-card" style="border-left: 4px solid #2563eb;">
+							<span class="module-icon" style="background: #dbeafe; color: #1e40af;">PC</span>
+							<div>
+								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Equipos</h2>
+								<p th:text="${resumen.equipos}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+							</div>
+						</article>
+						<article class="module-card" style="border-left: 4px solid #16a34a;">
+							<span class="module-icon" style="background: #dcfce7; color: #166534;">PA</span>
+							<div>
+								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Patrimonio</h2>
+								<p th:text="${resumen.bienesPatrimoniales}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+							</div>
+						</article>
+						<article class="module-card" style="border-left: 4px solid #0284c7;">
+							<span class="module-icon" style="background: #e0f2fe; color: #0369a1;">AC</span>
+							<div>
+								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Actas</h2>
+								<p th:text="${resumen.actas}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+							</div>
+						</article>
+						<article class="module-card" style="border-left: 4px solid #ca8a04;">
+							<span class="module-icon" style="background: #fef9c3; color: #854d0e;">MU</span>
+							<div>
+								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Muebles</h2>
+								<p th:text="${resumen.muebles}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+							</div>
+						</article>
+						<article class="module-card" style="border-left: 4px solid #ea580c;">
+							<span class="module-icon" style="background: #ffedd5; color: #9a3412;">TA</span>
+							<div>
+								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Tareas</h2>
+								<p th:text="${resumen.tareas}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+							</div>
+						</article>
+						<article class="module-card" style="border-left: 4px solid #7c3aed;">
+							<span class="module-icon" style="background: #f3e8ff; color: #6b21a8;">UB</span>
+							<div>
+								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Ubicaciones</h2>
+								<p th:text="${resumen.ubicaciones}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+							</div>
+						</article>
 					</div>
-				</form>
+				</section>
+			</div>
 
-				<div class="admin-actions" th:if="${puedeExportarReportes}">
-					<a class="primary-action" th:href="@{/api/v1/reportes/muebles.csv(query=${filtroQuery})}">Muebles CSV</a>
-					<a class="secondary-action" th:href="@{/api/v1/reportes/patrimonio.csv(query=${filtroQuery})}">Patrimonio CSV</a>
-					<a class="secondary-action" th:href="@{/api/v1/reportes/tareas.csv(query=${filtroQuery})}">Tareas CSV</a>
-					<a class="secondary-action" th:href="@{/api/v1/reportes/actas.csv(query=${filtroQuery})}">Actas CSV</a>
-					<a class="secondary-action" th:href="@{/api/v1/reportes/ubicaciones.csv(query=${filtroQuery})}">Ubicaciones CSV</a>
-				</div>
+			<!-- ==========================================================
+			     PESTAÑA 2: Exportaciones CSV con Filtros
+			     ========================================================== -->
+			<div class="tab-pane" id="pane-exportar" role="tabpanel" aria-labelledby="tab-btn-exportar">
+				<section class="attributes-section" aria-labelledby="reportes-export-title">
+					<div class="section-header">
+						<div>
+							<h2 id="reportes-export-title" style="margin: 0; font-size: 1.1rem;">Exportaciones CSV</h2>
+							<p class="section-note">Genera archivos compatibles con planillas de cálculo (Excel, LibreOffice) para enviar a administración.</p>
+						</div>
+						<span class="count-badge" th:if="${puedeExportarReportes}">Exportación Habilitada</span>
+					</div>
 
-				<p class="empty-state" th:if="${!puedeExportarReportes}">El usuario actual puede ver reportes, pero no exportarlos.</p>
-			</section>
+					<form class="search-form dashboard-filter-form" th:action="@{/admin/reportes}" method="get" role="search"
+						  style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+						<label>
+							<span>Filtro CSV</span>
+							<input type="search" name="query" th:value="${filtroQuery}" maxlength="120" placeholder="Filtrar por fuero, juzgado, custodio o responsable...">
+						</label>
+						<div class="form-actions">
+							<button class="primary-action" type="submit">Aplicar filtro</button>
+							<a class="secondary-action" th:href="@{/admin/reportes}">Limpiar</a>
+						</div>
+					</form>
+
+					<div class="admin-actions" th:if="${puedeExportarReportes}" style="display: flex; gap: 10px; flex-wrap: wrap;">
+						<a class="primary-action" th:href="@{/api/v1/reportes/muebles.csv(query=${filtroQuery})}" style="font-size: 0.9rem; padding: 8px 16px;">
+							📥 Muebles CSV
+						</a>
+						<a class="secondary-action" th:href="@{/api/v1/reportes/patrimonio.csv(query=${filtroQuery})}" style="font-size: 0.9rem; padding: 8px 16px;">
+							📥 Patrimonio CSV
+						</a>
+						<a class="secondary-action" th:href="@{/api/v1/reportes/tareas.csv(query=${filtroQuery})}" style="font-size: 0.9rem; padding: 8px 16px;">
+							📥 Tareas CSV
+						</a>
+						<a class="secondary-action" th:href="@{/api/v1/reportes/actas.csv(query=${filtroQuery})}" style="font-size: 0.9rem; padding: 8px 16px;">
+							📥 Actas CSV
+						</a>
+						<a class="secondary-action" th:href="@{/api/v1/reportes/ubicaciones.csv(query=${filtroQuery})}" style="font-size: 0.9rem; padding: 8px 16px;">
+							📥 Ubicaciones CSV
+						</a>
+					</div>
+
+					<p class="empty-state" th:if="${!puedeExportarReportes}">
+						El usuario actual puede ver el resumen de reportes, pero no tiene permisos para descargar los CSV.
+					</p>
+				</section>
+			</div>
 		</section>
 	</main>
+
+	<!-- Script de Pestañas Interactivas -->
+	<script>
+		function switchTab(tabId) {
+			const tabs = ['resumen', 'exportar'];
+			tabs.forEach(function(id) {
+				const btn = document.getElementById('tab-btn-' + id);
+				const pane = document.getElementById('pane-' + id);
+				if (btn && pane) {
+					if (id === tabId) {
+						btn.classList.add('is-active');
+						btn.setAttribute('aria-selected', 'true');
+						pane.classList.add('is-active');
+					} else {
+						btn.classList.remove('is-active');
+						btn.setAttribute('aria-selected', 'false');
+						pane.classList.remove('is-active');
+					}
+				}
+			});
+			if (history.replaceState) {
+				history.replaceState(null, null, '#tab-' + tabId);
+			}
+		}
+
+		// Leer hash inicial al cargar
+		window.addEventListener('DOMContentLoaded', function() {
+			const hash = window.location.hash;
+			if (hash === '#tab-exportar') {
+				switchTab('exportar');
+			} else if (hash === '#tab-resumen') {
+				switchTab('resumen');
+			}
+		});
+	</script>
 </body>
 </html>

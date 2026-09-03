@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,13 +7,97 @@
 	<link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
-	<main class="shell">
+	<main class="shell shell-wide">
 		<section class="status-panel" aria-labelledby="system-title">
 			<header th:replace="~{admin/nav :: topbar('Centro Judicial San Pedro', ${applicationName}, 'panel')}"></header>
-			<div class="status-row">
+
+			<div class="status-row" style="margin-bottom: 16px;">
 				<span class="status-dot" aria-hidden="true"></span>
-				<span>Sistema operativo</span>
+				<span style="font-weight: 600; color: #166534;">Sistema en línea y operativo</span>
 			</div>
+
+			<!-- 🧭 LA BRÚJULA DEL OPERADOR: Recorrido Natural de los Circuitos Judiciales e Informáticos -->
+			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 16px; background: #f8fafc; border: 2px solid #2563eb; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+					<div style="display: flex; align-items: center; gap: 12px;">
+						<span style="font-size: 1.8rem;">🧭</span>
+						<div>
+							<strong style="font-size: 1.15rem; color: #0f172a; display: block;">Brújula Operativa: Circuitos Naturales del Sistema</strong>
+							<span style="font-size: 0.88rem; color: #475569;">Guía rápida para saber a qué módulo acudir según la tarea que necesitas realizar:</span>
+						</div>
+					</div>
+					<span class="authorization-badge is-authorized">FLUJOS INTEGRADOS</span>
+				</div>
+
+				<!-- Las 3 Rutas Naturales -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+					<!-- Ruta 1: Informática y Gemelo Digital -->
+					<div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+						<div>
+							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+								<span style="font-size: 1.2rem;">💻</span>
+								<strong style="color: #1e40af; font-size: 0.98rem;">1. Circuito Técnico de Equipos</strong>
+							</div>
+							<p style="margin: 0 0 12px; font-size: 0.83rem; color: #334155; line-height: 1.45;">
+								Detección de PCs vía script PowerShell, fijación de línea base oficial (Gemelo Digital), armado de piezas en taller y control de diferencias.
+							</p>
+							<div style="background: #eff6ff; border-radius: 6px; padding: 10px; font-size: 0.8rem; color: #1e3a8a; margin-bottom: 12px;">
+								<strong>Recorrido:</strong> Script PS ➔ Equipos ➔ Taller/Órdenes ➔ Stock ➔ Diferencias
+							</div>
+						</div>
+						<div style="display: flex; gap: 6px; flex-wrap: wrap;" th:if="${canViewEquipos != null ? canViewEquipos : true}">
+							<a class="primary-action" th:href="@{/admin/equipos}" style="font-size: 0.8rem; padding: 5px 10px;">🖥️ Equipos</a>
+							<a class="secondary-action" th:if="${canViewOrdenesArmado != null ? canViewOrdenesArmado : true}" th:href="@{/admin/ordenes-armado}" style="font-size: 0.8rem; padding: 5px 9px;">🛠️ Órdenes</a>
+							<a class="secondary-action" th:if="${canViewDashboardDiferencias != null ? canViewDashboardDiferencias : true}" th:href="@{/admin/dashboard-diferencias}" style="font-size: 0.8rem; padding: 5px 9px;">📊 Diferencias</a>
+						</div>
+					</div>
+
+					<!-- Ruta 2: Patrimonio, Mobiliario y Actas -->
+					<div style="background: #ffffff; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+						<div>
+							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+								<span style="font-size: 1.2rem;">🏛️</span>
+								<strong style="color: #166534; font-size: 0.98rem;">2. Circuito Patrimonial y Legal</strong>
+							</div>
+							<p style="margin: 0 0 12px; font-size: 0.83rem; color: #334155; line-height: 1.45;">
+								Inventario de bienes con chapa patrimonial PJ, mobiliario de juzgados, asignación formal a custodios y emisión de Actas en PDF listas para firmar.
+							</p>
+							<div style="background: #f0fdf4; border-radius: 6px; padding: 10px; font-size: 0.8rem; color: #14532d; margin-bottom: 12px;">
+								<strong>Recorrido:</strong> Alta Bien PJ ➔ Asignar Funcionario ➔ Ubicación ➔ Acta PDF
+							</div>
+						</div>
+						<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+							<a class="primary-action" th:if="${canViewPatrimonio != null ? canViewPatrimonio : true}" th:href="@{/admin/patrimonio}" style="font-size: 0.8rem; padding: 5px 10px; background: #16a34a;">🏛️ Patrimonio</a>
+							<a class="secondary-action" th:if="${canViewActas != null ? canViewActas : true}" th:href="@{/admin/actas}" style="font-size: 0.8rem; padding: 5px 9px;">📋 Actas PDF</a>
+							<a class="secondary-action" th:if="${canViewMuebles != null ? canViewMuebles : true}" th:href="@{/admin/muebles}" style="font-size: 0.8rem; padding: 5px 9px;">🪑 Muebles</a>
+						</div>
+					</div>
+
+					<!-- Ruta 3: Soporte, Depósito y Auditoría -->
+					<div style="background: #ffffff; border: 1px solid #fed7aa; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+						<div>
+							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+								<span style="font-size: 1.2rem;">📦</span>
+								<strong style="color: #c2410c; font-size: 0.98rem;">3. Depósito, Tareas y Control</strong>
+							</div>
+							<p style="margin: 0 0 12px; font-size: 0.83rem; color: #334155; line-height: 1.45;">
+								Recepción de repuestos en depósito (memorias, discos), apertura y cierre de tareas técnicas, sedes judiciales y exportaciones de reportes ejecutivos.
+							</p>
+							<div style="background: #fff7ed; border-radius: 6px; padding: 10px; font-size: 0.8rem; color: #7c2d12; margin-bottom: 12px;">
+								<strong>Recorrido:</strong> Depósito Stock ➔ Tareas ➔ Ubicaciones ➔ Reportes
+							</div>
+						</div>
+						<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+							<a class="primary-action" th:if="${canViewStock != null ? canViewStock : true}" th:href="@{/admin/stock}" style="font-size: 0.8rem; padding: 5px 10px; background: #ea580c;">📦 Stock</a>
+							<a class="secondary-action" th:if="${canViewTareas != null ? canViewTareas : true}" th:href="@{/admin/tareas}" style="font-size: 0.8rem; padding: 5px 9px;">🔧 Tareas</a>
+							<a class="secondary-action" th:if="${canViewUbicaciones != null ? canViewUbicaciones : true}" th:href="@{/admin/ubicaciones}" style="font-size: 0.8rem; padding: 5px 9px;">🏢 Sedes</a>
+							<a class="secondary-action" th:if="${canViewAuditoria != null ? canViewAuditoria : true}" th:href="@{/admin/auditoria}" style="font-size: 0.8rem; padding: 5px 9px;">🛡️ Auditoría</a>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Estado del Runtime del Sistema -->
 			<section class="runtime-section" aria-labelledby="runtime-title">
 				<div class="section-header">
 					<h2 id="runtime-title">Modo de trabajo</h2>
@@ -30,40 +114,42 @@
 						<dd th:text="${runtimeMode.baseDatos}">MySQL local</dd>
 					</div>
 					<div>
-						<dt>Conexion</dt>
+						<dt>Conexión</dt>
 						<dd th:text="${runtimeMode.baseDatosUrl}">mysql://127.0.0.1:3306/inventario_modular</dd>
 					</div>
 					<div>
-						<dt>Autenticacion</dt>
+						<dt>Autenticación</dt>
 						<dd th:text="${runtimeMode.autenticacion}">Usuarios locales</dd>
 					</div>
 				</dl>
-				<p class="empty-state" th:text="${runtimeMode.mensaje}">
+				<p class="empty-state" th:text="${runtimeMode.mensaje}" style="margin-top: 10px;">
 					Modo local/fallback: se usan usuarios locales y base local disponible.
 				</p>
 			</section>
+
+			<!-- Módulos Habilitados para el Usuario -->
 			<section class="modules-section" aria-labelledby="modules-title">
 				<div class="section-header">
-					<h2 id="modules-title">Modulos habilitados</h2>
+					<h2 id="modules-title">Módulos habilitados</h2>
 					<span class="authorization-badge" th:classappend="${authorized} ? ' is-authorized' : ' is-pending'"
-							th:text="${authorized} ? 'Autorizado' : 'Pendiente de autorizacion'">
+							th:text="${authorized} ? 'Autorizado' : 'Pendiente de autorización'">
 						Autorizado
 					</span>
 				</div>
 				<p class="empty-state" th:if="${#lists.isEmpty(modules)}">
-					Este usuario todavia no tiene modulos asignados en Inventario Modular.
+					Este usuario todavía no tiene módulos asignados en Inventario Modular.
 				</p>
 				<div class="modules-grid" th:if="${!#lists.isEmpty(modules)}">
 					<article class="module-card" th:each="module : ${modules}">
 						<h3 th:text="${module.nombre}">Equipos</h3>
-						<p th:text="${module.descripcion}">Inventario tecnico de computadoras.</p>
+						<p th:text="${module.descripcion}">Inventario técnico de computadoras.</p>
 						<div class="permission-list" aria-label="Permisos">
 							<span th:each="permission : ${module.permisos}" th:text="${permission}">VER</span>
 						</div>
 					</article>
 				</div>
 			</section>
-			<p class="version">Version <span th:text="${version}">0.0.1-SNAPSHOT</span></p>
+			<p class="version">Versión <span th:text="${version}">0.0.1-SNAPSHOT</span></p>
 		</section>
 	</main>
 </body>

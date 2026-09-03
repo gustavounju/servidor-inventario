@@ -9,215 +9,379 @@
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="ubicaciones-title">
-			<header th:replace="~{admin/nav :: topbar('Modulo funcional', 'Ubicaciones', 'ubicaciones')}"></header>
+			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Sedes y Ubicaciones Judiciales', 'ubicaciones')}"></header>
 
-			<p class="success-message" th:if="${creado}">Ubicacion actualizada correctamente.</p>
+			<!-- Barra de Acciones Rápidas y Navegación Cruzada -->
+			<nav class="quick-nav-bar" aria-label="Navegación contextual de ubicaciones">
+				<div class="quick-nav-group">
+					<a class="secondary-action" th:href="@{/admin/equipos}">
+						🖥️ Equipos
+					</a>
+					<a class="secondary-action" th:href="@{/admin/patrimonio}">
+						🏛️ Patrimonio
+					</a>
+					<a class="secondary-action" th:href="@{/admin/muebles}">
+						🪑 Muebles
+					</a>
+					<a class="secondary-action" th:href="@{/admin/actas}">
+						📋 Actas
+					</a>
+				</div>
+				<div class="quick-nav-group">
+					<span class="count-badge" th:text="${#lists.size(ubicaciones)} + ' sedes/despachos'">0 ubicaciones</span>
+				</div>
+			</nav>
 
-			<form class="search-form dashboard-filter-form" th:action="@{/admin/ubicaciones}" method="get">
-				<label>
-					<span>Buscar</span>
-					<input type="search" name="query" th:value="${filtroQuery}" maxlength="120">
-				</label>
-				<label>
-					<span>Tipo</span>
-					<select name="tipo">
-						<option value="">Todos</option>
-						<option th:each="tipo : ${tiposUbicacion}" th:value="${tipo}" th:text="${tipo}"
-								th:selected="${tipo == filtroTipo}">OFICINA</option>
-					</select>
-				</label>
-				<label>
-					<span>Estado</span>
-					<select name="estado">
-						<option value="">Todos</option>
-						<option th:each="estado : ${estadosUbicacion}" th:value="${estado}" th:text="${estado}"
-								th:selected="${estado == filtroEstado}">ACTIVA</option>
-					</select>
-				</label>
-				<button class="secondary-action" type="submit">Filtrar</button>
-			</form>
+			<!-- Mensaje de Éxito -->
+			<p class="success-message" th:if="${creado}">Ubicación actualizada o registrada correctamente.</p>
 
-			<section class="modules-section" aria-labelledby="ubicaciones-list-title">
-				<div class="section-header">
-					<div>
-						<h2 id="ubicaciones-list-title">Ubicaciones registradas</h2>
-						<p class="section-note">Oficinas, depositos, salas y racks donde se asignan bienes.</p>
+			<!-- 🚀 GUÍA COMPACTA Y CLARA: Estructura de Sedes Judiciales -->
+			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
+				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+					<div style="display: flex; align-items: center; gap: 12px;">
+						<span style="font-size: 1.6rem;">🏢</span>
+						<div>
+							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Organización Territorial: Circuito de Ubicaciones</strong>
+							<span style="font-size: 0.85rem; color: #475569;">Estructura de edificios, juzgados, secretarías, depósitos y salas de audiencia:</span>
+						</div>
 					</div>
-					<span class="count-badge" th:text="${#lists.size(ubicaciones)} + ' ubicaciones'">0 ubicaciones</span>
+					<span class="authorization-badge is-authorized">ESTRUCTURA EDILICIA</span>
 				</div>
 
-				<p class="empty-state" th:if="${#lists.isEmpty(ubicaciones)}">Todavia no hay ubicaciones con esos filtros.</p>
+				<!-- 3 Pasos del Circuito -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+					<!-- Paso 1 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
+							<strong style="color: #1e3a8a; font-size: 0.9rem;">Definición y Código</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Alta del espacio físico con su código normalizado (ej: <code>INF-OFI</code> o <code>JUZ-CIV-1</code>).
+						</p>
+					</div>
 
-				<div class="responsive-table" th:if="${!#lists.isEmpty(ubicaciones)}">
-					<table>
-						<thead>
-							<tr>
-								<th scope="col">Codigo</th>
-								<th scope="col">Ubicacion</th>
-								<th scope="col">Edificio</th>
-								<th scope="col">Responsable</th>
-								<th scope="col">Estado</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr th:each="ubicacion : ${ubicaciones}">
-								<td data-label="Codigo" th:text="${ubicacion.codigo}">INF-OFI</td>
-								<td data-label="Ubicacion">
-									<strong th:text="${ubicacion.nombre}">Informatica</strong>
-									<span class="table-subtext" th:text="${ubicacion.tipo}">OFICINA</span>
-									<span class="table-subtext" th:if="${ubicacion.observaciones}" th:text="${ubicacion.observaciones}">Observaciones</span>
-								</td>
-								<td data-label="Edificio">
-									<span th:text="${ubicacion.edificio ?: 'Sin edificio'}">Central</span>
-									<span class="table-subtext" th:text="${ubicacion.piso ?: 'Sin piso'}">PB</span>
-								</td>
-								<td data-label="Responsable">
-									<span th:text="${ubicacion.responsable ?: 'Sin responsable'}">admin.local</span>
-									<span class="table-subtext" th:text="${ubicacion.fuero ?: 'Sin fuero'}">Informatica</span>
-								</td>
-								<td data-label="Estado">
-									<span class="authorization-badge" th:classappend="${ubicacion.activo} ? ' is-authorized' : ' is-pending'"
-											th:text="${ubicacion.estado}">ACTIVA</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
+					<!-- Paso 2 -->
+					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
+							<strong style="color: #0369a1; font-size: 0.9rem;">Fuero, Edificio y Piso</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Geolocalización interna: Centro Judicial San Pedro, piso y fuero judicial al que pertenece.
+						</p>
+					</div>
+
+					<!-- Paso 3 -->
+					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
+							<strong style="color: #15803d; font-size: 0.9rem;">Asignación de Bienes</strong>
+						</div>
+						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+							Esta ubicación queda disponible para vincular computadoras, bienes patrimoniales y muebles.
+						</p>
+					</div>
 				</div>
 			</section>
 
-			<section class="attributes-section" th:if="${puedeEditarUbicaciones and !#lists.isEmpty(ubicaciones)}" aria-labelledby="ubicaciones-edit-title">
-				<div class="section-header">
-					<div>
-						<h2 id="ubicaciones-edit-title">Editar ubicaciones cargadas</h2>
-						<p class="section-note">Ajuste responsable, fuero, edificio o estado operativo.</p>
-					</div>
-				</div>
+			<!-- Pestañas de Navegación Limpias (Sin scroll infinito) -->
+			<ul class="subnav-tabs" role="tablist">
+				<li>
+					<button type="button" class="subnav-tab is-active" id="tab-btn-catalogo" onclick="switchTab('catalogo')" role="tab" aria-selected="true" aria-controls="pane-catalogo">
+						📋 Ubicaciones registradas
+						<span class="tab-badge" th:text="${#lists.size(ubicaciones)}">0</span>
+					</button>
+				</li>
+				<li th:if="${puedeEditarUbicaciones}">
+					<button type="button" class="subnav-tab" id="tab-btn-nuevo" onclick="switchTab('nuevo')" role="tab" aria-selected="false" aria-controls="pane-nuevo">
+						➕ Cargar ubicación
+					</button>
+				</li>
+				<li th:if="${puedeEditarUbicaciones and !#lists.isEmpty(ubicaciones)}">
+					<button type="button" class="subnav-tab" id="tab-btn-editar" onclick="switchTab('editar')" role="tab" aria-selected="false" aria-controls="pane-editar">
+						✏️ Editar ubicaciones cargadas
+					</button>
+				</li>
+			</ul>
 
-				<div class="edit-stack">
-					<form class="equipment-form inline-edit-card" th:each="ubicacion : ${ubicaciones}"
-							th:action="@{/admin/ubicaciones/{id}(id=${ubicacion.id})}" method="post">
-						<div class="section-header">
-							<h2 th:text="${ubicacion.codigo}">INF-OFI</h2>
-							<span class="count-badge" th:text="'ID ' + ${ubicacion.id}">ID 1</span>
+			<!-- ==========================================================
+			     PESTAÑA 1: Listado de Ubicaciones y Filtros
+			     ========================================================== -->
+			<div class="tab-pane is-active" id="pane-catalogo" role="tabpanel" aria-labelledby="tab-btn-catalogo">
+				<form class="search-form dashboard-filter-form" th:action="@{/admin/ubicaciones}" method="get" role="search"
+					  style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+					<label>
+						<span>Buscar</span>
+						<input type="search" name="query" th:value="${filtroQuery}" maxlength="120" placeholder="Código, nombre, fuero o responsable...">
+					</label>
+					<label>
+						<span>Tipo</span>
+						<select name="tipo">
+							<option value="">Todos los tipos</option>
+							<option th:each="tipo : ${tiposUbicacion}" th:value="${tipo}" th:text="${tipo}"
+									th:selected="${tipo == filtroTipo}">OFICINA</option>
+						</select>
+					</label>
+					<label>
+						<span>Estado</span>
+						<select name="estado">
+							<option value="">Todos los estados</option>
+							<option th:each="estado : ${estadosUbicacion}" th:value="${estado}" th:text="${estado}"
+									th:selected="${estado == filtroEstado}">ACTIVA</option>
+						</select>
+					</label>
+					<div class="form-actions">
+						<button class="primary-action" type="submit">🔍 Filtrar</button>
+					</div>
+				</form>
+
+				<section class="modules-section" aria-labelledby="ubicaciones-list-title">
+					<div class="section-header">
+						<div>
+							<h2 id="ubicaciones-list-title" style="margin: 0; font-size: 1.1rem;">Ubicaciones registradas</h2>
+							<p class="section-note">Oficinas, depósitos, salas de audiencia y racks donde se asignan los bienes.</p>
 						</div>
+						<button type="button" class="primary-action" th:if="${puedeEditarUbicaciones}" onclick="switchTab('nuevo')" style="font-size: 0.85rem; padding: 7px 14px;">
+							➕ Cargar ubicación
+						</button>
+					</div>
+
+					<p class="empty-state" th:if="${#lists.isEmpty(ubicaciones)}">
+						Todavía no hay ubicaciones con los filtros aplicados.
+						<a href="#tab-nuevo" onclick="switchTab('nuevo')" th:if="${puedeEditarUbicaciones}" style="color: #2563eb; font-weight: 700; text-decoration: underline;">Haz clic aquí para dar de alta la primera sede u oficina.</a>
+					</p>
+
+					<div class="responsive-table" th:if="${!#lists.isEmpty(ubicaciones)}">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Código</th>
+									<th scope="col">Ubicación / Tipo</th>
+									<th scope="col">Edificio y Piso</th>
+									<th scope="col">Responsable y Fuero</th>
+									<th scope="col">Estado</th>
+									<th scope="col" th:if="${puedeEditarUbicaciones}">Acción</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="ubicacion : ${ubicaciones}">
+									<td data-label="Código">
+										<code th:text="${ubicacion.codigo}" style="font-weight: 700; font-size: 0.92rem; color: #1e3a8a;">INF-OFI</code>
+									</td>
+									<td data-label="Ubicación">
+										<strong th:text="${ubicacion.nombre}">Informática</strong>
+										<span class="table-subtext" th:text="${ubicacion.tipo}">OFICINA</span>
+										<span class="table-subtext" th:if="${ubicacion.observaciones}" th:text="${ubicacion.observaciones}">Observaciones</span>
+									</td>
+									<td data-label="Edificio">
+										<span th:text="${ubicacion.edificio ?: 'Sin edificio'}">Central</span>
+										<span class="table-subtext" th:text="'Piso: ' + (${ubicacion.piso ?: 'PB'})">PB</span>
+									</td>
+									<td data-label="Responsable">
+										<span th:text="${ubicacion.responsable ?: 'Sin responsable'}">admin.local</span>
+										<span class="table-subtext" th:text="${ubicacion.fuero ?: 'Sin fuero'}">Informática</span>
+									</td>
+									<td data-label="Estado">
+										<span class="authorization-badge" th:classappend="${ubicacion.activo} ? ' is-authorized' : ' is-pending'"
+												th:text="${ubicacion.estado}">ACTIVA</span>
+									</td>
+									<td data-label="Acción" th:if="${puedeEditarUbicaciones}">
+										<button type="button" class="secondary-action" onclick="switchTab('editar')" style="font-size: 0.8rem; padding: 5px 9px;">
+											✏️ Modificar
+										</button>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+
+			<!-- ==========================================================
+			     PESTAÑA 2: Cargar Nueva Ubicación
+			     ========================================================== -->
+			<div class="tab-pane" id="pane-nuevo" role="tabpanel" aria-labelledby="tab-btn-nuevo" th:if="${puedeEditarUbicaciones}">
+				<section class="attributes-section" aria-labelledby="ubicacion-form-title">
+					<div class="section-header">
+						<div>
+							<h2 id="ubicacion-form-title" style="margin: 0; font-size: 1.1rem;">Cargar ubicación</h2>
+							<p class="section-note">Alta de nueva oficina, sala o depósito en el Centro Judicial.</p>
+						</div>
+					</div>
+
+					<form class="equipment-form" th:action="@{/admin/ubicaciones}" th:object="${ubicacionForm}" method="post">
 						<div class="form-grid">
 							<label>
-								<span>Codigo</span>
-								<input name="codigo" th:value="${ubicacion.codigo}" maxlength="80" required>
+								<span>Código identificador *</span>
+								<input th:field="*{codigo}" maxlength="80" placeholder="Ej: JUZ-LAB-01 / DEP-INFO" required>
+								<small class="field-error" th:if="${#fields.hasErrors('codigo')}" th:errors="*{codigo}">Error</small>
 							</label>
 							<label>
-								<span>Nombre</span>
-								<input name="nombre" th:value="${ubicacion.nombre}" maxlength="180" required>
+								<span>Nombre del despacho / dependencia *</span>
+								<input th:field="*{nombre}" maxlength="180" placeholder="Ej: Juzgado de Primera Instancia del Trabajo N° 1" required>
+								<small class="field-error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}">Error</small>
 							</label>
 							<label>
-								<span>Tipo</span>
-								<select name="tipo">
-									<option th:each="tipo : ${tiposUbicacion}" th:value="${tipo}" th:text="${tipo}"
-											th:selected="${tipo == ubicacion.tipo}">OFICINA</option>
+								<span>Tipo de espacio *</span>
+								<select th:field="*{tipo}">
+									<option th:each="tipo : ${tiposUbicacion}" th:value="${tipo}" th:text="${tipo}">OFICINA</option>
 								</select>
 							</label>
 							<label>
-								<span>Estado</span>
-								<select name="estado">
-									<option th:each="estado : ${estadosUbicacion}" th:value="${estado}" th:text="${estado}"
-											th:selected="${estado == ubicacion.estado}">ACTIVA</option>
+								<span>Estado operativo</span>
+								<select th:field="*{estado}">
+									<option th:each="estado : ${estadosUbicacion}" th:value="${estado}" th:text="${estado}">ACTIVA</option>
 								</select>
 							</label>
 							<label>
-								<span>Fuero</span>
-								<input name="fuero" th:value="${ubicacion.fuero}" maxlength="120">
+								<span>Fuero judicial</span>
+								<input th:field="*{fuero}" maxlength="120" placeholder="Ej: Laboral, Penal, Civil">
 							</label>
 							<label>
-								<span>Responsable</span>
-								<input name="responsable" th:value="${ubicacion.responsable}" maxlength="120">
+								<span>Funcionario / Juez a cargo</span>
+								<input th:field="*{responsable}" maxlength="120" placeholder="Ej: Dr. González">
 							</label>
 							<label>
 								<span>Edificio</span>
-								<input name="edificio" th:value="${ubicacion.edificio}" maxlength="120">
+								<input th:field="*{edificio}" maxlength="120" placeholder="Ej: Centro Judicial San Pedro">
 							</label>
 							<label>
-								<span>Piso</span>
-								<input name="piso" th:value="${ubicacion.piso}" maxlength="40">
+								<span>Piso / Ala</span>
+								<input th:field="*{piso}" maxlength="40" placeholder="Ej: Planta Baja / 1° Piso Ala Norte">
 							</label>
 						</div>
 						<label>
-							<span>Observaciones</span>
-							<textarea name="observaciones" maxlength="500" rows="2" th:text="${ubicacion.observaciones}"></textarea>
+							<span>Observaciones y detalles de acceso</span>
+							<textarea th:field="*{observaciones}" maxlength="500" rows="3" placeholder="Notas sobre seguridad, llaves o referencias..."></textarea>
 						</label>
-						<label class="checkbox-row">
+						<label class="checkbox-row" style="margin-top: 10px;">
 							<input name="_activo" type="hidden" value="on">
-							<input name="activo" type="checkbox" value="true" th:checked="${ubicacion.activo}">
-							<span>Ubicacion activa</span>
+							<input th:field="*{activo}" type="checkbox" checked>
+							<span>Ubicación activa en el sistema</span>
 						</label>
-						<div class="form-actions">
-							<button class="secondary-action" type="submit">Guardar cambios</button>
+						<div class="form-actions" style="margin-top: 16px;">
+							<button class="primary-action" type="submit">Guardar ubicación</button>
+							<button type="button" class="secondary-action" onclick="switchTab('catalogo')">Volver al Catálogo</button>
 						</div>
 					</form>
-				</div>
-			</section>
+				</section>
+			</div>
 
-			<section class="attributes-section" th:if="${puedeEditarUbicaciones}" aria-labelledby="ubicacion-form-title">
-				<div class="section-header">
-					<h2 id="ubicacion-form-title">Cargar ubicacion</h2>
-					<span class="count-badge">Requiere UBICACIONES:EDITAR</span>
-				</div>
+			<!-- ==========================================================
+			     PESTAÑA 3: Editar Ubicaciones Cargadas
+			     ========================================================== -->
+			<div class="tab-pane" id="pane-editar" role="tabpanel" aria-labelledby="tab-btn-editar" th:if="${puedeEditarUbicaciones and !#lists.isEmpty(ubicaciones)}">
+				<section class="attributes-section" aria-labelledby="ubicaciones-edit-title">
+					<div class="section-header">
+						<div>
+							<h2 id="ubicaciones-edit-title" style="margin: 0; font-size: 1.1rem;">Editar ubicaciones cargadas</h2>
+							<p class="section-note">Ajusta responsable, fuero, edificio o estado operativo de cada sede.</p>
+						</div>
+					</div>
 
-				<form class="equipment-form" th:action="@{/admin/ubicaciones}" th:object="${ubicacionForm}" method="post">
-					<div class="form-grid">
-						<label>
-							<span>Codigo</span>
-							<input th:field="*{codigo}" maxlength="80" required>
-							<small class="field-error" th:if="${#fields.hasErrors('codigo')}" th:errors="*{codigo}">Error</small>
-						</label>
-						<label>
-							<span>Nombre</span>
-							<input th:field="*{nombre}" maxlength="180" required>
-							<small class="field-error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}">Error</small>
-						</label>
-						<label>
-							<span>Tipo</span>
-							<select th:field="*{tipo}">
-								<option th:each="tipo : ${tiposUbicacion}" th:value="${tipo}" th:text="${tipo}">OFICINA</option>
-							</select>
-						</label>
-						<label>
-							<span>Estado</span>
-							<select th:field="*{estado}">
-								<option th:each="estado : ${estadosUbicacion}" th:value="${estado}" th:text="${estado}">ACTIVA</option>
-							</select>
-						</label>
-						<label>
-							<span>Fuero</span>
-							<input th:field="*{fuero}" maxlength="120">
-						</label>
-						<label>
-							<span>Responsable</span>
-							<input th:field="*{responsable}" maxlength="120">
-						</label>
-						<label>
-							<span>Edificio</span>
-							<input th:field="*{edificio}" maxlength="120">
-						</label>
-						<label>
-							<span>Piso</span>
-							<input th:field="*{piso}" maxlength="40">
-						</label>
+					<div class="edit-stack">
+						<form class="equipment-form inline-edit-card" th:each="ubicacion : ${ubicaciones}"
+								th:action="@{/admin/ubicaciones/{id}(id=${ubicacion.id})}" method="post"
+								style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+							<div class="section-header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">
+								<h3 th:text="${ubicacion.codigo} + ' - ' + ${ubicacion.nombre}" style="margin: 0; font-size: 1.05rem; color: #1e3a8a;">INF-OFI</h3>
+								<span class="count-badge" th:text="'ID ' + ${ubicacion.id}">ID 1</span>
+							</div>
+							<div class="form-grid">
+								<label>
+									<span>Código</span>
+									<input name="codigo" th:value="${ubicacion.codigo}" maxlength="80" required>
+								</label>
+								<label>
+									<span>Nombre</span>
+									<input name="nombre" th:value="${ubicacion.nombre}" maxlength="180" required>
+								</label>
+								<label>
+									<span>Tipo</span>
+									<select name="tipo">
+										<option th:each="tipo : ${tiposUbicacion}" th:value="${tipo}" th:text="${tipo}"
+												th:selected="${tipo == ubicacion.tipo}">OFICINA</option>
+									</select>
+								</label>
+								<label>
+									<span>Estado</span>
+									<select name="estado">
+										<option th:each="estado : ${estadosUbicacion}" th:value="${estado}" th:text="${estado}"
+												th:selected="${estado == ubicacion.estado}">ACTIVA</option>
+									</select>
+								</label>
+								<label>
+									<span>Fuero</span>
+									<input name="fuero" th:value="${ubicacion.fuero}" maxlength="120">
+								</label>
+								<label>
+									<span>Responsable</span>
+									<input name="responsable" th:value="${ubicacion.responsable}" maxlength="120">
+								</label>
+								<label>
+									<span>Edificio</span>
+									<input name="edificio" th:value="${ubicacion.edificio}" maxlength="120">
+								</label>
+								<label>
+									<span>Piso</span>
+									<input name="piso" th:value="${ubicacion.piso}" maxlength="40">
+								</label>
+							</div>
+							<label>
+								<span>Observaciones</span>
+								<textarea name="observaciones" maxlength="500" rows="2" th:text="${ubicacion.observaciones}"></textarea>
+							</label>
+							<label class="checkbox-row" style="margin-top: 8px;">
+								<input name="_activo" type="hidden" value="on">
+								<input name="activo" type="checkbox" value="true" th:checked="${ubicacion.activo}">
+								<span>Ubicación activa</span>
+							</label>
+							<div class="form-actions" style="margin-top: 12px;">
+								<button class="secondary-action" type="submit">Guardar cambios</button>
+							</div>
+						</form>
 					</div>
-					<label>
-						<span>Observaciones</span>
-						<textarea th:field="*{observaciones}" maxlength="500" rows="3"></textarea>
-					</label>
-					<label class="checkbox-row">
-						<input name="_activo" type="hidden" value="on">
-						<input th:field="*{activo}" type="checkbox">
-						<span>Ubicacion activa</span>
-					</label>
-					<div class="form-actions">
-						<button class="primary-action" type="submit">Guardar ubicacion</button>
-					</div>
-				</form>
-			</section>
+				</section>
+			</div>
 		</section>
 	</main>
+
+	<!-- Script de Pestañas Interactivas -->
+	<script>
+		function switchTab(tabId) {
+			const tabs = ['catalogo', 'nuevo', 'editar'];
+			tabs.forEach(function(id) {
+				const btn = document.getElementById('tab-btn-' + id);
+				const pane = document.getElementById('pane-' + id);
+				if (btn && pane) {
+					if (id === tabId) {
+						btn.classList.add('is-active');
+						btn.setAttribute('aria-selected', 'true');
+						pane.classList.add('is-active');
+					} else {
+						btn.classList.remove('is-active');
+						btn.setAttribute('aria-selected', 'false');
+						pane.classList.remove('is-active');
+					}
+				}
+			});
+			if (history.replaceState) {
+				history.replaceState(null, null, '#tab-' + tabId);
+			}
+		}
+
+		// Leer hash inicial al cargar
+		window.addEventListener('DOMContentLoaded', function() {
+			const hash = window.location.hash;
+			if (hash === '#tab-nuevo') {
+				switchTab('nuevo');
+			} else if (hash === '#tab-editar') {
+				switchTab('editar');
+			} else if (hash === '#tab-catalogo') {
+				switchTab('catalogo');
+			}
+		});
+	</script>
 </body>
 </html>
