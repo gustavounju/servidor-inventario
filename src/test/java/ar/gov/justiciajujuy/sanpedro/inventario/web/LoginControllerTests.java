@@ -28,18 +28,15 @@ class LoginControllerTests {
 	private MockMvc mockMvc;
 
 	@Test
-	void muestraComandoDeInventarioParaCopiarDesdeLogin() throws Exception {
+	void muestraFormularioDeLoginSinComandoDeInventario() throws Exception {
 		mockMvc.perform(get("/login"))
 			.andExpect(status().isOk())
 			.andExpect(view().name("login"))
-			.andExpect(content().string(containsString("Copiar comando")))
-			.andExpect(content().string(containsString("/scripts/windows/inventario-modular.ps1")))
-			.andExpect(content().string(containsString("/scripts/windows/inventario-modular.ps1.sha256")))
-			.andExpect(content().string(containsString("New-Object Net.WebClient")))
-			.andExpect(content().string(org.hamcrest.Matchers.not(containsString("iwr"))))
-			.andExpect(content().string(containsString("SHA-256 invalido")))
-			.andExpect(content().string(containsString("-ExecutionPolicy Bypass")))
-			.andExpect(content().string(containsString("/api/v1/equipos/inventario")));
+			.andExpect(content().string(containsString("Usuario")))
+			.andExpect(content().string(containsString("Clave")))
+			.andExpect(content().string(containsString("Ingresar")))
+			.andExpect(content().string(org.hamcrest.Matchers.not(containsString("Copiar comando"))))
+			.andExpect(content().string(org.hamcrest.Matchers.not(containsString("inventory-command"))));
 	}
 
 	@Test

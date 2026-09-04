@@ -20,13 +20,19 @@
 					<a class="secondary-action" th:href="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}">
 						📜 Auditoría y Movimientos
 					</a>
-					<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
+					<!-- Órdenes de Armado: Solo disponible tras registrar el Gemelo Digital -->
+					<a class="secondary-action" th:if="${puedeVerOrdenes and tieneRelevamientoInicial}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
 						🛠️ Órdenes de Armado (<span th:text="${#lists.size(ordenesArmado)}">0</span>)
 					</a>
-					<a class="secondary-action" th:href="@{/admin/dashboard-diferencias}">
+					<span class="secondary-action is-disabled" th:if="${puedeVerOrdenes and !tieneRelevamientoInicial}" style="opacity: 0.5; cursor: not-allowed;" title="Primero debes registrar el Gemelo Digital oficial de esta PC">
+						🛠️ Órdenes (Bloqueado)
+					</span>
+					<!-- Tablero de Diferencias: Disponible si tiene Gemelo oficial -->
+					<a class="secondary-action" th:if="${tieneRelevamientoInicial}" th:href="@{/admin/dashboard-diferencias}">
 						📊 Tablero de Diferencias
 					</a>
-					<a class="secondary-action" th:href="@{/admin/actas}">
+					<!-- Actas: Disponible tras tener Gemelo oficial -->
+					<a class="secondary-action" th:if="${tieneRelevamientoInicial}" th:href="@{/admin/actas}">
 						📋 Actas
 					</a>
 				</div>
@@ -197,14 +203,17 @@
 						Gemelo Digital registrado. Los componentes detectados son la configuración oficial esperada del equipo.
 					</p>
 					<p class="step-desc" th:unless="${tieneRelevamientoInicial}">
-						El script detectó los componentes en vivo. Falta confirmarlos como el Gemelo Digital oficial de la PC.
+						El script detectó los componentes en vivo. Confírmalos como el Gemelo Digital oficial de la PC.
 					</p>
 					<div class="step-action-area">
-						<form th:if="${puedeEditarComponentes}" th:action="@{/admin/equipos/{id}/componentes/consolidar-relevamiento-inicial(id=${equipo.id})}" method="post" style="margin:0; width:100%;">
-							<button class="primary-action" type="submit" style="width: 100%; font-size: 0.85rem; padding: 7px 10px; background: #16a34a;">
-								Registrar componentes como Gemelo Digital
+						<form th:if="${!tieneRelevamientoInicial and puedeEditarComponentes}" th:action="@{/admin/equipos/{id}/componentes/consolidar-relevamiento-inicial(id=${equipo.id})}" method="post" style="margin:0; width:100%;">
+							<button class="primary-action" type="submit" style="width: 100%; font-size: 0.85rem; padding: 7px 10px; background: #16a34a; border-color: #15803d; cursor: pointer;">
+								✅ Registrar como Gemelo Digital
 							</button>
 						</form>
+						<span th:if="${tieneRelevamientoInicial}" style="color: #166534; font-size: 0.82rem; font-weight: 700;">
+							Línea base confirmada
+						</span>
 					</div>
 				</div>
 
@@ -219,28 +228,38 @@
 						Planifica cambios de hardware, salidas de Stock de componentes y armado para este equipo.
 					</p>
 					<div class="step-action-area">
-						<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
+						<a class="secondary-action" th:if="${puedeVerOrdenes and tieneRelevamientoInicial}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
 							🛠️ Gestionar Órdenes
 						</a>
+						<button class="secondary-action is-disabled" th:if="${puedeVerOrdenes and !tieneRelevamientoInicial}" disabled style="width: 100%; opacity: 0.5; cursor: not-allowed; font-size: 0.82rem; padding: 7px 10px;" title="Disponible tras registrar el Gemelo Digital">
+							🔒 Requiere Paso 1
+						</button>
 					</div>
 				</div>
 
 				<!-- Paso 3: Gemelo Digital y Comparación -->
-				<div class="workflow-step" th:classappend="${diferenciasCount == 0} ? ' is-done' : ' is-current'">
+				<div class="workflow-step" th:classappend="${tieneRelevamientoInicial and diferenciasCount == 0} ? ' is-done' : ''">
 					<div class="step-header">
 						<span class="step-badge">3</span>
-						<span class="authorization-badge" th:classappend="${diferenciasCount == 0} ? ' is-authorized' : ' is-pending'"
+						<span th:if="${tieneRelevamientoInicial}" class="authorization-badge" th:classappend="${diferenciasCount == 0} ? ' is-authorized' : ' is-pending'"
 							  th:text="${diferenciasCount == 0} ? 'COINCIDE 100%' : (${diferenciasCount} + ' DIFERENCIAS')">
 							COINCIDE
 						</span>
+						<span th:unless="${tieneRelevamientoInicial}" class="count-badge">PAUSADO</span>
 					</div>
-					<h3 class="step-title">Gemelo Digital</h3>
-					<p class="step-desc">
-						Cruce automático: lo esperado (relevamiento + órdenes) vs lo detectado por el script en vivo.
+					<h3 class="step-title">Comparación en Vivo</h3>
+					<p class="step-desc" th:if="${tieneRelevamientoInicial}">
+						Cruce automático: lo esperado (Gemelo oficial) vs lo detectado por el script en vivo.
+					</p>
+					<p class="step-desc" th:unless="${tieneRelevamientoInicial}">
+						Se activará automáticamente una vez fijado el Gemelo Digital oficial.
 					</p>
 					<div class="step-action-area">
-						<button type="button" class="secondary-action" onclick="switchTab('gemelo')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+						<button type="button" class="secondary-action" th:if="${tieneRelevamientoInicial}" onclick="switchTab('gemelo')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
 							🔍 Ver Comparación
+						</button>
+						<button class="secondary-action is-disabled" th:unless="${tieneRelevamientoInicial}" disabled style="width: 100%; opacity: 0.5; cursor: not-allowed; font-size: 0.82rem; padding: 7px 10px;" title="Disponible tras registrar el Gemelo Digital">
+							🔒 Esperando Gemelo
 						</button>
 					</div>
 				</div>
@@ -403,6 +422,23 @@
 			     PESTAÑA 2: Gemelo Digital y Componentes
 			     ========================================================== -->
 			<div class="tab-pane" id="pane-gemelo" role="tabpanel" aria-labelledby="tab-btn-gemelo">
+				<!-- Banner Deductivo: Si aún no tiene Gemelo Oficial -->
+				<div class="workflow-banner" th:unless="${tieneRelevamientoInicial}" style="background: #f0fdf4; border: 2px solid #16a34a; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+					<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+						<div>
+							<strong style="color: #15803d; font-size: 1.05rem;">👉 Acción Requerida: Confirmar Gemelo Digital Oficial</strong>
+							<p style="margin: 4px 0 0; font-size: 0.85rem; color: #334155;">
+								El script relevó el hardware real instalado en el equipo. Para oficializar esta configuración como línea base y habilitar órdenes o comparaciones, haz clic en el botón:
+							</p>
+						</div>
+						<form th:if="${puedeEditarComponentes}" th:action="@{/admin/equipos/{id}/componentes/consolidar-relevamiento-inicial(id=${equipo.id})}" method="post" style="margin: 0;">
+							<button class="primary-action" type="submit" style="background: #16a34a; border-color: #15803d; padding: 9px 18px; font-weight: 700; cursor: pointer;">
+								✅ Registrar como Gemelo Digital Oficial
+							</button>
+						</form>
+					</div>
+				</div>
+
 				<!-- Sección Comparación Esperado vs Detectado -->
 				<section class="attributes-section" th:if="${puedeVerComponentes}" aria-labelledby="comparacion-title">
 					<div class="section-header">
@@ -517,7 +553,7 @@
 					</div>
 
 					<!-- Formulario Colapsable para Cargar Componente Manualmente -->
-					<details class="collapsible-card" th:if="${puedeEditarComponentes}">
+					<details class="collapsible-card" th:if="${puedeEditarComponentes and tieneRelevamientoInicial}">
 						<summary class="collapsible-summary">
 							<span>➕ Cargar nuevo componente manual a este equipo</span>
 							<span class="count-badge">Opcional</span>
@@ -599,6 +635,9 @@
 							</form>
 						</div>
 					</details>
+					<p th:if="${puedeEditarComponentes and !tieneRelevamientoInicial}" class="section-note" style="color: #64748b; font-style: italic; margin-top: 14px;">
+						🔒 La carga manual de componentes adicionales se habilitará luego de confirmar el Gemelo Digital oficial.
+					</p>
 				</section>
 			</div>
 
@@ -614,12 +653,19 @@
 								Aquí puedes ver todas las órdenes de trabajo y ensamblaje planificadas para este equipo.
 							</p>
 						</div>
-						<a class="primary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
+						<a class="primary-action" th:if="${puedeVerOrdenes and tieneRelevamientoInicial}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
 							➕ Crear / Asignar Orden de Armado
 						</a>
+						<button class="primary-action is-disabled" th:if="${puedeVerOrdenes and !tieneRelevamientoInicial}" disabled style="opacity: 0.5; cursor: not-allowed;" title="Bloqueado hasta registrar Gemelo Digital">
+							🔒 Requiere Gemelo Digital Previo
+						</button>
 					</div>
 
-					<p class="empty-state" th:if="${#lists.isEmpty(ordenesArmado)}">
+					<div th:unless="${tieneRelevamientoInicial}" class="empty-state" style="background: #fefce8; border: 1px solid #fef08a; color: #854d0e; padding: 14px; border-radius: 6px; margin-bottom: 14px;">
+						⚠️ <strong>Paso previo requerido:</strong> Primero confirma los componentes detectados como el <strong>Gemelo Digital oficial</strong> de esta PC antes de planificar órdenes de armado o cambios de piezas.
+					</div>
+
+					<p class="empty-state" th:if="${tieneRelevamientoInicial and #lists.isEmpty(ordenesArmado)}">
 						Este equipo no tiene órdenes de armado registradas actualmente. Si necesitas sustituir componentes, instalar memorias o discos desde el stock, crea una orden de armado.
 					</p>
 

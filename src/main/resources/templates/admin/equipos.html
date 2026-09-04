@@ -11,97 +11,23 @@
 		<section class="status-panel admin-users-panel" aria-labelledby="equipos-title">
 			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Inventario de Equipos', 'equipos')}"></header>
 
-			<!-- Barra Superior de Accesos Rápidos -->
-			<nav class="quick-nav-bar" aria-label="Navegación rápida de equipos">
-				<div class="quick-nav-group">
-					<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}">
-						🛠️ Órdenes de Armado
-					</a>
-					<a class="secondary-action" th:if="${puedeVerStock}" th:href="@{/admin/stock}">
-						📦 Stock de Depósito
-					</a>
-					<a class="secondary-action" th:if="${puedeVerDiferencias}" th:href="@{/admin/dashboard-diferencias}">
-						📊 Tablero de Diferencias
-					</a>
-					<a class="secondary-action" th:if="${puedeVerActas}" th:href="@{/admin/actas}">
-						📋 Actas y Movimientos
-					</a>
+			<!-- Guía del Circuito Deductivo -->
+			<div class="workflow-banner" style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #2563eb; padding: 12px 16px; border-radius: 6px; margin: 12px 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+				<div style="display: flex; align-items: center; gap: 10px;">
+					<span style="font-size: 1.3rem;">💡</span>
+					<span style="font-size: 0.88rem; color: #334155;">
+						<strong>Circuito Deductivo:</strong> 1. La PC reporta por script ➔ 2. En la lista, haz clic en <strong style="color: #16a34a;">Registrar Gemelo</strong> ➔ 3. El equipo queda oficializado y listo para mantenimiento u órdenes.
+					</span>
 				</div>
-				<div class="quick-nav-group">
-					<span class="count-badge" th:text="${equipos.paginacion.totalItems} + ' equipos en catálogo'">0 equipos en catálogo</span>
-				</div>
-			</nav>
-
-			<!-- 🚀 GUÍA COMPACTA Y CLARA: Pasos a seguir para subir e incorporar una PC -->
-			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
-				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-					<div style="display: flex; align-items: center; gap: 12px;">
-						<span style="font-size: 1.6rem;">🚀</span>
-						<div>
-							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Guía Rápida: Qué hacer cuando ingresas una PC</strong>
-							<span style="font-size: 0.85rem; color: #475569;">Sigue estos 3 sencillos pasos naturales para que el equipo quede registrado y monitoreado:</span>
-						</div>
-					</div>
-					<span class="authorization-badge is-authorized">FLUJO PASO A PASO</span>
-				</div>
-
-				<!-- Los 3 Pasos Naturales en Tarjetas Claras -->
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px;">
-					<!-- Paso 1 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
-						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
-							<strong style="color: #1e3a8a; font-size: 0.9rem;">Ejecutar el script en la PC</strong>
-						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
-							Copia el comando de abajo y pégalo en <strong>PowerShell</strong> en la máquina cliente. Enviará los componentes reales automáticamente.
-						</p>
-					</div>
-
-					<!-- Paso 2 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
-						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
-							<strong style="color: #0369a1; font-size: 0.9rem;">Aparece en la tabla abajo</strong>
-						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
-							Al terminar el script, el equipo aparecerá inmediatamente en el listado inferior en estado <span class="authorization-badge is-authorized" style="font-size: 0.72rem; padding: 2px 6px;">🟢 Reportó con Éxito</span>.
-						</p>
-					</div>
-
-					<!-- Paso 3 -->
-					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
-						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
-							<strong style="color: #15803d; font-size: 0.9rem;">Hacer clic en "👉 Abrir Ficha"</strong>
-						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
-							Haz clic en el botón azul de la fila para entrar y presionar <strong>"Registrar como Gemelo Digital"</strong>. ¡Eso fija la configuración oficial esperada!
-						</p>
-					</div>
-				</div>
-
-				<!-- Barra de Comando PowerShell con Copiado Infalible -->
-				<div style="background: #0f172a; border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-					<div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 280px;">
-						<span style="color: #38bdf8; font-family: monospace; font-size: 0.85rem; font-weight: 700;">PowerShell:</span>
-						<input id="ps-cmd-input" type="text" readonly onclick="this.select();"
-							   style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 4px; padding: 6px 10px; font-family: monospace; font-size: 0.82rem; width: 100%; outline: none;"
-							   value='Invoke-WebRequest -Uri "http://10.15.2.251:8081/scripts/windows/inventario-modular.ps1" -OutFile "$env:TEMP\inventario.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\inventario.ps1" -ServerUrl "http://10.15.2.251:8081/api/v1/equipos/inventario"'>
-					</div>
-					<button id="btn-copiar-cmd" type="button" onclick="copiarComandoScript()" class="primary-action"
-							style="background: #2563eb; color: #ffffff; padding: 8px 16px; font-size: 0.85rem; font-weight: 700; white-space: nowrap; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;">
-						📋 Copiar Comando
-					</button>
-				</div>
-			</section>
+				<span class="count-badge" th:text="${equipos.paginacion.totalItems} + ' equipos en catálogo'">0 equipos en catálogo</span>
+			</div>
 
 			<!-- Catálogo de Equipos -->
 			<section class="modules-section" aria-labelledby="equipos-list-title">
 				<div class="section-header">
 					<div>
-						<h2 id="equipos-list-title">Inventario tecnico</h2>
-						<p class="section-note">Listado de equipos del parque judicial. Haz clic en <strong>"👉 Abrir Ficha"</strong> para ver sus componentes o consolidar su configuración.</p>
+						<h2 id="equipos-list-title">Inventario de Equipos</h2>
+						<p class="section-note">Parque informático del Centro Judicial. Haz clic en <strong>"Ver Ficha"</strong> o <strong>"Registrar Gemelo"</strong> para gestionar cada equipo.</p>
 					</div>
 					<div style="display: flex; align-items: center; gap: 10px;">
 						<form th:if="${puedeEditar}" th:action="@{/admin/equipos/nuevo-taller}" method="post" style="margin: 0;">
@@ -109,13 +35,7 @@
 								🔧 Iniciar Armado en Taller
 							</button>
 						</form>
-						<span class="count-badge" th:text="${equipos.paginacion.totalItems} + ' equipos'">0 equipos</span>
 					</div>
-				</div>
-
-				<div class="success-message" th:if="${importacionResultado != null}">
-					<span th:text="'Importación: ' + ${importacionResultado.importados} + '/' + ${importacionResultado.procesados} + ' filas importadas.'">Importación completada.</span>
-					<span th:each="error : ${importacionResultado.errores}" th:text="${error}">Fila 2: error</span>
 				</div>
 
 				<form class="search-form dashboard-filter-form" th:action="@{/admin/equipos}" method="get" role="search">
@@ -127,7 +47,7 @@
 				</form>
 
 				<p class="empty-state" th:if="${#lists.isEmpty(equipos.equipos)}">
-					Todavía no hay equipos para mostrar con los filtros aplicados. Ejecuta el script PowerShell en una PC para que aparezca aquí.
+					Todavía no hay equipos para mostrar con los filtros aplicados.
 				</p>
 
 				<div class="responsive-table" th:if="${!#lists.isEmpty(equipos.equipos)}">
@@ -140,7 +60,7 @@
 								<th scope="col">IP</th>
 								<th scope="col">Sistema Operativo</th>
 								<th scope="col">Gemelo / Estado</th>
-								<th scope="col">Paso Siguiente</th>
+								<th scope="col">Acciones</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -164,8 +84,11 @@
 								<td data-label="Sistema Operativo" th:text="${equipo.sistemaOperativo ?: 'Sin dato'}">Windows 11</td>
 								<td data-label="Gemelo / Estado">
 									<div style="display: flex; flex-direction: column; gap: 3px;">
-										<span th:if="${equipo.ultimoReporteEn != null}" class="authorization-badge is-authorized" style="font-size: 0.72rem; padding: 2px 6px;">
-											🟢 Reportó con Éxito
+										<span th:if="${equipo.ultimoReporteEn != null and (equiposConGemelo == null or !equiposConGemelo.contains(equipo.id))}" class="authorization-badge is-pending" style="font-size: 0.72rem; padding: 2px 6px; background: #fef9c3; color: #854d0e; border: 1px solid #fde047;">
+											🟡 Pendiente Gemelo
+										</span>
+										<span th:if="${equipo.ultimoReporteEn != null and equiposConGemelo != null and equiposConGemelo.contains(equipo.id)}" class="authorization-badge is-authorized" style="font-size: 0.72rem; padding: 2px 6px;">
+											🟢 Gemelo Sincronizado
 										</span>
 										<span th:if="${equipo.ultimoReporteEn == null}" class="authorization-badge is-pending" style="font-size: 0.72rem; padding: 2px 6px;">
 											🟡 Esperando Script
@@ -173,17 +96,28 @@
 										<span th:if="${equipo.ultimoReporteEn != null}" style="font-size: 0.72rem; color: #64748b;" th:text="${#temporals.format(equipo.ultimoReporteEn, 'dd/MM HH:mm')}">03/09 17:30</span>
 									</div>
 								</td>
-								<td data-label="Paso Siguiente">
+								<td data-label="Acciones">
 									<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-										<a class="primary-action" th:href="@{/admin/equipos/{id}(id=${equipo.id})}" style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700;">
-											👉 Abrir Ficha
+										<!-- Si reportó por script pero aún no registró gemelo: botón prioritario verde para registrar gemelo -->
+										<a th:if="${equipo.ultimoReporteEn != null and (equiposConGemelo == null or !equiposConGemelo.contains(equipo.id))}"
+										   class="primary-action" th:href="@{/admin/equipos/{id}#tab-gemelo(id=${equipo.id})}"
+										   style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700; background: #16a34a; border-color: #15803d;"
+										   title="Confirmar componentes reportados como el Gemelo Digital oficial">
+											🤖 Registrar Gemelo
 										</a>
-										<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
+										<!-- Si ya tiene gemelo o es manual: botón estándar de ver ficha -->
+										<a th:if="${equipo.ultimoReporteEn == null or (equiposConGemelo != null and equiposConGemelo.contains(equipo.id))}"
+										   class="primary-action" th:href="@{/admin/equipos/{id}(id=${equipo.id})}"
+										   style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700;">
+											🖥️ Ver Ficha
+										</a>
+										<!-- Órdenes solo disponible si ya tiene gemelo oficial registrado -->
+										<a class="secondary-action" th:if="${puedeVerOrdenes and equiposConGemelo != null and equiposConGemelo.contains(equipo.id)}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
 											🛠️ Órdenes
 										</a>
 										<form th:if="${puedeEditar}" th:action="@{/admin/equipos/{id}/eliminar(id=${equipo.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este equipo y todos sus datos asociados?');">
-											<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 5px 9px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
-												🗑️ Eliminar
+											<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 5px 9px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;" title="Eliminar equipo">
+												🗑️
 											</button>
 										</form>
 									</div>
@@ -193,106 +127,7 @@
 					</table>
 				</div>
 			</section>
-
-			<!-- Opciones de Importación Colapsadas -->
-			<details class="collapsible-card" th:if="${puedeEditar}">
-				<summary class="collapsible-summary">
-					<h2 id="importar-viejo-title" style="margin: 0; font-size: 0.95rem; font-weight: 700;">📂 Importar inventario viejo (CSV)</h2>
-					<span class="count-badge">Opcional</span>
-				</summary>
-				<div class="collapsible-body">
-					<p class="section-note" style="margin-top: 0;">
-						Permite cargar equipamiento histórico desde un CSV con columnas: nombre, PC_Nombre, Usuario_Actual, fuero, ubicacion, ip, OsName, Procesador, RAM, etc.
-					</p>
-					<form class="equipment-form" th:action="@{/admin/equipos/importar-viejo}" method="post">
-						<label>
-							<span>Contenido CSV</span>
-							<textarea name="contenidoCsv" maxlength="50000" rows="5" placeholder="Pegue las filas CSV aquí..." required></textarea>
-						</label>
-						<div class="form-actions">
-							<button class="secondary-action" type="submit">Importar equipos</button>
-						</div>
-					</form>
-				</div>
-			</details>
 		</section>
 	</main>
-
-	<!-- Script de Copiado Robusto (Compatible con HTTP y HTTPS en redes locales) -->
-	<script>
-		function copiarComandoScript() {
-			var input = document.getElementById('ps-cmd-input');
-			if (!input) return;
-			var cmd = input.value;
-
-			// Método 1: Fallback clásico para navegadores en HTTP (no HTTPS)
-			var textarea = document.createElement('textarea');
-			textarea.value = cmd;
-			textarea.setAttribute('readonly', '');
-			textarea.style.position = 'fixed';
-			textarea.style.top = '0';
-			textarea.style.left = '0';
-			textarea.style.opacity = '0';
-			document.body.appendChild(textarea);
-			textarea.focus();
-			textarea.select();
-
-			var copiado = false;
-			try {
-				copiado = document.execCommand('copy');
-			} catch (err) {
-				copiado = false;
-			}
-			document.body.removeChild(textarea);
-
-			// Método 2: API moderna de portapapeles si está disponible
-			if (!copiado && navigator.clipboard && navigator.clipboard.writeText) {
-				navigator.clipboard.writeText(cmd).then(function() {
-					mostrarFeedbackCopia();
-				}).catch(function() {
-					input.focus();
-					input.select();
-					alert('Comando seleccionado. Presiona Ctrl+C para copiar.');
-				});
-				return;
-			}
-
-			if (copiado) {
-				mostrarFeedbackCopia();
-			} else {
-				input.focus();
-				input.select();
-				prompt('Copia este comando con Ctrl+C:', cmd);
-			}
-		}
-
-		function mostrarFeedbackCopia() {
-			var btn = document.getElementById('btn-copiar-cmd');
-			if (btn) {
-				var textoOriginal = btn.innerHTML;
-				btn.innerHTML = '✅ ¡Comando Copiado!';
-				btn.style.backgroundColor = '#16a34a';
-				setTimeout(function() {
-					btn.innerHTML = textoOriginal;
-					btn.style.backgroundColor = '#2563eb';
-				}, 3000);
-			}
-		}
-
-		// Rellenar automáticamente la IP/Host actual del servidor
-		window.addEventListener('DOMContentLoaded', function() {
-			var input = document.getElementById('ps-cmd-input');
-			if (input) {
-				var host = window.location.host;
-				var proto = window.location.protocol;
-				var baseUrl = proto + '//' + host;
-				var isHttps = proto === 'https:';
-				var tlsPrefix = isHttps
-					? "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]'Tls12,Tls11,Tls'; [Net.ServicePointManager]::ServerCertificateValidationCallback={$true}; "
-					: "";
-				input.value = tlsPrefix + '$u="' + baseUrl + '"; $p="$env:TEMP\\inventario.ps1"; (New-Object Net.WebClient).DownloadFile("$u/scripts/windows/inventario-modular.ps1", $p); powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"';
-			}
-		});
-	</script>
 </body>
 </html>

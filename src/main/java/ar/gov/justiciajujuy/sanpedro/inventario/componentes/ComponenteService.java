@@ -32,6 +32,11 @@ public class ComponenteService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public java.util.Set<Long> obtenerEquipoIdsConRelevamientoInicial() {
+		return new java.util.HashSet<>(componenteRepository.findEquipoIdsByOrigen(OrigenComponente.RELEVAMIENTO_INICIAL));
+	}
+
 	@Transactional
 	public ComponenteDetalle crear(Long equipoId, GuardarComponenteCommand command) {
 		Equipo equipo = equipoRepository.findById(equipoId)

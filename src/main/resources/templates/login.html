@@ -31,53 +31,7 @@
 				<button class="primary-action" type="submit">Ingresar</button>
 			</form>
 
-			<section class="script-copy-panel" aria-labelledby="script-copy-title">
-				<h2 id="script-copy-title">Inventario de equipo</h2>
-				<textarea id="inventory-command" readonly rows="5"></textarea>
-				<button class="secondary-action" id="copy-inventory-command" type="button">Copiar comando</button>
-				<p class="script-copy-status" id="copy-inventory-status" role="status" aria-live="polite"></p>
-			</section>
 		</section>
 	</main>
-	<script>
-		(function () {
-			const origin = window.location.origin;
-			const isHttps = window.location.protocol === "https:";
-			const tlsPrefix = isHttps
-				? "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]'Tls12,Tls11,Tls'; [Net.ServicePointManager]::ServerCertificateValidationCallback={$true}; "
-				: "";
-			// El comando usa la misma IP/puerto del login y valida SHA-256 antes de ejecutar.
-			const command = tlsPrefix + [
-				"$u='" + origin + "';",
-				"$p=\"$env:TEMP\\inventario-modular.ps1\";",
-				"$wc=New-Object Net.WebClient;",
-				"$h=$wc.DownloadString(\"$u/scripts/windows/inventario-modular.ps1.sha256\").Trim();",
-				"$wc.DownloadFile(\"$u/scripts/windows/inventario-modular.ps1\",$p);",
-				"$sha=[System.Security.Cryptography.SHA256]::Create();",
-				"$fs=[System.IO.File]::OpenRead($p);",
-				"try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()};",
-				"if($a -ne $h){throw \"SHA-256 invalido. Script descargado no coincide con el publicado por el servidor.\"};",
-				"powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl \"$u/api/v1/equipos/inventario\""
-			].join(" ");
-			const commandBox = document.getElementById("inventory-command");
-			const copyButton = document.getElementById("copy-inventory-command");
-			const status = document.getElementById("copy-inventory-status");
-			commandBox.value = command;
-			copyButton.addEventListener("click", function () {
-				if (navigator.clipboard && window.isSecureContext) {
-					navigator.clipboard.writeText(command).then(function () {
-						status.textContent = "Comando copiado.";
-					}).catch(function () {
-						commandBox.select();
-						status.textContent = "Seleccione y copie el comando.";
-					});
-					return;
-				}
-				commandBox.select();
-				document.execCommand("copy");
-				status.textContent = "Comando copiado.";
-			});
-		}());
-	</script>
 </body>
 </html>

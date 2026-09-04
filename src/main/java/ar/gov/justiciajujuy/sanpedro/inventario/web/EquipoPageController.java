@@ -91,6 +91,7 @@ public class EquipoPageController {
 				.map(ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoService.OrdenArmadoDetalle::equipoId)
 				.filter(java.util.Objects::nonNull)
 				.collect(java.util.stream.Collectors.toSet()));
+		model.addAttribute("equiposConGemelo", componenteService.obtenerEquipoIdsConRelevamientoInicial());
 		model.addAttribute("puedeEditar", authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR));
 		model.addAttribute("puedeVerOrdenes", authorizationService.tienePermiso(userDetails, "ORDENES_ARMADO", PERMISO_VER));
 		model.addAttribute("puedeVerStock", authorizationService.tienePermiso(userDetails, "STOCK", PERMISO_VER));
@@ -327,13 +328,13 @@ public class EquipoPageController {
 
 		if (equipo.ultimoReporteEn() == null) {
 			pasoTitulo = "Paso 1: Ejecutar script de inventario en la PC";
-			pasoDesc = "Para generar el gemelo digital de esta PC, copia el comando PowerShell y córrelo en el equipo cliente.";
+			pasoDesc = "Para generar el gemelo digital de esta PC, ejecuta el script en el equipo cliente.";
 			pasoAccionTexto = "📋 Copiar Comando PowerShell";
 			pasoAccionTipo = "COPIAR_SCRIPT";
 			pasoEnlace = "";
-		} else if (equipo.ultimoReporteEn() != null && !tieneRelevamientoInicial && ordenes.isEmpty()) {
+		} else if (equipo.ultimoReporteEn() != null && !tieneRelevamientoInicial) {
 			pasoTitulo = "Paso 2: Registrar como Gemelo Digital Oficial";
-			pasoDesc = "El script se comunicó exitosamente con el servidor. Confirma estos componentes como el Gemelo Digital de este equipo para auditar futuros cambios.";
+			pasoDesc = "El hardware real fue detectado por el script. Confirma estos componentes como el Gemelo Digital oficial para fijar la línea base del equipo.";
 			pasoAccionTexto = "✅ Registrar como Gemelo Digital Oficial";
 			pasoAccionTipo = "CONSOLIDAR";
 			pasoEnlace = "";

@@ -39,8 +39,8 @@ class EquipoPageControllerTests {
 		mockMvc.perform(get("/admin/equipos").with(user(adminLocal())))
 			.andExpect(status().isOk())
 			.andExpect(view().name("admin/equipos"))
-			.andExpect(content().string(containsString("Inventario tecnico")))
-			.andExpect(content().string(containsString("Importar inventario viejo")))
+			.andExpect(content().string(containsString("Inventario de Equipos")))
+			.andExpect(content().string(org.hamcrest.Matchers.not(containsString("Importar inventario viejo"))))
 			.andExpect(content().string(containsString("PC-INF-001")))
 			.andExpect(content().string(containsString("Windows 11 Pro")));
 	}

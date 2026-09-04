@@ -2310,6 +2310,29 @@ Se incorporo de forma completa y segura la funcionalidad de eliminacion en todos
 - **Ubicaciones**: eliminacion de sedes y oficinas judiciales.
 - Cobertura de pruebas unitarias y de integracion: 134 pruebas exitosas (0 fallos).
 
+## 2026-09-04 - Simplificación de Interfaz y Circuito Deductivo Guiado de Gemelo Digital
+
+Se simplificó la interfaz de usuario en base a los criterios de deducción operativa directa del técnico informático:
+
+- **Pantalla de Ingreso (`login.html`)**:
+  - Se eliminó el bloque de copiado del script PowerShell y scripts asociados; el inicio de sesión quedó limpio y enfocado exclusivamente en las credenciales (`Usuario` y `Clave`).
+- **Panel Principal (`admin/index.html`)**:
+  - Se removió la sección "Modo de trabajo", conservando la Brújula Operativa de los 3 circuitos judiciales/técnicos.
+- **Inventario de Equipos (`admin/equipos.html`)**:
+  - Se eliminó la barra de accesos rápidos (`quick-nav-bar`) que duplicaba los módulos ya accesibles en el encabezado principal (`nav.html`).
+  - Se removió la caja de comando PowerShell y el botón de copiado del catálogo.
+  - Se retiró la sección de importación de inventario viejo (CSV).
+  - Se simplificó la cabecera a **"Inventario de Equipos"** con textos concisos y directos.
+  - Se implementó el **flujo deductivo guiado**:
+    - Si un equipo reportó mediante script y aún no consolidó su Gemelo Digital, el sistema lo identifica como `🟡 Pendiente Gemelo` y resalta de forma prioritaria el botón verde **"🤖 Registrar Gemelo"**, ocultando opciones prematuras como órdenes de taller.
+    - Si el equipo ya cuenta con Gemelo Digital oficial, muestra `🟢 Gemelo Sincronizado` y habilita el acceso a **"🖥️ Ver Ficha"** y **"🛠️ Órdenes"**.
+- **Ficha de Detalle de Equipo (`admin/equipo-detalle.html`)**:
+  - Se bloquearon y deshabilitaron las opciones prematuras mientras no exista Gemelo Digital oficial consolidado:
+    - Enlaces y botones de órdenes de armado muestran estado bloqueado indicando que requieren primero el Gemelo Digital oficial (Paso 1).
+    - En la solapa de Gemelo Digital/Componentes se despliega un cartel de acción destacada para oficializar los componentes detectados por el script.
+    - La carga manual de componentes adicionales se desactiva temporalmente hasta fijar la línea base del hardware real.
+- Pruebas automatizadas actualizadas y exitosas: 134 pruebas (0 fallos).
+
 ## Fuentes internas consultadas
 
 - `README.md`

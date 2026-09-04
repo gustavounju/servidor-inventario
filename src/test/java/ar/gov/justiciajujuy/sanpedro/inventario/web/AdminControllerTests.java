@@ -35,7 +35,8 @@ class AdminControllerTests {
 		mockMvc.perform(get("/admin").with(user(usuario("admin.local"))))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("href=\"/admin/usuarios\"")))
-			.andExpect(content().string(containsString("Modo de trabajo")));
+			.andExpect(content().string(containsString("Brújula Operativa")))
+			.andExpect(content().string(not(containsString("Modo de trabajo"))));
 	}
 
 	@Test
