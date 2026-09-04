@@ -19,6 +19,30 @@ public class EquipoService {
 	private final FueroService fueroService;
 	private final Clock clock;
 
+	@Autowired(required = false)
+	private ar.gov.justiciajujuy.sanpedro.inventario.componentes.ComponenteRepository componenteRepository;
+
+	@Autowired(required = false)
+	private ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoRepository ordenArmadoRepository;
+
+	@Autowired(required = false)
+	private ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoComponenteRepository ordenArmadoComponenteRepository;
+
+	@Autowired(required = false)
+	private ar.gov.justiciajujuy.sanpedro.inventario.auditoria.MovimientoEquipoRepository movimientoEquipoRepository;
+
+	@Autowired(required = false)
+	private ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaRepository tareaTecnicaRepository;
+
+	@Autowired(required = false)
+	private ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.BienPatrimonialRepository bienPatrimonialRepository;
+
+	@Autowired(required = false)
+	private ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaRepository actaRepository;
+
+	@Autowired(required = false)
+	private ar.gov.justiciajujuy.sanpedro.inventario.auditoria.AuditoriaService auditoriaService;
+
 	@Autowired
 	public EquipoService(EquipoRepository equipoRepository, FueroService fueroService) {
 		this(equipoRepository, fueroService, Clock.systemDefaultZone());
@@ -28,6 +52,44 @@ public class EquipoService {
 		this.equipoRepository = equipoRepository;
 		this.fueroService = fueroService;
 		this.clock = clock;
+	}
+
+	@Transactional
+	public void eliminar(Long id) {
+		Equipo equipo = equipoRepository.findById(id)
+				.orElseThrow(() -> new EquipoNoEncontradoException(id));
+		String nombre = equipo.getNombre();
+
+		if (componenteRepository != null) {
+			componenteRepository.deleteByEquipoId(id);
+		}
+		if (movimientoEquipoRepository != null) {
+			movimientoEquipoRepository.deleteByEquipoId(id);
+		}
+		if (actaRepository != null) {
+			actaRepository.findByEquipoId(id).forEach(ar.gov.justiciajujuy.sanpedro.inventario.actas.Acta::desvincularEquipo);
+		}
+		if (bienPatrimonialRepository != null) {
+			bienPatrimonialRepository.findByEquipoId(id).forEach(ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.BienPatrimonial::desvincularEquipo);
+		}
+		if (tareaTecnicaRepository != null) {
+			tareaTecnicaRepository.findByEquipoId(id).forEach(ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnica::desvincularEquipo);
+		}
+		if (ordenArmadoRepository != null) {
+			ordenArmadoRepository.findByEquipoIdOrderByIdDesc(id).forEach(orden -> {
+				if (ordenArmadoComponenteRepository != null) {
+					ordenArmadoComponenteRepository.deleteByOrdenId(orden.getId());
+				}
+				ordenArmadoRepository.delete(orden);
+			});
+		}
+
+		equipoRepository.delete(equipo);
+
+		if (auditoriaService != null) {
+			auditoriaService.registrar("EQUIPOS", "ELIMINAR", "Equipo", id,
+					"Equipo " + nombre + " eliminado del sistema.");
+		}
 	}
 
 	@Transactional(readOnly = true)

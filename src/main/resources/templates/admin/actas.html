@@ -191,6 +191,7 @@
 									<th scope="col">Destinatario y Oficina</th>
 									<th scope="col">Intervinientes</th>
 									<th scope="col">Estado</th>
+									<th scope="col" th:if="${puedeEditarActas}">Acción</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -225,6 +226,13 @@
 									<td data-label="Estado">
 										<span class="authorization-badge" th:classappend="${acta.estado.name() == 'EMITIDA'} ? ' is-authorized' : ' is-pending'"
 												th:text="${acta.estado}">EMITIDA</span>
+									</td>
+									<td data-label="Acción" th:if="${puedeEditarActas}">
+										<form th:action="@{/admin/actas/{id}/eliminar(id=${acta.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta acta?');">
+											<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 4px 8px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+												🗑️ Eliminar
+											</button>
+										</form>
 									</td>
 								</tr>
 							</tbody>

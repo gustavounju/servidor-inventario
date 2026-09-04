@@ -96,4 +96,5 @@ public class BienPatrimonial {
 	public Equipo getEquipo() { return equipo; }
 	public String getObservaciones() { return observaciones; }
 	public boolean isActivo() { return activo; }
+	public void desvincularEquipo() { this.equipo = null; }
 }

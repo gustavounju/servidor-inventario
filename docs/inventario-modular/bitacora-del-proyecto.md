@@ -2296,6 +2296,20 @@ Se implemento la capa de infraestructura y soporte seguro para publicacion produ
   - Deteccion automatica del protocolo (`http:` vs `https:`).
   - Incorporacion de prefijo de seguridad TLS 1.2 y uso de `Net.WebClient` compatible con Windows 7 (PowerShell 2.0) y Windows 10/11.
 
+## 2026-09-04 - Incorporacion de funciones de eliminacion transversal
+
+Se incorporo de forma completa y segura la funcionalidad de eliminacion en todos los modulos del sistema:
+- **Equipos**: eliminacion en cascada y desvinculacion de componentes, auditoria, ordenes de armado, tareas, bienes patrimoniales y actas. Botones de eliminacion en listado y ficha de equipo.
+- **Ordenes de Armado**: eliminacion de ordenes liberando automaticamente las piezas reservadas (`RESERVADO` -> `DISPONIBLE`) en el stock.
+- **Componentes**: eliminacion/desvinculacion individual de componentes en el gemelo digital del equipo.
+- **Stock**: eliminacion de repuestos y piezas de deposito con confirmacion visual.
+- **Tareas Tecnicas**: eliminacion de tareas y sus hilos de comentarios asociados.
+- **Muebles**: eliminacion de mobiliario desde el catalogo y desde la edicion.
+- **Patrimonio**: eliminacion de bienes patrimoniales desde la grilla de gestion.
+- **Actas**: eliminacion de actas emitidas y en borrador.
+- **Ubicaciones**: eliminacion de sedes y oficinas judiciales.
+- Cobertura de pruebas unitarias y de integracion: 134 pruebas exitosas (0 fallos).
+
 ## Fuentes internas consultadas
 
 - `README.md`

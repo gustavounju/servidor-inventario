@@ -92,6 +92,15 @@ public class EquipoController {
 		return equipoService.actualizarManualmente(id, request.toCommand());
 	}
 
+	@org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void eliminar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		equipoService.eliminar(id);
+	}
+
 	@PostMapping(value = "/importar-viejo", consumes = {"text/csv", "text/plain"})
 	public ImportacionInventarioViejoResultado importarInventarioViejo(
 			@AuthenticationPrincipal UserDetails userDetails,

@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface MovimientoEquipoRepository extends JpaRepository<MovimientoEquipo, Long> {
     List<MovimientoEquipo> findByEquipoIdOrderByFechaMovimientoDesc(Long equipoId);
+    void deleteByEquipoId(Long equipoId);
 }

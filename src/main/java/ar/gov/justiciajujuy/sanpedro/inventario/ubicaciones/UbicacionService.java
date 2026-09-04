@@ -56,6 +56,15 @@ public class UbicacionService {
 		return toDetalle(guardada);
 	}
 
+	@Transactional
+	public void eliminar(Long id) {
+		Ubicacion ubicacion = ubicacionRepository.findById(id).orElseThrow(() -> new UbicacionNoEncontradaException(id));
+		String codigo = ubicacion.getCodigo();
+		ubicacionRepository.delete(ubicacion);
+		auditoriaService.registrar("UBICACIONES", "ELIMINAR", "Ubicacion", id,
+				"Ubicación " + codigo + " eliminada.");
+	}
+
 	public long contar() {
 		return ubicacionRepository.count();
 	}

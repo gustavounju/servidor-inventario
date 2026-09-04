@@ -74,6 +74,15 @@ public class ActaService {
 		return toDetalle(guardada);
 	}
 
+	@Transactional
+	public void eliminar(Long id) {
+		Acta acta = actaRepository.findById(id).orElseThrow(() -> new ActaNoEncontradaException(id));
+		String numero = acta.getNumero();
+		actaRepository.delete(acta);
+		auditoriaService.registrar("ACTAS", "ELIMINAR", "Acta", id,
+				"Acta " + numero + " eliminada.");
+	}
+
 	public long contar() {
 		return actaRepository.count();
 	}

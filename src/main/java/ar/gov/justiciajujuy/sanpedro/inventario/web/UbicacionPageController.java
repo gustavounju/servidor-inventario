@@ -90,6 +90,17 @@ public class UbicacionPageController {
 		return "redirect:/admin/ubicaciones";
 	}
 
+	@PostMapping("/admin/ubicaciones/{id}/eliminar")
+	public String eliminar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			RedirectAttributes redirectAttributes) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		ubicacionService.eliminar(id);
+		redirectAttributes.addFlashAttribute("eliminado", true);
+		return "redirect:/admin/ubicaciones";
+	}
+
 	private void prepararModelo(Model model, UserDetails userDetails, UbicacionForm ubicacionForm, String query,
 			TipoUbicacion tipo, EstadoUbicacion estado) {
 		model.addAttribute("ubicaciones", ubicacionService.buscar(query, tipo, estado));

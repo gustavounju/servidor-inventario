@@ -197,6 +197,16 @@ class EquipoPageControllerTests {
 			.andExpect(redirectedUrlPattern("/admin/ordenes-armado?*equipoId=*&creado=1"));
 	}
 
+	@Test
+	void permiteEliminarEquipoParaUsuarioConPermiso() throws Exception {
+		mockMvc.perform(post("/admin/equipos/1/eliminar")
+				.with(user(adminLocal()))
+				.with(csrf()))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/admin/equipos"))
+			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attribute("eliminado", true));
+	}
+
 	private ActiveDirectoryUserDetails adminLocal() {
 		return new ActiveDirectoryUserDetails(
 				"admin.local",

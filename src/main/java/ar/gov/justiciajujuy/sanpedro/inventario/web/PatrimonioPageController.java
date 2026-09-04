@@ -96,6 +96,17 @@ public class PatrimonioPageController {
 		return "redirect:/admin/patrimonio";
 	}
 
+	@PostMapping({"/admin/patrimonio/bienes/{id}/eliminar", "/admin/patrimonio/{id}/eliminar"})
+	public String eliminar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			RedirectAttributes redirectAttributes) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		patrimonioService.eliminar(id);
+		redirectAttributes.addFlashAttribute("eliminado", true);
+		return "redirect:/admin/patrimonio";
+	}
+
 	private void prepararModelo(Model model, UserDetails userDetails, PatrimonioForm patrimonioForm,
 			String query, EstadoBienPatrimonial estado) {
 		var bienes = patrimonioService.buscar(query, estado);

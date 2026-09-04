@@ -92,6 +92,17 @@ public class MueblePageController {
 		return "redirect:/admin/muebles";
 	}
 
+	@PostMapping("/admin/muebles/{id}/eliminar")
+	public String eliminar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			RedirectAttributes redirectAttributes) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		muebleService.eliminar(id);
+		redirectAttributes.addFlashAttribute("eliminado", true);
+		return "redirect:/admin/muebles";
+	}
+
 	private void prepararModelo(Model model, UserDetails userDetails, MuebleForm muebleForm, String query, EstadoMueble estado) {
 		model.addAttribute("muebles", muebleService.buscar(query, estado));
 		model.addAttribute("muebleForm", muebleForm);

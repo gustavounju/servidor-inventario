@@ -88,6 +88,7 @@ public class TareaTecnica {
 	public PrioridadTareaTecnica getPrioridad() { return prioridad; }
 	public String getResponsable() { return responsable; }
 	public String getObservacionesCierre() { return observacionesCierre; }
+	public void desvincularEquipo() { this.equipo = null; }
 	public LocalDateTime getCerradoEn() { return cerradoEn; }
 	public LocalDateTime getCreadoEn() { return creadoEn; }
 }

@@ -35,6 +35,11 @@
 						  th:text="${equipo.activo} ? ('ESTADO: ' + ${equipo.monitoreo}) : 'ESTADO: INACTIVO'">
 						ESTADO: REPORTADO
 					</span>
+					<form th:if="${puedeEditar}" th:action="@{/admin/equipos/{id}/eliminar(id=${equipo.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar permanentemente este equipo y todos sus datos asociados?');">
+						<button type="submit" class="secondary-action" style="font-size: 0.82rem; padding: 5px 10px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-weight: 700; cursor: pointer;">
+							🗑️ Eliminar Equipo
+						</button>
+					</form>
 				</div>
 			</nav>
 
@@ -468,6 +473,7 @@
 									<th scope="col">Serial</th>
 									<th scope="col">Remito / OC</th>
 									<th scope="col">Ubicación</th>
+									<th scope="col" th:if="${puedeEditarComponentes}">Acción</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -498,6 +504,13 @@
 										<span th:unless="${componente.remito != null or componente.ordenCompra != null}" style="color: #94a3b8; font-size: 0.8rem;">-</span>
 									</td>
 									<td data-label="Ubicación" th:text="${componente.ubicacion ?: 'Sin ubicación'}">Slot 1</td>
+									<td data-label="Acción" th:if="${puedeEditarComponentes}">
+										<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de eliminar este componente del equipo?');">
+											<button type="submit" class="secondary-action" style="font-size: 0.78rem; padding: 4px 8px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+												🗑️ Quitar
+											</button>
+										</form>
+									</td>
 								</tr>
 							</tbody>
 						</table>

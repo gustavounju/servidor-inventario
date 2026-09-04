@@ -202,6 +202,14 @@
 												<input name="comentario" maxlength="1000" required placeholder="Agregar nota de avance..." style="font-size: 0.8rem; padding: 4px; flex: 1;">
 												<button class="secondary-action" type="submit" style="font-size: 0.78rem; padding: 4px 8px;">Comentar</button>
 											</form>
+											<!-- Formulario para eliminar tarea -->
+											<div style="display: flex; justify-content: flex-end;">
+												<form th:action="@{/admin/tareas/{id}/eliminar(id=${tarea.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta tarea técnica y sus comentarios?');">
+													<button type="submit" class="secondary-action" style="font-size: 0.78rem; padding: 3px 8px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+														🗑️ Eliminar Tarea
+													</button>
+												</form>
+											</div>
 										</div>
 									</td>
 								</tr>

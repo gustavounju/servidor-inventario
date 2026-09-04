@@ -25,4 +25,6 @@ public interface TareaTecnicaRepository extends JpaRepository<TareaTecnica, Long
 			@Param("estado") EstadoTareaTecnica estado,
 			@Param("equipoId") Long equipoId,
 			@Param("responsable") String responsable);
+
+	List<TareaTecnica> findByEquipoId(Long equipoId);
 }

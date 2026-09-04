@@ -177,9 +177,16 @@
 												th:text="${mueble.estado}">ACTIVO</span>
 									</td>
 									<td data-label="Acción" th:if="${puedeEditarMuebles}">
-										<button type="button" class="secondary-action" onclick="switchTab('editar')" style="font-size: 0.8rem; padding: 5px 9px;">
-											✏️ Modificar
-										</button>
+										<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+											<button type="button" class="secondary-action" onclick="switchTab('editar')" style="font-size: 0.8rem; padding: 5px 9px;">
+												✏️ Modificar
+											</button>
+											<form th:action="@{/admin/muebles/{id}/eliminar(id=${mueble.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este mueble?');">
+												<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 5px 9px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+													🗑️ Eliminar
+												</button>
+											</form>
+										</div>
 									</td>
 								</tr>
 							</tbody>

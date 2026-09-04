@@ -93,6 +93,17 @@ public class ActaPageController {
 		return "redirect:/admin/actas";
 	}
 
+	@PostMapping("/admin/actas/{id}/eliminar")
+	public String eliminar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			RedirectAttributes redirectAttributes) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		actaService.eliminar(id);
+		redirectAttributes.addFlashAttribute("eliminado", true);
+		return "redirect:/admin/actas";
+	}
+
 	private void prepararModelo(Model model, UserDetails userDetails, ActaForm actaForm, String query, TipoActa tipo,
 			EstadoActa estado) {
 		var actas = actaService.buscar(query, tipo, estado);

@@ -81,6 +81,23 @@ public class OrdenArmadoService {
 		return toDetalle(guardada);
 	}
 
+	@Transactional
+	public void eliminar(Long id) {
+		OrdenArmado orden = ordenArmadoRepository.findById(id)
+				.orElseThrow(() -> new OrdenArmadoNoEncontradaException(id));
+
+		List<OrdenArmadoComponente> componentes = ordenArmadoComponenteRepository.findByOrdenId(id);
+		for (OrdenArmadoComponente oac : componentes) {
+			if (oac.getStockComponente() != null && oac.getStockComponente().getEstado() == EstadoStockComponente.RESERVADO) {
+				oac.getStockComponente().liberar();
+			}
+		}
+		ordenArmadoComponenteRepository.deleteByOrdenId(id);
+		ordenArmadoRepository.delete(orden);
+		auditoriaService.registrar("ORDENES_ARMADO", "ELIMINAR", "OrdenArmado", id,
+				"Orden de armado " + id + " eliminada.");
+	}
+
 	/**
 	 * Incorpora un componente previsto (esperado) al gemelo digital del equipo asociado a la orden.
 	 * Si se seleccionó una pieza física de Stock, la reserva automáticamente y propaga sus datos

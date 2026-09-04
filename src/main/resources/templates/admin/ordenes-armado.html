@@ -202,6 +202,11 @@
 											<button type="button" class="secondary-action" onclick="switchTab('crear')" style="font-size: 0.8rem; padding: 5px 9px;">
 												✏️ Editar
 											</button>
+											<form th:action="@{/admin/ordenes-armado/{id}/eliminar(id=${orden.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta orden de trabajo? Las piezas reservadas volverán a quedar disponibles en stock.');">
+												<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 5px 9px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+													🗑️ Eliminar
+												</button>
+											</form>
 										</div>
 									</td>
 								</tr>

@@ -51,6 +51,15 @@ public class MuebleService {
 		return toDetalle(guardado);
 	}
 
+	@Transactional
+	public void eliminar(Long id) {
+		Mueble mueble = muebleRepository.findById(id).orElseThrow(() -> new MuebleNoEncontradoException(id));
+		String codigo = mueble.getCodigo();
+		muebleRepository.delete(mueble);
+		auditoriaService.registrar("MUEBLES", "ELIMINAR", "Mueble", id,
+				"Mueble " + codigo + " eliminado.");
+	}
+
 	public long contar() {
 		return muebleRepository.count();
 	}

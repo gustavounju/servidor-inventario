@@ -161,7 +161,7 @@
 									<th scope="col">Remito / O. Compra</th>
 									<th scope="col">Ubicación Física</th>
 									<th scope="col">Estado</th>
-									<th scope="col">Siguiente Acción</th>
+									<th scope="col">Acciones</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -193,10 +193,17 @@
 										<span class="authorization-badge" th:classappend="${componente.estado.name() == 'DISPONIBLE'} ? ' is-authorized' : ' is-pending'"
 												th:text="${componente.estado}">DISPONIBLE</span>
 									</td>
-									<td data-label="Siguiente Acción">
-										<a th:if="${puedeVerOrdenes}" class="secondary-action" th:href="@{/admin/ordenes-armado}" style="font-size: 0.8rem; padding: 5px 9px;">
-											🛠️ Asignar a Orden
-										</a>
+									<td data-label="Acciones">
+										<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+											<a th:if="${puedeVerOrdenes}" class="secondary-action" th:href="@{/admin/ordenes-armado}" style="font-size: 0.8rem; padding: 5px 9px;">
+												🛠️ Asignar
+											</a>
+											<form th:if="${puedeEditarStock}" th:action="@{/admin/stock/{id}/eliminar(id=${componente.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta pieza del stock?');">
+												<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 5px 9px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+													🗑️ Eliminar
+												</button>
+											</form>
+										</div>
 									</td>
 								</tr>
 							</tbody>

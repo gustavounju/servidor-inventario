@@ -57,6 +57,16 @@ public class PatrimonioService {
 		return toDetalle(guardado);
 	}
 
+	@Transactional
+	public void eliminar(Long id) {
+		BienPatrimonial bien = bienPatrimonialRepository.findById(id)
+				.orElseThrow(() -> new BienPatrimonialNoEncontradoException(id));
+		String num = bien.getNumeroPatrimonial();
+		bienPatrimonialRepository.delete(bien);
+		auditoriaService.registrar("PATRIMONIO", "ELIMINAR", "BienPatrimonial", id,
+				"Bien patrimonial " + num + " eliminado.");
+	}
+
 	public long contar() {
 		return bienPatrimonialRepository.count();
 	}

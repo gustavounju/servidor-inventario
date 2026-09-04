@@ -104,4 +104,5 @@ public class Acta {
 	public EstadoActa getEstado() { return estado; }
 	public String getObservaciones() { return observaciones; }
 	public boolean isActivo() { return activo; }
+	public void desvincularEquipo() { this.equipo = null; }
 }

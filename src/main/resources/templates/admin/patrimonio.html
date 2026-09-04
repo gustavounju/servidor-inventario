@@ -203,6 +203,7 @@
 									<th scope="col">Custodio Responsable</th>
 									<th scope="col">Equipo Vinculado</th>
 									<th scope="col">Estado</th>
+									<th scope="col" th:if="${puedeEditarPatrimonio}">Acción</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -232,6 +233,18 @@
 									<td data-label="Estado">
 										<span class="authorization-badge" th:classappend="${bien.activo} ? ' is-authorized' : ' is-pending'"
 												th:text="${bien.estado}">EN_USO</span>
+									</td>
+									<td data-label="Acción" th:if="${puedeEditarPatrimonio}">
+										<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+											<button type="button" class="secondary-action" onclick="switchTab('edicion')" style="font-size: 0.8rem; padding: 4px 8px;">
+												✏️ Modificar
+											</button>
+											<form th:action="@{/admin/patrimonio/bienes/{id}/eliminar(id=${bien.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este bien patrimonial?');">
+												<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 4px 8px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+													🗑️ Eliminar
+												</button>
+											</form>
+										</div>
 									</td>
 								</tr>
 							</tbody>

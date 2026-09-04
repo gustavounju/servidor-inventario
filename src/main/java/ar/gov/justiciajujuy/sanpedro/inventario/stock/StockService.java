@@ -76,6 +76,25 @@ public class StockService {
 		return componente;
 	}
 
+	@Transactional
+	public StockComponente liberar(Long id) {
+		StockComponente componente = stockComponenteRepository.findById(id)
+				.orElseThrow(() -> new StockComponenteNoEncontradoException(id));
+		componente.liberar();
+		auditoriaService.registrar("STOCK", "LIBERAR", "StockComponente", componente.getId(),
+				"Componente de stock liberado a disponible: " + componente.getDescripcion() + ".");
+		return componente;
+	}
+
+	@Transactional
+	public void eliminar(Long id) {
+		StockComponente componente = stockComponenteRepository.findById(id)
+				.orElseThrow(() -> new StockComponenteNoEncontradoException(id));
+		stockComponenteRepository.delete(componente);
+		auditoriaService.registrar("STOCK", "ELIMINAR", "StockComponente", id,
+				"Componente de stock eliminado: " + componente.getDescripcion() + ".");
+	}
+
 	private void aplicarCampos(StockComponente componente, GuardarStockComponenteCommand command) {
 		componente.actualizar(
 				command.tipo(),

@@ -11,4 +11,6 @@ public interface ComponenteRepository extends JpaRepository<Componente, Long> {
 	List<Componente> findByEquipoIdAndOrigenOrderByTipoAscDescripcionAsc(Long equipoId, OrigenComponente origen);
 
 	void deleteByEquipoIdAndOrigen(Long equipoId, OrigenComponente origen);
+
+	void deleteByEquipoId(Long equipoId);
 }

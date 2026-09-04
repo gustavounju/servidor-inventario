@@ -143,6 +143,33 @@ public class EquipoPageController {
 		return "redirect:/admin/equipos/{id}";
 	}
 
+	@PostMapping("/admin/equipos/{id}/eliminar")
+	public String eliminar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			RedirectAttributes redirectAttributes) {
+		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para eliminar equipos.");
+		}
+		equipoService.eliminar(id);
+		redirectAttributes.addFlashAttribute("eliminado", true);
+		return "redirect:/admin/equipos";
+	}
+
+	@PostMapping("/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar")
+	public String eliminarComponente(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long equipoId,
+			@PathVariable Long componenteId,
+			RedirectAttributes redirectAttributes) {
+		if (!authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_EDITAR)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para eliminar componentes.");
+		}
+		componenteService.eliminar(componenteId);
+		redirectAttributes.addAttribute("actualizado", "1");
+		return "redirect:/admin/equipos/" + equipoId;
+	}
+
 	/**
 	 * Inicia de forma ágil una PC en el Taller de Informática en un solo paso:
 	 * crea el equipo con código autogenerado (ej. ARMADO-001) o ingresado,

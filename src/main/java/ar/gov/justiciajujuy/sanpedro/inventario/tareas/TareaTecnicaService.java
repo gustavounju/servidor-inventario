@@ -102,6 +102,17 @@ public class TareaTecnicaService {
 		return toComentarioDetalle(comentario);
 	}
 
+	@Transactional
+	public void eliminar(Long id) {
+		TareaTecnica tarea = tareaTecnicaRepository.findById(id)
+				.orElseThrow(() -> new TareaTecnicaNoEncontradaException(id));
+		String titulo = tarea.getTitulo();
+		comentarioRepository.deleteByTareaId(id);
+		tareaTecnicaRepository.delete(tarea);
+		auditoriaService.registrar("TAREAS", "ELIMINAR", "TareaTecnica", id,
+				"Tarea técnica " + id + " (" + titulo + ") eliminada.");
+	}
+
 	private Equipo buscarEquipoOpcional(Long equipoId) {
 		if (equipoId == null) {
 			return null;

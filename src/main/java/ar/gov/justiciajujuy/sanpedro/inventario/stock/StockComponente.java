@@ -101,6 +101,10 @@ public class StockComponente {
 		this.estado = EstadoStockComponente.ASIGNADO;
 	}
 
+	public void liberar() {
+		this.estado = EstadoStockComponente.DISPONIBLE;
+	}
+
 	public Long getId() {
 		return id;
 	}

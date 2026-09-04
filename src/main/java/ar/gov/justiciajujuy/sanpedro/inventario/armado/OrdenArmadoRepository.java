@@ -9,4 +9,6 @@ public interface OrdenArmadoRepository extends JpaRepository<OrdenArmado, Long> 
 	List<OrdenArmado> findAllByOrderByIdDesc();
 
 	List<OrdenArmado> findByEquipoIdOrderByIdDesc(Long equipoId);
+ 
+ 	void deleteByEquipoId(Long equipoId);
 }

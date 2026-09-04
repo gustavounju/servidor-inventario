@@ -26,4 +26,6 @@ public interface BienPatrimonialRepository extends JpaRepository<BienPatrimonial
 			ORDER BY b.numeroPatrimonial
 			""")
 	List<BienPatrimonial> buscar(@Param("query") String query, @Param("estado") EstadoBienPatrimonial estado);
+
+	List<BienPatrimonial> findByEquipoId(Long equipoId);
 }

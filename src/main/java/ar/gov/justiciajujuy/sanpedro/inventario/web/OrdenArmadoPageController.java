@@ -130,6 +130,21 @@ public class OrdenArmadoPageController {
 		return "redirect:/admin/ordenes-armado";
 	}
 
+	@PostMapping("/admin/ordenes-armado/{ordenId}/eliminar")
+	public String eliminarOrden(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long ordenId,
+			@RequestParam(required = false) Long equipoId,
+			RedirectAttributes redirectAttributes) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		ordenArmadoService.eliminar(ordenId);
+		if (equipoId != null) {
+			redirectAttributes.addAttribute("equipoId", equipoId);
+		}
+		redirectAttributes.addFlashAttribute("eliminado", true);
+		return "redirect:/admin/ordenes-armado";
+	}
+
 	@PostMapping("/admin/ordenes-armado/componentes")
 	public String agregarComponenteSeleccionandoOrden(
 			Model model,

@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TareaTecnicaComentarioRepository extends JpaRepository<TareaTecnicaComentario, Long> {
 
 	List<TareaTecnicaComentario> findByTareaIdOrderByCreadoEnDescIdDesc(Long tareaId);
+ 
+ 	void deleteByTareaId(Long tareaId);
 }

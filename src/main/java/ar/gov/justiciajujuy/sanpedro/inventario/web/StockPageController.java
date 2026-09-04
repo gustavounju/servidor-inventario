@@ -88,6 +88,17 @@ public class StockPageController {
 		return "redirect:/admin/stock";
 	}
 
+	@PostMapping({"/admin/stock/componentes/{id}/eliminar", "/admin/stock/{id}/eliminar"})
+	public String eliminar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			RedirectAttributes redirectAttributes) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		stockService.eliminar(id);
+		redirectAttributes.addFlashAttribute("eliminado", true);
+		return "redirect:/admin/stock";
+	}
+
 	private void prepararModelo(Model model, UserDetails userDetails, StockForm stockForm) {
 		var componentes = stockService.listarDisponiblesYActivos();
 		long disponiblesCount = componentes.stream().filter(c -> c.estado() == EstadoStockComponente.DISPONIBLE).count();

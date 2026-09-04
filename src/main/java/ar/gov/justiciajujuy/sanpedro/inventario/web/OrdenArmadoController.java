@@ -84,6 +84,15 @@ public class OrdenArmadoController {
 		return ordenArmadoService.confirmarSalidaStock(ordenComponenteId);
 	}
 
+	@org.springframework.web.bind.annotation.DeleteMapping("/ordenes-armado/{ordenId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void eliminar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long ordenId) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		ordenArmadoService.eliminar(ordenId);
+	}
+
 	private void exigirPermiso(UserDetails userDetails, String permiso) {
 		if (!authorizationService.tienePermiso(userDetails, MODULO_ORDENES, permiso)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para operar ordenes de armado.");

@@ -29,4 +29,6 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
 			""")
 	List<Acta> buscar(@Param("query") String query, @Param("tipo") TipoActa tipo,
 			@Param("estado") EstadoActa estado);
+
+	List<Acta> findByEquipoId(Long equipoId);
 }

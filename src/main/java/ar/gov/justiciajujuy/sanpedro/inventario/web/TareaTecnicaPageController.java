@@ -114,6 +114,17 @@ public class TareaTecnicaPageController {
 		return "redirect:/admin/tareas";
 	}
 
+	@PostMapping("/admin/tareas/{id}/eliminar")
+	public String eliminar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			RedirectAttributes redirectAttributes) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		tareaTecnicaService.eliminar(id);
+		redirectAttributes.addFlashAttribute("eliminado", true);
+		return "redirect:/admin/tareas";
+	}
+
 	@PostMapping("/admin/tareas/{id}/comentarios")
 	public String comentar(
 			@AuthenticationPrincipal UserDetails userDetails,

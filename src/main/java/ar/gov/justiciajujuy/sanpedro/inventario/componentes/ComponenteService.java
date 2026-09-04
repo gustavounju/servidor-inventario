@@ -60,6 +60,17 @@ public class ComponenteService {
 		return toDetalle(guardado);
 	}
 
+	@Transactional
+	public void eliminar(Long id) {
+		Componente componente = componenteRepository.findById(id)
+				.orElseThrow(() -> new ComponenteNoEncontradoException(id));
+		String desc = componente.getDescripcion();
+		Long equipoId = componente.getEquipo().getId();
+		componenteRepository.delete(componente);
+		auditoriaService.registrar("COMPONENTES", "ELIMINAR", "Componente", id,
+				"Componente " + desc + " eliminado del equipo " + equipoId + ".");
+	}
+
 	@Transactional(readOnly = true)
 	public Componente obtenerEntidad(Long id) {
 		return componenteRepository.findById(id)
