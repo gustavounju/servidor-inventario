@@ -44,13 +44,13 @@ public class StockComponente {
 	private String capacidad;
 
 	@Column(length = 80)
-	private String remito;
+	private String remito; // Remito o número de entrega del proveedor
 
 	@Column(name = "orden_compra", length = 80)
-	private String ordenCompra;
+	private String ordenCompra; // Número de Orden de Compra o Expediente administrativo
 
 	@Column(length = 120)
-	private String proveedor;
+	private String proveedor; // Razón social o nombre comercial del proveedor adjudicado
 
 	@Column(length = 120)
 	private String ubicacion;

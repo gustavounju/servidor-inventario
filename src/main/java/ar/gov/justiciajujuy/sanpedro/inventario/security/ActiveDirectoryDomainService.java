@@ -17,6 +17,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+/**
+ * Servicio de integración con Active Directory / LDAP para consulta de usuarios y unidades
+ * organizacionales (OU) del dominio del Poder Judicial.
+ */
 @Service
 public class ActiveDirectoryDomainService {
 

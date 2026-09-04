@@ -55,13 +55,13 @@ public class Componente {
 	private String capacidad;
 
 	@Column(length = 80)
-	private String remito;
+	private String remito; // Remito o número de entrega del proveedor (heredado de Stock o cargado en taller)
 
 	@Column(name = "orden_compra", length = 80)
-	private String ordenCompra;
+	private String ordenCompra; // Número de Orden de Compra o Expediente administrativo
 
 	@Column(length = 120)
-	private String proveedor;
+	private String proveedor; // Proveedor adjudicado que suministró la pieza al Poder Judicial
 
 	@Column(length = 120)
 	private String ubicacion;

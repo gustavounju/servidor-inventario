@@ -81,6 +81,15 @@ public class OrdenArmadoService {
 		return toDetalle(guardada);
 	}
 
+	/**
+	 * Incorpora un componente previsto (esperado) al gemelo digital del equipo asociado a la orden.
+	 * Si se seleccionó una pieza física de Stock, la reserva automáticamente y propaga sus datos
+	 * de trazabilidad de compras (Remito, Orden de Compra y Proveedor).
+	 *
+	 * @param ordenId ID de la orden de armado
+	 * @param command Datos del componente y referencia opcional al ítem de stock
+	 * @return Detalle del componente creado en el gemelo digital
+	 */
 	@Transactional
 	public ComponenteDetalle agregarComponenteEsperado(Long ordenId, GuardarComponenteOrdenCommand command) {
 		OrdenArmado orden = ordenArmadoRepository.findById(ordenId)
@@ -121,6 +130,14 @@ public class OrdenArmadoService {
 				.toList();
 	}
 
+	/**
+	 * Confirma la salida física de un componente reservado en Stock hacia la PC ensamblada.
+	 * Transiciona el stock a estado ASIGNADO y asegura la propagación definitiva de los campos
+	 * de remito, orden de compra y proveedor al componente del gemelo digital.
+	 *
+	 * @param ordenComponenteId ID del vínculo orden-componente
+	 * @return Componente actualizado con estado ORIGEN_STOCK y trazabilidad de compras
+	 */
 	@Transactional
 	public ComponenteDetalle confirmarSalidaStock(Long ordenComponenteId) {
 		OrdenArmadoComponente ordenComponente = ordenArmadoComponenteRepository.findById(ordenComponenteId)

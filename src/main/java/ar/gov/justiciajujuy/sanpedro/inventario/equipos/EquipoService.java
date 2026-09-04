@@ -191,6 +191,15 @@ public class EquipoService {
 		return toDetalle(equipoRepository.save(equipo));
 	}
 
+	/**
+	 * Crea de forma ágil una estación en el Taller de Informática para iniciar su ensamblado.
+	 * Si no se indica un código manual, genera correlativamente un nombre secuencial libre
+	 * con el formato 'ARMADO-001', 'ARMADO-002', etc., evitando colisiones.
+	 *
+	 * @param codigoSugerido Código opcional ingresado por el técnico o nulo/vacío para autogenerar
+	 * @return Detalle del equipo creado y persistido con ubicación y fuero de taller
+	 * @throws EquipoDuplicadoException Si el código sugerido ya existe en la base de datos
+	 */
 	@Transactional
 	public EquipoDetalle crearEquipoEnTaller(String codigoSugerido) {
 		String nombre;

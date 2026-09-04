@@ -2206,6 +2206,28 @@ Durante esta etapa se unifico la experiencia de usuario:
 5. **Muebles, Ubicaciones, Reportes y Tareas:** Pestañas `subnav-tabs` que eliminan el scroll vertical excesivo y organizan la interaccion en fichas limpias.
 6. **Panel Principal (`/admin`):** Incorporacion de la Brujula Operativa con las 3 rutas naturales del Centro Judicial: Circuito Tecnico, Circuito Patrimonial y Circuito de Soporte/Deposito.
 
+## Circuito Agil de Taller, Trazabilidad de Compras (Remito/OC) y Resolucion de Fueros
+
+Durante esta jornada se consolido la operatividad real del Taller de Informatica y el control administrativo de adquisiciones:
+
+1. **Taller en 1 Clic (`POST /admin/equipos/nuevo-taller`):**
+   - El técnico inicia una estación desde `/admin/equipos` con un solo clic.
+   - El sistema genera un código secuencial provisorio libre (`ARMADO-001`, `ARMADO-002`, etc.) o utiliza el sugerido por el usuario, asociándola de inmediato a `Taller de Informática` y abriendo su primera Orden de Armado en `BORRADOR`.
+   - Evita requerir nombre definitivo, fuero de destino o usuario antes de tiempo.
+
+2. **Trazabilidad de Compras (Remito / Orden de Compra / Proveedor):**
+   - Se incorporaron las columnas `remito`, `orden_compra` y `proveedor` en la tabla `stock_componentes` y en `componentes` del Gemelo Digital (migración Flyway `V13__remito_orden_compra_trazabilidad.sql`).
+   - Al dar de alta piezas en Stock, se puede registrar el remito de entrega, expediente de compra y proveedor.
+   - Al confirmar la salida física del stock reservado para una PC en la orden de taller, los tres datos de compra se transfieren automáticamente al gemelo digital del equipo, manteniendo la cadena de custodia patrimonial.
+
+3. **Catálogo Canónico de Fueros (`FueroService`):**
+   - Centraliza los juzgados, salas y dependencias del Centro Judicial San Pedro (Juzgados Civiles y Comerciales, Familia, Tribunal del Trabajo, Violencia de Género, etc.).
+   - Se alimenta automáticamente de las Unidades Organizacionales (OU) de Active Directory y de los prefijos históricos de los equipos (`TTSIVVOC`, `JCC`, `VGS`, etc.).
+   - Provee un `<datalist>` dinámico en la web para autocompletar con precisión el fuero sin errores tipográficos.
+
+4. **Reorganización Ergonómica de Navegación:**
+   - Se agrupó el acceso al Taller y Órdenes de Armado dentro de la barra de navegación para un acceso más fluido en el trabajo diario.
+
 ## Pendientes principales
 
 Pendientes de seguridad y usuarios:

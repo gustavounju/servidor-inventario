@@ -9,6 +9,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+/**
+ * Representa una estación de trabajo (PC, notebook, servidor) dentro del inventario del Centro Judicial.
+ * Puede originarse por relevamiento automatizado vía script o por ensamblado inicial en el Taller de Informática.
+ */
 @Entity
 @Table(name = "equipos")
 public class Equipo {
@@ -94,6 +98,15 @@ public class Equipo {
 		this.fuero = fuero;
 	}
 
+	/**
+	 * Fábrica para instanciar un equipo en estado inicial de ensamblado en Taller.
+	 * Se crea con fuero y ubicación fijados en 'Taller de Informática', usuario 'Sin asignar'
+	 * y sistema operativo 'Pendiente de instalación / relevamiento' hasta que sea entregado
+	 * a su juzgado destino y relevado por el script automatizado.
+	 *
+	 * @param nombre Código identificador provisorio o definitivo (ej. ARMADO-001)
+	 * @return Instancia de Equipo lista para asociar piezas de Stock en una Orden de Armado
+	 */
 	public static Equipo crearParaTaller(String nombre) {
 		Equipo equipo = new Equipo(nombre, "Taller de Informática");
 		equipo.ubicacion = "Taller de Informática";

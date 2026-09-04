@@ -336,3 +336,37 @@ Suite completa:
 ```powershell
 .\mvnw.cmd --batch-mode test
 ```
+
+## Actualizacion V13: Trazabilidad de Compras y Circuito Agil de Taller
+
+### 1. Migracion de Trazabilidad (`V13__remito_orden_compra_trazabilidad.sql`)
+
+Se incorporaron tres columnas auditables de compras tanto en `stock_componentes` como en `componentes` (gemelo digital del equipo):
+
+- `remito` (VARCHAR 80): Número de remito de entrega del proveedor.
+- `orden_compra` (VARCHAR 80): Número de orden de compra o expediente de adquisición administrativa.
+- `proveedor` (VARCHAR 120): Razón social o nombre comercial del proveedor adjudicado.
+
+### 2. Circuito de Taller en 1 Clic (`POST /admin/equipos/nuevo-taller`)
+
+Para agilizar el flujo de armado en el laboratorio de informática sin requerir datos definitivos antes de tiempo:
+1. Desde `/admin/equipos`, el técnico presiona `⚡ Iniciar PC en Taller` (o ingresa un código opcional).
+2. El sistema reserva automáticamente un identificador secuencial no repetido (`ARMADO-001`, `ARMADO-002`, etc.).
+3. Se crea el `Equipo` fijando su fuero y ubicación en `Taller de Informática`, con usuario `Sin asignar` y SO `Pendiente de instalación / relevamiento`.
+4. Se crea automáticamente su primera `Orden de Armado` en estado `BORRADOR`.
+5. Se redirige al técnico a `/admin/ordenes-armado` para que vincule las piezas físicas de stock que componen la máquina.
+
+### 3. Propagación Automática de Compras
+
+Al confirmar la salida física de un componente reservado en stock (`confirmarSalidaStock`):
+- El ítem de stock pasa a estado `ASIGNADO`.
+- El componente en la PC pasa a origen `STOCK`.
+- Los valores de `remito`, `ordenCompra` y `proveedor` cargados en el stock se copian automáticamente al componente del gemelo digital de la máquina, garantizando trazabilidad patrimonial de origen a fin.
+
+### 4. Relevamiento y Cierre de Ciclo
+
+Una vez ensamblada e instalada con el sistema operativo en su juzgado o tribunal:
+1. Se ejecuta el script `inventario-modular.ps1` en la máquina.
+2. El script detecta el hardware real, IP, usuario de sesión y fuero.
+3. Se compara el hardware detectado contra el Gemelo Digital oficial ensamblado en el taller, alertando de cualquier discrepancia de memoria, discos o periféricos.
+

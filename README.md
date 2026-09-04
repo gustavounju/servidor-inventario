@@ -280,6 +280,30 @@ GET  /api/v1/reportes/actas.csv
 GET  /api/v1/reportes/ubicaciones.csv
 ```
 
+### Stock, Ordenes de Armado y Taller
+
+Permite gestionar el stock de piezas sueltas y el ensamblado de estaciones en el laboratorio:
+
+- **Stock de componentes**: Registro y control de estado (`DISPONIBLE`, `RESERVADO`, `ASIGNADO`, `BAJA`).
+- **Trazabilidad de compras**: Soporta **Remito**, **Orden de Compra / Expediente** y **Proveedor** tanto en componentes de stock como en el gemelo digital del equipo.
+- **Taller de Informática en 1 clic**: Desde `/admin/equipos`, el botón `⚡ Iniciar PC en Taller` crea una estación provisoria (`ARMADO-001`, `ARMADO-002`, etc.) y abre su Orden de Armado en borrador de inmediato.
+- **Propagación automática**: Al confirmar la salida física de una pieza de stock reservada a una orden, sus datos de compra (remito, OC y proveedor) se transfieren automáticamente al gemelo digital.
+- **Resolución canónica de Fueros**: Servicio `FueroService` con catálogo precargado de juzgados y salas del Centro Judicial San Pedro y soporte de unidades organizacionales de Active Directory.
+
+APIs principales:
+
+```text
+GET  /api/v1/stock/componentes
+POST /api/v1/stock/componentes
+PUT  /api/v1/stock/componentes/{id}
+GET  /api/v1/ordenes-armado
+POST /api/v1/ordenes-armado
+POST /admin/equipos/nuevo-taller
+```
+
+Guia tecnica:
+- [Stock, Ordenes de Armado y Gemelo Digital](docs/inventario-modular/stock-ordenes-armado-y-comparacion.md)
+
 ## Documentacion
 
 La documentacion del estudio inicial esta en `docs/inventario-modular`.

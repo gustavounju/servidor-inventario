@@ -143,6 +143,12 @@ public class EquipoPageController {
 		return "redirect:/admin/equipos/{id}";
 	}
 
+	/**
+	 * Inicia de forma ágil una PC en el Taller de Informática en un solo paso:
+	 * crea el equipo con código autogenerado (ej. ARMADO-001) o ingresado,
+	 * crea inmediatamente su primera Orden de Armado en estado BORRADOR,
+	 * y redirige al técnico a la pantalla de órdenes para asociar piezas de stock.
+	 */
 	@PostMapping("/admin/equipos/nuevo-taller")
 	public String nuevoTaller(
 			@AuthenticationPrincipal UserDetails userDetails,
