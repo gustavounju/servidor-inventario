@@ -94,6 +94,15 @@ public class Equipo {
 		this.fuero = fuero;
 	}
 
+	public static Equipo crearParaTaller(String nombre) {
+		Equipo equipo = new Equipo(nombre, "Taller de Informática");
+		equipo.ubicacion = "Taller de Informática";
+		equipo.ultimoUsuario = "Sin asignar";
+		equipo.sistemaOperativo = "Pendiente de instalación / relevamiento";
+		equipo.activo = true;
+		return equipo;
+	}
+
 	public Long getId() {
 		return id;
 	}

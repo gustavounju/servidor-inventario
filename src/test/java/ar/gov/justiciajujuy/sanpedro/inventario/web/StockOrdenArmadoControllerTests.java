@@ -45,7 +45,10 @@ class StockOrdenArmadoControllerTests {
 				  "capacidad": "480GB",
 				  "ubicacion": "Deposito Informatica",
 				  "observaciones": "Alta inicial de stock",
-				  "activo": true
+				  "activo": true,
+				  "remito": "REM-2025-001",
+				  "ordenCompra": "OC-2025-050",
+				  "proveedor": "Banghó"
 				}
 				""";
 		String orden = """
@@ -87,7 +90,10 @@ class StockOrdenArmadoControllerTests {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(stock))
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.serial").value("DISK-001"));
+			.andExpect(jsonPath("$.serial").value("DISK-001"))
+			.andExpect(jsonPath("$.remito").value("REM-2025-001"))
+			.andExpect(jsonPath("$.ordenCompra").value("OC-2025-050"))
+			.andExpect(jsonPath("$.proveedor").value("Banghó"));
 
 		mockMvc.perform(post("/api/v1/equipos/1/ordenes-armado")
 				.with(user(adminLocal()))
@@ -104,7 +110,10 @@ class StockOrdenArmadoControllerTests {
 				.content(esperado))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.origen").value("ORDEN_ARMADO"))
-			.andExpect(jsonPath("$.estadoComparacion").value("ESPERADO"));
+			.andExpect(jsonPath("$.estadoComparacion").value("ESPERADO"))
+			.andExpect(jsonPath("$.remito").value("REM-2025-001"))
+			.andExpect(jsonPath("$.ordenCompra").value("OC-2025-050"))
+			.andExpect(jsonPath("$.proveedor").value("Banghó"));
 
 		mockMvc.perform(post("/api/v1/ordenes-armado/componentes/1/confirmar-salida-stock")
 				.with(user(adminLocal()))
@@ -112,7 +121,8 @@ class StockOrdenArmadoControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.origen").value("STOCK"))
 			.andExpect(jsonPath("$.estadoComparacion").value("ESPERADO"))
-			.andExpect(jsonPath("$.serial").value("DISK-001"));
+			.andExpect(jsonPath("$.serial").value("DISK-001"))
+			.andExpect(jsonPath("$.remito").value("REM-2025-001"));
 
 		mockMvc.perform(get("/api/v1/stock/componentes").with(user(adminLocal())))
 			.andExpect(status().isOk())

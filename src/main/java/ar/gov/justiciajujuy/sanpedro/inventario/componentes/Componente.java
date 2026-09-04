@@ -54,6 +54,15 @@ public class Componente {
 	@Column(length = 120)
 	private String capacidad;
 
+	@Column(length = 80)
+	private String remito;
+
+	@Column(name = "orden_compra", length = 80)
+	private String ordenCompra;
+
+	@Column(length = 120)
+	private String proveedor;
+
 	@Column(length = 120)
 	private String ubicacion;
 
@@ -120,6 +129,18 @@ public class Componente {
 		return capacidad;
 	}
 
+	public String getRemito() {
+		return remito;
+	}
+
+	public String getOrdenCompra() {
+		return ordenCompra;
+	}
+
+	public String getProveedor() {
+		return proveedor;
+	}
+
 	public String getUbicacion() {
 		return ubicacion;
 	}
@@ -133,7 +154,8 @@ public class Componente {
 	}
 
 	public void actualizar(TipoComponente tipo, OrigenComponente origen, EstadoComparacion estadoComparacion, String descripcion,
-			String marca, String modelo, String serial, String capacidad, String ubicacion, String observaciones, boolean activo) {
+			String marca, String modelo, String serial, String capacidad, String remito, String ordenCompra, String proveedor,
+			String ubicacion, String observaciones, boolean activo) {
 		this.tipo = tipo;
 		this.origen = origen;
 		this.estadoComparacion = estadoComparacion;
@@ -142,6 +164,9 @@ public class Componente {
 		this.modelo = modelo;
 		this.serial = serial;
 		this.capacidad = capacidad;
+		this.remito = remito;
+		this.ordenCompra = ordenCompra;
+		this.proveedor = proveedor;
 		this.ubicacion = ubicacion;
 		this.observaciones = observaciones;
 		this.activo = activo;

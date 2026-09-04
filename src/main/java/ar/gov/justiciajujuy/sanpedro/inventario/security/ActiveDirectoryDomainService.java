@@ -90,6 +90,98 @@ public class ActiveDirectoryDomainService {
 		}
 	}
 
+	private static final java.util.Set<String> OUS_IGNORADAS = java.util.Set.of(
+			"EQUIPOS", "USUARIOS", "PODJUDSP", "COMPUTERS", "DOMAIN CONTROLLERS", "SYSTEM", "BUILTIN"
+	);
+
+	/**
+	 * Obtiene todas las Unidades Organizativas (OUs) de Active Directory que representan fueros, juzgados y áreas.
+	 */
+	public List<String> listarFuerosDesdeAd() {
+		if (!properties.isEnabled() || ldapOperations == null) {
+			return List.of();
+		}
+		try {
+			SearchControls controls = new SearchControls();
+			controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+			controls.setReturningAttributes(new String[] { "ou", "name" });
+			List<String> ous = ldapOperations.search(
+					"",
+					"(objectClass=organizationalUnit)",
+					controls,
+					(AttributesMapper<String>) attrs -> {
+						Attribute ouAttr = attrs.get("ou");
+						if (ouAttr == null || ouAttr.get() == null) {
+							ouAttr = attrs.get("name");
+						}
+						return ouAttr != null && ouAttr.get() != null ? String.valueOf(ouAttr.get()).trim() : null;
+					});
+			return ous.stream()
+					.filter(StringUtils::hasText)
+					.filter(ou -> !OUS_IGNORADAS.contains(ou.toUpperCase()))
+					.distinct()
+					.sorted(String.CASE_INSENSITIVE_ORDER)
+					.toList();
+		} catch (RuntimeException exception) {
+			LOGGER.warn("No se pudieron consultar las Unidades Organizativas (OUs) en Active Directory: {}", exception.getMessage());
+			return List.of();
+		}
+	}
+
+	/**
+	 * Busca una computadora en AD por su nombre y deduce su Fuero jerárquico a partir de las OUs de su distinguishedName.
+	 */
+	public String obtenerFueroDeEquipo(String nombreEquipo) {
+		if (!properties.isEnabled() || ldapOperations == null || !StringUtils.hasText(nombreEquipo)) {
+			return null;
+		}
+		try {
+			String cleanName = encodeLdapFilterValue(nombreEquipo.trim());
+			SearchControls controls = new SearchControls();
+			controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+			controls.setCountLimit(1);
+			controls.setReturningAttributes(new String[] { "distinguishedName" });
+			String filter = "(|(sAMAccountName=" + cleanName + "$)(sAMAccountName=" + cleanName + "))";
+			List<String> results = ldapOperations.search(
+					"",
+					filter,
+					controls,
+					(AttributesMapper<String>) attrs -> firstText(attrs, "distinguishedName", null));
+			if (results.isEmpty() || !StringUtils.hasText(results.get(0))) {
+				return null;
+			}
+			return parsearFueroDesdeDn(results.get(0));
+		} catch (RuntimeException exception) {
+			LOGGER.warn("No se pudo consultar el equipo {} en Active Directory: {}", nombreEquipo, exception.getMessage());
+			return null;
+		}
+	}
+
+	/**
+	 * Extrae las OUs de un distinguishedName en orden jerárquico general -> específico, ignorando contenedores genéricos.
+	 */
+	public String parsearFueroDesdeDn(String dn) {
+		if (!StringUtils.hasText(dn)) {
+			return null;
+		}
+		String[] parts = dn.split(",");
+		java.util.List<String> ous = new java.util.ArrayList<>();
+		for (String part : parts) {
+			String p = part.trim();
+			if (p.toUpperCase().startsWith("OU=")) {
+				String ouName = p.substring(3).trim();
+				if (!OUS_IGNORADAS.contains(ouName.toUpperCase())) {
+					ous.add(ouName);
+				}
+			}
+		}
+		if (ous.isEmpty()) {
+			return null;
+		}
+		java.util.Collections.reverse(ous);
+		return String.join(" - ", ous);
+	}
+
 	private String buildSearchFilter(String query, String displayNameAttribute) {
 		String encodedQuery = encodeLdapFilterValue(query);
 		return "(&"

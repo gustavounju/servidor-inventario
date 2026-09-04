@@ -37,9 +37,9 @@
 	<nav class="admin-actions admin-nav-bar" aria-label="Navegación principal">
 		<a class="nav-tab" th:classappend="${activeModule == 'panel'} ? ' is-active' : ''" th:href="@{/admin}">Panel</a>
 		<a class="nav-tab" th:if="${canViewEquipos != null ? canViewEquipos : true}" th:classappend="${activeModule == 'equipos'} ? ' is-active' : ''" th:href="@{/admin/equipos}">Equipos</a>
-		<a class="nav-tab" th:if="${canViewDashboardDiferencias != null ? canViewDashboardDiferencias : true}" th:classappend="${activeModule == 'diferencias'} ? ' is-active' : ''" th:href="@{/admin/dashboard-diferencias}">Diferencias</a>
-		<a class="nav-tab" th:if="${canViewStock != null ? canViewStock : true}" th:classappend="${activeModule == 'stock'} ? ' is-active' : ''" th:href="@{/admin/stock}">Stock</a>
 		<a class="nav-tab" th:if="${canViewOrdenesArmado != null ? canViewOrdenesArmado : true}" th:classappend="${activeModule == 'ordenes'} ? ' is-active' : ''" th:href="@{/admin/ordenes-armado}">Ordenes</a>
+		<a class="nav-tab" th:if="${canViewStock != null ? canViewStock : true}" th:classappend="${activeModule == 'stock'} ? ' is-active' : ''" th:href="@{/admin/stock}">Stock</a>
+		<a class="nav-tab" th:if="${canViewDashboardDiferencias != null ? canViewDashboardDiferencias : true}" th:classappend="${activeModule == 'diferencias'} ? ' is-active' : ''" th:href="@{/admin/dashboard-diferencias}">Diferencias</a>
 		<a class="nav-tab" th:if="${canViewMuebles != null ? canViewMuebles : true}" th:classappend="${activeModule == 'muebles'} ? ' is-active' : ''" th:href="@{/admin/muebles}">Muebles</a>
 		<a class="nav-tab" th:if="${canViewUbicaciones != null ? canViewUbicaciones : true}" th:classappend="${activeModule == 'ubicaciones'} ? ' is-active' : ''" th:href="@{/admin/ubicaciones}">Ubicaciones</a>
 		<a class="nav-tab" th:if="${canViewPatrimonio != null ? canViewPatrimonio : true}" th:classappend="${activeModule == 'patrimonio'} ? ' is-active' : ''" th:href="@{/admin/patrimonio}">Patrimonio</a>

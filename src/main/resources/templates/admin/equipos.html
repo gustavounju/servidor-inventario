@@ -65,7 +65,7 @@
 							<strong style="color: #0369a1; font-size: 0.9rem;">Aparece en la tabla abajo</strong>
 						</div>
 						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
-							Al terminar el script, el equipo aparecerá inmediatamente en el listado inferior en estado <span class="authorization-badge is-authorized" style="font-size: 0.72rem; padding: 2px 6px;">REPORTADO</span>.
+							Al terminar el script, el equipo aparecerá inmediatamente en el listado inferior en estado <span class="authorization-badge is-authorized" style="font-size: 0.72rem; padding: 2px 6px;">🟢 Reportó con Éxito</span>.
 						</p>
 					</div>
 
@@ -76,7 +76,7 @@
 							<strong style="color: #15803d; font-size: 0.9rem;">Hacer clic en "👉 Abrir Ficha"</strong>
 						</div>
 						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
-							Haz clic en el botón azul de la fila para entrar y presionar <strong>"Consolidar relevamiento"</strong>. ¡Eso fija la configuración oficial esperada!
+							Haz clic en el botón azul de la fila para entrar y presionar <strong>"Registrar como Gemelo Digital"</strong>. ¡Eso fija la configuración oficial esperada!
 						</p>
 					</div>
 				</div>
@@ -103,7 +103,14 @@
 						<h2 id="equipos-list-title">Inventario tecnico</h2>
 						<p class="section-note">Listado de equipos del parque judicial. Haz clic en <strong>"👉 Abrir Ficha"</strong> para ver sus componentes o consolidar su configuración.</p>
 					</div>
-					<span class="count-badge" th:text="${equipos.paginacion.totalItems} + ' equipos'">0 equipos</span>
+					<div style="display: flex; align-items: center; gap: 10px;">
+						<form th:if="${puedeEditar}" th:action="@{/admin/equipos/nuevo-taller}" method="post" style="margin: 0;">
+							<button type="submit" class="primary-action" style="font-size: 0.82rem; padding: 6px 12px; background: #0284c7; border: none; cursor: pointer;">
+								🔧 Iniciar Armado en Taller
+							</button>
+						</form>
+						<span class="count-badge" th:text="${equipos.paginacion.totalItems} + ' equipos'">0 equipos</span>
+					</div>
 				</div>
 
 				<div class="success-message" th:if="${importacionResultado != null}">
@@ -127,31 +134,47 @@
 					<table>
 						<thead>
 							<tr>
-								<th scope="col">Equipo</th>
+								<th scope="col">Equipo y Origen</th>
 								<th scope="col">Usuario Actual</th>
 								<th scope="col">Fuero / Ubicación</th>
 								<th scope="col">IP</th>
 								<th scope="col">Sistema Operativo</th>
-								<th scope="col">Estado</th>
+								<th scope="col">Gemelo / Estado</th>
 								<th scope="col">Paso Siguiente</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr th:each="equipo : ${equipos.equipos}">
-								<td data-label="Equipo">
-									<a th:href="@{/admin/equipos/{id}(id=${equipo.id})}" th:text="${equipo.nombre}" style="font-weight: 700; color: #1e3a8a; text-decoration: none; font-size: 0.98rem;">PC-001</a>
+								<td data-label="Equipo y Origen">
+									<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+										<a th:href="@{/admin/equipos/{id}(id=${equipo.id})}" th:text="${equipo.nombre}" style="font-weight: 700; color: #1e3a8a; text-decoration: none; font-size: 0.98rem;">PC-001</a>
+										<!-- Etiqueta de Origen -->
+										<span th:if="${equipo.ultimoReporteEn != null}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;">🚀 Sumado via Script</span>
+										<span th:if="${equipo.ultimoReporteEn == null and equiposConOrdenes != null and equiposConOrdenes.contains(equipo.id)}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">🔧 Armado en el Taller</span>
+										<span th:if="${equipo.ultimoReporteEn == null and (equiposConOrdenes == null or !equiposConOrdenes.contains(equipo.id))}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: #fefce8; color: #a16207; border: 1px solid #fef08a;">📝 Manual</span>
+									</div>
 									<span class="table-subtext" th:text="${equipo.ubicacion ?: 'Sin ubicación asignada'}">Oficina</span>
 								</td>
-								<td data-label="Usuario Actual" th:text="${equipo.ultimoUsuario ?: 'Sin dato'}">gmurad</td>
+								<td data-label="Usuario Actual">
+									<strong th:if="${equipo.ultimoUsuario != null and !#strings.isEmpty(equipo.ultimoUsuario)}" th:text="${equipo.ultimoUsuario}">gmurad</strong>
+									<span th:if="${equipo.ultimoUsuario == null or #strings.isEmpty(equipo.ultimoUsuario)}" style="color: #b45309; font-size: 0.82rem; font-weight: 600;">⚠️ Sin asignar</span>
+								</td>
 								<td data-label="Fuero / Ubicación" th:text="${equipo.fuero}">Informática</td>
 								<td data-label="IP" th:text="${equipo.ip ?: 'Sin dato'}">10.15.2.20</td>
 								<td data-label="Sistema Operativo" th:text="${equipo.sistemaOperativo ?: 'Sin dato'}">Windows 11</td>
-								<td data-label="Estado">
-									<span class="authorization-badge" th:classappend="${equipo.activo} ? ' is-authorized' : ' is-pending'"
-											th:text="${equipo.activo} ? equipo.monitoreo : 'INACTIVO'">REPORTADO</span>
+								<td data-label="Gemelo / Estado">
+									<div style="display: flex; flex-direction: column; gap: 3px;">
+										<span th:if="${equipo.ultimoReporteEn != null}" class="authorization-badge is-authorized" style="font-size: 0.72rem; padding: 2px 6px;">
+											🟢 Reportó con Éxito
+										</span>
+										<span th:if="${equipo.ultimoReporteEn == null}" class="authorization-badge is-pending" style="font-size: 0.72rem; padding: 2px 6px;">
+											🟡 Esperando Script
+										</span>
+										<span th:if="${equipo.ultimoReporteEn != null}" style="font-size: 0.72rem; color: #64748b;" th:text="${#temporals.format(equipo.ultimoReporteEn, 'dd/MM HH:mm')}">03/09 17:30</span>
+									</div>
 								</td>
 								<td data-label="Paso Siguiente">
-									<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+									<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
 										<a class="primary-action" th:href="@{/admin/equipos/{id}(id=${equipo.id})}" style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700;">
 											👉 Abrir Ficha
 										</a>

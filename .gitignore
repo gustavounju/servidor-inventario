@@ -35,3 +35,29 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local / Security ###
+*.pem
+*.crt
+*.key
+*.p12
+*.jks
+.env
+*.db
+__pycache__/
+.agent/
+.agents/
+backups/
+archive_scripts/
+scripts_tmp/
+scratch/
+database/
+logs/
+repositories/
+services/
+tools/
+utils/
+blueprints/
+standalone_pdf_tool/
+inventario-next/
+static/

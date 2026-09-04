@@ -82,13 +82,16 @@ public class StockController {
 			@Size(max = 180) String modelo,
 			@Size(max = 180) String serial,
 			@Size(max = 120) String capacidad,
+			@Size(max = 80) String remito,
+			@Size(max = 80) String ordenCompra,
+			@Size(max = 150) String proveedor,
 			@Size(max = 120) String ubicacion,
 			@Size(max = 500) String observaciones,
 			boolean activo) {
 
 		private GuardarStockComponenteCommand toCommand() {
 			return new GuardarStockComponenteCommand(
-					tipo, estado, descripcion, marca, modelo, serial, capacidad, ubicacion, observaciones, activo);
+					tipo, estado, descripcion, marca, modelo, serial, capacidad, remito, ordenCompra, proveedor, ubicacion, observaciones, activo);
 		}
 	}
 }

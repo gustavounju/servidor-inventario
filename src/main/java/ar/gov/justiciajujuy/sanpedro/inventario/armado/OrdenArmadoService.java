@@ -86,6 +86,10 @@ public class OrdenArmadoService {
 		OrdenArmado orden = ordenArmadoRepository.findById(ordenId)
 				.orElseThrow(() -> new OrdenArmadoNoEncontradaException(ordenId));
 		StockComponente stock = command.stockComponenteId() != null ? stockService.reservar(command.stockComponenteId()) : null;
+		String remito = stock != null && StringUtils.hasText(stock.getRemito()) ? stock.getRemito() : command.remito();
+		String ordenCompra = stock != null && StringUtils.hasText(stock.getOrdenCompra()) ? stock.getOrdenCompra() : command.ordenCompra();
+		String proveedor = stock != null && StringUtils.hasText(stock.getProveedor()) ? stock.getProveedor() : command.proveedor();
+
 		ComponenteDetalle componente = componenteService.crear(orden.getEquipo().getId(), new GuardarComponenteCommand(
 				command.tipo(),
 				OrigenComponente.ORDEN_ARMADO,
@@ -95,6 +99,9 @@ public class OrdenArmadoService {
 				command.modelo(),
 				command.serial(),
 				command.capacidad(),
+				remito,
+				ordenCompra,
+				proveedor,
 				command.ubicacion(),
 				command.observaciones(),
 				true));
@@ -124,6 +131,10 @@ public class OrdenArmadoService {
 		}
 		stockService.asignarReservado(stock.getId());
 		var componente = ordenComponente.getComponente();
+		String remito = stock.getRemito() != null ? stock.getRemito() : componente.getRemito();
+		String ordenCompra = stock.getOrdenCompra() != null ? stock.getOrdenCompra() : componente.getOrdenCompra();
+		String proveedor = stock.getProveedor() != null ? stock.getProveedor() : componente.getProveedor();
+
 		ComponenteDetalle actualizado = componenteService.actualizar(componente.getId(), new GuardarComponenteCommand(
 				componente.getTipo(),
 				OrigenComponente.STOCK,
@@ -133,6 +144,9 @@ public class OrdenArmadoService {
 				componente.getModelo(),
 				componente.getSerial(),
 				componente.getCapacidad(),
+				remito,
+				ordenCompra,
+				proveedor,
 				componente.getUbicacion(),
 				observacionSalidaStock(componente.getObservaciones()),
 				componente.isActivo()));
@@ -164,7 +178,10 @@ public class OrdenArmadoService {
 				componente.getSerial(),
 				componente.getOrigen(),
 				componente.getEstadoComparacion(),
-				stock != null ? stock.getEstado() : null);
+				stock != null ? stock.getEstado() : null,
+				componente.getRemito(),
+				componente.getOrdenCompra(),
+				componente.getProveedor());
 	}
 
 	private String observacionSalidaStock(String observacionesActuales) {
@@ -204,7 +221,10 @@ public class OrdenArmadoService {
 			String serial,
 			String capacidad,
 			String ubicacion,
-			String observaciones) {
+			String observaciones,
+			String remito,
+			String ordenCompra,
+			String proveedor) {
 	}
 
 	public record OrdenArmadoDetalle(
@@ -226,7 +246,10 @@ public class OrdenArmadoService {
 			String serial,
 			OrigenComponente origen,
 			EstadoComparacion estadoComparacion,
-			EstadoStockComponente estadoStock) {
+			EstadoStockComponente estadoStock,
+			String remito,
+			String ordenCompra,
+			String proveedor) {
 	}
 
 	public static class OrdenArmadoNoEncontradaException extends RuntimeException {

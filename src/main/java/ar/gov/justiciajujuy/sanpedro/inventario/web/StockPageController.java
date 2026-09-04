@@ -147,8 +147,17 @@ public class StockPageController {
 
 		private boolean activo = true;
 
+		@Size(max = 80)
+		private String remito;
+
+		@Size(max = 80)
+		private String ordenCompra;
+
+		@Size(max = 150)
+		private String proveedor;
+
 		GuardarStockComponenteCommand toCommand() {
-			return new GuardarStockComponenteCommand(tipo, estado, descripcion, marca, modelo, serial, capacidad, ubicacion, observaciones, activo);
+			return new GuardarStockComponenteCommand(tipo, estado, descripcion, marca, modelo, serial, capacidad, remito, ordenCompra, proveedor, ubicacion, observaciones, activo);
 		}
 
 		public TipoComponente getTipo() { return tipo; }
@@ -171,5 +180,11 @@ public class StockPageController {
 		public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
 		public boolean isActivo() { return activo; }
 		public void setActivo(boolean activo) { this.activo = activo; }
+		public String getRemito() { return remito; }
+		public void setRemito(String remito) { this.remito = remito; }
+		public String getOrdenCompra() { return ordenCompra; }
+		public void setOrdenCompra(String ordenCompra) { this.ordenCompra = ordenCompra; }
+		public String getProveedor() { return proveedor; }
+		public void setProveedor(String proveedor) { this.proveedor = proveedor; }
 	}
 }

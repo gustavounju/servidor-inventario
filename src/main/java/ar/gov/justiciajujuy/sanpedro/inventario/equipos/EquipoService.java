@@ -16,15 +16,17 @@ import org.springframework.util.StringUtils;
 public class EquipoService {
 
 	private final EquipoRepository equipoRepository;
+	private final FueroService fueroService;
 	private final Clock clock;
 
 	@Autowired
-	public EquipoService(EquipoRepository equipoRepository) {
-		this(equipoRepository, Clock.systemDefaultZone());
+	public EquipoService(EquipoRepository equipoRepository, FueroService fueroService) {
+		this(equipoRepository, fueroService, Clock.systemDefaultZone());
 	}
 
-	EquipoService(EquipoRepository equipoRepository, Clock clock) {
+	EquipoService(EquipoRepository equipoRepository, FueroService fueroService, Clock clock) {
 		this.equipoRepository = equipoRepository;
+		this.fueroService = fueroService;
 		this.clock = clock;
 	}
 
@@ -126,10 +128,10 @@ public class EquipoService {
 		Equipo equipoExistente = equipoRepository.findByNombreIgnoreCase(nombre).orElse(null);
 		if (command.fuero() != null && StringUtils.hasText(command.fuero())) {
 			fuero = command.fuero().trim();
-		} else if (equipoExistente != null) {
+		} else if (equipoExistente != null && StringUtils.hasText(equipoExistente.getFuero()) && !"Desconocido".equalsIgnoreCase(equipoExistente.getFuero())) {
 			fuero = equipoExistente.getFuero();
 		} else {
-			fuero = detectarFuero(nombre);
+			fuero = fueroService.resolverFuero(command.fuero(), nombre);
 		}
 
 		Equipo equipo = equipoExistente != null ? equipoExistente : new Equipo(nombre, fuero);
@@ -189,6 +191,25 @@ public class EquipoService {
 		return toDetalle(equipoRepository.save(equipo));
 	}
 
+	@Transactional
+	public EquipoDetalle crearEquipoEnTaller(String codigoSugerido) {
+		String nombre;
+		if (StringUtils.hasText(codigoSugerido)) {
+			nombre = normalizarNombre(codigoSugerido);
+			if (equipoRepository.findByNombreIgnoreCase(nombre).isPresent()) {
+				throw new EquipoDuplicadoException(nombre);
+			}
+		} else {
+			int seq = 1;
+			do {
+				nombre = String.format("ARMADO-%03d", seq++);
+			} while (equipoRepository.findByNombreIgnoreCase(nombre).isPresent());
+		}
+
+		Equipo equipo = Equipo.crearParaTaller(nombre);
+		return toDetalle(equipoRepository.save(equipo));
+	}
+
 	private EquipoResumen toResumen(Equipo equipo) {
 		return new EquipoResumen(
 				equipo.getId(),
@@ -199,7 +220,8 @@ public class EquipoService {
 				equipo.getIp(),
 				equipo.getSistemaOperativo(),
 				equipo.getMonitoreo(),
-				equipo.isActivo());
+				equipo.isActivo(),
+				equipo.getUltimoReporteEn());
 	}
 
 	private EquipoDetalle toDetalle(Equipo equipo) {
@@ -302,7 +324,8 @@ public class EquipoService {
 			String ip,
 			String sistemaOperativo,
 			String monitoreo,
-			boolean activo) {
+			boolean activo,
+			LocalDateTime ultimoReporteEn) {
 	}
 
 	public record EquipoDetalle(

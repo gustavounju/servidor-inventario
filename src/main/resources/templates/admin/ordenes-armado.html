@@ -113,15 +113,20 @@
 						🤖 Ver Gemelo Digital de <span th:text="${equipoSeleccionado.nombre}">PC</span>
 					</a>
 				</div>
-				<form class="search-form" th:action="@{/admin/ordenes-armado}" method="get" style="display: flex; gap: 10px; align-items: flex-end;">
-					<label style="flex: 1; margin: 0;">
+				<form class="search-form" th:action="@{/admin/ordenes-armado}" method="get" style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+					<label style="flex: 1; min-width: 250px; margin: 0;">
 						<span style="font-weight: 600; font-size: 0.85rem; color: #334155;">Seleccionar Computadora</span>
-						<select name="equipoId" onchange="this.form.submit()" style="padding: 8px 12px; font-size: 0.92rem; font-weight: 600; border: 1px solid #94a3b8; border-radius: 6px;">
+						<select name="equipoId" onchange="this.form.submit()" style="padding: 8px 12px; font-size: 0.92rem; font-weight: 600; border: 1px solid #94a3b8; border-radius: 6px; width: 100%;">
 							<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre} + ' (' + ${equipo.fuero} + ' - ' + ${equipo.ubicacion ?: 'Sin ubicación'} + ')'"
 									th:selected="${equipo.id == equipoSeleccionadoId}">PC-INF-001</option>
 						</select>
 					</label>
 					<button class="primary-action" type="submit" style="padding: 9px 16px; font-size: 0.88rem;">Cargar Equipo</button>
+				</form>
+				<form th:if="${puedeEditarOrdenes}" th:action="@{/admin/equipos/nuevo-taller}" method="post" style="margin-top: 10px;">
+					<button class="secondary-action" type="submit" style="padding: 7px 14px; font-size: 0.85rem; background: #0284c7; color: #ffffff; border: none; cursor: pointer; border-radius: 4px;">
+						🔧 ➕ Iniciar Nueva PC en Taller (Código Automático)
+					</button>
 				</form>
 			</section>
 
@@ -133,14 +138,14 @@
 						<span class="tab-badge" th:text="${#lists.size(ordenes)}">0</span>
 					</button>
 				</li>
-				<li th:if="${puedeEditarOrdenes and !#lists.isEmpty(ordenes)}">
-					<button type="button" class="subnav-tab" id="tab-btn-agregar" onclick="switchTab('agregar')" role="tab" aria-selected="false" aria-controls="pane-agregar">
-						➕ Reservar Pieza de Stock
-					</button>
-				</li>
 				<li th:if="${puedeEditarOrdenes}">
 					<button type="button" class="subnav-tab" id="tab-btn-crear" onclick="switchTab('crear')" role="tab" aria-selected="false" aria-controls="pane-crear">
 						🛠️ Crear o Editar Orden
+					</button>
+				</li>
+				<li th:if="${puedeEditarOrdenes and !#lists.isEmpty(ordenes)}">
+					<button type="button" class="subnav-tab" id="tab-btn-agregar" onclick="switchTab('agregar')" role="tab" aria-selected="false" aria-controls="pane-agregar">
+						➕ Reservar Pieza de Stock
 					</button>
 				</li>
 			</ul>
@@ -239,6 +244,7 @@
 											<th scope="col">Tipo</th>
 											<th scope="col">Componente y Modelo</th>
 											<th scope="col">Origen</th>
+											<th scope="col">Remito / OC</th>
 											<th scope="col">Estado Stock</th>
 											<th scope="col">Paso de Salida Física</th>
 										</tr>
@@ -254,6 +260,14 @@
 											</td>
 											<td data-label="Origen">
 												<span class="table-subtext" th:text="${componenteOrden.origen}">ORDEN_ARMADO</span>
+											</td>
+											<td data-label="Remito / OC">
+												<div th:if="${componenteOrden.remito != null or componenteOrden.ordenCompra != null}">
+													<span th:if="${componenteOrden.remito}" style="display: block; font-size: 0.8rem; font-weight: 600; color: #0f172a;">📄 <span th:text="${componenteOrden.remito}">R-001</span></span>
+													<span th:if="${componenteOrden.ordenCompra}" style="display: block; font-size: 0.78rem; color: #475569;">🛒 <span th:text="${componenteOrden.ordenCompra}">OC-12</span></span>
+													<span th:if="${componenteOrden.proveedor}" style="display: block; font-size: 0.75rem; color: #64748b;" th:text="${componenteOrden.proveedor}">Banghó</span>
+												</div>
+												<span th:unless="${componenteOrden.remito != null or componenteOrden.ordenCompra != null}" class="table-subtext">-</span>
 											</td>
 											<td data-label="Estado Stock">
 												<span th:if="${componenteOrden.estadoStock != null}" class="authorization-badge"
@@ -339,6 +353,18 @@
 							<label>
 								<span>Capacidad</span>
 								<input th:field="*{capacidad}" maxlength="120" placeholder="Ej: 8GB / 480GB">
+							</label>
+							<label>
+								<span>N° Remito</span>
+								<input th:field="*{remito}" placeholder="Ej: R-0001-00084321" maxlength="80">
+							</label>
+							<label>
+								<span>Orden de Compra</span>
+								<input th:field="*{ordenCompra}" placeholder="Ej: OC-2025-089" maxlength="80">
+							</label>
+							<label>
+								<span>Proveedor</span>
+								<input th:field="*{proveedor}" placeholder="Ej: PC Arts / Banghó..." maxlength="150">
 							</label>
 							<label>
 								<span>Ubicación prevista</span>
@@ -452,7 +478,7 @@
 	<!-- Script de Pestañas Interactivas -->
 	<script>
 		function switchTab(tabId) {
-			const tabs = ['ordenes', 'agregar', 'crear'];
+			const tabs = ['ordenes', 'crear', 'agregar'];
 			tabs.forEach(function(id) {
 				const btn = document.getElementById('tab-btn-' + id);
 				const pane = document.getElementById('pane-' + id);

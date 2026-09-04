@@ -158,6 +158,7 @@
 									<th scope="col">Descripción Técnica</th>
 									<th scope="col">Marca / Modelo / Capacidad</th>
 									<th scope="col">N° Serial</th>
+									<th scope="col">Remito / O. Compra</th>
 									<th scope="col">Ubicación Física</th>
 									<th scope="col">Estado</th>
 									<th scope="col">Siguiente Acción</th>
@@ -178,6 +179,14 @@
 									</td>
 									<td data-label="N° Serial">
 										<code th:text="${componente.serial ?: 'Sin serial'}" style="font-size: 0.85rem; color: #1e3a8a;">SN-001</code>
+									</td>
+									<td data-label="Remito / O. Compra">
+										<div th:if="${componente.remito != null or componente.ordenCompra != null}">
+											<span th:if="${componente.remito}" style="display: block; font-size: 0.8rem; font-weight: 600; color: #0f172a;">📄 Rem: <span th:text="${componente.remito}">R-001</span></span>
+											<span th:if="${componente.ordenCompra}" style="display: block; font-size: 0.78rem; color: #475569;">🛒 OC: <span th:text="${componente.ordenCompra}">OC-12</span></span>
+											<span th:if="${componente.proveedor}" style="display: block; font-size: 0.75rem; color: #64748b;" th:text="${componente.proveedor}">Banghó</span>
+										</div>
+										<span th:unless="${componente.remito != null or componente.ordenCompra != null}" style="color: #94a3b8; font-size: 0.8rem;">-</span>
 									</td>
 									<td data-label="Ubicación" th:text="${componente.ubicacion ?: 'Depósito'}">Depósito</td>
 									<td data-label="Estado">
@@ -242,7 +251,19 @@
 								<span>Capacidad / Frecuencia</span>
 								<input th:field="*{capacidad}" placeholder="Ej: 16GB 3200MHz, 480GB, 1TB..." maxlength="120">
 							</label>
-							<label style="grid-column: 1 / -1;">
+							<label>
+								<span>N° de Remito</span>
+								<input th:field="*{remito}" placeholder="Ej: R-0001-00084321" maxlength="80">
+							</label>
+							<label>
+								<span>Orden de Compra (OC)</span>
+								<input th:field="*{ordenCompra}" placeholder="Ej: OC-2025-089" maxlength="80">
+							</label>
+							<label>
+								<span>Proveedor</span>
+								<input th:field="*{proveedor}" placeholder="Ej: PC Arts / Compumundo / Banghó..." maxlength="150">
+							</label>
+							<label>
 								<span>Ubicación Física en Depósito</span>
 								<select th:field="*{ubicacion}">
 									<option value="">Depósito Central</option>
@@ -320,7 +341,19 @@
 									<span>Capacidad</span>
 									<input name="capacidad" th:value="${componente.capacidad}" maxlength="120">
 								</label>
-								<label style="grid-column: 1 / -1;">
+								<label>
+									<span>N° de Remito</span>
+									<input name="remito" th:value="${componente.remito}" placeholder="Ej: R-0001-00084321" maxlength="80">
+								</label>
+								<label>
+									<span>Orden de Compra</span>
+									<input name="ordenCompra" th:value="${componente.ordenCompra}" placeholder="Ej: OC-2025-089" maxlength="80">
+								</label>
+								<label>
+									<span>Proveedor</span>
+									<input name="proveedor" th:value="${componente.proveedor}" placeholder="Ej: PC Arts / Banghó..." maxlength="150">
+								</label>
+								<label>
 									<span>Ubicación</span>
 									<select name="ubicacion">
 										<option value="">Depósito Central</option>

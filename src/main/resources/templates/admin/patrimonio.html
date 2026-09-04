@@ -291,7 +291,10 @@
 							</label>
 							<label>
 								<span>Fuero / Dependencia</span>
-								<input th:field="*{fuero}" placeholder="Ej: Informática, Civil y Comercial, Penal..." maxlength="120">
+								<input th:field="*{fuero}" list="lista-fueros" placeholder="Seleccione o escriba el Fuero..." maxlength="120">
+								<datalist id="lista-fueros">
+									<option th:each="f : ${fuerosDisponibles}" th:value="${f}" th:text="${f}"></option>
+								</datalist>
 							</label>
 							<label style="grid-column: 1 / -1;">
 								<span>Custodio Responsable</span>
@@ -371,7 +374,7 @@
 								</label>
 								<label>
 									<span>Fuero</span>
-									<input name="fuero" th:value="${bien.fuero}" maxlength="120">
+									<input name="fuero" th:value="${bien.fuero}" list="lista-fueros" maxlength="120" placeholder="Seleccione o escriba el Fuero...">
 								</label>
 								<label style="grid-column: 1 / -1;">
 									<span>Custodio</span>

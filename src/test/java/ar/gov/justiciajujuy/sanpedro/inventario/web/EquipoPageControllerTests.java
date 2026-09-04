@@ -101,7 +101,7 @@ class EquipoPageControllerTests {
 		mockMvc.perform(get("/admin/equipos/1").with(user(adminLocal())))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("RELEVAMIENTO_INICIAL")))
-			.andExpect(content().string(containsString("Consolidar lectura como relevamiento inicial")));
+			.andExpect(content().string(containsString("Gemelo Digital")));
 	}
 
 	@Test
@@ -186,6 +186,15 @@ class EquipoPageControllerTests {
 				.param("fuero", "Informatica")
 				.param("activo", "true"))
 			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void iniciaNuevoEquipoEnTallerConCodigoAutomaticoYRedirigeAOrdenes() throws Exception {
+		mockMvc.perform(post("/admin/equipos/nuevo-taller")
+				.with(user(adminLocal()))
+				.with(csrf()))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrlPattern("/admin/ordenes-armado?*equipoId=*&creado=1"));
 	}
 
 	private ActiveDirectoryUserDetails adminLocal() {

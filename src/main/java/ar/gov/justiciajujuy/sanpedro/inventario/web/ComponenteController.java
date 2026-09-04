@@ -115,6 +115,15 @@ public class ComponenteController {
 			@Size(max = 120)
 			String capacidad,
 
+			@Size(max = 80)
+			String remito,
+
+			@Size(max = 80)
+			String ordenCompra,
+
+			@Size(max = 150)
+			String proveedor,
+
 			@Size(max = 120)
 			String ubicacion,
 
@@ -133,6 +142,9 @@ public class ComponenteController {
 					modelo,
 					serial,
 					capacidad,
+					remito,
+					ordenCompra,
+					proveedor,
 					ubicacion,
 					observaciones,
 					activo);

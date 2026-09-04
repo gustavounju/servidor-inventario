@@ -277,8 +277,17 @@ public class OrdenArmadoPageController {
 		@Size(max = 500)
 		private String observaciones;
 
+		@Size(max = 80)
+		private String remito;
+
+		@Size(max = 80)
+		private String ordenCompra;
+
+		@Size(max = 150)
+		private String proveedor;
+
 		GuardarComponenteOrdenCommand toCommand() {
-			return new GuardarComponenteOrdenCommand(stockComponenteId, tipo, descripcion, marca, modelo, serial, capacidad, ubicacion, observaciones);
+			return new GuardarComponenteOrdenCommand(stockComponenteId, tipo, descripcion, marca, modelo, serial, capacidad, ubicacion, observaciones, remito, ordenCompra, proveedor);
 		}
 
 		public Long getOrdenId() { return ordenId; }
@@ -301,5 +310,11 @@ public class OrdenArmadoPageController {
 		public void setUbicacion(String ubicacion) { this.ubicacion = ubicacion; }
 		public String getObservaciones() { return observaciones; }
 		public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+		public String getRemito() { return remito; }
+		public void setRemito(String remito) { this.remito = remito; }
+		public String getOrdenCompra() { return ordenCompra; }
+		public void setOrdenCompra(String ordenCompra) { this.ordenCompra = ordenCompra; }
+		public String getProveedor() { return proveedor; }
+		public void setProveedor(String proveedor) { this.proveedor = proveedor; }
 	}
 }

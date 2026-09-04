@@ -85,6 +85,9 @@ public class StockService {
 				textoOpcional(command.modelo()),
 				textoOpcional(command.serial()),
 				textoOpcional(command.capacidad()),
+				textoOpcional(command.remito()),
+				textoOpcional(command.ordenCompra()),
+				textoOpcional(command.proveedor()),
 				textoOpcional(command.ubicacion()),
 				textoOpcional(command.observaciones()),
 				command.activo());
@@ -100,6 +103,9 @@ public class StockService {
 				componente.getModelo(),
 				componente.getSerial(),
 				componente.getCapacidad(),
+				componente.getRemito(),
+				componente.getOrdenCompra(),
+				componente.getProveedor(),
 				componente.getUbicacion(),
 				componente.getObservaciones(),
 				componente.isActivo());
@@ -124,6 +130,9 @@ public class StockService {
 			String modelo,
 			String serial,
 			String capacidad,
+			String remito,
+			String ordenCompra,
+			String proveedor,
 			String ubicacion,
 			String observaciones,
 			boolean activo) {
@@ -138,6 +147,9 @@ public class StockService {
 			String modelo,
 			String serial,
 			String capacidad,
+			String remito,
+			String ordenCompra,
+			String proveedor,
 			String ubicacion,
 			String observaciones,
 			boolean activo) {

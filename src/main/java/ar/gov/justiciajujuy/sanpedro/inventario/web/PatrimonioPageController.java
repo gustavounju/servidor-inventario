@@ -36,13 +36,16 @@ public class PatrimonioPageController {
 	private final PatrimonioService patrimonioService;
 	private final EquipoRepository equipoRepository;
 	private final UbicacionService ubicacionService;
+	private final ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService;
 
 	public PatrimonioPageController(AuthorizationService authorizationService, PatrimonioService patrimonioService,
-			EquipoRepository equipoRepository, UbicacionService ubicacionService) {
+			EquipoRepository equipoRepository, UbicacionService ubicacionService,
+			ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService) {
 		this.authorizationService = authorizationService;
 		this.patrimonioService = patrimonioService;
 		this.equipoRepository = equipoRepository;
 		this.ubicacionService = ubicacionService;
+		this.fueroService = fueroService;
 	}
 
 	@GetMapping("/admin/patrimonio")
@@ -111,6 +114,7 @@ public class PatrimonioPageController {
 		model.addAttribute("ubicacionesActivas", ubicacionService.activas());
 		model.addAttribute("filtroQuery", query);
 		model.addAttribute("filtroEstado", estado);
+		model.addAttribute("fuerosDisponibles", fueroService.listarFueros());
 		model.addAttribute("puedeEditarPatrimonio", authorizationService.tienePermiso(userDetails, MODULO_PATRIMONIO, PERMISO_EDITAR));
 		model.addAttribute("puedeVerActas", authorizationService.tienePermiso(userDetails, "ACTAS", PERMISO_VER));
 		model.addAttribute("puedeVerEquipos", authorizationService.tienePermiso(userDetails, "EQUIPOS", PERMISO_VER));

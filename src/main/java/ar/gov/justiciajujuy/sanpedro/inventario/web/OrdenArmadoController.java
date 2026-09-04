@@ -122,11 +122,14 @@ public class OrdenArmadoController {
 			@Size(max = 180) String serial,
 			@Size(max = 120) String capacidad,
 			@Size(max = 120) String ubicacion,
-			@Size(max = 500) String observaciones) {
+			@Size(max = 500) String observaciones,
+			@Size(max = 80) String remito,
+			@Size(max = 80) String ordenCompra,
+			@Size(max = 150) String proveedor) {
 
 		private GuardarComponenteOrdenCommand toCommand() {
 			return new GuardarComponenteOrdenCommand(
-					stockComponenteId, tipo, descripcion, marca, modelo, serial, capacidad, ubicacion, observaciones);
+					stockComponenteId, tipo, descripcion, marca, modelo, serial, capacidad, ubicacion, observaciones, remito, ordenCompra, proveedor);
 		}
 	}
 }

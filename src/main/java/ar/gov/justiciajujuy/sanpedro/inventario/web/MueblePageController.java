@@ -33,12 +33,15 @@ public class MueblePageController {
 	private final AuthorizationService authorizationService;
 	private final MuebleService muebleService;
 	private final UbicacionService ubicacionService;
+	private final ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService;
 
 	public MueblePageController(AuthorizationService authorizationService, MuebleService muebleService,
-			UbicacionService ubicacionService) {
+			UbicacionService ubicacionService,
+			ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService) {
 		this.authorizationService = authorizationService;
 		this.muebleService = muebleService;
 		this.ubicacionService = ubicacionService;
+		this.fueroService = fueroService;
 	}
 
 	@GetMapping("/admin/muebles")
@@ -94,6 +97,7 @@ public class MueblePageController {
 		model.addAttribute("muebleForm", muebleForm);
 		model.addAttribute("estadosMueble", EstadoMueble.values());
 		model.addAttribute("ubicacionesActivas", ubicacionService.activas());
+		model.addAttribute("fuerosDisponibles", fueroService.listarFueros());
 		model.addAttribute("filtroQuery", query);
 		model.addAttribute("filtroEstado", estado);
 		model.addAttribute("puedeEditarMuebles", authorizationService.tienePermiso(userDetails, MODULO_MUEBLES, PERMISO_EDITAR));

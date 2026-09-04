@@ -32,10 +32,13 @@ public class UbicacionPageController {
 
 	private final AuthorizationService authorizationService;
 	private final UbicacionService ubicacionService;
+	private final ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService;
 
-	public UbicacionPageController(AuthorizationService authorizationService, UbicacionService ubicacionService) {
+	public UbicacionPageController(AuthorizationService authorizationService, UbicacionService ubicacionService,
+			ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService) {
 		this.authorizationService = authorizationService;
 		this.ubicacionService = ubicacionService;
+		this.fueroService = fueroService;
 	}
 
 	@GetMapping("/admin/ubicaciones")
@@ -96,6 +99,7 @@ public class UbicacionPageController {
 		model.addAttribute("filtroQuery", query);
 		model.addAttribute("filtroTipo", tipo);
 		model.addAttribute("filtroEstado", estado);
+		model.addAttribute("fuerosDisponibles", fueroService.listarFueros());
 		model.addAttribute("puedeEditarUbicaciones",
 				authorizationService.tienePermiso(userDetails, MODULO_UBICACIONES, PERMISO_EDITAR));
 	}

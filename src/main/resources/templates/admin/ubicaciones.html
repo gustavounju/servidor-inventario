@@ -236,7 +236,10 @@
 							</label>
 							<label>
 								<span>Fuero judicial</span>
-								<input th:field="*{fuero}" maxlength="120" placeholder="Ej: Laboral, Penal, Civil">
+								<input th:field="*{fuero}" list="lista-fueros" maxlength="120" placeholder="Seleccione o escriba el Fuero...">
+								<datalist id="lista-fueros">
+									<option th:each="f : ${fuerosDisponibles}" th:value="${f}" th:text="${f}"></option>
+								</datalist>
 							</label>
 							<label>
 								<span>Funcionario / Juez a cargo</span>
@@ -313,7 +316,7 @@
 								</label>
 								<label>
 									<span>Fuero</span>
-									<input name="fuero" th:value="${ubicacion.fuero}" maxlength="120">
+									<input name="fuero" th:value="${ubicacion.fuero}" list="lista-fueros" maxlength="120" placeholder="Seleccione o escriba el Fuero...">
 								</label>
 								<label>
 									<span>Responsable</span>

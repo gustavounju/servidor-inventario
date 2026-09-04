@@ -97,6 +97,42 @@ function Get-PrinterName {
     return ""
 }
 
+function Get-ActiveDirectoryFuero {
+    try {
+        $System = Get-InventoryClass -ClassName "Win32_ComputerSystem" | Select-Object -First 1
+        $DomainRole = $System.DomainRole
+        $PartOfDomain = $System.PartOfDomain
+
+        if ($PartOfDomain -or ($null -ne $DomainRole -and [int]$DomainRole -gt 0)) {
+            $CompName = $env:COMPUTERNAME
+            $Searcher = [adsisearcher]"(sAMAccountName=$CompName$)"
+            $Result = $Searcher.FindOne()
+            if ($Result -and $Result.Properties["distinguishedname"]) {
+                $Dn = [string]$Result.Properties["distinguishedname"][0]
+                $Parts = $Dn -split ","
+                $Ous = @()
+                foreach ($Part in $Parts) {
+                    $P = $Part.Trim()
+                    if ($P.StartsWith("OU=", [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $OuName = $P.Substring(3).Trim()
+                        if ($OuName -notmatch "^(?i)(EQUIPOS|USUARIOS|PODJUDSP|COMPUTERS|DOMAIN CONTROLLERS|SYSTEM)$") {
+                            $Ous += $OuName
+                        }
+                    }
+                }
+                if ($Ous.Count -gt 0) {
+                    [array]::Reverse($Ous)
+                    return [string]::Join(" - ", $Ous)
+                }
+            }
+        }
+    }
+    catch {
+        # Silencioso si no hay acceso al dominio o estamos en modo local
+    }
+    return ""
+}
+
 function Get-RamDetails {
     try {
         $Memories = Get-InventoryClass -ClassName "Win32_PhysicalMemory"
@@ -314,6 +350,14 @@ $MotherboardDetails = Get-MotherboardDetails
 $Monitors = Get-MonitorDetails
 $Keyboard = Get-PeripheralName -ClassName "Win32_Keyboard"
 $Mouse = Get-PeripheralName -ClassName "Win32_PointingDevice"
+
+if (-not (Test-HasText $Fuero)) {
+    $AdFuero = Get-ActiveDirectoryFuero
+    if (Test-HasText $AdFuero) {
+        $Fuero = $AdFuero
+        Write-Host "Fuero detectado automaticamente via Active Directory (OU): $Fuero" -ForegroundColor Cyan
+    }
+}
 
 $Json = "{"
 $Json += '"nombre":"' + (ConvertTo-JsonString $ComputerName) + '",'

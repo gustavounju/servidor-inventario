@@ -123,4 +123,24 @@ class ActiveDirectoryDomainServiceTests {
 				any(AttributesMapper.class));
 		assertThat(filterCaptor.getValue()).contains("gm\\2a\\29\\28admin");
 	}
+
+	@Test
+	void parseaFueroCorrectamenteDesdeDistinguishedName() {
+		ActiveDirectoryDomainService service = new ActiveDirectoryDomainService(new ActiveDirectoryProperties(), (LdapOperations) null);
+
+		String dn = "CN=TTSIVVOC100002,OU=Vocalia 10,OU=Sala IV,OU=Tribunal de Trabajo,OU=EQUIPOS,OU=PODJUDSP,DC=podjudsp,DC=local";
+		String fuero = service.parsearFueroDesdeDn(dn);
+
+		assertThat(fuero).isEqualTo("Tribunal de Trabajo - Sala IV - Vocalia 10");
+	}
+
+	@Test
+	void parseaFueroRetornaNullSiSoloHayContenedoresIgnorados() {
+		ActiveDirectoryDomainService service = new ActiveDirectoryDomainService(new ActiveDirectoryProperties(), (LdapOperations) null);
+
+		String dn = "CN=PC-01,OU=EQUIPOS,OU=PODJUDSP,DC=podjudsp,DC=local";
+		String fuero = service.parsearFueroDesdeDn(dn);
+
+		assertThat(fuero).isNull();
+	}
 }

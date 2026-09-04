@@ -91,6 +91,9 @@ public class ComponenteService {
 					detectado.getModelo(),
 					detectado.getSerial(),
 					detectado.getCapacidad(),
+					detectado.getRemito(),
+					detectado.getOrdenCompra(),
+					detectado.getProveedor(),
 					detectado.getUbicacion(),
 					observacionConsolidada(detectado.getObservaciones()),
 					true);
@@ -129,6 +132,9 @@ public class ComponenteService {
 				textoOpcional(command.modelo()),
 				textoOpcional(command.serial()),
 				textoOpcional(command.capacidad()),
+				textoOpcional(command.remito()),
+				textoOpcional(command.ordenCompra()),
+				textoOpcional(command.proveedor()),
 				textoOpcional(command.ubicacion()),
 				textoOpcional(command.observaciones()),
 				command.activo());
@@ -170,6 +176,7 @@ public class ComponenteService {
 		Componente componente = new Componente(equipo, tipo, OrigenComponente.SCRIPT, EstadoComparacion.DETECTADO, descripcion);
 		componente.actualizar(tipo, OrigenComponente.SCRIPT, EstadoComparacion.DETECTADO, descripcion,
 				textoOpcional(marca), textoOpcional(modelo), textoOpcional(serial), textoOpcional(capacidad),
+				null, null, null,
 				textoOpcional(ubicacion), "Detectado por script de inventario.", true);
 		componenteRepository.save(componente);
 	}
@@ -216,6 +223,9 @@ public class ComponenteService {
 				componente.getModelo(),
 				componente.getSerial(),
 				componente.getCapacidad(),
+				componente.getRemito(),
+				componente.getOrdenCompra(),
+				componente.getProveedor(),
 				componente.getUbicacion(),
 				componente.getObservaciones(),
 				componente.isActivo());
@@ -241,6 +251,9 @@ public class ComponenteService {
 			String modelo,
 			String serial,
 			String capacidad,
+			String remito,
+			String ordenCompra,
+			String proveedor,
 			String ubicacion,
 			String observaciones,
 			boolean activo) {
@@ -257,6 +270,9 @@ public class ComponenteService {
 			String modelo,
 			String serial,
 			String capacidad,
+			String remito,
+			String ordenCompra,
+			String proveedor,
 			String ubicacion,
 			String observaciones,
 			boolean activo) {
