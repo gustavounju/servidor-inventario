@@ -4,10 +4,23 @@ param(
     [string]$Token = $env:INVENTARIO_REPORT_TOKEN,
     [string]$Fuero = $env:INVENTARIO_FUERO,
     [string]$BackupDirectory = "$env:ProgramData\InventarioModular",
+    [switch]$SkipCertificateCheck,
     [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
+
+# Habilitar TLS 1.2 y protocolos criptograficos modernos en PowerShell (.NET 3.5 / 4.x)
+try {
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12 -bor 3072
+} catch {}
+
+# Si la conexion es HTTPS, asegurar tolerancia a certificados autofirmados o de CA interna
+if ($SkipCertificateCheck -or ($ServerUrl -and $ServerUrl.StartsWith("https:", [System.StringComparison]::OrdinalIgnoreCase))) {
+    try {
+        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+    } catch {}
+}
 
 function Test-HasText {
     param($Value)

@@ -42,8 +42,12 @@
 	<script>
 		(function () {
 			const origin = window.location.origin;
+			const isHttps = window.location.protocol === "https:";
+			const tlsPrefix = isHttps
+				? "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]'Tls12,Tls11,Tls'; [Net.ServicePointManager]::ServerCertificateValidationCallback={$true}; "
+				: "";
 			// El comando usa la misma IP/puerto del login y valida SHA-256 antes de ejecutar.
-			const command = [
+			const command = tlsPrefix + [
 				"$u='" + origin + "';",
 				"$p=\"$env:TEMP\\inventario-modular.ps1\";",
 				"$wc=New-Object Net.WebClient;",

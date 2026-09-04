@@ -2272,9 +2272,29 @@ Pendientes de actas y ubicaciones:
 
 Pendientes de plataforma:
 
-- Definir reverse proxy/HTTPS para un despliegue real.
 - Formalizar rollback con revision de migraciones Flyway.
 - Definir despliegue automatico solo cuando el flujo manual este maduro.
+
+## 2026-09-04 - Servidor Inverso Nginx, HTTPS y resiliencia de reporte
+
+Se implemento la capa de infraestructura y soporte seguro para publicacion productiva bajo HTTPS:
+
+- Se creo la plantilla Nginx `scripts/nginx/inventario-modular.conf` con:
+  - Redireccion automatica de HTTP (80) a HTTPS (443).
+  - Reverse Proxy hacia Spring Boot en `127.0.0.1:8081`.
+  - Paso de cabeceras `Host`, `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Port`.
+  - Soporte TLS 1.2/1.3 y WebSockets.
+- Se creo el script de despliegue automatico `scripts/setup-nginx-https.sh` para Ubuntu:
+  - Instalacion de Nginx/OpenSSL.
+  - Generacion automatica de certificado autofirmado para intranet si no existe certificado institucional previo.
+  - Activacion del sitio y verificacion de sintaxis con `nginx -t`.
+  - Apertura de puertos 80 y 443 en UFW.
+- Soporte HTTPS y compatibilidad universal en `inventario-modular.ps1`:
+  - Habilitacion de TLS 1.2 y tolerancia segura a certificados autofirmados de intranet.
+  - Parametro `-SkipCertificateCheck` para ejecucion en entornos controlados.
+- Actualizacion de `login.html` y `admin/equipos.html`:
+  - Deteccion automatica del protocolo (`http:` vs `https:`).
+  - Incorporacion de prefijo de seguridad TLS 1.2 y uso de `Net.WebClient` compatible con Windows 7 (PowerShell 2.0) y Windows 10/11.
 
 ## Fuentes internas consultadas
 

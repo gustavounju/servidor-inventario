@@ -281,7 +281,11 @@
 				var host = window.location.host;
 				var proto = window.location.protocol;
 				var baseUrl = proto + '//' + host;
-				input.value = 'Invoke-WebRequest -Uri "' + baseUrl + '/scripts/windows/inventario-modular.ps1" -OutFile "$env:TEMP\\inventario.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\\inventario.ps1" -ServerUrl "' + baseUrl + '/api/v1/equipos/inventario"';
+				var isHttps = proto === 'https:';
+				var tlsPrefix = isHttps
+					? "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]'Tls12,Tls11,Tls'; [Net.ServicePointManager]::ServerCertificateValidationCallback={$true}; "
+					: "";
+				input.value = tlsPrefix + '$u="' + baseUrl + '"; $p="$env:TEMP\\inventario.ps1"; (New-Object Net.WebClient).DownloadFile("$u/scripts/windows/inventario-modular.ps1", $p); powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"';
 			}
 		});
 	</script>
