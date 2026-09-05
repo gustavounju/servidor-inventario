@@ -87,13 +87,31 @@ public class AuditoriaService {
         return movimientoRepository.findByEquipoIdOrderByFechaMovimientoDesc(equipoId);
     }
 
+    @Transactional(readOnly = true)
+    public List<MovimientoEquipo> obtenerHistorialFiltrado(Long equipoId, String usuario, TipoMovimiento tipo) {
+        String uFiltro = StringUtils.hasText(usuario) ? usuario.trim() : null;
+        return movimientoRepository.filtrarPorEquipo(equipoId, uFiltro, tipo);
+    }
+
     @Transactional
     public MovimientoEquipo registrarMovimiento(Long equipoId, TipoMovimiento tipo, String usuarioDestino, String ubiOrigen, String ubiDestino, String admin, String obs) {
         Equipo equipo = equipoRepository.findById(equipoId)
             .orElseThrow(() -> new IllegalArgumentException("Equipo no encontrado"));
         
-        MovimientoEquipo mov = new MovimientoEquipo(equipo, tipo, usuarioDestino, ubiOrigen, ubiDestino, admin, obs);
-        return movimientoRepository.save(mov);
+        String operador = StringUtils.hasText(admin) ? admin : usuarioActual();
+        MovimientoEquipo mov = new MovimientoEquipo(equipo, tipo, usuarioDestino, ubiOrigen, ubiDestino, operador, obs);
+        MovimientoEquipo guardado = movimientoRepository.save(mov);
+
+        // Sincronización automática con la bitácora transversal de auditoría del sistema
+        String detalleAudit = StringUtils.hasText(obs) ? obs : ("Movimiento de tipo " + tipo + " en equipo " + equipo.getNombre());
+        registrar("EQUIPOS", tipo.name(), "Equipo", equipoId, detalleAudit);
+
+        return guardado;
+    }
+
+    @Transactional
+    public MovimientoEquipo registrarMovimientoAutomatico(Long equipoId, TipoMovimiento tipo, String usuarioDestino, String ubiOrigen, String ubiDestino, String obs) {
+        return registrarMovimiento(equipoId, tipo, usuarioDestino, ubiOrigen, ubiDestino, usuarioActual(), obs);
     }
 
     public byte[] generarActaPdf(Long movimientoId) throws Exception {

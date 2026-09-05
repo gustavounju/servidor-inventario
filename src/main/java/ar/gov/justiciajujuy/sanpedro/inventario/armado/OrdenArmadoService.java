@@ -3,6 +3,7 @@ package ar.gov.justiciajujuy.sanpedro.inventario.armado;
 import java.util.List;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.auditoria.AuditoriaService;
+import ar.gov.justiciajujuy.sanpedro.inventario.auditoria.TipoMovimiento;
 import ar.gov.justiciajujuy.sanpedro.inventario.componentes.ComponenteService;
 import ar.gov.justiciajujuy.sanpedro.inventario.componentes.ComponenteService.ComponenteDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.componentes.ComponenteService.GuardarComponenteCommand;
@@ -67,6 +68,15 @@ public class OrdenArmadoService {
 		OrdenArmado guardada = ordenArmadoRepository.save(orden);
 		auditoriaService.registrar("ORDENES_ARMADO", "CREAR", "OrdenArmado", guardada.getId(),
 				"Orden de armado creada para " + equipo.getNombre() + " con estado " + guardada.getEstado() + ".");
+
+		auditoriaService.registrarMovimientoAutomatico(
+				equipoId,
+				TipoMovimiento.MANTENIMIENTO,
+				equipo.getUltimoUsuario(),
+				equipo.getUbicacion(),
+				equipo.getUbicacion(),
+				"Creación de Orden de Armado #" + guardada.getId() + " (" + guardada.getEstado() + "): " + guardada.getDescripcion() + ".");
+
 		return toDetalle(guardada);
 	}
 
@@ -78,6 +88,17 @@ public class OrdenArmadoService {
 		OrdenArmado guardada = ordenArmadoRepository.save(orden);
 		auditoriaService.registrar("ORDENES_ARMADO", "ACTUALIZAR", "OrdenArmado", guardada.getId(),
 				"Orden de armado actualizada con estado " + guardada.getEstado() + ".");
+
+		if (command.estado() == EstadoOrdenArmado.CERRADA) {
+			auditoriaService.registrarMovimientoAutomatico(
+					orden.getEquipo().getId(),
+					TipoMovimiento.MANTENIMIENTO,
+					orden.getEquipo().getUltimoUsuario(),
+					orden.getEquipo().getUbicacion(),
+					orden.getEquipo().getUbicacion(),
+					"Orden de Armado #" + id + " cerrada y finalizada con éxito: " + orden.getDescripcion() + ".");
+		}
+
 		return toDetalle(guardada);
 	}
 
@@ -186,6 +207,15 @@ public class OrdenArmadoService {
 				componente.isActivo()));
 		auditoriaService.registrar("ORDENES_ARMADO", "CONFIRMAR_SALIDA_STOCK", "OrdenArmadoComponente", ordenComponente.getId(),
 				"Salida real desde stock confirmada para orden " + ordenComponente.getOrden().getId() + ".");
+
+		auditoriaService.registrarMovimientoAutomatico(
+				ordenComponente.getOrden().getEquipo().getId(),
+				TipoMovimiento.MANTENIMIENTO,
+				ordenComponente.getOrden().getEquipo().getUltimoUsuario(),
+				ordenComponente.getOrden().getEquipo().getUbicacion(),
+				ordenComponente.getOrden().getEquipo().getUbicacion(),
+				"Orden #" + ordenComponente.getOrden().getId() + ": Montaje y salida confirmada de " + componente.getTipo() + " (" + componente.getDescripcion() + ", S/N: " + (componente.getSerial() != null ? componente.getSerial() : "S/N") + ").");
+
 		return actualizado;
 	}
 

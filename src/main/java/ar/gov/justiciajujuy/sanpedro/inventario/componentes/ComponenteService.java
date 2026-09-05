@@ -3,6 +3,7 @@ package ar.gov.justiciajujuy.sanpedro.inventario.componentes;
 import java.util.List;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.auditoria.AuditoriaService;
+import ar.gov.justiciajujuy.sanpedro.inventario.auditoria.TipoMovimiento;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.Equipo;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoRepository;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoNoEncontradoException;
@@ -56,6 +57,13 @@ public class ComponenteService {
 		Componente guardado = componenteRepository.save(componente);
 		auditoriaService.registrar("COMPONENTES", "CREAR", "Componente", guardado.getId(),
 				"Componente " + guardado.getTipo() + " creado para equipo " + equipo.getNombre() + " con origen " + guardado.getOrigen() + ".");
+		auditoriaService.registrarMovimientoAutomatico(
+				equipoId,
+				TipoMovimiento.MANTENIMIENTO,
+				equipo.getUltimoUsuario(),
+				equipo.getUbicacion(),
+				equipo.getUbicacion(),
+				"Alta manual de componente: " + guardado.getTipo() + " - " + guardado.getDescripcion() + (guardado.getSerial() != null ? " (S/N: " + guardado.getSerial() + ")" : "") + ".");
 		return toDetalle(guardado);
 	}
 
@@ -76,9 +84,17 @@ public class ComponenteService {
 				.orElseThrow(() -> new ComponenteNoEncontradoException(id));
 		String desc = componente.getDescripcion();
 		Long equipoId = componente.getEquipo().getId();
+		Equipo equipo = componente.getEquipo();
 		componenteRepository.delete(componente);
 		auditoriaService.registrar("COMPONENTES", "ELIMINAR", "Componente", id,
 				"Componente " + desc + " eliminado del equipo " + equipoId + ".");
+		auditoriaService.registrarMovimientoAutomatico(
+				equipoId,
+				TipoMovimiento.MANTENIMIENTO,
+				equipo.getUltimoUsuario(),
+				equipo.getUbicacion(),
+				equipo.getUbicacion(),
+				"Eliminación de componente: " + desc + ".");
 	}
 
 	/**
@@ -135,6 +151,17 @@ public class ComponenteService {
 			auditoriaService.registrar("EQUIPOS", "ELIMINAR_COMPONENTE", "Equipo", equipoId,
 					"Se eliminó componente del equipo: " + tipoDesc + ".");
 		}
+
+		String detalleMov = "BAJA".equalsIgnoreCase(destino)
+				? "Retiro y baja por rotura de: " + tipoDesc + (serial != null ? " (S/N: " + serial + ")" : "") + (StringUtils.hasText(motivo) ? " - Motivo: " + motivo.trim() : "")
+				: "Retiro a Stock de: " + tipoDesc + (serial != null ? " (S/N: " + serial + ")" : "") + " (vuelve al depósito como DISPONIBLE)" + (StringUtils.hasText(motivo) ? " - Motivo: " + motivo.trim() : "");
+		auditoriaService.registrarMovimientoAutomatico(
+				equipoId,
+				TipoMovimiento.MANTENIMIENTO,
+				componente.getEquipo().getUltimoUsuario(),
+				componente.getEquipo().getUbicacion(),
+				componente.getEquipo().getUbicacion(),
+				detalleMov);
 
 		componenteRepository.delete(componente);
 	}
@@ -194,6 +221,16 @@ public class ComponenteService {
 				+ (stock.getSerial() != null ? " (S/N: " + stock.getSerial() + ")" : "")
 				+ " desde Stock (#" + stock.getId() + ") asignado a " + equipo.getNombre() + ".");
 
+		auditoriaService.registrarMovimientoAutomatico(
+				equipoId,
+				TipoMovimiento.MANTENIMIENTO,
+				equipo.getUltimoUsuario(),
+				equipo.getUbicacion(),
+				equipo.getUbicacion(),
+				"Instalación de pieza desde Stock: " + stock.getTipo() + " - " + stock.getDescripcion()
+						+ (stock.getSerial() != null ? " (S/N: " + stock.getSerial() + ")" : "")
+						+ " en " + (StringUtils.hasText(ubicacion) ? ubicacion.trim() : "ranura prevista") + ".");
+
 		return toDetalle(guardado);
 	}
 
@@ -238,6 +275,15 @@ public class ComponenteService {
 		}
 		auditoriaService.registrar("COMPONENTES", "CONSOLIDAR_RELEVAMIENTO_INICIAL", "Equipo", equipoId,
 				"Se consolido la lectura SCRIPT como RELEVAMIENTO_INICIAL para " + equipo.getNombre() + ".");
+
+		auditoriaService.registrarMovimientoAutomatico(
+				equipoId,
+				TipoMovimiento.MANTENIMIENTO,
+				equipo.getUltimoUsuario(),
+				equipo.getUbicacion(),
+				equipo.getUbicacion(),
+				"Gemelo Digital oficial confirmado y consolidado con " + detectados.size() + " componentes de línea base.");
+
 		return listarPorEquipo(equipoId);
 	}
 

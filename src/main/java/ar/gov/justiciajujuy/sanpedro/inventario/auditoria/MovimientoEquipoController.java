@@ -24,10 +24,17 @@ public class MovimientoEquipoController {
     }
 
     @GetMapping
-    public String verHistorial(@PathVariable Long equipoId, Model model) {
+    public String verHistorial(
+            @PathVariable Long equipoId,
+            @RequestParam(required = false) String usuario,
+            @RequestParam(required = false) TipoMovimiento tipo,
+            Model model) {
         Equipo equipo = equipoRepository.findById(equipoId).orElseThrow();
         model.addAttribute("equipo", equipo);
-        model.addAttribute("historial", auditoriaService.obtenerHistorial(equipoId));
+        model.addAttribute("historial", auditoriaService.obtenerHistorialFiltrado(equipoId, usuario, tipo));
+        model.addAttribute("usuarioFiltro", usuario);
+        model.addAttribute("tipoFiltro", tipo);
+        model.addAttribute("tiposMovimiento", TipoMovimiento.values());
         return "admin/equipo-auditoria";
     }
 

@@ -3,7 +3,9 @@ package ar.gov.justiciajujuy.sanpedro.inventario.equipos;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
+import ar.gov.justiciajujuy.sanpedro.inventario.auditoria.TipoMovimiento;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -217,7 +219,18 @@ public class EquipoService {
 				textoOpcional(command.impresora()),
 				command.activo(),
 				LocalDateTime.now(clock));
-		return toDetalle(equipoRepository.save(equipo));
+		Equipo guardado = equipoRepository.save(equipo);
+		if (auditoriaService != null && equipoExistente == null) {
+			auditoriaService.registrarMovimiento(
+					guardado.getId(),
+					TipoMovimiento.ENTREGA,
+					guardado.getUltimoUsuario(),
+					"Desconocido",
+					guardado.getUbicacion() != null ? guardado.getUbicacion() : "Sin ubicación",
+					"SCRIPT",
+					"Alta automática de equipo por script de relevamiento de telemetría.");
+		}
+		return toDetalle(guardado);
 	}
 
 	@Transactional
@@ -230,11 +243,17 @@ public class EquipoService {
 				.ifPresent(existente -> {
 					throw new EquipoDuplicadoException(nombre);
 				});
+
+		String ubiAnterior = equipo.getUbicacion();
+		String userAnterior = equipo.getUltimoUsuario();
+		String ubiNueva = textoOpcional(command.ubicacion());
+		String userNuevo = textoOpcional(command.ultimoUsuario());
+
 		equipo.actualizarManualmente(
 				nombre,
-				textoOpcional(command.ultimoUsuario()),
+				userNuevo,
 				textoRequerido(command.fuero(), "fuero"),
-				textoOpcional(command.ubicacion()),
+				ubiNueva,
 				textoOpcional(command.ip()),
 				textoOpcional(command.sistemaOperativo()),
 				textoOpcional(command.procesador()),
@@ -250,7 +269,39 @@ public class EquipoService {
 				textoOpcional(command.mouse()),
 				textoOpcional(command.impresora()),
 				command.activo());
-		return toDetalle(equipoRepository.save(equipo));
+		Equipo guardado = equipoRepository.save(equipo);
+
+		if (auditoriaService != null) {
+			boolean huboReubicacion = !Objects.equals(ubiAnterior, ubiNueva);
+			boolean huboCambioUsuario = !Objects.equals(userAnterior, userNuevo);
+
+			if (huboReubicacion) {
+				auditoriaService.registrarMovimientoAutomatico(
+						id,
+						TipoMovimiento.REUBICACION,
+						userNuevo != null ? userNuevo : userAnterior,
+						ubiAnterior != null ? ubiAnterior : "Sin ubicación",
+						ubiNueva != null ? ubiNueva : "Sin ubicación",
+						"Reubicación automática: equipo trasladado de '" + (ubiAnterior != null ? ubiAnterior : "Sin ubicación") + "' a '" + (ubiNueva != null ? ubiNueva : "Sin ubicación") + "'.");
+			}
+
+			if (huboCambioUsuario) {
+				auditoriaService.registrarMovimientoAutomatico(
+						id,
+						TipoMovimiento.ENTREGA,
+						userNuevo,
+						ubiNueva != null ? ubiNueva : (ubiAnterior != null ? ubiAnterior : "Sin ubicación"),
+						ubiNueva != null ? ubiNueva : (ubiAnterior != null ? ubiAnterior : "Sin ubicación"),
+						"Entrega / Asignación de usuario: de '" + (userAnterior != null ? userAnterior : "Sin usuario") + "' a '" + (userNuevo != null ? userNuevo : "Sin usuario") + "'.");
+			}
+
+			if (!huboReubicacion && !huboCambioUsuario) {
+				auditoriaService.registrar("EQUIPOS", "ACTUALIZAR", "Equipo", id,
+						"Edición manual de especificaciones y datos del equipo " + nombre + ".");
+			}
+		}
+
+		return toDetalle(guardado);
 	}
 
 	/**
@@ -278,7 +329,17 @@ public class EquipoService {
 		}
 
 		Equipo equipo = Equipo.crearParaTaller(nombre);
-		return toDetalle(equipoRepository.save(equipo));
+		Equipo guardado = equipoRepository.save(equipo);
+		if (auditoriaService != null) {
+			auditoriaService.registrarMovimientoAutomatico(
+					guardado.getId(),
+					TipoMovimiento.MANTENIMIENTO,
+					null,
+					"Depósito / Stock",
+					"Taller de Informática",
+					"Equipo " + nombre + " iniciado en Taller para ensamblaje y preparación.");
+		}
+		return toDetalle(guardado);
 	}
 
 	private EquipoResumen toResumen(Equipo equipo) {

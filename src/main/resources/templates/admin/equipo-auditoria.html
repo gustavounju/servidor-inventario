@@ -3,95 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditoría de Equipo</title>
+    <title th:text="'Auditoría y Movimientos: ' + ${equipo.nombre} + ' - Inventario Modular'">Auditoría de Equipo</title>
     <link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
-<div class="shell">
+<div class="shell shell-wide">
     <div class="status-panel admin-users-panel">
         <header class="panel-header">
             <div>
-                <p class="eyebrow">Auditoría y Movimientos</p>
-                <h1 th:text="'Equipo: ' + ${equipo.nombre}">Equipo</h1>
+                <p class="eyebrow">Trazabilidad y Control</p>
+                <h1 th:text="'Historial de Movimientos: ' + ${equipo.nombre}">Equipo</h1>
             </div>
             <div class="admin-actions">
-                <a th:href="@{/admin/equipos}" class="secondary-action">Volver</a>
+                <a th:href="@{/admin/equipos/{id}(id=${equipo.id})}" class="secondary-action">⬅ Volver a Ficha de Equipo</a>
+                <a th:href="@{/admin/equipos}" class="secondary-action">Lista de Equipos</a>
             </div>
         </header>
 
-        <section class="modules-section">
-            <div class="section-header">
-                <h2>Registrar Nuevo Movimiento</h2>
+        <!-- Banner Informativo -->
+        <div class="workflow-banner" style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px 18px; margin: 10px 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.5rem;">🤖</span>
+                <div>
+                    <strong style="color: #1e3a8a; font-size: 0.95rem;">Registro Automático de Actividad</strong>
+                    <span style="display: block; font-size: 0.84rem; color: #475569;">
+                        Cada acción realizada en este equipo (reubicaciones, asignaciones de usuario, piezas de taller/stock u órdenes de armado) se guarda automáticamente indicando qué se hizo, fecha y el usuario operador.
+                    </span>
+                </div>
             </div>
-            <form th:action="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}" method="post" class="user-form">
-                <div class="inline-action-form" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
-                    <label>
-                        <span>Tipo de Movimiento</span>
-                        <select name="tipoMovimiento" required>
-                            <option value="ENTREGA">Entrega</option>
-                            <option value="DEVOLUCION">Devolución</option>
-                            <option value="REUBICACION">Reubicación</option>
-                            <option value="MANTENIMIENTO">Mantenimiento</option>
-                            <option value="OTRO">Otro</option>
-                        </select>
-                    </label>
-                    <label>
-                        <span>Usuario Destino / Responsable</span>
-                        <input type="text" name="usuarioDestino">
-                    </label>
-                    <label>
-                        <span>Ubicación Origen</span>
-                        <input type="text" name="ubicacionOrigen">
-                    </label>
-                    <label>
-                        <span>Ubicación Destino</span>
-                        <input type="text" name="ubicacionDestino">
-                    </label>
-                </div>
-                <label style="margin-top:14px;">
-                    <span>Observaciones</span>
-                    <input type="text" name="observaciones">
-                </label>
-                <div style="margin-top: 14px;">
-                    <button type="submit" class="primary-action">Registrar Movimiento</button>
-                </div>
-            </form>
-        </section>
+            <span class="count-badge" th:text="${#lists.size(historial)} + ' registros'">0 registros</span>
+        </div>
 
-        <section class="attributes-section">
-            <h2>Historial de Movimientos</h2>
-            <div th:if="${historial.empty}" class="empty-state">No hay movimientos registrados.</div>
+        <!-- Filtros Rápidos de Búsqueda -->
+        <form class="search-form dashboard-filter-form" th:action="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}" method="get" style="margin-bottom: 22px;">
+            <label style="flex: 2; min-width: 220px;">
+                <span>Filtrar por Usuario (Operador o Destino)</span>
+                <input type="search" name="usuario" th:value="${usuarioFiltro}" placeholder="Ej: admin.local, técnico, usuario...">
+            </label>
+            <label style="flex: 1; min-width: 180px;">
+                <span>Tipo de Movimiento / Acción</span>
+                <select name="tipo">
+                    <option value="">-- Todos los tipos --</option>
+                    <option th:each="t : ${tiposMovimiento}" th:value="${t}" th:text="${t}" th:selected="${tipoFiltro == t}">ENTREGA</option>
+                </select>
+            </label>
+            <div class="form-actions">
+                <button class="primary-action" type="submit">🔍 Filtrar</button>
+                <a class="secondary-action" th:href="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}">Limpiar</a>
+            </div>
+        </form>
+
+        <!-- SECCIÓN PRINCIPAL: Historial de Movimientos y Acciones -->
+        <section class="attributes-section" aria-labelledby="historial-title">
+            <div class="section-header">
+                <div>
+                    <h2 id="historial-title">Movimientos y Acciones Registradas</h2>
+                    <p class="section-note">Bitácora completa y automática de eventos de este equipo.</p>
+                </div>
+            </div>
+
+            <div th:if="${historial.empty}" class="empty-state" style="padding: 30px 20px;">
+                <p>No se encontraron movimientos registrados con los filtros seleccionados.</p>
+            </div>
+
             <div th:unless="${historial.empty}" class="responsive-table">
                 <table>
                     <thead>
                         <tr>
-                            <th>Fecha</th>
-                            <th>Tipo</th>
-                            <th>Usuario / Destino</th>
-                            <th>Origen -> Destino</th>
-                            <th>Registró</th>
-                            <th>Acciones</th>
+                            <th scope="col">Fecha / Hora</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col" style="min-width: 260px;">Detalle de la Acción (Qué se hizo)</th>
+                            <th scope="col">Usuario Responsable</th>
+                            <th scope="col">Ubicación (Origen ➡ Destino)</th>
+                            <th scope="col">Operador / Registró</th>
+                            <th scope="col">Acta</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:each="mov : ${historial}">
-                            <td data-label="Fecha" th:text="${#temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td data-label="Fecha" style="white-space: nowrap;">
+                                <strong th:text="${#temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy')}">01/09/2026</strong>
+                                <span style="display: block; font-size: 0.78rem; color: #64748b;" th:text="${#temporals.format(mov.fechaMovimiento, 'HH:mm:ss')}">14:30:00</span>
+                            </td>
                             <td data-label="Tipo">
-                                <span class="role-chip" th:text="${mov.tipoMovimiento}"></span>
+                                <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'REUBICACION'}" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">🚚 Reubicación</span>
+                                <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'ENTREGA'}" style="background: #ecfdf5; color: #047857; font-weight: 700;">👤 Entrega / Asignación</span>
+                                <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'MANTENIMIENTO'}" style="background: #fef3c7; color: #b45309; font-weight: 700;">🔧 Taller / Hardware</span>
+                                <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'DEVOLUCION'}" style="background: #ede9fe; color: #6d28d9; font-weight: 700;">🔄 Devolución</span>
+                                <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'OTRO'}" style="background: #f1f5f9; color: #475569; font-weight: 700;">📝 Otro</span>
                             </td>
-                            <td data-label="Usuario" th:text="${mov.usuarioDestino}"></td>
+                            <td data-label="Detalle">
+                                <span th:text="${mov.observaciones ?: 'Sin detalle adicional'}" style="font-size: 0.88rem; color: #1e293b;">Detalle de la acción</span>
+                            </td>
+                            <td data-label="Usuario">
+                                <span th:if="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="font-weight: 600; color: #0f172a;" th:text="${mov.usuarioDestino}">cguzman</span>
+                                <span th:unless="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="color: #94a3b8; font-size: 0.85rem;">-</span>
+                            </td>
                             <td data-label="Ubicación">
-                                <span th:text="${mov.ubicacionOrigen}"></span> &rarr; <span th:text="${mov.ubicacionDestino}"></span>
+                                <div th:if="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="font-size: 0.85rem;">
+                                    <span th:text="${mov.ubicacionOrigen ?: 'Sin ubicación'}" style="color: #64748b;">Origen</span>
+                                    <span style="color: #0284c7; font-weight: 700;"> ➡ </span>
+                                    <strong th:text="${mov.ubicacionDestino ?: 'Sin ubicación'}" style="color: #0f172a;">Destino</strong>
+                                </div>
+                                <span th:unless="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="color: #94a3b8; font-size: 0.85rem;">-</span>
                             </td>
-                            <td data-label="Registró" th:text="${mov.registradoPor}"></td>
-                            <td data-label="Acciones">
-                                <a th:href="@{/admin/equipos/{id}/auditoria/{movId}/pdf(id=${equipo.id}, movId=${mov.id})}" target="_blank" class="secondary-action" style="padding: 4px 8px; font-size:0.8rem;">PDF</a>
+                            <td data-label="Registró">
+                                <span class="count-badge" style="font-size: 0.8rem; padding: 3px 8px; font-weight: 600;" th:text="${mov.registradoPor}">admin.local</span>
+                            </td>
+                            <td data-label="Acta">
+                                <a th:href="@{/admin/equipos/{id}/auditoria/{movId}/pdf(id=${equipo.id}, movId=${mov.id})}" target="_blank" class="secondary-action" style="padding: 4px 8px; font-size: 0.78rem; text-decoration: none;" title="Descargar acta de movimiento en PDF">
+                                    📄 PDF
+                                </a>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </section>
+
+        <!-- SECCIÓN SECUNDARIA COLAPSABLE: Registrar Acta / Movimiento Manual Adicional -->
+        <details class="collapsible-card" style="margin-top: 24px;">
+            <summary class="collapsible-summary">
+                <span>📝 Generar Acta o Registrar Movimiento Manual Adicional</span>
+                <span class="count-badge">Opcional para firmas</span>
+            </summary>
+            <div class="collapsible-body" style="padding-top: 14px;">
+                <p style="font-size: 0.85rem; color: #475569; margin: 0 0 14px;">
+                    Utilice este formulario únicamente si desea confeccionar un acta personalizada de entrega, devolución o traslado para imprimir y firmar en papel.
+                </p>
+                <form th:action="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}" method="post" class="user-form">
+                    <div class="inline-action-form" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+                        <label>
+                            <span>Tipo de Movimiento</span>
+                            <select name="tipoMovimiento" required>
+                                <option value="ENTREGA">Entrega</option>
+                                <option value="DEVOLUCION">Devolución</option>
+                                <option value="REUBICACION">Reubicación</option>
+                                <option value="MANTENIMIENTO">Mantenimiento</option>
+                                <option value="OTRO">Otro</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Usuario Destino / Responsable</span>
+                            <input type="text" name="usuarioDestino" th:value="${equipo.ultimoUsuario}" placeholder="Nombre de usuario o agente">
+                        </label>
+                        <label>
+                            <span>Ubicación Origen</span>
+                            <input type="text" name="ubicacionOrigen" th:value="${equipo.ubicacion}" placeholder="Ej: Oficina Informática">
+                        </label>
+                        <label>
+                            <span>Ubicación Destino</span>
+                            <input type="text" name="ubicacionDestino" placeholder="Ej: Juzgado Civil y Comercial">
+                        </label>
+                    </div>
+                    <label style="margin-top: 14px;">
+                        <span>Observaciones / Motivo</span>
+                        <input type="text" name="observaciones" placeholder="Detalle que figurará en el acta impresa...">
+                    </label>
+                    <div style="margin-top: 14px;">
+                        <button type="submit" class="primary-action">📄 Registrar y Generar Acta</button>
+                    </div>
+                </form>
+            </div>
+        </details>
     </div>
 </div>
 </body>
