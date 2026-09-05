@@ -411,7 +411,8 @@
 							<label>
 								<span>Estado inicial</span>
 								<select th:field="*{estado}">
-									<option th:each="estado : ${estadosOrden}" th:value="${estado}" th:text="${estado}">EN_ARMADO</option>
+									<option value="EN_ARMADO">🛠️ En Taller (En curso)</option>
+									<option value="CERRADA">✅ Finalizada (Entregada)</option>
 								</select>
 							</label>
 							<label style="grid-column: 1 / -1;">
@@ -436,7 +437,7 @@
 					<div class="section-header">
 						<div>
 							<h2 id="editar-ordenes-title" style="margin: 0; font-size: 1.1rem;">Modificar órdenes existentes</h2>
-							<p class="section-note">Actualiza el estado (por ejemplo, cambiar a COMPLETADA cuando finalice el armado).</p>
+							<p class="section-note">Actualiza el estado (por ejemplo, cambiar a Finalizada cuando concluya el trabajo en taller).</p>
 						</div>
 					</div>
 					<div class="edit-stack">
@@ -457,7 +458,8 @@
 								<label>
 									<span>Estado del trabajo</span>
 									<select name="estado">
-										<option th:each="estado : ${estadosOrden}" th:value="${estado}" th:text="${estado}"
+										<option th:each="estado : ${estadosOrden}" th:value="${estado}"
+												th:text="${estado.name() == 'EN_ARMADO' ? '🛠️ En Taller (En curso)' : (estado.name() == 'CERRADA' ? '✅ Finalizada (Entregada)' : (estado.name() == 'CANCELADA' ? '❌ Cancelada' : (estado.name() == 'BORRADOR' ? '📝 Borrador' : (estado.name() == 'ESPERANDO_REPORTE' ? '⏳ Esperando Reporte' : estado.name()))))}"
 												th:selected="${estado == orden.estado}">EN_ARMADO</option>
 									</select>
 								</label>

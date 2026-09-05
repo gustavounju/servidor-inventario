@@ -207,6 +207,38 @@ class EquipoPageControllerTests {
 			.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attribute("eliminado", true));
 	}
 
+	@Test
+	void retiraComponenteHaciaStockYRegeneraItemEnStock() throws Exception {
+		mockMvc.perform(post("/admin/equipos/1/componentes/1/retirar")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.param("destino", "STOCK")
+				.param("motivo", "Ampliación de capacidad"))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrlPattern("/admin/equipos/1?actualizado=*"));
+
+		mockMvc.perform(get("/admin/stock").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("Modulo RAM instalado")))
+			.andExpect(content().string(containsString("RAMSN-001")));
+	}
+
+	@Test
+	void instalaComponenteDirectamenteDesdeStock() throws Exception {
+		mockMvc.perform(post("/admin/equipos/1/componentes/instalar-desde-stock")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.param("stockComponenteId", "1")
+				.param("ubicacion", "Slot 2"))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrlPattern("/admin/equipos/1?actualizado=*"));
+
+		mockMvc.perform(get("/admin/equipos/1").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("STOCK-RAM-001")))
+			.andExpect(content().string(containsString("Slot 2")));
+	}
+
 	private ActiveDirectoryUserDetails adminLocal() {
 		return new ActiveDirectoryUserDetails(
 				"admin.local",

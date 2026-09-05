@@ -13,6 +13,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoDeta
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoDuplicadoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.InventarioViejoImportService;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
+import ar.gov.justiciajujuy.sanpedro.inventario.stock.StockService;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -61,12 +62,14 @@ public class EquipoPageController {
 	private final InventarioViejoImportService inventarioViejoImportService;
 	private final OrdenArmadoService ordenArmadoService;
 	private final ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService;
+	private final StockService stockService;
 
 	public EquipoPageController(AuthorizationService authorizationService, EquipoService equipoService,
 			ComponenteService componenteService, GemeloDigitalService gemeloDigitalService,
 			UbicacionService ubicacionService, InventarioViejoImportService inventarioViejoImportService,
 			OrdenArmadoService ordenArmadoService,
-			ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService) {
+			ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService,
+			StockService stockService) {
 		this.authorizationService = authorizationService;
 		this.equipoService = equipoService;
 		this.componenteService = componenteService;
@@ -75,6 +78,7 @@ public class EquipoPageController {
 		this.inventarioViejoImportService = inventarioViejoImportService;
 		this.ordenArmadoService = ordenArmadoService;
 		this.fueroService = fueroService;
+		this.stockService = stockService;
 	}
 
 	@GetMapping("/admin/equipos")
@@ -172,9 +176,48 @@ public class EquipoPageController {
 	}
 
 	/**
+	 * Permite retirar un componente físico de una máquina en taller.
+	 * Soporta reingreso directo a stock de depósito (DISPONIBLE) o baja definitiva por rotura.
+	 */
+	@PostMapping("/admin/equipos/{equipoId}/componentes/{componenteId}/retirar")
+	public String retirarComponente(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long equipoId,
+			@PathVariable Long componenteId,
+			@RequestParam String destino,
+			@RequestParam(required = false) String motivo,
+			RedirectAttributes redirectAttributes) {
+		if (!authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_EDITAR)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para editar componentes.");
+		}
+		componenteService.retirar(componenteId, destino, motivo);
+		redirectAttributes.addAttribute("actualizado", "1");
+		return "redirect:/admin/equipos/" + equipoId;
+	}
+
+	/**
+	 * Permite instalar de forma ágil una pieza disponible en el Stock de taller dentro de la PC.
+	 * Registra el componente como ESPERADO con origen STOCK y reserva la salida física del depósito.
+	 */
+	@PostMapping("/admin/equipos/{equipoId}/componentes/instalar-desde-stock")
+	public String instalarDesdeStock(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long equipoId,
+			@RequestParam Long stockComponenteId,
+			@RequestParam(required = false) String ubicacion,
+			RedirectAttributes redirectAttributes) {
+		if (!authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_EDITAR)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para editar componentes.");
+		}
+		componenteService.instalarDesdeStock(equipoId, stockComponenteId, ubicacion);
+		redirectAttributes.addAttribute("actualizado", "1");
+		return "redirect:/admin/equipos/" + equipoId;
+	}
+
+	/**
 	 * Inicia de forma ágil una PC en el Taller de Informática en un solo paso:
 	 * crea el equipo con código autogenerado (ej. ARMADO-001) o ingresado,
-	 * crea inmediatamente su primera Orden de Armado en estado BORRADOR,
+	 * crea inmediatamente su primera Orden de Armado directamente EN TALLER (EN_ARMADO),
 	 * y redirige al técnico a la pantalla de órdenes para asociar piezas de stock.
 	 */
 	@PostMapping("/admin/equipos/nuevo-taller")
@@ -187,7 +230,7 @@ public class EquipoPageController {
 		}
 		EquipoDetalle nuevo = equipoService.crearEquipoEnTaller(codigo);
 		ordenArmadoService.crear(nuevo.id(), new ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoService.GuardarOrdenArmadoCommand(
-				ar.gov.justiciajujuy.sanpedro.inventario.armado.EstadoOrdenArmado.BORRADOR,
+				ar.gov.justiciajujuy.sanpedro.inventario.armado.EstadoOrdenArmado.EN_ARMADO,
 				"Armado y ensamblado de equipo en taller",
 				"Orden inicial generada automáticamente al iniciar PC en taller."));
 		redirectAttributes.addAttribute("equipoId", nuevo.id());
@@ -239,6 +282,9 @@ public class EquipoPageController {
 		model.addAttribute("estadosComparacion", EstadoComparacion.values());
 		model.addAttribute("ubicacionesActivas", ubicacionService.activas());
 		model.addAttribute("fuerosDisponibles", fueroService.listarFueros());
+		model.addAttribute("stockDisponibles", stockService.listarDisponiblesYActivos().stream()
+				.filter(s -> "DISPONIBLE".equals(s.estado().name()))
+				.toList());
 		model.addAttribute("actualizado", false);
 		model.addAttribute("relevamientoConsolidado", false);
 	}

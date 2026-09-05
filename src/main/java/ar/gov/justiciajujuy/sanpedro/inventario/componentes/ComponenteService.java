@@ -7,6 +7,9 @@ import ar.gov.justiciajujuy.sanpedro.inventario.equipos.Equipo;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoRepository;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoNoEncontradoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.ReporteInventarioCommand;
+import ar.gov.justiciajujuy.sanpedro.inventario.stock.EstadoStockComponente;
+import ar.gov.justiciajujuy.sanpedro.inventario.stock.StockComponente;
+import ar.gov.justiciajujuy.sanpedro.inventario.stock.StockComponenteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -17,12 +20,14 @@ public class ComponenteService {
 	private final ComponenteRepository componenteRepository;
 	private final EquipoRepository equipoRepository;
 	private final AuditoriaService auditoriaService;
+	private final StockComponenteRepository stockComponenteRepository;
 
 	public ComponenteService(ComponenteRepository componenteRepository, EquipoRepository equipoRepository,
-			AuditoriaService auditoriaService) {
+			AuditoriaService auditoriaService, StockComponenteRepository stockComponenteRepository) {
 		this.componenteRepository = componenteRepository;
 		this.equipoRepository = equipoRepository;
 		this.auditoriaService = auditoriaService;
+		this.stockComponenteRepository = stockComponenteRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -74,6 +79,122 @@ public class ComponenteService {
 		componenteRepository.delete(componente);
 		auditoriaService.registrar("COMPONENTES", "ELIMINAR", "Componente", id,
 				"Componente " + desc + " eliminado del equipo " + equipoId + ".");
+	}
+
+	/**
+	 * Retira un componente físico de un equipo durante una intervención de taller.
+	 * <p>
+	 * Según el destino seleccionado por el técnico:
+	 * <ul>
+	 *   <li><b>STOCK:</b> Da de alta automáticamente la pieza retirada en el depósito de stock de componentes
+	 *       con estado {@code DISPONIBLE}, conservando su número de serie, marca, modelo, capacidad y trazabilidad.</li>
+	 *   <li><b>BAJA:</b> Registra la salida definitiva del componente por rotura o desperfecto físico.</li>
+	 * </ul>
+	 * En todos los casos se registra la operación en la bitácora de auditoría del equipo y se desvincula la entidad.
+	 *
+	 * @param componenteId identificador del componente a retirar
+	 * @param destino      destino de la pieza ("STOCK" para reingreso al depósito, "BAJA" por falla)
+	 * @param motivo       justificación u observación técnica opcional
+	 */
+	@Transactional
+	public void retirar(Long componenteId, String destino, String motivo) {
+		Componente componente = componenteRepository.findById(componenteId)
+				.orElseThrow(() -> new ComponenteNoEncontradoException(componenteId));
+		Long equipoId = componente.getEquipo().getId();
+		String equipoNombre = componente.getEquipo().getNombre();
+		String tipoDesc = (componente.getTipo() != null ? componente.getTipo().name() : "COMPONENTE") + " - " + componente.getDescripcion();
+		String serial = componente.getSerial();
+
+		if ("STOCK".equalsIgnoreCase(destino)) {
+			StockComponente stockItem = new StockComponente(
+					componente.getTipo() != null ? componente.getTipo() : TipoComponente.RAM,
+					componente.getDescripcion());
+			stockItem.actualizar(
+					componente.getTipo() != null ? componente.getTipo() : TipoComponente.RAM,
+					EstadoStockComponente.DISPONIBLE,
+					componente.getDescripcion(),
+					componente.getMarca(),
+					componente.getModelo(),
+					componente.getSerial(),
+					componente.getCapacidad(),
+					componente.getRemito(),
+					componente.getOrdenCompra(),
+					componente.getProveedor(),
+					"Depósito Taller",
+					"Recuperado de " + equipoNombre + (StringUtils.hasText(motivo) ? " - Motivo: " + motivo.trim() : ""),
+					true);
+			stockComponenteRepository.save(stockItem);
+			auditoriaService.registrar("EQUIPOS", "RETIRAR_A_STOCK", "Equipo", equipoId,
+					"Intervención de taller: Se retiró " + tipoDesc + (serial != null ? " (S/N: " + serial + ")" : "") + " y volvió al Stock como DISPONIBLE."
+					+ (StringUtils.hasText(motivo) ? " Motivo: " + motivo.trim() : ""));
+		} else if ("BAJA".equalsIgnoreCase(destino)) {
+			auditoriaService.registrar("EQUIPOS", "BAJA_COMPONENTE", "Equipo", equipoId,
+					"Intervención de taller: Se retiró y dio de baja por rotura/desperfecto: " + tipoDesc + (serial != null ? " (S/N: " + serial + ")" : "") + "."
+					+ (StringUtils.hasText(motivo) ? " Motivo: " + motivo.trim() : ""));
+		} else {
+			auditoriaService.registrar("EQUIPOS", "ELIMINAR_COMPONENTE", "Equipo", equipoId,
+					"Se eliminó componente del equipo: " + tipoDesc + ".");
+		}
+
+		componenteRepository.delete(componente);
+	}
+
+	/**
+	 * Instala de forma directa un componente disponible en el depósito de stock en el equipo indicado.
+	 * <p>
+	 * La pieza en stock pasa a estado {@code ASIGNADO} y se crea el componente correspondiente en el equipo
+	 * con origen {@code STOCK} y estado de comparación {@code ESPERADO}, registrando la intervención en auditoría.
+	 * Al ejecutar el script de inventario en la máquina cliente, el Gemelo Digital auditará la coincidencia en vivo.
+	 *
+	 * @param equipoId          identificador del equipo receptor
+	 * @param stockComponenteId identificador de la pieza disponible en stock
+	 * @param ubicacion         ubicación física o ranura prevista (ej. "Slot 2", "Bahía 1")
+	 * @return detalle del componente creado y asociado
+	 */
+	@Transactional
+	public ComponenteDetalle instalarDesdeStock(Long equipoId, Long stockComponenteId, String ubicacion) {
+		Equipo equipo = equipoRepository.findById(equipoId)
+				.orElseThrow(() -> new EquipoNoEncontradoException(equipoId));
+		StockComponente stock = stockComponenteRepository.findById(stockComponenteId)
+				.orElseThrow(() -> new IllegalArgumentException("Componente de stock no encontrado: " + stockComponenteId));
+
+		if (stock.getEstado() != EstadoStockComponente.DISPONIBLE) {
+			throw new IllegalStateException("El componente de stock #" + stockComponenteId + " no está en estado DISPONIBLE.");
+		}
+
+		stock.asignar();
+		stockComponenteRepository.save(stock);
+
+		Componente componente = new Componente(
+				equipo,
+				stock.getTipo(),
+				OrigenComponente.STOCK,
+				EstadoComparacion.ESPERADO,
+				stock.getDescripcion());
+		componente.actualizar(
+				stock.getTipo(),
+				OrigenComponente.STOCK,
+				EstadoComparacion.ESPERADO,
+				stock.getDescripcion(),
+				stock.getMarca(),
+				stock.getModelo(),
+				stock.getSerial(),
+				stock.getCapacidad(),
+				stock.getRemito(),
+				stock.getOrdenCompra(),
+				stock.getProveedor(),
+				StringUtils.hasText(ubicacion) ? ubicacion.trim() : stock.getUbicacion(),
+				"Instalado desde Stock (ID #" + stock.getId() + ")",
+				true);
+
+		Componente guardado = componenteRepository.save(componente);
+
+		auditoriaService.registrar("EQUIPOS", "INSTALAR_DESDE_STOCK", "Equipo", equipoId,
+				"Intervención de taller: Se instaló " + stock.getTipo() + " - " + stock.getDescripcion()
+				+ (stock.getSerial() != null ? " (S/N: " + stock.getSerial() + ")" : "")
+				+ " desde Stock (#" + stock.getId() + ") asignado a " + equipo.getNombre() + ".");
+
+		return toDetalle(guardado);
 	}
 
 	@Transactional(readOnly = true)

@@ -18,22 +18,7 @@
 						⬅ Volver al listado
 					</a>
 					<a class="secondary-action" th:href="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}">
-						📜 Auditoría y Movimientos
-					</a>
-					<!-- Órdenes de Armado: Solo disponible tras registrar el Gemelo Digital -->
-					<a class="secondary-action" th:if="${puedeVerOrdenes and tieneRelevamientoInicial}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
-						🛠️ Órdenes de Armado (<span th:text="${#lists.size(ordenesArmado)}">0</span>)
-					</a>
-					<span class="secondary-action is-disabled" th:if="${puedeVerOrdenes and !tieneRelevamientoInicial}" style="opacity: 0.5; cursor: not-allowed;" title="Primero debes registrar el Gemelo Digital oficial de esta PC">
-						🛠️ Órdenes (Bloqueado)
-					</span>
-					<!-- Tablero de Diferencias: Disponible si tiene Gemelo oficial -->
-					<a class="secondary-action" th:if="${tieneRelevamientoInicial}" th:href="@{/admin/dashboard-diferencias}">
-						📊 Tablero de Diferencias
-					</a>
-					<!-- Actas: Disponible tras tener Gemelo oficial -->
-					<a class="secondary-action" th:if="${tieneRelevamientoInicial}" th:href="@{/admin/actas}">
-						📋 Actas
+						📜 Auditoría
 					</a>
 				</div>
 				<div class="quick-nav-group">
@@ -49,219 +34,54 @@
 				</div>
 			</nav>
 
-			<!-- Banner Contextual de Éxito / Próximos Pasos tras Consolidar Relevamiento -->
-			<div class="workflow-banner" th:if="${relevamientoConsolidado}">
-				<div class="workflow-banner-icon">🎉</div>
-				<div class="workflow-banner-content">
-					<strong>¡Gemelo Digital registrado con éxito!</strong>
-					<p>
-						Los componentes detectados actualmente por el script han quedado registrados como el <strong>Gemelo Digital</strong> para este equipo.
-					</p>
-					<div class="workflow-next-actions">
-						<span>👉 <strong>¿Cómo continuar ahora?</strong></span>
-						<a class="primary-action" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
-							🛠️ Crear o Asignar Orden de Armado
-						</a>
-						<button type="button" class="secondary-action" onclick="switchTab('gemelo')">
-							🤖 Ver Estado del Gemelo Digital
-						</button>
-						<a class="secondary-action" th:href="@{/admin/dashboard-diferencias}">
-							📊 Ver Tablero General de Diferencias
-						</a>
-					</div>
-				</div>
-			</div>
-
-			<!-- Mensaje de confirmación estándar si se editó manualmente -->
+			<!-- Mensajes de confirmación limpios -->
 			<p class="success-message" th:if="${actualizado == true and relevamientoConsolidado != true}">
 				Equipo actualizado correctamente.
 			</p>
+			<p class="success-message" th:if="${relevamientoConsolidado}">
+				✅ ¡Gemelo Digital registrado con éxito! Los componentes detectados quedaron confirmados como la línea base oficial del equipo.
+			</p>
 
-			<!-- 🧭 BRÚJULA OPERATIVA: Origen, Semáforo del Gemelo y Próximo Paso Sugerido -->
-			<section class="brujula-panel" style="background: #ffffff; border: 2px solid #2563eb; border-radius: 8px; padding: 18px; margin: 16px 0 20px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);" aria-label="Brújula de Estado del Equipo">
-				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
-					<div style="display: flex; align-items: center; gap: 10px;">
-						<span style="font-size: 1.6rem;">🧭</span>
-						<div>
-							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Brújula de Estado del Equipo</strong>
-							<span style="font-size: 0.82rem; color: #64748b;">Diagnóstico de origen, integridad del gemelo digital y acción recomendada</span>
-						</div>
-					</div>
-					<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-						<!-- Etiqueta de Origen -->
-						<span class="authorization-badge" th:classappend="${brujula.origenBadgeClass}"
-							  style="font-size: 0.82rem; padding: 4px 10px; font-weight: 700;"
-							  th:text="${brujula.origenEtiqueta}">🚀 Sumado via Script</span>
-						<!-- Semáforo del Gemelo -->
-						<span class="authorization-badge" th:classappend="${brujula.semaforoBadgeClass}"
-							  style="font-size: 0.82rem; padding: 4px 10px; font-weight: 700;"
-							  th:text="${brujula.semaforoEtiqueta}">🟢 Gemelo Sincronizado</span>
-					</div>
+			<!-- Barra Compacta de Estado e Integridad del Equipo -->
+			<section class="equipo-status-strip" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 18px; margin: 14px 0 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);" aria-label="Estado del equipo">
+				<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+					<!-- Origen -->
+					<span class="authorization-badge" th:classappend="${brujula.origenBadgeClass}"
+						  style="font-size: 0.8rem; padding: 4px 10px; font-weight: 700;"
+						  th:text="${brujula.origenEtiqueta}">🚀 Sumado via Script</span>
+
+					<!-- Semáforo Gemelo -->
+					<span class="authorization-badge" th:classappend="${brujula.semaforoBadgeClass}"
+						  style="font-size: 0.8rem; padding: 4px 10px; font-weight: 700;"
+						  th:text="${brujula.semaforoEtiqueta}">🟢 Gemelo Sincronizado</span>
+
+					<!-- Último Reporte -->
+					<span th:if="${equipo.ultimoReporteEn != null}" style="font-size: 0.82rem; color: #64748b;">
+						📡 Último reporte: <strong th:text="${#temporals.format(equipo.ultimoReporteEn, 'dd/MM/yyyy HH:mm')}">04/09/2026 23:34</strong>
+					</span>
+					<span th:if="${equipo.ultimoReporteEn == null}" style="font-size: 0.82rem; color: #b45309; font-weight: 600;">
+						⏳ Pendiente de reporte inicial por script
+					</span>
 				</div>
 
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px;">
-					<!-- Tarjeta 1: Origen del Equipo -->
-					<div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
-						<div>
-							<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-								<span style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">1. Origen del Equipo</span>
-								<span class="count-badge" th:text="${brujula.origenCodigo}">OFICINA</span>
-							</div>
-							<strong style="font-size: 0.95rem; color: #1e293b; display: block; margin-bottom: 4px;" th:text="${brujula.origenEtiqueta}">🚀 Sumado via Script</strong>
-							<p style="margin: 0; font-size: 0.82rem; color: #475569; line-height: 1.4;" th:text="${brujula.origenDetalle}">
-								Equipo sumado e inventariado directamente vía script en la máquina cliente.
-							</p>
-						</div>
-						<div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #cbd5e1;">
-							<a th:if="${puedeVerOrdenes and !#lists.isEmpty(ordenesArmado)}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="font-size: 0.8rem; color: #2563eb; text-decoration: none; font-weight: 600;">
-								🛠️ Ver <span th:text="${#lists.size(ordenesArmado)}">1</span> orden(es) de taller →
-							</a>
-							<span th:if="${brujula.origenCodigo == 'OFICINA'}" style="font-size: 0.8rem; color: #15803d; font-weight: 600;">
-								🚀 Sumado directamente vía script
-							</span>
-							<span th:if="${brujula.origenCodigo == 'TALLER'}" style="font-size: 0.8rem; color: #0369a1; font-weight: 600;">
-								🔧 Armado en el Taller
-							</span>
-							<span th:if="${brujula.origenCodigo == 'MANUAL'}" style="font-size: 0.8rem; color: #b45309; font-weight: 600;">
-								📝 Sin órdenes ni reporte previo
-							</span>
-						</div>
-					</div>
-
-					<!-- Tarjeta 2: Semáforo del Gemelo Digital -->
-					<div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
-						<div>
-							<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-								<span style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">2. Gemelo Digital</span>
-								<span class="authorization-badge" th:classappend="${brujula.semaforoBadgeClass}" style="font-size: 0.72rem; padding: 2px 6px;" th:text="${brujula.semaforoCodigo}">SINCRONIZADO</span>
-							</div>
-							<strong style="font-size: 0.95rem; color: #1e293b; display: block; margin-bottom: 4px;" th:text="${brujula.semaforoEtiqueta}">🟢 Gemelo Sincronizado</strong>
-							<p style="margin: 0; font-size: 0.82rem; color: #475569; line-height: 1.4;" th:text="${brujula.semaforoDetalle}">
-								El hardware físico coincide con la configuración oficial esperada.
-							</p>
-						</div>
-						<div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #cbd5e1;">
-							<button type="button" class="secondary-action" onclick="switchTab('gemelo')" style="width: 100%; font-size: 0.8rem; padding: 4px 8px;">
-								🔍 Ver Solapa Gemelo Digital (<span th:text="${#lists.size(componentes)}">0</span> componentes)
-							</button>
-						</div>
-					</div>
-
-					<!-- Tarjeta 3: Paso Siguiente Sugerido (Call to action) -->
-					<div style="background: #eff6ff; border: 1.5px solid #2563eb; border-radius: 6px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
-						<div>
-							<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-								<span style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: #1e40af; letter-spacing: 0.5px;">3. Paso Siguiente Sugerido</span>
-								<span class="count-badge" style="background: #2563eb; color: #fff;">ACCIÓN</span>
-							</div>
-							<strong style="font-size: 0.95rem; color: #1e3a8a; display: block; margin-bottom: 4px;" th:text="${brujula.pasoSiguienteTitulo}">Paso 1: Ejecutar script</strong>
-							<p style="margin: 0; font-size: 0.82rem; color: #1e3a8a; line-height: 1.4;" th:text="${brujula.pasoSiguienteDescripcion}">
-								Para generar el gemelo digital de esta PC, copia el comando PowerShell y córrelo en el equipo cliente.
-							</p>
-						</div>
-						<div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #93c5fd;">
-							<!-- Caso COPIAR_SCRIPT -->
-							<button th:if="${brujula.pasoSiguienteAccionTipo == 'COPIAR_SCRIPT'}" type="button" class="primary-action" onclick="copiarComandoScriptDetalle()" style="width: 100%; font-size: 0.82rem; padding: 7px 12px; font-weight: 700;">
-								📋 Copiar Comando PowerShell
-							</button>
-							<!-- Caso CONSOLIDAR -->
-							<form th:if="${brujula.pasoSiguienteAccionTipo == 'CONSOLIDAR' and puedeEditarComponentes}" th:action="@{/admin/equipos/{id}/componentes/consolidar-relevamiento-inicial(id=${equipo.id})}" method="post" style="margin:0; width:100%;">
-								<button class="primary-action" type="submit" style="width: 100%; font-size: 0.82rem; padding: 7px 12px; font-weight: 700; background: #16a34a; border-color: #15803d;">
-									✅ Registrar como Gemelo Digital Oficial
-								</button>
-							</form>
-							<!-- Caso VER_GEMELO -->
-							<button th:if="${brujula.pasoSiguienteAccionTipo == 'VER_GEMELO'}" type="button" class="primary-action" onclick="switchTab('gemelo')" style="width: 100%; font-size: 0.82rem; padding: 7px 12px; font-weight: 700; background: #dc2626; border-color: #b91c1c;">
-								🔍 Resolver Diferencias en Gemelo
-							</button>
-							<!-- Caso EDITAR_UBICACION -->
-							<button th:if="${brujula.pasoSiguienteAccionTipo == 'EDITAR_UBICACION'}" type="button" class="primary-action" onclick="switchTab('editar')" style="width: 100%; font-size: 0.82rem; padding: 7px 12px; font-weight: 700;">
-								🏢 Asignar Ubicación y Usuario
-							</button>
-							<!-- Caso CREAR_ACTA -->
-							<a th:if="${brujula.pasoSiguienteAccionTipo == 'CREAR_ACTA'}" th:href="@{/admin/actas(equipoId=${equipo.id})}" class="primary-action" style="width: 100%; text-align: center; font-size: 0.82rem; padding: 7px 12px; font-weight: 700; display: block; box-sizing: border-box; text-decoration: none;">
-								📋 Generar Acta de Entrega
-							</a>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			<!-- Guía Visual del Circuito (Workflow Stepper de 3 Pasos) -->
-			<section class="workflow-stepper" aria-label="Circuito de Gestión del Equipo">
-				<!-- Paso 1: Gemelo Digital Oficial -->
-				<div class="workflow-step" th:classappend="${tieneRelevamientoInicial} ? ' is-done' : ' is-current'">
-					<div class="step-header">
-						<span class="step-badge">1</span>
-						<span class="authorization-badge" th:classappend="${tieneRelevamientoInicial} ? ' is-authorized' : ' is-pending'"
-							  th:text="${tieneRelevamientoInicial} ? 'GEMELO REGISTRADO ✅' : 'PENDIENTE ⚠️'">
-							PENDIENTE
-						</span>
-					</div>
-					<h3 class="step-title">Gemelo Digital</h3>
-					<p class="step-desc" th:if="${tieneRelevamientoInicial}">
-						Gemelo Digital registrado. Los componentes detectados son la configuración oficial esperada del equipo.
-					</p>
-					<p class="step-desc" th:unless="${tieneRelevamientoInicial}">
-						El script detectó los componentes en vivo. Confírmalos como el Gemelo Digital oficial de la PC.
-					</p>
-					<div class="step-action-area">
-						<form th:if="${!tieneRelevamientoInicial and puedeEditarComponentes}" th:action="@{/admin/equipos/{id}/componentes/consolidar-relevamiento-inicial(id=${equipo.id})}" method="post" style="margin:0; width:100%;">
-							<button class="primary-action" type="submit" style="width: 100%; font-size: 0.85rem; padding: 7px 10px; background: #16a34a; border-color: #15803d; cursor: pointer;">
-								✅ Registrar como Gemelo Digital
-							</button>
-						</form>
-						<span th:if="${tieneRelevamientoInicial}" style="color: #166534; font-size: 0.82rem; font-weight: 700;">
-							Línea base confirmada
-						</span>
-					</div>
-				</div>
-
-				<!-- Paso 2: Orden de Armado -->
-				<div class="workflow-step" th:classappend="${!#lists.isEmpty(ordenesArmado)} ? ' is-done' : ''">
-					<div class="step-header">
-						<span class="step-badge">2</span>
-						<span class="count-badge" th:text="${#lists.size(ordenesArmado)} + ' órdenes'">0 órdenes</span>
-					</div>
-					<h3 class="step-title">Órdenes de Armado</h3>
-					<p class="step-desc">
-						Planifica cambios de hardware, salidas de Stock de componentes y armado para este equipo.
-					</p>
-					<div class="step-action-area">
-						<a class="secondary-action" th:if="${puedeVerOrdenes and tieneRelevamientoInicial}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
-							🛠️ Gestionar Órdenes
-						</a>
-						<button class="secondary-action is-disabled" th:if="${puedeVerOrdenes and !tieneRelevamientoInicial}" disabled style="width: 100%; opacity: 0.5; cursor: not-allowed; font-size: 0.82rem; padding: 7px 10px;" title="Disponible tras registrar el Gemelo Digital">
-							🔒 Requiere Paso 1
+				<!-- Acción Contextual Única si se requiere -->
+				<div style="display: flex; align-items: center; gap: 8px;">
+					<!-- Si reportó por script y aún no tiene Gemelo Oficial -->
+					<form th:if="${!tieneRelevamientoInicial and equipo.ultimoReporteEn != null and puedeEditarComponentes}"
+						  th:action="@{/admin/equipos/{id}/componentes/consolidar-relevamiento-inicial(id=${equipo.id})}"
+						  method="post" style="margin: 0;">
+						<button class="primary-action" type="submit"
+								style="font-size: 0.82rem; padding: 6px 14px; background: #16a34a; border-color: #15803d; font-weight: 700; cursor: pointer;"
+								title="Confirmar componentes detectados como el Gemelo Digital oficial">
+							🤖 Confirmar como Gemelo Digital
 						</button>
-					</div>
-				</div>
+					</form>
 
-				<!-- Paso 3: Gemelo Digital y Comparación -->
-				<div class="workflow-step" th:classappend="${tieneRelevamientoInicial and diferenciasCount == 0} ? ' is-done' : ''">
-					<div class="step-header">
-						<span class="step-badge">3</span>
-						<span th:if="${tieneRelevamientoInicial}" class="authorization-badge" th:classappend="${diferenciasCount == 0} ? ' is-authorized' : ' is-pending'"
-							  th:text="${diferenciasCount == 0} ? 'COINCIDE 100%' : (${diferenciasCount} + ' DIFERENCIAS')">
-							COINCIDE
-						</span>
-						<span th:unless="${tieneRelevamientoInicial}" class="count-badge">PAUSADO</span>
-					</div>
-					<h3 class="step-title">Comparación en Vivo</h3>
-					<p class="step-desc" th:if="${tieneRelevamientoInicial}">
-						Cruce automático: lo esperado (Gemelo oficial) vs lo detectado por el script en vivo.
-					</p>
-					<p class="step-desc" th:unless="${tieneRelevamientoInicial}">
-						Se activará automáticamente una vez fijado el Gemelo Digital oficial.
-					</p>
-					<div class="step-action-area">
-						<button type="button" class="secondary-action" th:if="${tieneRelevamientoInicial}" onclick="switchTab('gemelo')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
-							🔍 Ver Comparación
-						</button>
-						<button class="secondary-action is-disabled" th:unless="${tieneRelevamientoInicial}" disabled style="width: 100%; opacity: 0.5; cursor: not-allowed; font-size: 0.82rem; padding: 7px 10px;" title="Disponible tras registrar el Gemelo Digital">
-							🔒 Esperando Gemelo
-						</button>
-					</div>
+					<!-- Si todavía no ejecutó script en el cliente -->
+					<button th:if="${equipo.ultimoReporteEn == null}" type="button" class="secondary-action" onclick="copiarComandoScriptDetalle()"
+							style="font-size: 0.82rem; padding: 6px 14px; font-weight: 700;">
+						📋 Copiar Comando PowerShell
+					</button>
 				</div>
 			</section>
 
@@ -541,16 +361,63 @@
 									</td>
 									<td data-label="Ubicación" th:text="${componente.ubicacion ?: 'Sin ubicación'}">Slot 1</td>
 									<td data-label="Acción" th:if="${puedeEditarComponentes}">
-										<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de eliminar este componente del equipo?');">
-											<button type="submit" class="secondary-action" style="font-size: 0.78rem; padding: 4px 8px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
-												🗑️ Quitar
-											</button>
-										</form>
+										<div style="display: flex; gap: 4px; flex-wrap: wrap;">
+											<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este componente y regresarlo a Stock de taller como DISPONIBLE?');">
+												<input type="hidden" name="destino" value="STOCK">
+												<button type="submit" class="secondary-action" title="Retirar pieza y regresarla al depósito de Stock como disponible" style="font-size: 0.76rem; padding: 3px 6px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; cursor: pointer;">
+													📦 A Stock
+												</button>
+											</form>
+											<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Dar de baja este componente por desperfecto o rotura?');">
+												<input type="hidden" name="destino" value="BAJA">
+												<button type="submit" class="secondary-action" title="Dar de baja el componente por rotura o falla" style="font-size: 0.76rem; padding: 3px 6px; background: #fef2f2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+													❌ Baja
+												</button>
+											</form>
+											<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de desvincular este componente del equipo?');">
+												<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: #f8fafc; color: #64748b; border-color: #cbd5e1; cursor: pointer;">
+													🗑️
+												</button>
+											</form>
+										</div>
 									</td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
+
+					<!-- Panel Rápido: Instalar Componente desde el Stock de Taller -->
+					<section class="inline-edit-card" th:if="${puedeEditarComponentes}" style="background: #f8fafc; border: 1.5px solid #0284c7; border-radius: 8px; padding: 14px 18px; margin-top: 18px;">
+						<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+							<div style="display: flex; align-items: center; gap: 8px;">
+								<span style="font-size: 1.3rem;">🔧</span>
+								<div>
+									<strong style="color: #0369a1; font-size: 0.95rem;">Instalar componente desde el Stock del Taller</strong>
+									<span style="display: block; font-size: 0.8rem; color: #475569;">Asigna una memoria RAM, disco u otra pieza disponible en depósito a esta PC.</span>
+								</div>
+							</div>
+							<span class="count-badge" th:text="${#lists.size(stockDisponibles)} + ' en stock disponible'">0 en stock</span>
+						</div>
+						<form th:if="${!#lists.isEmpty(stockDisponibles)}" th:action="@{/admin/equipos/{equipoId}/componentes/instalar-desde-stock(equipoId=${equipo.id})}" method="post" style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+							<label style="flex: 2; min-width: 260px; margin: 0;">
+								<span style="font-size: 0.82rem; font-weight: 600; color: #334155;">Seleccionar Pieza de Stock</span>
+								<select name="stockComponenteId" required style="padding: 7px 10px; font-size: 0.88rem; width: 100%; border: 1px solid #94a3b8; border-radius: 5px;">
+									<option th:each="stock : ${stockDisponibles}" th:value="${stock.id}"
+											th:text="|${stock.tipo} - ${stock.descripcion} (${stock.marca ?: ''} ${stock.modelo ?: ''}) - SN: ${stock.serial ?: 'S/N'}|">RAM - Kingston</option>
+								</select>
+							</label>
+							<label style="flex: 1; min-width: 150px; margin: 0;">
+								<span style="font-size: 0.82rem; font-weight: 600; color: #334155;">Ubicación / Ranura (opcional)</span>
+								<input name="ubicacion" placeholder="Ej: Slot 1 / Bahía 1" style="padding: 7px 10px; font-size: 0.88rem; width: 100%; border: 1px solid #94a3b8; border-radius: 5px;">
+							</label>
+							<button class="primary-action" type="submit" style="padding: 8px 16px; font-size: 0.88rem; background: #0284c7; border-color: #0369a1; cursor: pointer;">
+								➕ Instalar en PC
+							</button>
+						</form>
+						<p th:if="${#lists.isEmpty(stockDisponibles)}" style="margin: 6px 0 0; font-size: 0.84rem; color: #64748b;">
+							No hay piezas marcadas como <em>DISPONIBLE</em> en el depósito. <a th:href="@{/admin/stock}" style="color: #0284c7; font-weight: 600;">Ir al Stock para dar de alta componentes ➡</a>
+						</p>
+					</section>
 
 					<!-- Formulario Colapsable para Cargar Componente Manualmente -->
 					<details class="collapsible-card" th:if="${puedeEditarComponentes and tieneRelevamientoInicial}">
