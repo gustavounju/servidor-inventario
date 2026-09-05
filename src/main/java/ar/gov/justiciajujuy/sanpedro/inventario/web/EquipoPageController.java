@@ -264,12 +264,19 @@ public class EquipoPageController {
 
 		BrujulaEquipo brujula = calcularBrujula(equipo, listaComponentes, tieneRelevamientoInicial, diferenciasCount, ordenes);
 
+		// Filtrar para la tabla de gestión de componentes: si ya tiene relevamiento inicial o componentes oficiales,
+		// NO mostramos las lecturas crudas SCRIPT en la tabla de componentes (para evitar duplicados confusos).
+		// Las lecturas SCRIPT se muestran exclusivamente en la tabla superior de "Comparación del gemelo digital".
+		var componentesGestion = tieneRelevamientoInicial
+				? listaComponentes.stream().filter(c -> c.origen() != OrigenComponente.SCRIPT).toList()
+				: listaComponentes;
+
 		model.addAttribute("equipo", equipo);
 		model.addAttribute("equipoForm", equipoForm);
 		model.addAttribute("puedeEditar", authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR));
 		model.addAttribute("puedeVerComponentes", puedeVerComponentes);
 		model.addAttribute("puedeEditarComponentes", authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_EDITAR));
-		model.addAttribute("componentes", listaComponentes);
+		model.addAttribute("componentes", componentesGestion);
 		model.addAttribute("comparacionGemelo", comparaciones);
 		model.addAttribute("tieneRelevamientoInicial", tieneRelevamientoInicial);
 		model.addAttribute("diferenciasCount", diferenciasCount);
