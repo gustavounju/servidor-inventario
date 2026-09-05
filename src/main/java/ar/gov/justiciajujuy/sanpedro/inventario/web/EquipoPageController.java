@@ -271,12 +271,39 @@ public class EquipoPageController {
 				? listaComponentes.stream().filter(c -> c.origen() != OrigenComponente.SCRIPT).toList()
 				: listaComponentes;
 
+		var cpuYMother = componentesGestion.stream()
+				.filter(c -> c.tipo() == TipoComponente.CPU || c.tipo() == TipoComponente.MOTHERBOARD || c.tipo() == TipoComponente.FUENTE || c.tipo() == TipoComponente.GABINETE)
+				.toList();
+		var memoriasRam = componentesGestion.stream()
+				.filter(c -> c.tipo() == TipoComponente.RAM)
+				.toList();
+		var discos = componentesGestion.stream()
+				.filter(c -> c.tipo() == TipoComponente.DISCO)
+				.toList();
+		var perifericos = componentesGestion.stream()
+				.filter(c -> c.tipo() != TipoComponente.CPU
+						&& c.tipo() != TipoComponente.MOTHERBOARD
+						&& c.tipo() != TipoComponente.FUENTE
+						&& c.tipo() != TipoComponente.GABINETE
+						&& c.tipo() != TipoComponente.RAM
+						&& c.tipo() != TipoComponente.DISCO)
+				.toList();
+
+		var discrepancias = comparaciones.stream()
+				.filter(c -> c.resultado() != EstadoComparacion.COINCIDE)
+				.toList();
+
 		model.addAttribute("equipo", equipo);
 		model.addAttribute("equipoForm", equipoForm);
 		model.addAttribute("puedeEditar", authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR));
 		model.addAttribute("puedeVerComponentes", puedeVerComponentes);
 		model.addAttribute("puedeEditarComponentes", authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_EDITAR));
 		model.addAttribute("componentes", componentesGestion);
+		model.addAttribute("componentesCpuMother", cpuYMother);
+		model.addAttribute("componentesRam", memoriasRam);
+		model.addAttribute("componentesDiscos", discos);
+		model.addAttribute("componentesPerifericos", perifericos);
+		model.addAttribute("discrepancias", discrepancias);
 		model.addAttribute("comparacionGemelo", comparaciones);
 		model.addAttribute("tieneRelevamientoInicial", tieneRelevamientoInicial);
 		model.addAttribute("diferenciasCount", diferenciasCount);

@@ -259,132 +259,363 @@
 					</div>
 				</div>
 
-				<!-- Sección Comparación Esperado vs Detectado -->
+				<!-- Sección Unificada: Gemelo Digital y Componentes Oficiales por Categoría -->
 				<section class="attributes-section" th:if="${puedeVerComponentes}" aria-labelledby="comparacion-title">
 					<div class="section-header">
 						<div>
-							<h2 id="comparacion-title">Comparacion del gemelo digital</h2>
-							<p class="section-note">
-								Cruce entre componentes esperados (por relevamiento inicial u orden de armado) y componentes detectados en la máquina real por el script.
+							<h2 id="comparacion-title" style="margin: 0; font-size: 1.15rem;">Gemelo digital / Componentes</h2>
+							<p class="section-note" style="margin: 2px 0 0;">
+								Comparacion del gemelo digital: Hardware oficial del equipo organizado por módulos y verificado en vivo con el script.
 							</p>
 						</div>
-						<span class="count-badge" th:text="${diferenciasCount} + ' diferencias'">0 diferencias</span>
+						<span class="count-badge" th:text="${#lists.size(componentes)} + ' componentes oficiales'">0 componentes</span>
 					</div>
 
-					<p class="empty-state" th:if="${#lists.isEmpty(comparacionGemelo)}">
-						Todavía no hay datos suficientes para comparar esperado contra detectado. Ejecuta el script de relevamiento o consolida la lectura inicial.
-					</p>
+					<!-- Semáforo en Vivo: 100% Sincronizado -->
+					<div class="workflow-banner" th:if="${tieneRelevamientoInicial and diferenciasCount == 0}" style="background: #f0fdf4; border: 2px solid #16a34a; border-radius: 8px; padding: 14px 18px; margin: 12px 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+						<div style="display: flex; align-items: center; gap: 12px;">
+							<span style="font-size: 1.6rem;">🟢</span>
+							<div>
+								<strong style="color: #15803d; font-size: 1rem; display: block;">Gemelo Digital 100% Sincronizado</strong>
+								<span style="color: #166534; font-size: 0.85rem;">Todos los componentes oficiales asignados coinciden exactamente con lo reportado por el script en vivo.</span>
+							</div>
+						</div>
+						<span class="authorization-badge is-authorized" style="font-weight: 700;">✓ COINCIDE 100%</span>
+					</div>
 
-					<div class="responsive-table" th:if="${!#lists.isEmpty(comparacionGemelo)}">
-						<table>
-							<thead>
-								<tr>
-									<th scope="col">Tipo</th>
-									<th scope="col">Esperado (Línea Base / Orden)</th>
-									<th scope="col">Detectado (Script en Vivo)</th>
-									<th scope="col">Estado</th>
-									<th scope="col">Observación</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr th:each="fila : ${comparacionGemelo}">
-									<td data-label="Tipo" th:text="${fila.tipo}">RAM</td>
-									<td data-label="Esperado">
-										<strong th:text="${fila.esperado}">RAM esperada</strong>
-									</td>
-									<td data-label="Detectado" th:text="${fila.detectado}">RAM detectada</td>
-									<td data-label="Estado">
-										<span class="authorization-badge" th:classappend="${fila.resultado.name() == 'COINCIDE'} ? ' is-authorized' : ' is-pending'"
-											  th:text="${fila.resultado}">COINCIDE</span>
-									</td>
-									<td data-label="Observación" th:text="${fila.observacion}">Coincide</td>
-								</tr>
-							</tbody>
-						</table>
+					<!-- Semáforo en Vivo: Discrepancias Detectadas -->
+					<div class="workflow-banner" th:if="${tieneRelevamientoInicial and diferenciasCount > 0}" style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px 18px; margin: 12px 0 20px;">
+						<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+							<span style="font-size: 1.5rem;">⚠️</span>
+							<div>
+								<strong style="color: #b45309; font-size: 1rem;">Discrepancias detectadas en vivo (<span th:text="${diferenciasCount}">0</span>)</strong>
+								<p style="margin: 2px 0 0; font-size: 0.84rem; color: #78350f;">Existe una diferencia entre los componentes que espera el sistema y lo que la máquina física tiene instalado:</p>
+							</div>
+						</div>
+						<div class="responsive-table" style="margin-top: 10px; background: #ffffff; border-radius: 6px;">
+							<table>
+								<thead>
+									<tr>
+										<th scope="col">Tipo</th>
+										<th scope="col">Esperado en Sistema</th>
+										<th scope="col">Detectado en la PC</th>
+										<th scope="col">Estado</th>
+										<th scope="col">Detalle</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="disc : ${discrepancias}">
+										<td><span class="count-badge" th:text="${disc.tipo}">RAM</span></td>
+										<td><strong th:text="${disc.esperado}">64GB</strong></td>
+										<td th:text="${disc.detectado}">Sin detectar</td>
+										<td>
+											<span class="authorization-badge is-pending" th:text="${disc.resultado}">FALTA</span>
+										</td>
+										<td class="table-subtext" th:text="${disc.observacion}">Detalle</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<!-- 1. Categoría: Procesador y Placa Madre -->
+					<div class="inline-edit-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+						<div class="section-header" style="margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+							<div style="display: flex; align-items: center; gap: 8px;">
+								<span style="font-size: 1.25rem;">🧠</span>
+								<h3 style="margin: 0; font-size: 1rem; color: #1e3a8a;">Procesamiento y Placa Madre</h3>
+							</div>
+							<span class="count-badge" th:text="${#lists.size(componentesCpuMother)} + ' componentes'">0 componentes</span>
+						</div>
+						<p class="empty-state" th:if="${#lists.isEmpty(componentesCpuMother)}" style="padding: 10px; font-size: 0.85rem;">
+							Sin componentes de procesamiento registrados.
+						</p>
+						<div class="responsive-table" th:if="${!#lists.isEmpty(componentesCpuMother)}">
+							<table>
+								<thead>
+									<tr>
+										<th scope="col">Tipo</th>
+										<th scope="col">Componente</th>
+										<th scope="col">Número de Serie (S/N)</th>
+										<th scope="col">Trazabilidad / Ranura</th>
+										<th scope="col">Estado</th>
+										<th scope="col" th:if="${puedeEditarComponentes}">Acciones de Taller</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="componente : ${componentesCpuMother}">
+										<td data-label="Tipo"><span class="count-badge" th:text="${componente.tipo}">CPU</span></td>
+										<td data-label="Componente">
+											<strong th:text="${componente.descripcion}">Intel Core i5</strong>
+											<div class="table-subtext">
+												<span th:text="${componente.marca ?: ''}">Marca</span>
+												<span th:text="${componente.modelo ?: ''}">Modelo</span>
+												<span class="count-badge" style="font-size: 0.7rem; padding: 2px 5px;" th:text="${componente.origen}">RELEVAMIENTO_INICIAL</span>
+											</div>
+										</td>
+										<td data-label="Serial">
+											<code th:text="${componente.serial ?: 'Sin serial'}" style="font-size: 0.85rem;">MB-001</code>
+										</td>
+										<td data-label="Trazabilidad">
+											<span th:text="${componente.ubicacion ?: 'Placa madre'}">Ubicación</span>
+										</td>
+										<td data-label="Estado">
+											<span class="authorization-badge is-authorized" th:text="${componente.estadoComparacion}">COINCIDE</span>
+										</td>
+										<td data-label="Acciones" th:if="${puedeEditarComponentes}">
+											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este componente y regresarlo a Stock de taller como DISPONIBLE?');">
+													<input type="hidden" name="destino" value="STOCK">
+													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; cursor: pointer;">
+														📦 A Stock
+													</button>
+												</form>
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Dar de baja este componente por desperfecto o rotura?');">
+													<input type="hidden" name="destino" value="BAJA">
+													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: #fef2f2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+														❌ Baja
+													</button>
+												</form>
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de desvincular este componente del equipo?');">
+													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: #f8fafc; color: #64748b; border-color: #cbd5e1; cursor: pointer;">
+														🗑️
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<!-- 2. Categoría: Memorias RAM -->
+					<div class="inline-edit-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+						<div class="section-header" style="margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+							<div style="display: flex; align-items: center; gap: 8px;">
+								<span style="font-size: 1.25rem;">💾</span>
+								<h3 style="margin: 0; font-size: 1rem; color: #1e3a8a;">Memorias RAM</h3>
+							</div>
+							<span class="count-badge" th:text="${#lists.size(componentesRam)} + ' módulos instalados'">0 módulos</span>
+						</div>
+						<p class="empty-state" th:if="${#lists.isEmpty(componentesRam)}" style="padding: 10px; font-size: 0.85rem;">
+							Sin módulos de memoria RAM registrados.
+						</p>
+						<div class="responsive-table" th:if="${!#lists.isEmpty(componentesRam)}">
+							<table>
+								<thead>
+									<tr>
+										<th scope="col">Módulo</th>
+										<th scope="col">Capacidad y Frecuencia</th>
+										<th scope="col">Número de Serie (S/N)</th>
+										<th scope="col">Ranura / Ubicación</th>
+										<th scope="col">Remito / OC</th>
+										<th scope="col">Estado</th>
+										<th scope="col" th:if="${puedeEditarComponentes}">Acciones de Taller</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="componente : ${componentesRam}">
+										<td data-label="Módulo">
+											<strong th:text="${componente.descripcion}">Modulo RAM instalado</strong>
+											<div class="table-subtext">
+												<span th:text="${componente.marca ?: ''}">Kingston</span>
+												<span th:text="${componente.modelo ?: ''}">DDR4</span>
+												<span class="count-badge" style="font-size: 0.7rem; padding: 2px 5px;" th:text="${componente.origen}">RELEVAMIENTO_INICIAL</span>
+											</div>
+										</td>
+										<td data-label="Capacidad">
+											<span class="count-badge" style="background: #eff6ff; color: #1e40af; font-weight: 700;" th:text="${componente.capacidad ?: 'Sin capacidad'}">8GB</span>
+										</td>
+										<td data-label="Serial">
+											<code th:text="${componente.serial ?: 'Sin serial'}" style="font-size: 0.85rem;">RAMSN-001</code>
+										</td>
+										<td data-label="Ranura" th:text="${componente.ubicacion ?: 'Slot RAM'}">Slot 1</td>
+										<td data-label="Remito / OC">
+											<div th:if="${componente.remito != null or componente.ordenCompra != null}">
+												<span th:if="${componente.remito}" style="display: block; font-size: 0.8rem; font-weight: 600; color: #0f172a;">📄 <span th:text="${componente.remito}">R-001</span></span>
+												<span th:if="${componente.ordenCompra}" style="display: block; font-size: 0.78rem; color: #475569;">🛒 <span th:text="${componente.ordenCompra}">OC-12</span></span>
+											</div>
+											<span th:unless="${componente.remito != null or componente.ordenCompra != null}" style="color: #94a3b8; font-size: 0.8rem;">-</span>
+										</td>
+										<td data-label="Estado">
+											<span class="authorization-badge is-authorized" th:text="${componente.estadoComparacion}">COINCIDE</span>
+										</td>
+										<td data-label="Acciones" th:if="${puedeEditarComponentes}">
+											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar esta memoria RAM y regresarla al Stock de taller como DISPONIBLE?');">
+													<input type="hidden" name="destino" value="STOCK">
+													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; cursor: pointer;">
+														📦 A Stock
+													</button>
+												</form>
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Dar de baja esta memoria por falla o rotura?');">
+													<input type="hidden" name="destino" value="BAJA">
+													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: #fef2f2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+														❌ Baja
+													</button>
+												</form>
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de desvincular esta memoria del equipo?');">
+													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: #f8fafc; color: #64748b; border-color: #cbd5e1; cursor: pointer;">
+														🗑️
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<!-- 3. Categoría: Almacenamiento y Discos -->
+					<div class="inline-edit-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+						<div class="section-header" style="margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+							<div style="display: flex; align-items: center; gap: 8px;">
+								<span style="font-size: 1.25rem;">💽</span>
+								<h3 style="margin: 0; font-size: 1rem; color: #1e3a8a;">Almacenamiento y Discos</h3>
+							</div>
+							<span class="count-badge" th:text="${#lists.size(componentesDiscos)} + ' unidades'">0 unidades</span>
+						</div>
+						<p class="empty-state" th:if="${#lists.isEmpty(componentesDiscos)}" style="padding: 10px; font-size: 0.85rem;">
+							Sin unidades de disco registradas.
+						</p>
+						<div class="responsive-table" th:if="${!#lists.isEmpty(componentesDiscos)}">
+							<table>
+								<thead>
+									<tr>
+										<th scope="col">Disco / Unidad</th>
+										<th scope="col">Modelo y Marca</th>
+										<th scope="col">Número de Serie (S/N)</th>
+										<th scope="col">Puerto / Bahía</th>
+										<th scope="col">Remito / OC</th>
+										<th scope="col">Estado</th>
+										<th scope="col" th:if="${puedeEditarComponentes}">Acciones de Taller</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="componente : ${componentesDiscos}">
+										<td data-label="Disco">
+											<strong th:text="${componente.descripcion}">Disco detectado</strong>
+											<div class="table-subtext">
+												<span th:text="${componente.capacidad ?: ''}">480GB</span>
+												<span class="count-badge" style="font-size: 0.7rem; padding: 2px 5px;" th:text="${componente.origen}">RELEVAMIENTO_INICIAL</span>
+											</div>
+										</td>
+										<td data-label="Modelo">
+											<span th:text="${componente.marca ?: ''}">Kingston</span>
+											<strong th:text="${componente.modelo ?: ''}">SA400</strong>
+										</td>
+										<td data-label="Serial">
+											<code th:text="${componente.serial ?: 'Sin serial'}" style="font-size: 0.82rem; word-break: break-all;">DISK-001</code>
+										</td>
+										<td data-label="Puerto" th:text="${componente.ubicacion ?: 'Bahía/puerto de disco'}">SATA 1</td>
+										<td data-label="Remito / OC">
+											<div th:if="${componente.remito != null or componente.ordenCompra != null}">
+												<span th:if="${componente.remito}" style="display: block; font-size: 0.8rem; font-weight: 600; color: #0f172a;">📄 <span th:text="${componente.remito}">R-001</span></span>
+												<span th:if="${componente.ordenCompra}" style="display: block; font-size: 0.78rem; color: #475569;">🛒 <span th:text="${componente.ordenCompra}">OC-12</span></span>
+											</div>
+											<span th:unless="${componente.remito != null or componente.ordenCompra != null}" style="color: #94a3b8; font-size: 0.8rem;">-</span>
+										</td>
+										<td data-label="Estado">
+											<span class="authorization-badge is-authorized" th:text="${componente.estadoComparacion}">COINCIDE</span>
+										</td>
+										<td data-label="Acciones" th:if="${puedeEditarComponentes}">
+											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este disco y regresarlo al Stock de taller como DISPONIBLE?');">
+													<input type="hidden" name="destino" value="STOCK">
+													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; cursor: pointer;">
+														📦 A Stock
+													</button>
+												</form>
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Dar de baja este disco por falla o rotura?');">
+													<input type="hidden" name="destino" value="BAJA">
+													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: #fef2f2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+														❌ Baja
+													</button>
+												</form>
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de desvincular este disco del equipo?');">
+													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: #f8fafc; color: #64748b; border-color: #cbd5e1; cursor: pointer;">
+														🗑️
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<!-- 4. Categoría: Periféricos y Puesto de Trabajo -->
+					<div class="inline-edit-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+						<div class="section-header" style="margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+							<div style="display: flex; align-items: center; gap: 8px;">
+								<span style="font-size: 1.25rem;">🖥️</span>
+								<h3 style="margin: 0; font-size: 1rem; color: #1e3a8a;">Periféricos y Dispositivos de Puesto</h3>
+							</div>
+							<span class="count-badge" th:text="${#lists.size(componentesPerifericos)} + ' dispositivos'">0 dispositivos</span>
+						</div>
+						<p class="empty-state" th:if="${#lists.isEmpty(componentesPerifericos)}" style="padding: 10px; font-size: 0.85rem;">
+							Sin periféricos ni dispositivos adicionales registrados.
+						</p>
+						<div class="responsive-table" th:if="${!#lists.isEmpty(componentesPerifericos)}">
+							<table>
+								<thead>
+									<tr>
+										<th scope="col">Tipo</th>
+										<th scope="col">Dispositivo</th>
+										<th scope="col">Número de Serie (S/N)</th>
+										<th scope="col">Ubicación</th>
+										<th scope="col">Estado</th>
+										<th scope="col" th:if="${puedeEditarComponentes}">Acciones de Taller</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="componente : ${componentesPerifericos}">
+										<td data-label="Tipo"><span class="count-badge" th:text="${componente.tipo}">MONITOR</span></td>
+										<td data-label="Dispositivo">
+											<strong th:text="${componente.descripcion}">Monitor detectado</strong>
+											<div class="table-subtext">
+												<span th:text="${componente.marca ?: ''}">Samsung</span>
+												<span th:text="${componente.modelo ?: ''}">S24</span>
+												<span class="count-badge" style="font-size: 0.7rem; padding: 2px 5px;" th:text="${componente.origen}">RELEVAMIENTO_INICIAL</span>
+											</div>
+										</td>
+										<td data-label="Serial">
+											<code th:text="${componente.serial ?: 'Sin serial'}" style="font-size: 0.85rem;">MON-001</code>
+										</td>
+										<td data-label="Ubicación" th:text="${componente.ubicacion ?: 'Puesto de trabajo'}">Escritorio</td>
+										<td data-label="Estado">
+											<span class="authorization-badge is-authorized" th:text="${componente.estadoComparacion}">COINCIDE</span>
+										</td>
+										<td data-label="Acciones" th:if="${puedeEditarComponentes}">
+											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este dispositivo y regresarlo a Stock de taller como DISPONIBLE?');">
+													<input type="hidden" name="destino" value="STOCK">
+													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; cursor: pointer;">
+														📦 A Stock
+													</button>
+												</form>
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Dar de baja este dispositivo por rotura?');">
+													<input type="hidden" name="destino" value="BAJA">
+													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: #fef2f2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+														❌ Baja
+													</button>
+												</form>
+												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de desvincular este dispositivo del equipo?');">
+													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: #f8fafc; color: #64748b; border-color: #cbd5e1; cursor: pointer;">
+														🗑️
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
 					</div>
 				</section>
-
-				<!-- Listado de Componentes Registrados -->
-				<section class="attributes-section" th:if="${puedeVerComponentes}" aria-labelledby="componentes-title" style="margin-top: 24px;">
-					<div class="section-header">
-						<div>
-							<h2 id="componentes-title">Gemelo digital / Componentes</h2>
-							<p class="section-note">Todos los componentes asociados al equipo y su origen de registro.</p>
-						</div>
-						<span class="count-badge" th:text="${#lists.size(componentes)} + ' componentes'">0 componentes</span>
-					</div>
-
-					<p class="empty-state" th:if="${#lists.isEmpty(componentes)}">
-						Todavía no hay componentes asociados a este equipo.
-					</p>
-
-					<div class="responsive-table" th:if="${!#lists.isEmpty(componentes)}">
-						<table>
-							<thead>
-								<tr>
-									<th scope="col">Tipo</th>
-									<th scope="col">Componente</th>
-									<th scope="col">Origen</th>
-									<th scope="col">Comparación</th>
-									<th scope="col">Serial</th>
-									<th scope="col">Remito / OC</th>
-									<th scope="col">Ubicación</th>
-									<th scope="col" th:if="${puedeEditarComponentes}">Acción</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr th:each="componente : ${componentes}">
-									<td data-label="Tipo" th:text="${componente.tipo}">RAM</td>
-									<td data-label="Componente">
-										<strong th:text="${componente.descripcion}">Modulo RAM instalado</strong>
-										<span class="table-subtext">
-											<span th:text="${componente.marca ?: ''}">Kingston</span>
-											<span th:text="${componente.modelo ?: ''}">DDR4</span>
-											<span th:text="${componente.capacidad ?: ''}">8GB</span>
-										</span>
-									</td>
-									<td data-label="Origen">
-										<span class="count-badge" th:text="${componente.origen}">SCRIPT</span>
-									</td>
-									<td data-label="Comparación">
-										<span class="authorization-badge" th:classappend="${componente.estadoComparacion.name() == 'COINCIDE'} ? ' is-authorized' : ' is-pending'"
-											  th:text="${componente.estadoComparacion}">COINCIDE</span>
-									</td>
-									<td data-label="Serial" th:text="${componente.serial ?: 'Sin serial'}">RAMSN-001</td>
-									<td data-label="Remito / OC">
-										<div th:if="${componente.remito != null or componente.ordenCompra != null}">
-											<span th:if="${componente.remito}" style="display: block; font-size: 0.8rem; font-weight: 600; color: #0f172a;">📄 <span th:text="${componente.remito}">R-001</span></span>
-											<span th:if="${componente.ordenCompra}" style="display: block; font-size: 0.78rem; color: #475569;">🛒 <span th:text="${componente.ordenCompra}">OC-12</span></span>
-											<span th:if="${componente.proveedor}" style="display: block; font-size: 0.75rem; color: #64748b;" th:text="${componente.proveedor}">Banghó</span>
-										</div>
-										<span th:unless="${componente.remito != null or componente.ordenCompra != null}" style="color: #94a3b8; font-size: 0.8rem;">-</span>
-									</td>
-									<td data-label="Ubicación" th:text="${componente.ubicacion ?: 'Sin ubicación'}">Slot 1</td>
-									<td data-label="Acción" th:if="${puedeEditarComponentes}">
-										<div style="display: flex; gap: 4px; flex-wrap: wrap;">
-											<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este componente y regresarlo a Stock de taller como DISPONIBLE?');">
-												<input type="hidden" name="destino" value="STOCK">
-												<button type="submit" class="secondary-action" title="Retirar pieza y regresarla al depósito de Stock como disponible" style="font-size: 0.76rem; padding: 3px 6px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; cursor: pointer;">
-													📦 A Stock
-												</button>
-											</form>
-											<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Dar de baja este componente por desperfecto o rotura?');">
-												<input type="hidden" name="destino" value="BAJA">
-												<button type="submit" class="secondary-action" title="Dar de baja el componente por rotura o falla" style="font-size: 0.76rem; padding: 3px 6px; background: #fef2f2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
-													❌ Baja
-												</button>
-											</form>
-											<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de desvincular este componente del equipo?');">
-												<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: #f8fafc; color: #64748b; border-color: #cbd5e1; cursor: pointer;">
-													🗑️
-												</button>
-											</form>
-										</div>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
 
 					<!-- Panel Rápido: Instalar Componente desde el Stock de Taller -->
 					<section class="inline-edit-card" th:if="${puedeEditarComponentes}" style="background: #f8fafc; border: 1.5px solid #0284c7; border-radius: 8px; padding: 14px 18px; margin-top: 18px;">
