@@ -264,13 +264,32 @@ public class EquipoPageController {
 
 		BrujulaEquipo brujula = calcularBrujula(equipo, listaComponentes, tieneRelevamientoInicial, diferenciasCount, ordenes);
 
-		// Filtrar para la tabla de gestión de componentes: si ya tiene relevamiento inicial o componentes oficiales,
-		// NO mostramos las lecturas crudas SCRIPT en la tabla de componentes (para evitar duplicados confusos).
-		// Las lecturas SCRIPT se muestran exclusivamente en la tabla superior de "Comparación del gemelo digital".
+		// =========================================================================================
+		// GESTIÓN DE HARDWARE: DISTINCIÓN ENTRE ACCIONES RÁPIDAS DE TALLER Y ÓRDENES DE ARMADO
+		// =========================================================================================
+		// 1. Acciones Rápidas (Día a día):
+		//    El técnico instala o retira componentes de stock directamente desde la ficha del equipo
+		//    sin necesidad de trámites ni burocracia (vía /componentes/instalar-desde-stock y /retirar).
+		// 2. Órdenes de Armado (Planificación / Institucional):
+		//    Se reservan para compras masivas, ensamblaje de PCs desde cero, reserva de piezas para juzgados
+		//    o requerimientos de trazabilidad y actas patrimoniales con firma del técnico responsable.
+		//
+		// FILTRADO DE LECTURAS CRUDAS DEL SCRIPT:
+		// Si el equipo ya cuenta con relevamiento inicial consolidado (Gemelo Digital oficial confirmado),
+		// excluimos las filas crudas con origen SCRIPT de la lista de gestión para no duplicar visualmente
+		// los componentes oficiales con las lecturas de telemetría viva.
 		var componentesGestion = tieneRelevamientoInicial
 				? listaComponentes.stream().filter(c -> c.origen() != OrigenComponente.SCRIPT).toList()
 				: listaComponentes;
 
+		// =========================================================================================
+		// CLASIFICACIÓN MODULAR POR CATEGORÍAS DE HARDWARE:
+		// Se agrupan los componentes en 4 módulos lógicos para una visualización ordenada y limpia:
+		//   1. Procesamiento y Placa Madre: CPU, MOTHERBOARD, FUENTE, GABINETE
+		//   2. Memorias RAM: Módulos individuales organizados por Ranura/Slot y Capacidad
+		//   3. Almacenamiento y Discos: Discos magnéticos y de estado sólido (SSD, NVMe, SATA)
+		//   4. Periféricos y Puesto de Trabajo: Monitores, Teclados, Mouse, Impresoras y otros
+		// =========================================================================================
 		var cpuYMother = componentesGestion.stream()
 				.filter(c -> c.tipo() == TipoComponente.CPU || c.tipo() == TipoComponente.MOTHERBOARD || c.tipo() == TipoComponente.FUENTE || c.tipo() == TipoComponente.GABINETE)
 				.toList();
@@ -289,6 +308,7 @@ public class EquipoPageController {
 						&& c.tipo() != TipoComponente.DISCO)
 				.toList();
 
+		// Componentes del gemelo que presentan discrepancias contra el reporte del script en vivo
 		var discrepancias = comparaciones.stream()
 				.filter(c -> c.resultado() != EstadoComparacion.COINCIDE)
 				.toList();
