@@ -17,9 +17,6 @@
 					<a class="secondary-action" th:href="@{/admin/equipos}" title="Volver a la lista de equipos">
 						⬅ Volver al listado
 					</a>
-					<a class="secondary-action" th:href="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}">
-						📜 Auditoría
-					</a>
 				</div>
 				<div class="quick-nav-group">
 					<span class="authorization-badge" th:classappend="${equipo.activo} ? ' is-authorized' : ' is-pending'"

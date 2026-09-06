@@ -2456,6 +2456,9 @@ Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional
     - `dashboard-diferencias.html`: Se removieron los accesos repetidos a catálogo, órdenes, stock y actas, conservando únicamente la acción `📥 Exportar CSV`.
     - `stock.html`: Se eliminaron los botones duplicados, manteniendo solo la insignia de conteo total de componentes.
   - *Resultado*: Interfaz despejada, sin duplicación de elementos de navegación y con máxima relevancia en las acciones propias de cada pantalla.
+- **Depuración de la Ficha de Detalle de Equipo (`equipo-detalle.html`)**:
+  - Se eliminó el botón redundante e incoherente `[ 📜 Auditoría ]` de la barra superior del detalle de equipo, conservando únicamente el botón esencial `[ ⬅ Volver al listado ]` a la izquierda y las acciones administrativas a la derecha.
+  - Comprobado visualmente en `/admin/equipos/{id}` y validado con 136 tests automatizados al 100%.
 
 ## Fuentes internas consultadas
 
