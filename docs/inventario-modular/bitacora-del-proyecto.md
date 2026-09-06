@@ -2456,9 +2456,12 @@ Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional
     - `dashboard-diferencias.html`: Se removieron los accesos repetidos a catálogo, órdenes, stock y actas, conservando únicamente la acción `📥 Exportar CSV`.
     - `stock.html`: Se eliminaron los botones duplicados, manteniendo solo la insignia de conteo total de componentes.
   - *Resultado*: Interfaz despejada, sin duplicación de elementos de navegación y con máxima relevancia en las acciones propias de cada pantalla.
-- **Depuración de la Ficha de Detalle de Equipo (`equipo-detalle.html`)**:
-  - Se eliminó el botón redundante e incoherente `[ 📜 Auditoría ]` de la barra superior del detalle de equipo, conservando únicamente el botón esencial `[ ⬅ Volver al listado ]` a la izquierda y las acciones administrativas a la derecha.
-  - Comprobado visualmente en `/admin/equipos/{id}` y validado con 136 tests automatizados al 100%.
+- **Normalización y Contraste de Cajas de Formulario (`input`, `select`, `textarea`)**:
+  - *Diagnóstico*: En formularios como creación de órdenes, asignación de componentes y datos de usuario, los controles conservaban estilos fijos claros (`color: #1d252d; border: 1px solid #c7d2dd;`), provocando que en Modo Oscuro el fondo y el texto tuvieran bajo contraste y apariencia desprolija.
+  - *Saneamiento en `admin.css`*:
+    - Se aplicaron variables temáticas para todos los controles (`.equipment-form`, `.user-form`, `.inline-action-form`): `background: var(--bg-input)`, `color: var(--text-primary)` y `border: 1px solid var(--border-input)`.
+    - Se configuraron los placeholders con `var(--text-muted)` y las opciones de los desplegables (`select option`) con `background: var(--bg-card)`.
+    - Se verificó visualmente el contraste nítido y descansado en `/admin/ordenes-armado` y formularios de equipos.
 
 ## Fuentes internas consultadas
 

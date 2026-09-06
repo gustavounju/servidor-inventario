@@ -727,9 +727,55 @@ h1 {
 	width: 100%;
 }
 
-.login-form input:focus {
-	border-color: #23405f;
-	box-shadow: 0 0 0 3px rgba(35, 64, 95, 0.14);
+.equipment-form label {
+	display: grid;
+	gap: 6px;
+}
+
+.equipment-form label span {
+	color: var(--text-secondary) !important;
+	font-size: 0.78rem !important;
+	font-weight: 700 !important;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.equipment-form input,
+.equipment-form select,
+.equipment-form textarea {
+	background: var(--bg-input) !important;
+	border: 1px solid var(--border-input) !important;
+	border-radius: 6px;
+	color: var(--text-primary) !important;
+	font: inherit;
+	font-size: 0.88rem;
+	padding: 8px 12px;
+	width: 100%;
+	transition: all 0.15s ease;
+}
+
+.equipment-form input::placeholder,
+.equipment-form textarea::placeholder {
+	color: var(--text-muted) !important;
+	opacity: 0.8;
+}
+
+.equipment-form select option {
+	background: var(--bg-card) !important;
+	color: var(--text-primary) !important;
+}
+
+.equipment-form textarea {
+	line-height: 1.45;
+	resize: vertical;
+}
+
+.equipment-form input:focus,
+.equipment-form select:focus,
+.equipment-form textarea:focus {
+	background: var(--bg-card) !important;
+	border-color: var(--accent-primary) !important;
+	box-shadow: 0 0 0 3px var(--accent-focus) !important;
 	outline: none;
 }
 
@@ -814,27 +860,33 @@ h1 {
 
 .user-form label span,
 .role-picker legend {
-	color: #415366;
-	font-size: 0.84rem;
-	font-weight: 700;
+	color: var(--text-secondary) !important;
+	font-size: 0.78rem !important;
+	font-weight: 700 !important;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
 }
 
 .user-form input[type="text"],
 .user-form input[type="password"],
 .user-form select {
-	border: 1px solid #c7d2dd;
+	background: var(--bg-input) !important;
+	border: 1px solid var(--border-input) !important;
 	border-radius: 6px;
-	color: #1d252d;
+	color: var(--text-primary) !important;
 	font: inherit;
-	padding: 10px 12px;
+	font-size: 0.88rem;
+	padding: 8px 12px;
 	width: 100%;
+	transition: all 0.15s ease;
 }
 
 .user-form input[type="text"]:focus,
 .user-form input[type="password"]:focus,
 .user-form select:focus {
-	border-color: #23405f;
-	box-shadow: 0 0 0 3px rgba(35, 64, 95, 0.14);
+	background: var(--bg-card) !important;
+	border-color: var(--accent-primary) !important;
+	box-shadow: 0 0 0 3px var(--accent-focus) !important;
 	outline: none;
 }
 
@@ -858,22 +910,16 @@ h1 {
 	margin: 0;
 }
 
-.inline-action-form select {
-	border: 1px solid #c7d2dd;
+.inline-action-form select,
+.inline-action-form input {
+	background: var(--bg-input) !important;
+	border: 1px solid var(--border-input) !important;
 	border-radius: 6px;
-	color: #1d252d;
+	color: var(--text-primary) !important;
 	font: inherit;
 	min-width: 150px;
-	padding: 8px 10px;
-}
-
-.inline-action-form input {
-	border: 1px solid #c7d2dd;
-	border-radius: 6px;
-	color: #1d252d;
-	font: inherit;
-	min-width: 180px;
-	padding: 8px 10px;
+	padding: 6px 10px;
+	font-size: 0.85rem;
 }
 
 .search-form {
