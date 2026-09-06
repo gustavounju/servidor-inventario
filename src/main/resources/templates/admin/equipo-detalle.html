@@ -282,12 +282,19 @@
 
 					<!-- Semáforo en Vivo: Discrepancias Detectadas -->
 					<div class="workflow-banner" th:if="${tieneRelevamientoInicial and diferenciasCount > 0}" style="border-left: 4px solid #f59e0b; margin: 12px 0 20px;">
-						<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-							<span style="font-size: 1.5rem;">⚠️</span>
-							<div>
-								<strong style="color: #facc15; font-size: 1rem;">Discrepancias detectadas en vivo (<span th:text="${diferenciasCount}">0</span>)</strong>
-								<p style="margin: 2px 0 0; font-size: 0.84rem;">Existe una diferencia entre los componentes que espera el sistema y lo que la máquina física tiene instalado:</p>
+						<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
+							<div style="display: flex; align-items: center; gap: 10px;">
+								<span style="font-size: 1.5rem;">⚠️</span>
+								<div>
+									<strong style="color: #facc15; font-size: 1rem;">Discrepancias detectadas en vivo (<span th:text="${diferenciasCount}">0</span>)</strong>
+									<p style="margin: 2px 0 0; font-size: 0.84rem;">Existe una diferencia entre los componentes que espera el sistema y lo que la máquina física tiene instalado:</p>
+								</div>
 							</div>
+							<form th:if="${puedeEditarComponentes}" th:action="@{/admin/equipos/{id}/componentes/consolidar-relevamiento-inicial(id=${equipo.id})}" method="post" style="margin: 0;" onsubmit="return confirm('¿Confirmar y adoptar toda la configuración detectada actualmente por el script físico como la base oficial del Gemelo Digital?');">
+								<button class="primary-action" type="submit" style="background: #16a34a; border-color: #15803d; font-size: 0.82rem; padding: 6px 14px; font-weight: 600; cursor: pointer;">
+									✅ Adoptar Hardware Físico como Oficial
+								</button>
+							</form>
 						</div>
 						<div class="responsive-table" style="margin-top: 10px;">
 							<table>
