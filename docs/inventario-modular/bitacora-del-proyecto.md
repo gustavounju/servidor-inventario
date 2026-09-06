@@ -2436,6 +2436,19 @@ Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional
   - *Verificación*:
     - Comprobación visual mediante captura en navegador (`dashboard-diferencias.html`): disposición en una fila perfecta de 3 tarjetas de circuito y 4 tarjetas de métricas, etiquetas limpias y descansadas.
     - Ejecución completa de suite de pruebas: 136 tests ejecutados, 0 fallos, 0 errores.
+- **Optimización de Pantalla Equipos y Nuevo Estilo Horizontal de Métricas ("Stat Bar")**:
+  - *Depuración Funcional en `equipos.html`*:
+    - Eliminación del encabezado redundante `Inventario de Equipos` y el párrafo explicativo ("Parque informático del Centro Judicial. Haz clic en Ver Ficha o Registrar Gemelo..."), reduciendo la altura previa a la tabla y optimizando el espacio de trabajo.
+    - Reubicación del botón de acción prioritario `🔧 Iniciar Armado en Taller` en la barra superior rápida (`.quick-nav-bar`), alineado con los accesos rápidos a Órdenes, Stock y Diferencias.
+  - *Nuevo Estilo Horizontal Micro-Compacto de Métricas (`.summary-grid` / `.metric-card`)*:
+    - Se reemplazaron las tarjetas verticales gruesas (~80px de alto) por una **barra de estadísticas horizontal micro-compacta** (~42px de alto):
+      - Arquitectura CSS Grid (`grid-template-areas: "title value" "action value"`).
+      - Título en mayúsculas micro (`0.63rem`) y enlace de acción (`0.64rem`) apilados a la izquierda.
+      - Cifra numérica prominente (`1.25rem`) alineada a la derecha con acento lateral de color semántico (azul, verde, amarillo, naranja, rojo).
+      - Reducción drástica del espacio vertical consumido, logrando que los listados y tablas queden inmediatamente visibles al cargar la página.
+  - *Verificación Integral*:
+    - Pruebas visuales en navegador con capturas directas en `/admin/equipos` y `/admin/dashboard-diferencias`.
+    - 136 tests unitarios y de integración ejecutados con resultado 100% exitoso.
 
 ## Fuentes internas consultadas
 

@@ -506,31 +506,37 @@ h1 {
 	display: grid;
 	gap: 12px;
 	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-	margin-top: 24px;
+	gap: 8px;
+	grid-template-columns: repeat(4, 1fr);
+	margin: 8px 0 14px;
 }
 
 .summary-grid div {
-	border: 1px solid #e1e7ee;
-	border-radius: 8px;
-	padding: 13px 14px;
+	border: 1px solid var(--border-color);
+	border-radius: 6px;
+	padding: 6px 12px;
+	background: var(--bg-card);
 }
 
 .summary-grid span {
-	color: #5e7184;
+	color: var(--text-muted);
 	display: block;
-	font-size: 0.78rem;
+	font-size: 0.65rem;
 	font-weight: 700;
 	text-transform: uppercase;
+	letter-spacing: 0.04em;
 }
 
 .summary-grid strong {
 	display: block;
-	margin-top: 5px;
+	color: var(--text-primary);
+	font-size: 1.30rem;
+	font-weight: 800;
 	overflow-wrap: anywhere;
 }
 
 .dashboard-summary strong {
-	font-size: 1.7rem;
+	font-size: 1.35rem;
 }
 
 .empty-state {
@@ -1893,12 +1899,12 @@ dialog::backdrop {
 	padding-top: 8px;
 }
 
-/* Grilla de Tarjetas Métricas Interactivas (Diseño Limpio, Compacto y Refinado) */
+/* Grilla de Tarjetas Métricas Interactivas (Nuevo Estilo: Barra de Estadísticas Horizontal Micro-Compacta) */
 .summary-grid {
 	display: grid;
 	grid-template-columns: repeat(4, 1fr);
-	gap: 12px;
-	margin: 12px 0 18px;
+	gap: 8px;
+	margin: 8px 0 14px;
 }
 
 @media (max-width: 1100px) {
@@ -1914,66 +1920,72 @@ dialog::backdrop {
 }
 
 .metric-card {
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	background: var(--bg-card);
-	border: 1px solid var(--border-color);
-	border-radius: 8px;
-	padding: 10px 14px;
-	text-decoration: none;
+	display: grid !important;
+	grid-template-columns: 1fr auto !important;
+	grid-template-rows: auto auto !important;
+	grid-template-areas:
+		"title value"
+		"action value" !important;
+	align-items: center !important;
+	column-gap: 8px !important;
+	row-gap: 1px !important;
+	background: var(--bg-card) !important;
+	border: 1px solid var(--border-color) !important;
+	border-radius: 6px !important;
+	padding: 6px 12px !important;
+	min-height: 42px !important;
+	text-decoration: none !important;
 	box-shadow: var(--shadow-sm);
-	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	transition: all 0.15s ease-in-out;
 	position: relative;
 	cursor: pointer;
 }
 
 .metric-card:hover {
-	transform: translateY(-2px);
-	border-color: var(--border-input);
-	box-shadow: var(--shadow-card);
+	transform: translateY(-1px);
+	border-color: var(--border-input) !important;
+	background: var(--bg-card-hover) !important;
 }
 
 .metric-card.is-active {
-	background: var(--bg-card);
-	border-color: var(--accent-primary);
-	box-shadow: 0 0 0 2px var(--accent-focus), var(--shadow-card);
+	background: rgba(37, 99, 235, 0.08) !important;
+	border-color: var(--accent-primary) !important;
+	box-shadow: 0 0 0 1px var(--accent-primary);
 }
 
-.metric-card.border-red { border-left: 3px solid #ef4444; }
-.metric-card.border-orange { border-left: 3px solid #f97316; }
-.metric-card.border-yellow { border-left: 3px solid #f59e0b; }
-.metric-card.border-green { border-left: 3px solid #10b981; }
-.metric-card.border-blue { border-left: 3px solid #3b82f6; }
-.metric-card.border-cyan { border-left: 3px solid #06b6d4; }
-.metric-card.border-purple { border-left: 3px solid #8b5cf6; }
+.metric-card.border-red { border-left: 3px solid #ef4444 !important; }
+.metric-card.border-orange { border-left: 3px solid #f97316 !important; }
+.metric-card.border-yellow { border-left: 3px solid #f59e0b !important; }
+.metric-card.border-green { border-left: 3px solid #10b981 !important; }
+.metric-card.border-blue { border-left: 3px solid #3b82f6 !important; }
+.metric-card.border-cyan { border-left: 3px solid #06b6d4 !important; }
+.metric-card.border-purple { border-left: 3px solid #8b5cf6 !important; }
 
 .metric-card-title {
+	grid-area: title;
 	display: block;
 	color: var(--text-muted);
-	font-size: 0.68rem;
+	font-size: 0.63rem !important;
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
-	margin-bottom: 2px;
+	line-height: 1.15;
+	margin: 0;
 }
 
 .metric-card-value {
+	grid-area: value;
 	display: block;
-	font-size: 1.45rem;
+	font-size: 1.25rem !important;
 	font-weight: 800;
-	line-height: 1.1;
-	margin: 2px 0 4px;
+	line-height: 1;
+	margin: 0;
+	text-align: right;
 	letter-spacing: -0.02em;
 	color: var(--text-primary);
 }
 
 .metric-card-action {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	font-size: 0.70rem;
-	font-weight: 600;
 	margin-top: 2px;
 	color: var(--text-link);
 }
