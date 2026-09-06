@@ -2400,7 +2400,12 @@ Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional
   - *Eliminación del Modo Oscuro Aislado*: Se unificó el panel lateral izquierdo (`.app-sidebar`) con el área de trabajo derecha, descartando el fondo oscuro discordante (`#0f172a`) en favor de una paleta institucional clara (`#ffffff` y `#f8fafc`).
   - *Continuidad Estética*: Cabecera institucional en fondo blanco con tipografía Slate corporativa (`#0f172a`), badge azul suave (`#f0f7ff` / `#2563eb`), enlaces en Slate-600 (`#475569`) con hover gris suave (`#f1f5f9`) y selección activa en azul primario con pestaña destacada (`#eff6ff`, `#1d4ed8`, `border-left: 3px solid #2563eb`).
   - *Pie y Separadores Suaves*: Borde derecho y divisores sutiles de 1px en `#e2e8f0`, scrollbar discreta (`#cbd5e1`) y pie de usuario en `#f8fafc` con botón de cierre de sesión claro.
-  - *Documentación en Código*: Se añadieron comentarios descriptivos en español a lo largo de las nuevas reglas en `admin.css`.
+- **Implementación del Modo Oscuro "Eye-Care" Relajante (Midnight Slate) y Soporte Dual con Selector**:
+  - *Filosofía de Cuidado Visual*: Diseñado específicamente para evitar el cansancio visual derivado de fondos blancos deslumbrantes o contrastes negros agresivos, adoptando la paleta profunda *Midnight Slate* (`#0b0f19` en canvas principal, `#0e1626` en barra lateral y `#151f32` en tarjetas y módulos).
+  - *Unificación Total de Paneles*: Ambos paneles (barra lateral izquierda y espacio de trabajo derecho con todas sus opciones, tablas y formularios) comparten el mismo tono oscuro unificado sin diferencias de contraste incómodas.
+  - *Arquitectura de Variables CSS Dinámicas (`:root` / `[data-theme]`)*: Se parametrizó la totalidad de fondos (`--bg-canvas`, `--bg-sidebar`, `--bg-card`), bordes suaves (`--border-color`, `--border-subtle`), textos de alta legibilidad (`--text-primary`, `--text-secondary`), tablas y formularios.
+  - *Selector de Tema en Barra Superior (`.theme-toggle-btn`)*: Botón accesible en la cabecera del panel que permite alternar con un solo clic entre Modo Oscuro (por defecto) y Modo Claro, con persistencia inmediata en `localStorage` y ejecución previa sin parpadeos visuales (`flash of unstyled content`).
+  - *Comentarios y Documentación*: El código CSS y las plantillas de navegación incluyen comentarios explicativos en español sobre la arquitectura de color y su comportamiento accesible.
 
 ## Fuentes internas consultadas
 

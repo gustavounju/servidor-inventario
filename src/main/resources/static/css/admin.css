@@ -1,13 +1,80 @@
 /**
  * Arquitectura Visual: Modern Card-Based Admin Shell
- * Esquema de Color: Soft Corporate Light
- * Objetivo: UI limpia, orientada a datos y escalable.
+ * Esquema de Color: Midnight Slate Eye-Care (Modo Oscuro Relajante que no daña la vista por defecto)
+ * Soporte Dual: Conmutación accesible entre Modo Oscuro y Modo Claro
  */
-:root {
-	color-scheme: light;
+:root,
+:root[data-theme="dark"] {
+	color-scheme: dark;
 	font-family: Arial, Helvetica, sans-serif;
-	background: #f6f7f9; /* Fondo general suave */
-	color: #1d252d; /* Texto principal oscuro */
+
+	/* Paleta Modo Oscuro "Eye-Care" (Midnight Slate - Cuidado visual sin contrastes agresivos) */
+	--bg-canvas: #0b0f19;          /* Canvas principal profundo y descansado */
+	--bg-sidebar: #0e1626;         /* Barra lateral con sutil elevación */
+	--bg-card: #151f32;            /* Tarjetas de datos y módulos */
+	--bg-card-hover: #1c2a42;      /* Efecto hover suave en tarjetas */
+	--bg-card-secondary: #111a2c;  /* Fondo de elementos anidados */
+	--bg-input: #0b111c;           /* Fondo de campos de formulario */
+	
+	--border-color: #22314a;       /* Bordes principales nítidos pero no estridentes */
+	--border-subtle: #19263b;      /* Divisores internos suaves */
+	--border-input: #2a3d5c;       /* Bordes de inputs y selectores */
+	
+	--text-primary: #f8fafc;       /* Texto principal blanco Slate */
+	--text-secondary: #94a3b8;     /* Texto secundario y etiquetas */
+	--text-muted: #64748b;         /* Texto atenuado y antetítulos */
+	--text-link: #60a5fa;          /* Enlaces y acentos celestes */
+	
+	--accent-primary: #2563eb;     /* Azul judicial */
+	--accent-hover: #1d4ed8;       /* Azul interactivo */
+	--accent-focus: rgba(59, 130, 246, 0.35); /* Anillo de foco */
+	
+	--badge-bg: #1e293b;
+	--badge-text: #94a3b8;
+	--badge-border: #334155;
+	
+	--table-head-bg: #0f1827;      /* Encabezados de tabla */
+	--table-row-hover: #1b273d;    /* Fila de tabla al pasar cursor */
+	--table-border: #22314a;
+	
+	--shadow-card: 0 4px 16px rgba(0, 0, 0, 0.4);
+	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme="light"] {
+	color-scheme: light;
+	
+	/* Paleta Modo Claro Corporativo */
+	--bg-canvas: #f8fafc;
+	--bg-sidebar: #ffffff;
+	--bg-card: #ffffff;
+	--bg-card-hover: #f1f5f9;
+	--bg-card-secondary: #f8fafc;
+	--bg-input: #f8fafc;
+	
+	--border-color: #e2e8f0;
+	--border-subtle: #f1f5f9;
+	--border-input: #cbd5e1;
+	
+	--text-primary: #0f172a;
+	--text-secondary: #475569;
+	--text-muted: #64748b;
+	--text-link: #2563eb;
+	
+	--accent-primary: #2563eb;
+	--accent-hover: #1d4ed8;
+	--accent-focus: rgba(59, 130, 246, 0.2);
+	
+	--badge-bg: #f1f5f9;
+	--badge-text: #475569;
+	--badge-border: #cbd5e1;
+	
+	--table-head-bg: #f8fafc;
+	--table-row-hover: #f8fafc;
+	--table-border: #e2e8f0;
+	
+	--shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 * {
@@ -17,7 +84,9 @@
 body {
 	margin: 0;
 	min-height: 100vh;
-	background: #f6f7f9;
+	background: var(--bg-canvas);
+	color: var(--text-primary);
+	transition: background 0.2s ease, color 0.2s ease;
 }
 
 /* Contenedor principal de disposición */
@@ -35,10 +104,10 @@ body {
 	align-items: stretch;
 	justify-content: flex-start;
 	min-height: 100vh;
-	background: #f8fafc; /* Canvas moderno Slate-50 */
+	background: var(--bg-canvas);
 	padding: 24px 36px 48px;
 	box-sizing: border-box;
-	transition: margin-left 0.25s ease, width 0.25s ease;
+	transition: margin-left 0.25s ease, width 0.25s ease, background 0.2s ease;
 }
 
 @media (min-width: 992px) {
@@ -49,23 +118,25 @@ body {
 	}
 }
 
-/* Tarjeta base: se preserva solo para el formulario de login centrado */
+/* Tarjeta base: se preserva para el formulario de login centrado */
 .status-panel {
 	width: min(100%, 1040px);
-	border: 1px solid #d9e0e7;
-	border-radius: 8px;
-	background: #ffffff;
+	border: 1px solid var(--border-color);
+	border-radius: 12px;
+	background: var(--bg-card);
+	color: var(--text-primary);
 	padding: 32px;
-	box-shadow: 0 18px 50px rgba(31, 42, 55, 0.08);
+	box-shadow: var(--shadow-card);
 }
 
 .status-panel.login-panel {
 	width: min(100%, 460px);
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--border-color);
 	border-radius: 12px;
-	background: #ffffff;
+	background: var(--bg-card);
+	color: var(--text-primary);
 	padding: 36px;
-	box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+	box-shadow: var(--shadow-card);
 }
 
 /* En el panel derecho de administración: se elimina completamente el recuadro rígido antiguo */
@@ -97,7 +168,7 @@ body {
 	gap: 16px;
 	width: 100%;
 	padding-bottom: 18px;
-	border-bottom: 1px solid #e2e8f0;
+	border-bottom: 1px solid var(--border-color);
 }
 
 .panel-branding {
@@ -108,7 +179,7 @@ body {
 
 .panel-branding .eyebrow {
 	margin: 0 0 3px;
-	color: #64748b;
+	color: var(--text-muted);
 	font-size: 0.75rem;
 	font-weight: 700;
 	text-transform: uppercase;
@@ -120,9 +191,31 @@ body {
 	margin: 0;
 	font-size: 1.65rem;
 	font-weight: 800;
-	color: #0f172a;
+	color: var(--text-primary);
 	letter-spacing: -0.02em;
 	line-height: 1.2;
+}
+
+/* Botón de alternancia de modo visual (Oscuro / Claro) */
+.theme-toggle-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--bg-card);
+	border: 1px solid var(--border-input);
+	border-radius: 10px;
+	padding: 7px 12px;
+	color: var(--text-primary);
+	font-size: 0.82rem;
+	font-weight: 600;
+	cursor: pointer;
+	box-shadow: var(--shadow-sm);
+	transition: all 0.15s ease;
+}
+
+.theme-toggle-btn:hover {
+	background: var(--bg-card-hover);
+	border-color: var(--accent-primary);
 }
 
 /* Pastilla de sesión de usuario moderna en barra superior */
@@ -130,19 +223,19 @@ body {
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	background: #ffffff;
-	border: 1px solid #e2e8f0;
+	background: var(--bg-card);
+	border: 1px solid var(--border-color);
 	border-radius: 12px;
 	padding: 6px 12px 6px 8px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	box-shadow: var(--shadow-sm);
 }
 
 .user-avatar {
 	width: 36px;
 	height: 36px;
 	border-radius: 50%;
-	background: #eff6ff;
-	color: #2563eb;
+	background: rgba(37, 99, 235, 0.2);
+	color: #60a5fa;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -158,7 +251,7 @@ body {
 .user-name {
 	font-size: 0.84rem;
 	font-weight: 700;
-	color: #0f172a;
+	color: var(--text-primary);
 	line-height: 1.2;
 }
 
@@ -167,18 +260,18 @@ body {
 	align-items: center;
 	gap: 6px;
 	font-size: 0.74rem;
-	color: #64748b;
+	color: var(--text-secondary);
 }
 
 .user-account {
-	color: #64748b;
+	color: var(--text-muted);
 }
 
 .user-badge {
 	font-size: 0.68rem;
 	font-weight: 700;
-	background: #e0f2fe;
-	color: #0284c7;
+	background: rgba(37, 99, 235, 0.2);
+	color: #60a5fa;
 	padding: 1px 6px;
 	border-radius: 4px;
 	text-transform: uppercase;
@@ -189,10 +282,10 @@ body {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	background: #f8fafc;
-	border: 1px solid #e2e8f0;
+	background: var(--bg-card-secondary);
+	border: 1px solid var(--border-input);
 	border-radius: 8px;
-	color: #475569;
+	color: var(--text-secondary);
 	font-size: 0.8rem;
 	font-weight: 600;
 	padding: 6px 12px;
@@ -201,9 +294,9 @@ body {
 }
 
 .logout-pill-btn:hover {
-	background: #fee2e2;
-	border-color: #fca5a5;
-	color: #dc2626;
+	background: rgba(239, 68, 68, 0.2);
+	border-color: #ef4444;
+	color: #f87171;
 }
 
 .admin-actions {
@@ -220,12 +313,11 @@ body {
 }
 
 .logout-form button,
-.secondary-action,
-.primary-action {
-	border: 1px solid #cbd5e1;
+.secondary-action {
+	border: 1px solid var(--border-input);
 	border-radius: 8px;
-	background: #ffffff;
-	color: #334155;
+	background: var(--bg-card);
+	color: var(--text-primary);
 	cursor: pointer;
 	font: inherit;
 	font-size: 0.88rem;
@@ -237,28 +329,41 @@ body {
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	box-shadow: var(--shadow-sm);
 	transition: all 0.15s ease;
 }
 
 .logout-form button:hover,
 .secondary-action:hover {
-	background: #f8fafc;
-	border-color: #94a3b8;
-	color: #0f172a;
+	background: var(--bg-card-hover);
+	border-color: var(--border-color);
+	color: var(--text-primary);
 }
 
 .primary-action {
 	background: #2563eb;
-	border-color: #1d4ed8;
+	border: 1px solid #1d4ed8;
+	border-radius: 8px;
 	color: #ffffff;
-	box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.88rem;
+	font-weight: 600;
+	padding: 8px 16px;
+	text-decoration: none;
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+	transition: all 0.15s ease;
 }
 
 .primary-action:hover {
 	background: #1d4ed8;
 	border-color: #1e40af;
-	box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+	box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
 }
 
 .eyebrow {
@@ -435,10 +540,10 @@ h1 {
 
 .modules-section,
 .attributes-section {
-	background: #ffffff;
-	border: 1px solid #e2e8f0;
+	background: var(--bg-card);
+	border: 1px solid var(--border-color);
 	border-radius: 12px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+	box-shadow: var(--shadow-card);
 	padding: 24px 28px;
 	margin-top: 20px;
 	margin-bottom: 24px;
@@ -452,19 +557,19 @@ h1 {
 	gap: 16px;
 	margin-bottom: 20px;
 	padding-bottom: 16px;
-	border-bottom: 1px solid #f1f5f9;
+	border-bottom: 1px solid var(--border-subtle);
 }
 
 .section-header h2 {
 	margin: 0;
 	font-size: 1.25rem;
 	font-weight: 800;
-	color: #0f172a;
+	color: var(--text-primary);
 	letter-spacing: -0.01em;
 }
 
 .section-note {
-	color: #64748b;
+	color: var(--text-secondary);
 	font-size: 0.86rem;
 	line-height: 1.45;
 	margin: 4px 0 0;
@@ -763,7 +868,7 @@ h1 {
 }
 
 .search-form label span {
-	color: #475569;
+	color: var(--text-secondary);
 	font-size: 0.78rem;
 	font-weight: 700;
 	text-transform: uppercase;
@@ -773,10 +878,10 @@ h1 {
 .search-form input[type="search"],
 .search-form input[type="text"],
 .search-form select {
-	background: #f8fafc;
-	border: 1px solid #cbd5e1;
+	background: var(--bg-input);
+	border: 1px solid var(--border-input);
 	border-radius: 8px;
-	color: #0f172a;
+	color: var(--text-primary);
 	font: inherit;
 	font-size: 0.88rem;
 	padding: 9px 14px;
@@ -789,10 +894,10 @@ h1 {
 .search-form input[type="search"]:focus,
 .search-form input[type="text"]:focus,
 .search-form select:focus {
-	background: #ffffff;
-	border-color: #3b82f6;
+	background: var(--bg-card);
+	border-color: var(--accent-primary);
 	outline: none;
-	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+	box-shadow: 0 0 0 3px var(--accent-focus);
 }
 
 .search-form .form-actions {
@@ -957,11 +1062,11 @@ h1 {
 
 /* Tablas responsivas modernas tipo Dashboard SaaS */
 .responsive-table {
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--border-color);
 	border-radius: 10px;
 	overflow-x: auto;
-	background: #ffffff;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+	background: var(--bg-card);
+	box-shadow: var(--shadow-sm);
 }
 
 table {
@@ -977,10 +1082,10 @@ td {
 }
 
 thead th {
-	background: #f8fafc;
+	background: var(--table-head-bg);
 	border-top: 0;
-	border-bottom: 1px solid #e2e8f0;
-	color: #475569;
+	border-bottom: 1px solid var(--table-border);
+	color: var(--text-secondary);
 	font-size: 0.72rem;
 	font-weight: 700;
 	text-transform: uppercase;
@@ -989,9 +1094,9 @@ thead th {
 }
 
 tbody td {
-	border-top: 1px solid #f1f5f9;
+	border-top: 1px solid var(--border-subtle);
 	font-size: 0.88rem;
-	color: #1e293b;
+	color: var(--text-primary);
 	overflow-wrap: anywhere;
 }
 
@@ -1000,7 +1105,7 @@ tbody tr {
 }
 
 tbody tr:hover {
-	background: #f8fafc;
+	background: var(--table-row-hover);
 }
 
 @media (max-width: 900px) {
@@ -1347,13 +1452,13 @@ dialog::backdrop {
 	display: flex;
 	gap: 16px;
 	align-items: flex-start;
-	background: #eef7ff;
-	border: 1px solid #b9daf9;
-	border-left: 5px solid #1a62ab;
+	background: var(--bg-card-secondary);
+	border: 1px solid var(--border-color);
+	border-left: 5px solid #2563eb;
 	border-radius: 8px;
 	padding: 18px 20px;
 	margin: 16px 0 24px;
-	box-shadow: 0 4px 14px rgba(26, 98, 171, 0.08);
+	box-shadow: var(--shadow-sm);
 }
 
 .workflow-banner-icon {
@@ -1372,12 +1477,12 @@ dialog::backdrop {
 
 .workflow-banner-content strong {
 	font-size: 1.05rem;
-	color: #15457a;
+	color: var(--text-primary);
 }
 
 .workflow-banner-content p {
 	margin: 0;
-	color: #334d6e;
+	color: var(--text-secondary);
 	font-size: 0.92rem;
 	line-height: 1.45;
 }
@@ -1389,12 +1494,12 @@ dialog::backdrop {
 	gap: 10px;
 	margin-top: 6px;
 	padding-top: 10px;
-	border-top: 1px solid #d3e7fa;
+	border-top: 1px solid var(--border-subtle);
 }
 
 .workflow-next-actions span {
 	font-size: 0.85rem;
-	color: #23405f;
+	color: var(--text-secondary);
 	font-weight: 600;
 }
 
@@ -1407,8 +1512,8 @@ dialog::backdrop {
 }
 
 .workflow-step {
-	background: #ffffff;
-	border: 1px solid #e1e7ee;
+	background: var(--bg-card);
+	border: 1px solid var(--border-color);
 	border-radius: 8px;
 	padding: 18px;
 	position: relative;
@@ -1492,7 +1597,7 @@ dialog::backdrop {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
-	border-bottom: 2px solid #e2e8f0;
+	border-bottom: 2px solid var(--border-color);
 	margin: 22px 0 24px;
 	padding: 0;
 	list-style: none;
@@ -1507,7 +1612,7 @@ dialog::backdrop {
 	padding: 10px 18px;
 	font-size: 0.92rem;
 	font-weight: 700;
-	color: #64748b;
+	color: var(--text-secondary);
 	cursor: pointer;
 	border-radius: 6px 6px 0 0;
 	transition: all 0.15s ease-in-out;
@@ -1518,28 +1623,30 @@ dialog::backdrop {
 }
 
 .subnav-tab:hover {
-	color: #1e293b;
-	background: #f1f5f9;
+	color: var(--text-primary);
+	background: var(--bg-card-hover);
 }
 
 .subnav-tab.is-active {
-	color: #1e3a8a;
-	border-bottom-color: #1e3a8a;
-	background: #eff6ff;
+	color: #60a5fa;
+	border-bottom-color: #3b82f6;
+	background: var(--bg-card);
 }
 
 .tab-badge {
 	font-size: 0.72rem;
 	padding: 2px 7px;
 	border-radius: 999px;
-	background: #e2e8f0;
-	color: #475569;
+	background: var(--bg-input);
+	color: var(--text-secondary);
+	border: 1px solid var(--border-color);
 	font-weight: 700;
 }
 
 .subnav-tab.is-active .tab-badge {
-	background: #dbeafe;
-	color: #1e40af;
+	background: rgba(37, 99, 235, 0.2);
+	color: #93c5fd;
+	border-color: #3b82f6;
 }
 
 .tab-pane {
@@ -1767,12 +1874,12 @@ dialog::backdrop {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	background: #ffffff;
-	border: 1px solid #e2e8f0;
+	background: var(--bg-card);
+	border: 1px solid var(--border-color);
 	border-radius: 12px;
 	padding: 18px 20px;
 	text-decoration: none;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+	box-shadow: var(--shadow-sm);
 	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 	position: relative;
 	cursor: pointer;
@@ -1780,14 +1887,14 @@ dialog::backdrop {
 
 .metric-card:hover {
 	transform: translateY(-2px);
-	border-color: #cbd5e1;
-	box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+	border-color: var(--border-input);
+	box-shadow: var(--shadow-card);
 }
 
 .metric-card.is-active {
-	background: #ffffff;
-	border-color: #3b82f6;
-	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.08);
+	background: var(--bg-card);
+	border-color: var(--accent-primary);
+	box-shadow: 0 0 0 2px var(--accent-focus), var(--shadow-card);
 }
 
 .metric-card.border-red { border-left: 4px solid #ef4444; }
@@ -1800,7 +1907,7 @@ dialog::backdrop {
 
 .metric-card-title {
 	display: block;
-	color: #64748b;
+	color: var(--text-muted);
 	font-size: 0.75rem;
 	font-weight: 700;
 	text-transform: uppercase;
@@ -1815,6 +1922,7 @@ dialog::backdrop {
 	line-height: 1.1;
 	margin: 4px 0 8px;
 	letter-spacing: -0.03em;
+	color: var(--text-primary);
 }
 
 .metric-card-action {
@@ -1824,6 +1932,7 @@ dialog::backdrop {
 	font-size: 0.78rem;
 	font-weight: 600;
 	margin-top: 4px;
+	color: var(--text-link);
 }
 
 .metric-card:hover .metric-card-action {
@@ -1831,9 +1940,8 @@ dialog::backdrop {
 }
 
 /* ==========================================================================
-   BARRA LATERAL DE NAVEGACIÓN (SIDEBAR) - ESTILO CORPORATIVO CLARO (LIGHT THEME)
-   Unifica visualmente el panel izquierdo con el espacio de trabajo derecho (#ffffff / #f8fafc)
-   para una experiencia homogénea, luminosa y sin contrastes discordantes.
+   BARRA LATERAL DE NAVEGACIÓN (SIDEBAR)
+   Soporte dinámico para Modo Oscuro Relajante y Modo Claro
    ========================================================================== */
 
 /* Contenedor fijo de la barra lateral izquierda */
@@ -1843,17 +1951,17 @@ dialog::backdrop {
 	left: 0;
 	bottom: 0;
 	width: 260px;
-	background: #ffffff; /* Fondo blanco limpio idéntico a las tarjetas del panel derecho */
-	color: #334155; /* Texto base Slate-700 de alta legibilidad */
+	background: var(--bg-sidebar);
+	color: var(--text-secondary);
 	display: flex;
 	flex-direction: column;
 	z-index: 1000;
 	overflow-y: auto;
 	scrollbar-width: thin;
-	scrollbar-color: #cbd5e1 transparent; /* Barra de desplazamiento suave y discreta */
-	border-right: 1px solid #e2e8f0; /* Separador sutil de 1px hacia el panel derecho */
-	box-shadow: 1px 0 4px rgba(0, 0, 0, 0.02); /* Sombra milimétrica de profundidad */
-	transition: transform 0.25s ease;
+	scrollbar-color: var(--border-input) transparent;
+	border-right: 1px solid var(--border-color);
+	box-shadow: var(--shadow-sm);
+	transition: transform 0.25s ease, background 0.2s ease;
 }
 
 /* Cabecera institucional de la barra lateral (Escudo y Dependencia) */
@@ -1862,8 +1970,8 @@ dialog::backdrop {
 	align-items: center;
 	gap: 12px;
 	padding: 18px 18px 14px;
-	background: #ffffff;
-	border-bottom: 1px solid #e2e8f0;
+	background: var(--bg-sidebar);
+	border-bottom: 1px solid var(--border-color);
 }
 
 .sidebar-brand-icon {
@@ -1874,29 +1982,29 @@ dialog::backdrop {
 	display: block;
 	font-size: 0.95rem;
 	font-weight: 800;
-	color: #0f172a; /* Slate 900 corporativo */
+	color: var(--text-primary);
 	letter-spacing: -0.2px;
 }
 
 .sidebar-brand-sub {
 	display: block;
 	font-size: 0.74rem;
-	color: #64748b; /* Slate 500 neutro */
+	color: var(--text-muted);
 	margin-top: 1px;
 }
 
 /* Distintivo de aplicación del sistema judicial */
 .sidebar-app-badge {
 	padding: 6px 18px;
-	background: #f0f7ff; /* Tono azul cielo muy suave */
-	border-bottom: 1px solid #e2e8f0;
+	background: rgba(37, 99, 235, 0.12);
+	border-bottom: 1px solid var(--border-color);
 }
 
 .sidebar-app-badge span {
 	font-size: 0.68rem;
 	font-weight: 800;
 	letter-spacing: 0.8px;
-	color: #2563eb; /* Azul institucional */
+	color: #60a5fa;
 }
 
 /* Lista navegable categorizada por áreas operativas */
@@ -1920,7 +2028,7 @@ dialog::backdrop {
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.8px;
-	color: #94a3b8; /* Gris tenue para no competir con los enlaces */
+	color: var(--text-muted);
 	padding: 4px 12px 4px;
 }
 
@@ -1931,7 +2039,7 @@ dialog::backdrop {
 	gap: 10px;
 	padding: 8px 12px;
 	border-radius: 6px;
-	color: #475569; /* Slate 600 equilibrado */
+	color: var(--text-secondary);
 	text-decoration: none;
 	font-size: 0.85rem;
 	font-weight: 500;
@@ -1940,16 +2048,16 @@ dialog::backdrop {
 
 /* Efecto hover al pasar el cursor */
 .sidebar-link:hover {
-	background: #f1f5f9; /* Slate 100 suave */
-	color: #0f172a; /* Oscurecimiento de texto para indicar interactividad */
+	background: var(--bg-card-hover);
+	color: var(--text-primary);
 }
 
 /* Estado activo del módulo en pantalla (selección visual clara) */
 .sidebar-link.is-active {
-	background: #eff6ff; /* Fondo azul tintado acorde al tema del sistema */
-	color: #1d4ed8; /* Azul primario intenso */
+	background: rgba(37, 99, 235, 0.18);
+	color: #60a5fa;
 	font-weight: 700;
-	box-shadow: inset 3px 0 0 #2563eb; /* Indicador lateral azul de pestaña activa */
+	box-shadow: inset 3px 0 0 #3b82f6;
 }
 
 .sidebar-icon {
@@ -1970,8 +2078,8 @@ dialog::backdrop {
 /* Pie de usuario conectado y cierre de sesión en la base del sidebar */
 .sidebar-user-footer {
 	padding: 12px 16px;
-	background: #f8fafc; /* Fondo Slate 50 para diferenciar sutilmente el pie */
-	border-top: 1px solid #e2e8f0;
+	background: var(--bg-card-secondary);
+	border-top: 1px solid var(--border-color);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -1986,7 +2094,7 @@ dialog::backdrop {
 	display: block;
 	font-size: 0.82rem;
 	font-weight: 700;
-	color: #0f172a;
+	color: var(--text-primary);
 	white-space: nowrap;
 	text-overflow: ellipsis;
 	overflow: hidden;
@@ -1995,15 +2103,15 @@ dialog::backdrop {
 .sidebar-user-sub {
 	display: block;
 	font-size: 0.72rem;
-	color: #64748b;
+	color: var(--text-muted);
 }
 
 /* Botón de salir / cerrar sesión integrado */
 .sidebar-logout-btn {
-	background: #ffffff;
-	border: 1px solid #cbd5e1;
+	background: var(--bg-card);
+	border: 1px solid var(--border-input);
 	border-radius: 6px;
-	color: #475569;
+	color: var(--text-secondary);
 	font-size: 0.75rem;
 	font-weight: 600;
 	padding: 5px 10px;
@@ -2012,9 +2120,9 @@ dialog::backdrop {
 }
 
 .sidebar-logout-btn:hover {
-	background: #fee2e2;
-	border-color: #fca5a5;
-	color: #dc2626;
+	background: rgba(239, 68, 68, 0.2);
+	border-color: #ef4444;
+	color: #f87171;
 }
 
 /* Botón hamburguesa para dispositivos táctiles o pantallas pequeñas */
