@@ -2424,6 +2424,18 @@ Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional
     - `actas.html`: Sustitución de textos oscuros `#1e3a8a` por `var(--text-link)` y botones de eliminación estandarizados.
     - `equipos.html`, `stock.html` y `patrimonio.html`: Enlaces y códigos normalizados a `var(--text-link)`.
   - *Resultado*: 100% de coherencia estética en modo oscuro; cero parches blancos o contrastes discordantes, logrando una interfaz prolija, uniforme, descansada y profesional.
+- **Rediseño Integral de Etiquetas, Insignias (Badges) y Tarjetas a Formato Micro-Chip Compacto**:
+  - *Diagnóstico*: Las etiquetas, insignias de estado, chips contadores y tarjetas de guía visual resultaban desproporcionadamente grandes (estilo píldora 999px con textos en 0.85rem-0.90rem y paddings gruesos), sobrecargando visualmente la pantalla y forzando saltos de línea indeseados en banners y cuadrículas.
+  - *Refactorización Global en `admin.css`*:
+    - `.authorization-badge`: Escala reducida a micro-chip de alta gama con `font-size: 0.68rem`, `padding: 2px 8px`, bordes redondeados sutiles (`border-radius: 6px`) y `letter-spacing: 0.03em`.
+    - `.count-badge`: Estandarización a `font-size: 0.70rem`, `padding: 2px 7px`, con fondo translúcido y borde suave acorde a la paleta Eye-Care.
+    - `.step-badge`: Numeradores de secuencia compactados a `18px × 18px`, con tipografía en `0.68rem` y peso `font-weight: 800`.
+    - `.workflow-banner` y `.workflow-steps-grid`: Disposición forzada a 3 columnas equilibradas horizontales (`grid-template-columns: repeat(3, 1fr) !important`), logrando que las 3 tarjetas de explicación del Gemelo Digital (`FALTA`, `SOBRA / REVISAR`, `COINCIDE`) se presenten en una sola fila compacta y armónica sin envolver a dos filas.
+    - `.metric-card` y `.summary-grid`: Optimización de tarjetas de métricas en cuadrícula de 4 columnas horizontales, reduciendo padding a `10px 14px`, ajustando los números principales a `1.45rem` y las micro-etiquetas a `0.68rem`.
+    - Formularios de filtro (`.search-form`, `.dashboard-filter-form`): Micro-etiquetas superiores en `0.68rem`, controles de entrada en `height: 32px` y botones de acción compactos.
+  - *Verificación*:
+    - Comprobación visual mediante captura en navegador (`dashboard-diferencias.html`): disposición en una fila perfecta de 3 tarjetas de circuito y 4 tarjetas de métricas, etiquetas limpias y descansadas.
+    - Ejecución completa de suite de pruebas: 136 tests ejecutados, 0 fallos, 0 errores.
 
 ## Fuentes internas consultadas
 

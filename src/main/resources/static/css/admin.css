@@ -576,24 +576,44 @@ h1 {
 }
 
 .authorization-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
 	border: 1px solid var(--border-subtle);
-	border-radius: 999px;
-	font-size: 0.78rem;
+	border-radius: 6px;
+	font-size: 0.68rem;
 	font-weight: 700;
-	padding: 4px 10px;
+	letter-spacing: 0.03em;
+	padding: 2px 8px;
 	white-space: nowrap;
+	line-height: 1.3;
 }
 
 .authorization-badge.is-authorized {
-	background: rgba(34, 197, 94, 0.15);
-	border-color: rgba(34, 197, 94, 0.35);
+	background: rgba(34, 197, 94, 0.12);
+	border-color: rgba(34, 197, 94, 0.32);
 	color: #4ade80;
 }
 
 .authorization-badge.is-pending {
-	background: rgba(234, 179, 8, 0.15);
-	border-color: rgba(234, 179, 8, 0.35);
+	background: rgba(234, 179, 8, 0.12);
+	border-color: rgba(234, 179, 8, 0.32);
 	color: #facc15;
+}
+
+.count-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 7px;
+	border-radius: 6px;
+	background: rgba(148, 163, 184, 0.1);
+	border: 1px solid var(--border-color);
+	color: var(--text-secondary);
+	font-size: 0.70rem;
+	font-weight: 600;
+	line-height: 1.3;
+	white-space: nowrap;
 }
 
 .modules-grid {
@@ -1728,17 +1748,24 @@ dialog::backdrop {
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-	margin: 16px 0 20px;
-	padding-bottom: 16px;
-	border-bottom: 1px solid #e2e8f0;
+	gap: 8px;
+	margin: 8px 0 14px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid var(--border-subtle);
 }
 
 .quick-nav-group {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 8px;
+	gap: 6px;
 	align-items: center;
+}
+
+.quick-nav-bar a.secondary-action,
+.quick-nav-bar a.primary-action {
+	font-size: 0.76rem !important;
+	padding: 4px 9px !important;
+	border-radius: 6px !important;
 }
 
 /* Colapsables y Acordeones */
@@ -1866,12 +1893,24 @@ dialog::backdrop {
 	padding-top: 8px;
 }
 
-/* Grilla de Tarjetas Métricas Interactivas (Diseño Limpio y Minimalista) */
+/* Grilla de Tarjetas Métricas Interactivas (Diseño Limpio, Compacto y Refinado) */
 .summary-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-	gap: 16px;
-	margin: 16px 0 24px;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+	margin: 12px 0 18px;
+}
+
+@media (max-width: 1100px) {
+	.summary-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 600px) {
+	.summary-grid {
+		grid-template-columns: 1fr;
+	}
 }
 
 .metric-card {
@@ -1880,8 +1919,8 @@ dialog::backdrop {
 	justify-content: space-between;
 	background: var(--bg-card);
 	border: 1px solid var(--border-color);
-	border-radius: 12px;
-	padding: 18px 20px;
+	border-radius: 8px;
+	padding: 10px 14px;
 	text-decoration: none;
 	box-shadow: var(--shadow-sm);
 	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1901,31 +1940,31 @@ dialog::backdrop {
 	box-shadow: 0 0 0 2px var(--accent-focus), var(--shadow-card);
 }
 
-.metric-card.border-red { border-left: 4px solid #ef4444; }
-.metric-card.border-orange { border-left: 4px solid #f97316; }
-.metric-card.border-yellow { border-left: 4px solid #f59e0b; }
-.metric-card.border-green { border-left: 4px solid #10b981; }
-.metric-card.border-blue { border-left: 4px solid #3b82f6; }
-.metric-card.border-cyan { border-left: 4px solid #06b6d4; }
-.metric-card.border-purple { border-left: 4px solid #8b5cf6; }
+.metric-card.border-red { border-left: 3px solid #ef4444; }
+.metric-card.border-orange { border-left: 3px solid #f97316; }
+.metric-card.border-yellow { border-left: 3px solid #f59e0b; }
+.metric-card.border-green { border-left: 3px solid #10b981; }
+.metric-card.border-blue { border-left: 3px solid #3b82f6; }
+.metric-card.border-cyan { border-left: 3px solid #06b6d4; }
+.metric-card.border-purple { border-left: 3px solid #8b5cf6; }
 
 .metric-card-title {
 	display: block;
 	color: var(--text-muted);
-	font-size: 0.75rem;
+	font-size: 0.68rem;
 	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: 0.6px;
-	margin-bottom: 4px;
+	letter-spacing: 0.05em;
+	margin-bottom: 2px;
 }
 
 .metric-card-value {
 	display: block;
-	font-size: 1.85rem;
+	font-size: 1.45rem;
 	font-weight: 800;
 	line-height: 1.1;
-	margin: 4px 0 8px;
-	letter-spacing: -0.03em;
+	margin: 2px 0 4px;
+	letter-spacing: -0.02em;
 	color: var(--text-primary);
 }
 
@@ -1933,9 +1972,9 @@ dialog::backdrop {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
-	font-size: 0.78rem;
+	font-size: 0.70rem;
 	font-weight: 600;
-	margin-top: 4px;
+	margin-top: 2px;
 	color: var(--text-link);
 }
 
@@ -2199,19 +2238,22 @@ dialog::backdrop {
 
 /* ==========================================================================
    Secciones Guiadas, Circuitos y Banners de Trabajo (Workflow Banners)
-   Equilibrio visual sin fondos blancos agresivos y compatibilidad total
+   Diseño Compacto, Prolijo y Relajante
    ========================================================================== */
 
 .workflow-banner {
-	display: flex;
-	flex-direction: column;
-	gap: 14px;
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: stretch !important;
+	width: 100% !important;
+	box-sizing: border-box !important;
+	gap: 10px;
 	background: var(--bg-card) !important;
 	border: 1px solid var(--border-color) !important;
-	border-left: 4px solid var(--accent-primary) !important;
-	padding: 18px 20px !important;
-	border-radius: 10px !important;
-	margin: 16px 0 24px !important;
+	border-left: 3px solid var(--accent-primary) !important;
+	padding: 12px 16px !important;
+	border-radius: 8px !important;
+	margin: 10px 0 16px !important;
 	box-shadow: var(--shadow-sm) !important;
 	transition: background 0.2s ease, border-color 0.2s ease;
 }
@@ -2219,16 +2261,25 @@ dialog::backdrop {
 .workflow-banner strong,
 .workflow-banner b {
 	color: var(--text-primary) !important;
+	font-size: 0.90rem;
 }
 
-.workflow-banner span:not(.step-badge):not(.authorization-badge) {
+.workflow-banner span:not(.step-badge):not(.authorization-badge):not(.count-badge) {
 	color: var(--text-secondary);
+	font-size: 0.80rem;
 }
 
 .workflow-steps-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-	gap: 12px;
+	grid-template-columns: repeat(3, 1fr) !important;
+	gap: 10px;
+	width: 100% !important;
+}
+
+@media (max-width: 900px) {
+	.workflow-steps-grid {
+		grid-template-columns: 1fr !important;
+	}
 }
 
 /* Tarjetas individuales de los pasos del flujo */
@@ -2236,8 +2287,8 @@ dialog::backdrop {
 .workflow-step-card {
 	background: var(--bg-card-secondary) !important;
 	border: 1px solid var(--border-color) !important;
-	border-radius: 8px !important;
-	padding: 14px !important;
+	border-radius: 6px !important;
+	padding: 8px 12px !important;
 	transition: background 0.2s ease, border-color 0.2s ease;
 }
 
@@ -2247,10 +2298,29 @@ dialog::backdrop {
 	background: var(--bg-card-hover) !important;
 }
 
+.workflow-step-card strong {
+	font-size: 0.82rem !important;
+}
+
 .workflow-banner > div:last-child > div p,
 .workflow-step-card p {
 	color: var(--text-secondary) !important;
-	line-height: 1.45;
+	line-height: 1.35;
+	font-size: 0.76rem !important;
+	margin: 2px 0 0 !important;
+}
+
+.step-badge {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 18px !important;
+	height: 18px !important;
+	border-radius: 4px !important;
+	font-size: 0.68rem !important;
+	font-weight: 800 !important;
+	line-height: 1 !important;
+	flex-shrink: 0;
 }
 
 .workflow-banner code,
@@ -2258,8 +2328,9 @@ dialog::backdrop {
 	background: var(--bg-canvas) !important;
 	color: var(--text-link) !important;
 	border: 1px solid var(--border-subtle) !important;
-	padding: 2px 6px !important;
+	padding: 1px 5px !important;
 	border-radius: 4px;
+	font-size: 0.75rem !important;
 }
 
 /* ==========================================================================
@@ -2270,13 +2341,13 @@ dialog::backdrop {
 .dashboard-filter-form {
 	background: var(--bg-card) !important;
 	border: 1px solid var(--border-color) !important;
-	border-radius: 10px !important;
-	padding: 16px 20px !important;
-	margin-bottom: 24px !important;
+	border-radius: 8px !important;
+	padding: 10px 14px !important;
+	margin-bottom: 16px !important;
 	box-shadow: var(--shadow-sm) !important;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 14px;
+	gap: 10px;
 	align-items: flex-end;
 	transition: background 0.2s ease, border-color 0.2s ease;
 }
@@ -2285,12 +2356,12 @@ dialog::backdrop {
 .dashboard-filter-form label {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	font-size: 0.8rem;
+	gap: 4px;
+	font-size: 0.68rem !important;
 	font-weight: 700;
-	color: var(--text-secondary) !important;
+	color: var(--text-muted) !important;
 	text-transform: uppercase;
-	letter-spacing: 0.03em;
+	letter-spacing: 0.04em;
 }
 
 .search-form input,
@@ -2300,9 +2371,10 @@ dialog::backdrop {
 	background: var(--bg-input) !important;
 	border: 1px solid var(--border-input) !important;
 	color: var(--text-primary) !important;
-	border-radius: 6px;
-	padding: 8px 12px;
-	font-size: 0.88rem;
+	border-radius: 5px !important;
+	padding: 4px 10px !important;
+	font-size: 0.84rem !important;
+	height: 32px !important;
 	outline: none;
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -2315,6 +2387,18 @@ dialog::backdrop {
 	box-shadow: 0 0 0 3px var(--accent-focus) !important;
 }
 
+.search-form .primary-action,
+.search-form .secondary-action,
+.dashboard-filter-form .primary-action,
+.dashboard-filter-form .secondary-action {
+	padding: 4px 12px !important;
+	font-size: 0.78rem !important;
+	height: 32px !important;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
 /* ==========================================================================
    Tarjetas de Edición Inline y Bloques Operativos
    ========================================================================== */
@@ -2322,9 +2406,9 @@ dialog::backdrop {
 .inline-edit-card {
 	background: var(--bg-card) !important;
 	border: 1px solid var(--border-color) !important;
-	border-radius: 10px !important;
-	padding: 18px !important;
-	margin-bottom: 16px !important;
+	border-radius: 8px !important;
+	padding: 14px !important;
+	margin-bottom: 14px !important;
 	box-shadow: var(--shadow-sm) !important;
 }
 
