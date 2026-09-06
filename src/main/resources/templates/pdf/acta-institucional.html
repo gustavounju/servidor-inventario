@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Acta Institucional de Inventario</title>
+    <style type="text/css">
+        @page {
+            size: A4 portrait;
+            margin: 20mm 15mm 20mm 15mm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+            @bottom-left {
+                content: "Poder Judicial de Jujuy - Centro Judicial San Pedro";
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            color: #1e293b;
+            line-height: 1.45;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #1e3a8a;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .header-title-box {
+            text-align: left;
+        }
+
+        .header-title-box h1 {
+            margin: 0;
+            font-size: 14pt;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-title-box h2 {
+            margin: 2px 0 0 0;
+            font-size: 10pt;
+            color: #475569;
+            font-weight: normal;
+        }
+
+        .header-title-box p {
+            margin: 2px 0 0 0;
+            font-size: 8.5pt;
+            color: #64748b;
+        }
+
+        .acta-badge-box {
+            text-align: right;
+            vertical-align: top;
+        }
+
+        .acta-number {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #1e3a8a;
+            border: 1px solid #93c5fd;
+            background-color: #eff6ff;
+            padding: 5px 12px;
+            display: inline-block;
+            border-radius: 4px;
+        }
+
+        .acta-type-strip {
+            background-color: #f1f5f9;
+            border-left: 4px solid #2563eb;
+            padding: 8px 14px;
+            margin-bottom: 18px;
+        }
+
+        .acta-type-strip strong {
+            font-size: 11pt;
+            color: #0f172a;
+            text-transform: uppercase;
+        }
+
+        .section-heading {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #1e3a8a;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 4px;
+            margin-top: 14px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+        }
+
+        table.data-table th, table.data-table td {
+            border: 1px solid #cbd5e1;
+            padding: 6px 10px;
+            font-size: 9pt;
+            vertical-align: top;
+        }
+
+        table.data-table th {
+            background-color: #f8fafc;
+            color: #334155;
+            font-weight: bold;
+            width: 32%;
+            text-align: left;
+        }
+
+        table.data-table td {
+            background-color: #ffffff;
+            color: #0f172a;
+        }
+
+        .detail-box {
+            background-color: #fdfefe;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 10px 14px;
+            font-size: 9pt;
+            margin-bottom: 14px;
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        .legal-clause {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 10px 12px;
+            font-size: 8.5pt;
+            color: #475569;
+            text-align: justify;
+            line-height: 1.35;
+            margin-top: 16px;
+            margin-bottom: 24px;
+        }
+
+        .signatures-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 40px;
+        }
+
+        .signatures-table td {
+            width: 50%;
+            vertical-align: top;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .signature-line {
+            border-top: 1px solid #0f172a;
+            padding-top: 6px;
+            margin-top: 50px;
+        }
+
+        .sign-role {
+            font-weight: bold;
+            font-size: 9pt;
+            color: #0f172a;
+        }
+
+        .sign-name {
+            font-size: 8.5pt;
+            color: #475569;
+            margin-top: 2px;
+        }
+
+        .sign-doc {
+            font-size: 8pt;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .watermark-draft {
+            color: #ef4444;
+            font-weight: bold;
+            font-size: 9pt;
+            display: inline-block;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado Institucional -->
+    <table class="header-table" cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="header-title-box">
+                <h1>PODER JUDICIAL DE JUJUY</h1>
+                <h2>Centro Judicial San Pedro — Departamento de Sistemas e Informática</h2>
+                <p>Sistema Modular de Inventario, Gestión Técnica y Gemelo Digital</p>
+            </td>
+            <td class="acta-badge-box">
+                <div class="acta-number" th:text="${acta.numero}">ACT-2026-0001</div>
+                <div th:if="${acta.estado.name() == 'BORRADOR'}" class="watermark-draft">⚠️ DOCUMENTO EN BORRADOR</div>
+                <div th:if="${acta.estado.name() == 'EMITIDA'}" style="color: #16a34a; font-weight: bold; font-size: 8.5pt; margin-top: 4px;">✅ ACTA OFICIAL EMITIDA</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Barra de Tipo de Movimiento y Fecha -->
+    <div class="acta-type-strip">
+        <strong>ACTA DE <span th:text="${acta.tipo}">ENTREGA</span> DE EQUIPAMIENTO INFORMÁTICO</strong>
+        <span style="float: right; font-size: 9pt; color: #475569;">
+            Fecha de emisión: <strong th:text="${#temporals.format(acta.fechaEmision, 'dd/MM/yyyy')}">01/09/2026</strong>
+        </span>
+    </div>
+
+    <!-- 1. Intervinientes y Destino -->
+    <div class="section-heading">1. Intervinientes y Destino Judicial</div>
+    <table class="data-table" cellpadding="0" cellspacing="0">
+        <tr>
+            <th>Destinatario / Fuero / Oficina:</th>
+            <td><strong th:text="${acta.destinatario}">Juzgado de Control N° 1 - Sede San Pedro</strong></td>
+        </tr>
+        <tr>
+            <th>Responsable de Entrega (Técnico / Emisor):</th>
+            <td th:text="${acta.responsableEntrega ?: 'Área Técnica - Depto. Informática'}">Técnico</td>
+        </tr>
+        <tr>
+            <th>Responsable de Recepción (Custodio Destino):</th>
+            <td><strong th:text="${acta.responsableRecepcion ?: 'Funcionario Responsable'}">Funcionario</strong></td>
+        </tr>
+        <tr>
+            <th>Estado Administrativo del Acta:</th>
+            <td th:text="${acta.estado}">EMITIDA</td>
+        </tr>
+    </table>
+
+    <!-- 2. Equipo Informático Asociado (si aplica) -->
+    <div class="section-heading" th:if="${equipo != null or (acta.equipoNombre != null and !acta.equipoNombre.isEmpty())}">
+        2. Equipo Informático Involucrado
+    </div>
+    <table class="data-table" cellpadding="0" cellspacing="0" th:if="${equipo != null or (acta.equipoNombre != null and !acta.equipoNombre.isEmpty())}">
+        <tr>
+            <th>Nombre / Chapa de Equipo:</th>
+            <td><strong th:text="${equipo != null ? equipo.nombre : acta.equipoNombre}">PC-INF-001</strong></td>
+        </tr>
+        <tr th:if="${equipo != null}">
+            <th>Fuero / Área Asignada en Ficha:</th>
+            <td th:text="${equipo.fuero}">Informatica</td>
+        </tr>
+        <tr th:if="${equipo != null and equipo.ubicacion != null}">
+            <th>Ubicación Física Declarada:</th>
+            <td th:text="${equipo.ubicacion}">Oficina Central</td>
+        </tr>
+        <tr th:if="${equipo != null and equipo.procesador != null}">
+            <th>Procesador / Memoria RAM:</th>
+            <td th:text="${equipo.procesador} + (${equipo.ramMb != null} ? (' — ' + ${equipo.ramMb} + ' MB RAM') : '')">Intel Core i5 - 16 GB</td>
+        </tr>
+    </table>
+
+    <!-- 3. Detalle de Bienes y Componentes Entregados -->
+    <div class="section-heading">3. Detalle de Bienes, Componentes y Periféricos Entregados</div>
+    <div class="detail-box" th:text="${acta.detalle}">
+        Detalle de bienes y componentes entregados formalmente bajo la presente acta.
+    </div>
+
+    <!-- 4. Observaciones Técnicas (si existen) -->
+    <div th:if="${acta.observaciones != null and !acta.observaciones.isEmpty()}">
+        <div class="section-heading">4. Observaciones y Condiciones Técnicas</div>
+        <div class="detail-box" style="background-color: #f8fafc;" th:text="${acta.observaciones}">
+            Sin observaciones adicionales.
+        </div>
+    </div>
+
+    <!-- Cláusula Institucional de Conformidad -->
+    <div class="legal-clause">
+        <strong>CONSTANCIA DE RESGUARDO Y RECEPCIÓN CONFORME:</strong> En la ciudad de San Pedro de Jujuy, Departamento San Pedro, Provincia de Jujuy, en la fecha indicada supra, el responsable de entrega hace efectiva la entrega física del equipamiento, bienes y/o componentes precedentemente descriptos. El receptor deja expresa constancia de haberlos recibido en perfecto estado de funcionamiento, conservación e integridad física, asumiendo su custodia, buen uso y resguardo exclusivo para el desempeño de las labores judiciales asignadas dentro de esta jurisdicción.
+    </div>
+
+    <!-- Bloque de Firmas -->
+    <table class="signatures-table" cellpadding="0" cellspacing="0">
+        <tr>
+            <td>
+                <div class="signature-line">
+                    <div class="sign-role">POR ÁREA TÉCNICA / ENTREGA</div>
+                    <div class="sign-name" th:text="${acta.responsableEntrega ?: 'Área de Sistemas e Informática'}">Técnico Emisor</div>
+                    <div class="sign-doc">Firma y Sello Aclaratorio</div>
+                </div>
+            </td>
+            <td>
+                <div class="signature-line">
+                    <div class="sign-role">POR ÁREA RECEPTORA / CUSTODIO</div>
+                    <div class="sign-name" th:text="${acta.responsableRecepcion ?: 'Funcionario / Agente Judicial'}">Funcionario Receptor</div>
+                    <div class="sign-doc">Firma, Aclaración y DNI / Legajo</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

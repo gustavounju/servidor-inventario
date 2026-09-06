@@ -81,21 +81,75 @@ public class EquipoPageController {
 		this.stockService = stockService;
 	}
 
+	/**
+	 * Vista principal del catálogo de equipos.
+	 * Calcula métricas en tiempo real para las tarjetas gráficas superiores (.metric-card):
+	 * - TOTAL: Parque informático global registrado.
+	 * - SINCRONIZADOS: Computadoras que reportan por script y tienen línea base de gemelo oficializada.
+	 * - PENDIENTES: Computadoras que reportaron por script pero aún no tienen gemelo registrado.
+	 * - EN TALLER: Equipos originados en armado técnico o esperando reporte del script.
+	 *
+	 * Soporta filtrado directo mediante el parámetro `estado` (SINCRONIZADO, PENDIENTE, TALLER)
+	 * activado al hacer clic en las tarjetas métricas.
+	 */
 	@GetMapping("/admin/equipos")
 	public String equipos(
 			Model model,
 			@AuthenticationPrincipal UserDetails userDetails,
-			@RequestParam(required = false) String q) {
+			@RequestParam(required = false) String q,
+			@RequestParam(required = false) String estado) {
 		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_VER)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para ver equipos.");
 		}
-		model.addAttribute("query", q == null ? "" : q.trim());
-		model.addAttribute("equipos", equipoService.listar(q, 0, 50));
-		model.addAttribute("equiposConOrdenes", ordenArmadoService.listarTodas().stream()
+
+		// 1. Obtención del universo de equipos y relaciones activas para métricas
+		var todosLosEquipos = equipoService.listar(null, 0, 1000).equipos();
+		var equiposConOrdenes = ordenArmadoService.listarTodas().stream()
 				.map(ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoService.OrdenArmadoDetalle::equipoId)
 				.filter(java.util.Objects::nonNull)
-				.collect(java.util.stream.Collectors.toSet()));
-		model.addAttribute("equiposConGemelo", componenteService.obtenerEquipoIdsConRelevamientoInicial());
+				.collect(java.util.stream.Collectors.toSet());
+		var equiposConGemelo = componenteService.obtenerEquipoIdsConRelevamientoInicial();
+
+		// 2. Cálculo de métricas para las tarjetas superiores
+		long totalEquipos = todosLosEquipos.size();
+		long sincronizadosCount = todosLosEquipos.stream()
+				.filter(e -> e.ultimoReporteEn() != null && equiposConGemelo.contains(e.id()))
+				.count();
+		long pendientesGemeloCount = todosLosEquipos.stream()
+				.filter(e -> e.ultimoReporteEn() != null && !equiposConGemelo.contains(e.id()))
+				.count();
+		long enTallerCount = todosLosEquipos.stream()
+				.filter(e -> equiposConOrdenes.contains(e.id()) || e.ultimoReporteEn() == null)
+				.count();
+
+		// 3. Filtrado por término de búsqueda (q) y estado seleccionado en las tarjetas métricas
+		var resultadoEquipos = equipoService.listar(q, 0, 50);
+		if (org.springframework.util.StringUtils.hasText(estado)) {
+			var listaFiltrada = resultadoEquipos.equipos().stream().filter(e -> {
+				if ("SINCRONIZADO".equalsIgnoreCase(estado)) {
+					return e.ultimoReporteEn() != null && equiposConGemelo.contains(e.id());
+				} else if ("PENDIENTE".equalsIgnoreCase(estado)) {
+					return e.ultimoReporteEn() != null && !equiposConGemelo.contains(e.id());
+				} else if ("TALLER".equalsIgnoreCase(estado)) {
+					return equiposConOrdenes.contains(e.id()) || e.ultimoReporteEn() == null;
+				}
+				return true;
+			}).toList();
+			resultadoEquipos = new ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoPagina(
+					listaFiltrada,
+					new ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.Paginacion(0, 50, listaFiltrada.size(), 1));
+		}
+
+		// 4. Carga de atributos en el modelo para renderizado en Thymeleaf
+		model.addAttribute("query", q == null ? "" : q.trim());
+		model.addAttribute("estadoFiltro", estado);
+		model.addAttribute("totalEquipos", totalEquipos);
+		model.addAttribute("sincronizadosCount", sincronizadosCount);
+		model.addAttribute("pendientesGemeloCount", pendientesGemeloCount);
+		model.addAttribute("enTallerCount", enTallerCount);
+		model.addAttribute("equipos", resultadoEquipos);
+		model.addAttribute("equiposConOrdenes", equiposConOrdenes);
+		model.addAttribute("equiposConGemelo", equiposConGemelo);
 		model.addAttribute("puedeEditar", authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR));
 		model.addAttribute("puedeVerOrdenes", authorizationService.tienePermiso(userDetails, "ORDENES_ARMADO", PERMISO_VER));
 		model.addAttribute("puedeVerStock", authorizationService.tienePermiso(userDetails, "STOCK", PERMISO_VER));

@@ -52,73 +52,115 @@
 				</div>
 			</div>
 
-			<!-- 🚀 GUÍA COMPACTA Y CLARA: Cómo funciona el circuito de Stock -->
-			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
-				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-					<div style="display: flex; align-items: center; gap: 12px;">
-						<span style="font-size: 1.6rem;">📦</span>
-						<div>
-							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Depósito Informático: Circuito de componentes paso a paso</strong>
-							<span style="font-size: 0.85rem; color: #475569;">Gestiona las piezas físicas de repuesto y su asignación en las computadoras del parque:</span>
-						</div>
+			<!-- Stepper Visual del Circuito de Stock y Depósito (4 Pasos) -->
+			<section class="workflow-stepper" aria-label="Circuito de Gestión de Stock">
+				<!-- Paso 1: Ingreso a Depósito -->
+				<div class="workflow-step" th:classappend="${totalStock > 0} ? ' is-done' : ' is-current'">
+					<div class="step-header">
+						<span class="step-badge">1</span>
+						<span class="authorization-badge" th:classappend="${totalStock > 0} ? ' is-authorized' : ' is-pending'"
+							  th:text="${totalStock > 0} ? 'ALTA REGISTRADA ✅' : 'PENDIENTE ⚠️'">
+							PENDIENTE
+						</span>
 					</div>
-					<span class="authorization-badge is-authorized">FLUJO DE DEPÓSITO</span>
+					<h3 class="step-title">1. Ingreso y Recepción</h3>
+					<p class="step-desc">
+						Alta en inventario con número de serie único, marca, modelo, remito de entrega o proveedor.
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="primary-action" th:if="${puedeEditarStock}" onclick="switchTab('nuevo')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							➕ Ingresar Pieza
+						</button>
+					</div>
 				</div>
 
-				<!-- 3 Pasos Compactos del Depósito -->
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
-					<!-- Paso 1 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
-						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
-							<strong style="color: #1e3a8a; font-size: 0.9rem;">Ingreso a Depósito</strong>
-						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
-							Registra memorias RAM, discos SSD o fuentes recibidas con su marca, modelo y número de serie único.
-						</p>
+				<!-- Paso 2: Disponibilidad en Depósito -->
+				<div class="workflow-step" th:classappend="${disponiblesCount > 0} ? ' is-done' : ''">
+					<div class="step-header">
+						<span class="step-badge">2</span>
+						<span class="count-badge" th:text="${disponiblesCount} + ' en estante'">0 en estante</span>
 					</div>
-
-					<!-- Paso 2 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
-						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
-							<strong style="color: #0369a1; font-size: 0.9rem;">Stock Disponible en Taller</strong>
-						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
-							Las piezas quedan listas en el estante para ser asignadas a reparaciones o ampliaciones de hardware.
-						</p>
+					<h3 class="step-title">2. Stock en Taller</h3>
+					<p class="step-desc">
+						Piezas físicas disponibles en depósito listas para mantenimiento preventivo o correctivo.
+					</p>
+					<div class="step-action-area">
+						<button type="button" class="secondary-action" onclick="switchTab('disponibles')" style="width: 100%; font-size: 0.85rem; padding: 7px 10px;">
+							📋 Ver Disponibles
+						</button>
 					</div>
+				</div>
 
-					<!-- Paso 3 -->
-					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
-						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
-							<strong style="color: #15803d; font-size: 0.9rem;">Asignar en Orden de Armado</strong>
-						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
-							Al retirar la pieza física se vincula a una PC. Al encender la máquina, el Gemelo Digital audita la instalación.
-						</p>
+				<!-- Paso 3: Reserva para Ensamble -->
+				<div class="workflow-step" th:classappend="${reservadosCount > 0} ? ' is-done' : ''">
+					<div class="step-header">
+						<span class="step-badge">3</span>
+						<span class="count-badge" th:text="${reservadosCount} + ' reservadas'">0 reservadas</span>
+					</div>
+					<h3 class="step-title">3. Reserva en Órdenes</h3>
+					<p class="step-desc">
+						Componentes asignados a una Orden de Armado y Ensamble para una computadora en taller.
+					</p>
+					<div class="step-action-area">
+						<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
+							🛠️ Órdenes de Armado
+						</a>
+					</div>
+				</div>
+
+				<!-- Paso 4: Asignación y Gemelo Digital -->
+				<div class="workflow-step" th:classappend="${asignadosCount > 0} ? ' is-done' : ''">
+					<div class="step-header">
+						<span class="step-badge">4</span>
+						<span class="authorization-badge is-authorized" th:text="${asignadosCount} + ' INSTALADOS'">EN EQUIPOS 🖥️</span>
+					</div>
+					<h3 class="step-title">4. Asignación y Gemelo</h3>
+					<p class="step-desc">
+						Pieza instalada físicamente en la PC y confirmada por el reporte del Gemelo Digital en vivo.
+					</p>
+					<div class="step-action-area">
+						<a class="secondary-action" th:if="${puedeVerEquipos}" th:href="@{/admin/equipos}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
+							🖥️ Ver Catálogo de Equipos
+						</a>
 					</div>
 				</div>
 			</section>
 
-			<!-- Resumen Estadístico de Stock -->
-			<section class="summary-grid" aria-label="Resumen rápido de componentes en stock">
-				<div>
-					<span>Total Componentes</span>
-					<strong th:text="${totalStock}">0</strong>
+			<!-- Resumen Estadístico de Stock (Tarjetas Métricas Interactivas con navegación a pestañas y módulos vinculados) -->
+			<section class="summary-grid" aria-label="Resumen de componentes en stock">
+				<!-- Tarjeta Azul: Total Componentes - Inventario global de piezas físicas registradas -->
+				<div class="metric-card border-blue" onclick="switchTab('disponibles')" role="button" tabindex="0" title="Ver catálogo completo de componentes">
+					<span class="metric-card-title">TOTAL</span>
+					<strong class="metric-card-value" style="color: #1e3a8a;" th:text="${totalStock}">0</strong>
+					<span class="metric-card-action" style="color: #2563eb;">Ver stock ➜</span>
 				</div>
-				<div>
-					<span>Disponibles en Depósito</span>
-					<strong th:text="${disponiblesCount}">0</strong>
+				<!-- Tarjeta Verde: Stock Disponible - Piezas físicas en depósito listas para armados o reparaciones -->
+				<div class="metric-card border-green" onclick="switchTab('disponibles')" role="button" tabindex="0" title="Ver componentes disponibles en taller">
+					<span class="metric-card-title">DISPONIBLES</span>
+					<strong class="metric-card-value" style="color: #15803d;" th:text="${disponiblesCount}">0</strong>
+					<span class="metric-card-action" style="color: #16a34a;">Listos en taller ➜</span>
 				</div>
-				<div>
-					<span>Reservados para Armado</span>
-					<strong th:text="${reservadosCount}">0</strong>
+				<!-- Tarjeta Amarilla: Reservados para Armado - Piezas comprometidas en órdenes técnicas en curso -->
+				<a class="metric-card border-yellow" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}" title="Ver órdenes de armado técnicas">
+					<span class="metric-card-title">RESERVADOS</span>
+					<strong class="metric-card-value" style="color: #a16207;" th:text="${reservadosCount}">0</strong>
+					<span class="metric-card-action" style="color: #d97706;">Ver órdenes ➜</span>
+				</a>
+				<div class="metric-card border-yellow" th:unless="${puedeVerOrdenes}">
+					<span class="metric-card-title">RESERVADOS</span>
+					<strong class="metric-card-value" style="color: #a16207;" th:text="${reservadosCount}">0</strong>
+					<span class="metric-card-action" style="color: #d97706;">En armado</span>
 				</div>
-				<div>
-					<span>Asignados / En PC</span>
-					<strong th:text="${asignadosCount}">0</strong>
+				<!-- Tarjeta Naranja: Instalados en PC - Piezas que salieron de depósito y se auditan activas en computadoras -->
+				<a class="metric-card border-orange" th:if="${puedeVerEquipos}" th:href="@{/admin/equipos}" title="Ver catálogo de equipos con hardware instalado">
+					<span class="metric-card-title">INSTALADOS</span>
+					<strong class="metric-card-value" style="color: #c2410c;" th:text="${asignadosCount}">0</strong>
+					<span class="metric-card-action" style="color: #f97316;">Ver en PC ➜</span>
+				</a>
+				<div class="metric-card border-orange" th:unless="${puedeVerEquipos}">
+					<span class="metric-card-title">INSTALADOS</span>
+					<strong class="metric-card-value" style="color: #c2410c;" th:text="${asignadosCount}">0</strong>
+					<span class="metric-card-action" style="color: #f97316;">En equipos</span>
 				</div>
 			</section>
 

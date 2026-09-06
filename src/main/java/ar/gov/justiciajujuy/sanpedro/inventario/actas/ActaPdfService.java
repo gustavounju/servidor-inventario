@@ -6,14 +6,74 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoRepository;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.xhtmlrenderer.pdf.ITextRenderer;
 
+/**
+ * Servicio para la generación de actas oficiales e institucionales en formato PDF.
+ * <p>
+ * Utiliza <b>Flying Saucer (OpenPDF)</b> acoplado al motor de plantillas <b>Thymeleaf</b>
+ * para procesar una plantilla XHTML institucional ({@code pdf/acta-institucional.html})
+ * con membrete del <i>Poder Judicial de Jujuy - Centro Judicial San Pedro</i>.
+ * <p>
+ * Características del circuito:
+ * <ul>
+ *   <li>Inyección del modelo de datos del acta y equipo asociado para enriquecer la ficha técnica.</li>
+ *   <li>Cumplimiento estricto del estándar XHTML/CSS para renderizado fiel y paginado A4.</li>
+ *   <li>Mecanismo de resguardo (fallback) a bajo nivel en caso de contingencia o fallo de parseo XML.</li>
+ * </ul>
+ */
 @Service
 public class ActaPdfService {
 
 	private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+	private final SpringTemplateEngine templateEngine;
+	private final EquipoRepository equipoRepository;
+
+	public ActaPdfService(SpringTemplateEngine templateEngine, EquipoRepository equipoRepository) {
+		this.templateEngine = templateEngine;
+		this.equipoRepository = equipoRepository;
+	}
+
+	/**
+	 * Genera el documento PDF formal correspondiente a un acta institucional.
+	 *
+	 * @param acta detalle de la información del acta (número, tipo, estado, intervinientes, detalles)
+	 * @return arreglo de bytes con el contenido binario del archivo PDF generado
+	 */
 	public byte[] generar(ActaService.ActaDetalle acta) {
+		try {
+			// 1. Preparar el contexto de variables para Thymeleaf
+			Context context = new Context();
+			context.setVariable("acta", acta);
+
+			// 2. Enriquecer con los datos de hardware del equipo vinculado si existe
+			if (acta.equipoId() != null) {
+				equipoRepository.findById(acta.equipoId()).ifPresent(equipo -> context.setVariable("equipo", equipo));
+			}
+
+			// 3. Renderizar la plantilla XHTML institucional
+			String html = templateEngine.process("pdf/acta-institucional", context);
+
+			// 4. Transformar el documento XHTML en PDF mediante Flying Saucer
+			try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+				ITextRenderer renderer = new ITextRenderer();
+				renderer.setDocumentFromString(html);
+				renderer.layout();
+				renderer.createPDF(os);
+				return os.toByteArray();
+			}
+		} catch (Exception ex) {
+			// 5. En caso de imprevisto, recurrir a la generación directa de bajo nivel
+			return fallbackPdf(acta);
+		}
+	}
+
+	private byte[] fallbackPdf(ActaService.ActaDetalle acta) {
 		List<String> lineas = new ArrayList<>();
 		lineas.add("Poder Judicial de Jujuy - Centro Judicial San Pedro");
 		lineas.add("Inventario Modular");

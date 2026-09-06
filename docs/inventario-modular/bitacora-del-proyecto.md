@@ -2333,9 +2333,79 @@ Se simplificó la interfaz de usuario en base a los criterios de deducción oper
     - La carga manual de componentes adicionales se desactiva temporalmente hasta fijar la línea base del hardware real.
 - Pruebas automatizadas actualizadas y exitosas: 134 pruebas (0 fallos).
 
+## 2026-09-05 - Automatización de Trazabilidad y Auditoría en Equipos
+
+Se implementó el registro automático de eventos y movimientos de equipamiento con trazabilidad por usuario operador y destinatario:
+
+- **Trazabilidad Automática**:
+  - Toda reubicación de equipo, entrega o asignación de usuario, reemplazo de hardware de taller y ejecución de órdenes de armado registra automáticamente un `MovimientoEquipo` con fecha, hora, operador logueado (`usuarioActual()`), destinatario (`usuarioDestino`) y detalle explicativo.
+  - Sincronización automática de eventos entre el módulo de equipos y la bitácora transversal de auditoría del sistema (`AuditoriaEventoRepository`).
+- **Vista de Auditoría de Equipos (`admin/equipo-auditoria.html`)**:
+  - Filtros rápidos combinados por usuario (operador o destinatario) y por tipo de movimiento.
+  - Generación y descarga individual de actas de movimiento en formato PDF.
+
+## 2026-09-06 - Tablero de Discrepancias, Stepper en Stock y Actas Institucionales en PDF
+
+Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional:
+
+- **Tablero de Diferencias y Resolución Rápida (`admin/dashboard-diferencias.html`)**:
+  - Incorporación de botones de acción directa por fila con discrepancia:
+    - `🛠️ Crear Orden de Armado`: Navega a `/admin/ordenes-armado?equipoId={id}`, preseleccionando automáticamente el equipo en el formulario técnico para asignar componentes faltantes sin pasos extra.
+    - `🤖 Auditar Gemelo Digital`: Enlace a `/admin/equipos/{id}#tab-gemelo` que abre la ficha del equipo directamente en la pestaña del Gemelo Digital.
+    - `📜 Historial de Movimientos`: Acceso directo a la bitácora del equipo.
+  - Distinción visual y cromática clara para alertas `FALTA` (rojo), `SOBRA` (naranja) y `REVISAR` (amarillo).
+  - Tarjetas métricas superiores interactivas con filtrado inmediato en un solo clic.
+- **Stepper Unificado de 4 Pasos en Stock (`admin/stock.html`)**:
+  - Implementación del componente `.workflow-stepper` para reflejar el ciclo del hardware en depósito:
+    - *Paso 1 (Ingreso y Recepción):* Alta en inventario con serial, marca, modelo y remito/proveedor.
+    - *Paso 2 (Stock en Taller):* Piezas físicas disponibles en estantería para reparaciones (`disponiblesCount`).
+    - *Paso 3 (Reserva en Órdenes):* Piezas comprometidas para armados técnicos en proceso (`reservadosCount`).
+    - *Paso 4 (Asignación y Gemelo):* Pieza instalada y verificada en una PC mediante el reporte del gemelo digital (`asignadosCount`).
+- **Motor de Actas Institucionales en PDF (Flying Saucer OpenPDF)**:
+  - Nueva plantilla oficial XHTML (`pdf/acta-institucional.html`) con membrete formal del **Poder Judicial de Jujuy - Centro Judicial San Pedro - Departamento de Sistemas e Informática**, datos técnicos de la computadora asociada, funcionario receptor, detalle pormenorizado de bienes entregados, cláusula legal de resguardo y cuadro de firmas.
+  - Refactorización de `ActaPdfService.java` acoplado a `SpringTemplateEngine` e `ITextRenderer` con mecanismo de fallback de resguardo.
+  - Incorporación de visualización opcional en **Línea de Tiempo (Timeline)** en la auditoría del equipo (`equipo-auditoria.html` y `.audit-timeline`).
+- **Validación Completa**:
+  - Suite de 136 pruebas automatizadas ejecutadas con Maven: 100% pasando (0 fallos, 0 errores).
+### Unificación y Simplificación de Tarjetas Métricas (.metric-card) y Limpieza de UI
+
+- **Unificación de Tarjetas Métricas en Equipos y Stock**:
+  - Extensión del diseño gráfico de tarjetas métricas con borde coloreado lateral, valor numérico destacado y enlaces directos de acción/filtrado (aprobado en el Dashboard de Diferencias) a las vistas de **Equipos** (`/admin/equipos`) y **Stock** (`/admin/stock`).
+  - *En Equipos*: 4 tarjetas dinámicas para `TOTAL` (azul), `SINCRONIZADOS` (verde), `PENDIENTES` (amarillo) y `EN TALLER` (naranja), con soporte de filtrado en backend en `EquipoPageController.java` (`?estado=SINCRONIZADO`, `?estado=PENDIENTE`, `?estado=TALLER`).
+  - *En Stock*: 4 tarjetas estilizadas para `TOTAL` (azul), `DISPONIBLES` (verde), `RESERVADOS` (amarillo con navegación cruzada a órdenes de armado) e `INSTALADOS` (naranja con navegación al catálogo de equipos).
+- **Simplificación Visual y Depuración de la Interfaz (UI Minimalista)**:
+  - *Equipos (`equipos.html`)*: Se retiró el banner redundante de "Circuito Deductivo" y el contador estático; el catálogo y las métricas toman protagonismo directo.
+  - *Stock (`stock.html`)*: Títulos de tarjetas concisos en mayúsculas (`TOTAL`, `DISPONIBLES`, `RESERVADOS`, `INSTALADOS`) y acciones compactas (`Ver stock ➜`, `Listos en taller ➜`, `Ver órdenes ➜`, `Ver en PC ➜`).
+  - *Diferencias (`dashboard-diferencias.html`)*: Títulos normalizados a mayúsculas limpias (`FALTAN`, `SOBRAN`, `REVISAR`, `COINCIDEN`).
+  - *Estilo Global (`admin.css`)*: Tarjetas planas de 1px de borde suave (`#e9edf2`), listón lateral de 4px de color temático, sin sombras pesadas ni saltos bruscos en hover, logrando una estética corporativa, clara y directa.
+  - *Menú Panel (`admin/index.html`)*: Se quitó la sección inferior de "Módulos habilitados", permitiendo un acceso rápido sin ruido visual.
+- **Rediseño de Navegación del Sistema (Implementación Alternativa 1 - Sidebar Vertical)**:
+  - Se eliminó la fila plana de 13 botones superiores que provocaba desbordes antiestéticos en pantallas estándar.
+  - Implementación de la **Barra Lateral Fija (Sidebar Vertical)** (`app-sidebar` en `nav.html` y `admin.css`) con 5 áreas funcionales claramente jerarquizadas:
+    1. *Principal:* Panel General.
+    2. *Hardware y Taller:* Equipos, Órdenes de Armado, Stock de Depósito, Diferencias (Gemelo).
+    3. *Bienes y Sedes:* Sedes y Ubicaciones, Muebles, Patrimonio.
+    4. *Operaciones:* Actas y Movimientos, Reportes, Tareas Técnicas.
+    5. *Administración:* Auditoría Global, Usuarios y Permisos.
+  - Pie del sidebar con información de usuario conectado y botón de cierre de sesión.
+  - Cabecera del área principal (`panel-topbar`) completamente limpia, mostrando solo el título contextual del módulo, botón de menú móvil (`☰`) y sesión activa.
+  - *Arquitectura Flexible:* Todo el menú se encuentra centralizado en `templates/admin/nav.html` y `static/css/admin.css`, permitiendo conmutar a la **Alternativa 2 (Topbar con 5 menús desplegables)** o la **Alternativa 3 (Pestañas prioritarias + selector "Más...")** en cualquier momento según las preferencias del usuario.
+- **Modernización Integral de los Paneles Derechos (Área de Opciones y Contenido)**:
+  - *Eliminación del Recuadro Antiguo*: Se transformó `.shell-wide` en un canvas SaaS fluido (`#f8fafc`), removiendo el contenedor rígido flotante `.status-panel` (1040px con bordes y sombras antiguas). Ahora el espacio de trabajo derecho se adapta dinámicamente con margen de 260px respetando el sidebar.
+  - *Cabecera y Barra Superior (`.panel-topbar`)*: Integración de título moderno con tipografía jerarquizada (`#0f172a`), pastilla de usuario estilizada (`.user-session-pill`) con avatar circular, meta información clara y botón de salida sutil.
+  - *Secciones Modulares como Tarjetas Modernas (`.modules-section`, `.attributes-section`)*: Cada bloque de datos, catálogo o formulario reside en una tarjeta blanca independiente con bordes suaves (`1px solid #e2e8f0`), esquinas redondeadas (`12px`), sombra sutil (`0 1px 3px rgba(0,0,0,0.04)`) y cabecera con divisor limpio.
+  - *Barra de Búsqueda y Filtros Flexibles (`.search-form`)*: Reemplazo de la grilla rígida por un contenedor flex responsivo con inputs estilizados, foco con anillo azul translúcido (`rgba(59, 130, 246, 0.15)`) y botones alineados que no se deforman ni dejan huecos vacíos.
+  - *Tablas de Datos Modernas (`.responsive-table`)*: Cabeceras en Slate suave (`#f8fafc`) con tipografía en mayúsculas micro-espaciada, filas con transición de color al pasar el cursor (`hover: #f8fafc`), bordes redondeados y botones de acción tipo pastilla.
+- **Armonización Visual Integral (Unificación de Sidebar y Panel de Trabajo en Tema Claro)**:
+  - *Eliminación del Modo Oscuro Aislado*: Se unificó el panel lateral izquierdo (`.app-sidebar`) con el área de trabajo derecha, descartando el fondo oscuro discordante (`#0f172a`) en favor de una paleta institucional clara (`#ffffff` y `#f8fafc`).
+  - *Continuidad Estética*: Cabecera institucional en fondo blanco con tipografía Slate corporativa (`#0f172a`), badge azul suave (`#f0f7ff` / `#2563eb`), enlaces en Slate-600 (`#475569`) con hover gris suave (`#f1f5f9`) y selección activa en azul primario con pestaña destacada (`#eff6ff`, `#1d4ed8`, `border-left: 3px solid #2563eb`).
+  - *Pie y Separadores Suaves*: Borde derecho y divisores sutiles de 1px en `#e2e8f0`, scrollbar discreta (`#cbd5e1`) y pie de usuario en `#f8fafc` con botón de cierre de sesión claro.
+  - *Documentación en Código*: Se añadieron comentarios descriptivos en español a lo largo de las nuevas reglas en `admin.css`.
+
 ## Fuentes internas consultadas
 
 - `README.md`
+- `ARQUITECTURA_VISUAL_Y_FUNCIONAL.md`
 - `docs/designs/inventario-modular-java.md`
 - `docs/inventario-modular/README.md`
 - `docs/inventario-modular/cierre-jornada-windows.md`

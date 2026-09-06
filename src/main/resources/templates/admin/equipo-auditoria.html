@@ -55,10 +55,19 @@
 
         <!-- SECCIÓN PRINCIPAL: Historial de Movimientos y Acciones -->
         <section class="attributes-section" aria-labelledby="historial-title">
-            <div class="section-header">
+            <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
                 <div>
                     <h2 id="historial-title">Movimientos y Acciones Registradas</h2>
                     <p class="section-note">Bitácora completa y automática de eventos de este equipo.</p>
+                </div>
+                <!-- Selector de Vista: Tabla o Línea de Tiempo -->
+                <div style="display: flex; gap: 6px;" th:unless="${historial.empty}">
+                    <button type="button" id="btn-view-tabla" class="secondary-action is-active" onclick="switchAuditoriaView('tabla')" style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700; cursor: pointer;">
+                        📋 Vista Tabla
+                    </button>
+                    <button type="button" id="btn-view-timeline" class="secondary-action" onclick="switchAuditoriaView('timeline')" style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700; cursor: pointer;">
+                        ⏳ Línea de Tiempo
+                    </button>
                 </div>
             </div>
 
@@ -66,58 +75,103 @@
                 <p>No se encontraron movimientos registrados con los filtros seleccionados.</p>
             </div>
 
-            <div th:unless="${historial.empty}" class="responsive-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th scope="col">Fecha / Hora</th>
-                            <th scope="col">Tipo</th>
-                            <th scope="col" style="min-width: 260px;">Detalle de la Acción (Qué se hizo)</th>
-                            <th scope="col">Usuario Responsable</th>
-                            <th scope="col">Ubicación (Origen ➡ Destino)</th>
-                            <th scope="col">Operador / Registró</th>
-                            <th scope="col">Acta</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="mov : ${historial}">
-                            <td data-label="Fecha" style="white-space: nowrap;">
-                                <strong th:text="${#temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy')}">01/09/2026</strong>
-                                <span style="display: block; font-size: 0.78rem; color: #64748b;" th:text="${#temporals.format(mov.fechaMovimiento, 'HH:mm:ss')}">14:30:00</span>
-                            </td>
-                            <td data-label="Tipo">
-                                <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'REUBICACION'}" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">🚚 Reubicación</span>
-                                <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'ENTREGA'}" style="background: #ecfdf5; color: #047857; font-weight: 700;">👤 Entrega / Asignación</span>
-                                <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'MANTENIMIENTO'}" style="background: #fef3c7; color: #b45309; font-weight: 700;">🔧 Taller / Hardware</span>
-                                <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'DEVOLUCION'}" style="background: #ede9fe; color: #6d28d9; font-weight: 700;">🔄 Devolución</span>
-                                <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'OTRO'}" style="background: #f1f5f9; color: #475569; font-weight: 700;">📝 Otro</span>
-                            </td>
-                            <td data-label="Detalle">
-                                <span th:text="${mov.observaciones ?: 'Sin detalle adicional'}" style="font-size: 0.88rem; color: #1e293b;">Detalle de la acción</span>
-                            </td>
-                            <td data-label="Usuario">
-                                <span th:if="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="font-weight: 600; color: #0f172a;" th:text="${mov.usuarioDestino}">cguzman</span>
-                                <span th:unless="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="color: #94a3b8; font-size: 0.85rem;">-</span>
-                            </td>
-                            <td data-label="Ubicación">
-                                <div th:if="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="font-size: 0.85rem;">
-                                    <span th:text="${mov.ubicacionOrigen ?: 'Sin ubicación'}" style="color: #64748b;">Origen</span>
-                                    <span style="color: #0284c7; font-weight: 700;"> ➡ </span>
-                                    <strong th:text="${mov.ubicacionDestino ?: 'Sin ubicación'}" style="color: #0f172a;">Destino</strong>
+            <div th:unless="${historial.empty}">
+                <!-- VISTA 1: TABLA RESPONSIVA -->
+                <div id="view-tabla" class="responsive-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Fecha / Hora</th>
+                                <th scope="col">Tipo</th>
+                                <th scope="col" style="min-width: 260px;">Detalle de la Acción (Qué se hizo)</th>
+                                <th scope="col">Usuario Responsable</th>
+                                <th scope="col">Ubicación (Origen ➡ Destino)</th>
+                                <th scope="col">Operador / Registró</th>
+                                <th scope="col">Acta</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="mov : ${historial}">
+                                <td data-label="Fecha" style="white-space: nowrap;">
+                                    <strong th:text="${#temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy')}">01/09/2026</strong>
+                                    <span style="display: block; font-size: 0.78rem; color: #64748b;" th:text="${#temporals.format(mov.fechaMovimiento, 'HH:mm:ss')}">14:30:00</span>
+                                </td>
+                                <td data-label="Tipo">
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'REUBICACION'}" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">🚚 Reubicación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'ENTREGA'}" style="background: #ecfdf5; color: #047857; font-weight: 700;">👤 Entrega / Asignación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'MANTENIMIENTO'}" style="background: #fef3c7; color: #b45309; font-weight: 700;">🔧 Taller / Hardware</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'DEVOLUCION'}" style="background: #ede9fe; color: #6d28d9; font-weight: 700;">🔄 Devolución</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'OTRO'}" style="background: #f1f5f9; color: #475569; font-weight: 700;">📝 Otro</span>
+                                </td>
+                                <td data-label="Detalle">
+                                    <span th:text="${mov.observaciones ?: 'Sin detalle adicional'}" style="font-size: 0.88rem; color: #1e293b;">Detalle de la acción</span>
+                                </td>
+                                <td data-label="Usuario">
+                                    <span th:if="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="font-weight: 600; color: #0f172a;" th:text="${mov.usuarioDestino}">cguzman</span>
+                                    <span th:unless="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="color: #94a3b8; font-size: 0.85rem;">-</span>
+                                </td>
+                                <td data-label="Ubicación">
+                                    <div th:if="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="font-size: 0.85rem;">
+                                        <span th:text="${mov.ubicacionOrigen ?: 'Sin ubicación'}" style="color: #64748b;">Origen</span>
+                                        <span style="color: #0284c7; font-weight: 700;"> ➡ </span>
+                                        <strong th:text="${mov.ubicacionDestino ?: 'Sin ubicación'}" style="color: #0f172a;">Destino</strong>
+                                    </div>
+                                    <span th:unless="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="color: #94a3b8; font-size: 0.85rem;">-</span>
+                                </td>
+                                <td data-label="Registró">
+                                    <span class="count-badge" style="font-size: 0.8rem; padding: 3px 8px; font-weight: 600;" th:text="${mov.registradoPor}">admin.local</span>
+                                </td>
+                                <td data-label="Acta">
+                                    <a th:href="@{/admin/equipos/{id}/auditoria/{movId}/pdf(id=${equipo.id}, movId=${mov.id})}" target="_blank" class="secondary-action" style="padding: 4px 8px; font-size: 0.78rem; text-decoration: none;" title="Descargar acta de movimiento en PDF">
+                                        📄 PDF
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- VISTA 2: LÍNEA DE TIEMPO (TIMELINE) CRONOLÓGICA -->
+                <div id="view-timeline" class="audit-timeline" style="display: none;">
+                    <div class="timeline-item" th:each="mov : ${historial}">
+                        <div class="timeline-point"
+                             th:classappend="${mov.tipoMovimiento.name() == 'REUBICACION'} ? ' is-reubicacion' : (${mov.tipoMovimiento.name() == 'ENTREGA'} ? ' is-entrega' : (${mov.tipoMovimiento.name() == 'MANTENIMIENTO'} ? ' is-mantenimiento' : (${mov.tipoMovimiento.name() == 'DEVOLUCION'} ? ' is-devolucion' : ' is-otro')))">
+                        </div>
+                        <div class="timeline-card">
+                            <div class="timeline-header">
+                                <div>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'REUBICACION'}" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">🚚 Reubicación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'ENTREGA'}" style="background: #ecfdf5; color: #047857; font-weight: 700;">👤 Entrega / Asignación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'MANTENIMIENTO'}" style="background: #fef3c7; color: #b45309; font-weight: 700;">🔧 Taller / Hardware</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'DEVOLUCION'}" style="background: #ede9fe; color: #6d28d9; font-weight: 700;">🔄 Devolución</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'OTRO'}" style="background: #f1f5f9; color: #475569; font-weight: 700;">📝 Otro</span>
                                 </div>
-                                <span th:unless="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="color: #94a3b8; font-size: 0.85rem;">-</span>
-                            </td>
-                            <td data-label="Registró">
-                                <span class="count-badge" style="font-size: 0.8rem; padding: 3px 8px; font-weight: 600;" th:text="${mov.registradoPor}">admin.local</span>
-                            </td>
-                            <td data-label="Acta">
-                                <a th:href="@{/admin/equipos/{id}/auditoria/{movId}/pdf(id=${equipo.id}, movId=${mov.id})}" target="_blank" class="secondary-action" style="padding: 4px 8px; font-size: 0.78rem; text-decoration: none;" title="Descargar acta de movimiento en PDF">
-                                    📄 PDF
+                                <span class="timeline-date">
+                                    📅 <span th:text="${#temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy HH:mm:ss')}">01/09/2026 14:30:00</span>
+                                </span>
+                            </div>
+                            <div class="timeline-body">
+                                <strong style="color: #0f172a;" th:text="${mov.observaciones ?: 'Acción registrada en el equipo'}">Detalle</strong>
+                            </div>
+                            <div class="timeline-footer">
+                                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                                    <span th:if="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}">
+                                        👤 <strong>Destino:</strong> <span th:text="${mov.usuarioDestino}">cguzman</span>
+                                    </span>
+                                    <span th:if="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}">
+                                        📍 <span th:text="${mov.ubicacionOrigen ?: 'Origen'}">Origen</span> ➡ <strong th:text="${mov.ubicacionDestino ?: 'Destino'}">Destino</strong>
+                                    </span>
+                                    <span>
+                                        🛠️ <strong>Operador:</strong> <span th:text="${mov.registradoPor}">admin.local</span>
+                                    </span>
+                                </div>
+                                <a th:href="@{/admin/equipos/{id}/auditoria/{movId}/pdf(id=${equipo.id}, movId=${mov.id})}" target="_blank" class="secondary-action" style="padding: 3px 8px; font-size: 0.76rem; text-decoration: none;">
+                                    📄 Acta PDF
                                 </a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -168,5 +222,42 @@
         </details>
     </div>
 </div>
+
+<script>
+    function switchAuditoriaView(view) {
+        var tabView = document.getElementById('view-tabla');
+        var timelineView = document.getElementById('view-timeline');
+        var btnTab = document.getElementById('btn-view-tabla');
+        var btnTimeline = document.getElementById('btn-view-timeline');
+
+        if (view === 'timeline') {
+            if (tabView) tabView.style.display = 'none';
+            if (timelineView) timelineView.style.display = 'block';
+            if (btnTab) {
+                btnTab.style.background = '#f8fafc';
+                btnTab.style.color = '#475569';
+                btnTab.style.borderColor = '#cbd5e1';
+            }
+            if (btnTimeline) {
+                btnTimeline.style.background = '#2563eb';
+                btnTimeline.style.color = '#ffffff';
+                btnTimeline.style.borderColor = '#2563eb';
+            }
+        } else {
+            if (tabView) tabView.style.display = 'block';
+            if (timelineView) timelineView.style.display = 'none';
+            if (btnTab) {
+                btnTab.style.background = '#2563eb';
+                btnTab.style.color = '#ffffff';
+                btnTab.style.borderColor = '#2563eb';
+            }
+            if (btnTimeline) {
+                btnTimeline.style.background = '#f8fafc';
+                btnTimeline.style.color = '#475569';
+                btnTimeline.style.borderColor = '#cbd5e1';
+            }
+        }
+    }
+</script>
 </body>
 </html>

@@ -76,6 +76,15 @@ Toda la interfaz visual se construye sobre Vanilla CSS optimizado en `src/main/r
   - Acceso al Tablero General de Diferencias.
   - Historial de Auditoría y Movimientos.
 
+### 3.6. Tarjetas Métricas Interactivas (`.metric-card`)
+- **Propósito:** Reemplazar contadores estáticos o tablas frías por tarjetas KPI de alto impacto visual e interactividad directa (tal como en el Tablero de Diferencias, Catálogo de Equipos y Gestión de Stock).
+- **Estructura y Estilos:**
+  - Borde lateral de color temático: `.border-blue` (totales), `.border-green` (conformes/disponibles), `.border-yellow` (pendientes/reservados), `.border-orange` (taller/instalados), `.border-red` (faltantes/alertas).
+  - Título en mayúsculas sobrias (`.metric-card-title`), valor numérico en tipografía grande y negrita (`.metric-card-value`).
+  - Pie interactivo (`.metric-card-action`) con flecha `➜` que actúa como filtro instantáneo o salto de contexto.
+  - Micro-animación en hover (elevación sutil `translateY(-2px)` y sombra `0 4px 12px rgba(0,0,0,0.08)`).
+  - Estado activo (`.is-active`) para indicar qué filtro se encuentra actualmente aplicado en la vista.
+
 ---
 
 ## 4. 📂 Mapeo de Archivos y Responsabilidades
@@ -85,32 +94,48 @@ Toda la interfaz visual se construye sobre Vanilla CSS optimizado en `src/main/r
 | **Controlador de Equipos** | `ar.gov...web.EquipoPageController.java` | Prepara el modelo de detalle con banderas de relevamiento inicial, conteo de órdenes activas y diferencias del gemelo digital. |
 | **Controlador de Armado** | `ar.gov...web.OrdenArmadoPageController.java` | Gestiona el ciclo de vida de las órdenes de ensamble, reserva de piezas de stock (`RESERVADO`) y confirmación física (`ASIGNADO`). |
 | **Controlador de Auditoría** | `ar.gov...auditoria.MovimientoEquipoController.java` | Registra traslados de equipos y genera actas de entrega/devolución en formato PDF imprimible. |
+| **Servicio de Actas PDF** | `ar.gov...actas.ActaPdfService.java` | Genera actas oficiales en PDF mediante Flying Saucer y plantilla XHTML formal con membrete del Poder Judicial de Jujuy. |
 | **Servicio de Gemelo Digital** | `ar.gov...componentes.GemeloDigitalService.java` | Compara componentes esperados vs componentes detectados por el script para calcular discrepancias (`COINCIDE`, `FALTA`, `SOBRA`, `REVISAR`). |
-| **Estilos CSS Globales** | `src/main/resources/static/css/admin.css` | Contiene todas las definiciones para steppers, banners, pestañas, tablas responsivas y tarjetas. |
-| **Plantilla Detalle Equipo** | `src/main/resources/templates/admin/equipo-detalle.html` | Pantalla principal del equipo con stepper de 3 pasos y 4 pestañas. |
+| **Estilos CSS Globales** | `src/main/resources/static/css/admin.css` | Contiene todas las definiciones para steppers, banners, pestañas, tablas responsivas, tarjetas y líneas de tiempo (`.audit-timeline`). |
+| **Plantilla Detalle Equipo** | `src/main/resources/templates/admin/equipo-detalle.html` | Pantalla principal del equipo con stepper de 3 pasos y 4 pestañas interactivas. |
 | **Plantilla Órdenes Armado** | `src/main/resources/templates/admin/ordenes-armado.html` | Pantalla de órdenes y ensamble con stepper de 4 pasos y 3 pestañas. |
+| **Plantilla Stock Depósito** | `src/main/resources/templates/admin/stock.html` | Pantalla de almacén de repuestos con stepper de 4 pasos (Ingreso, Depósito, Reserva, Asignación). |
+| **Plantilla Tablero Diferencias** | `src/main/resources/templates/admin/dashboard-diferencias.html` | Matriz de discrepancias de hardware con botones directos para subsanar faltantes y auditar gemelos. |
+| **Plantilla Auditoría Equipo** | `src/main/resources/templates/admin/equipo-auditoria.html` | Bitácora de trazabilidad con selector de vista dual (Tabla y Línea de Tiempo). |
+| **Plantilla Acta Institucional PDF** | `src/main/resources/templates/pdf/acta-institucional.html` | Plantilla oficial en XHTML para renderizado con Flying Saucer con membrete, firmas y resguardo legal. |
 | **Plantilla Listado Equipos** | `src/main/resources/templates/admin/equipos.html` | Listado general con accesos rápidos `[🔍 Gemelo]` y `[🛠️ Órdenes]`. |
 
 ---
 
-## 5. 🚀 Hoja de Ruta para la Próxima Jornada de Trabajo
+## 5. ✅ Hitos Completados en la Bitácora de Trabajo
 
-Para continuar mejorando la secuencia natural de pasos desde el puesto de trabajo:
+1. **Tablero de Diferencias y Resolución Inmediata (`/admin/dashboard-diferencias`):**
+   - **Acción directa por discrepancia:** Cada fila de equipo cuenta ahora con botones de resolución rápida:
+     - `🛠️ Crear Orden de Armado`: Navega a `/admin/ordenes-armado?equipoId={id}`, preseleccionando la PC automáticamente en el formulario técnico para asignar piezas de inmediato.
+     - `🤖 Auditar Gemelo Digital`: Navega a `/admin/equipos/{id}#tab-gemelo`, activando directamente la pestaña del gemelo digital.
+     - `📜 Historial de Movimientos`: Acceso directo a la bitácora del equipo.
+   - **Identificación cromática de alertas:** Badges y bloques diferenciados para `FALTA` (alerta roja), `SOBRA` (alerta naranja) y `REVISAR` (alerta amarilla).
+   - **Métricas interactivas:** Tarjetas superiores con filtrado directo en un solo clic.
 
-1. **Aplicar el Stepper en la Pantalla de Stock (`/admin/stock`):**
-   - *Paso 1:* Ingreso / Recepción de Componentes (alta en inventario con serial y marca).
-   - *Paso 2:* Estado en Depósito (disponibilidad física).
-   - *Paso 3:* Reserva para Ensamble (vinculado a una orden de armado).
-   - *Paso 4:* Asignación Definitiva en Equipo.
+2. **Stepper Unificado de 4 Pasos en Pantalla de Stock (`/admin/stock`):**
+   - Implementación del componente `.workflow-stepper` para reflejar el ciclo de vida del hardware de taller:
+     - *Paso 1 (Ingreso y Recepción):* Alta en inventario con serial, marca, modelo y remito/proveedor.
+     - *Paso 2 (Stock en Taller):* Piezas físicas disponibles en estantería para reparaciones (`disponiblesCount`).
+     - *Paso 3 (Reserva en Órdenes):* Piezas comprometidas para armados técnicos en proceso (`reservadosCount`).
+     - *Paso 4 (Asignación y Gemelo):* Pieza instalada y verificada en una PC mediante el reporte del gemelo digital (`asignadosCount`).
 
-2. **Refinar el Tablero de Diferencias (`/admin/dashboard-diferencias`):**
-   - Incorporar acciones directas en cada fila con discrepancia:
-     - Botón directo *"Crear Orden de Armado para subsanar faltante"*.
-     - Botón directo *"Actualizar relevamiento oficial con la nueva lectura"*.
+3. **Motor de Actas Institucionales en PDF (Flying Saucer OpenPDF):**
+   - **Plantilla Oficial (`pdf/acta-institucional.html`):** Membrete institucional formal del *Poder Judicial de Jujuy - Centro Judicial San Pedro - Departamento de Sistemas e Informática*, datos del equipo asociado, funcionario receptor, detalle de bienes, cláusula legal de resguardo y recepción conforme, y cuadro de firmas.
+   - **Servicio `ActaPdfService`:** Renderizado automático de XHTML a PDF con `SpringTemplateEngine` e `ITextRenderer`, complementado con mecanismo de resguardo (fallback).
+   - **Línea de Tiempo en Auditoría (`equipo-auditoria.html` y `.audit-timeline`):** Visualización cronológica opcional para revisar la historia física de cada computadora como un timeline visual.
 
-3. **Optimización del Módulo de Actas y Auditoría (`/admin/actas` / `/admin/equipos/{id}/auditoria`):**
-   - Integrar la firma digital o código QR de validación en el acta PDF generada con Flying Saucer.
-   - Mostrar el histórico de cambios de hardware en una línea de tiempo (*timeline*) visual.
+---
 
-4. **Automatización de Notificaciones o Alertas:**
-   - Detectar si un equipo conectado a la red cambió de memoria RAM o disco sin que exista una orden de armado previa (prevención de desvío de hardware).
+## 6. 🚀 Próximos Pasos (Hoja de Ruta Futura)
+
+1. **Automatización de Notificaciones o Alertas Tempranas:**
+   - Detectar si un equipo conectado a la red cambió de memoria RAM o disco sin que exista una orden de armado previa (prevención de desvío no autorizado de hardware).
+
+2. **Código QR Institucional en Actas:**
+   - Incorporar en el pie de página del acta PDF un código QR verificador que apunte a la URL de validación del documento en el servidor de inventario.
+

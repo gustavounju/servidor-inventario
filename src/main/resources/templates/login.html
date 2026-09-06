@@ -31,9 +31,10 @@
 				<button class="primary-action" type="submit">Ingresar</button>
 			</form>
 
+			<!-- Copia rápida del script PowerShell de inventario: se oculta visualmente el área de código para mayor limpieza estética, manteniendo intacto el botón y su funcionalidad -->
 			<section class="script-copy-panel" aria-labelledby="script-copy-title">
 				<h2 id="script-copy-title">Inventario de equipo</h2>
-				<textarea id="inventory-command" readonly rows="5"></textarea>
+				<textarea id="inventory-command" readonly style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;" aria-hidden="true"></textarea>
 				<button class="secondary-action" id="copy-inventory-command" type="button">Copiar comando</button>
 				<p class="script-copy-status" id="copy-inventory-status" role="status" aria-live="polite"></p>
 			</section>

@@ -97,28 +97,6 @@
 				</div>
 			</section>
 
-			<!-- Módulos Habilitados para el Usuario -->
-			<section class="modules-section" aria-labelledby="modules-title">
-				<div class="section-header">
-					<h2 id="modules-title">Módulos habilitados</h2>
-					<span class="authorization-badge" th:classappend="${authorized} ? ' is-authorized' : ' is-pending'"
-							th:text="${authorized} ? 'Autorizado' : 'Pendiente de autorización'">
-						Autorizado
-					</span>
-				</div>
-				<p class="empty-state" th:if="${#lists.isEmpty(modules)}">
-					Este usuario todavía no tiene módulos asignados en Inventario Modular.
-				</p>
-				<div class="modules-grid" th:if="${!#lists.isEmpty(modules)}">
-					<article class="module-card" th:each="module : ${modules}">
-						<h3 th:text="${module.nombre}">Equipos</h3>
-						<p th:text="${module.descripcion}">Inventario técnico de computadoras.</p>
-						<div class="permission-list" aria-label="Permisos">
-							<span th:each="permission : ${module.permisos}" th:text="${permission}">VER</span>
-						</div>
-					</article>
-				</div>
-			</section>
 			<p class="version">Versión <span th:text="${version}">0.0.1-SNAPSHOT</span></p>
 		</section>
 	</main>

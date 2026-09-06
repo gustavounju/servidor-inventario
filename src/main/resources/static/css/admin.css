@@ -20,7 +20,7 @@ body {
 	background: #f6f7f9;
 }
 
-/* Contenedor principal de disposición (Grid) */
+/* Contenedor principal de disposición */
 .shell {
 	display: grid;
 	min-height: 100vh;
@@ -28,12 +28,28 @@ body {
 	padding: 32px 20px;
 }
 
+/* En vistas administrativas (.shell-wide): Layout moderno de panel completo, fluido y espacioso */
 .shell-wide {
-	align-items: start;
-	place-items: start center;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: flex-start;
+	min-height: 100vh;
+	background: #f8fafc; /* Canvas moderno Slate-50 */
+	padding: 24px 36px 48px;
+	box-sizing: border-box;
+	transition: margin-left 0.25s ease, width 0.25s ease;
 }
 
-/* Tarjeta base: Efecto de elevación y bordes sutiles */
+@media (min-width: 992px) {
+	.shell-wide {
+		margin-left: 260px;
+		width: calc(100% - 260px);
+		max-width: calc(100% - 260px);
+	}
+}
+
+/* Tarjeta base: se preserva solo para el formulario de login centrado */
 .status-panel {
 	width: min(100%, 1040px);
 	border: 1px solid #d9e0e7;
@@ -43,16 +59,151 @@ body {
 	box-shadow: 0 18px 50px rgba(31, 42, 55, 0.08);
 }
 
-.admin-users-panel {
-	width: min(100%, 1160px);
+.status-panel.login-panel {
+	width: min(100%, 460px);
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	background: #ffffff;
+	padding: 36px;
+	box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
-.panel-header {
+/* En el panel derecho de administración: se elimina completamente el recuadro rígido antiguo */
+.shell-wide .status-panel,
+.shell-wide .admin-users-panel {
+	width: 100%;
+	max-width: 1600px;
+	margin: 0;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	padding: 0;
+	box-shadow: none;
 	display: flex;
-	align-items: flex-start;
+	flex-direction: column;
+}
+
+/* Cabecera del Panel Derecho: Topbar Moderna y Limpia */
+.panel-header {
+	width: 100%;
+	margin-bottom: 20px;
+}
+
+.panel-topbar {
+	display: flex;
+	align-items: center;
 	justify-content: space-between;
 	flex-wrap: wrap;
-	gap: 18px;
+	gap: 16px;
+	width: 100%;
+	padding-bottom: 18px;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.panel-branding {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.panel-branding .eyebrow {
+	margin: 0 0 3px;
+	color: #64748b;
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.panel-branding h1,
+#panel-title {
+	margin: 0;
+	font-size: 1.65rem;
+	font-weight: 800;
+	color: #0f172a;
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+}
+
+/* Pastilla de sesión de usuario moderna en barra superior */
+.user-session-pill {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 6px 12px 6px 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.user-avatar {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	background: #eff6ff;
+	color: #2563eb;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.user-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.user-name {
+	font-size: 0.84rem;
+	font-weight: 700;
+	color: #0f172a;
+	line-height: 1.2;
+}
+
+.user-subtext {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.74rem;
+	color: #64748b;
+}
+
+.user-account {
+	color: #64748b;
+}
+
+.user-badge {
+	font-size: 0.68rem;
+	font-weight: 700;
+	background: #e0f2fe;
+	color: #0284c7;
+	padding: 1px 6px;
+	border-radius: 4px;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+}
+
+.logout-pill-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	color: #475569;
+	font-size: 0.8rem;
+	font-weight: 600;
+	padding: 6px 12px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.logout-pill-btn:hover {
+	background: #fee2e2;
+	border-color: #fca5a5;
+	color: #dc2626;
 }
 
 .admin-actions {
@@ -71,31 +222,43 @@ body {
 .logout-form button,
 .secondary-action,
 .primary-action {
-	border: 1px solid #c7d2dd;
-	border-radius: 6px;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
 	background: #ffffff;
-	color: #25313d;
+	color: #334155;
 	cursor: pointer;
 	font: inherit;
-	font-weight: 700;
-	padding: 9px 14px;
+	font-size: 0.88rem;
+	font-weight: 600;
+	padding: 8px 16px;
 	text-decoration: none;
 	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	transition: all 0.15s ease;
 }
 
 .logout-form button:hover,
 .secondary-action:hover {
-	background: #f0f4f8;
+	background: #f8fafc;
+	border-color: #94a3b8;
+	color: #0f172a;
 }
 
 .primary-action {
-	background: #23405f;
-	border-color: #23405f;
+	background: #2563eb;
+	border-color: #1d4ed8;
 	color: #ffffff;
+	box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
 }
 
 .primary-action:hover {
-	background: #1b3148;
+	background: #1d4ed8;
+	border-color: #1e40af;
+	box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
 }
 
 .eyebrow {
@@ -270,30 +433,41 @@ h1 {
 	color: #5e7184;
 }
 
-.modules-section {
-	margin-top: 30px;
-	padding-top: 24px;
-	border-top: 1px solid #e6ebf0;
+.modules-section,
+.attributes-section {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+	padding: 24px 28px;
+	margin-top: 20px;
+	margin-bottom: 24px;
 }
 
 .section-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-	margin-bottom: 14px;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin-bottom: 20px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid #f1f5f9;
 }
 
 .section-header h2 {
 	margin: 0;
-	font-size: 1rem;
-	line-height: 1.25;
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: #0f172a;
+	letter-spacing: -0.01em;
 }
 
 .section-note {
-	color: #5e7184;
-	line-height: 1.4;
-	margin: 6px 0 0;
+	color: #64748b;
+	font-size: 0.86rem;
+	line-height: 1.45;
+	margin: 4px 0 0;
 }
 
 .authorization-badge {
@@ -569,37 +743,71 @@ h1 {
 }
 
 .search-form {
-	align-items: end;
-	display: grid;
+	display: flex;
+	align-items: flex-end;
+	flex-wrap: wrap;
 	gap: 12px;
-	grid-template-columns: minmax(220px, 1fr) auto;
-	margin-bottom: 18px;
+	margin: 16px 0 20px;
 }
 
 .dashboard-filter-form {
-	grid-template-columns: repeat(3, minmax(170px, 1fr)) auto;
-	margin: 24px 0 0;
+	margin: 16px 0 20px;
 }
 
 .search-form label {
-	display: grid;
-	gap: 7px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	flex: 1 1 240px;
+	min-width: 200px;
 }
 
 .search-form label span {
-	color: #415366;
-	font-size: 0.84rem;
+	color: #475569;
+	font-size: 0.78rem;
 	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
 }
 
 .search-form input[type="search"],
+.search-form input[type="text"],
 .search-form select {
-	border: 1px solid #c7d2dd;
-	border-radius: 6px;
-	color: #1d252d;
+	background: #f8fafc;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	color: #0f172a;
 	font: inherit;
-	padding: 10px 12px;
+	font-size: 0.88rem;
+	padding: 9px 14px;
+	height: 42px;
+	box-sizing: border-box;
+	transition: all 0.15s ease;
 	width: 100%;
+}
+
+.search-form input[type="search"]:focus,
+.search-form input[type="text"]:focus,
+.search-form select:focus {
+	background: #ffffff;
+	border-color: #3b82f6;
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.search-form .form-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+}
+
+.search-form .primary-action,
+.search-form .secondary-action,
+.search-form button[type="submit"] {
+	height: 42px;
+	box-sizing: border-box;
+	margin: 0;
 }
 
 .equipment-form {
@@ -747,11 +955,13 @@ h1 {
 	white-space: nowrap;
 }
 
-/* Tablas responsivas: Transformación a Mobile-friendly */
+/* Tablas responsivas modernas tipo Dashboard SaaS */
 .responsive-table {
-	border: 1px solid #e1e7ee;
-	border-radius: 8px;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
 	overflow-x: auto;
+	background: #ffffff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 table {
@@ -761,22 +971,36 @@ table {
 
 th,
 td {
-	border-top: 1px solid #e1e7ee;
-	padding: 12px 14px;
+	padding: 13px 16px;
 	text-align: left;
-	vertical-align: top;
+	vertical-align: middle;
 }
 
 thead th {
-	background: #f6f8fa;
+	background: #f8fafc;
 	border-top: 0;
-	color: #415366;
-	font-size: 0.78rem;
+	border-bottom: 1px solid #e2e8f0;
+	color: #475569;
+	font-size: 0.72rem;
+	font-weight: 700;
 	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	white-space: nowrap;
 }
 
-td {
+tbody td {
+	border-top: 1px solid #f1f5f9;
+	font-size: 0.88rem;
+	color: #1e293b;
 	overflow-wrap: anywhere;
+}
+
+tbody tr {
+	transition: background 0.15s ease;
+}
+
+tbody tr:hover {
+	background: #f8fafc;
 }
 
 @media (max-width: 900px) {
@@ -1437,4 +1661,425 @@ dialog::backdrop {
 	padding: 20px;
 	border-top: 1px solid #e2e8f0;
 }
+
+/* Línea de Tiempo de Auditoría y Movimientos (Audit Timeline) */
+.audit-timeline {
+	position: relative;
+	margin: 20px 0 30px;
+	padding-left: 36px;
+}
+
+.audit-timeline::before {
+	content: '';
+	position: absolute;
+	left: 14px;
+	top: 10px;
+	bottom: 10px;
+	width: 3px;
+	background: #cbd5e1;
+	border-radius: 2px;
+}
+
+.timeline-item {
+	position: relative;
+	margin-bottom: 20px;
+}
+
+.timeline-item:last-child {
+	margin-bottom: 0;
+}
+
+.timeline-point {
+	position: absolute;
+	left: -30px;
+	top: 16px;
+	width: 15px;
+	height: 15px;
+	border-radius: 50%;
+	background: #2563eb;
+	border: 3px solid #ffffff;
+	box-shadow: 0 0 0 2px #2563eb;
+}
+
+.timeline-point.is-reubicacion { background: #0284c7; box-shadow: 0 0 0 2px #0284c7; }
+.timeline-point.is-entrega { background: #16a34a; box-shadow: 0 0 0 2px #16a34a; }
+.timeline-point.is-mantenimiento { background: #d97706; box-shadow: 0 0 0 2px #d97706; }
+.timeline-point.is-devolucion { background: #7c3aed; box-shadow: 0 0 0 2px #7c3aed; }
+.timeline-point.is-otro { background: #64748b; box-shadow: 0 0 0 2px #64748b; }
+
+.timeline-card {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 14px 18px;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+	transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.timeline-card:hover {
+	border-color: #cbd5e1;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.timeline-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.timeline-date {
+	font-size: 0.85rem;
+	color: #64748b;
+	font-weight: 600;
+}
+
+.timeline-body {
+	font-size: 0.9rem;
+	color: #1e293b;
+	line-height: 1.45;
+	margin-bottom: 10px;
+}
+
+.timeline-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+	font-size: 0.82rem;
+	color: #475569;
+	border-top: 1px dashed #e2e8f0;
+	padding-top: 8px;
+}
+
+/* Grilla de Tarjetas Métricas Interactivas (Diseño Limpio y Minimalista) */
+.summary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
+	margin: 16px 0 24px;
+}
+
+.metric-card {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 18px 20px;
+	text-decoration: none;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	position: relative;
+	cursor: pointer;
+}
+
+.metric-card:hover {
+	transform: translateY(-2px);
+	border-color: #cbd5e1;
+	box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+}
+
+.metric-card.is-active {
+	background: #ffffff;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.08);
+}
+
+.metric-card.border-red { border-left: 4px solid #ef4444; }
+.metric-card.border-orange { border-left: 4px solid #f97316; }
+.metric-card.border-yellow { border-left: 4px solid #f59e0b; }
+.metric-card.border-green { border-left: 4px solid #10b981; }
+.metric-card.border-blue { border-left: 4px solid #3b82f6; }
+.metric-card.border-cyan { border-left: 4px solid #06b6d4; }
+.metric-card.border-purple { border-left: 4px solid #8b5cf6; }
+
+.metric-card-title {
+	display: block;
+	color: #64748b;
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.6px;
+	margin-bottom: 4px;
+}
+
+.metric-card-value {
+	display: block;
+	font-size: 1.85rem;
+	font-weight: 800;
+	line-height: 1.1;
+	margin: 4px 0 8px;
+	letter-spacing: -0.03em;
+}
+
+.metric-card-action {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	margin-top: 4px;
+}
+
+.metric-card:hover .metric-card-action {
+	text-decoration: underline;
+}
+
+/* ==========================================================================
+   BARRA LATERAL DE NAVEGACIÓN (SIDEBAR) - ESTILO CORPORATIVO CLARO (LIGHT THEME)
+   Unifica visualmente el panel izquierdo con el espacio de trabajo derecho (#ffffff / #f8fafc)
+   para una experiencia homogénea, luminosa y sin contrastes discordantes.
+   ========================================================================== */
+
+/* Contenedor fijo de la barra lateral izquierda */
+.app-sidebar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 260px;
+	background: #ffffff; /* Fondo blanco limpio idéntico a las tarjetas del panel derecho */
+	color: #334155; /* Texto base Slate-700 de alta legibilidad */
+	display: flex;
+	flex-direction: column;
+	z-index: 1000;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: #cbd5e1 transparent; /* Barra de desplazamiento suave y discreta */
+	border-right: 1px solid #e2e8f0; /* Separador sutil de 1px hacia el panel derecho */
+	box-shadow: 1px 0 4px rgba(0, 0, 0, 0.02); /* Sombra milimétrica de profundidad */
+	transition: transform 0.25s ease;
+}
+
+/* Cabecera institucional de la barra lateral (Escudo y Dependencia) */
+.sidebar-brand {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 18px 18px 14px;
+	background: #ffffff;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.sidebar-brand-icon {
+	font-size: 1.5rem;
+}
+
+.sidebar-brand-title {
+	display: block;
+	font-size: 0.95rem;
+	font-weight: 800;
+	color: #0f172a; /* Slate 900 corporativo */
+	letter-spacing: -0.2px;
+}
+
+.sidebar-brand-sub {
+	display: block;
+	font-size: 0.74rem;
+	color: #64748b; /* Slate 500 neutro */
+	margin-top: 1px;
+}
+
+/* Distintivo de aplicación del sistema judicial */
+.sidebar-app-badge {
+	padding: 6px 18px;
+	background: #f0f7ff; /* Tono azul cielo muy suave */
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.sidebar-app-badge span {
+	font-size: 0.68rem;
+	font-weight: 800;
+	letter-spacing: 0.8px;
+	color: #2563eb; /* Azul institucional */
+}
+
+/* Lista navegable categorizada por áreas operativas */
+.sidebar-nav {
+	flex: 1;
+	padding: 14px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.sidebar-section {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+/* Título de cada categoría operativa (Hardware, Bienes, Operaciones, etc.) */
+.sidebar-section-title {
+	font-size: 0.67rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.8px;
+	color: #94a3b8; /* Gris tenue para no competir con los enlaces */
+	padding: 4px 12px 4px;
+}
+
+/* Enlace individual de menú */
+.sidebar-link {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 12px;
+	border-radius: 6px;
+	color: #475569; /* Slate 600 equilibrado */
+	text-decoration: none;
+	font-size: 0.85rem;
+	font-weight: 500;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* Efecto hover al pasar el cursor */
+.sidebar-link:hover {
+	background: #f1f5f9; /* Slate 100 suave */
+	color: #0f172a; /* Oscurecimiento de texto para indicar interactividad */
+}
+
+/* Estado activo del módulo en pantalla (selección visual clara) */
+.sidebar-link.is-active {
+	background: #eff6ff; /* Fondo azul tintado acorde al tema del sistema */
+	color: #1d4ed8; /* Azul primario intenso */
+	font-weight: 700;
+	box-shadow: inset 3px 0 0 #2563eb; /* Indicador lateral azul de pestaña activa */
+}
+
+.sidebar-icon {
+	font-size: 0.98rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	flex-shrink: 0;
+}
+
+.sidebar-text {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Pie de usuario conectado y cierre de sesión en la base del sidebar */
+.sidebar-user-footer {
+	padding: 12px 16px;
+	background: #f8fafc; /* Fondo Slate 50 para diferenciar sutilmente el pie */
+	border-top: 1px solid #e2e8f0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.sidebar-user-info {
+	overflow: hidden;
+}
+
+.sidebar-user-name {
+	display: block;
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: #0f172a;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+.sidebar-user-sub {
+	display: block;
+	font-size: 0.72rem;
+	color: #64748b;
+}
+
+/* Botón de salir / cerrar sesión integrado */
+.sidebar-logout-btn {
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	color: #475569;
+	font-size: 0.75rem;
+	font-weight: 600;
+	padding: 5px 10px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.sidebar-logout-btn:hover {
+	background: #fee2e2;
+	border-color: #fca5a5;
+	color: #dc2626;
+}
+
+/* Botón hamburguesa para dispositivos táctiles o pantallas pequeñas */
+.sidebar-toggle-btn {
+	display: none;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	font-size: 1.2rem;
+	padding: 4px 10px;
+	cursor: pointer;
+	color: #1e293b;
+	line-height: 1;
+}
+
+.sidebar-backdrop {
+	display: none;
+}
+
+/* En pantallas de escritorio (>= 992px): Ajuste del contenedor principal al ancho restante */
+@media (min-width: 992px) {
+	.shell-wide {
+		margin-left: 260px;
+		width: calc(100% - 260px);
+		max-width: calc(100% - 260px);
+		box-sizing: border-box;
+		padding: 24px 36px 48px;
+	}
+
+	.shell-wide .status-panel,
+	.shell-wide .admin-users-panel {
+		width: 100%;
+		max-width: 1600px;
+	}
+}
+
+/* En pantallas compactas (< 992px): Sidebar oculto con apertura táctil/hamburguesa */
+@media (max-width: 991px) {
+	.sidebar-toggle-btn {
+		display: inline-block;
+	}
+
+	.app-sidebar {
+		transform: translateX(-100%);
+		box-shadow: none;
+	}
+
+	.app-sidebar.is-open {
+		transform: translateX(0);
+		box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+	}
+
+	.sidebar-backdrop.is-open {
+		display: block;
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(15, 23, 42, 0.6);
+		z-index: 999;
+		backdrop-filter: blur(2px);
+	}
+}
+
+
+
 
