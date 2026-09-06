@@ -33,11 +33,11 @@
 			</nav>
 
 			<!-- Banner de Operación Exitosa -->
-			<div class="workflow-banner" th:if="${creado}" style="background: #f0fdf4; border: 2px solid #16a34a; margin: 12px 0;">
+			<div class="workflow-banner" th:if="${creado}" style="background: rgba(22, 163, 74, 0.15); border: 1.5px solid rgba(22, 163, 74, 0.4); margin: 12px 0;">
 				<div class="workflow-banner-icon">✅</div>
 				<div class="workflow-banner-content">
-					<strong style="color: #15803d; font-size: 1.05rem;">¡Operación registrada con éxito!</strong>
-					<p style="margin: 4px 0 8px; color: #166534; font-size: 0.88rem;">
+					<strong style="color: #4ade80; font-size: 1.05rem;">¡Operación registrada con éxito!</strong>
+					<p style="margin: 4px 0 8px; color: var(--text-secondary); font-size: 0.88rem;">
 						Los cambios en la orden o en las piezas de armado fueron guardados correctamente.
 					</p>
 					<div class="workflow-next-actions">
@@ -53,49 +53,49 @@
 			</div>
 
 			<!-- 🚀 GUÍA COMPACTA Y CLARA DEL TALLER TÉCNICO (Criterio Equipos) -->
-			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
+			<section class="workflow-banner">
 				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
 					<div style="display: flex; align-items: center; gap: 12px;">
 						<span style="font-size: 1.6rem;">🛠️</span>
 						<div>
-							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Taller Técnico: ¿Para qué sirven las Órdenes de Armado?</strong>
-							<span style="font-size: 0.85rem; color: #475569;">Úsalas cuando una PC entre al taller para agregar memoria RAM, cambiar un disco o reemplazar piezas desde el depósito.</span>
+							<strong style="font-size: 1.05rem; display: block;">Taller Técnico: ¿Para qué sirven las Órdenes de Armado?</strong>
+							<span style="font-size: 0.85rem;">Úsalas cuando una PC entre al taller para agregar memoria RAM, cambiar un disco o reemplazar piezas desde el depósito.</span>
 						</div>
 					</div>
 					<span class="authorization-badge is-authorized">CIRCUITO DE TALLER</span>
 				</div>
 
 				<!-- 3 Pasos Compactos del Taller -->
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+				<div class="workflow-steps-grid">
 					<!-- Paso 1 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+					<div class="workflow-step-card">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
-							<strong style="color: #1e3a8a; font-size: 0.9rem;">Seleccionar PC y Crear Orden</strong>
+							<strong style="font-size: 0.9rem;">Seleccionar PC y Crear Orden</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Elige el equipo en el selector abajo y define la orden técnica (ej: <em>"Ampliación a 16GB de RAM y SSD"</em>).
 						</p>
 					</div>
 
 					<!-- Paso 2 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+					<div class="workflow-step-card">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
-							<strong style="color: #0369a1; font-size: 0.9rem;">Reservar Pieza de Stock</strong>
+							<strong style="font-size: 0.9rem;">Reservar Pieza de Stock</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Asigna la pieza física del depósito (con su número de serie) a esta orden para que no pueda usarse en otra PC.
 						</p>
 					</div>
 
 					<!-- Paso 3 -->
-					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
+					<div class="workflow-step-card" style="border-left: 3px solid #22c55e;">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
-							<strong style="color: #15803d; font-size: 0.9rem;">Confirmar Salida y Ensamblar</strong>
+							<strong style="font-size: 0.9rem; color: #4ade80;">Confirmar Salida y Ensamblar</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Al retirar la pieza del taller, confirma su salida. Cuando la PC encienda, el Gemelo Digital audita el 100% de coincidencia.
 						</p>
 					</div>
@@ -103,7 +103,7 @@
 			</section>
 
 			<!-- Selector de Equipo de Trabajo -->
-			<section class="modules-section" aria-labelledby="selector-equipo-title" style="margin-bottom: 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+			<section class="modules-section" aria-labelledby="selector-equipo-title" style="margin-bottom: 20px;">
 				<div class="section-header" style="margin-bottom: 12px;">
 					<div>
 						<h2 id="selector-equipo-title" style="font-size: 1.05rem; margin: 0;">Equipo de trabajo</h2>
@@ -113,10 +113,10 @@
 						🤖 Ver Gemelo Digital de <span th:text="${equipoSeleccionado.nombre}">PC</span>
 					</a>
 				</div>
-				<form class="search-form" th:action="@{/admin/ordenes-armado}" method="get" style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+				<form class="search-form" th:action="@{/admin/ordenes-armado}" method="get" style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 10px;">
 					<label style="flex: 1; min-width: 250px; margin: 0;">
-						<span style="font-weight: 600; font-size: 0.85rem; color: #334155;">Seleccionar Computadora</span>
-						<select name="equipoId" onchange="this.form.submit()" style="padding: 8px 12px; font-size: 0.92rem; font-weight: 600; border: 1px solid #94a3b8; border-radius: 6px; width: 100%;">
+						<span style="font-weight: 600; font-size: 0.85rem;">Seleccionar Computadora</span>
+						<select name="equipoId" onchange="this.form.submit()" style="padding: 8px 12px; font-size: 0.92rem; font-weight: 600; width: 100%;">
 							<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre} + ' (' + ${equipo.fuero} + ' - ' + ${equipo.ubicacion ?: 'Sin ubicación'} + ')'"
 									th:selected="${equipo.id == equipoSeleccionadoId}">PC-INF-001</option>
 						</select>
@@ -124,7 +124,7 @@
 					<button class="primary-action" type="submit" style="padding: 9px 16px; font-size: 0.88rem;">Cargar Equipo</button>
 				</form>
 				<form th:if="${puedeEditarOrdenes}" th:action="@{/admin/equipos/nuevo-taller}" method="post" style="margin-top: 10px;">
-					<button class="secondary-action" type="submit" style="padding: 7px 14px; font-size: 0.85rem; background: #0284c7; color: #ffffff; border: none; cursor: pointer; border-radius: 4px;">
+					<button class="primary-action" type="submit" style="padding: 7px 14px; font-size: 0.85rem; cursor: pointer;">
 						🔧 ➕ Iniciar Nueva PC en Taller (Código Automático)
 					</button>
 				</form>
@@ -203,7 +203,7 @@
 												✏️ Editar
 											</button>
 											<form th:action="@{/admin/ordenes-armado/{id}/eliminar(id=${orden.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta orden de trabajo? Las piezas reservadas volverán a quedar disponibles en stock.');">
-												<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 5px 9px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+												<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.8rem; padding: 5px 9px; cursor: pointer;">
 													🗑️ Eliminar
 												</button>
 											</form>
@@ -228,10 +228,10 @@
 					</div>
 
 					<div class="edit-stack">
-						<section class="inline-edit-card" th:each="orden : ${ordenes}" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 16px;">
-							<div class="section-header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 12px;">
+						<section class="inline-edit-card" th:each="orden : ${ordenes}">
+							<div class="section-header">
 								<div>
-									<h3 th:text="${orden.descripcion}" style="margin: 0; font-size: 1.05rem; color: #1e3a8a;">Orden</h3>
+									<h3 th:text="${orden.descripcion}">Orden</h3>
 									<span class="table-subtext" th:text="'Estado: ' + ${orden.estado}">Estado: EN_ARMADO</span>
 								</div>
 								<span class="count-badge" th:text="${#lists.size(componentesOrden[orden.id])} + ' componentes asignados'">0 componentes</span>

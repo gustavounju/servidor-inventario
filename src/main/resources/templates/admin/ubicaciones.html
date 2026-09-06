@@ -36,49 +36,49 @@
 			<p class="success-message" th:if="${creado}">Ubicación actualizada o registrada correctamente.</p>
 
 			<!-- 🚀 GUÍA COMPACTA Y CLARA: Estructura de Sedes Judiciales -->
-			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
+			<section class="workflow-banner">
 				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
 					<div style="display: flex; align-items: center; gap: 12px;">
 						<span style="font-size: 1.6rem;">🏢</span>
 						<div>
-							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Organización Territorial: Circuito de Ubicaciones</strong>
-							<span style="font-size: 0.85rem; color: #475569;">Estructura de edificios, juzgados, secretarías, depósitos y salas de audiencia:</span>
+							<strong style="font-size: 1.05rem; display: block;">Organización Territorial: Circuito de Ubicaciones</strong>
+							<span style="font-size: 0.85rem;">Estructura de edificios, juzgados, secretarías, depósitos y salas de audiencia:</span>
 						</div>
 					</div>
 					<span class="authorization-badge is-authorized">ESTRUCTURA EDILICIA</span>
 				</div>
 
 				<!-- 3 Pasos del Circuito -->
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+				<div class="workflow-steps-grid">
 					<!-- Paso 1 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+					<div class="workflow-step-card">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
-							<strong style="color: #1e3a8a; font-size: 0.9rem;">Definición y Código</strong>
+							<strong style="font-size: 0.9rem;">Definición y Código</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Alta del espacio físico con su código normalizado (ej: <code>INF-OFI</code> o <code>JUZ-CIV-1</code>).
 						</p>
 					</div>
 
 					<!-- Paso 2 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+					<div class="workflow-step-card">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
-							<strong style="color: #0369a1; font-size: 0.9rem;">Fuero, Edificio y Piso</strong>
+							<strong style="font-size: 0.9rem;">Fuero, Edificio y Piso</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Geolocalización interna: Centro Judicial San Pedro, piso y fuero judicial al que pertenece.
 						</p>
 					</div>
 
 					<!-- Paso 3 -->
-					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
+					<div class="workflow-step-card" style="border-left: 3px solid #22c55e;">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
-							<strong style="color: #15803d; font-size: 0.9rem;">Asignación de Bienes</strong>
+							<strong style="font-size: 0.9rem; color: #4ade80;">Asignación de Bienes</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Esta ubicación queda disponible para vincular computadoras, bienes patrimoniales y muebles.
 						</p>
 					</div>
@@ -109,8 +109,7 @@
 			     PESTAÑA 1: Listado de Ubicaciones y Filtros
 			     ========================================================== -->
 			<div class="tab-pane is-active" id="pane-catalogo" role="tabpanel" aria-labelledby="tab-btn-catalogo">
-				<form class="search-form dashboard-filter-form" th:action="@{/admin/ubicaciones}" method="get" role="search"
-					  style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+				<form class="search-form dashboard-filter-form" th:action="@{/admin/ubicaciones}" method="get" role="search">
 					<label>
 						<span>Buscar</span>
 						<input type="search" name="query" th:value="${filtroQuery}" maxlength="120" placeholder="Código, nombre, fuero o responsable...">
@@ -167,7 +166,7 @@
 							<tbody>
 								<tr th:each="ubicacion : ${ubicaciones}">
 									<td data-label="Código">
-										<code th:text="${ubicacion.codigo}" style="font-weight: 700; font-size: 0.92rem; color: #1e3a8a;">INF-OFI</code>
+										<code th:text="${ubicacion.codigo}" style="font-weight: 700; font-size: 0.92rem; color: var(--text-link);">INF-OFI</code>
 									</td>
 									<td data-label="Ubicación">
 										<strong th:text="${ubicacion.nombre}">Informática</strong>
@@ -192,7 +191,7 @@
 												✏️ Modificar
 											</button>
 											<form th:action="@{/admin/ubicaciones/{id}/eliminar(id=${ubicacion.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta ubicación?');">
-												<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 5px 9px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+												<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.8rem; padding: 5px 9px;">
 													🗑️ Eliminar
 												</button>
 											</form>
@@ -292,10 +291,9 @@
 
 					<div class="edit-stack">
 						<form class="equipment-form inline-edit-card" th:each="ubicacion : ${ubicaciones}"
-								th:action="@{/admin/ubicaciones/{id}(id=${ubicacion.id})}" method="post"
-								style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
-							<div class="section-header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">
-								<h3 th:text="${ubicacion.codigo} + ' - ' + ${ubicacion.nombre}" style="margin: 0; font-size: 1.05rem; color: #1e3a8a;">INF-OFI</h3>
+								th:action="@{/admin/ubicaciones/{id}(id=${ubicacion.id})}" method="post">
+							<div class="section-header">
+								<h3 th:text="${ubicacion.codigo} + ' - ' + ${ubicacion.nombre}">INF-OFI</h3>
 								<span class="count-badge" th:text="'ID ' + ${ubicacion.id}">ID 1</span>
 							</div>
 							<div class="form-grid">

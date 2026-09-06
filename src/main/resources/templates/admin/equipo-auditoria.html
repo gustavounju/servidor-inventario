@@ -21,12 +21,12 @@
         </header>
 
         <!-- Banner Informativo -->
-        <div class="workflow-banner" style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px 18px; margin: 10px 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div class="workflow-banner" style="margin: 10px 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <span style="font-size: 1.5rem;">🤖</span>
                 <div>
-                    <strong style="color: #1e3a8a; font-size: 0.95rem;">Registro Automático de Actividad</strong>
-                    <span style="display: block; font-size: 0.84rem; color: #475569;">
+                    <strong style="color: var(--text-link); font-size: 0.95rem;">Registro Automático de Actividad</strong>
+                    <span style="display: block; font-size: 0.84rem; color: var(--text-secondary);">
                         Cada acción realizada en este equipo (reubicaciones, asignaciones de usuario, piezas de taller/stock u órdenes de armado) se guarda automáticamente indicando qué se hizo, fecha y el usuario operador.
                     </span>
                 </div>
@@ -97,26 +97,26 @@
                                     <span style="display: block; font-size: 0.78rem; color: #64748b;" th:text="${#temporals.format(mov.fechaMovimiento, 'HH:mm:ss')}">14:30:00</span>
                                 </td>
                                 <td data-label="Tipo">
-                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'REUBICACION'}" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">🚚 Reubicación</span>
-                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'ENTREGA'}" style="background: #ecfdf5; color: #047857; font-weight: 700;">👤 Entrega / Asignación</span>
-                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'MANTENIMIENTO'}" style="background: #fef3c7; color: #b45309; font-weight: 700;">🔧 Taller / Hardware</span>
-                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'DEVOLUCION'}" style="background: #ede9fe; color: #6d28d9; font-weight: 700;">🔄 Devolución</span>
-                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'OTRO'}" style="background: #f1f5f9; color: #475569; font-weight: 700;">📝 Otro</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'REUBICACION'}" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700;">🚚 Reubicación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'ENTREGA'}" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); font-weight: 700;">👤 Entrega / Asignación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'MANTENIMIENTO'}" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 700;">🔧 Taller / Hardware</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'DEVOLUCION'}" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-weight: 700;">🔄 Devolución</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'OTRO'}" style="background: rgba(148, 163, 184, 0.15); color: var(--text-secondary); border: 1px solid var(--border-color); font-weight: 700;">📝 Otro</span>
                                 </td>
                                 <td data-label="Detalle">
-                                    <span th:text="${mov.observaciones ?: 'Sin detalle adicional'}" style="font-size: 0.88rem; color: #1e293b;">Detalle de la acción</span>
+                                    <span th:text="${mov.observaciones ?: 'Sin detalle adicional'}" style="font-size: 0.88rem; color: var(--text-primary);">Detalle de la acción</span>
                                 </td>
                                 <td data-label="Usuario">
-                                    <span th:if="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="font-weight: 600; color: #0f172a;" th:text="${mov.usuarioDestino}">cguzman</span>
-                                    <span th:unless="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="color: #94a3b8; font-size: 0.85rem;">-</span>
+                                    <span th:if="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="font-weight: 600; color: var(--text-link);" th:text="${mov.usuarioDestino}">cguzman</span>
+                                    <span th:unless="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="color: var(--text-secondary); font-size: 0.85rem;">-</span>
                                 </td>
                                 <td data-label="Ubicación">
                                     <div th:if="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="font-size: 0.85rem;">
-                                        <span th:text="${mov.ubicacionOrigen ?: 'Sin ubicación'}" style="color: #64748b;">Origen</span>
-                                        <span style="color: #0284c7; font-weight: 700;"> ➡ </span>
-                                        <strong th:text="${mov.ubicacionDestino ?: 'Sin ubicación'}" style="color: #0f172a;">Destino</strong>
+                                        <span th:text="${mov.ubicacionOrigen ?: 'Sin ubicación'}" style="color: var(--text-secondary);">Origen</span>
+                                        <span style="color: var(--text-link); font-weight: 700;"> ➡ </span>
+                                        <strong th:text="${mov.ubicacionDestino ?: 'Sin ubicación'}" style="color: var(--text-primary);">Destino</strong>
                                     </div>
-                                    <span th:unless="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="color: #94a3b8; font-size: 0.85rem;">-</span>
+                                    <span th:unless="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="color: var(--text-secondary); font-size: 0.85rem;">-</span>
                                 </td>
                                 <td data-label="Registró">
                                     <span class="count-badge" style="font-size: 0.8rem; padding: 3px 8px; font-weight: 600;" th:text="${mov.registradoPor}">admin.local</span>
@@ -140,18 +140,18 @@
                         <div class="timeline-card">
                             <div class="timeline-header">
                                 <div>
-                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'REUBICACION'}" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">🚚 Reubicación</span>
-                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'ENTREGA'}" style="background: #ecfdf5; color: #047857; font-weight: 700;">👤 Entrega / Asignación</span>
-                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'MANTENIMIENTO'}" style="background: #fef3c7; color: #b45309; font-weight: 700;">🔧 Taller / Hardware</span>
-                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'DEVOLUCION'}" style="background: #ede9fe; color: #6d28d9; font-weight: 700;">🔄 Devolución</span>
-                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'OTRO'}" style="background: #f1f5f9; color: #475569; font-weight: 700;">📝 Otro</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'REUBICACION'}" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700;">🚚 Reubicación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'ENTREGA'}" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); font-weight: 700;">👤 Entrega / Asignación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'MANTENIMIENTO'}" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 700;">🔧 Taller / Hardware</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'DEVOLUCION'}" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-weight: 700;">🔄 Devolución</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'OTRO'}" style="background: rgba(148, 163, 184, 0.15); color: var(--text-secondary); border: 1px solid var(--border-color); font-weight: 700;">📝 Otro</span>
                                 </div>
                                 <span class="timeline-date">
                                     📅 <span th:text="${#temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy HH:mm:ss')}">01/09/2026 14:30:00</span>
                                 </span>
                             </div>
                             <div class="timeline-body">
-                                <strong style="color: #0f172a;" th:text="${mov.observaciones ?: 'Acción registrada en el equipo'}">Detalle</strong>
+                                <strong style="color: var(--text-primary);" th:text="${mov.observaciones ?: 'Acción registrada en el equipo'}">Detalle</strong>
                             </div>
                             <div class="timeline-footer">
                                 <div style="display: flex; gap: 14px; flex-wrap: wrap;">
@@ -234,27 +234,19 @@
             if (tabView) tabView.style.display = 'none';
             if (timelineView) timelineView.style.display = 'block';
             if (btnTab) {
-                btnTab.style.background = '#f8fafc';
-                btnTab.style.color = '#475569';
-                btnTab.style.borderColor = '#cbd5e1';
+                btnTab.classList.remove('is-active');
             }
             if (btnTimeline) {
-                btnTimeline.style.background = '#2563eb';
-                btnTimeline.style.color = '#ffffff';
-                btnTimeline.style.borderColor = '#2563eb';
+                btnTimeline.classList.add('is-active');
             }
         } else {
             if (tabView) tabView.style.display = 'block';
             if (timelineView) timelineView.style.display = 'none';
             if (btnTab) {
-                btnTab.style.background = '#2563eb';
-                btnTab.style.color = '#ffffff';
-                btnTab.style.borderColor = '#2563eb';
+                btnTab.classList.add('is-active');
             }
             if (btnTimeline) {
-                btnTimeline.style.background = '#f8fafc';
-                btnTimeline.style.color = '#475569';
-                btnTimeline.style.borderColor = '#cbd5e1';
+                btnTimeline.classList.remove('is-active');
             }
         }
     }

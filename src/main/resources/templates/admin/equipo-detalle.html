@@ -27,7 +27,7 @@
 						ESTADO: REPORTADO
 					</span>
 					<form th:if="${puedeEditar}" th:action="@{/admin/equipos/{id}/eliminar(id=${equipo.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar permanentemente este equipo y todos sus datos asociados?');">
-						<button type="submit" class="secondary-action" style="font-size: 0.82rem; padding: 5px 10px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-weight: 700; cursor: pointer;">
+						<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.82rem; padding: 5px 10px; font-weight: 700; cursor: pointer;">
 							🗑️ Eliminar Equipo
 						</button>
 					</form>
@@ -43,7 +43,7 @@
 			</p>
 
 			<!-- Barra Compacta de Estado e Integridad del Equipo -->
-			<section class="equipo-status-strip" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 18px; margin: 14px 0 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);" aria-label="Estado del equipo">
+			<section class="equipo-status-strip" style="padding: 12px 18px; margin: 14px 0 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;" aria-label="Estado del equipo">
 				<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
 					<!-- Origen -->
 					<span class="authorization-badge" th:classappend="${brujula.origenBadgeClass}"
@@ -243,11 +243,11 @@
 			     ========================================================== -->
 			<div class="tab-pane" id="pane-gemelo" role="tabpanel" aria-labelledby="tab-btn-gemelo">
 				<!-- Banner Deductivo: Si aún no tiene Gemelo Oficial -->
-				<div class="workflow-banner" th:unless="${tieneRelevamientoInicial}" style="background: #f0fdf4; border: 2px solid #16a34a; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+				<div class="workflow-banner" th:unless="${tieneRelevamientoInicial}" style="border-left: 4px solid #16a34a; margin-bottom: 20px;">
 					<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
 						<div>
-							<strong style="color: #15803d; font-size: 1.05rem;">👉 Acción Requerida: Confirmar Gemelo Digital Oficial</strong>
-							<p style="margin: 4px 0 0; font-size: 0.85rem; color: #334155;">
+							<strong style="color: #4ade80; font-size: 1.05rem;">👉 Acción Requerida: Confirmar Gemelo Digital Oficial</strong>
+							<p style="margin: 4px 0 0; font-size: 0.85rem;">
 								El script relevó el hardware real instalado en el equipo. Para oficializar esta configuración como línea base y habilitar órdenes o comparaciones, haz clic en el botón:
 							</p>
 						</div>
@@ -272,27 +272,27 @@
 					</div>
 
 					<!-- Semáforo en Vivo: 100% Sincronizado -->
-					<div class="workflow-banner" th:if="${tieneRelevamientoInicial and diferenciasCount == 0}" style="background: #f0fdf4; border: 2px solid #16a34a; border-radius: 8px; padding: 14px 18px; margin: 12px 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+					<div class="workflow-banner" th:if="${tieneRelevamientoInicial and diferenciasCount == 0}" style="border-left: 4px solid #16a34a; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 12px 0 20px;">
 						<div style="display: flex; align-items: center; gap: 12px;">
 							<span style="font-size: 1.6rem;">🟢</span>
 							<div>
-								<strong style="color: #15803d; font-size: 1rem; display: block;">Gemelo Digital 100% Sincronizado</strong>
-								<span style="color: #166534; font-size: 0.85rem;">Todos los componentes oficiales asignados coinciden exactamente con lo reportado por el script en vivo.</span>
+								<strong style="color: #4ade80; font-size: 1rem; display: block;">Gemelo Digital 100% Sincronizado</strong>
+								<span style="font-size: 0.85rem;">Todos los componentes oficiales asignados coinciden exactamente con lo reportado por el script en vivo.</span>
 							</div>
 						</div>
 						<span class="authorization-badge is-authorized" style="font-weight: 700;">✓ COINCIDE 100%</span>
 					</div>
 
 					<!-- Semáforo en Vivo: Discrepancias Detectadas -->
-					<div class="workflow-banner" th:if="${tieneRelevamientoInicial and diferenciasCount > 0}" style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px 18px; margin: 12px 0 20px;">
+					<div class="workflow-banner" th:if="${tieneRelevamientoInicial and diferenciasCount > 0}" style="border-left: 4px solid #f59e0b; margin: 12px 0 20px;">
 						<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
 							<span style="font-size: 1.5rem;">⚠️</span>
 							<div>
-								<strong style="color: #b45309; font-size: 1rem;">Discrepancias detectadas en vivo (<span th:text="${diferenciasCount}">0</span>)</strong>
-								<p style="margin: 2px 0 0; font-size: 0.84rem; color: #78350f;">Existe una diferencia entre los componentes que espera el sistema y lo que la máquina física tiene instalado:</p>
+								<strong style="color: #facc15; font-size: 1rem;">Discrepancias detectadas en vivo (<span th:text="${diferenciasCount}">0</span>)</strong>
+								<p style="margin: 2px 0 0; font-size: 0.84rem;">Existe una diferencia entre los componentes que espera el sistema y lo que la máquina física tiene instalado:</p>
 							</div>
 						</div>
-						<div class="responsive-table" style="margin-top: 10px; background: #ffffff; border-radius: 6px;">
+						<div class="responsive-table" style="margin-top: 10px;">
 							<table>
 								<thead>
 									<tr>
@@ -319,11 +319,11 @@
 					</div>
 
 					<!-- 1. Categoría: Procesador y Placa Madre -->
-					<div class="inline-edit-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-						<div class="section-header" style="margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+					<div class="inline-edit-card">
+						<div class="section-header" style="margin-bottom: 10px; padding-bottom: 8px;">
 							<div style="display: flex; align-items: center; gap: 8px;">
 								<span style="font-size: 1.25rem;">🧠</span>
-								<h3 style="margin: 0; font-size: 1rem; color: #1e3a8a;">Procesamiento y Placa Madre</h3>
+								<h3 style="margin: 0; font-size: 1rem;">Procesamiento y Placa Madre</h3>
 							</div>
 							<span class="count-badge" th:text="${#lists.size(componentesCpuMother)} + ' componentes'">0 componentes</span>
 						</div>
@@ -366,18 +366,18 @@
 											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este componente y regresarlo a Stock de taller como DISPONIBLE?');">
 													<input type="hidden" name="destino" value="STOCK">
-													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); cursor: pointer;">
 														📦 A Stock
 													</button>
 												</form>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Dar de baja este componente por desperfecto o rotura?');">
 													<input type="hidden" name="destino" value="BAJA">
-													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: #fef2f2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer;">
 														❌ Baja
 													</button>
 												</form>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de desvincular este componente del equipo?');">
-													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: #f8fafc; color: #64748b; border-color: #cbd5e1; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(148, 163, 184, 0.12); color: var(--text-secondary); border: 1px solid var(--border-color); cursor: pointer;">
 														🗑️
 													</button>
 												</form>
@@ -390,11 +390,11 @@
 					</div>
 
 					<!-- 2. Categoría: Memorias RAM -->
-					<div class="inline-edit-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-						<div class="section-header" style="margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+					<div class="inline-edit-card">
+						<div class="section-header" style="margin-bottom: 10px; padding-bottom: 8px;">
 							<div style="display: flex; align-items: center; gap: 8px;">
 								<span style="font-size: 1.25rem;">💾</span>
-								<h3 style="margin: 0; font-size: 1rem; color: #1e3a8a;">Memorias RAM</h3>
+								<h3 style="margin: 0; font-size: 1rem;">Memorias RAM</h3>
 							</div>
 							<span class="count-badge" th:text="${#lists.size(componentesRam)} + ' módulos instalados'">0 módulos</span>
 						</div>
@@ -425,7 +425,7 @@
 											</div>
 										</td>
 										<td data-label="Capacidad">
-											<span class="count-badge" style="background: #eff6ff; color: #1e40af; font-weight: 700;" th:text="${componente.capacidad ?: 'Sin capacidad'}">8GB</span>
+											<span class="count-badge" style="background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-weight: 700;" th:text="${componente.capacidad ?: 'Sin capacidad'}">8GB</span>
 										</td>
 										<td data-label="Serial">
 											<code th:text="${componente.serial ?: 'Sin serial'}" style="font-size: 0.85rem;">RAMSN-001</code>
@@ -445,18 +445,18 @@
 											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar esta memoria RAM y regresarla al Stock de taller como DISPONIBLE?');">
 													<input type="hidden" name="destino" value="STOCK">
-													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); cursor: pointer;">
 														📦 A Stock
 													</button>
 												</form>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Dar de baja esta memoria por falla o rotura?');">
 													<input type="hidden" name="destino" value="BAJA">
-													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: #fef2f2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer;">
 														❌ Baja
 													</button>
 												</form>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de desvincular esta memoria del equipo?');">
-													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: #f8fafc; color: #64748b; border-color: #cbd5e1; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(148, 163, 184, 0.12); color: var(--text-secondary); border: 1px solid var(--border-color); cursor: pointer;">
 														🗑️
 													</button>
 												</form>
@@ -469,11 +469,11 @@
 					</div>
 
 					<!-- 3. Categoría: Almacenamiento y Discos -->
-					<div class="inline-edit-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-						<div class="section-header" style="margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+					<div class="inline-edit-card">
+						<div class="section-header" style="margin-bottom: 10px; padding-bottom: 8px;">
 							<div style="display: flex; align-items: center; gap: 8px;">
 								<span style="font-size: 1.25rem;">💽</span>
-								<h3 style="margin: 0; font-size: 1rem; color: #1e3a8a;">Almacenamiento y Discos</h3>
+								<h3 style="margin: 0; font-size: 1rem;">Almacenamiento y Discos</h3>
 							</div>
 							<span class="count-badge" th:text="${#lists.size(componentesDiscos)} + ' unidades'">0 unidades</span>
 						</div>
@@ -524,18 +524,18 @@
 											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este disco y regresarlo al Stock de taller como DISPONIBLE?');">
 													<input type="hidden" name="destino" value="STOCK">
-													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); cursor: pointer;">
 														📦 A Stock
 													</button>
 												</form>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Dar de baja este disco por falla o rotura?');">
 													<input type="hidden" name="destino" value="BAJA">
-													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: #fef2f2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer;">
 														❌ Baja
 													</button>
 												</form>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de desvincular este disco del equipo?');">
-													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: #f8fafc; color: #64748b; border-color: #cbd5e1; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(148, 163, 184, 0.12); color: var(--text-secondary); border: 1px solid var(--border-color); cursor: pointer;">
 														🗑️
 													</button>
 												</form>
@@ -548,11 +548,11 @@
 					</div>
 
 					<!-- 4. Categoría: Periféricos y Puesto de Trabajo -->
-					<div class="inline-edit-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-						<div class="section-header" style="margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+					<div class="inline-edit-card">
+						<div class="section-header" style="margin-bottom: 10px; padding-bottom: 8px;">
 							<div style="display: flex; align-items: center; gap: 8px;">
 								<span style="font-size: 1.25rem;">🖥️</span>
-								<h3 style="margin: 0; font-size: 1rem; color: #1e3a8a;">Periféricos y Dispositivos de Puesto</h3>
+								<h3 style="margin: 0; font-size: 1rem;">Periféricos y Dispositivos de Puesto</h3>
 							</div>
 							<span class="count-badge" th:text="${#lists.size(componentesPerifericos)} + ' dispositivos'">0 dispositivos</span>
 						</div>
@@ -593,18 +593,18 @@
 											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este dispositivo y regresarlo a Stock de taller como DISPONIBLE?');">
 													<input type="hidden" name="destino" value="STOCK">
-													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); cursor: pointer;">
 														📦 A Stock
 													</button>
 												</form>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Dar de baja este dispositivo por rotura?');">
 													<input type="hidden" name="destino" value="BAJA">
-													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: #fef2f2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Dar de baja el componente" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer;">
 														❌ Baja
 													</button>
 												</form>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Está seguro de desvincular este dispositivo del equipo?');">
-													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: #f8fafc; color: #64748b; border-color: #cbd5e1; cursor: pointer;">
+													<button type="submit" class="secondary-action" title="Desvincular del equipo" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(148, 163, 184, 0.12); color: var(--text-secondary); border: 1px solid var(--border-color); cursor: pointer;">
 														🗑️
 													</button>
 												</form>
@@ -618,13 +618,13 @@
 				</section>
 
 					<!-- Panel Rápido: Instalar Componente desde el Stock de Taller -->
-					<section class="inline-edit-card" th:if="${puedeEditarComponentes}" style="background: #f8fafc; border: 1.5px solid #0284c7; border-radius: 8px; padding: 14px 18px; margin-top: 18px;">
+					<section class="inline-edit-card" th:if="${puedeEditarComponentes}" style="border-left: 4px solid #0284c7; margin-top: 18px;">
 						<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
 							<div style="display: flex; align-items: center; gap: 8px;">
 								<span style="font-size: 1.3rem;">🔧</span>
 								<div>
-									<strong style="color: #0369a1; font-size: 0.95rem;">Instalar componente desde el Stock del Taller</strong>
-									<span style="display: block; font-size: 0.8rem; color: #475569;">Asigna una memoria RAM, disco u otra pieza disponible en depósito a esta PC.</span>
+									<strong style="color: var(--text-link); font-size: 0.95rem;">Instalar componente desde el Stock del Taller</strong>
+									<span style="display: block; font-size: 0.8rem; color: var(--text-secondary);">Asigna una memoria RAM, disco u otra pieza disponible en depósito a esta PC.</span>
 								</div>
 							</div>
 							<span class="count-badge" th:text="${#lists.size(stockDisponibles)} + ' en stock disponible'">0 en stock</span>
@@ -758,7 +758,7 @@
 						</button>
 					</div>
 
-					<div th:unless="${tieneRelevamientoInicial}" class="empty-state" style="background: #fefce8; border: 1px solid #fef08a; color: #854d0e; padding: 14px; border-radius: 6px; margin-bottom: 14px;">
+					<div th:unless="${tieneRelevamientoInicial}" class="empty-state" style="background: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.3); color: #facc15; padding: 14px; border-radius: 6px; margin-bottom: 14px;">
 						⚠️ <strong>Paso previo requerido:</strong> Primero confirma los componentes detectados como el <strong>Gemelo Digital oficial</strong> de esta PC antes de planificar órdenes de armado o cambios de piezas.
 					</div>
 

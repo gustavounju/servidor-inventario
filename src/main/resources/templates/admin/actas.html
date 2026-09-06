@@ -197,7 +197,7 @@
 							<tbody>
 								<tr th:each="acta : ${actas}">
 									<td data-label="N° Acta y PDF">
-										<strong style="color: #1e3a8a; font-size: 0.95rem;" th:text="${acta.numero}">ACT-001</strong>
+										<strong style="color: var(--text-link); font-size: 0.95rem;" th:text="${acta.numero}">ACT-001</strong>
 										<div style="margin-top: 5px;">
 											<a class="primary-action" th:href="@{/api/v1/actas/{id}/pdf(id=${acta.id})}" target="_blank" style="font-size: 0.78rem; padding: 4px 8px;">
 												📥 Descargar PDF
@@ -229,7 +229,7 @@
 									</td>
 									<td data-label="Acción" th:if="${puedeEditarActas}">
 										<form th:action="@{/admin/actas/{id}/eliminar(id=${acta.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta acta?');">
-											<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 4px 8px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+											<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.8rem; padding: 4px 8px; cursor: pointer;">
 												🗑️ Eliminar
 											</button>
 										</form>

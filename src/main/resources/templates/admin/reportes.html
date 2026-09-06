@@ -33,49 +33,49 @@
 			</nav>
 
 			<!-- 🚀 GUÍA COMPACTA Y CLARA: Informes y Auditoría -->
-			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
+			<section class="workflow-banner">
 				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
 					<div style="display: flex; align-items: center; gap: 12px;">
 						<span style="font-size: 1.6rem;">📊</span>
 						<div>
-							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Centro de Reportes: Información ejecutiva y planillas</strong>
-							<span style="font-size: 0.85rem; color: #475569;">Supervisión global del inventario y exportación directa para auditoría judicial o contable:</span>
+							<strong style="font-size: 1.05rem; display: block;">Centro de Reportes: Información ejecutiva y planillas</strong>
+							<span style="font-size: 0.85rem;">Supervisión global del inventario y exportación directa para auditoría judicial o contable:</span>
 						</div>
 					</div>
 					<span class="authorization-badge is-authorized">REPORTES OFICIALES</span>
 				</div>
 
 				<!-- 3 Pasos del Módulo -->
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+				<div class="workflow-steps-grid">
 					<!-- Paso 1 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+					<div class="workflow-step-card">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
-							<strong style="color: #1e3a8a; font-size: 0.9rem;">Métricas Consolidadas</strong>
+							<strong style="font-size: 0.9rem;">Métricas Consolidadas</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Visualiza en vivo la cantidad de computadoras, muebles, bienes patrimoniales, actas y tareas abiertas.
 						</p>
 					</div>
 
 					<!-- Paso 2 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+					<div class="workflow-step-card">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
-							<strong style="color: #0369a1; font-size: 0.9rem;">Filtrado por Dependencia</strong>
+							<strong style="font-size: 0.9rem;">Filtrado por Dependencia</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Filtra por fuero, custodio o juzgado para obtener planillas acotadas a una secretaría o sede.
 						</p>
 					</div>
 
 					<!-- Paso 3 -->
-					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
+					<div class="workflow-step-card" style="border-left: 3px solid #22c55e;">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
-							<strong style="color: #15803d; font-size: 0.9rem;">Descarga Inmediata en CSV</strong>
+							<strong style="font-size: 0.9rem; color: #4ade80;">Descarga Inmediata en CSV</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Exporta archivos livianos listos para abrir en Excel o enviar a superintendencia y administración.
 						</p>
 					</div>
@@ -110,45 +110,45 @@
 
 					<div class="modules-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
 						<article class="module-card" style="border-left: 4px solid #2563eb;">
-							<span class="module-icon" style="background: #dbeafe; color: #1e40af;">PC</span>
+							<span class="module-icon" style="background: rgba(37, 99, 235, 0.15); color: #60a5fa;">PC</span>
 							<div>
 								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Equipos</h2>
-								<p th:text="${resumen.equipos}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+								<p th:text="${resumen.equipos}" style="font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin: 0;">0</p>
 							</div>
 						</article>
 						<article class="module-card" style="border-left: 4px solid #16a34a;">
-							<span class="module-icon" style="background: #dcfce7; color: #166534;">PA</span>
+							<span class="module-icon" style="background: rgba(22, 163, 74, 0.15); color: #4ade80;">PA</span>
 							<div>
 								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Patrimonio</h2>
-								<p th:text="${resumen.bienesPatrimoniales}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+								<p th:text="${resumen.bienesPatrimoniales}" style="font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin: 0;">0</p>
 							</div>
 						</article>
 						<article class="module-card" style="border-left: 4px solid #0284c7;">
-							<span class="module-icon" style="background: #e0f2fe; color: #0369a1;">AC</span>
+							<span class="module-icon" style="background: rgba(2, 132, 199, 0.15); color: #38bdf8;">AC</span>
 							<div>
 								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Actas</h2>
-								<p th:text="${resumen.actas}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+								<p th:text="${resumen.actas}" style="font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin: 0;">0</p>
 							</div>
 						</article>
 						<article class="module-card" style="border-left: 4px solid #ca8a04;">
-							<span class="module-icon" style="background: #fef9c3; color: #854d0e;">MU</span>
+							<span class="module-icon" style="background: rgba(202, 138, 4, 0.15); color: #facc15;">MU</span>
 							<div>
 								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Muebles</h2>
-								<p th:text="${resumen.muebles}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+								<p th:text="${resumen.muebles}" style="font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin: 0;">0</p>
 							</div>
 						</article>
 						<article class="module-card" style="border-left: 4px solid #ea580c;">
-							<span class="module-icon" style="background: #ffedd5; color: #9a3412;">TA</span>
+							<span class="module-icon" style="background: rgba(234, 88, 12, 0.15); color: #fb923c;">TA</span>
 							<div>
 								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Tareas</h2>
-								<p th:text="${resumen.tareas}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+								<p th:text="${resumen.tareas}" style="font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin: 0;">0</p>
 							</div>
 						</article>
 						<article class="module-card" style="border-left: 4px solid #7c3aed;">
-							<span class="module-icon" style="background: #f3e8ff; color: #6b21a8;">UB</span>
+							<span class="module-icon" style="background: rgba(124, 58, 237, 0.15); color: #c084fc;">UB</span>
 							<div>
 								<h2 style="font-size: 0.95rem; margin: 0 0 4px;">Ubicaciones</h2>
-								<p th:text="${resumen.ubicaciones}" style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0;">0</p>
+								<p th:text="${resumen.ubicaciones}" style="font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin: 0;">0</p>
 							</div>
 						</article>
 					</div>
@@ -168,8 +168,7 @@
 						<span class="count-badge" th:if="${puedeExportarReportes}">Exportación Habilitada</span>
 					</div>
 
-					<form class="search-form dashboard-filter-form" th:action="@{/admin/reportes}" method="get" role="search"
-						  style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+					<form class="search-form dashboard-filter-form" th:action="@{/admin/reportes}" method="get" role="search">
 						<label>
 							<span>Filtro CSV</span>
 							<input type="search" name="query" th:value="${filtroQuery}" maxlength="120" placeholder="Filtrar por fuero, juzgado, custodio o responsable...">

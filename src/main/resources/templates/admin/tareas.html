@@ -36,49 +36,49 @@
 			<p class="success-message" th:if="${creado}">Tarea técnica actualizada o registrada correctamente.</p>
 
 			<!-- 🚀 GUÍA COMPACTA Y CLARA: Ciclo de Resolución Técnica -->
-			<section class="workflow-banner" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 2px solid #2563eb; padding: 18px; border-radius: 8px; margin: 16px 0 24px;">
+			<section class="workflow-banner">
 				<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
 					<div style="display: flex; align-items: center; gap: 12px;">
 						<span style="font-size: 1.6rem;">🔧</span>
 						<div>
-							<strong style="font-size: 1.05rem; color: #0f172a; display: block;">Mesa de Ayuda Técnica: Circuito de resolución paso a paso</strong>
-							<span style="font-size: 0.85rem; color: #475569;">Flujo operativo para soporte, reparaciones y mantenimiento de equipamiento judicial:</span>
+							<strong style="font-size: 1.05rem; display: block;">Mesa de Ayuda Técnica: Circuito de resolución paso a paso</strong>
+							<span style="font-size: 0.85rem;">Flujo operativo para soporte, reparaciones y mantenimiento de equipamiento judicial:</span>
 						</div>
 					</div>
 					<span class="authorization-badge is-authorized">SOPORTE TÉCNICO</span>
 				</div>
 
 				<!-- 3 Pasos del Circuito -->
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+				<div class="workflow-steps-grid">
 					<!-- Paso 1 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+					<div class="workflow-step-card">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #2563eb; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">1</span>
-							<strong style="color: #1e3a8a; font-size: 0.9rem;">Apertura e Incidente</strong>
+							<strong style="font-size: 0.9rem;">Apertura e Incidente</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Registra el desperfecto, vincula la PC afectada y asigna la prioridad (Baja, Media o Alta).
 						</p>
 					</div>
 
 					<!-- Paso 2 -->
-					<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
+					<div class="workflow-step-card">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #0284c7; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">2</span>
-							<strong style="color: #0369a1; font-size: 0.9rem;">Intervención y Bitácora</strong>
+							<strong style="font-size: 0.9rem;">Intervención y Bitácora</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							El técnico a cargo añade comentarios de avance sobre las acciones realizadas en la máquina.
 						</p>
 					</div>
 
 					<!-- Paso 3 -->
-					<div style="background: #ffffff; border: 1px solid #16a34a; border-radius: 6px; padding: 14px; background: #f0fdf4;">
+					<div class="workflow-step-card" style="border-left: 3px solid #22c55e;">
 						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
 							<span class="step-badge" style="background: #16a34a; color: #fff; width: 22px; height: 22px; font-size: 0.8rem;">3</span>
-							<strong style="color: #15803d; font-size: 0.9rem;">Cierre y Conformidad</strong>
+							<strong style="font-size: 0.9rem; color: #4ade80;">Cierre y Conformidad</strong>
 						</div>
-						<p style="margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">
+						<p>
 							Cambio de estado a <code>CERRADA</code> con detalle del trabajo finalizado para archivo histórico.
 						</p>
 					</div>
@@ -104,8 +104,7 @@
 			     PESTAÑA 1: Seguimiento de Tareas y Filtros
 			     ========================================================== -->
 			<div class="tab-pane is-active" id="pane-seguimiento" role="tabpanel" aria-labelledby="tab-btn-seguimiento">
-				<form class="search-form dashboard-filter-form" th:action="@{/admin/tareas}" method="get" role="search"
-					  style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+				<form class="search-form dashboard-filter-form" th:action="@{/admin/tareas}" method="get" role="search">
 					<label>
 						<span>Estado</span>
 						<select name="estado">
@@ -162,11 +161,11 @@
 							<tbody>
 								<tr th:each="tarea : ${tareas}">
 									<td data-label="Tarea">
-										<strong th:text="${tarea.titulo}" style="color: #0f172a; font-size: 0.95rem;">Revisar fuente</strong>
+										<strong th:text="${tarea.titulo}">Revisar fuente</strong>
 										<span class="table-subtext" th:text="${tarea.descripcion ?: 'Sin descripción'}">Detalle</span>
-										<span class="table-subtext" th:if="${tarea.observacionesCierre}" th:text="'Cierre: ' + ${tarea.observacionesCierre}" style="color: #166534; font-weight: 600;">Cierre</span>
+										<span class="table-subtext" th:if="${tarea.observacionesCierre}" th:text="'Cierre: ' + ${tarea.observacionesCierre}" style="color: #4ade80; font-weight: 600;">Cierre</span>
 										<div class="comment-thread" th:if="${comentariosPorTarea[tarea.id] != null and !#lists.isEmpty(comentariosPorTarea[tarea.id])}"
-											 style="margin-top: 8px; border-left: 2px solid #cbd5e1; padding-left: 8px;">
+											 style="margin-top: 8px; border-left: 2px solid var(--border-color); padding-left: 8px;">
 											<span class="table-subtext" th:each="comentario : ${comentariosPorTarea[tarea.id]}"
 													th:text="${comentario.autor + ': ' + comentario.comentario}" style="display: block; margin-bottom: 2px;">admin.local: Se revisó cableado</span>
 										</div>
@@ -174,7 +173,7 @@
 									<td data-label="Equipo">
 										<span th:if="${tarea.equipoId != null}">
 											<a th:href="@{/admin/equipos/{id}(id=${tarea.equipoId})}" th:text="${tarea.equipoNombre ?: 'PC'}"
-											   style="font-weight: 700; color: #1e3a8a; text-decoration: none;">PC-INF-001</a>
+											   style="font-weight: 700; color: var(--text-link); text-decoration: none;">PC-INF-001</a>
 										</span>
 										<span th:unless="${tarea.equipoId != null}" class="table-subtext">Sin equipo</span>
 									</td>
@@ -205,7 +204,7 @@
 											<!-- Formulario para eliminar tarea -->
 											<div style="display: flex; justify-content: flex-end;">
 												<form th:action="@{/admin/tareas/{id}/eliminar(id=${tarea.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta tarea técnica y sus comentarios?');">
-													<button type="submit" class="secondary-action" style="font-size: 0.78rem; padding: 3px 8px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+													<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.78rem; padding: 3px 8px;">
 														🗑️ Eliminar Tarea
 													</button>
 												</form>

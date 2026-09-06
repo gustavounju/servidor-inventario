@@ -209,7 +209,7 @@
 							<tbody>
 								<tr th:each="bien : ${bienes}">
 									<td data-label="N° Patrimonial">
-										<strong style="color: #1e3a8a; font-size: 0.95rem;" th:text="${bien.numeroPatrimonial}">PJ-001</strong>
+										<strong style="color: var(--text-link); font-size: 0.95rem;" th:text="${bien.numeroPatrimonial}">PJ-001</strong>
 									</td>
 									<td data-label="Bien / Categoría">
 										<strong th:text="${bien.descripcion}">PC de escritorio</strong>
@@ -240,7 +240,7 @@
 												✏️ Modificar
 											</button>
 											<form th:action="@{/admin/patrimonio/bienes/{id}/eliminar(id=${bien.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este bien patrimonial?');">
-												<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 4px 8px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+												<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.8rem; padding: 4px 8px;">
 													🗑️ Eliminar
 												</button>
 											</form>

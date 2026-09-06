@@ -2405,7 +2405,25 @@ Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional
   - *Unificación Total de Paneles*: Ambos paneles (barra lateral izquierda y espacio de trabajo derecho con todas sus opciones, tablas y formularios) comparten el mismo tono oscuro unificado sin diferencias de contraste incómodas.
   - *Arquitectura de Variables CSS Dinámicas (`:root` / `[data-theme]`)*: Se parametrizó la totalidad de fondos (`--bg-canvas`, `--bg-sidebar`, `--bg-card`), bordes suaves (`--border-color`, `--border-subtle`), textos de alta legibilidad (`--text-primary`, `--text-secondary`), tablas y formularios.
   - *Selector de Tema en Barra Superior (`.theme-toggle-btn`)*: Botón accesible en la cabecera del panel que permite alternar con un solo clic entre Modo Oscuro (por defecto) y Modo Claro, con persistencia inmediata en `localStorage` y ejecución previa sin parpadeos visuales (`flash of unstyled content`).
-  - *Comentarios y Documentación*: El código CSS y las plantillas de navegación incluyen comentarios explicativos en español sobre la arquitectura de color y su comportamiento accesible.
+- **Depuración Integral de Tonos Visuales: Eliminación de Fondos Blancos Residuales y Armonización Dark Slate**:
+  - *Detección y Diagnóstico*: En la revisión de vistas administrativas (como Muebles, Ubicaciones, Tareas, Reportes, Órdenes de Armado, Detalle de Equipos y Dashboard de Diferencias), se detectó que componentes como banners de circuitos (`.workflow-banner`), tarjetas de pasos interiores (`.workflow-step-card`), barras de búsqueda (`.search-form`) y tarjetas de edición inline (`.inline-edit-card`) conservaban fondos rígidos `#ffffff` o pasteles claros (`#f8fafc`, `#eff6ff`, `#fef2f2`, `#f0fdf4`) con textos en azul marino `#1e3a8a` o negro `#0f172a`, generando un contraste deslumbrante e incómodo para la vista ("manchas blancas").
+  - *Normalización en `admin.css`*:
+    - Se agregaron reglas globales con precedencia para `.workflow-banner`, `.workflow-steps-grid`, `.workflow-step-card`, `.search-form`, `.dashboard-filter-form`, `.inline-edit-card` y `.equipo-status-strip` asegurando el uso de `var(--bg-card)`, `var(--bg-card-secondary)`, `var(--border-color)` y `var(--text-primary)`.
+    - Creación de la clase utilitaria `.button-danger-subtle` con fondo y borde translúcido (`rgba(239, 68, 68, 0.15)`) para botones destructivos (eliminar, dar de baja) en reemplazo del antiguo fondo pastel `#fee2e2`.
+    - Ajuste de insignias de autorización (`.authorization-badge`), chips de roles y tarjetas de métricas para emplear tintes translúcidos (`rgba(...)`) de alto contraste relativo pero relajantes para la visión.
+  - *Saneamiento Exhaustivo en las 13 Vistas*:
+    - `muebles.html`: Se eliminaron fondos blancos inline en el banner de mobiliario, tarjetas de 3 pasos, formulario de búsqueda y tarjetas de edición inline.
+    - `ubicaciones.html`: Eliminación de cajas blancas en banner de gestión de sedes, pasos de circuito y tarjetas de edición.
+    - `tareas.html`: Limpieza de fondos claros en banner técnico, hilo de comentarios y formularios de filtrado.
+    - `reportes.html`: Saneamiento de banner de exportación, tarjetas de resumen modular con iconos en tintes translúcidos (PC azul, PA verde, AC celeste, MU amarillo, TA naranja, UB violeta).
+    - `ordenes-armado.html`: Limpieza de banners de éxito (`#f0fdf4` ➔ verde translúcido), selector de equipos y tarjetas de orden.
+    - `index.html`: Depuración de las 3 tarjetas de "Brújula Operativa" (Inventario de Equipos, Control de Stock, Gestión Patrimonial) pasando de fondos blancos a `.workflow-step-card` con bordes e indicadores oscuros.
+    - `dashboard-diferencias.html`: Saneamiento de banners, tarjetas de pasos y filas de discrepancia (`FALTA`, `SOBRA`, `REVISAR`) utilizando fondos translúcidos suaves (`rgba(..., 0.12)`) y tipografía accesible.
+    - `equipo-detalle.html`: Banners de estado, tablas de componentes (CPU, RAM, Discos, Periféricos) y botones de acción rápida ("A Stock", "Baja", "Desvincular", "Eliminar") convertidos a tonos dark unificados.
+    - `equipo-auditoria.html`: Banner de registro automático saneado, chips de movimiento con tintes translúcidos semánticos y refactorización del conmutador JavaScript (Tabla / Línea de Tiempo) para evitar inyección de estilos blancos inline.
+    - `actas.html`: Sustitución de textos oscuros `#1e3a8a` por `var(--text-link)` y botones de eliminación estandarizados.
+    - `equipos.html`, `stock.html` y `patrimonio.html`: Enlaces y códigos normalizados a `var(--text-link)`.
+  - *Resultado*: 100% de coherencia estética en modo oscuro; cero parches blancos o contrastes discordantes, logrando una interfaz prolija, uniforme, descansada y profesional.
 
 ## Fuentes internas consultadas
 

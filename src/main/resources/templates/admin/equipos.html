@@ -16,26 +16,26 @@
 				<!-- Tarjeta Azul: Total Equipos - Conteo global del parque informático; hace clic para limpiar filtros -->
 				<a class="metric-card border-blue" th:href="@{/admin/equipos}" th:classappend="${estadoFiltro == null or estadoFiltro == ''} ? ' is-active' : ''" title="Ver catálogo completo de equipos">
 					<span class="metric-card-title">TOTAL</span>
-					<strong class="metric-card-value" style="color: #1e3a8a;" th:text="${totalEquipos}">0</strong>
-					<span class="metric-card-action" style="color: #2563eb;">Ver todos ➜</span>
+					<strong class="metric-card-value" style="color: var(--text-link);" th:text="${totalEquipos}">0</strong>
+					<span class="metric-card-action" style="color: #60a5fa;">Ver todos ➜</span>
 				</a>
 				<!-- Tarjeta Verde: Sincronizados - Equipos con reporte de script y configuración oficial conforme -->
 				<a class="metric-card border-green" th:href="@{/admin/equipos(estado='SINCRONIZADO')}" th:classappend="${estadoFiltro == 'SINCRONIZADO'} ? ' is-active' : ''" title="Filtrar equipos con gemelo digital sincronizado">
 					<span class="metric-card-title">SINCRONIZADOS</span>
-					<strong class="metric-card-value" style="color: #15803d;" th:text="${sincronizadosCount}">0</strong>
-					<span class="metric-card-action" style="color: #16a34a;">Filtrar conformes ➜</span>
+					<strong class="metric-card-value" style="color: #4ade80;" th:text="${sincronizadosCount}">0</strong>
+					<span class="metric-card-action" style="color: #4ade80;">Filtrar conformes ➜</span>
 				</a>
 				<!-- Tarjeta Amarilla: Pendientes - Equipos que reportaron por script pero esperan consolidación de gemelo -->
 				<a class="metric-card border-yellow" th:href="@{/admin/equipos(estado='PENDIENTE')}" th:classappend="${estadoFiltro == 'PENDIENTE'} ? ' is-active' : ''" title="Filtrar equipos pendientes de registrar gemelo">
 					<span class="metric-card-title">PENDIENTES</span>
-					<strong class="metric-card-value" style="color: #a16207;" th:text="${pendientesGemeloCount}">0</strong>
-					<span class="metric-card-action" style="color: #d97706;">Filtrar pendientes ➜</span>
+					<strong class="metric-card-value" style="color: #facc15;" th:text="${pendientesGemeloCount}">0</strong>
+					<span class="metric-card-action" style="color: #facc15;">Filtrar pendientes ➜</span>
 				</a>
 				<!-- Tarjeta Naranja: En Taller - Equipos originados en armado de taller o con órdenes de trabajo activas -->
 				<a class="metric-card border-orange" th:href="@{/admin/equipos(estado='TALLER')}" th:classappend="${estadoFiltro == 'TALLER'} ? ' is-active' : ''" title="Filtrar equipos en circuito de taller u órdenes">
 					<span class="metric-card-title">EN TALLER</span>
-					<strong class="metric-card-value" style="color: #c2410c;" th:text="${enTallerCount}">0</strong>
-					<span class="metric-card-action" style="color: #f97316;">Filtrar taller ➜</span>
+					<strong class="metric-card-value" style="color: #fb923c;" th:text="${enTallerCount}">0</strong>
+					<span class="metric-card-action" style="color: #fb923c;">Filtrar taller ➜</span>
 				</a>
 			</section>
 
@@ -85,24 +85,24 @@
 							<tr th:each="equipo : ${equipos.equipos}">
 								<td data-label="Equipo y Origen">
 									<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-										<a th:href="@{/admin/equipos/{id}(id=${equipo.id})}" th:text="${equipo.nombre}" style="font-weight: 700; color: #1e3a8a; text-decoration: none; font-size: 0.98rem;">PC-001</a>
+										<a th:href="@{/admin/equipos/{id}(id=${equipo.id})}" th:text="${equipo.nombre}" style="font-weight: 700; color: var(--text-link); text-decoration: none; font-size: 0.98rem;">PC-001</a>
 										<!-- Etiqueta de Origen -->
-										<span th:if="${equipo.ultimoReporteEn != null}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;">🚀 Sumado via Script</span>
-										<span th:if="${equipo.ultimoReporteEn == null and equiposConOrdenes != null and equiposConOrdenes.contains(equipo.id)}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">🔧 Armado en el Taller</span>
-										<span th:if="${equipo.ultimoReporteEn == null and (equiposConOrdenes == null or !equiposConOrdenes.contains(equipo.id))}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: #fefce8; color: #a16207; border: 1px solid #fef08a;">📝 Manual</span>
+										<span th:if="${equipo.ultimoReporteEn != null}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3);">🚀 Sumado via Script</span>
+										<span th:if="${equipo.ultimoReporteEn == null and equiposConOrdenes != null and equiposConOrdenes.contains(equipo.id)}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">🔧 Armado en el Taller</span>
+										<span th:if="${equipo.ultimoReporteEn == null and (equiposConOrdenes == null or !equiposConOrdenes.contains(equipo.id))}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3);">📝 Manual</span>
 									</div>
 									<span class="table-subtext" th:text="${equipo.ubicacion ?: 'Sin ubicación asignada'}">Oficina</span>
 								</td>
 								<td data-label="Usuario Actual">
 									<strong th:if="${equipo.ultimoUsuario != null and !#strings.isEmpty(equipo.ultimoUsuario)}" th:text="${equipo.ultimoUsuario}">gmurad</strong>
-									<span th:if="${equipo.ultimoUsuario == null or #strings.isEmpty(equipo.ultimoUsuario)}" style="color: #b45309; font-size: 0.82rem; font-weight: 600;">⚠️ Sin asignar</span>
+									<span th:if="${equipo.ultimoUsuario == null or #strings.isEmpty(equipo.ultimoUsuario)}" style="color: #facc15; font-size: 0.82rem; font-weight: 600;">⚠️ Sin asignar</span>
 								</td>
 								<td data-label="Fuero / Ubicación" th:text="${equipo.fuero}">Informática</td>
 								<td data-label="IP" th:text="${equipo.ip ?: 'Sin dato'}">10.15.2.20</td>
 								<td data-label="Sistema Operativo" th:text="${equipo.sistemaOperativo ?: 'Sin dato'}">Windows 11</td>
 								<td data-label="Gemelo / Estado">
 									<div style="display: flex; flex-direction: column; gap: 3px;">
-										<span th:if="${equipo.ultimoReporteEn != null and (equiposConGemelo == null or !equiposConGemelo.contains(equipo.id))}" class="authorization-badge is-pending" style="font-size: 0.72rem; padding: 2px 6px; background: #fef9c3; color: #854d0e; border: 1px solid #fde047;">
+										<span th:if="${equipo.ultimoReporteEn != null and (equiposConGemelo == null or !equiposConGemelo.contains(equipo.id))}" class="authorization-badge is-pending" style="font-size: 0.72rem; padding: 2px 6px; background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3);">
 											🟡 Pendiente Gemelo
 										</span>
 										<span th:if="${equipo.ultimoReporteEn != null and equiposConGemelo != null and equiposConGemelo.contains(equipo.id)}" class="authorization-badge is-authorized" style="font-size: 0.72rem; padding: 2px 6px;">
@@ -111,7 +111,7 @@
 										<span th:if="${equipo.ultimoReporteEn == null}" class="authorization-badge is-pending" style="font-size: 0.72rem; padding: 2px 6px;">
 											🟡 Esperando Script
 										</span>
-										<span th:if="${equipo.ultimoReporteEn != null}" style="font-size: 0.72rem; color: #64748b;" th:text="${#temporals.format(equipo.ultimoReporteEn, 'dd/MM HH:mm')}">03/09 17:30</span>
+										<span th:if="${equipo.ultimoReporteEn != null}" style="font-size: 0.72rem; color: var(--text-muted);" th:text="${#temporals.format(equipo.ultimoReporteEn, 'dd/MM HH:mm')}">03/09 17:30</span>
 									</div>
 								</td>
 								<td data-label="Acciones">
@@ -134,7 +134,7 @@
 											🛠️ Órdenes
 										</a>
 										<form th:if="${puedeEditar}" th:action="@{/admin/equipos/{id}/eliminar(id=${equipo.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este equipo y todos sus datos asociados?');">
-											<button type="submit" class="secondary-action" style="font-size: 0.8rem; padding: 5px 9px; background: #fee2e2; color: #b91c1c; border-color: #fca5a5; cursor: pointer;" title="Eliminar equipo">
+											<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.8rem; padding: 5px 9px;" title="Eliminar equipo">
 												🗑️
 											</button>
 										</form>
