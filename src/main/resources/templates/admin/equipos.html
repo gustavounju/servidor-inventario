@@ -11,21 +11,14 @@
 		<section class="status-panel admin-users-panel" aria-labelledby="equipos-title">
 			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Inventario de Equipos', 'equipos')}"></header>
 
-			<!-- Barra Superior de Navegación Rápida y Acciones Principales -->
-			<nav class="quick-nav-bar" aria-label="Navegación y acciones de equipos">
-				<div class="quick-nav-group">
-					<a class="secondary-action" th:href="@{/admin/ordenes-armado}">🛠️ Órdenes de Armado</a>
-					<a class="secondary-action" th:href="@{/admin/stock}">📦 Stock de Depósito</a>
-					<a class="secondary-action" th:href="@{/admin/dashboard-diferencias}">⚠️ Diferencias (Gemelo)</a>
-				</div>
-				<div class="quick-nav-group">
-					<form th:if="${puedeEditar}" th:action="@{/admin/equipos/nuevo-taller}" method="post" style="margin: 0;">
-						<button type="submit" class="primary-action" style="font-size: 0.76rem; padding: 5px 12px; background: #0284c7; border: none; cursor: pointer; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-							🔧 Iniciar Armado en Taller
-						</button>
-					</form>
-				</div>
-			</nav>
+			<!-- Barra Superior de Acciones Principales -->
+			<div th:if="${puedeEditar}" class="page-top-actions" style="display: flex; justify-content: flex-end; align-items: center; margin: 4px 0 10px;">
+				<form th:action="@{/admin/equipos/nuevo-taller}" method="post" style="margin: 0;">
+					<button type="submit" class="primary-action" style="font-size: 0.76rem; padding: 5px 12px; background: #0284c7; border: none; cursor: pointer; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+						🔧 Iniciar Armado en Taller
+					</button>
+				</form>
+			</div>
 
 			<!-- Barra de Métricas Interactivas Compactas (Filtros directos por estado del gemelo digital) -->
 			<section class="summary-grid" aria-label="Resumen de equipos">

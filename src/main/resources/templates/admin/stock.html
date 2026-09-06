@@ -11,23 +11,10 @@
 		<section class="status-panel admin-users-panel" aria-labelledby="stock-title">
 			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Stock de Componentes', 'stock')}"></header>
 
-			<!-- Barra de Acciones Rápidas y Navegación Contextual -->
-			<nav class="quick-nav-bar" aria-label="Navegación contextual de stock">
-				<div class="quick-nav-group">
-					<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}">
-						🛠️ Órdenes de Armado y Ensamble
-					</a>
-					<a class="secondary-action" th:if="${puedeVerEquipos}" th:href="@{/admin/equipos}">
-						🖥️ Catálogo de Equipos
-					</a>
-					<a class="secondary-action" th:if="${puedeVerDiferencias}" th:href="@{/admin/dashboard-diferencias}">
-						📊 Tablero de Diferencias
-					</a>
-				</div>
-				<div class="quick-nav-group">
-					<span class="count-badge" th:text="${totalStock} + ' componentes en depósito'">0 componentes</span>
-				</div>
-			</nav>
+			<!-- Barra Superior de Acciones de Stock -->
+			<div class="page-top-actions" style="display: flex; justify-content: flex-end; align-items: center; margin: 4px 0 10px;">
+				<span class="count-badge" th:text="${totalStock} + ' componentes en depósito'">0 componentes</span>
+			</div>
 
 			<!-- Banner Contextual de Siguientes Pasos tras Guardar Componente -->
 			<div class="workflow-banner" th:if="${creado}">

@@ -2449,6 +2449,13 @@ Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional
   - *Verificación Integral*:
     - Pruebas visuales en navegador con capturas directas en `/admin/equipos` y `/admin/dashboard-diferencias`.
     - 136 tests unitarios y de integración ejecutados con resultado 100% exitoso.
+- **Eliminación de Botones Superiores Redundantes que Duplicaban el Menú Lateral**:
+  - *Diagnóstico*: Al contar con la barra lateral persistente (`.app-sidebar`) con todos los módulos categorizados, las filas de botones superiores (`[ Órdenes de Armado ]`, `[ Stock de Depósito ]`, `[ Diferencias Gemelo ]`, etc.) resultaban duplicadas e innecesarias en el área de trabajo.
+  - *Saneamiento*:
+    - `equipos.html`: Se eliminaron los botones de navegación a otros módulos, dejando exclusivamente el botón de acción contextual `🔧 Iniciar Armado en Taller` alineado a la derecha.
+    - `dashboard-diferencias.html`: Se removieron los accesos repetidos a catálogo, órdenes, stock y actas, conservando únicamente la acción `📥 Exportar CSV`.
+    - `stock.html`: Se eliminaron los botones duplicados, manteniendo solo la insignia de conteo total de componentes.
+  - *Resultado*: Interfaz despejada, sin duplicación de elementos de navegación y con máxima relevancia en las acciones propias de cada pantalla.
 
 ## Fuentes internas consultadas
 

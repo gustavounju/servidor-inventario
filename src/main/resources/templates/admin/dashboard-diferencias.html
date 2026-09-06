@@ -11,28 +11,12 @@
 		<section class="status-panel admin-users-panel" aria-labelledby="dashboard-title">
 			<header th:replace="~{admin/nav :: topbar('Gemelo digital', 'Dashboard de diferencias', 'diferencias')}"></header>
 
-			<!-- Barra de Acciones Rápidas y Navegación Cruzada -->
-			<nav class="quick-nav-bar" aria-label="Navegación rápida del tablero">
-				<div class="quick-nav-group">
-					<a class="secondary-action" th:href="@{/admin/equipos}">
-						🖥️ Catálogo de Equipos
-					</a>
-					<a class="secondary-action" th:href="@{/admin/ordenes-armado}">
-						🛠️ Órdenes de Armado
-					</a>
-					<a class="secondary-action" th:href="@{/admin/stock}">
-						📦 Stock de Depósito
-					</a>
-					<a class="secondary-action" th:href="@{/admin/actas}">
-						📋 Actas y Movimientos
-					</a>
-				</div>
-				<div class="quick-nav-group">
-					<a class="secondary-action" th:href="@{/api/v1/gemelo-digital/dashboard-diferencias.csv(equipo=${equipoFiltro},fuero=${fueroFiltro},estado=${estadoFiltro})}">
-						📥 Exportar CSV
-					</a>
-				</div>
-			</nav>
+			<!-- Barra Superior de Acciones del Tablero -->
+			<div class="page-top-actions" style="display: flex; justify-content: flex-end; align-items: center; margin: 4px 0 10px;">
+				<a class="secondary-action" th:href="@{/api/v1/gemelo-digital/dashboard-diferencias.csv(equipo=${equipoFiltro},fuero=${fueroFiltro},estado=${estadoFiltro})}" style="font-size: 0.76rem; padding: 5px 12px; border-radius: 6px;">
+					📥 Exportar CSV
+				</a>
+			</div>
 
 			<!-- 🚀 GUÍA COMPACTA Y CLARA: Cómo interpretar y resolver las diferencias -->
 			<section class="workflow-banner">
