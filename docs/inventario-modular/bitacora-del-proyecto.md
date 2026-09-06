@@ -2460,8 +2460,16 @@ Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional
   - *Diagnóstico*: En formularios como creación de órdenes, asignación de componentes y datos de usuario, los controles conservaban estilos fijos claros (`color: #1d252d; border: 1px solid #c7d2dd;`), provocando que en Modo Oscuro el fondo y el texto tuvieran bajo contraste y apariencia desprolija.
   - *Saneamiento en `admin.css`*:
     - Se aplicaron variables temáticas para todos los controles (`.equipment-form`, `.user-form`, `.inline-action-form`): `background: var(--bg-input)`, `color: var(--text-primary)` y `border: 1px solid var(--border-input)`.
-    - Se configuraron los placeholders con `var(--text-muted)` y las opciones de los desplegables (`select option`) con `background: var(--bg-card)`.
-    - Se verificó visualmente el contraste nítido y descansado en `/admin/ordenes-armado` y formularios de equipos.
+- **Guía Operativa y Resolución Asistida de Discrepancias en Vivo (`SOBRA` / `FALTA`)**:
+  - *Diagnóstico y Clarificación Operativa*:
+    - Cuando un componente se retira o elimina del inventario oficial del sistema pero la máquina física aún tiene la pieza conectada (o no se ha vuelto a ejecutar el script), el motor de comparación en vivo detecta un estado **`SOBRA`** (*Esperado: Sin esperar*, *Detectado: Hardware físico*).
+    - Los botones `📦 A Stock`, `❌ Baja` y `🗑️ Eliminar` operan sobre piezas registradas en la base de datos oficial de la PC. Al estar en estado `SOBRA`, la pieza no existe en la base de datos de esa máquina.
+    - Se incorporó en `equipo-detalle.html` una columna explicativa **`¿Cómo Resolver?`** en la tabla de *Discrepancias detectadas en vivo*, indicando de forma explícita los dos caminos según la situación:
+      1. Si la pieza fue retirada físicamente: reejecutar el script de relevamiento en la PC para refrescar el reporte en vivo y alcanzar el `✓ COINCIDE 100%`.
+      2. Si la pieza debe permanecer en la PC: registrarla desde el formulario inferior *"Instalar Componente"* para consolidarla en el inventario oficial.
+      3. Para piezas en estado `FALTA`: recordatorio de desvincular con `📦 A Stock` / `🗑️ Eliminar` o reponer físicamente la pieza mediante una Orden de Armado.
+  - *Verificación*:
+    - Suite completa de 136 pruebas unitarias y de integración pasando al 100% en verde.
 
 ## Fuentes internas consultadas
 

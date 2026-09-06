@@ -298,6 +298,7 @@
 										<th scope="col">Detectado en la PC</th>
 										<th scope="col">Estado</th>
 										<th scope="col">Detalle</th>
+										<th scope="col">¿Cómo Resolver?</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -306,9 +307,25 @@
 										<td><strong th:text="${disc.esperado}">64GB</strong></td>
 										<td th:text="${disc.detectado}">Sin detectar</td>
 										<td>
-											<span class="authorization-badge is-pending" th:text="${disc.resultado}">FALTA</span>
+											<span class="authorization-badge is-pending" th:if="${disc.resultado.name() == 'FALTA'}" th:text="${disc.resultado}">FALTA</span>
+											<span class="authorization-badge is-rejected" th:if="${disc.resultado.name() == 'SOBRA'}" th:text="${disc.resultado}">SOBRA</span>
+											<span class="authorization-badge" th:if="${disc.resultado.name() != 'FALTA' and disc.resultado.name() != 'SOBRA'}" th:text="${disc.resultado}">REVISAR</span>
 										</td>
 										<td class="table-subtext" th:text="${disc.observacion}">Detalle</td>
+										<td style="font-size: 0.8rem; line-height: 1.35;">
+											<div th:if="${disc.resultado.name() == 'SOBRA'}">
+												<span style="color: #60a5fa; display: block; font-weight: 600;">• Si la pieza ya no está en la PC:</span>
+												<span style="color: var(--text-secondary);">Ejecuta el script en la PC física para refrescar el reporte en vivo.</span>
+												<span style="color: #4ade80; display: block; font-weight: 600; margin-top: 4px;">• Si debe quedar en el equipo:</span>
+												<span style="color: var(--text-secondary);">Regístrala abajo con <em>"Instalar Componente"</em> para que pase a estado oficial.</span>
+											</div>
+											<div th:if="${disc.resultado.name() == 'FALTA'}">
+												<span style="color: #f87171; display: block; font-weight: 600;">• Si retiraste la pieza:</span>
+												<span style="color: var(--text-secondary);">Usa el botón 📦 <strong>A Stock</strong> o 🗑️ en la tabla de abajo para desvincularla.</span>
+												<span style="color: #facc15; display: block; font-weight: 600; margin-top: 4px;">• Si falta físicamente:</span>
+												<span style="color: var(--text-secondary);">Instala el hardware en la PC o crea una Orden de Armado.</span>
+											</div>
+										</td>
 									</tr>
 								</tbody>
 							</table>
