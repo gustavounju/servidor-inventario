@@ -2470,6 +2470,16 @@ Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional
       3. Para piezas en estado `FALTA`: recordatorio de desvincular con `📦 A Stock` / `🗑️ Eliminar` o reponer físicamente la pieza mediante una Orden de Armado.
   - *Verificación*:
     - Suite completa de 136 pruebas unitarias y de integración pasando al 100% en verde.
+- **Botón "✅ Adoptar Hardware Físico como Oficial" y Corrección de Duplicación de Stock**:
+  - *Problema detectado*: Cuando un técnico usaba `📦 A Stock` para retirar un componente de un equipo (creando un registro en el Depósito), y luego usaba `✅ Adoptar Hardware Físico como Oficial` para re-consolidar la lectura del script (que aún detectaba esa pieza físicamente instalada), el componente quedaba registrado simultáneamente en el equipo Y en el depósito de stock, generando un duplicado fantasma.
+  - *Corrección en `ComponenteService.consolidarRelevamientoInicial()`*:
+    - Después de crear cada componente oficial desde la lectura del script, se verifica si existe una pieza activa en `stock_componentes` con el mismo número de serie (`serial`).
+    - Si se encuentra un duplicado en stock, se elimina automáticamente del depósito y se registra un evento de auditoría `LIMPIEZA_POR_ADOPCION` con el detalle del serial y el equipo involucrado.
+    - Se agregó el método `findBySerialAndActivoTrue(String serial)` al `StockComponenteRepository`.
+  - *Mejora de UX en `equipo-detalle.html`*:
+    - Se agregó el botón `✅ Adoptar Hardware Físico como Oficial` directamente en el banner de discrepancias detectadas en vivo, permitiendo al técnico resolver las diferencias con un solo clic.
+    - Se corrigió el texto de la columna `¿Cómo Resolver?` para estado `SOBRA`: ahora referencia el botón real `✅ Adoptar Hardware Físico como Oficial` en lugar de una acción inexistente.
+  - *Verificación*: 136 tests unitarios y de integración pasando al 100%.
 
 ## Fuentes internas consultadas
 

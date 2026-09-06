@@ -246,6 +246,7 @@ public class ComponenteService {
 				.orElseThrow(() -> new EquipoNoEncontradoException(equipoId));
 		List<Componente> detectados = componenteRepository.findByEquipoIdAndOrigenOrderByTipoAscDescripcionAsc(equipoId, OrigenComponente.SCRIPT);
 		componenteRepository.deleteByEquipoIdAndOrigen(equipoId, OrigenComponente.RELEVAMIENTO_INICIAL);
+		int stockLimpiados = 0;
 		for (Componente detectado : detectados) {
 			if (!detectado.isActivo()) {
 				continue;
@@ -272,9 +273,29 @@ public class ComponenteService {
 					observacionConsolidada(detectado.getObservaciones()),
 					true);
 			componenteRepository.save(relevado);
+
+			// Limpieza de stock duplicado: si esta pieza tiene serial y existe en el depósito
+			// de stock (por ejemplo, porque antes se usó "📦 A Stock" y ahora se re-adopta
+			// con "✅ Adoptar Hardware Físico como Oficial"), se elimina del stock para evitar
+			// que la misma pieza figure simultáneamente en el equipo y en el depósito.
+			if (StringUtils.hasText(detectado.getSerial())) {
+				List<StockComponente> duplicadosEnStock = stockComponenteRepository.findBySerialAndActivoTrue(detectado.getSerial());
+				for (StockComponente duplicado : duplicadosEnStock) {
+					stockComponenteRepository.delete(duplicado);
+					stockLimpiados++;
+					auditoriaService.registrar("STOCK", "LIMPIEZA_POR_ADOPCION", "StockComponente", duplicado.getId(),
+							"Pieza retirada automáticamente del depósito al adoptar hardware físico como oficial en "
+							+ equipo.getNombre() + ". Serial: " + detectado.getSerial() + ".");
+				}
+			}
+		}
+		String detalle = "Gemelo Digital oficial confirmado y consolidado con " + detectados.size() + " componentes de línea base.";
+		if (stockLimpiados > 0) {
+			detalle += " Se retiraron " + stockLimpiados + " pieza(s) duplicada(s) del depósito de stock.";
 		}
 		auditoriaService.registrar("COMPONENTES", "CONSOLIDAR_RELEVAMIENTO_INICIAL", "Equipo", equipoId,
-				"Se consolido la lectura SCRIPT como RELEVAMIENTO_INICIAL para " + equipo.getNombre() + ".");
+				"Se consolido la lectura SCRIPT como RELEVAMIENTO_INICIAL para " + equipo.getNombre() + "."
+				+ (stockLimpiados > 0 ? " Se limpiaron " + stockLimpiados + " pieza(s) duplicada(s) del stock." : ""));
 
 		auditoriaService.registrarMovimientoAutomatico(
 				equipoId,
@@ -282,7 +303,7 @@ public class ComponenteService {
 				equipo.getUltimoUsuario(),
 				equipo.getUbicacion(),
 				equipo.getUbicacion(),
-				"Gemelo Digital oficial confirmado y consolidado con " + detectados.size() + " componentes de línea base.");
+				detalle);
 
 		return listarPorEquipo(equipoId);
 	}
