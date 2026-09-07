@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Auditoria - Inventario Modular</title>
+	<link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+	<main class="shell shell-wide">
+		<section class="status-panel admin-users-panel" aria-labelledby="auditoria-title">
+			<header th:replace="~{admin/nav :: topbar('Modulo transversal', 'Auditoria', 'auditoria')}"></header>
+
+			<form class="search-form dashboard-filter-form" th:action="@{/admin/auditoria}" method="get">
+				<label>
+					<span>Usuario</span>
+					<input type="search" name="usuario" th:value="${usuarioFiltro}" placeholder="admin.local">
+				</label>
+				<label>
+					<span>Modulo</span>
+					<input type="search" name="modulo" th:value="${moduloFiltro}" placeholder="STOCK">
+				</label>
+				<label>
+					<span>Accion</span>
+					<input type="search" name="accion" th:value="${accionFiltro}" placeholder="CREAR">
+				</label>
+				<div class="form-actions">
+					<button class="primary-action" type="submit">Filtrar</button>
+					<a class="secondary-action" th:href="@{/admin/auditoria}">Limpiar</a>
+					<a class="secondary-action" th:href="@{/api/v1/auditoria/eventos.csv(usuario=${usuarioFiltro},modulo=${moduloFiltro},accion=${accionFiltro})}">Exportar CSV</a>
+				</div>
+			</form>
+
+			<section class="modules-section" aria-labelledby="eventos-title">
+				<div class="section-header">
+					<div>
+						<h2 id="eventos-title">Eventos recientes</h2>
+						<p class="section-note">Cambios relevantes registrados desde componentes y stock.</p>
+					</div>
+					<span class="count-badge" th:text="${#lists.size(eventos)} + ' eventos'">0 eventos</span>
+				</div>
+
+				<p class="empty-state" th:if="${#lists.isEmpty(eventos)}">Todavia no hay eventos de auditoria registrados.</p>
+
+				<div class="responsive-table" th:if="${!#lists.isEmpty(eventos)}">
+					<table>
+						<thead>
+							<tr>
+								<th scope="col">Fecha</th>
+								<th scope="col">Usuario</th>
+								<th scope="col">Modulo</th>
+								<th scope="col">Accion</th>
+								<th scope="col">Entidad</th>
+								<th scope="col">Detalle</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="evento : ${eventos}">
+								<td data-label="Fecha" th:text="${evento.creadoEn != null} ? ${#temporals.format(evento.creadoEn, 'dd/MM/yyyy HH:mm:ss')} : 'Sin fecha'">31/08/2026 23:59:00</td>
+								<td data-label="Usuario" th:text="${evento.usuario}">admin.local</td>
+								<td data-label="Modulo" th:text="${evento.modulo}">STOCK</td>
+								<td data-label="Accion">
+									<span class="authorization-badge is-pending" th:text="${evento.accion}">CREAR</span>
+								</td>
+								<td data-label="Entidad" th:text="|${evento.entidadTipo} #${evento.entidadId ?: '-'}|">StockComponente #1</td>
+								<td data-label="Detalle" th:text="${evento.detalle}">Cambio registrado.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
+		</section>
+	</main>
+</body>
+</html>

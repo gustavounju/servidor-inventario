@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Auditoría y Movimientos: ' + ${equipo.nombre} + ' - Inventario Modular'">Auditoría de Equipo</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<div class="shell shell-wide">
+    <div class="status-panel admin-users-panel">
+        <header class="panel-header">
+            <div>
+                <p class="eyebrow">Trazabilidad y Control</p>
+                <h1 th:text="'Historial de Movimientos: ' + ${equipo.nombre}">Equipo</h1>
+            </div>
+            <div class="admin-actions">
+                <a th:href="@{/admin/equipos/{id}(id=${equipo.id})}" class="secondary-action">⬅ Volver a Ficha de Equipo</a>
+                <a th:href="@{/admin/equipos}" class="secondary-action">Lista de Equipos</a>
+            </div>
+        </header>
+
+        <!-- Banner Informativo -->
+        <div class="workflow-banner" style="margin: 10px 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.5rem;">🤖</span>
+                <div>
+                    <strong style="color: var(--text-link); font-size: 0.95rem;">Registro Automático de Actividad</strong>
+                    <span style="display: block; font-size: 0.84rem; color: var(--text-secondary);">
+                        Cada acción realizada en este equipo (reubicaciones, asignaciones de usuario, piezas de taller/stock u órdenes de armado) se guarda automáticamente indicando qué se hizo, fecha y el usuario operador.
+                    </span>
+                </div>
+            </div>
+            <span class="count-badge" th:text="${#lists.size(historial)} + ' registros'">0 registros</span>
+        </div>
+
+        <!-- Filtros Rápidos de Búsqueda -->
+        <form class="search-form dashboard-filter-form" th:action="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}" method="get" style="margin-bottom: 22px;">
+            <label style="flex: 2; min-width: 220px;">
+                <span>Filtrar por Usuario (Operador o Destino)</span>
+                <input type="search" name="usuario" th:value="${usuarioFiltro}" placeholder="Ej: admin.local, técnico, usuario...">
+            </label>
+            <label style="flex: 1; min-width: 180px;">
+                <span>Tipo de Movimiento / Acción</span>
+                <select name="tipo">
+                    <option value="">-- Todos los tipos --</option>
+                    <option th:each="t : ${tiposMovimiento}" th:value="${t}" th:text="${t}" th:selected="${tipoFiltro == t}">ENTREGA</option>
+                </select>
+            </label>
+            <div class="form-actions">
+                <button class="primary-action" type="submit">🔍 Filtrar</button>
+                <a class="secondary-action" th:href="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}">Limpiar</a>
+            </div>
+        </form>
+
+        <!-- SECCIÓN PRINCIPAL: Historial de Movimientos y Acciones -->
+        <section class="attributes-section" aria-labelledby="historial-title">
+            <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <h2 id="historial-title">Movimientos y Acciones Registradas</h2>
+                    <p class="section-note">Bitácora completa y automática de eventos de este equipo.</p>
+                </div>
+                <!-- Selector de Vista: Tabla o Línea de Tiempo -->
+                <div style="display: flex; gap: 6px;" th:unless="${historial.empty}">
+                    <button type="button" id="btn-view-tabla" class="secondary-action is-active" onclick="switchAuditoriaView('tabla')" style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700; cursor: pointer;">
+                        📋 Vista Tabla
+                    </button>
+                    <button type="button" id="btn-view-timeline" class="secondary-action" onclick="switchAuditoriaView('timeline')" style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700; cursor: pointer;">
+                        ⏳ Línea de Tiempo
+                    </button>
+                </div>
+            </div>
+
+            <div th:if="${historial.empty}" class="empty-state" style="padding: 30px 20px;">
+                <p>No se encontraron movimientos registrados con los filtros seleccionados.</p>
+            </div>
+
+            <div th:unless="${historial.empty}">
+                <!-- VISTA 1: TABLA RESPONSIVA -->
+                <div id="view-tabla" class="responsive-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Fecha / Hora</th>
+                                <th scope="col">Tipo</th>
+                                <th scope="col" style="min-width: 260px;">Detalle de la Acción (Qué se hizo)</th>
+                                <th scope="col">Usuario Responsable</th>
+                                <th scope="col">Ubicación (Origen ➡ Destino)</th>
+                                <th scope="col">Operador / Registró</th>
+                                <th scope="col">Acta</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="mov : ${historial}">
+                                <td data-label="Fecha" style="white-space: nowrap;">
+                                    <strong th:text="${#temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy')}">01/09/2026</strong>
+                                    <span style="display: block; font-size: 0.78rem; color: #64748b;" th:text="${#temporals.format(mov.fechaMovimiento, 'HH:mm:ss')}">14:30:00</span>
+                                </td>
+                                <td data-label="Tipo">
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'REUBICACION'}" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700;">🚚 Reubicación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'ENTREGA'}" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); font-weight: 700;">👤 Entrega / Asignación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'MANTENIMIENTO'}" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 700;">🔧 Taller / Hardware</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'DEVOLUCION'}" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-weight: 700;">🔄 Devolución</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'OTRO'}" style="background: rgba(148, 163, 184, 0.15); color: var(--text-secondary); border: 1px solid var(--border-color); font-weight: 700;">📝 Otro</span>
+                                </td>
+                                <td data-label="Detalle">
+                                    <span th:text="${mov.observaciones ?: 'Sin detalle adicional'}" style="font-size: 0.88rem; color: var(--text-primary);">Detalle de la acción</span>
+                                </td>
+                                <td data-label="Usuario">
+                                    <span th:if="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="font-weight: 600; color: var(--text-link);" th:text="${mov.usuarioDestino}">cguzman</span>
+                                    <span th:unless="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}" style="color: var(--text-secondary); font-size: 0.85rem;">-</span>
+                                </td>
+                                <td data-label="Ubicación">
+                                    <div th:if="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="font-size: 0.85rem;">
+                                        <span th:text="${mov.ubicacionOrigen ?: 'Sin ubicación'}" style="color: var(--text-secondary);">Origen</span>
+                                        <span style="color: var(--text-link); font-weight: 700;"> ➡ </span>
+                                        <strong th:text="${mov.ubicacionDestino ?: 'Sin ubicación'}" style="color: var(--text-primary);">Destino</strong>
+                                    </div>
+                                    <span th:unless="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}" style="color: var(--text-secondary); font-size: 0.85rem;">-</span>
+                                </td>
+                                <td data-label="Registró">
+                                    <span class="count-badge" style="font-size: 0.8rem; padding: 3px 8px; font-weight: 600;" th:text="${mov.registradoPor}">admin.local</span>
+                                </td>
+                                <td data-label="Acta">
+                                    <a th:href="@{/admin/equipos/{id}/auditoria/{movId}/pdf(id=${equipo.id}, movId=${mov.id})}" target="_blank" class="secondary-action" style="padding: 4px 8px; font-size: 0.78rem; text-decoration: none;" title="Descargar acta de movimiento en PDF">
+                                        📄 PDF
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- VISTA 2: LÍNEA DE TIEMPO (TIMELINE) CRONOLÓGICA -->
+                <div id="view-timeline" class="audit-timeline" style="display: none;">
+                    <div class="timeline-item" th:each="mov : ${historial}">
+                        <div class="timeline-point"
+                             th:classappend="${mov.tipoMovimiento.name() == 'REUBICACION'} ? ' is-reubicacion' : (${mov.tipoMovimiento.name() == 'ENTREGA'} ? ' is-entrega' : (${mov.tipoMovimiento.name() == 'MANTENIMIENTO'} ? ' is-mantenimiento' : (${mov.tipoMovimiento.name() == 'DEVOLUCION'} ? ' is-devolucion' : ' is-otro')))">
+                        </div>
+                        <div class="timeline-card">
+                            <div class="timeline-header">
+                                <div>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'REUBICACION'}" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-weight: 700;">🚚 Reubicación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'ENTREGA'}" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); font-weight: 700;">👤 Entrega / Asignación</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'MANTENIMIENTO'}" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 700;">🔧 Taller / Hardware</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'DEVOLUCION'}" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-weight: 700;">🔄 Devolución</span>
+                                    <span class="role-chip" th:if="${mov.tipoMovimiento.name() == 'OTRO'}" style="background: rgba(148, 163, 184, 0.15); color: var(--text-secondary); border: 1px solid var(--border-color); font-weight: 700;">📝 Otro</span>
+                                </div>
+                                <span class="timeline-date">
+                                    📅 <span th:text="${#temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy HH:mm:ss')}">01/09/2026 14:30:00</span>
+                                </span>
+                            </div>
+                            <div class="timeline-body">
+                                <strong style="color: var(--text-primary);" th:text="${mov.observaciones ?: 'Acción registrada en el equipo'}">Detalle</strong>
+                            </div>
+                            <div class="timeline-footer">
+                                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                                    <span th:if="${mov.usuarioDestino != null and !mov.usuarioDestino.isEmpty()}">
+                                        👤 <strong>Destino:</strong> <span th:text="${mov.usuarioDestino}">cguzman</span>
+                                    </span>
+                                    <span th:if="${mov.ubicacionOrigen != null or mov.ubicacionDestino != null}">
+                                        📍 <span th:text="${mov.ubicacionOrigen ?: 'Origen'}">Origen</span> ➡ <strong th:text="${mov.ubicacionDestino ?: 'Destino'}">Destino</strong>
+                                    </span>
+                                    <span>
+                                        🛠️ <strong>Operador:</strong> <span th:text="${mov.registradoPor}">admin.local</span>
+                                    </span>
+                                </div>
+                                <a th:href="@{/admin/equipos/{id}/auditoria/{movId}/pdf(id=${equipo.id}, movId=${mov.id})}" target="_blank" class="secondary-action" style="padding: 3px 8px; font-size: 0.76rem; text-decoration: none;">
+                                    📄 Acta PDF
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN SECUNDARIA COLAPSABLE: Registrar Acta / Movimiento Manual Adicional -->
+        <details class="collapsible-card" style="margin-top: 24px;">
+            <summary class="collapsible-summary">
+                <span>📝 Generar Acta o Registrar Movimiento Manual Adicional</span>
+                <span class="count-badge">Opcional para firmas</span>
+            </summary>
+            <div class="collapsible-body" style="padding-top: 14px;">
+                <p style="font-size: 0.85rem; color: #475569; margin: 0 0 14px;">
+                    Utilice este formulario únicamente si desea confeccionar un acta personalizada de entrega, devolución o traslado para imprimir y firmar en papel.
+                </p>
+                <form th:action="@{/admin/equipos/{id}/auditoria(id=${equipo.id})}" method="post" class="user-form">
+                    <div class="inline-action-form" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+                        <label>
+                            <span>Tipo de Movimiento</span>
+                            <select name="tipoMovimiento" required>
+                                <option value="ENTREGA">Entrega</option>
+                                <option value="DEVOLUCION">Devolución</option>
+                                <option value="REUBICACION">Reubicación</option>
+                                <option value="MANTENIMIENTO">Mantenimiento</option>
+                                <option value="OTRO">Otro</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Usuario Destino / Responsable</span>
+                            <input type="text" name="usuarioDestino" th:value="${equipo.ultimoUsuario}" placeholder="Nombre de usuario o agente">
+                        </label>
+                        <label>
+                            <span>Ubicación Origen</span>
+                            <input type="text" name="ubicacionOrigen" th:value="${equipo.ubicacion}" placeholder="Ej: Oficina Informática">
+                        </label>
+                        <label>
+                            <span>Ubicación Destino</span>
+                            <input type="text" name="ubicacionDestino" placeholder="Ej: Juzgado Civil y Comercial">
+                        </label>
+                    </div>
+                    <label style="margin-top: 14px;">
+                        <span>Observaciones / Motivo</span>
+                        <input type="text" name="observaciones" placeholder="Detalle que figurará en el acta impresa...">
+                    </label>
+                    <div style="margin-top: 14px;">
+                        <button type="submit" class="primary-action">📄 Registrar y Generar Acta</button>
+                    </div>
+                </form>
+            </div>
+        </details>
+    </div>
+</div>
+
+<script>
+    function switchAuditoriaView(view) {
+        var tabView = document.getElementById('view-tabla');
+        var timelineView = document.getElementById('view-timeline');
+        var btnTab = document.getElementById('btn-view-tabla');
+        var btnTimeline = document.getElementById('btn-view-timeline');
+
+        if (view === 'timeline') {
+            if (tabView) tabView.style.display = 'none';
+            if (timelineView) timelineView.style.display = 'block';
+            if (btnTab) {
+                btnTab.classList.remove('is-active');
+            }
+            if (btnTimeline) {
+                btnTimeline.classList.add('is-active');
+            }
+        } else {
+            if (tabView) tabView.style.display = 'block';
+            if (timelineView) timelineView.style.display = 'none';
+            if (btnTab) {
+                btnTab.classList.add('is-active');
+            }
+            if (btnTimeline) {
+                btnTimeline.classList.remove('is-active');
+            }
+        }
+    }
+</script>
+</body>
+</html>

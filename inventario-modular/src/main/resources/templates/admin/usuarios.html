@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Administracion de usuarios - Inventario Modular</title>
+	<link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+	<main class="shell shell-wide">
+		<section class="status-panel admin-users-panel" aria-labelledby="users-title">
+			<header th:replace="~{admin/nav :: topbar('Seguridad modular', 'Administracion de usuarios', 'usuarios')}"></header>
+
+			<p class="success-message" th:if="${param.creado != null}">
+				Usuario creado: <strong th:text="${param.creado}">usuario</strong>
+			</p>
+			<p class="success-message" th:if="${param.autorizado != null}">
+				Usuario de dominio autorizado: <strong th:text="${param.autorizado}">usuario</strong>
+			</p>
+			<p class="success-message" th:if="${param.actualizado != null}">
+				Usuario actualizado correctamente.
+			</p>
+			<p class="success-message" th:if="${param.claveCambiada != null}">
+				Clave del usuario modificada correctamente.
+			</p>
+			<p class="error-message" th:if="${param.error != null and param.error[0] == 'duplicado'}">
+				El usuario ya existe en Inventario Modular.
+			</p>
+			<p class="error-message" th:if="${param.error != null and param.error[0] == 'rol'}">
+				El rol seleccionado no existe o no esta activo.
+			</p>
+			<p class="error-message" th:if="${param.error != null and param.error[0] == 'password'}">
+				Los usuarios locales requieren una clave de al menos 8 caracteres.
+			</p>
+
+			<section class="user-list-section domain-user-section" aria-labelledby="domain-users-title">
+				<div class="section-header">
+					<h2 id="domain-users-title">Usuarios de dominio</h2>
+					<span class="count-badge" th:if="${usuariosDominio.disponible}" th:text="${#lists.size(usuariosDominio.usuarios)} + ' encontrados'">0 encontrados</span>
+					<span class="count-badge" th:if="${!usuariosDominio.consultaRealizada}">Buscar AD</span>
+					<span class="count-badge" th:if="${usuariosDominio.consultaRealizada and !usuariosDominio.disponible}">No disponible</span>
+				</div>
+				<form class="search-form domain-search-form" th:action="@{/admin/usuarios}" method="get" role="search">
+					<label>
+						<span>Buscar usuario AD</span>
+						<input name="q" type="search" maxlength="120" th:value="${usuariosDominio.query}"
+								placeholder="Usuario, nombre o apellido">
+					</label>
+					<button class="secondary-action" type="submit">Buscar</button>
+				</form>
+				<p class="empty-state" th:if="${!usuariosDominio.disponible}" th:text="${usuariosDominio.mensaje}">
+					Ingrese al menos 2 caracteres para buscar usuarios de dominio.
+				</p>
+				<p class="empty-state" th:if="${usuariosDominio.disponible and #lists.isEmpty(usuariosDominio.usuarios)}">
+					No se encontraron usuarios de dominio para esa busqueda.
+				</p>
+				<div class="responsive-table domain-results-table" th:if="${usuariosDominio.disponible and !#lists.isEmpty(usuariosDominio.usuarios)}">
+					<table>
+						<thead>
+							<tr>
+								<th scope="col">Usuario AD</th>
+								<th scope="col">Nombre</th>
+								<th scope="col">Fuero</th>
+								<th scope="col">Accion</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="usuarioDominio : ${usuariosDominio.usuarios}">
+								<td data-label="Usuario AD" th:text="${usuarioDominio.username}">gmurad</td>
+								<td data-label="Nombre" th:text="${usuarioDominio.nombreVisible}">Gustavo Elias Murad</td>
+								<td data-label="Fuero" th:text="${usuarioDominio.fuero}">Informatica</td>
+								<td data-label="Accion">
+									<form class="inline-action-form" th:action="@{/admin/usuarios/dominio}" method="post">
+										<input type="hidden" name="username" th:value="${usuarioDominio.username}">
+										<input type="hidden" name="nombreVisible" th:value="${usuarioDominio.nombreVisible}">
+										<input type="hidden" name="fuero" th:value="${usuarioDominio.fuero}">
+										<input type="hidden" name="activo" value="true">
+										<select name="roles" aria-label="Rol local">
+											<option th:each="rol : ${roles}" th:value="${rol.codigo}" th:text="${rol.codigo}">LECTOR</option>
+										</select>
+										<button class="secondary-action" type="submit">Autorizar</button>
+									</form>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
+
+			<section class="management-layout">
+				<form class="user-form" th:action="@{/admin/usuarios}" method="post" aria-labelledby="new-user-title">
+					<h2 id="new-user-title">Crear usuario local</h2>
+
+					<label>
+						<span>Usuario local</span>
+						<input name="username" type="text" maxlength="120" pattern="[a-zA-Z0-9._@-]+"
+								placeholder="chofer.local" required>
+					</label>
+
+					<label>
+						<span>Clave local</span>
+						<input name="password" type="password" minlength="8" maxlength="120" autocomplete="new-password"
+								placeholder="Minimo 8 caracteres" required>
+						<small class="field-help">Solo se crean usuarios locales. Las cuentas AD se toman del dominio y no llevan clave aca.</small>
+					</label>
+
+					<label>
+						<span>Nombre visible</span>
+						<input name="nombreVisible" type="text" maxlength="180"
+								placeholder="Gustavo Elias Murad" required>
+					</label>
+
+					<label>
+						<span>Fuero o area</span>
+						<input name="fuero" type="text" maxlength="120" placeholder="Informatica" required>
+					</label>
+
+					<fieldset class="role-picker">
+						<legend>Rol inicial</legend>
+						<label th:each="rol : ${roles}">
+							<input type="checkbox" name="roles" th:value="${rol.codigo}" th:checked="${rol.codigo == 'LECTOR'}">
+							<span>
+								<strong th:text="${rol.codigo}">ADMINISTRADOR</strong>
+								<small th:text="${rol.descripcion}">Acceso total.</small>
+							</span>
+						</label>
+					</fieldset>
+
+					<label class="checkbox-row">
+						<input type="checkbox" name="activo" value="true" checked>
+						<span>Usuario activo</span>
+					</label>
+
+					<button class="primary-action" type="submit">Crear usuario</button>
+				</form>
+
+				<section class="user-list-section" aria-labelledby="authorized-users-title">
+					<div class="section-header">
+						<h2 id="authorized-users-title">Usuarios autorizados</h2>
+						<span class="count-badge" th:text="${#lists.size(usuarios)} + ' registrados'">0 registrados</span>
+					</div>
+
+					<div class="responsive-table">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Usuario</th>
+									<th scope="col">Nombre</th>
+									<th scope="col">Fuero</th>
+									<th scope="col">Origen</th>
+									<th scope="col">Estado</th>
+									<th scope="col">Roles</th>
+									<th scope="col">Acciones</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="usuario : ${usuarios}">
+									<td data-label="Usuario" th:text="${usuario.username}">admin.local</td>
+									<td data-label="Nombre" th:text="${usuario.nombreVisible}">Administrador Local</td>
+									<td data-label="Fuero" th:text="${usuario.fuero}">Desarrollo local</td>
+									<td data-label="Origen">
+										<span class="role-chip" th:text="${usuario.origen}">LOCAL</span>
+										<span class="credential-hint" th:if="${usuario.tieneCredencialLocal}">con clave local</span>
+									</td>
+									<td data-label="Estado">
+										<span class="authorization-badge" th:classappend="${usuario.activo} ? ' is-authorized' : ' is-pending'"
+												th:text="${usuario.activo} ? 'Activo' : 'Inactivo'">Activo</span>
+									</td>
+									<td data-label="Roles">
+										<span class="role-chip" th:each="rol : ${usuario.roles}" th:text="${rol}">ADMINISTRADOR</span>
+									</td>
+									<td data-label="Acciones">
+										<div class="inline-action-form" style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+											<button type="button" class="secondary-action" style="padding: 5px 10px; font-size: 0.8rem;"
+													th:data-id="${usuario.id}" 
+													th:data-username="${usuario.username}" 
+													th:data-roles="${#strings.listJoin(usuario.roles, ',')}" 
+													th:data-activo="${usuario.activo}" 
+													onclick="handleEditClick(this)">Editar</button>
+											<form method="post" th:action="@{/admin/usuarios/editar}" style="display:inline; margin:0;">
+												<input type="hidden" name="id" th:value="${usuario.id}">
+												<input type="hidden" name="activo" th:value="${!usuario.activo}">
+												<input type="hidden" name="roles" th:each="r : ${usuario.roles}" th:value="${r}">
+												<button type="submit" class="secondary-action"
+														th:classappend="${usuario.activo} ? ' btn-deactivate' : ' btn-activate'"
+														style="padding: 5px 10px; font-size: 0.8rem;"
+														th:text="${usuario.activo} ? 'Desactivar' : 'Activar'"
+														th:title="${usuario.activo} ? 'Desactivar acceso al sistema' : 'Activar acceso al sistema'"></button>
+											</form>
+											<button type="button" class="secondary-action" th:if="${usuario.origen == 'LOCAL'}"
+													style="padding: 5px 10px; font-size: 0.8rem;"
+													th:data-id="${usuario.id}" 
+													th:data-username="${usuario.username}" 
+													onclick="handlePasswordClick(this)">Clave</button>
+										</div>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+			</section>
+		</section>
+	</main>
+
+	<!-- Modal de Edicion -->
+	<dialog id="editDialog" class="status-panel">
+		<form method="post" th:action="@{/admin/usuarios/editar}">
+			<h2>Editar Usuario</h2>
+			<input type="hidden" name="id" id="editUserId">
+			<p style="margin: 14px 0 20px;">Usuario: <strong id="editUsername"></strong></p>
+			
+			<fieldset class="role-picker" style="margin-bottom: 18px;">
+				<legend>Roles asignados</legend>
+				<label th:each="rol : ${roles}">
+					<input type="checkbox" name="roles" th:value="${rol.codigo}" class="edit-role-checkbox">
+					<span>
+						<strong th:text="${rol.codigo}">ADMINISTRADOR</strong>
+					</span>
+				</label>
+			</fieldset>
+			
+			<label class="checkbox-row" style="margin-bottom: 24px;">
+				<input type="checkbox" name="activo" value="true" id="editActivo">
+				<span>Usuario activo</span>
+			</label>
+			
+			<div style="display: flex; gap: 10px; justify-content: flex-end;">
+				<button type="button" class="secondary-action" onclick="document.getElementById('editDialog').close()">Cancelar</button>
+				<button type="submit" class="primary-action">Guardar</button>
+			</div>
+		</form>
+	</dialog>
+
+	<!-- Modal de Cambio de Clave -->
+	<dialog id="passwordDialog" class="status-panel">
+		<form method="post" th:action="@{/admin/usuarios/cambiar-clave}">
+			<h2>Cambiar Clave Local</h2>
+			<input type="hidden" name="id" id="passUserId">
+			<p style="margin: 14px 0 20px;">Usuario: <strong id="passUsername"></strong></p>
+			
+			<label style="display: grid; gap: 7px; margin-bottom: 24px;">
+				<span style="color: #415366; font-size: 0.84rem; font-weight: 700;">Nueva Clave</span>
+				<input name="password" type="password" minlength="8" maxlength="120" required 
+					   placeholder="Minimo 8 caracteres" 
+					   style="border: 1px solid #c7d2dd; border-radius: 6px; padding: 10px 12px; width: 100%;">
+			</label>
+			
+			<div style="display: flex; gap: 10px; justify-content: flex-end;">
+				<button type="button" class="secondary-action" onclick="document.getElementById('passwordDialog').close()">Cancelar</button>
+				<button type="submit" class="primary-action">Guardar</button>
+			</div>
+		</form>
+	</dialog>
+
+	<script>
+		function handleEditClick(btn) {
+			const id = btn.getAttribute('data-id');
+			const username = btn.getAttribute('data-username');
+			const rolesStr = btn.getAttribute('data-roles');
+			const activo = btn.getAttribute('data-activo') === 'true';
+			
+			document.getElementById('editUserId').value = id;
+			document.getElementById('editUsername').textContent = username;
+			document.getElementById('editActivo').checked = activo;
+			
+			const roles = rolesStr ? rolesStr.split(',') : [];
+			const checkboxes = document.querySelectorAll('.edit-role-checkbox');
+			checkboxes.forEach(cb => {
+				cb.checked = roles.includes(cb.value);
+			});
+			
+			document.getElementById('editDialog').showModal();
+		}
+
+		function handlePasswordClick(btn) {
+			const id = btn.getAttribute('data-id');
+			const username = btn.getAttribute('data-username');
+			
+			document.getElementById('passUserId').value = id;
+			document.getElementById('passUsername').textContent = username;
+			document.getElementById('passwordDialog').showModal();
+		}
+	</script>
+</body>
+</html>

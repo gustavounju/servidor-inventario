@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<header th:fragment="topbar(eyebrow, title, activeModule)" class="panel-header">
+	<!-- =========================================================================
+	     ALTERNATIVA 1: BARRA LATERAL (SIDEBAR) VERTICAL Y CATEGORIZADA
+	     Resuelve el desborde horizontal organizando los 13 módulos por áreas operativas.
+	     ========================================================================= -->
+	<aside class="app-sidebar" id="app-sidebar" aria-label="Menú lateral de navegación">
+		<!-- Cabecera Institucional del Sidebar -->
+		<div class="sidebar-brand">
+			<div class="sidebar-brand-icon" aria-hidden="true">⚖️</div>
+			<div class="sidebar-brand-text">
+				<strong class="sidebar-brand-title">Poder Judicial</strong>
+				<span class="sidebar-brand-sub">Centro Judicial San Pedro</span>
+			</div>
+		</div>
+		<div class="sidebar-app-badge">
+			<span>INVENTARIO MODULAR</span>
+		</div>
+
+		<!-- Navegación Categorizada por Áreas Operativas -->
+		<nav class="sidebar-nav" role="navigation" aria-label="Secciones del sistema">
+			<!-- Sección 1: Principal -->
+			<div class="sidebar-section">
+				<span class="sidebar-section-title">Principal</span>
+				<a class="sidebar-link" th:classappend="${activeModule == 'panel'} ? ' is-active' : ''" th:href="@{/admin}">
+					<span class="sidebar-icon">🏠</span>
+					<span class="sidebar-text">Panel General</span>
+				</a>
+			</div>
+
+			<!-- Sección 2: Informática y Taller -->
+			<div class="sidebar-section">
+				<span class="sidebar-section-title">Hardware y Taller</span>
+				<a class="sidebar-link" th:if="${canViewEquipos != null ? canViewEquipos : true}" th:classappend="${activeModule == 'equipos'} ? ' is-active' : ''" th:href="@{/admin/equipos}">
+					<span class="sidebar-icon">🖥️</span>
+					<span class="sidebar-text">Equipos</span>
+				</a>
+
+				<a class="sidebar-link" th:if="${canViewStock != null ? canViewStock : true}" th:classappend="${activeModule == 'stock'} ? ' is-active' : ''" th:href="@{/admin/stock}">
+					<span class="sidebar-icon">📦</span>
+					<span class="sidebar-text">Stock de Depósito</span>
+				</a>
+				<a class="sidebar-link" th:if="${canViewDashboardDiferencias != null ? canViewDashboardDiferencias : true}" th:classappend="${activeModule == 'diferencias'} ? ' is-active' : ''" th:href="@{/admin/dashboard-diferencias}">
+					<span class="sidebar-icon">⚠️</span>
+					<span class="sidebar-text">Diferencias (Gemelo)</span>
+				</a>
+			</div>
+
+			<!-- Sección 3: Bienes y Espacios -->
+			<div class="sidebar-section">
+				<span class="sidebar-section-title">Bienes y Sedes</span>
+				<a class="sidebar-link" th:if="${canViewUbicaciones != null ? canViewUbicaciones : true}" th:classappend="${activeModule == 'ubicaciones'} ? ' is-active' : ''" th:href="@{/admin/ubicaciones}">
+					<span class="sidebar-icon">🏢</span>
+					<span class="sidebar-text">Sedes y Ubicaciones</span>
+				</a>
+				<a class="sidebar-link" th:if="${canViewMuebles != null ? canViewMuebles : true}" th:classappend="${activeModule == 'muebles'} ? ' is-active' : ''" th:href="@{/admin/muebles}">
+					<span class="sidebar-icon">🪑</span>
+					<span class="sidebar-text">Muebles</span>
+				</a>
+			</div>
+
+			<!-- Sección 4: Gestión Operativa -->
+			<div class="sidebar-section">
+				<span class="sidebar-section-title">Operaciones</span>
+				<a class="sidebar-link" th:if="${canViewActas != null ? canViewActas : true}" th:classappend="${activeModule == 'actas'} ? ' is-active' : ''" th:href="@{/admin/actas}">
+					<span class="sidebar-icon">📋</span>
+					<span class="sidebar-text">Actas y Movimientos</span>
+				</a>
+				<a class="sidebar-link" th:if="${canViewReportes != null ? canViewReportes : true}" th:classappend="${activeModule == 'reportes'} ? ' is-active' : ''" th:href="@{/admin/reportes}">
+					<span class="sidebar-icon">📊</span>
+					<span class="sidebar-text">Reportes</span>
+				</a>
+				<a class="sidebar-link" th:if="${canViewTareas != null ? canViewTareas : true}" th:classappend="${activeModule == 'tareas'} ? ' is-active' : ''" th:href="@{/admin/tareas}">
+					<span class="sidebar-icon">🔧</span>
+					<span class="sidebar-text">Tareas Técnicas</span>
+				</a>
+			</div>
+
+			<!-- Sección 5: Sistema y Auditoría -->
+			<div class="sidebar-section">
+				<span class="sidebar-section-title">Administración</span>
+				<a class="sidebar-link" th:if="${canViewAuditoria != null ? canViewAuditoria : true}" th:classappend="${activeModule == 'auditoria'} ? ' is-active' : ''" th:href="@{/admin/auditoria}">
+					<span class="sidebar-icon">🛡️</span>
+					<span class="sidebar-text">Auditoría Global</span>
+				</a>
+				<a class="sidebar-link" th:if="${canManageUsers != null ? canManageUsers : true}" th:classappend="${activeModule == 'usuarios'} ? ' is-active' : ''" th:href="@{/admin/usuarios}">
+					<span class="sidebar-icon">👥</span>
+					<span class="sidebar-text">Usuarios y Permisos</span>
+				</a>
+			</div>
+		</nav>
+
+		<!-- Perfil y Cierre de Sesión en pie de barra -->
+		<div class="sidebar-user-footer">
+			<div class="sidebar-user-info">
+				<span class="sidebar-user-name" th:text="${displayName != null and !displayName.isEmpty() ? displayName : (username != null and !username.isEmpty() ? username : 'Usuario')}">Usuario</span>
+				<span class="sidebar-user-sub" th:text="'@' + ${username != null and !username.isEmpty() ? username : 'local'}">@usuario</span>
+			</div>
+			<form class="logout-form" th:action="@{/logout}" method="post">
+				<button type="submit" class="sidebar-logout-btn" title="Cerrar sesión" aria-label="Cerrar sesión">
+					🚪 Salir
+				</button>
+			</form>
+		</div>
+	</aside>
+
+	<!-- Fondo oscuro móvil para cerrar el sidebar al tocar afuera -->
+	<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+	<!-- Script de aplicación inmediata de tema visual (Por defecto: Modo Oscuro "Eye-Care" relajante) -->
+	<script>
+		(function() {
+			try {
+				var savedTheme = localStorage.getItem('modular-app-theme') || 'dark';
+				document.documentElement.setAttribute('data-theme', savedTheme);
+			} catch (e) {
+				document.documentElement.setAttribute('data-theme', 'dark');
+			}
+		})();
+	</script>
+
+	<!-- Barra Superior Limpia del Área de Contenido (Sin la fila desbordada de 13 botones) -->
+	<div class="panel-topbar">
+		<div class="panel-branding" style="display: flex; align-items: center; gap: 12px;">
+			<!-- Botón de apertura de menú en pantallas compactas / móviles -->
+			<button type="button" class="sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Abrir menú de navegación" title="Abrir menú">
+				☰
+			</button>
+			<div>
+				<p class="eyebrow" th:text="${eyebrow}">Modulo</p>
+				<h1 id="panel-title" th:text="${title}">Titulo</h1>
+			</div>
+		</div>
+
+		<div class="topbar-actions" style="display: flex; align-items: center; gap: 10px;">
+			<!-- Botón de Conmutación de Modo Visual (Oscuro / Claro) -->
+			<button type="button" class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Alternar modo visual (Oscuro / Claro)" aria-label="Alternar modo visual">
+				<span id="theme-toggle-icon">🌙</span>
+				<span class="theme-toggle-text" id="theme-toggle-label">Modo Oscuro</span>
+			</button>
+
+			<div class="user-session-pill" title="Sesión activa">
+				<div class="user-avatar" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+						<circle cx="12" cy="7" r="4"></circle>
+					</svg>
+				</div>
+				<div class="user-meta">
+					<span class="user-name" th:text="${displayName != null and !displayName.isEmpty() ? displayName : (username != null and !username.isEmpty() ? username : 'Usuario')}">Usuario</span>
+					<span class="user-subtext">
+						<span class="user-account" th:text="'@' + ${username != null and !username.isEmpty() ? username : 'local'}">@usuario</span>
+						<span class="user-badge" th:if="${fuero != null and !#strings.isEmpty(fuero)}" th:text="${fuero}">Fuero</span>
+					</span>
+				</div>
+				<form class="logout-form" th:action="@{/logout}" method="post">
+					<button type="submit" class="logout-pill-btn" title="Cerrar sesión" aria-label="Cerrar sesión">
+						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+							<polyline points="16 17 21 12 16 7"></polyline>
+							<line x1="21" y1="12" x2="9" y2="12"></line>
+						</svg>
+						<span>Salir</span>
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Script de alternancia de menú y tema visual accesible -->
+	<script>
+		function toggleSidebar() {
+			var sb = document.getElementById('app-sidebar');
+			var bd = document.getElementById('sidebar-backdrop');
+			if (sb) sb.classList.toggle('is-open');
+			if (bd) bd.classList.toggle('is-open');
+		}
+
+		function applyTheme(theme) {
+			document.documentElement.setAttribute('data-theme', theme);
+			try {
+				localStorage.setItem('modular-app-theme', theme);
+			} catch (e) {}
+			var icon = document.getElementById('theme-toggle-icon');
+			var label = document.getElementById('theme-toggle-label');
+			if (icon && label) {
+				if (theme === 'light') {
+					icon.textContent = '☀️';
+					label.textContent = 'Modo Claro';
+				} else {
+					icon.textContent = '🌙';
+					label.textContent = 'Modo Oscuro';
+				}
+			}
+		}
+
+		function toggleTheme() {
+			var current = document.documentElement.getAttribute('data-theme') || 'dark';
+			var next = current === 'dark' ? 'light' : 'dark';
+			applyTheme(next);
+		}
+
+		document.addEventListener('DOMContentLoaded', function() {
+			document.body.classList.add('has-sidebar');
+			try {
+				var savedTheme = localStorage.getItem('modular-app-theme') || 'dark';
+				applyTheme(savedTheme);
+			} catch (e) {
+				applyTheme('dark');
+			}
+		});
+	</script>
+</header>
+
+</body>
+</html>

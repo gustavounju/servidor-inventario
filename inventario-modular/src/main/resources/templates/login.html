@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title th:text="${applicationName} + ' - Ingreso'">Inventario Modular - Ingreso</title>
+	<link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+	<main class="shell">
+		<section class="status-panel login-panel" aria-labelledby="login-title">
+			<p class="eyebrow">Centro Judicial San Pedro</p>
+			<h1 id="login-title" th:text="${applicationName}">Inventario Modular</h1>
+
+			<p class="login-intro">Ingrese con usuario local o credenciales de dominio habilitadas.</p>
+
+			<p class="success-message" th:if="${loggedOut}">Sesion cerrada correctamente.</p>
+			<p class="error-message" th:if="${hasError}">Usuario o clave incorrectos.</p>
+
+			<form class="login-form" th:action="@{/login}" method="post">
+				<label>
+					<span>Usuario</span>
+					<input type="text" name="username" autocomplete="username" required autofocus>
+				</label>
+
+				<label>
+					<span>Clave</span>
+					<input type="password" name="password" autocomplete="current-password" required>
+				</label>
+
+				<button class="primary-action" type="submit">Ingresar</button>
+			</form>
+
+			<!-- Copia rápida del script PowerShell de inventario: se oculta visualmente el área de código para mayor limpieza estética, manteniendo intacto el botón y su funcionalidad -->
+			<section class="script-copy-panel" aria-labelledby="script-copy-title">
+				<h2 id="script-copy-title">Inventario de equipo</h2>
+				<textarea id="inventory-command" readonly style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;" aria-hidden="true"></textarea>
+				<button class="secondary-action" id="copy-inventory-command" type="button">Copiar comando</button>
+				<p class="script-copy-status" id="copy-inventory-status" role="status" aria-live="polite"></p>
+			</section>
+		</section>
+	</main>
+	<script>
+		(function () {
+			const origin = window.location.origin;
+			const isHttps = window.location.protocol === "https:";
+			const tlsPrefix = isHttps
+				? "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]'Tls12,Tls11,Tls'; "
+				: "";
+			// El comando usa la misma IP/puerto del login y valida SHA-256 antes de ejecutar.
+			const command = tlsPrefix + [
+				"$u='" + origin + "';",
+				"$p=\"$env:TEMP\\inventario-modular.ps1\";",
+				"$wc=New-Object Net.WebClient;",
+				"$h=$wc.DownloadString(\"$u/scripts/windows/inventario-modular.ps1.sha256\").Trim();",
+				"$wc.DownloadFile(\"$u/scripts/windows/inventario-modular.ps1\",$p);",
+				"$sha=[System.Security.Cryptography.SHA256]::Create();",
+				"$fs=[System.IO.File]::OpenRead($p);",
+				"try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()};",
+				"if($a -ne $h){throw \"SHA-256 invalido. Script descargado no coincide con el publicado por el servidor.\"};",
+				"powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl \"$u/api/v1/equipos/inventario\""
+			].join(" ");
+			const commandBox = document.getElementById("inventory-command");
+			const copyButton = document.getElementById("copy-inventory-command");
+			const status = document.getElementById("copy-inventory-status");
+			commandBox.value = command;
+			copyButton.addEventListener("click", function () {
+				if (navigator.clipboard && window.isSecureContext) {
+					navigator.clipboard.writeText(command).then(function () {
+						status.textContent = "Comando copiado.";
+					}).catch(function () {
+						commandBox.select();
+						status.textContent = "Seleccione y copie el comando.";
+					});
+					return;
+				}
+				commandBox.select();
+				document.execCommand("copy");
+				status.textContent = "Comando copiado.";
+			});
+		}());
+	</script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Acta de Movimiento</title>
+    <style>
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 12pt; color: #333; line-height: 1.5; margin: 40px; }
+        .header { text-align: center; border-bottom: 2px solid #23405f; padding-bottom: 20px; margin-bottom: 30px; }
+        .header h1 { color: #23405f; margin: 0 0 10px 0; }
+        .header p { margin: 0; color: #555; }
+        .content-section { margin-bottom: 30px; }
+        .content-section h2 { font-size: 14pt; color: #23405f; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #f6f8fa; width: 30%; }
+        .signatures { margin-top: 80px; width: 100%; text-align: center; }
+        .signatures td { border: none; padding-top: 60px; }
+        .sign-line { border-top: 1px solid #000; width: 80%; margin: 0 auto; padding-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Acta de <span th:text="${movimiento.tipoMovimiento}">Movimiento</span> de Equipamiento</h1>
+        <p>Poder Judicial de San Pedro de Jujuy</p>
+        <p>Fecha de emisión: <span th:text="${#temporals.format(movimiento.fechaMovimiento, 'dd/MM/yyyy HH:mm')}"></span></p>
+    </div>
+
+    <div class="content-section">
+        <h2>Datos del Equipo</h2>
+        <table>
+            <tr><th>ID de Inventario / Nombre</th><td th:text="${equipo.nombre}"></td></tr>
+            <tr><th>Fuero / Área Asignada</th><td th:text="${equipo.fuero}"></td></tr>
+            <tr><th>Procesador</th><td th:text="${equipo.procesador}"></td></tr>
+            <tr><th>Memoria RAM</th><td th:text="${equipo.ramMb} + ' MB'"></td></tr>
+        </table>
+    </div>
+
+    <div class="content-section">
+        <h2>Detalles del Movimiento</h2>
+        <table>
+            <tr><th>Tipo de Movimiento</th><td th:text="${movimiento.tipoMovimiento}"></td></tr>
+            <tr><th>Usuario Responsable / Destino</th><td th:text="${movimiento.usuarioDestino}"></td></tr>
+            <tr><th>Ubicación de Origen</th><td th:text="${movimiento.ubicacionOrigen}"></td></tr>
+            <tr><th>Ubicación de Destino</th><td th:text="${movimiento.ubicacionDestino}"></td></tr>
+            <tr><th>Registrado por (Admin)</th><td th:text="${movimiento.registradoPor}"></td></tr>
+            <tr><th>Observaciones</th><td th:text="${movimiento.observaciones}"></td></tr>
+        </table>
+    </div>
+
+    <table class="signatures">
+        <tr>
+            <td>
+                <div class="sign-line">Firma de Quien Entrega</div>
+            </td>
+            <td>
+                <div class="sign-line">Firma de Quien Recibe</div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

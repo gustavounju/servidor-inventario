@@ -1,0 +1,2 @@
+ALTER TABLE equipos
+  ADD COLUMN ubicacion VARCHAR(180) NULL AFTER fuero;

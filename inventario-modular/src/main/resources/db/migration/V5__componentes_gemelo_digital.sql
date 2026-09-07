@@ -1,0 +1,21 @@
+CREATE TABLE componentes (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  equipo_id BIGINT NOT NULL,
+  tipo VARCHAR(60) NOT NULL,
+  origen VARCHAR(40) NOT NULL,
+  estado_comparacion VARCHAR(40) NOT NULL,
+  descripcion VARCHAR(255) NOT NULL,
+  marca VARCHAR(120) NULL,
+  modelo VARCHAR(180) NULL,
+  serial VARCHAR(180) NULL,
+  capacidad VARCHAR(120) NULL,
+  ubicacion VARCHAR(120) NULL,
+  observaciones VARCHAR(500) NULL,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_componentes_equipo FOREIGN KEY (equipo_id) REFERENCES equipos (id),
+  INDEX idx_componentes_equipo_tipo (equipo_id, tipo),
+  INDEX idx_componentes_serial (serial)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

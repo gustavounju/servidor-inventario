@@ -1,0 +1,40 @@
+image: eclipse-temurin:21
+
+stages:
+  - validar
+  - construir
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+
+cache:
+  key:
+    files:
+      - pom.xml
+  paths:
+    - .m2/repository/
+
+validar:
+  stage: validar
+  script:
+    - sh ./mvnw $MAVEN_CLI_OPTS test
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+    paths:
+      - target/surefire-reports/
+    expire_in: 7 days
+
+construir:
+  stage: construir
+  needs:
+    - validar
+  script:
+    - sh ./mvnw $MAVEN_CLI_OPTS -DskipTests package
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 7 days
