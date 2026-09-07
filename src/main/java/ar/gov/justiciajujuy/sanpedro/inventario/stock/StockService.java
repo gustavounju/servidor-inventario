@@ -90,6 +90,11 @@ public class StockService {
 	public void eliminar(Long id) {
 		StockComponente componente = stockComponenteRepository.findById(id)
 				.orElseThrow(() -> new StockComponenteNoEncontradoException(id));
+		
+		if (componente.getEstado() == EstadoStockComponente.ASIGNADO) {
+			throw new IllegalStateException("No se puede eliminar del stock porque ya fue ASIGNADO a un equipo. Para removerlo, ve a la ficha del equipo y desvincúlalo.");
+		}
+		
 		stockComponenteRepository.delete(componente);
 		auditoriaService.registrar("STOCK", "ELIMINAR", "StockComponente", id,
 				"Componente de stock eliminado: " + componente.getDescripcion() + ".");

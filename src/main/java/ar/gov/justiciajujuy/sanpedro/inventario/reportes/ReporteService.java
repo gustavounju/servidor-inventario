@@ -8,8 +8,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaService.ActaDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoRepository;
 import ar.gov.justiciajujuy.sanpedro.inventario.muebles.MuebleService;
 import ar.gov.justiciajujuy.sanpedro.inventario.muebles.MuebleService.MuebleDetalle;
-import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.PatrimonioService;
-import ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.PatrimonioService.BienPatrimonialDetalle;
+
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.TareaTecnicaDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
@@ -21,17 +20,16 @@ public class ReporteService {
 
 	private final EquipoRepository equipoRepository;
 	private final MuebleService muebleService;
-	private final PatrimonioService patrimonioService;
+
 	private final TareaTecnicaService tareaTecnicaService;
 	private final ActaService actaService;
 	private final UbicacionService ubicacionService;
-
 	public ReporteService(EquipoRepository equipoRepository, MuebleService muebleService,
-			PatrimonioService patrimonioService, TareaTecnicaService tareaTecnicaService, ActaService actaService,
+			TareaTecnicaService tareaTecnicaService, ActaService actaService,
 			UbicacionService ubicacionService) {
 		this.equipoRepository = equipoRepository;
 		this.muebleService = muebleService;
-		this.patrimonioService = patrimonioService;
+
 		this.tareaTecnicaService = tareaTecnicaService;
 		this.actaService = actaService;
 		this.ubicacionService = ubicacionService;
@@ -41,7 +39,6 @@ public class ReporteService {
 		return new ResumenOperativo(
 				equipoRepository.count(),
 				muebleService.contar(),
-				patrimonioService.contar(),
 				tareaTecnicaService.contar(),
 				actaService.contar(),
 				ubicacionService.contar());
@@ -63,22 +60,7 @@ public class ReporteService {
 		return csv.toString();
 	}
 
-	public String patrimonioCsv(String query) {
-		StringBuilder csv = new StringBuilder("numeroPatrimonial,categoria,descripcion,ubicacion,fuero,custodio,estado,equipoNombre,activo\n");
-		for (BienPatrimonialDetalle bien : patrimonioService.buscar(query, null)) {
-			csv.append(fila(Arrays.asList(
-					bien.numeroPatrimonial(),
-					bien.categoria(),
-					bien.descripcion(),
-					bien.ubicacion(),
-					bien.fuero(),
-					bien.custodio(),
-					String.valueOf(bien.estado()),
-					bien.equipoNombre(),
-					String.valueOf(bien.activo()))));
-		}
-		return csv.toString();
-	}
+
 
 	public String tareasCsv(String query) {
 		StringBuilder csv = new StringBuilder("id,titulo,equipoNombre,estado,prioridad,responsable\n");
@@ -143,7 +125,7 @@ public class ReporteService {
 		return limpio.contains(",") || limpio.contains("\"") || limpio.contains("\n") ? "\"" + limpio + "\"" : limpio;
 	}
 
-	public record ResumenOperativo(long equipos, long muebles, long bienesPatrimoniales, long tareas, long actas,
+	public record ResumenOperativo(long equipos, long muebles, long tareas, long actas,
 			long ubicaciones) {
 	}
 }

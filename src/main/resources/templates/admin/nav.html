@@ -38,10 +38,7 @@
 					<span class="sidebar-icon">🖥️</span>
 					<span class="sidebar-text">Equipos</span>
 				</a>
-				<a class="sidebar-link" th:if="${canViewOrdenesArmado != null ? canViewOrdenesArmado : true}" th:classappend="${activeModule == 'ordenes'} ? ' is-active' : ''" th:href="@{/admin/ordenes-armado}">
-					<span class="sidebar-icon">🛠️</span>
-					<span class="sidebar-text">Órdenes de Armado</span>
-				</a>
+
 				<a class="sidebar-link" th:if="${canViewStock != null ? canViewStock : true}" th:classappend="${activeModule == 'stock'} ? ' is-active' : ''" th:href="@{/admin/stock}">
 					<span class="sidebar-icon">📦</span>
 					<span class="sidebar-text">Stock de Depósito</span>
@@ -62,10 +59,6 @@
 				<a class="sidebar-link" th:if="${canViewMuebles != null ? canViewMuebles : true}" th:classappend="${activeModule == 'muebles'} ? ' is-active' : ''" th:href="@{/admin/muebles}">
 					<span class="sidebar-icon">🪑</span>
 					<span class="sidebar-text">Muebles</span>
-				</a>
-				<a class="sidebar-link" th:if="${canViewPatrimonio != null ? canViewPatrimonio : true}" th:classappend="${activeModule == 'patrimonio'} ? ' is-active' : ''" th:href="@{/admin/patrimonio}">
-					<span class="sidebar-icon">🏷️</span>
-					<span class="sidebar-text">Patrimonio</span>
 				</a>
 			</div>
 

@@ -1,6 +1,5 @@
 package ar.gov.justiciajujuy.sanpedro.inventario.web;
 
-import ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoService;
 import ar.gov.justiciajujuy.sanpedro.inventario.componentes.ComponenteService;
 import ar.gov.justiciajujuy.sanpedro.inventario.componentes.ComponenteService.GuardarComponenteCommand;
 import ar.gov.justiciajujuy.sanpedro.inventario.componentes.EstadoComparacion;
@@ -15,6 +14,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.equipos.InventarioViejoImportSer
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
 import ar.gov.justiciajujuy.sanpedro.inventario.stock.StockService;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
+import java.util.List;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -60,14 +60,12 @@ public class EquipoPageController {
 	private final GemeloDigitalService gemeloDigitalService;
 	private final UbicacionService ubicacionService;
 	private final InventarioViejoImportService inventarioViejoImportService;
-	private final OrdenArmadoService ordenArmadoService;
 	private final ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService;
 	private final StockService stockService;
 
 	public EquipoPageController(AuthorizationService authorizationService, EquipoService equipoService,
 			ComponenteService componenteService, GemeloDigitalService gemeloDigitalService,
 			UbicacionService ubicacionService, InventarioViejoImportService inventarioViejoImportService,
-			OrdenArmadoService ordenArmadoService,
 			ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService,
 			StockService stockService) {
 		this.authorizationService = authorizationService;
@@ -76,7 +74,6 @@ public class EquipoPageController {
 		this.gemeloDigitalService = gemeloDigitalService;
 		this.ubicacionService = ubicacionService;
 		this.inventarioViejoImportService = inventarioViejoImportService;
-		this.ordenArmadoService = ordenArmadoService;
 		this.fueroService = fueroService;
 		this.stockService = stockService;
 	}
@@ -104,10 +101,6 @@ public class EquipoPageController {
 
 		// 1. Obtención del universo de equipos y relaciones activas para métricas
 		var todosLosEquipos = equipoService.listar(null, 0, 1000).equipos();
-		var equiposConOrdenes = ordenArmadoService.listarTodas().stream()
-				.map(ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoService.OrdenArmadoDetalle::equipoId)
-				.filter(java.util.Objects::nonNull)
-				.collect(java.util.stream.Collectors.toSet());
 		var equiposConGemelo = componenteService.obtenerEquipoIdsConRelevamientoInicial();
 
 		// 2. Cálculo de métricas para las tarjetas superiores
@@ -119,26 +112,33 @@ public class EquipoPageController {
 				.filter(e -> e.ultimoReporteEn() != null && !equiposConGemelo.contains(e.id()))
 				.count();
 		long enTallerCount = todosLosEquipos.stream()
-				.filter(e -> equiposConOrdenes.contains(e.id()) || e.ultimoReporteEn() == null)
+				.filter(e -> e.ultimoReporteEn() == null)
 				.count();
 
 		// 3. Filtrado por término de búsqueda (q) y estado seleccionado en las tarjetas métricas
 		var resultadoEquipos = equipoService.listar(q, 0, 50);
-		if (org.springframework.util.StringUtils.hasText(estado)) {
-			var listaFiltrada = resultadoEquipos.equipos().stream().filter(e -> {
+		var listaFiltrada = resultadoEquipos.equipos().stream().filter(e -> {
+			if (org.springframework.util.StringUtils.hasText(estado)) {
 				if ("SINCRONIZADO".equalsIgnoreCase(estado)) {
 					return e.ultimoReporteEn() != null && equiposConGemelo.contains(e.id());
 				} else if ("PENDIENTE".equalsIgnoreCase(estado)) {
 					return e.ultimoReporteEn() != null && !equiposConGemelo.contains(e.id());
 				} else if ("TALLER".equalsIgnoreCase(estado)) {
-					return equiposConOrdenes.contains(e.id()) || e.ultimoReporteEn() == null;
+					return e.ultimoReporteEn() == null;
 				}
 				return true;
-			}).toList();
-			resultadoEquipos = new ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoPagina(
-					listaFiltrada,
-					new ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.Paginacion(0, 50, listaFiltrada.size(), 1));
-		}
+			} else {
+				// Vista por defecto: ocultar los equipos creados en taller que no fueron reportados
+				if (org.springframework.util.StringUtils.hasText(q)) {
+					return true; // Si busca por texto, mostramos todo lo que coincida
+				}
+				return e.ultimoReporteEn() != null || (e.nombre() != null && !e.nombre().startsWith("TALLER-"));
+			}
+		}).toList();
+		
+		resultadoEquipos = new ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoPagina(
+				listaFiltrada,
+				new ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.Paginacion(0, 50, listaFiltrada.size(), 1));
 
 		// 4. Carga de atributos en el modelo para renderizado en Thymeleaf
 		model.addAttribute("query", q == null ? "" : q.trim());
@@ -148,17 +148,15 @@ public class EquipoPageController {
 		model.addAttribute("pendientesGemeloCount", pendientesGemeloCount);
 		model.addAttribute("enTallerCount", enTallerCount);
 		model.addAttribute("equipos", resultadoEquipos);
-		model.addAttribute("equiposConOrdenes", equiposConOrdenes);
 		model.addAttribute("equiposConGemelo", equiposConGemelo);
 		model.addAttribute("puedeEditar", authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR));
-		model.addAttribute("puedeVerOrdenes", authorizationService.tienePermiso(userDetails, "ORDENES_ARMADO", PERMISO_VER));
 		model.addAttribute("puedeVerStock", authorizationService.tienePermiso(userDetails, "STOCK", PERMISO_VER));
 		model.addAttribute("puedeVerActas", authorizationService.tienePermiso(userDetails, "ACTAS", PERMISO_VER));
 		model.addAttribute("puedeVerDiferencias", authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_VER));
 		return "admin/equipos";
 	}
 
-	@org.springframework.web.bind.annotation.GetMapping("/admin/equipos/{id}")
+	@org.springframework.web.bind.annotation.GetMapping("/admin/equipos/{id:\\d+}")
 	public String detalle(
 			Model model,
 			@AuthenticationPrincipal UserDetails userDetails,
@@ -172,10 +170,21 @@ public class EquipoPageController {
 		prepararDetalle(model, userDetails, equipo, EquipoForm.desde(equipo));
 		model.addAttribute("actualizado", "1".equals(actualizado) || "relevamiento".equals(actualizado));
 		model.addAttribute("relevamientoConsolidado", "relevamiento".equals(actualizado) || "1".equals(relevamiento));
+		
+		// Load Taller equipments for linking
+		var tallerEquipos = equipoService.listar(null, 0, 1000).equipos().stream()
+			.filter(e -> e.ultimoReporteEn() == null && !e.id().equals(id))
+			.toList();
+		model.addAttribute("equiposTaller", tallerEquipos);
+
+		// Stock disponible para el modal de carga masiva de piezas
+		var stockDisponible = stockService.listarDisponiblesYActivos();
+		model.addAttribute("stockDisponible", stockDisponible);
+
 		return "admin/equipo-detalle";
 	}
 
-	@PostMapping("/admin/equipos/{id}")
+	@PostMapping("/admin/equipos/{id:\\d+}")
 	public String actualizar(
 			Model model,
 			@AuthenticationPrincipal UserDetails userDetails,
@@ -213,6 +222,32 @@ public class EquipoPageController {
 		equipoService.eliminar(id);
 		redirectAttributes.addFlashAttribute("eliminado", true);
 		return "redirect:/admin/equipos";
+	}
+
+	@PostMapping("/admin/equipos/taller")
+	public String crearEquipoTaller(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam String nombre,
+			RedirectAttributes redirectAttributes) {
+		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para crear equipos.");
+		}
+		EquipoDetalle equipo = equipoService.crearEquipoTaller(nombre);
+		return "redirect:/admin/equipos/" + equipo.id();
+	}
+
+	@PostMapping("/admin/equipos/{id}/vincular-taller")
+	public String vincularEquipoTaller(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			@RequestParam Long idTaller,
+			RedirectAttributes redirectAttributes) {
+		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para editar equipos.");
+		}
+		equipoService.vincularEquipoTaller(id, idTaller);
+		redirectAttributes.addAttribute("actualizado", "1");
+		return "redirect:/admin/equipos/" + id;
 	}
 
 	@PostMapping("/admin/equipos/{equipoId}/componentes/{componenteId}/eliminar")
@@ -269,27 +304,23 @@ public class EquipoPageController {
 	}
 
 	/**
-	 * Inicia de forma ágil una PC en el Taller de Informática en un solo paso:
-	 * crea el equipo con código autogenerado (ej. ARMADO-001) o ingresado,
-	 * crea inmediatamente su primera Orden de Armado directamente EN TALLER (EN_ARMADO),
-	 * y redirige al técnico a la pantalla de órdenes para asociar piezas de stock.
+	 * Instala masivamente múltiples piezas del stock en un equipo de taller.
+	 * Acepta una lista de IDs de stock seleccionados via checkboxes desde el modal de carga masiva.
 	 */
-	@PostMapping("/admin/equipos/nuevo-taller")
-	public String nuevoTaller(
+	@PostMapping("/admin/equipos/{equipoId}/componentes/instalar-masivo")
+	public String instalarMasivo(
 			@AuthenticationPrincipal UserDetails userDetails,
-			@RequestParam(required = false) String codigo,
+			@PathVariable Long equipoId,
+			@RequestParam(required = false) List<Long> stockIds,
 			RedirectAttributes redirectAttributes) {
-		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para crear equipos.");
+		if (!authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_EDITAR)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para editar componentes.");
 		}
-		EquipoDetalle nuevo = equipoService.crearEquipoEnTaller(codigo);
-		ordenArmadoService.crear(nuevo.id(), new ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoService.GuardarOrdenArmadoCommand(
-				ar.gov.justiciajujuy.sanpedro.inventario.armado.EstadoOrdenArmado.EN_ARMADO,
-				"Armado y ensamblado de equipo en taller",
-				"Orden inicial generada automáticamente al iniciar PC en taller."));
-		redirectAttributes.addAttribute("equipoId", nuevo.id());
-		redirectAttributes.addAttribute("creado", "1");
-		return "redirect:/admin/ordenes-armado";
+		if (stockIds != null && !stockIds.isEmpty()) {
+			componenteService.instalarMasivamenteDesdeStock(equipoId, stockIds);
+		}
+		redirectAttributes.addAttribute("actualizado", "1");
+		return "redirect:/admin/equipos/" + equipoId;
 	}
 
 	@PostMapping("/admin/equipos/importar-viejo")
@@ -306,7 +337,6 @@ public class EquipoPageController {
 
 	private void prepararDetalle(Model model, UserDetails userDetails, EquipoDetalle equipo, EquipoForm equipoForm) {
 		boolean puedeVerComponentes = authorizationService.tienePermiso(userDetails, MODULO_COMPONENTES, PERMISO_VER);
-		boolean puedeVerOrdenes = authorizationService.tienePermiso(userDetails, "ORDENES_ARMADO", PERMISO_VER);
 		var listaComponentes = puedeVerComponentes ? componenteService.listarPorEquipo(equipo.id()) : java.util.List.<ComponenteService.ComponenteDetalle>of();
 		var comparaciones = puedeVerComponentes ? gemeloDigitalService.compararEquipo(equipo.id()) : java.util.List.<GemeloDigitalService.ComparacionComponente>of();
 		boolean tieneRelevamientoInicial = listaComponentes.stream()
@@ -314,9 +344,8 @@ public class EquipoPageController {
 		long diferenciasCount = comparaciones.stream()
 				.filter(c -> c.resultado() != EstadoComparacion.COINCIDE)
 				.count();
-		var ordenes = puedeVerOrdenes ? ordenArmadoService.listarPorEquipo(equipo.id()) : java.util.List.<ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoService.OrdenArmadoDetalle>of();
 
-		BrujulaEquipo brujula = calcularBrujula(equipo, listaComponentes, tieneRelevamientoInicial, diferenciasCount, ordenes);
+		BrujulaEquipo brujula = calcularBrujula(equipo, listaComponentes, tieneRelevamientoInicial, diferenciasCount);
 
 		// =========================================================================================
 		// GESTIÓN DE HARDWARE: DISTINCIÓN ENTRE ACCIONES RÁPIDAS DE TALLER Y ÓRDENES DE ARMADO
@@ -381,8 +410,6 @@ public class EquipoPageController {
 		model.addAttribute("comparacionGemelo", comparaciones);
 		model.addAttribute("tieneRelevamientoInicial", tieneRelevamientoInicial);
 		model.addAttribute("diferenciasCount", diferenciasCount);
-		model.addAttribute("puedeVerOrdenes", puedeVerOrdenes);
-		model.addAttribute("ordenesArmado", ordenes);
 		model.addAttribute("brujula", brujula);
 		model.addAttribute("componenteForm", new ComponenteForm());
 		model.addAttribute("tiposComponente", TipoComponente.values());
@@ -417,8 +444,7 @@ public class EquipoPageController {
 			EquipoDetalle equipo,
 			java.util.List<ComponenteService.ComponenteDetalle> componentes,
 			boolean tieneRelevamientoInicial,
-			long diferenciasCount,
-			java.util.List<ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoService.OrdenArmadoDetalle> ordenes) {
+			long diferenciasCount) {
 
 		// 1. Origen del equipo
 		String origenCodigo;
@@ -429,21 +455,12 @@ public class EquipoPageController {
 			origenCodigo = "OFICINA";
 			origenEtiqueta = "🚀 Sumado via Script";
 			origenBadgeClass = "is-authorized";
-			if (!ordenes.isEmpty()) {
-				origenDetalle = "Equipo sumado e inventariado vía script de relevamiento. Cuenta con " + ordenes.size() + " orden(es) técnica(s) en taller.";
-			} else {
-				origenDetalle = "Equipo sumado e inventariado directamente vía script en la máquina cliente.";
-			}
-		} else if (!ordenes.isEmpty()) {
-			origenCodigo = "TALLER";
-			origenEtiqueta = "🔧 Armado en el Taller";
-			origenBadgeClass = "is-authorized";
-			origenDetalle = "Equipo armado y preparado en taller técnico (" + ordenes.size() + " orden(es) registrada(s)). Pendiente de traslado e inventario inicial via script.";
+			origenDetalle = "Equipo sumado e inventariado directamente vía script en la máquina cliente.";
 		} else {
 			origenCodigo = "MANUAL";
 			origenEtiqueta = "📝 Registro Manual";
 			origenBadgeClass = "is-pending";
-			origenDetalle = "Alta en sistema. Aún no ejecutó el script de inventario ni tiene órdenes de taller.";
+			origenDetalle = "Alta en sistema. Aún no ejecutó el script de inventario ni tiene componentes oficiales.";
 		}
 
 		// 2. Semáforo del Gemelo Digital
@@ -456,7 +473,7 @@ public class EquipoPageController {
 			semaforoEtiqueta = "🟡 Esperando Script Inicial";
 			semaforoBadgeClass = "is-pending";
 			semaforoDetalle = "La máquina todavía no reportó su hardware. Se requiere ejecutar el script en el equipo cliente.";
-		} else if (equipo.ultimoReporteEn() != null && !tieneRelevamientoInicial && ordenes.isEmpty()) {
+		} else if (equipo.ultimoReporteEn() != null && !tieneRelevamientoInicial) {
 			semaforoCodigo = "RELEVAMIENTO_PENDIENTE";
 			semaforoEtiqueta = "🟡 Script se comunicó con éxito (Falta registrar Gemelo)";
 			semaforoBadgeClass = "is-pending";

@@ -11,15 +11,6 @@
 		<section class="status-panel admin-users-panel" aria-labelledby="equipos-title">
 			<header th:replace="~{admin/nav :: topbar('Módulo funcional', 'Inventario de Equipos', 'equipos')}"></header>
 
-			<!-- Barra Superior de Acciones Principales -->
-			<div th:if="${puedeEditar}" class="page-top-actions" style="display: flex; justify-content: flex-end; align-items: center; margin: 4px 0 10px;">
-				<form th:action="@{/admin/equipos/nuevo-taller}" method="post" style="margin: 0;">
-					<button type="submit" class="primary-action" style="font-size: 0.76rem; padding: 5px 12px; background: #0284c7; border: none; cursor: pointer; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-						🔧 Iniciar Armado en Taller
-					</button>
-				</form>
-			</div>
-
 			<!-- Barra de Métricas Interactivas Compactas (Filtros directos por estado del gemelo digital) -->
 			<section class="summary-grid" aria-label="Resumen de equipos">
 				<!-- Tarjeta Azul: Total Equipos -->
@@ -50,14 +41,17 @@
 
 			<!-- Catálogo de Equipos -->
 			<section class="modules-section" aria-label="Catálogo de equipos" style="margin-top: 14px;">
-				<form class="search-form" th:action="@{/admin/equipos}" method="get" role="search" style="margin-top: 0;">
-					<label>
-						<span>Buscar</span>
-						<input name="q" type="search" maxlength="120" th:value="${query}" placeholder="Buscar por PC, usuario, fuero o IP...">
-					</label>
-					<button class="primary-action" type="submit">🔍 Buscar</button>
-					<a class="secondary-action" th:if="${estadoFiltro != null and estadoFiltro != ''}" th:href="@{/admin/equipos}">Limpiar Filtro</a>
-				</form>
+				<div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+					<form class="search-form" th:action="@{/admin/equipos}" method="get" role="search" style="margin-top: 0; margin-bottom: 0;">
+						<label>
+							<span>Buscar</span>
+							<input name="q" type="search" maxlength="120" th:value="${query}" placeholder="Buscar por PC, usuario, fuero o IP...">
+						</label>
+						<button class="primary-action" type="submit">🔍 Buscar</button>
+						<a class="secondary-action" th:if="${estadoFiltro != null and estadoFiltro != ''}" th:href="@{/admin/equipos}">Limpiar Filtro</a>
+					</form>
+					<button class="primary-action" onclick="document.getElementById('modal-taller').showModal()" style="background-color: #fb923c; color: #fff;">🛠️ Armar PC en Taller</button>
+				</div>
 
 				<p class="empty-state" th:if="${#lists.isEmpty(equipos.equipos)}">
 					Todavía no hay equipos para mostrar con los filtros aplicados.
@@ -83,8 +77,7 @@
 										<a th:href="@{/admin/equipos/{id}(id=${equipo.id})}" th:text="${equipo.nombre}" style="font-weight: 700; color: var(--text-link); text-decoration: none; font-size: 0.98rem;">PC-001</a>
 										<!-- Etiqueta de Origen -->
 										<span th:if="${equipo.ultimoReporteEn != null}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3);">🚀 Sumado via Script</span>
-										<span th:if="${equipo.ultimoReporteEn == null and equiposConOrdenes != null and equiposConOrdenes.contains(equipo.id)}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">🔧 Armado en el Taller</span>
-										<span th:if="${equipo.ultimoReporteEn == null and (equiposConOrdenes == null or !equiposConOrdenes.contains(equipo.id))}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3);">📝 Manual</span>
+										<span th:if="${equipo.ultimoReporteEn == null}" class="authorization-badge" style="font-size: 0.68rem; padding: 2px 6px; background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3);">📝 Manual</span>
 									</div>
 									<span class="table-subtext" th:text="${equipo.ubicacion ?: 'Sin ubicación asignada'}">Oficina</span>
 								</td>
@@ -124,10 +117,7 @@
 										   style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700;">
 											🖥️ Ver Ficha
 										</a>
-										<!-- Órdenes solo disponible si ya tiene gemelo oficial registrado -->
-										<a class="secondary-action" th:if="${puedeVerOrdenes and equiposConGemelo != null and equiposConGemelo.contains(equipo.id)}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}" style="font-size: 0.8rem; padding: 5px 9px;">
-											🛠️ Órdenes
-										</a>
+
 										<form th:if="${puedeEditar}" th:action="@{/admin/equipos/{id}/eliminar(id=${equipo.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este equipo y todos sus datos asociados?');">
 											<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.8rem; padding: 5px 9px;" title="Eliminar equipo">
 												🗑️
@@ -141,6 +131,22 @@
 				</div>
 			</section>
 		</section>
+
+		<!-- Modal Taller -->
+		<dialog id="modal-taller" class="modal-dialog">
+			<form th:action="@{/admin/equipos/taller}" method="post" class="modal-content">
+				<h3 style="margin-top:0;">🛠️ Armar PC en Taller</h3>
+				<p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Crea un equipo fantasma para pre-ensamblar componentes en el taller. Luego podrás fusionarlo con la PC real cuando esta reporte por red.</p>
+				<label style="display:block; margin-bottom: 1rem;">
+					<span style="display:block; margin-bottom:0.3rem; font-weight: 600;">Nombre Provisorio</span>
+					<input type="text" name="nombre" required th:value="${'TALLER-' + T(java.util.UUID).randomUUID().toString().substring(0,4).toUpperCase()}" style="width:100%; padding: 8px; border: 1px solid var(--border-light); border-radius: 4px;">
+				</label>
+				<div class="modal-actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+					<button type="button" class="secondary-action" onclick="document.getElementById('modal-taller').close()">Cancelar</button>
+					<button type="submit" class="primary-action">Crear Equipo Taller</button>
+				</div>
+			</form>
+		</dialog>
 	</main>
 </body>
 </html>

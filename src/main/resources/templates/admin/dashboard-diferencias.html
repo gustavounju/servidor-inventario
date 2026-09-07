@@ -178,11 +178,7 @@
 								</td>
 								<td data-label="Acciones de Resolución">
 									<div style="display: flex; flex-direction: column; gap: 4px;">
-										<!-- Botón de Orden de Armado con equipo preseleccionado -->
-										<a class="primary-action" th:href="@{/admin/ordenes-armado(equipoId=${equipo.equipoId})}"
-										   style="font-size: 0.76rem; padding: 4px 8px; font-weight: 600; white-space: nowrap; text-align: center; border-radius: 4px;">
-											🛠️ Orden Armado
-										</a>
+
 										<!-- Botón para ver y actualizar Gemelo Digital -->
 										<a class="secondary-action" th:href="@{/admin/equipos/{id}#tab-gemelo(id=${equipo.equipoId})}"
 										   style="font-size: 0.74rem; padding: 4px 8px; font-weight: 600; white-space: nowrap; text-align: center; border-radius: 4px;">

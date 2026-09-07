@@ -74,6 +74,18 @@
 						</button>
 					</form>
 
+					<!-- Botón de Fusión de Taller -->
+					<button th:if="${equipo.ultimoReporteEn != null and puedeEditar}" type="button" class="primary-action" onclick="document.getElementById('modal-vincular').showModal()"
+							style="font-size: 0.82rem; padding: 6px 14px; background-color: #fb923c; border-color: #f97316; font-weight: 700;">
+						🔗 Vincular con PC de Taller
+					</button>
+
+					<!-- Botón carga masiva (siempre visible si puede editar componentes) -->
+					<button th:if="${puedeEditarComponentes}" type="button" class="primary-action" onclick="document.getElementById('modal-masivo').showModal()"
+							style="font-size: 0.82rem; padding: 6px 14px; background-color: #4f46e5; border-color: #4338ca; font-weight: 700;">
+						📦 Carga Masiva de Piezas
+					</button>
+
 					<!-- Si todavía no ejecutó script en el cliente -->
 					<button th:if="${equipo.ultimoReporteEn == null}" type="button" class="secondary-action" onclick="copiarComandoScriptDetalle()"
 							style="font-size: 0.82rem; padding: 6px 14px; font-weight: 700;">
@@ -119,12 +131,7 @@
 						<span class="tab-badge" th:text="${#lists.size(componentes)}">0</span>
 					</button>
 				</li>
-				<li>
-					<button type="button" class="subnav-tab" id="tab-btn-ordenes" onclick="switchTab('ordenes')" role="tab" aria-selected="false" aria-controls="pane-ordenes">
-						🛠️ Órdenes de Armado
-						<span class="tab-badge" th:text="${#lists.size(ordenesArmado)}">0</span>
-					</button>
-				</li>
+
 				<li th:if="${puedeEditar}">
 					<button type="button" class="subnav-tab" id="tab-btn-editar" onclick="switchTab('editar')" role="tab" aria-selected="false" aria-controls="pane-editar">
 						✏️ Edición Manual
@@ -239,8 +246,8 @@
 			     PESTAÑA 2: Gemelo Digital y Componentes
 			     ========================================================== -->
 			<div class="tab-pane" id="pane-gemelo" role="tabpanel" aria-labelledby="tab-btn-gemelo">
-				<!-- Banner Deductivo: Si aún no tiene Gemelo Oficial -->
-				<div class="workflow-banner" th:unless="${tieneRelevamientoInicial}" style="border-left: 4px solid #16a34a; margin-bottom: 20px;">
+				<!-- Banner Deductivo: Si aún no tiene Gemelo Oficial PERO ya reportó vía script -->
+				<div class="workflow-banner" th:if="${!tieneRelevamientoInicial and equipo.ultimoReporteEn != null}" style="border-left: 4px solid #16a34a; margin-bottom: 20px;">
 					<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
 						<div>
 							<strong style="color: #4ade80; font-size: 1.05rem;">👉 Acción Requerida: Confirmar Gemelo Digital Oficial</strong>
@@ -280,7 +287,18 @@
 						<span class="authorization-badge is-authorized" style="font-weight: 700;">✓ COINCIDE 100%</span>
 					</div>
 
-					<!-- Semáforo en Vivo: Discrepancias Detectadas -->
+					<!-- ============================================================================
+					     Semáforo en Vivo: Discrepancias Detectadas (SOBRA / FALTA / REVISAR)
+					     Aparece cuando el motor de comparación del Gemelo Digital encuentra
+					     diferencias entre los componentes oficiales registrados en la base de datos
+					     y los que el script de inventario detecta físicamente instalados en la PC.
+					     Incluye:
+					       1) Banner de alerta con conteo de discrepancias
+					       2) Botón "✅ Adoptar Hardware Físico como Oficial" que re-consolida la
+					          lectura del script como línea base, eliminando además piezas duplicadas
+					          del depósito de stock que coincidan por serial
+					       3) Tabla de detalle por componente con columna "¿Cómo Resolver?"
+					     ============================================================================ -->
 					<div class="workflow-banner" th:if="${tieneRelevamientoInicial and diferenciasCount > 0}" style="border-left: 4px solid #f59e0b; margin: 12px 0 20px;">
 						<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
 							<div style="display: flex; align-items: center; gap: 10px;">
@@ -290,12 +308,16 @@
 									<p style="margin: 2px 0 0; font-size: 0.84rem;">Existe una diferencia entre los componentes que espera el sistema y lo que la máquina física tiene instalado:</p>
 								</div>
 							</div>
+							<!-- Botón de adopción rápida: llama a consolidar-relevamiento-inicial que
+							     re-crea la línea base oficial desde la lectura actual del script y
+							     limpia automáticamente las piezas duplicadas en stock por serial -->
 							<form th:if="${puedeEditarComponentes}" th:action="@{/admin/equipos/{id}/componentes/consolidar-relevamiento-inicial(id=${equipo.id})}" method="post" style="margin: 0;" onsubmit="return confirm('¿Confirmar y adoptar toda la configuración detectada actualmente por el script físico como la base oficial del Gemelo Digital?');">
 								<button class="primary-action" type="submit" style="background: #16a34a; border-color: #15803d; font-size: 0.82rem; padding: 6px 14px; font-weight: 600; cursor: pointer;">
 									✅ Adoptar Hardware Físico como Oficial
 								</button>
 							</form>
 						</div>
+						<!-- Tabla de discrepancias con guía de resolución contextual por estado -->
 						<div class="responsive-table" style="margin-top: 10px;">
 							<table>
 								<thead>
@@ -330,7 +352,9 @@
 												<span style="color: #f87171; display: block; font-weight: 600;">• Si retiraste la pieza:</span>
 												<span style="color: var(--text-secondary);">Usa el botón 📦 <strong>A Stock</strong> o 🗑️ en la tabla de abajo para desvincularla.</span>
 												<span style="color: #facc15; display: block; font-weight: 600; margin-top: 4px;">• Si falta físicamente:</span>
-												<span style="color: var(--text-secondary);">Instala el hardware en la PC o crea una Orden de Armado.</span>
+												<span style="color: var(--text-secondary);">Instala el hardware en la PC e ingresalo por sistema desde el Stock.</span>
+												<span style="color: #60a5fa; display: block; font-weight: 600; margin-top: 4px;">• Si acabas de sumar esta pieza o es un periférico:</span>
+												<span style="color: var(--text-secondary);">Si agregaste un monitor o periférico que el script no detecta automáticamente, puedes ignorar esta alerta o usar el botón <strong>✅ Adoptar Hardware Físico como Oficial</strong> si deseas forzar la sincronización (dependiendo del tipo de componente).</span>
 											</div>
 										</td>
 									</tr>
@@ -759,67 +783,6 @@
 					</p>
 			</div>
 
-			<!-- ==========================================================
-			     PESTAÑA 3: Órdenes de Armado de este Equipo
-			     ========================================================== -->
-			<div class="tab-pane" id="pane-ordenes" role="tabpanel" aria-labelledby="tab-btn-ordenes">
-				<section class="attributes-section" aria-labelledby="ordenes-title">
-					<div class="section-header">
-						<div>
-							<h2 id="ordenes-title">Órdenes de Armado vinculadas</h2>
-							<p class="section-note">
-								Aquí puedes ver todas las órdenes de trabajo y ensamblaje planificadas para este equipo.
-							</p>
-						</div>
-						<a class="primary-action" th:if="${puedeVerOrdenes and tieneRelevamientoInicial}" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
-							➕ Crear / Asignar Orden de Armado
-						</a>
-						<button class="primary-action is-disabled" th:if="${puedeVerOrdenes and !tieneRelevamientoInicial}" disabled style="opacity: 0.5; cursor: not-allowed;" title="Bloqueado hasta registrar Gemelo Digital">
-							🔒 Requiere Gemelo Digital Previo
-						</button>
-					</div>
-
-					<div th:unless="${tieneRelevamientoInicial}" class="empty-state" style="background: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.3); color: #facc15; padding: 14px; border-radius: 6px; margin-bottom: 14px;">
-						⚠️ <strong>Paso previo requerido:</strong> Primero confirma los componentes detectados como el <strong>Gemelo Digital oficial</strong> de esta PC antes de planificar órdenes de armado o cambios de piezas.
-					</div>
-
-					<p class="empty-state" th:if="${tieneRelevamientoInicial and #lists.isEmpty(ordenesArmado)}">
-						Este equipo no tiene órdenes de armado registradas actualmente. Si necesitas sustituir componentes, instalar memorias o discos desde el stock, crea una orden de armado.
-					</p>
-
-					<div class="responsive-table" th:if="${!#lists.isEmpty(ordenesArmado)}">
-						<table>
-							<thead>
-								<tr>
-									<th scope="col">ID</th>
-									<th scope="col">Descripción</th>
-									<th scope="col">Estado</th>
-									<th scope="col">Observaciones</th>
-									<th scope="col">Acción</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr th:each="orden : ${ordenesArmado}">
-									<td data-label="ID" th:text="${orden.id}">1</td>
-									<td data-label="Descripción">
-										<strong th:text="${orden.descripcion}">Armado y ampliación RAM</strong>
-									</td>
-									<td data-label="Estado">
-										<span class="authorization-badge" th:classappend="${orden.estado.name() == 'COMPLETADA'} ? ' is-authorized' : ' is-pending'"
-											  th:text="${orden.estado}">EN_ARMADO</span>
-									</td>
-									<td data-label="Observaciones" th:text="${orden.observaciones ?: 'Sin observaciones'}">Observaciones</td>
-									<td data-label="Acción">
-										<a class="secondary-action" th:href="@{/admin/ordenes-armado(equipoId=${equipo.id})}">
-											Ver componentes de orden ➡
-										</a>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</section>
-			</div>
 
 			<!-- ==========================================================
 			     PESTAÑA 4: Edición Manual Controlada
@@ -952,12 +915,92 @@
 			</div>
 
 		</section>
+
+		<!-- Modal Vincular -->
+		<dialog id="modal-vincular" class="modal-dialog">
+			<form th:action="@{/admin/equipos/{id}/vincular-taller(id=${equipo.id})}" method="post" class="modal-content">
+				<h3 style="margin-top:0;">🔗 Vincular con Equipo de Taller</h3>
+				<p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Selecciona la máquina fantasma (creada en taller) para fusionar sus piezas con esta PC física. <strong>El equipo de taller seleccionado se eliminará luego de transferir los componentes.</strong></p>
+				
+				<label style="display:block; margin-bottom: 1rem;">
+					<span style="display:block; margin-bottom:0.3rem; font-weight: 600;">Equipo de Taller a absorber</span>
+					<select name="idTaller" required style="width:100%; padding: 8px; border: 1px solid var(--border-light); border-radius: 4px;">
+						<option value="">-- Selecciona un equipo --</option>
+						<option th:each="t : ${equiposTaller}" th:value="${t.id}" th:text="${t.nombre}"></option>
+					</select>
+					<p th:if="${#lists.isEmpty(equiposTaller)}" style="color: #ef4444; font-size: 0.85rem; margin-top: 5px;">No hay equipos de taller disponibles.</p>
+				</label>
+
+				<div class="modal-actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+					<button type="button" class="secondary-action" onclick="document.getElementById('modal-vincular').close()">Cancelar</button>
+					<button type="submit" class="primary-action" th:disabled="${#lists.isEmpty(equiposTaller)}" style="background-color: #fb923c; border-color: #f97316;">Absorber Piezas</button>
+				</div>
+			</form>
+		</dialog>
+
+		<!-- Modal Carga Masiva de Piezas -->
+		<dialog id="modal-masivo" class="modal-dialog" style="max-width: 700px; width: 95vw;">
+			<form th:action="@{/admin/equipos/{id}/componentes/instalar-masivo(id=${equipo.id})}" method="post" class="modal-content">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+					<h3 style="margin:0;">📦 Carga Masiva de Piezas desde Stock</h3>
+					<button type="button" onclick="document.getElementById('modal-masivo').close()" style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-muted);">✕</button>
+				</div>
+				<p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">Marcá las piezas que querés asignar a esta PC. Solo se muestran los componentes con estado <strong>DISPONIBLE</strong>.</p>
+
+				<div th:if="${#lists.isEmpty(stockDisponible)}" style="padding: 1rem; text-align: center; color: var(--text-muted);">
+					No hay piezas disponibles en Stock.
+				</div>
+
+				<div th:if="${!#lists.isEmpty(stockDisponible)}" style="max-height: 55vh; overflow-y: auto; border: 1px solid var(--border-light); border-radius: 6px;">
+					<!-- Header fijo -->
+					<div style="display: grid; grid-template-columns: 2.5rem 7rem 1fr 7rem; gap: 0.5rem; align-items: center; padding: 8px 14px; background: var(--surface-elevated); border-bottom: 1px solid var(--border-light); font-size: 0.75rem; font-weight: 700; color: var(--text-muted); position: sticky; top: 0; z-index: 1;">
+						<span><input type="checkbox" id="select-all-stock" title="Seleccionar todos" onchange="document.querySelectorAll('.stock-cb').forEach(cb => cb.checked = this.checked)"></span>
+						<span>TIPO</span>
+						<span>DESCRIPCIÓN / MARCA</span>
+						<span>N° SERIAL</span>
+					</div>
+					<!-- Filas de stock -->
+					<label th:each="s : ${stockDisponible}"
+						   style="display: grid; grid-template-columns: 2.5rem 7rem 1fr 7rem; gap: 0.5rem; align-items: center; padding: 9px 14px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background 0.15s;"
+						   onmouseover="this.style.background='rgba(99,102,241,0.07)'" onmouseout="this.style.background=''">
+						<span style="display:flex; align-items:center;"><input class="stock-cb" type="checkbox" name="stockIds" th:value="${s.id}"></span>
+						<span style="overflow:hidden;">
+							<span style="display:inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; background: rgba(99,102,241,0.2); color: #a5b4fc; max-width: 100%; overflow: hidden; text-overflow: ellipsis;" th:text="${s.tipo}">RAM</span>
+						</span>
+						<span style="font-size: 0.85rem; overflow: hidden;">
+							<strong style="display:block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" th:text="${s.descripcion}">Descripción</strong>
+							<span style="color: var(--text-muted); font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" th:text="${(s.marca ?: '') + ' ' + (s.modelo ?: '')}">Marca Modelo</span>
+						</span>
+						<span style="font-size: 0.82rem; color: var(--text-link); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" th:text="${s.serial ?: 'Sin serial'}">SN-001</span>
+					</label>
+				</div>
+
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; gap: 8px; flex-wrap: wrap;">
+					<span id="count-selected" style="font-size: 0.85rem; color: var(--text-muted);">0 piezas seleccionadas</span>
+					<div style="display: flex; gap: 8px;">
+						<button type="button" class="secondary-action" onclick="document.getElementById('modal-masivo').close()">Cancelar</button>
+						<button type="submit" class="primary-action" style="background: #4f46e5;">⚡ Instalar Seleccionadas</button>
+					</div>
+				</div>
+			</form>
+		</dialog>
 	</main>
+
+	<script>
+		// Actualizar contador de piezas seleccionadas
+		document.addEventListener('change', function(e) {
+			if (e.target.classList.contains('stock-cb') || e.target.id === 'select-all-stock') {
+				var count = document.querySelectorAll('.stock-cb:checked').length;
+				var el = document.getElementById('count-selected');
+				if (el) el.textContent = count + (count === 1 ? ' pieza seleccionada' : ' piezas seleccionadas');
+			}
+		});
+	</script>
 
 	<!-- Script de Pestañas Interactivas Liviano y Accesible -->
 	<script>
 		function switchTab(tabId) {
-			const tabs = ['ficha', 'gemelo', 'ordenes', 'editar'];
+			const tabs = ['ficha', 'gemelo', 'editar'];
 			tabs.forEach(function(id) {
 				const btn = document.getElementById('tab-btn-' + id);
 				const pane = document.getElementById('pane-' + id);
@@ -983,8 +1026,7 @@
 			const hash = window.location.hash;
 			if (hash === '#tab-gemelo') {
 				switchTab('gemelo');
-			} else if (hash === '#tab-ordenes') {
-				switchTab('ordenes');
+
 			} else if (hash === '#tab-editar') {
 				switchTab('editar');
 			} else if (hash === '#tab-ficha') {

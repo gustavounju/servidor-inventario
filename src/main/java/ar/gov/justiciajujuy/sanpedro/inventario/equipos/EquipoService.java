@@ -24,11 +24,9 @@ public class EquipoService {
 	@Autowired(required = false)
 	private ar.gov.justiciajujuy.sanpedro.inventario.componentes.ComponenteRepository componenteRepository;
 
-	@Autowired(required = false)
-	private ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoRepository ordenArmadoRepository;
 
-	@Autowired(required = false)
-	private ar.gov.justiciajujuy.sanpedro.inventario.armado.OrdenArmadoComponenteRepository ordenArmadoComponenteRepository;
+
+
 
 	@Autowired(required = false)
 	private ar.gov.justiciajujuy.sanpedro.inventario.auditoria.MovimientoEquipoRepository movimientoEquipoRepository;
@@ -36,8 +34,6 @@ public class EquipoService {
 	@Autowired(required = false)
 	private ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaRepository tareaTecnicaRepository;
 
-	@Autowired(required = false)
-	private ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.BienPatrimonialRepository bienPatrimonialRepository;
 
 	@Autowired(required = false)
 	private ar.gov.justiciajujuy.sanpedro.inventario.actas.ActaRepository actaRepository;
@@ -71,20 +67,11 @@ public class EquipoService {
 		if (actaRepository != null) {
 			actaRepository.findByEquipoId(id).forEach(ar.gov.justiciajujuy.sanpedro.inventario.actas.Acta::desvincularEquipo);
 		}
-		if (bienPatrimonialRepository != null) {
-			bienPatrimonialRepository.findByEquipoId(id).forEach(ar.gov.justiciajujuy.sanpedro.inventario.patrimonio.BienPatrimonial::desvincularEquipo);
-		}
+
 		if (tareaTecnicaRepository != null) {
 			tareaTecnicaRepository.findByEquipoId(id).forEach(ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnica::desvincularEquipo);
 		}
-		if (ordenArmadoRepository != null) {
-			ordenArmadoRepository.findByEquipoIdOrderByIdDesc(id).forEach(orden -> {
-				if (ordenArmadoComponenteRepository != null) {
-					ordenArmadoComponenteRepository.deleteByOrdenId(orden.getId());
-				}
-				ordenArmadoRepository.delete(orden);
-			});
-		}
+
 
 		equipoRepository.delete(equipo);
 
@@ -231,6 +218,45 @@ public class EquipoService {
 					"Alta automática de equipo por script de relevamiento de telemetría.");
 		}
 		return toDetalle(guardado);
+	}
+
+	@Transactional
+	public EquipoDetalle crearEquipoTaller(String nombre) {
+		String nombreNormalizado = normalizarNombre(nombre);
+		if (equipoRepository.findByNombreIgnoreCase(nombreNormalizado).isPresent()) {
+			throw new EquipoDuplicadoException(nombreNormalizado);
+		}
+		Equipo equipo = new Equipo(nombreNormalizado, "Taller de Informática San Pedro");
+		Equipo guardado = equipoRepository.save(equipo);
+
+		if (auditoriaService != null) {
+			auditoriaService.registrar("EQUIPOS", "CREAR", "Equipo", guardado.getId(),
+					"Equipo lógico de taller '" + nombreNormalizado + "' creado.");
+		}
+		return toDetalle(guardado);
+	}
+
+	@Transactional
+	public void vincularEquipoTaller(Long idReal, Long idTaller) {
+		Equipo equipoReal = equipoRepository.findById(idReal)
+				.orElseThrow(() -> new EquipoNoEncontradoException(idReal));
+		Equipo equipoTaller = equipoRepository.findById(idTaller)
+				.orElseThrow(() -> new EquipoNoEncontradoException(idTaller));
+
+		if (componenteRepository != null) {
+			var componentes = componenteRepository.findByEquipoIdOrderByTipoAscDescripcionAsc(idTaller);
+			for (var comp : componentes) {
+				comp.setEquipo(equipoReal);
+				componenteRepository.save(comp);
+			}
+		}
+
+		if (auditoriaService != null) {
+			auditoriaService.registrar("EQUIPOS", "VINCULAR", "Equipo", idReal,
+					"Equipo real vinculado con equipo de taller '" + equipoTaller.getNombre() + "'. Se transfirieron sus componentes.");
+		}
+
+		eliminar(idTaller);
 	}
 
 	@Transactional

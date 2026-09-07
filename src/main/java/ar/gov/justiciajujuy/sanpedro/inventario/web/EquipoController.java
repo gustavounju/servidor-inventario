@@ -83,6 +83,25 @@ public class EquipoController {
 		return equipo;
 	}
 
+	@PostMapping("/taller")
+	@ResponseStatus(HttpStatus.CREATED)
+	public EquipoDetalle crearEquipoTaller(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam String nombre) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		return equipoService.crearEquipoTaller(nombre);
+	}
+
+	@PostMapping("/{id}/vincular-taller/{idTaller}")
+	@ResponseStatus(HttpStatus.OK)
+	public void vincularEquipoTaller(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			@PathVariable Long idTaller) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		equipoService.vincularEquipoTaller(id, idTaller);
+	}
+
 	@PutMapping("/{id}")
 	public EquipoDetalle actualizar(
 			@AuthenticationPrincipal UserDetails userDetails,

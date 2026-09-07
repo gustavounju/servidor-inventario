@@ -44,12 +44,7 @@ public class ReporteController {
 		return csv("muebles.csv", reporteService.mueblesCsv(query));
 	}
 
-	@GetMapping(value = "/patrimonio.csv", produces = "text/csv")
-	public ResponseEntity<String> patrimonioCsv(@AuthenticationPrincipal UserDetails userDetails,
-			@RequestParam(required = false) String query) {
-		exigirPermiso(userDetails, PERMISO_EXPORTAR);
-		return csv("patrimonio.csv", reporteService.patrimonioCsv(query));
-	}
+
 
 	@GetMapping(value = "/tareas.csv", produces = "text/csv")
 	public ResponseEntity<String> tareasCsv(@AuthenticationPrincipal UserDetails userDetails,

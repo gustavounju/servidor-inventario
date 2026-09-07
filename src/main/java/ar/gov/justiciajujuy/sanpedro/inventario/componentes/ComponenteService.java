@@ -122,9 +122,23 @@ public class ComponenteService {
 		String serial = componente.getSerial();
 
 		if ("STOCK".equalsIgnoreCase(destino)) {
-			StockComponente stockItem = new StockComponente(
-					componente.getTipo() != null ? componente.getTipo() : TipoComponente.RAM,
-					componente.getDescripcion());
+			StockComponente stockItem = null;
+			if (org.springframework.util.StringUtils.hasText(serial)) {
+				java.util.List<StockComponente> existentes = stockComponenteRepository.findBySerialAndActivoTrue(serial);
+				if (!existentes.isEmpty()) {
+					stockItem = existentes.stream()
+							.filter(s -> s.getEstado() == EstadoStockComponente.ASIGNADO)
+							.findFirst()
+							.orElse(existentes.get(0));
+				}
+			}
+			
+			if (stockItem == null) {
+				stockItem = new StockComponente(
+						componente.getTipo() != null ? componente.getTipo() : TipoComponente.RAM,
+						componente.getDescripcion());
+			}
+
 			stockItem.actualizar(
 					componente.getTipo() != null ? componente.getTipo() : TipoComponente.RAM,
 					EstadoStockComponente.DISPONIBLE,
@@ -234,12 +248,42 @@ public class ComponenteService {
 		return toDetalle(guardado);
 	}
 
+	/**
+	 * Instalación masiva de piezas desde stock en un equipo de taller.
+	 * Itera sobre cada ID de stock seleccionado y reutiliza la lógica individual de instalación.
+	 */
+	@Transactional
+	public void instalarMasivamenteDesdeStock(Long equipoId, List<Long> stockIds) {
+		for (Long stockId : stockIds) {
+			instalarDesdeStock(equipoId, stockId, null);
+		}
+	}
+
 	@Transactional(readOnly = true)
 	public Componente obtenerEntidad(Long id) {
 		return componenteRepository.findById(id)
 				.orElseThrow(() -> new ComponenteNoEncontradoException(id));
 	}
 
+	/**
+	 * Consolida la lectura del script físico como la línea base oficial del Gemelo Digital.
+	 * <p>
+	 * Este método ejecuta tres acciones principales:
+	 * <ol>
+	 *   <li><strong>Reemplazo de componentes oficiales:</strong> Elimina todos los componentes con origen
+	 *       {@code RELEVAMIENTO_INICIAL} y los recrea a partir de los detectados por el script ({@code SCRIPT}),
+	 *       marcándolos como {@code ESPERADO}.</li>
+	 *   <li><strong>Limpieza de stock duplicado:</strong> Para cada componente adoptado que tenga número de serie,
+	 *       verifica si existe una pieza activa en {@code stock_componentes} con el mismo serial. Si la encuentra
+	 *       (por ejemplo, porque previamente se usó "📦 A Stock" y ahora se re-adopta), la elimina del depósito
+	 *       automáticamente para evitar duplicados fantasma.</li>
+	 *   <li><strong>Auditoría:</strong> Registra la consolidación y, si hubo limpieza de stock, el detalle de
+	 *       cada pieza retirada con evento {@code LIMPIEZA_POR_ADOPCION}.</li>
+	 * </ol>
+	 *
+	 * @param equipoId identificador del equipo cuyo Gemelo Digital se consolida
+	 * @return lista actualizada de componentes oficiales del equipo
+	 */
 	@Transactional
 	public List<ComponenteDetalle> consolidarRelevamientoInicial(Long equipoId) {
 		Equipo equipo = equipoRepository.findById(equipoId)
@@ -272,6 +316,25 @@ public class ComponenteService {
 					detectado.getUbicacion(),
 					observacionConsolidada(detectado.getObservaciones()),
 					true);
+					
+			// Limpieza de duplicados en el propio equipo (ej. piezas pre-cargadas desde Taller)
+			List<Componente> componentesEquipo = componenteRepository.findByEquipoIdOrderByTipoAscDescripcionAsc(equipoId);
+			for (Componente c : componentesEquipo) {
+				if (c.getOrigen() == OrigenComponente.SCRIPT || c.getOrigen() == OrigenComponente.RELEVAMIENTO_INICIAL) {
+					continue;
+				}
+				boolean coincide = false;
+				if (StringUtils.hasText(detectado.getSerial()) && detectado.getSerial().equalsIgnoreCase(c.getSerial())) {
+					coincide = true;
+				} else if (!StringUtils.hasText(detectado.getSerial()) && c.getTipo() == detectado.getTipo() && 
+						(c.getTipo() == TipoComponente.CPU || c.getTipo() == TipoComponente.MOTHERBOARD || c.getTipo() == TipoComponente.FUENTE || c.getTipo() == TipoComponente.GABINETE)) {
+					coincide = true;
+				}
+				if (coincide) {
+					componenteRepository.delete(c);
+					break; // Solo borramos uno por cada pieza detectada
+				}
+			}
 			componenteRepository.save(relevado);
 
 			// Limpieza de stock duplicado: si esta pieza tiene serial y existe en el depósito

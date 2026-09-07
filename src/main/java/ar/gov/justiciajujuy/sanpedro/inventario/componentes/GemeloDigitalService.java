@@ -69,12 +69,30 @@ public class GemeloDigitalService {
 				continue;
 			}
 
+			boolean esPeriferico = esperado.getTipo() == TipoComponente.MONITOR ||
+					esperado.getTipo() == TipoComponente.TECLADO ||
+					esperado.getTipo() == TipoComponente.MOUSE ||
+					esperado.getTipo() == TipoComponente.IMPRESORA ||
+					esperado.getTipo() == TipoComponente.GABINETE ||
+					esperado.getTipo() == TipoComponente.FUENTE ||
+					esperado.getTipo() == TipoComponente.OTRO;
+
+			if (esPeriferico) {
+				resultado.add(new ComparacionComponente(
+						esperado.getTipo(),
+						texto(esperado),
+						"Aprobado manual",
+						EstadoComparacion.COINCIDE,
+						"Periférico o componente manual (No reportable por script en vivo)."));
+				continue;
+			}
+
 			resultado.add(new ComparacionComponente(
 					esperado.getTipo(),
 					texto(esperado),
 					"Sin detectar",
 					EstadoComparacion.FALTA,
-					"Estaba esperado por orden/stock, pero no aparece detectado."));
+					"Estaba esperado en sistema, pero no aparece detectado por el script."));
 		}
 
 		for (Componente detectado : detectadosPendientes) {

@@ -97,6 +97,10 @@ public class Componente {
 		return equipo;
 	}
 
+	public void setEquipo(Equipo equipo) {
+		this.equipo = equipo;
+	}
+
 	public TipoComponente getTipo() {
 		return tipo;
 	}

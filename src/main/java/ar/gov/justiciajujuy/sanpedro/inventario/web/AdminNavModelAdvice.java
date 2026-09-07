@@ -80,10 +80,7 @@ public class AdminNavModelAdvice {
 		return userDetails != null && authorizationService.tienePermiso(userDetails, "UBICACIONES", "VER");
 	}
 
-	@ModelAttribute("canViewPatrimonio")
-	public boolean canViewPatrimonio(@AuthenticationPrincipal UserDetails userDetails) {
-		return userDetails != null && authorizationService.tienePermiso(userDetails, "PATRIMONIO", "VER");
-	}
+
 
 	@ModelAttribute("canViewActas")
 	public boolean canViewActas(@AuthenticationPrincipal UserDetails userDetails) {

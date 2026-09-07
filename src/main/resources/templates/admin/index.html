@@ -43,15 +43,40 @@
 								Detección de PCs vía script PowerShell, fijación de línea base oficial (Gemelo Digital), armado de piezas en taller y control de diferencias.
 							</p>
 							<div style="background: rgba(37, 99, 235, 0.12); border: 1px solid rgba(37, 99, 235, 0.25); border-radius: 6px; padding: 10px; font-size: 0.8rem; color: #93c5fd; margin-bottom: 12px;">
-								<strong>Recorrido:</strong> Script PS ➔ Equipos ➔ Taller/Órdenes ➔ Stock ➔ Diferencias
+								<strong>Recorrido:</strong> Script PS ➔ Equipos ➔ Ficha/Taller ➔ Stock ➔ Diferencias
 							</div>
 						</div>
 						<div style="display: flex; gap: 6px; flex-wrap: wrap;" th:if="${canViewEquipos != null ? canViewEquipos : true}">
-							<a class="primary-action" th:href="@{/admin/equipos}" style="font-size: 0.8rem; padding: 5px 10px;">🖥️ Equipos</a>
-							<a class="secondary-action" th:if="${canViewOrdenesArmado != null ? canViewOrdenesArmado : true}" th:href="@{/admin/ordenes-armado}" style="font-size: 0.8rem; padding: 5px 9px;">🛠️ Órdenes</a>
-							<a class="secondary-action" th:if="${canViewDashboardDiferencias != null ? canViewDashboardDiferencias : true}" th:href="@{/admin/dashboard-diferencias}" style="font-size: 0.8rem; padding: 5px 9px;">📊 Diferencias</a>
-						</div>
-					</div>
+					<a class="primary-action" th:href="@{/admin/equipos}" style="font-size: 0.8rem; padding: 5px 10px;">🖥️ Equipos</a>
+					<a class="secondary-action" th:if="${canViewDashboardDiferencias != null ? canViewDashboardDiferencias : true}" th:href="@{/admin/dashboard-diferencias}" style="font-size: 0.8rem; padding: 5px 9px;">📊 Diferencias</a>
+					<button class="primary-action" onclick="abrirModalTaller()" style="font-size: 0.8rem; padding: 5px 10px; background: #fb923c; border-color: #f97316;">🛠️ Armar PC en Taller</button>
+				</div>
+			</div>
+
+			<!-- Modal Armar PC en Taller desde Dashboard -->
+		<dialog id="modal-taller-dashboard" class="modal-dialog">
+			<form th:action="@{/admin/equipos/taller}" method="post" class="modal-content">
+				<h3 style="margin-top:0;">🛠️ Armar PC en Taller</h3>
+				<p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Crea un equipo fantasma para pre-ensamblar componentes en el taller. Luego lo fusionás con la PC real cuando esta reporte por red.</p>
+				<label style="display:block; margin-bottom: 1rem;">
+					<span style="display:block; margin-bottom:0.3rem; font-weight: 600;">Nombre Provisorio</span>
+					<input type="text" id="nombre-taller-dashboard" name="nombre" required placeholder="Ej: TALLER-PC01" style="width:100%; padding: 8px; border: 1px solid var(--border-light); border-radius: 4px;">
+				</label>
+				<div style="display: flex; gap: 8px; justify-content: flex-end;">
+					<button type="button" class="secondary-action" onclick="document.getElementById('modal-taller-dashboard').close()">Cancelar</button>
+					<button type="submit" class="primary-action" style="background: #fb923c; border-color: #f97316;">Crear Equipo Taller</button>
+				</div>
+			</form>
+		</dialog>
+		<script>
+			function abrirModalTaller() {
+				var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+				var sufijo = '';
+				for (var i = 0; i < 4; i++) sufijo += chars.charAt(Math.floor(Math.random() * chars.length));
+				document.getElementById('nombre-taller-dashboard').value = 'TALLER-' + sufijo;
+				document.getElementById('modal-taller-dashboard').showModal();
+			}
+		</script>
 
 					<!-- Ruta 2: Patrimonio, Mobiliario y Actas -->
 					<div class="workflow-step-card" style="display: flex; flex-direction: column; justify-content: space-between; border-left: 4px solid #16a34a;">
@@ -68,7 +93,7 @@
 							</div>
 						</div>
 						<div style="display: flex; gap: 6px; flex-wrap: wrap;">
-							<a class="primary-action" th:if="${canViewPatrimonio != null ? canViewPatrimonio : true}" th:href="@{/admin/patrimonio}" style="font-size: 0.8rem; padding: 5px 10px; background: #16a34a;">🏛️ Patrimonio</a>
+
 							<a class="secondary-action" th:if="${canViewActas != null ? canViewActas : true}" th:href="@{/admin/actas}" style="font-size: 0.8rem; padding: 5px 9px;">📋 Actas PDF</a>
 							<a class="secondary-action" th:if="${canViewMuebles != null ? canViewMuebles : true}" th:href="@{/admin/muebles}" style="font-size: 0.8rem; padding: 5px 9px;">🪑 Muebles</a>
 						</div>

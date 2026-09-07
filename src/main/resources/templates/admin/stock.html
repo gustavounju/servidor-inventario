@@ -26,8 +26,8 @@
 					</p>
 					<div class="workflow-next-actions">
 						<span>👉 <strong>Siguiente paso natural recomendado:</strong></span>
-						<a class="primary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}">
-							🛠️ Asignar a una Orden de Armado
+						<a class="primary-action" th:href="@{/admin/equipos}">
+							🛠️ Instalar en un Equipo
 						</a>
 						<button type="button" class="secondary-action" onclick="switchTab('disponibles')">
 							📋 Ver Lista de Stock
@@ -78,27 +78,12 @@
 					</div>
 				</div>
 
-				<!-- Paso 3: Reserva para Ensamble -->
-				<div class="workflow-step" th:classappend="${reservadosCount > 0} ? ' is-done' : ''">
-					<div class="step-header">
-						<span class="step-badge">3</span>
-						<span class="count-badge" th:text="${reservadosCount} + ' reservadas'">0 reservadas</span>
-					</div>
-					<h3 class="step-title">3. Reserva en Órdenes</h3>
-					<p class="step-desc">
-						Componentes asignados a una Orden de Armado y Ensamble para una computadora en taller.
-					</p>
-					<div class="step-action-area">
-						<a class="secondary-action" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}" style="width: 100%; text-align: center; font-size: 0.85rem; padding: 7px 10px;">
-							🛠️ Órdenes de Armado
-						</a>
-					</div>
-				</div>
 
-				<!-- Paso 4: Asignación y Gemelo Digital -->
+
+				<!-- Paso 3: Asignación y Gemelo Digital -->
 				<div class="workflow-step" th:classappend="${asignadosCount > 0} ? ' is-done' : ''">
 					<div class="step-header">
-						<span class="step-badge">4</span>
+						<span class="step-badge">3</span>
 						<span class="authorization-badge is-authorized" th:text="${asignadosCount} + ' INSTALADOS'">EN EQUIPOS 🖥️</span>
 					</div>
 					<h3 class="step-title">4. Asignación y Gemelo</h3>
@@ -127,17 +112,13 @@
 					<strong class="metric-card-value" style="color: #4ade80;" th:text="${disponiblesCount}">0</strong>
 					<span class="metric-card-action" style="color: #4ade80;">Listos en taller ➜</span>
 				</div>
-				<!-- Tarjeta Amarilla: Reservados para Armado - Piezas comprometidas en órdenes técnicas en curso -->
-				<a class="metric-card border-yellow" th:if="${puedeVerOrdenes}" th:href="@{/admin/ordenes-armado}" title="Ver órdenes de armado técnicas">
-					<span class="metric-card-title">RESERVADOS</span>
-					<strong class="metric-card-value" style="color: #facc15;" th:text="${reservadosCount}">0</strong>
-					<span class="metric-card-action" style="color: #facc15;">Ver órdenes ➜</span>
-				</a>
-				<div class="metric-card border-yellow" th:unless="${puedeVerOrdenes}">
+				<!-- Tarjeta Amarilla: Reservados para Armado - Piezas comprometidas en armado en curso -->
+				<div class="metric-card border-yellow">
 					<span class="metric-card-title">RESERVADOS</span>
 					<strong class="metric-card-value" style="color: #facc15;" th:text="${reservadosCount}">0</strong>
 					<span class="metric-card-action" style="color: #facc15;">En armado</span>
 				</div>
+
 				<!-- Tarjeta Naranja: Instalados en PC - Piezas que salieron de depósito y se auditan activas en computadoras -->
 				<a class="metric-card border-orange" th:if="${puedeVerEquipos}" th:href="@{/admin/equipos}" title="Ver catálogo de equipos con hardware instalado">
 					<span class="metric-card-title">INSTALADOS</span>
@@ -196,7 +177,7 @@
 							<tbody>
 								<tr th:each="componente : ${componentesStock}">
 									<td data-label="Tipo">
-										<span class="step-badge" style="width: auto; height: auto; padding: 3px 8px; border-radius: 4px;" th:text="${componente.tipo}">RAM</span>
+										<span class="step-badge" style="width: auto; height: auto; padding: 3px 8px; border-radius: 4px; white-space: nowrap;" th:text="${componente.tipo}">RAM</span>
 									</td>
 									<td data-label="Descripción">
 										<strong th:text="${componente.descripcion}">Memoria RAM</strong>
@@ -224,11 +205,11 @@
 									</td>
 									<td data-label="Acciones">
 										<div style="display: flex; gap: 6px; flex-wrap: wrap;">
-											<a th:if="${puedeVerOrdenes}" class="secondary-action" th:href="@{/admin/ordenes-armado}" style="font-size: 0.8rem; padding: 5px 9px;">
-												🛠️ Asignar
-											</a>
+
 											<form th:if="${puedeEditarStock}" th:action="@{/admin/stock/{id}/eliminar(id=${componente.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta pieza del stock?');">
-												<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.8rem; padding: 5px 9px;">
+												<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.8rem; padding: 5px 9px;"
+														th:disabled="${componente.estado.name() == 'ASIGNADO'}"
+														th:title="${componente.estado.name() == 'ASIGNADO' ? 'No se puede eliminar porque está asignado e instalado en un equipo. Desvincúlalo desde la ficha del equipo primero.' : 'Eliminar pieza del stock'}">
 													🗑️ Eliminar
 												</button>
 											</form>
