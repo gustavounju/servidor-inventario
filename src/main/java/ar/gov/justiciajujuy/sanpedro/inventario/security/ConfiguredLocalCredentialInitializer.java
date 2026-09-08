@@ -11,6 +11,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 @ConditionalOnProperty(name = {
@@ -40,6 +41,9 @@ public class ConfiguredLocalCredentialInitializer implements ApplicationRunner {
 
 	@Override
 	public void run(ApplicationArguments args) {
+		if (!StringUtils.hasText(properties.getUsername()) || !StringUtils.hasText(properties.getPassword())) {
+			return;
+		}
 		if (!tableExists("usuarios") || !tableExists("credenciales_locales")) {
 			return;
 		}

@@ -1,6 +1,7 @@
 package ar.gov.justiciajujuy.sanpedro.inventario.config;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.security.ActiveDirectoryUserDetailsContextMapper;
+import ar.gov.justiciajujuy.sanpedro.inventario.security.LanOnlyAccessFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
@@ -35,13 +36,15 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(
 			HttpSecurity http,
+			NetworkAccessProperties networkAccessProperties,
 			ObjectProvider<AuthenticationProvider> authenticationProviders) throws Exception {
 		authenticationProviders.orderedStream().forEach(http::authenticationProvider);
 
 		http
+			.addFilterBefore(new LanOnlyAccessFilter(networkAccessProperties), UsernamePasswordAuthenticationFilter.class)
 			.addFilterBefore(new TokenAuthenticationFilter(reportToken), UsernamePasswordAuthenticationFilter.class)
 			.csrf(csrf -> csrf
-				.ignoringRequestMatchers("/api/v1/**", "/submit_inventory")
+				.ignoringRequestMatchers("/api/v1/equipos/inventario", "/submit_inventory")
 			)
 			.exceptionHandling(exceptions -> exceptions
 				.authenticationEntryPoint((request, response, authException) -> {
@@ -56,7 +59,6 @@ public class SecurityConfig {
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(
 					"/", "/login", "/logout",
-					"/api/v1/sistema/estado",
 					"/css/**", "/js/**", "/images/**", "/scripts/**", "/webjars/**", "/favicon.ico"
 				).permitAll()
 				.requestMatchers("/submit_inventory").authenticated()

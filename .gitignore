@@ -4,6 +4,7 @@ tmp/
 .local-data/
 .local-data.backup-*/
 *.log
+graphify-out/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

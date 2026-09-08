@@ -370,3 +370,21 @@ Una vez ensamblada e instalada con el sistema operativo en su juzgado o tribunal
 2. El script detecta el hardware real, IP, usuario de sesión y fuero.
 3. Se compara el hardware detectado contra el Gemelo Digital oficial ensamblado en el taller, alertando de cualquier discrepancia de memoria, discos o periféricos.
 
+## Actualizacion 2026-09-08: vinculacion visible y liberacion de stock huerfano
+
+La pantalla `/admin/stock` incorpora la columna `Vinculado a` para que una pieza en estado
+`ASIGNADO` no quede sin contexto operativo.
+
+- Cuando existe un componente activo con el mismo tipo y serial, se muestra la PC vinculada
+  y el ultimo usuario registrado en el equipo.
+- Si el usuario autenticado puede ver equipos, el nombre de la PC enlaza a la ficha
+  `/admin/equipos/{id}`.
+- Si una pieza `ASIGNADO` con serial ya no tiene componente activo asociado, el listado de
+  stock la libera automaticamente a `DISPONIBLE` y registra auditoria `LIBERAR_HUERFANO`.
+- Al desvincular un componente desde la ficha del equipo, el stock activo con el mismo serial
+  y estado `ASIGNADO` tambien se libera a `DISPONIBLE`.
+
+Esta regla corrige el caso operativo donde un tecnico desvincula una pieza del unico equipo
+existente y, al volver a stock, la pieza seguia apareciendo como asignada aunque ya no tenia
+PC asociada.
+

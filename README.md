@@ -155,6 +155,7 @@ La bitacora y el circuito actual de equipos/componentes estan documentados en:
 - [Bitacora del proyecto](docs/inventario-modular/bitacora-del-proyecto.md)
 - [Modulo Componentes y Gemelo Digital](docs/inventario-modular/modulo-componentes-gemelo-digital.md)
 - [Stock, ordenes de armado y comparacion](docs/inventario-modular/stock-ordenes-armado-y-comparacion.md)
+- [Seguridad LAN, stock y discrepancias](docs/inventario-modular/seguridad-lan-stock-y-discrepancias-2026-09-08.md)
 - [Modulo Tareas Tecnicas](docs/inventario-modular/modulo-tareas-tecnicas.md)
 - [Modulo Muebles](docs/inventario-modular/modulo-muebles.md)
 - [Modulo Patrimonio](docs/inventario-modular/modulo-patrimonio.md)

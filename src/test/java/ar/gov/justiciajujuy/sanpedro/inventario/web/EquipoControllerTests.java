@@ -23,7 +23,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
+@SpringBootTest(properties = "inventario.security.report-token=token-test")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Sql(scripts = "/sql/limpiar-seguridad-modular-test.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
@@ -253,7 +253,7 @@ class EquipoControllerTests {
 				""";
 
 		mockMvc.perform(post("/api/v1/equipos/inventario")
-				.header("Authorization", "Bearer dev-token-123456")
+				.header("Authorization", "Bearer token-test")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(body))
 			.andExpect(status().isCreated())
@@ -379,7 +379,7 @@ class EquipoControllerTests {
 				""";
 
 		mockMvc.perform(post("/submit_inventory")
-				.header("Authorization", "Bearer dev-token-123456")
+				.header("Authorization", "Bearer token-test")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(legacyPayload))
 			.andExpect(status().isOk())

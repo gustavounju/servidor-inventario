@@ -170,6 +170,7 @@
 									<th scope="col">N° Serial</th>
 									<th scope="col">Remito / O. Compra</th>
 									<th scope="col">Ubicación Física</th>
+									<th scope="col">Vinculado a</th>
 									<th scope="col">Estado</th>
 									<th scope="col">Acciones</th>
 								</tr>
@@ -199,6 +200,15 @@
 										<span th:unless="${componente.remito != null or componente.ordenCompra != null}" style="color: var(--text-muted); font-size: 0.8rem;">-</span>
 									</td>
 									<td data-label="Ubicación" th:text="${componente.ubicacion ?: 'Depósito'}">Depósito</td>
+									<td data-label="Vinculado a">
+										<div th:if="${componente.equipoId != null}">
+											<a th:if="${puedeVerEquipos}" th:href="@{/admin/equipos/{id}(id=${componente.equipoId})}" style="color: var(--text-link); font-weight: 700;" th:text="${componente.equipoNombre}">PC-INF-001</a>
+											<strong th:unless="${puedeVerEquipos}" th:text="${componente.equipoNombre}">PC-INF-001</strong>
+											<span class="table-subtext" th:if="${componente.ultimoUsuarioEquipo}" th:text="|Usuario: ${componente.ultimoUsuarioEquipo}|">Usuario</span>
+										</div>
+										<span th:if="${componente.equipoId == null and componente.estado.name() == 'ASIGNADO'}" class="authorization-badge is-rejected">Sin vínculo activo</span>
+										<span th:if="${componente.equipoId == null and componente.estado.name() != 'ASIGNADO'}" style="color: var(--text-muted); font-size: 0.8rem;">-</span>
+									</td>
 									<td data-label="Estado">
 										<span class="authorization-badge" th:classappend="${componente.estado.name() == 'DISPONIBLE'} ? ' is-authorized' : ' is-pending'"
 												th:text="${componente.estado}">DISPONIBLE</span>

@@ -3,6 +3,8 @@ package ar.gov.justiciajujuy.sanpedro.inventario.stock;
 import java.util.List;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.auditoria.AuditoriaService;
+import ar.gov.justiciajujuy.sanpedro.inventario.componentes.Componente;
+import ar.gov.justiciajujuy.sanpedro.inventario.componentes.ComponenteRepository;
 import ar.gov.justiciajujuy.sanpedro.inventario.componentes.TipoComponente;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,16 +14,23 @@ import org.springframework.util.StringUtils;
 public class StockService {
 
 	private final StockComponenteRepository stockComponenteRepository;
+	private final ComponenteRepository componenteRepository;
 	private final AuditoriaService auditoriaService;
 
-	public StockService(StockComponenteRepository stockComponenteRepository, AuditoriaService auditoriaService) {
+	public StockService(StockComponenteRepository stockComponenteRepository, ComponenteRepository componenteRepository,
+			AuditoriaService auditoriaService) {
 		this.stockComponenteRepository = stockComponenteRepository;
+		this.componenteRepository = componenteRepository;
 		this.auditoriaService = auditoriaService;
 	}
 
-	@Transactional(readOnly = true)
+	@Transactional
 	public List<StockComponenteDetalle> listarDisponiblesYActivos() {
-		return stockComponenteRepository.findByActivoTrueOrderByTipoAscDescripcionAsc().stream()
+		var componentes = stockComponenteRepository.findByActivoTrueOrderByTipoAscDescripcionAsc();
+		// El stock no guarda equipo_id: el vinculo operativo se reconstruye por serial.
+		// Si una pieza quedo ASIGNADO pero ya no existe en ningun equipo, se libera.
+		componentes.forEach(this::liberarAsignadoSinVinculoActivo);
+		return componentes.stream()
 				.map(this::toDetalle)
 				.toList();
 	}
@@ -118,6 +127,7 @@ public class StockService {
 	}
 
 	private StockComponenteDetalle toDetalle(StockComponente componente) {
+		var vinculo = buscarVinculoActivo(componente);
 		return new StockComponenteDetalle(
 				componente.getId(),
 				componente.getTipo(),
@@ -132,7 +142,50 @@ public class StockService {
 				componente.getProveedor(),
 				componente.getUbicacion(),
 				componente.getObservaciones(),
+				vinculo == null ? null : vinculo.getEquipo().getId(),
+				vinculo == null ? null : vinculo.getEquipo().getNombre(),
+				vinculo == null ? null : vinculo.getEquipo().getUltimoUsuario(),
 				componente.isActivo());
+	}
+
+	private void liberarAsignadoSinVinculoActivo(StockComponente componente) {
+		if (componente.getEstado() != EstadoStockComponente.ASIGNADO
+				|| !StringUtils.hasText(componente.getSerial())
+				|| buscarVinculoActivo(componente) != null) {
+			return;
+		}
+		componente.liberar();
+		componente.actualizar(
+				componente.getTipo(),
+				EstadoStockComponente.DISPONIBLE,
+				componente.getDescripcion(),
+				componente.getMarca(),
+				componente.getModelo(),
+				componente.getSerial(),
+				componente.getCapacidad(),
+				componente.getRemito(),
+				componente.getOrdenCompra(),
+				componente.getProveedor(),
+				componente.getUbicacion(),
+				observacionConNota(componente.getObservaciones(), "Liberado automáticamente: no tiene equipo activo vinculado."),
+				componente.isActivo());
+		auditoriaService.registrar("STOCK", "LIBERAR_HUERFANO", "StockComponente", componente.getId(),
+				"Stock asignado liberado automáticamente por no tener equipo activo vinculado: " + componente.getDescripcion() + ".");
+	}
+
+	private Componente buscarVinculoActivo(StockComponente componente) {
+		if (!StringUtils.hasText(componente.getSerial())) {
+			return null;
+		}
+		// Serial + tipo evita mostrar como vinculada una pieza distinta con el mismo codigo mal cargado.
+		return componenteRepository.findBySerialAndActivoTrue(componente.getSerial()).stream()
+				.filter(c -> c.getTipo() == componente.getTipo())
+				.findFirst()
+				.orElse(null);
+	}
+
+	private String observacionConNota(String observaciones, String nota) {
+		return StringUtils.hasText(observaciones) ? observaciones.trim() + " " + nota : nota;
 	}
 
 	private String textoOpcional(String valor) {
@@ -176,6 +229,9 @@ public class StockService {
 			String proveedor,
 			String ubicacion,
 			String observaciones,
+			Long equipoId,
+			String equipoNombre,
+			String ultimoUsuarioEquipo,
 			boolean activo) {
 	}
 

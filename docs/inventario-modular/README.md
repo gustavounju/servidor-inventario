@@ -39,6 +39,7 @@ Inventario Modular se disena como una aplicacion **API-first**:
 - [Modulo Equipos](./modulo-equipos.md)
 - [Modulo Componentes y Gemelo Digital](./modulo-componentes-gemelo-digital.md)
 - [Stock, ordenes de armado y comparacion](./stock-ordenes-armado-y-comparacion.md)
+- [Seguridad LAN, stock y discrepancias](./seguridad-lan-stock-y-discrepancias-2026-09-08.md)
 - [Auditoria transversal](./auditoria-transversal.md)
 - [Modulo Actas](./modulo-actas.md)
 - [Modulo Ubicaciones](./modulo-ubicaciones.md)

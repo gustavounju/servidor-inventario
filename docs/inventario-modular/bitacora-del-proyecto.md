@@ -2512,3 +2512,55 @@ Se completaron los tres hitos prioritarios de la hoja de ruta visual y funcional
 - `docs/decisions/ADR-007-identidades-autenticacion-autorizacion.md`
 - `docs/decisions/ADR-008-componentes-y-gemelo-digital-del-equipo.md`
 - Historial Git de la rama `primeros-pasos`.
+
+## 2026-09-08 - Seguridad LAN, discrepancias accionables y stock con vinculacion
+
+Se realizo una entrega de endurecimiento y ajustes operativos sobre Inventario Modular,
+orientada a uso dentro de la LAN institucional y a reducir errores de taller en la gestion
+de componentes.
+
+Cambios principales:
+
+- Seguridad:
+  - Se agrego filtro LAN-only para aceptar accesos solo desde loopback o redes privadas
+    cuando `inventario.security.network.lan-only` esta activo.
+  - Se removieron credenciales y tokens de reporte por defecto en propiedades locales y
+    perfiles de arranque.
+  - La autenticacion local exige usuario y password explicitos si se habilita.
+  - La comparacion del bearer token de reporte se realiza en tiempo constante.
+- Servidor y base:
+  - Se corrigieron errores 500 en `/admin/stock` y `/admin/equipos/{id}` observados durante
+    pruebas locales contra MySQL.
+  - Se actualizo el esquema H2 de casa para que siga acompañando las tablas usadas por los
+    flujos actuales.
+- Discrepancias:
+  - Las diferencias `FALTA` se resaltan en la tabla de discrepancias y tambien en las filas
+    inferiores de componentes que realmente originan esa falta.
+  - El indicador `Resolver` con punto pulsante ya no se aplica a todos los componentes
+    `ESPERADO`; se calcula por coincidencia con la discrepancia `FALTA` concreta.
+- Stock:
+  - `/admin/stock` muestra una columna `Vinculado a` con equipo y ultimo usuario cuando una
+    pieza `ASIGNADO` esta asociada a un componente activo.
+  - Al desvincular un componente desde la ficha del equipo, el stock asignado con el mismo
+    serial vuelve a `DISPONIBLE`.
+  - Al listar stock, los `ASIGNADO` huerfanos con serial se liberan automaticamente y quedan
+    auditados como `LIBERAR_HUERFANO`.
+- Contexto:
+  - Se instalo y ejecuto Graphify para mantener un grafo local del proyecto.
+  - `graphify-out/` quedo ignorado por Git y el grafo se actualizo despues de los cambios.
+
+Validaciones realizadas:
+
+```powershell
+.\mvnw "-Dtest=LanOnlyAccessFilterTests,SystemStatusControllerTests,EquipoControllerTests,LocalAuthenticationConfigTests" test
+.\mvnw "-Dtest=EquipoPageControllerTests#muestraDetalleDeHardwareExtendido" test
+.\mvnw "-Dtest=EquipoPageControllerTests#retiraComponenteHaciaStockYRegeneraItemEnStock" test
+```
+
+Validacion manual local:
+
+- Servidor Spring Boot levantado en `http://127.0.0.1:8081`.
+- Base MySQL local `inventario_modular`.
+- `/admin/stock` carga con columna `Vinculado a`.
+- Un stock asignado muestra PC y usuario cuando existe vinculo activo.
+- Los componentes faltantes inferiores se redujeron a las discrepancias reales a resolver.

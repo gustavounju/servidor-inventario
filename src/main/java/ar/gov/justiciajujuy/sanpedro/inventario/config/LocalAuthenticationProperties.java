@@ -13,7 +13,7 @@ public class LocalAuthenticationProperties {
 
 	private boolean enabled;
 	private String username = "admin.local";
-	private String password = "AdminLocal123";
+	private String password;
 	private String displayName = "Administrador Local";
 	private String fuero = "Desarrollo local";
 

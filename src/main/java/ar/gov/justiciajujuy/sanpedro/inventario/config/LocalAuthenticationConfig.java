@@ -39,6 +39,10 @@ public class LocalAuthenticationConfig {
 		 * de Spring Security.
 		 */
 		String configuredUsername = properties.getUsername();
+		if (!StringUtils.hasText(configuredUsername) || !StringUtils.hasText(properties.getPassword())) {
+			throw new IllegalStateException(
+					"inventario.local-auth requiere usuario y password explicitos; no se permiten credenciales por defecto.");
+		}
 		String encodedPassword = passwordEncoder.encode(properties.getPassword());
 
 		return new AuthenticationProvider() {

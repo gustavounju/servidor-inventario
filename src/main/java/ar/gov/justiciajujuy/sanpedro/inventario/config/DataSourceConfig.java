@@ -36,7 +36,7 @@ public class DataSourceConfig {
 	@Value("${inventario.datasource.fallback.username:inventario_local}")
 	private String fallbackUsername;
 
-	@Value("${inventario.datasource.fallback.password:Cambiar_Clave_Local_123!}")
+	@Value("${inventario.datasource.fallback.password:}")
 	private String fallbackPassword;
 
 	@Value("${inventario.datasource.timeout-ms:1500}")

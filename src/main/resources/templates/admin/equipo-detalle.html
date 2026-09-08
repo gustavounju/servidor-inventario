@@ -331,11 +331,13 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="disc : ${discrepancias}">
+									<tr th:each="disc : ${discrepancias}"
+									    th:classappend="${disc.resultado.name() == 'FALTA'} ? ' discrepancy-row is-missing' : ' discrepancy-row'">
 										<td><span class="count-badge" th:text="${disc.tipo}">RAM</span></td>
 										<td><strong th:text="${disc.esperado}">64GB</strong></td>
 										<td th:text="${disc.detectado}">Sin detectar</td>
 										<td>
+											<span class="missing-pulse-dot" th:if="${disc.resultado.name() == 'FALTA'}" aria-hidden="true"></span>
 											<span class="authorization-badge is-pending" th:if="${disc.resultado.name() == 'FALTA'}" th:text="${disc.resultado}">FALTA</span>
 											<span class="authorization-badge is-rejected" th:if="${disc.resultado.name() == 'SOBRA'}" th:text="${disc.resultado}">SOBRA</span>
 											<span class="authorization-badge" th:if="${disc.resultado.name() != 'FALTA' and disc.resultado.name() != 'SOBRA'}" th:text="${disc.resultado}">REVISAR</span>
@@ -388,7 +390,8 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="componente : ${componentesCpuMother}">
+									<tr th:each="componente : ${componentesCpuMother}"
+									    th:classappend="${componentesFaltantesIds.contains(componente.id)} ? ' component-row is-missing' : ' component-row'">
 										<td data-label="Tipo"><span class="count-badge" th:text="${componente.tipo}">CPU</span></td>
 										<td data-label="Componente">
 											<strong th:text="${componente.descripcion}">Intel Core i5</strong>
@@ -405,10 +408,14 @@
 											<span th:text="${componente.ubicacion ?: 'Placa madre'}">Ubicación</span>
 										</td>
 										<td data-label="Estado">
-											<span class="authorization-badge is-authorized" th:text="${componente.estadoComparacion}">COINCIDE</span>
+											<span class="missing-pulse-dot" th:if="${componentesFaltantesIds.contains(componente.id)}" aria-hidden="true"></span>
+											<span class="authorization-badge is-pending" th:if="${componentesFaltantesIds.contains(componente.id)}" th:text="${componente.estadoComparacion}">FALTA</span>
+											<span class="authorization-badge is-rejected" th:if="${componente.estadoComparacion != null and componente.estadoComparacion.name() == 'SOBRA'}" th:text="${componente.estadoComparacion}">SOBRA</span>
+											<span class="authorization-badge is-authorized" th:if="${!componentesFaltantesIds.contains(componente.id) and (componente.estadoComparacion == null or componente.estadoComparacion.name() != 'SOBRA')}" th:text="${componente.estadoComparacion}">COINCIDE</span>
 										</td>
 										<td data-label="Acciones" th:if="${puedeEditarComponentes}">
 											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
+												<span class="missing-action-cue" th:if="${componentesFaltantesIds.contains(componente.id)}"><span class="missing-pulse-dot" aria-hidden="true"></span>Resolver</span>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este componente y regresarlo a Stock de taller como DISPONIBLE?');">
 													<input type="hidden" name="destino" value="STOCK">
 													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); cursor: pointer;">
@@ -460,7 +467,8 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="componente : ${componentesRam}">
+									<tr th:each="componente : ${componentesRam}"
+									    th:classappend="${componentesFaltantesIds.contains(componente.id)} ? ' component-row is-missing' : ' component-row'">
 										<td data-label="Módulo">
 											<strong th:text="${componente.descripcion}">Modulo RAM instalado</strong>
 											<div class="table-subtext">
@@ -484,10 +492,14 @@
 											<span th:unless="${componente.remito != null or componente.ordenCompra != null}" style="color: #94a3b8; font-size: 0.8rem;">-</span>
 										</td>
 										<td data-label="Estado">
-											<span class="authorization-badge is-authorized" th:text="${componente.estadoComparacion}">COINCIDE</span>
+											<span class="missing-pulse-dot" th:if="${componentesFaltantesIds.contains(componente.id)}" aria-hidden="true"></span>
+											<span class="authorization-badge is-pending" th:if="${componentesFaltantesIds.contains(componente.id)}" th:text="${componente.estadoComparacion}">FALTA</span>
+											<span class="authorization-badge is-rejected" th:if="${componente.estadoComparacion != null and componente.estadoComparacion.name() == 'SOBRA'}" th:text="${componente.estadoComparacion}">SOBRA</span>
+											<span class="authorization-badge is-authorized" th:if="${!componentesFaltantesIds.contains(componente.id) and (componente.estadoComparacion == null or componente.estadoComparacion.name() != 'SOBRA')}" th:text="${componente.estadoComparacion}">COINCIDE</span>
 										</td>
 										<td data-label="Acciones" th:if="${puedeEditarComponentes}">
 											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
+												<span class="missing-action-cue" th:if="${componentesFaltantesIds.contains(componente.id)}"><span class="missing-pulse-dot" aria-hidden="true"></span>Resolver</span>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar esta memoria RAM y regresarla al Stock de taller como DISPONIBLE?');">
 													<input type="hidden" name="destino" value="STOCK">
 													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); cursor: pointer;">
@@ -539,7 +551,8 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="componente : ${componentesDiscos}">
+									<tr th:each="componente : ${componentesDiscos}"
+									    th:classappend="${componentesFaltantesIds.contains(componente.id)} ? ' component-row is-missing' : ' component-row'">
 										<td data-label="Disco">
 											<strong th:text="${componente.descripcion}">Disco detectado</strong>
 											<div class="table-subtext">
@@ -563,10 +576,14 @@
 											<span th:unless="${componente.remito != null or componente.ordenCompra != null}" style="color: #94a3b8; font-size: 0.8rem;">-</span>
 										</td>
 										<td data-label="Estado">
-											<span class="authorization-badge is-authorized" th:text="${componente.estadoComparacion}">COINCIDE</span>
+											<span class="missing-pulse-dot" th:if="${componentesFaltantesIds.contains(componente.id)}" aria-hidden="true"></span>
+											<span class="authorization-badge is-pending" th:if="${componentesFaltantesIds.contains(componente.id)}" th:text="${componente.estadoComparacion}">FALTA</span>
+											<span class="authorization-badge is-rejected" th:if="${componente.estadoComparacion != null and componente.estadoComparacion.name() == 'SOBRA'}" th:text="${componente.estadoComparacion}">SOBRA</span>
+											<span class="authorization-badge is-authorized" th:if="${!componentesFaltantesIds.contains(componente.id) and (componente.estadoComparacion == null or componente.estadoComparacion.name() != 'SOBRA')}" th:text="${componente.estadoComparacion}">COINCIDE</span>
 										</td>
 										<td data-label="Acciones" th:if="${puedeEditarComponentes}">
 											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
+												<span class="missing-action-cue" th:if="${componentesFaltantesIds.contains(componente.id)}"><span class="missing-pulse-dot" aria-hidden="true"></span>Resolver</span>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este disco y regresarlo al Stock de taller como DISPONIBLE?');">
 													<input type="hidden" name="destino" value="STOCK">
 													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); cursor: pointer;">
@@ -617,7 +634,8 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="componente : ${componentesPerifericos}">
+									<tr th:each="componente : ${componentesPerifericos}"
+									    th:classappend="${componentesFaltantesIds.contains(componente.id)} ? ' component-row is-missing' : ' component-row'">
 										<td data-label="Tipo"><span class="count-badge" th:text="${componente.tipo}">MONITOR</span></td>
 										<td data-label="Dispositivo">
 											<strong th:text="${componente.descripcion}">Monitor detectado</strong>
@@ -632,10 +650,14 @@
 										</td>
 										<td data-label="Ubicación" th:text="${componente.ubicacion ?: 'Puesto de trabajo'}">Escritorio</td>
 										<td data-label="Estado">
-											<span class="authorization-badge is-authorized" th:text="${componente.estadoComparacion}">COINCIDE</span>
+											<span class="missing-pulse-dot" th:if="${componentesFaltantesIds.contains(componente.id)}" aria-hidden="true"></span>
+											<span class="authorization-badge is-pending" th:if="${componentesFaltantesIds.contains(componente.id)}" th:text="${componente.estadoComparacion}">FALTA</span>
+											<span class="authorization-badge is-rejected" th:if="${componente.estadoComparacion != null and componente.estadoComparacion.name() == 'SOBRA'}" th:text="${componente.estadoComparacion}">SOBRA</span>
+											<span class="authorization-badge is-authorized" th:if="${!componentesFaltantesIds.contains(componente.id) and (componente.estadoComparacion == null or componente.estadoComparacion.name() != 'SOBRA')}" th:text="${componente.estadoComparacion}">COINCIDE</span>
 										</td>
 										<td data-label="Acciones" th:if="${puedeEditarComponentes}">
 											<div style="display: flex; gap: 4px; flex-wrap: wrap;">
+												<span class="missing-action-cue" th:if="${componentesFaltantesIds.contains(componente.id)}"><span class="missing-pulse-dot" aria-hidden="true"></span>Resolver</span>
 												<form th:action="@{/admin/equipos/{equipoId}/componentes/{componenteId}/retirar(equipoId=${equipo.id}, componenteId=${componente.id})}" method="post" onsubmit="return confirm('¿Retirar este dispositivo y regresarlo a Stock de taller como DISPONIBLE?');">
 													<input type="hidden" name="destino" value="STOCK">
 													<button type="submit" class="secondary-action" title="Retirar pieza y regresarla a Stock" style="font-size: 0.76rem; padding: 3px 6px; background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); cursor: pointer;">

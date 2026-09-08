@@ -10,11 +10,16 @@ import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.ActualizarEquipoCommand;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoDuplicadoException;
+import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoNoEncontradoException;
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.InventarioViejoImportService;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
 import ar.gov.justiciajujuy.sanpedro.inventario.stock.StockService;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -166,7 +171,7 @@ public class EquipoPageController {
 		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_VER)) {
 			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para ver equipos.");
 		}
-		EquipoDetalle equipo = equipoService.obtener(id);
+		EquipoDetalle equipo = obtenerEquipoOResponder404(id);
 		prepararDetalle(model, userDetails, equipo, EquipoForm.desde(equipo));
 		model.addAttribute("actualizado", "1".equals(actualizado) || "relevamiento".equals(actualizado));
 		model.addAttribute("relevamientoConsolidado", "relevamiento".equals(actualizado) || "1".equals(relevamiento));
@@ -195,7 +200,7 @@ public class EquipoPageController {
 		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para editar equipos.");
 		}
-		EquipoDetalle equipoActual = equipoService.obtener(id);
+		EquipoDetalle equipoActual = obtenerEquipoOResponder404(id);
 		if (bindingResult.hasErrors()) {
 			prepararDetalle(model, userDetails, equipoActual, equipoForm);
 			return "admin/equipo-detalle";
@@ -222,6 +227,14 @@ public class EquipoPageController {
 		equipoService.eliminar(id);
 		redirectAttributes.addFlashAttribute("eliminado", true);
 		return "redirect:/admin/equipos";
+	}
+
+	private EquipoDetalle obtenerEquipoOResponder404(Long id) {
+		try {
+			return equipoService.obtener(id);
+		} catch (EquipoNoEncontradoException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+		}
 	}
 
 	@PostMapping("/admin/equipos/taller")
@@ -395,6 +408,7 @@ public class EquipoPageController {
 		var discrepancias = comparaciones.stream()
 				.filter(c -> c.resultado() != EstadoComparacion.COINCIDE)
 				.toList();
+		Set<Long> componentesFaltantesIds = calcularComponentesFaltantes(componentesGestion, discrepancias);
 
 		model.addAttribute("equipo", equipo);
 		model.addAttribute("equipoForm", equipoForm);
@@ -406,6 +420,7 @@ public class EquipoPageController {
 		model.addAttribute("componentesRam", memoriasRam);
 		model.addAttribute("componentesDiscos", discos);
 		model.addAttribute("componentesPerifericos", perifericos);
+		model.addAttribute("componentesFaltantesIds", componentesFaltantesIds);
 		model.addAttribute("discrepancias", discrepancias);
 		model.addAttribute("comparacionGemelo", comparaciones);
 		model.addAttribute("tieneRelevamientoInicial", tieneRelevamientoInicial);
@@ -422,6 +437,49 @@ public class EquipoPageController {
 				.toList());
 		model.addAttribute("actualizado", false);
 		model.addAttribute("relevamientoConsolidado", false);
+	}
+
+	private Set<Long> calcularComponentesFaltantes(
+			List<ComponenteService.ComponenteDetalle> componentes,
+			List<GemeloDigitalService.ComparacionComponente> discrepancias) {
+		Set<Long> faltantes = new LinkedHashSet<>();
+		// La comparacion viva informa texto esperado, no id de componente. Por eso la
+		// pantalla reconstruye la coincidencia para resaltar abajo solo la pieza a decidir.
+		var esperadosFaltantes = discrepancias.stream()
+				.filter(d -> d.resultado() == EstadoComparacion.FALTA)
+				.toList();
+		for (var componente : componentes) {
+			String textoComponente = normalizarTextoComparacion(textoComponente(componente));
+			boolean correspondeAFalta = esperadosFaltantes.stream()
+					.anyMatch(d -> d.tipo() == componente.tipo()
+							&& normalizarTextoComparacion(d.esperado()).equals(textoComponente));
+			if (correspondeAFalta) {
+				faltantes.add(componente.id());
+			}
+		}
+		return faltantes;
+	}
+
+	private String textoComponente(ComponenteService.ComponenteDetalle componente) {
+		List<String> partes = new ArrayList<>();
+		partes.add(componente.descripcion());
+		if (org.springframework.util.StringUtils.hasText(componente.marca())) {
+			partes.add(componente.marca());
+		}
+		if (org.springframework.util.StringUtils.hasText(componente.modelo())) {
+			partes.add(componente.modelo());
+		}
+		if (org.springframework.util.StringUtils.hasText(componente.serial())) {
+			partes.add("SN " + componente.serial());
+		}
+		if (org.springframework.util.StringUtils.hasText(componente.capacidad())) {
+			partes.add(componente.capacidad());
+		}
+		return String.join(" / ", partes);
+	}
+
+	private String normalizarTextoComparacion(String valor) {
+		return valor == null ? "" : valor.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
 	}
 
 	public record BrujulaEquipo(

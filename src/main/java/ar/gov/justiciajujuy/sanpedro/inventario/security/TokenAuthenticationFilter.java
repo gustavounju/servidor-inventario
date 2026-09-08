@@ -1,6 +1,8 @@
 package ar.gov.justiciajujuy.sanpedro.inventario.security;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,7 +32,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 		String authHeader = request.getHeader("Authorization");
 		if (StringUtils.hasText(authHeader) && authHeader.toLowerCase().startsWith("bearer ")) {
 			String token = authHeader.substring(7).trim();
-			if (StringUtils.hasText(reportToken) && reportToken.equals(token)) {
+			if (StringUtils.hasText(reportToken) && constantTimeEquals(reportToken, token)) {
 				UserDetails userDetails = new User(
 						"maquina.reporte",
 						"unused",
@@ -43,5 +45,11 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 			}
 		}
 		filterChain.doFilter(request, response);
+	}
+
+	private boolean constantTimeEquals(String expected, String received) {
+		return MessageDigest.isEqual(
+				expected.getBytes(StandardCharsets.UTF_8),
+				received.getBytes(StandardCharsets.UTF_8));
 	}
 }

@@ -85,6 +85,7 @@ public class ComponenteService {
 		String desc = componente.getDescripcion();
 		Long equipoId = componente.getEquipo().getId();
 		Equipo equipo = componente.getEquipo();
+		liberarStockAsignadoPorSerial(componente);
 		componenteRepository.delete(componente);
 		auditoriaService.registrar("COMPONENTES", "ELIMINAR", "Componente", id,
 				"Componente " + desc + " eliminado del equipo " + equipoId + ".");
@@ -178,6 +179,33 @@ public class ComponenteService {
 				detalleMov);
 
 		componenteRepository.delete(componente);
+	}
+
+	private void liberarStockAsignadoPorSerial(Componente componente) {
+		String serial = componente.getSerial();
+		if (!StringUtils.hasText(serial)) {
+			return;
+		}
+		stockComponenteRepository.findBySerialAndActivoTrue(serial).stream()
+				.filter(s -> s.getEstado() == EstadoStockComponente.ASIGNADO)
+				.forEach(s -> {
+					s.liberar();
+					s.actualizar(
+							s.getTipo(),
+							EstadoStockComponente.DISPONIBLE,
+							s.getDescripcion(),
+							s.getMarca(),
+							s.getModelo(),
+							s.getSerial(),
+							s.getCapacidad(),
+							s.getRemito(),
+							s.getOrdenCompra(),
+							s.getProveedor(),
+							"Depósito Taller",
+							"Disponible por desvinculación de " + componente.getEquipo().getNombre(),
+							s.isActivo());
+					stockComponenteRepository.save(s);
+				});
 	}
 
 	/**

@@ -21,7 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
+@SpringBootTest(properties = "inventario.security.report-token=token-test")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Sql(scripts = "/sql/limpiar-seguridad-modular-test.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
@@ -32,8 +32,14 @@ class SystemStatusControllerTests {
 	private MockMvc mockMvc;
 
 	@Test
-	void exposesPublicSystemStatus() throws Exception {
+	void rejectsAnonymousSystemStatus() throws Exception {
 		mockMvc.perform(get("/api/v1/sistema/estado"))
+			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void exposesSystemStatusToAuthenticatedUsers() throws Exception {
+		mockMvc.perform(get("/api/v1/sistema/estado").with(user("admin.local")))
 			.andExpect(status().isOk())
 			.andExpect(content().contentTypeCompatibleWith("application/json"))
 			.andExpect(jsonPath("$.estado", is("OPERATIVO")))

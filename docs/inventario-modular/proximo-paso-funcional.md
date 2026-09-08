@@ -307,26 +307,26 @@ Primera version implementada:
 Pendiente siguiente:
 
 - Generar PDF/impresion formal de cada acta.
-- Usar ubicaciones como selector en equipos, muebles, patrimonio y stock.
 - Evaluar numeracion de actas por dependencia si el circuito administrativo lo requiere.
 - Reportes por ubicacion/fuero.
+- Consolidar pruebas de regresion para rutas antiguas removidas o renombradas.
 
-## No comenzar todavia por
+## Estado de modulos que ya no son pendientes iniciales
 
 ### Stock
 
-Tiene mas reglas de ciclo de vida, asignaciones, remitos, compras y movimientos. Conviene
-tener primero usuarios/permisos y equipos.
+Ya tiene primera version funcional: alta de piezas, trazabilidad de compras, reserva,
+asignacion, retiro a stock, baja, vinculacion visible a equipo/usuario y liberacion de
+asignados huerfanos con serial.
 
 ### Actas
 
-Es importante, pero depende de usuarios, equipos, patrimonio/componentes y reglas de
-documentacion.
+Ya tiene primera version funcional con numeracion, pantalla, API, exportacion y PDF demo.
 
 ### Dashboard completo
 
-El dashboard viejo es visible y tentador, pero conviene construirlo despues de tener datos
-limpios de equipos. Primero datos, despues resumen visual.
+El dashboard de diferencias del gemelo digital ya existe. Quedan reportes
+administrativos mas amplios por ubicacion, fuero, actas, patrimonio y movimientos.
 
 ## Orden sugerido
 
