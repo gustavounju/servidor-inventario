@@ -90,6 +90,10 @@
 					<span class="sidebar-icon">👥</span>
 					<span class="sidebar-text">Usuarios y Permisos</span>
 				</a>
+				<a class="sidebar-link" th:if="${canManageUsers != null ? canManageUsers : true}" th:classappend="${activeModule == 'sitio'} ? ' is-active' : ''" th:href="@{/admin/sitio}">
+					<span class="sidebar-icon">⏸️</span>
+					<span class="sidebar-text">Estado del Sitio</span>
+				</a>
 			</div>
 		</nav>
 

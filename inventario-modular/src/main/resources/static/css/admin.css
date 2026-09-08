@@ -869,6 +869,7 @@ h1 {
 
 .user-form input[type="text"],
 .user-form input[type="password"],
+.user-form textarea,
 .user-form select {
 	background: var(--bg-input) !important;
 	border: 1px solid var(--border-input) !important;
@@ -883,11 +884,39 @@ h1 {
 
 .user-form input[type="text"]:focus,
 .user-form input[type="password"]:focus,
+.user-form textarea:focus,
 .user-form select:focus {
 	background: var(--bg-card) !important;
 	border-color: var(--accent-primary) !important;
 	box-shadow: 0 0 0 3px var(--accent-focus) !important;
 	outline: none;
+}
+
+.user-form textarea {
+	line-height: 1.45;
+	resize: vertical;
+}
+
+.maintenance-banner {
+	background: rgba(234, 179, 8, 0.14);
+	border: 1px solid rgba(234, 179, 8, 0.34);
+	border-radius: 8px;
+	color: var(--text-primary);
+	display: grid;
+	gap: 8px;
+	margin: 20px 0 0;
+	padding: 14px;
+}
+
+.maintenance-banner h2,
+.maintenance-banner p {
+	margin: 0;
+}
+
+.maintenance-banner h2 {
+	color: #facc15;
+	font-size: 1rem;
+	line-height: 1.25;
 }
 
 .field-help,

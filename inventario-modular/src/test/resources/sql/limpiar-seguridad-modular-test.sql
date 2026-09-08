@@ -18,3 +18,4 @@ DROP TABLE IF EXISTS permisos;
 DROP TABLE IF EXISTS modulos;
 DROP TABLE IF EXISTS roles;
 DROP TABLE IF EXISTS usuarios;
+DROP TABLE IF EXISTS configuraciones_sistema;

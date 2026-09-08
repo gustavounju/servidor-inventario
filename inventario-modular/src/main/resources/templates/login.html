@@ -16,6 +16,17 @@
 
 			<p class="success-message" th:if="${loggedOut}">Sesion cerrada correctamente.</p>
 			<p class="error-message" th:if="${hasError}">Usuario o clave incorrectos.</p>
+			<section class="maintenance-banner" th:if="${siteAvailability != null and siteAvailability.temporarilyInactive()}">
+				<h2>Sitio temporalmente inactivo</h2>
+				<p th:text="${siteAvailability.message()}">El sistema esta temporalmente inactivo por tareas de mantenimiento.</p>
+				<p>
+					Acceso de emergencia habilitado solo para
+					<strong th:text="${siteAvailability.allowedUsername()}">gmurad</strong>.
+				</p>
+			</section>
+			<p class="error-message" th:if="${blockedByMaintenance}">
+				El sitio esta temporalmente inactivo. Solo el usuario de emergencia puede ingresar.
+			</p>
 
 			<form class="login-form" th:action="@{/login}" method="post">
 				<label>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Estado del sitio - Inventario Modular</title>
+	<link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+	<main class="shell shell-wide">
+		<section class="status-panel admin-users-panel" aria-labelledby="site-title">
+			<header th:replace="~{admin/nav :: topbar('Administracion', 'Estado del sitio', 'sitio')}"></header>
+
+			<p class="success-message" th:if="${updated}">Estado del sitio actualizado correctamente.</p>
+
+			<section class="user-management-grid">
+				<article class="user-card">
+					<h2>Modo temporal</h2>
+					<p class="form-hint">
+						Al activar este modo, el login queda visible con aviso de mantenimiento y solo el usuario de emergencia puede ingresar.
+					</p>
+
+					<form class="user-form" th:action="@{/admin/sitio}" method="post">
+						<label class="checkbox-row">
+							<input type="checkbox" name="temporarilyInactive" value="true"
+								   th:checked="${siteAvailability.temporarilyInactive()}">
+							<span>Mostrar sitio temporalmente inactivo</span>
+						</label>
+
+						<label>
+							<span>Usuario con acceso de emergencia</span>
+							<input type="text" name="allowedUsername" required
+								   th:value="${siteAvailability.allowedUsername()}">
+						</label>
+
+						<label>
+							<span>Mensaje visible en login</span>
+							<textarea name="message" rows="4" maxlength="500"
+									  th:text="${siteAvailability.message()}">El sistema esta temporalmente inactivo por tareas de mantenimiento.</textarea>
+						</label>
+
+						<button class="primary-action" type="submit">Guardar estado</button>
+					</form>
+				</article>
+
+				<article class="user-card">
+					<h2>Estado actual</h2>
+					<dl class="detail-list">
+						<div>
+							<dt>Disponibilidad</dt>
+							<dd th:text="${siteAvailability.temporarilyInactive()} ? 'Temporalmente inactivo' : 'Activo'">Activo</dd>
+						</div>
+						<div>
+							<dt>Acceso de emergencia</dt>
+							<dd th:text="${siteAvailability.allowedUsername()}">gmurad</dd>
+						</div>
+					</dl>
+				</article>
+			</section>
+		</section>
+	</main>
+</body>
+</html>

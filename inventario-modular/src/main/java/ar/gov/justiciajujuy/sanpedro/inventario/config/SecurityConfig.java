@@ -1,6 +1,7 @@
 package ar.gov.justiciajujuy.sanpedro.inventario.config;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.security.ActiveDirectoryUserDetailsContextMapper;
+import ar.gov.justiciajujuy.sanpedro.inventario.security.SiteMaintenanceFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
@@ -35,11 +36,13 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(
 			HttpSecurity http,
-			ObjectProvider<AuthenticationProvider> authenticationProviders) throws Exception {
+			ObjectProvider<AuthenticationProvider> authenticationProviders,
+			SiteAvailabilityService siteAvailabilityService) throws Exception {
 		authenticationProviders.orderedStream().forEach(http::authenticationProvider);
 
 		http
 			.addFilterBefore(new TokenAuthenticationFilter(reportToken), UsernamePasswordAuthenticationFilter.class)
+			.addFilterBefore(new SiteMaintenanceFilter(siteAvailabilityService), UsernamePasswordAuthenticationFilter.class)
 			.csrf(csrf -> csrf
 				.ignoringRequestMatchers("/api/v1/equipos/inventario", "/submit_inventory")
 			)
