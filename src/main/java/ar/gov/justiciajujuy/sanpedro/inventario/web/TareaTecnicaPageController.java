@@ -5,7 +5,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoRepository;
+import ar.gov.justiciajujuy.sanpedro.inventario.security.ActiveDirectoryDomainService;
+import ar.gov.justiciajujuy.sanpedro.inventario.security.ActiveDirectoryDomainService.DominioUsuarios;
+import ar.gov.justiciajujuy.sanpedro.inventario.security.ActiveDirectoryDomainService.UsuarioDominio;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
+import ar.gov.justiciajujuy.sanpedro.inventario.security.UsuarioManagementService;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.EstadoTareaTecnica;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.PrioridadTareaTecnica;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService;
@@ -42,14 +46,20 @@ public class TareaTecnicaPageController {
 	private final AuthorizationService authorizationService;
 	private final TareaTecnicaService tareaTecnicaService;
 	private final EquipoRepository equipoRepository;
+	private final ActiveDirectoryDomainService activeDirectoryDomainService;
+	private final UsuarioManagementService usuarioManagementService;
 
 	public TareaTecnicaPageController(
 			AuthorizationService authorizationService,
 			TareaTecnicaService tareaTecnicaService,
-			EquipoRepository equipoRepository) {
+			EquipoRepository equipoRepository,
+			ActiveDirectoryDomainService activeDirectoryDomainService,
+			UsuarioManagementService usuarioManagementService) {
 		this.authorizationService = authorizationService;
 		this.tareaTecnicaService = tareaTecnicaService;
 		this.equipoRepository = equipoRepository;
+		this.activeDirectoryDomainService = activeDirectoryDomainService;
+		this.usuarioManagementService = usuarioManagementService;
 	}
 
 	@GetMapping("/admin/tareas")
@@ -74,6 +84,7 @@ public class TareaTecnicaPageController {
 			BindingResult bindingResult,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
+		tareaForm.aplicarReglaResponsable(userDetails.getUsername(), authorizationService.puedeAdministrarUsuarios(userDetails));
 		if (bindingResult.hasErrors()) {
 			prepararModelo(model, userDetails, tareaForm, null, null, null);
 			return "admin/tareas";
@@ -92,11 +103,24 @@ public class TareaTecnicaPageController {
 			BindingResult bindingResult,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
+		exigirTareaPropiaOAdministrador(userDetails, id);
+		tareaForm.aplicarReglaResponsable(userDetails.getUsername(), authorizationService.puedeAdministrarUsuarios(userDetails));
 		if (bindingResult.hasErrors()) {
 			prepararModelo(model, userDetails, tareaForm, null, null, null);
 			return "admin/tareas";
 		}
 		tareaTecnicaService.actualizar(id, tareaForm.toCommand());
+		redirectAttributes.addAttribute("creado", "1");
+		return "redirect:/admin/tareas";
+	}
+
+	@PostMapping("/admin/tareas/{id}/tomar")
+	public String tomar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id,
+			RedirectAttributes redirectAttributes) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		tareaTecnicaService.tomar(id, userDetails.getUsername());
 		redirectAttributes.addAttribute("creado", "1");
 		return "redirect:/admin/tareas";
 	}
@@ -109,6 +133,7 @@ public class TareaTecnicaPageController {
 			@RequestParam(required = false) String observacionesCierre,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
+		exigirTareaPropiaOAdministrador(userDetails, id);
 		tareaTecnicaService.cambiarEstado(id, new CambiarEstadoTareaCommand(estado, observacionesCierre));
 		redirectAttributes.addAttribute("creado", "1");
 		return "redirect:/admin/tareas";
@@ -120,6 +145,7 @@ public class TareaTecnicaPageController {
 			@PathVariable Long id,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
+		exigirTareaPropiaOAdministrador(userDetails, id);
 		tareaTecnicaService.eliminar(id);
 		redirectAttributes.addFlashAttribute("eliminado", true);
 		return "redirect:/admin/tareas";
@@ -132,6 +158,7 @@ public class TareaTecnicaPageController {
 			@RequestParam @NotBlank @Size(max = 1000) String comentario,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
+		exigirTareaPropiaOAdministrador(userDetails, id);
 		tareaTecnicaService.comentar(id, new AgregarComentarioTareaCommand(userDetails.getUsername(), comentario));
 		redirectAttributes.addAttribute("creado", "1");
 		return "redirect:/admin/tareas";
@@ -145,18 +172,49 @@ public class TareaTecnicaPageController {
 		model.addAttribute("tareas", tareas);
 		model.addAttribute("comentariosPorTarea", comentariosPorTarea);
 		model.addAttribute("tareaForm", tareaForm);
-		model.addAttribute("equipos", equipoRepository.buscar(null, org.springframework.data.domain.Pageable.unpaged()).getContent());
+		model.addAttribute("equipos", equipoRepository.buscar(null, org.springframework.data.domain.Pageable.unpaged()).getContent().stream()
+				.filter(equipo -> !TareaTecnicaService.EQUIPO_GENERICO_NOMBRE.equalsIgnoreCase(equipo.getNombre()))
+				.toList());
+		model.addAttribute("equipoGenericoId", equipoRepository.findByNombreIgnoreCase(TareaTecnicaService.EQUIPO_GENERICO_NOMBRE)
+				.map(ar.gov.justiciajujuy.sanpedro.inventario.equipos.Equipo::getId)
+				.orElse(null));
 		model.addAttribute("estadosTarea", EstadoTareaTecnica.values());
 		model.addAttribute("prioridadesTarea", PrioridadTareaTecnica.values());
 		model.addAttribute("filtroEstado", estado);
 		model.addAttribute("filtroEquipoId", equipoId);
 		model.addAttribute("filtroResponsable", responsable);
-		model.addAttribute("puedeEditarTareas", authorizationService.tienePermiso(userDetails, MODULO_TAREAS, PERMISO_EDITAR));
+		boolean puedeEditarTareas = authorizationService.tienePermiso(userDetails, MODULO_TAREAS, PERMISO_EDITAR);
+		boolean puedeAsignarResponsable = authorizationService.puedeAdministrarUsuarios(userDetails);
+		model.addAttribute("puedeEditarTareas", puedeEditarTareas);
+		model.addAttribute("puedeAsignarResponsable", puedeAsignarResponsable);
+		model.addAttribute("usuarioActual", userDetails.getUsername());
+		model.addAttribute("solicitantes", solicitantesParaTareas());
+		model.addAttribute("tecnicosAsignables", usuarioManagementService.listarTecnicosAsignables());
+	}
+
+	private List<UsuarioDominio> solicitantesParaTareas() {
+		DominioUsuarios usuariosDominio = activeDirectoryDomainService.listarUsuariosParaTareas();
+		if (usuariosDominio.disponible()) {
+			return usuariosDominio.usuarios();
+		}
+		return usuarioManagementService.listarUsuariosActivosNoAdministrativos().stream()
+				.map(usuario -> new UsuarioDominio(usuario.username(), usuario.nombreVisible(), usuario.fuero()))
+				.toList();
 	}
 
 	private void exigirPermiso(UserDetails userDetails, String permiso) {
 		if (!authorizationService.tienePermiso(userDetails, MODULO_TAREAS, permiso)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para operar tareas tecnicas.");
+		}
+	}
+
+	private void exigirTareaPropiaOAdministrador(UserDetails userDetails, Long tareaId) {
+		if (authorizationService.puedeAdministrarUsuarios(userDetails)) {
+			return;
+		}
+		TareaTecnicaDetalle tarea = tareaTecnicaService.obtener(tareaId);
+		if (tarea.responsable() == null || !tarea.responsable().equalsIgnoreCase(userDetails.getUsername())) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La tarea debe estar tomada por el tecnico en sesion.");
 		}
 	}
 
@@ -171,6 +229,17 @@ public class TareaTecnicaPageController {
 		@Size(max = 1000)
 		private String descripcion;
 
+		@NotBlank
+		@Size(max = 120)
+		private String solicitanteUsername;
+
+		@NotBlank
+		@Size(max = 180)
+		private String solicitanteNombre;
+
+		@Size(max = 120)
+		private String solicitanteFuero;
+
 		@NotNull
 		private PrioridadTareaTecnica prioridad = PrioridadTareaTecnica.MEDIA;
 
@@ -178,7 +247,22 @@ public class TareaTecnicaPageController {
 		private String responsable;
 
 		GuardarTareaTecnicaCommand toCommand() {
-			return new GuardarTareaTecnicaCommand(equipoId, titulo, descripcion, prioridad, responsable);
+			return new GuardarTareaTecnicaCommand(
+					equipoId,
+					titulo,
+					descripcion,
+					solicitanteUsername,
+					solicitanteNombre,
+					solicitanteFuero,
+					prioridad,
+					responsable,
+					null);
+		}
+
+		void aplicarReglaResponsable(String usernameActual, boolean puedeAsignarResponsable) {
+			if (!puedeAsignarResponsable) {
+				this.responsable = usernameActual;
+			}
 		}
 
 		public Long getEquipoId() { return equipoId; }
@@ -187,6 +271,12 @@ public class TareaTecnicaPageController {
 		public void setTitulo(String titulo) { this.titulo = titulo; }
 		public String getDescripcion() { return descripcion; }
 		public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+		public String getSolicitanteUsername() { return solicitanteUsername; }
+		public void setSolicitanteUsername(String solicitanteUsername) { this.solicitanteUsername = solicitanteUsername; }
+		public String getSolicitanteNombre() { return solicitanteNombre; }
+		public void setSolicitanteNombre(String solicitanteNombre) { this.solicitanteNombre = solicitanteNombre; }
+		public String getSolicitanteFuero() { return solicitanteFuero; }
+		public void setSolicitanteFuero(String solicitanteFuero) { this.solicitanteFuero = solicitanteFuero; }
 		public PrioridadTareaTecnica getPrioridad() { return prioridad; }
 		public void setPrioridad(PrioridadTareaTecnica prioridad) { this.prioridad = prioridad; }
 		public String getResponsable() { return responsable; }

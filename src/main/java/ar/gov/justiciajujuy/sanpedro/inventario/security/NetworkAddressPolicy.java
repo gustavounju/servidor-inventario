@@ -18,8 +18,7 @@ public class NetworkAddressPolicy {
 	public boolean isAllowed(String address) {
 		try {
 			InetAddress inetAddress = InetAddress.getByName(address);
-			if (inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress()
-					|| inetAddress.isSiteLocalAddress()) {
+			if (inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress()) {
 				return true;
 			}
 			return allowedNetworks.stream().anyMatch(network -> network.contains(inetAddress));

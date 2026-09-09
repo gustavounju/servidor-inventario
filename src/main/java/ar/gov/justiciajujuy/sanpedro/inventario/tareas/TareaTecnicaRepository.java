@@ -17,6 +17,9 @@ public interface TareaTecnicaRepository extends JpaRepository<TareaTecnica, Long
 			  AND (:responsable IS NULL
 			    OR LOWER(t.titulo) LIKE LOWER(CONCAT('%', :responsable, '%'))
 			    OR LOWER(COALESCE(t.descripcion, '')) LIKE LOWER(CONCAT('%', :responsable, '%'))
+			    OR LOWER(COALESCE(t.solicitanteUsername, '')) LIKE LOWER(CONCAT('%', :responsable, '%'))
+			    OR LOWER(COALESCE(t.solicitanteNombre, '')) LIKE LOWER(CONCAT('%', :responsable, '%'))
+			    OR LOWER(COALESCE(t.solicitanteFuero, '')) LIKE LOWER(CONCAT('%', :responsable, '%'))
 			    OR LOWER(COALESCE(t.responsable, '')) LIKE LOWER(CONCAT('%', :responsable, '%'))
 			    OR LOWER(COALESCE(e.nombre, '')) LIKE LOWER(CONCAT('%', :responsable, '%')))
 			ORDER BY t.id DESC

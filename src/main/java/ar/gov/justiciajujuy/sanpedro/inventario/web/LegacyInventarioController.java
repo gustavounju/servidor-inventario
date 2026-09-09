@@ -39,7 +39,8 @@ public class LegacyInventarioController {
 			@AuthenticationPrincipal UserDetails userDetails,
 			@RequestBody Map<String, Object> payload) {
 
-		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR)) {
+		if (!authorizationService.esReporteDeMaquina(userDetails)
+				&& !authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para reportar equipos.");
 		}
 

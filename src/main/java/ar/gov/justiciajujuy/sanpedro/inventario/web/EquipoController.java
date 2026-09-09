@@ -76,7 +76,7 @@ public class EquipoController {
 	public EquipoDetalle registrarInventario(
 			@AuthenticationPrincipal UserDetails userDetails,
 			@Valid @RequestBody ReporteInventarioRequest request) {
-		exigirPermiso(userDetails, PERMISO_EDITAR);
+		exigirPermisoReporteInventario(userDetails);
 		ReporteInventarioCommand command = request.toCommand();
 		EquipoDetalle equipo = equipoService.registrarInventario(command);
 		componenteService.registrarDetectadosDesdeReporte(equipo.id(), command);
@@ -132,6 +132,13 @@ public class EquipoController {
 		if (!authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, permiso)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para operar equipos.");
 		}
+	}
+
+	private void exigirPermisoReporteInventario(UserDetails userDetails) {
+		if (authorizationService.esReporteDeMaquina(userDetails)) {
+			return;
+		}
+		exigirPermiso(userDetails, PERMISO_EDITAR);
 	}
 
 	@ExceptionHandler(EquipoNoEncontradoException.class)

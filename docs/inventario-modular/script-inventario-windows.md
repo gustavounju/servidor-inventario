@@ -51,6 +51,11 @@ http://IP_DEL_SERVIDOR:8081/scripts/windows/inventario-modular.ps1.sha256
 
 No captura salud SMART en esta etapa.
 
+Por defecto no consulta Active Directory desde la PC inventariada. Si no se informa fuero,
+el backend intenta resolverlo por nombre de equipo o conserva el valor previo. La lectura
+de OU desde AD queda disponible solo con `-DetectActiveDirectoryOu` o con
+`INVENTARIO_DETECT_AD_OU=true`, para que Seguridad/AD pueda aprobarla antes de usarla.
+
 ## Copiar desde el login
 
 La pantalla `/login` muestra un comando listo para copiar. Ese comando usa
@@ -88,19 +93,19 @@ http://192.168.1.8:8081/api/v1/equipos/inventario
 Con la app levantada en la misma maquina:
 
 ```powershell
-$u='http://localhost:8081'; $p="$env:TEMP\inventario-modular.ps1"; $wc=New-Object Net.WebClient; $h=$wc.DownloadString("$u/scripts/windows/inventario-modular.ps1.sha256").Trim(); $wc.DownloadFile("$u/scripts/windows/inventario-modular.ps1",$p); $sha=[System.Security.Cryptography.SHA256]::Create(); $fs=[System.IO.File]::OpenRead($p); try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()}; if($a -ne $h){throw "SHA-256 invalido. Script descargado no coincide con el publicado por el servidor."}; powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"
+$u='http://localhost:8081'; $p="$env:TEMP\inventario-modular.ps1"; $wc=New-Object Net.WebClient; $h=$wc.DownloadString("$u/scripts/windows/inventario-modular.ps1.sha256").Trim(); $wc.DownloadFile("$u/scripts/windows/inventario-modular.ps1",$p); $sha=[System.Security.Cryptography.SHA256]::Create(); $fs=[System.IO.File]::OpenRead($p); try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()}; if($a -ne $h){throw "SHA-256 invalido. Script descargado no coincide con el publicado por el servidor."}; try{powershell -ExecutionPolicy RemoteSigned -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"}finally{Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue}
 ```
 
 Para apuntar a la IP LAN de la maquina de Gustavo:
 
 ```powershell
-$u='http://192.168.1.8:8081'; $p="$env:TEMP\inventario-modular.ps1"; $wc=New-Object Net.WebClient; $h=$wc.DownloadString("$u/scripts/windows/inventario-modular.ps1.sha256").Trim(); $wc.DownloadFile("$u/scripts/windows/inventario-modular.ps1",$p); $sha=[System.Security.Cryptography.SHA256]::Create(); $fs=[System.IO.File]::OpenRead($p); try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()}; if($a -ne $h){throw "SHA-256 invalido. Script descargado no coincide con el publicado por el servidor."}; powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"
+$u='http://192.168.1.8:8081'; $p="$env:TEMP\inventario-modular.ps1"; $wc=New-Object Net.WebClient; $h=$wc.DownloadString("$u/scripts/windows/inventario-modular.ps1.sha256").Trim(); $wc.DownloadFile("$u/scripts/windows/inventario-modular.ps1",$p); $sha=[System.Security.Cryptography.SHA256]::Create(); $fs=[System.IO.File]::OpenRead($p); try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()}; if($a -ne $h){throw "SHA-256 invalido. Script descargado no coincide con el publicado por el servidor."}; try{powershell -ExecutionPolicy RemoteSigned -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"}finally{Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue}
 ```
 
 Para probar sin enviar:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\inventario-modular.ps1" -DryRun
+powershell -ExecutionPolicy RemoteSigned -File "$env:TEMP\inventario-modular.ps1" -DryRun
 ```
 
 ## Token
@@ -138,7 +143,7 @@ equipo ya existia, conserva el fuero anterior.
 Para mandarlo explicitamente:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -NoProfile -File "$env:TEMP\inventario-modular.ps1" `
+powershell -ExecutionPolicy RemoteSigned -NoProfile -File "$env:TEMP\inventario-modular.ps1" `
   -Fuero "Dpto. Informatica San Pedro"
 ```
 
@@ -146,7 +151,15 @@ O por variable de entorno:
 
 ```powershell
 $env:INVENTARIO_FUERO = "Dpto. Informatica San Pedro"
-powershell -ExecutionPolicy Bypass -NoProfile -File "$env:TEMP\inventario-modular.ps1"
+powershell -ExecutionPolicy RemoteSigned -NoProfile -File "$env:TEMP\inventario-modular.ps1"
+```
+
+La deteccion por OU de Active Directory queda apagada por defecto. Para probarla de forma
+controlada:
+
+```powershell
+powershell -ExecutionPolicy RemoteSigned -NoProfile -File "$env:TEMP\inventario-modular.ps1" `
+  -DetectActiveDirectoryOu
 ```
 
 ## Seguridad operativa
@@ -156,9 +169,14 @@ powershell -ExecutionPolicy Bypass -NoProfile -File "$env:TEMP\inventario-modula
 - El script no queda corriendo en segundo plano.
 - El script no modifica configuracion del equipo.
 - El script lee inventario por CIM/WMI y envia un POST al servidor.
-- El uso normal usa `ExecutionPolicy Bypass` solo para el proceso actual de PowerShell,
-  despues de validar el SHA-256 publicado por el servidor. No modifica la politica
-  permanente de Windows.
+- El uso normal usa `ExecutionPolicy RemoteSigned` solo para el proceso actual de
+  PowerShell, despues de validar el SHA-256 publicado por el servidor. No modifica la
+  politica permanente de Windows.
+- El archivo temporal descargado se elimina al terminar la ejecucion del comando copiado.
+- Si se usa HTTPS, la validacion de certificado queda activa. `-SkipCertificateCheck` solo
+  debe usarse en una prueba puntual aprobada por el administrador.
+- No hace consultas a Active Directory salvo que se active explicitamente
+  `-DetectActiveDirectoryOu` o `INVENTARIO_DETECT_AD_OU=true`.
 - El comando de descarga usa `System.Net.WebClient` para evitar depender de
   `Invoke-WebRequest`, que no esta disponible en PowerShell 2.0 de Windows 7.
 
@@ -172,6 +190,7 @@ antivirus. La forma correcta de evitar bloqueos falsos es:
 - crear una regla administrada de salida hacia `IP_DEL_SERVIDOR:8081` o mover el servicio a
   80/443 detras de un reverse proxy;
 - usar token real de reporte fuera de git;
+- limitar el token de maquina solo al endpoint de reporte de inventario;
 - validar siempre el SHA-256 del script descargado;
 - firmar el script con certificado interno si se va a desplegar masivamente;
 - registrar en documentacion interna que el script usa WMI/CIM y envia un POST de inventario.

@@ -104,6 +104,43 @@ class ActiveDirectoryDomainServiceTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
+	void listaSolicitantesDeTareasExcluyendoCuentasAdm() throws Exception {
+		ActiveDirectoryProperties properties = new ActiveDirectoryProperties();
+		properties.setEnabled(true);
+		properties.setUserSearchBase("OU=Usuarios");
+		properties.setUserSearchFilter("(objectClass=user)");
+		LdapOperations ldapOperations = mock(LdapOperations.class);
+		BasicAttributes usuarioComun = new BasicAttributes();
+		usuarioComun.put(new BasicAttribute("sAMAccountName", "mesa.entrada"));
+		usuarioComun.put(new BasicAttribute("displayName", "Mesa de Entrada"));
+		usuarioComun.put(new BasicAttribute("department", "Mesa de ayuda"));
+		BasicAttributes usuarioAdm = new BasicAttributes();
+		usuarioAdm.put(new BasicAttribute("sAMAccountName", "mesa_ADM"));
+		usuarioAdm.put(new BasicAttribute("displayName", "Mesa Administrador"));
+		usuarioAdm.put(new BasicAttribute("department", "Mesa de ayuda"));
+
+		when(ldapOperations.search(
+				eq("OU=Usuarios"),
+				eq("(objectClass=user)"),
+				any(SearchControls.class),
+				any(AttributesMapper.class)))
+			.thenAnswer(invocation -> List.of(
+					((AttributesMapper<ActiveDirectoryDomainService.UsuarioDominio>) invocation.getArgument(3))
+							.mapFromAttributes(usuarioComun),
+					((AttributesMapper<ActiveDirectoryDomainService.UsuarioDominio>) invocation.getArgument(3))
+							.mapFromAttributes(usuarioAdm)));
+
+		ActiveDirectoryDomainService service = new ActiveDirectoryDomainService(properties, ldapOperations);
+
+		ActiveDirectoryDomainService.DominioUsuarios resultado = service.listarUsuariosParaTareas();
+
+		assertThat(resultado.disponible()).isTrue();
+		assertThat(resultado.usuarios()).containsExactly(
+				new ActiveDirectoryDomainService.UsuarioDominio("mesa.entrada", "Mesa de Entrada", "Mesa de ayuda"));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
 	void escapaLaBusquedaAntesDeArmarElFiltroLdap() {
 		ActiveDirectoryProperties properties = new ActiveDirectoryProperties();
 		properties.setEnabled(true);

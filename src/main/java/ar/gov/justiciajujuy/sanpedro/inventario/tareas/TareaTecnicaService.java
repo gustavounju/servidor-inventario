@@ -13,6 +13,8 @@ import org.springframework.util.StringUtils;
 @Service
 public class TareaTecnicaService {
 
+	public static final String EQUIPO_GENERICO_NOMBRE = "PC-GENERICA";
+
 	private final TareaTecnicaRepository tareaTecnicaRepository;
 	private final TareaTecnicaComentarioRepository comentarioRepository;
 	private final EquipoRepository equipoRepository;
@@ -36,6 +38,13 @@ public class TareaTecnicaService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public TareaTecnicaDetalle obtener(Long id) {
+		return tareaTecnicaRepository.findById(id)
+				.map(this::toDetalle)
+				.orElseThrow(() -> new TareaTecnicaNoEncontradaException(id));
+	}
+
 	public long contar() {
 		return tareaTecnicaRepository.count();
 	}
@@ -52,11 +61,15 @@ public class TareaTecnicaService {
 	public TareaTecnicaDetalle crear(GuardarTareaTecnicaCommand command) {
 		TareaTecnica tarea = new TareaTecnica(textoRequerido(command.titulo(), "titulo"));
 		tarea.actualizarDatos(
-				buscarEquipoOpcional(command.equipoId()),
+				buscarEquipoParaTarea(command.equipoId()),
 				textoRequerido(command.titulo(), "titulo"),
 				textoOpcional(command.descripcion()),
+				textoRequerido(command.solicitanteUsername(), "solicitante"),
+				textoRequerido(command.solicitanteNombre(), "solicitanteNombre"),
+				textoOpcional(command.solicitanteFuero()),
 				command.prioridad() == null ? PrioridadTareaTecnica.MEDIA : command.prioridad(),
 				textoOpcional(command.responsable()));
+		tarea.marcarCreadoPor(textoOpcional(command.creadoPor()));
 		TareaTecnica guardada = tareaTecnicaRepository.save(tarea);
 		auditoriaService.registrar("TAREAS", "CREAR", "TareaTecnica", guardada.getId(),
 				"Tarea tecnica creada: " + guardada.getTitulo() + ".");
@@ -68,13 +81,45 @@ public class TareaTecnicaService {
 		TareaTecnica tarea = tareaTecnicaRepository.findById(id)
 				.orElseThrow(() -> new TareaTecnicaNoEncontradaException(id));
 		tarea.actualizarDatos(
-				buscarEquipoOpcional(command.equipoId()),
+				buscarEquipoParaTarea(command.equipoId()),
 				textoRequerido(command.titulo(), "titulo"),
 				textoOpcional(command.descripcion()),
+				textoRequerido(command.solicitanteUsername(), "solicitante"),
+				textoRequerido(command.solicitanteNombre(), "solicitanteNombre"),
+				textoOpcional(command.solicitanteFuero()),
 				command.prioridad() == null ? PrioridadTareaTecnica.MEDIA : command.prioridad(),
 				textoOpcional(command.responsable()));
 		auditoriaService.registrar("TAREAS", "ACTUALIZAR", "TareaTecnica", tarea.getId(),
 				"Tarea tecnica " + tarea.getId() + " actualizada.");
+		return toDetalle(tarea);
+	}
+
+	@Transactional
+	public TareaTecnicaDetalle tomar(Long id, String responsable) {
+		TareaTecnica tarea = tareaTecnicaRepository.findById(id)
+				.orElseThrow(() -> new TareaTecnicaNoEncontradaException(id));
+		String responsableNormalizado = textoRequerido(responsable, "responsable");
+		if (StringUtils.hasText(tarea.getResponsable()) && !tarea.getResponsable().equalsIgnoreCase(responsableNormalizado)) {
+			throw new TareaTecnicaYaAsignadaException(id, tarea.getResponsable());
+		}
+		tarea.tomar(responsableNormalizado);
+		auditoriaService.registrar("TAREAS", "TOMAR", "TareaTecnica", tarea.getId(),
+				"Tarea tecnica " + tarea.getId() + " tomada por " + responsableNormalizado + ".");
+		return toDetalle(tarea);
+	}
+
+	@Transactional
+	public TareaTecnicaDetalle reasignarEquipo(Long id, Long equipoDestinoId, String usuario) {
+		TareaTecnica tarea = tareaTecnicaRepository.findById(id)
+				.orElseThrow(() -> new TareaTecnicaNoEncontradaException(id));
+		Equipo equipoDestino = buscarEquipoOpcional(equipoDestinoId);
+		if (EQUIPO_GENERICO_NOMBRE.equalsIgnoreCase(equipoDestino.getNombre())) {
+			throw new IllegalArgumentException("La tarea ya se encuentra en la PC generica auxiliar.");
+		}
+		tarea.reasignarEquipo(equipoDestino);
+		auditoriaService.registrar("TAREAS", "REASIGNAR_EQUIPO", "TareaTecnica", tarea.getId(),
+				"Tarea tecnica " + tarea.getId() + " reasignada al equipo " + equipoDestino.getNombre()
+						+ " por " + textoOpcional(usuario) + ".");
 		return toDetalle(tarea);
 	}
 
@@ -121,6 +166,14 @@ public class TareaTecnicaService {
 				.orElseThrow(() -> new EquipoNoEncontradoException(equipoId));
 	}
 
+	private Equipo buscarEquipoParaTarea(Long equipoId) {
+		if (equipoId != null) {
+			return buscarEquipoOpcional(equipoId);
+		}
+		return equipoRepository.findByNombreIgnoreCase(EQUIPO_GENERICO_NOMBRE)
+				.orElseGet(() -> equipoRepository.save(new Equipo(EQUIPO_GENERICO_NOMBRE, "Sin fuero informado")));
+	}
+
 	private void validarExistencia(Long tareaId) {
 		if (!tareaTecnicaRepository.existsById(tareaId)) {
 			throw new TareaTecnicaNoEncontradaException(tareaId);
@@ -135,9 +188,13 @@ public class TareaTecnicaService {
 				equipo == null ? null : equipo.getNombre(),
 				tarea.getTitulo(),
 				tarea.getDescripcion(),
+				tarea.getSolicitanteUsername(),
+				tarea.getSolicitanteNombre(),
+				tarea.getSolicitanteFuero(),
 				tarea.getEstado(),
 				tarea.getPrioridad(),
 				tarea.getResponsable(),
+				tarea.getCreadoPor(),
 				tarea.getObservacionesCierre(),
 				tarea.getCreadoEn(),
 				tarea.getCerradoEn());
@@ -167,8 +224,12 @@ public class TareaTecnicaService {
 			Long equipoId,
 			String titulo,
 			String descripcion,
+			String solicitanteUsername,
+			String solicitanteNombre,
+			String solicitanteFuero,
 			PrioridadTareaTecnica prioridad,
-			String responsable) {
+			String responsable,
+			String creadoPor) {
 	}
 
 	public record CambiarEstadoTareaCommand(
@@ -187,9 +248,13 @@ public class TareaTecnicaService {
 			String equipoNombre,
 			String titulo,
 			String descripcion,
+			String solicitanteUsername,
+			String solicitanteNombre,
+			String solicitanteFuero,
 			EstadoTareaTecnica estado,
 			PrioridadTareaTecnica prioridad,
 			String responsable,
+			String creadoPor,
 			String observacionesCierre,
 			LocalDateTime creadoEn,
 			LocalDateTime cerradoEn) {
@@ -206,6 +271,12 @@ public class TareaTecnicaService {
 	public static class TareaTecnicaNoEncontradaException extends RuntimeException {
 		public TareaTecnicaNoEncontradaException(Long id) {
 			super("Tarea tecnica no encontrada: " + id);
+		}
+	}
+
+	public static class TareaTecnicaYaAsignadaException extends RuntimeException {
+		public TareaTecnicaYaAsignadaException(Long id, String responsable) {
+			super("Tarea tecnica " + id + " ya asignada a " + responsable + ".");
 		}
 	}
 

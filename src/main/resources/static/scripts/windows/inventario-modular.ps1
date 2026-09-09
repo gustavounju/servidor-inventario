@@ -4,6 +4,7 @@ param(
     [string]$Token = $env:INVENTARIO_REPORT_TOKEN,
     [string]$Fuero = $env:INVENTARIO_FUERO,
     [string]$BackupDirectory = "$env:ProgramData\InventarioModular",
+    [switch]$DetectActiveDirectoryOu,
     [switch]$SkipCertificateCheck,
     [switch]$DryRun
 )
@@ -15,8 +16,8 @@ try {
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12 -bor 3072
 } catch {}
 
-# Si la conexion es HTTPS, asegurar tolerancia a certificados autofirmados o de CA interna
-if ($SkipCertificateCheck -or ($ServerUrl -and $ServerUrl.StartsWith("https:", [System.StringComparison]::OrdinalIgnoreCase))) {
+# No relajar validacion TLS salvo pedido explicito del administrador.
+if ($SkipCertificateCheck) {
     try {
         [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
     } catch {}
@@ -309,10 +310,16 @@ function Send-InventoryJson {
         [string]$Json
     )
     $Client = New-Object System.Net.WebClient
+    $Client.Headers.Add("User-Agent", "InventarioModular-WindowsInventory/1.0")
     $Client.Headers.Add("Content-Type", "application/json; charset=utf-8")
     $Client.Headers.Add("Authorization", "Bearer $Token")
     $Client.Encoding = [System.Text.Encoding]::UTF8
-    return $Client.UploadString($ServerUrl, "POST", $Json)
+    try {
+        return $Client.UploadString($ServerUrl, "POST", $Json)
+    }
+    finally {
+        $Client.Dispose()
+    }
 }
 
 function Send-PendingBackups {
@@ -364,7 +371,7 @@ $Monitors = Get-MonitorDetails
 $Keyboard = Get-PeripheralName -ClassName "Win32_Keyboard"
 $Mouse = Get-PeripheralName -ClassName "Win32_PointingDevice"
 
-if (-not (Test-HasText $Fuero)) {
+if (-not (Test-HasText $Fuero) -and ($DetectActiveDirectoryOu -or $env:INVENTARIO_DETECT_AD_OU -eq "true")) {
     $AdFuero = Get-ActiveDirectoryFuero
     if (Test-HasText $AdFuero) {
         $Fuero = $AdFuero

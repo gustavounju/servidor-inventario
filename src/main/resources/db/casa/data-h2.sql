@@ -28,7 +28,9 @@ MERGE INTO roles (id, codigo, nombre, descripcion, activo) KEY(codigo) VALUES
   (5, 'PERSONALIZADO', 'Personalizado', 'Rol para combinaciones manuales de permisos.', TRUE);
 
 MERGE INTO usuarios (id, username, nombre_visible, fuero, origen, activo) KEY(username) VALUES
-  (1, 'admin.local', 'Administrador Local', 'Desarrollo local', 'LOCAL', TRUE);
+  (1, 'admin.local', 'Administrador Local', 'Desarrollo local', 'LOCAL', TRUE),
+  (2, 'gmurad', 'Gustavo Murad', 'Informatica', 'AD', TRUE),
+  (3, 'mesa.entrada', 'Mesa de Entrada', 'Mesa de ayuda', 'AD', TRUE);
 
 MERGE INTO usuario_roles (usuario_id, rol_id) KEY(usuario_id, rol_id)
 SELECT u.id, r.id
@@ -51,7 +53,13 @@ MERGE INTO equipos (
    '2x8GB DDR4', 'RAMSN-001 | RAMSN-002', 'KINGSTON SA400', 'DISK-001', 'Dell 0ABC',
    'MB-001', 'Dell 22 SN MON-001', 'Logitech Keyboard', 'Logitech Mouse', 'HP LaserJet', 'REPORTADO', TRUE),
   (2, 'PC-MESA-002', 'mesa.entrada', 'Mesa de ayuda', '10.15.2.11', 'Windows 10 Pro', 'Intel Core i3', 8192,
-   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'REPORTADO', TRUE);
+   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'REPORTADO', TRUE),
+  (3, 'PC-GENERICA', 'Sin asignar', 'Sin fuero informado', NULL, 'No aplica', NULL, NULL,
+   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'AUXILIAR_TAREAS', TRUE);
+
+UPDATE tareas_tecnicas
+SET equipo_id = 3
+WHERE equipo_id IS NULL;
 
 MERGE INTO componentes (id, equipo_id, tipo, origen, estado_comparacion, descripcion, marca, modelo, serial, capacidad, ubicacion, observaciones, activo) KEY(id) VALUES
   (1, 1, 'RAM', 'SCRIPT', 'COINCIDE', 'Modulo RAM instalado', 'Kingston', 'DDR4 2666', 'RAMSN-001', '8GB', 'Slot 1', 'Detectado por script', TRUE),
@@ -60,8 +68,11 @@ MERGE INTO componentes (id, equipo_id, tipo, origen, estado_comparacion, descrip
 MERGE INTO stock_componentes (id, tipo, estado, descripcion, marca, modelo, serial, capacidad, ubicacion, observaciones, activo) KEY(id) VALUES
   (1, 'RAM', 'DISPONIBLE', 'Memoria RAM nueva para armado', 'Kingston', 'DDR4 2666', 'STOCK-RAM-001', '8GB', 'Deposito Informatica', 'Disponible para orden de armado', TRUE);
 
-MERGE INTO tareas_tecnicas (id, equipo_id, titulo, descripcion, estado, prioridad, responsable) KEY(id) VALUES
-  (1, 1, 'Revisar mantenimiento preventivo', 'Tarea de ejemplo para validar el modulo desde casa.', 'PENDIENTE', 'MEDIA', 'admin.local');
+MERGE INTO tareas_tecnicas (
+  id, equipo_id, titulo, descripcion, solicitante_username, solicitante_nombre,
+  solicitante_fuero, estado, prioridad, responsable, creado_por) KEY(id) VALUES
+  (1, 1, 'Revisar mantenimiento preventivo', 'Tarea de ejemplo para validar el modulo desde casa.',
+   'mesa.entrada', 'Mesa de Entrada', 'Mesa de ayuda', 'PENDIENTE', 'MEDIA', 'admin.local', 'admin.local');
 
 MERGE INTO muebles (id, codigo, tipo, descripcion, ubicacion, fuero, responsable, estado, observaciones, activo) KEY(codigo) VALUES
   (1, 'MUE-SEED-001', 'SILLA', 'Silla operativa de Informatica', 'Informatica', 'Informatica', 'admin.local', 'ACTIVO', 'Seed local casa', TRUE);

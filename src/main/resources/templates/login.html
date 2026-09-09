@@ -43,12 +43,9 @@
 	<script>
 		(function () {
 			const origin = window.location.origin;
-			const isHttps = window.location.protocol === "https:";
-			const tlsPrefix = isHttps
-				? "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]'Tls12,Tls11,Tls'; [Net.ServicePointManager]::ServerCertificateValidationCallback={$true}; "
-				: "";
 			// El comando usa la misma IP/puerto del login y valida SHA-256 antes de ejecutar.
-			const command = tlsPrefix + [
+			const command = [
+				"[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor 3072;",
 				"$u='" + origin + "';",
 				"$p=\"$env:TEMP\\inventario-modular.ps1\";",
 				"$wc=New-Object Net.WebClient;",
@@ -58,7 +55,7 @@
 				"$fs=[System.IO.File]::OpenRead($p);",
 				"try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace('-','').ToLowerInvariant()}finally{$fs.Close()};",
 				"if($a -ne $h){throw \"SHA-256 invalido. Script descargado no coincide con el publicado por el servidor.\"};",
-				"powershell -ExecutionPolicy Bypass -NoProfile -File $p -ServerUrl \"$u/api/v1/equipos/inventario\""
+				"try{powershell -ExecutionPolicy RemoteSigned -NoProfile -File $p -ServerUrl \"$u/api/v1/equipos/inventario\"}finally{Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue}"
 			].join(" ");
 			const commandBox = document.getElementById("inventory-command");
 			const copyButton = document.getElementById("copy-inventory-command");

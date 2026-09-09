@@ -13,6 +13,7 @@ import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.Guard
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.TareaComentarioDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.TareaTecnicaDetalle;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.TareaTecnicaNoEncontradaException;
+import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService.TareaTecnicaYaAsignadaException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -66,7 +67,7 @@ public class TareaTecnicaController {
 			@AuthenticationPrincipal UserDetails userDetails,
 			@Valid @RequestBody GuardarTareaTecnicaRequest request) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
-		return tareaTecnicaService.crear(request.toCommand());
+		return tareaTecnicaService.crear(request.toCommand(userDetails, authorizationService.puedeAdministrarUsuarios(userDetails)));
 	}
 
 	@PutMapping("/{id}")
@@ -75,7 +76,16 @@ public class TareaTecnicaController {
 			@PathVariable Long id,
 			@Valid @RequestBody GuardarTareaTecnicaRequest request) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
-		return tareaTecnicaService.actualizar(id, request.toCommand());
+		exigirTareaPropiaOAdministrador(userDetails, id);
+		return tareaTecnicaService.actualizar(id, request.toCommand(userDetails, authorizationService.puedeAdministrarUsuarios(userDetails)));
+	}
+
+	@PostMapping("/{id}/tomar")
+	public TareaTecnicaDetalle tomar(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long id) {
+		exigirPermiso(userDetails, PERMISO_EDITAR);
+		return tareaTecnicaService.tomar(id, userDetails.getUsername());
 	}
 
 	@PatchMapping("/{id}/estado")
@@ -84,6 +94,7 @@ public class TareaTecnicaController {
 			@PathVariable Long id,
 			@Valid @RequestBody CambiarEstadoTareaRequest request) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
+		exigirTareaPropiaOAdministrador(userDetails, id);
 		return tareaTecnicaService.cambiarEstado(id, request.toCommand());
 	}
 
@@ -93,6 +104,7 @@ public class TareaTecnicaController {
 			@AuthenticationPrincipal UserDetails userDetails,
 			@PathVariable Long id) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
+		exigirTareaPropiaOAdministrador(userDetails, id);
 		tareaTecnicaService.eliminar(id);
 	}
 
@@ -111,6 +123,7 @@ public class TareaTecnicaController {
 			@PathVariable Long id,
 			@Valid @RequestBody AgregarComentarioTareaRequest request) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
+		exigirTareaPropiaOAdministrador(userDetails, id);
 		return tareaTecnicaService.comentar(id, request.toCommand(userDetails.getUsername()));
 	}
 
@@ -120,20 +133,48 @@ public class TareaTecnicaController {
 		}
 	}
 
+	private void exigirTareaPropiaOAdministrador(UserDetails userDetails, Long tareaId) {
+		if (authorizationService.puedeAdministrarUsuarios(userDetails)) {
+			return;
+		}
+		TareaTecnicaDetalle tarea = tareaTecnicaService.obtener(tareaId);
+		if (tarea.responsable() == null || !tarea.responsable().equalsIgnoreCase(userDetails.getUsername())) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La tarea debe estar tomada por el tecnico en sesion.");
+		}
+	}
+
 	@ExceptionHandler({TareaTecnicaNoEncontradaException.class, EquipoNoEncontradoException.class})
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	void noEncontrado() {
+	}
+
+	@ExceptionHandler(TareaTecnicaYaAsignadaException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	void yaAsignada() {
 	}
 
 	public record GuardarTareaTecnicaRequest(
 			Long equipoId,
 			@NotBlank @Size(max = 180) String titulo,
 			@Size(max = 1000) String descripcion,
+			@NotBlank @Size(max = 120) String solicitanteUsername,
+			@NotBlank @Size(max = 180) String solicitanteNombre,
+			@Size(max = 120) String solicitanteFuero,
 			PrioridadTareaTecnica prioridad,
 			@Size(max = 120) String responsable) {
 
-		private GuardarTareaTecnicaCommand toCommand() {
-			return new GuardarTareaTecnicaCommand(equipoId, titulo, descripcion, prioridad, responsable);
+		private GuardarTareaTecnicaCommand toCommand(UserDetails userDetails, boolean puedeAsignarResponsable) {
+			String responsableFinal = puedeAsignarResponsable ? responsable : userDetails.getUsername();
+			return new GuardarTareaTecnicaCommand(
+					equipoId,
+					titulo,
+					descripcion,
+					solicitanteUsername,
+					solicitanteNombre,
+					solicitanteFuero,
+					prioridad,
+					responsableFinal,
+					userDetails.getUsername());
 		}
 	}
 

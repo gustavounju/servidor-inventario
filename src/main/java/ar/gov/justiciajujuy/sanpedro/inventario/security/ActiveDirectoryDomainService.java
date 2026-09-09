@@ -50,6 +50,47 @@ public class ActiveDirectoryDomainService {
 				"Ingrese al menos " + MIN_QUERY_LENGTH + " caracteres para buscar usuarios de dominio.");
 	}
 
+	public DominioUsuarios listarUsuariosParaTareas() {
+		if (!properties.isEnabled()) {
+			return DominioUsuarios.noDisponible("LDAP esta desactivado en este entorno.", "");
+		}
+
+		if (ldapOperations == null) {
+			return DominioUsuarios.noDisponible("No hay cliente LDAP de lectura configurado.", "");
+		}
+
+		if (StringUtils.hasText(properties.getReadOnlyUserDn())
+				&& !StringUtils.hasText(properties.getReadOnlyPassword())) {
+			return DominioUsuarios.noDisponible("La cuenta LDAP lectora no tiene clave configurada.", "");
+		}
+
+		try {
+			String displayNameAttribute = safeAttributeName(properties.getDisplayNameAttribute(), "displayName");
+			SearchControls controls = new SearchControls();
+			controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+			controls.setCountLimit(Math.max(1, properties.getUserSearchLimit()));
+			controls.setReturningAttributes(new String[] {
+					"sAMAccountName",
+					"userPrincipalName",
+					displayNameAttribute,
+					properties.getFueroAttribute()
+			});
+
+			List<UsuarioDominio> usuarios = ldapOperations.search(
+					properties.getUserSearchBase(),
+					properties.getUserSearchFilter(),
+					controls,
+					(AttributesMapper<UsuarioDominio>) this::toUsuarioDominio)
+				.stream()
+				.filter(usuario -> !esCuentaAdministrativa(usuario.username()))
+				.toList();
+			return DominioUsuarios.disponible(usuarios, "");
+		} catch (RuntimeException exception) {
+			LOGGER.warn("No se pudo consultar Active Directory para listar solicitantes: {}", exception.getMessage());
+			return DominioUsuarios.noDisponible("No se pudo consultar Active Directory.", "");
+		}
+	}
+
 	public DominioUsuarios buscarUsuarios(String query) {
 		String queryNormalizada = query == null ? "" : query.trim();
 		if (queryNormalizada.length() < MIN_QUERY_LENGTH) {
@@ -233,6 +274,10 @@ public class ActiveDirectoryDomainService {
 		}
 		String value = String.valueOf(attribute.get()).trim();
 		return StringUtils.hasText(value) ? value : fallback;
+	}
+
+	private boolean esCuentaAdministrativa(String username) {
+		return StringUtils.hasText(username) && username.toUpperCase().contains("_ADM");
 	}
 
 	public record DominioUsuarios(

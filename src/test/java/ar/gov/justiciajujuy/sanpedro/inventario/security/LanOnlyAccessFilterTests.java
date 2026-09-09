@@ -39,6 +39,20 @@ class LanOnlyAccessFilterTests {
 	}
 
 	@Test
+	void honorsConfiguredAllowedCidrsForPrivateAddresses() throws ServletException, IOException {
+		NetworkAccessProperties properties = new NetworkAccessProperties();
+		properties.setAllowedCidrs(java.util.List.of("10.15.0.0/16"));
+		LanOnlyAccessFilter filter = new LanOnlyAccessFilter(properties);
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/login");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		request.setRemoteAddr("192.168.1.20");
+
+		filter.doFilter(request, response, new MockFilterChain());
+
+		assertThat(response.getStatus()).isEqualTo(403);
+	}
+
+	@Test
 	void usesForwardedAddressOnlyWhenProxyIsLocal() throws ServletException, IOException {
 		LanOnlyAccessFilter filter = new LanOnlyAccessFilter(new NetworkAccessProperties());
 		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/login");

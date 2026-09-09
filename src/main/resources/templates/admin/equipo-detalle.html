@@ -9,7 +9,12 @@
 <body>
 	<main class="shell shell-wide">
 		<section class="status-panel admin-users-panel" aria-labelledby="equipo-title">
-			<header th:replace="~{admin/nav :: topbar('Ficha de Equipo y Gemelo Digital', 'Equipo: ' + ${equipo.nombre}, 'equipos')}"></header>
+			<th:block th:if="${equipoGenerico}">
+				<header th:replace="~{admin/nav :: topbar('Tareas auxiliares', 'PC genérica', 'tareas')}"></header>
+			</th:block>
+			<th:block th:unless="${equipoGenerico}">
+				<header th:replace="~{admin/nav :: topbar('Ficha de Equipo y Gemelo Digital', 'Equipo: ' + ${equipo.nombre}, 'equipos')}"></header>
+			</th:block>
 
 			<!-- Barra de Acciones Rápidas y Navegación -->
 			<nav class="quick-nav-bar" aria-label="Acciones del equipo">
@@ -18,7 +23,7 @@
 						⬅ Volver al listado
 					</a>
 				</div>
-				<div class="quick-nav-group">
+				<div class="quick-nav-group" th:unless="${equipoGenerico}">
 					<span class="authorization-badge" th:classappend="${equipo.activo} ? ' is-authorized' : ' is-pending'"
 						  th:text="${equipo.activo} ? ('ESTADO: ' + ${equipo.monitoreo}) : 'ESTADO: INACTIVO'">
 						ESTADO: REPORTADO
@@ -39,6 +44,73 @@
 				✅ ¡Gemelo Digital registrado con éxito! Los componentes detectados quedaron confirmados como la línea base oficial del equipo.
 			</p>
 
+			<section th:if="${equipoGenerico}" class="table-section" aria-label="Tareas asignadas a PC genérica">
+				<div class="section-title-row">
+					<div>
+						<p class="eyebrow">Tareas sin equipo identificado</p>
+						<h2>PC genérica</h2>
+					</div>
+				</div>
+				<p class="table-empty" th:if="${#lists.isEmpty(tareasEquipoGenerico)}">
+					No hay tareas asignadas a PC genérica.
+				</p>
+				<div class="responsive-table" th:if="${!#lists.isEmpty(tareasEquipoGenerico)}">
+					<table>
+						<thead>
+							<tr>
+								<th>Tarea</th>
+								<th>Solicitante</th>
+								<th>Responsable</th>
+								<th>Estado</th>
+								<th>Seguimiento</th>
+								<th th:if="${puedeAsignarTareasGenericas}">Asignar a equipo</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="tarea : ${tareasEquipoGenerico}">
+								<td>
+									<strong th:text="${tarea.titulo}">Solicitud sin equipo</strong>
+									<span class="table-subtext" th:text="${tarea.descripcion ?: 'Sin descripción'}">Detalle</span>
+									<span class="table-subtext" th:text="'Creada por: ' + (${tarea.creadoPor ?: 'Sin registrar'})">Creada por</span>
+								</td>
+								<td>
+									<strong th:text="${tarea.solicitanteNombre ?: tarea.solicitanteUsername}">Solicitante</strong>
+									<span class="table-subtext" th:text="${tarea.solicitanteUsername ?: 'Sin usuario'}">usuario</span>
+									<span class="table-subtext" th:text="'Fuero: ' + (${tarea.solicitanteFuero ?: 'Sin fuero'})">Fuero</span>
+								</td>
+								<td>
+									<span th:text="${tarea.responsable ?: 'Pendiente de tomar'}">Responsable</span>
+								</td>
+								<td>
+									<span class="authorization-badge is-pending" th:text="${tarea.estado}">PENDIENTE</span>
+									<span class="table-subtext" th:text="'Prioridad: ' + ${tarea.prioridad}">Prioridad</span>
+									<span class="table-subtext" th:if="${tarea.creadoEn != null}" th:text="'Creada: ' + ${#temporals.format(tarea.creadoEn, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+								</td>
+								<td>
+									<div class="comment-thread" th:if="${comentariosPorTarea[tarea.id] != null and !#lists.isEmpty(comentariosPorTarea[tarea.id])}">
+										<span class="table-subtext" th:each="comentario : ${comentariosPorTarea[tarea.id]}"
+											  th:text="${#temporals.format(comentario.creadoEn, 'dd/MM/yyyy HH:mm')} + ' · ' + ${comentario.autor} + ': ' + ${comentario.comentario}">
+											Comentario
+										</span>
+									</div>
+									<span class="table-subtext" th:if="${comentariosPorTarea[tarea.id] == null or #lists.isEmpty(comentariosPorTarea[tarea.id])}">Sin acciones registradas.</span>
+								</td>
+								<td th:if="${puedeAsignarTareasGenericas}">
+									<form class="inline-form" th:action="@{/admin/equipos/generico/tareas/{id}/reasignar(id=${tarea.id})}" method="post">
+										<select name="equipoDestinoId" required>
+											<option value="">Equipo real...</option>
+											<option th:each="destino : ${equiposReasignacion}" th:value="${destino.id}" th:text="${destino.nombre}">PC-INF-001</option>
+										</select>
+										<button class="secondary-action" type="submit" th:disabled="${#lists.isEmpty(equiposReasignacion)}">Asignar</button>
+									</form>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
+
+			<th:block th:unless="${equipoGenerico}">
 			<!-- Barra Compacta de Estado e Integridad del Equipo -->
 			<section class="equipo-status-strip" style="padding: 12px 18px; margin: 14px 0 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;" aria-label="Estado del equipo">
 				<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -936,10 +1008,10 @@
 				</section>
 			</div>
 
+			</th:block>
 		</section>
 
-		<!-- Modal Vincular -->
-		<dialog id="modal-vincular" class="modal-dialog">
+		<dialog th:unless="${equipoGenerico}" id="modal-vincular" class="modal-dialog">
 			<form th:action="@{/admin/equipos/{id}/vincular-taller(id=${equipo.id})}" method="post" class="modal-content">
 				<h3 style="margin-top:0;">🔗 Vincular con Equipo de Taller</h3>
 				<p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Selecciona la máquina fantasma (creada en taller) para fusionar sus piezas con esta PC física. <strong>El equipo de taller seleccionado se eliminará luego de transferir los componentes.</strong></p>
@@ -960,8 +1032,7 @@
 			</form>
 		</dialog>
 
-		<!-- Modal Carga Masiva de Piezas -->
-		<dialog id="modal-masivo" class="modal-dialog" style="max-width: 700px; width: 95vw;">
+		<dialog th:unless="${equipoGenerico}" id="modal-masivo" class="modal-dialog" style="max-width: 700px; width: 95vw;">
 			<form th:action="@{/admin/equipos/{id}/componentes/instalar-masivo(id=${equipo.id})}" method="post" class="modal-content">
 				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
 					<h3 style="margin:0;">📦 Carga Masiva de Piezas desde Stock</h3>
@@ -1008,7 +1079,7 @@
 		</dialog>
 	</main>
 
-	<script>
+	<script th:unless="${equipoGenerico}">
 		// Actualizar contador de piezas seleccionadas
 		document.addEventListener('change', function(e) {
 			if (e.target.classList.contains('stock-cb') || e.target.id === 'select-all-stock') {
@@ -1020,7 +1091,7 @@
 	</script>
 
 	<!-- Script de Pestañas Interactivas Liviano y Accesible -->
-	<script>
+	<script th:unless="${equipoGenerico}">
 		function switchTab(tabId) {
 			const tabs = ['ficha', 'gemelo', 'editar'];
 			tabs.forEach(function(id) {
@@ -1057,8 +1128,20 @@
 		});
 
 		function copiarComandoScriptDetalle() {
-			var host = window.location.hostname + (window.location.port ? (':' + window.location.port) : ':8081');
-			var cmd = 'Invoke-WebRequest -Uri "http://' + host + '/scripts/windows/inventario-modular.ps1" -OutFile "$env:TEMP\\inventario.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\\inventario.ps1" -ServerUrl "http://' + host + '/api/v1/equipos/inventario"';
+			var origin = window.location.origin;
+			var cmd = [
+				'[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor 3072;',
+				'$u="' + origin + '";',
+				'$p="$env:TEMP\\inventario-modular.ps1";',
+				'$wc=New-Object Net.WebClient;',
+				'$h=$wc.DownloadString("$u/scripts/windows/inventario-modular.ps1.sha256").Trim();',
+				'$wc.DownloadFile("$u/scripts/windows/inventario-modular.ps1",$p);',
+				'$sha=[System.Security.Cryptography.SHA256]::Create();',
+				'$fs=[System.IO.File]::OpenRead($p);',
+				'try{$a=([BitConverter]::ToString($sha.ComputeHash($fs))).Replace("-","").ToLowerInvariant()}finally{$fs.Close()};',
+				'if($a -ne $h){throw "SHA-256 invalido. Script descargado no coincide con el publicado por el servidor."};',
+				'try{powershell -ExecutionPolicy RemoteSigned -NoProfile -File $p -ServerUrl "$u/api/v1/equipos/inventario"}finally{Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue}'
+			].join(' ');
 			if (navigator.clipboard && navigator.clipboard.writeText) {
 				navigator.clipboard.writeText(cmd).then(function() {
 					alert("¡Comando PowerShell copiado al portapapeles!\n\nPégalo en PowerShell en la PC cliente para enviar su hardware real.");

@@ -3,6 +3,7 @@ package ar.gov.justiciajujuy.sanpedro.inventario.web;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -259,6 +260,37 @@ class EquipoControllerTests {
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.nombre").value("PC-TOKEN-005"))
 			.andExpect(jsonPath("$.monitoreo").value("REPORTADO"));
+	}
+
+	@Test
+	void tokenDeMaquinaNoPermiteListarEquipos() throws Exception {
+		mockMvc.perform(get("/api/v1/equipos")
+				.header("Authorization", "Bearer token-test"))
+			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void tokenDeMaquinaNoPermiteEditarEquiposFueraDelReporte() throws Exception {
+		String body = """
+				{
+				  "nombre": "PC-INF-001",
+				  "fuero": "Informatica",
+				  "activo": true
+				}
+				""";
+
+		mockMvc.perform(put("/api/v1/equipos/1")
+				.header("Authorization", "Bearer token-test")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(body))
+			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void tokenDeMaquinaNoPermiteEliminarEquipos() throws Exception {
+		mockMvc.perform(delete("/api/v1/equipos/1")
+				.header("Authorization", "Bearer token-test"))
+			.andExpect(status().isForbidden());
 	}
 
 	@Test

@@ -14,12 +14,15 @@ import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoService.EquipoNoEn
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.InventarioViejoImportService;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
 import ar.gov.justiciajujuy.sanpedro.inventario.stock.StockService;
+import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaTecnicaService;
 import ar.gov.justiciajujuy.sanpedro.inventario.ubicaciones.UbicacionService;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -67,12 +70,14 @@ public class EquipoPageController {
 	private final InventarioViejoImportService inventarioViejoImportService;
 	private final ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService;
 	private final StockService stockService;
+	private final TareaTecnicaService tareaTecnicaService;
 
 	public EquipoPageController(AuthorizationService authorizationService, EquipoService equipoService,
 			ComponenteService componenteService, GemeloDigitalService gemeloDigitalService,
 			UbicacionService ubicacionService, InventarioViejoImportService inventarioViejoImportService,
 			ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService fueroService,
-			StockService stockService) {
+			StockService stockService,
+			TareaTecnicaService tareaTecnicaService) {
 		this.authorizationService = authorizationService;
 		this.equipoService = equipoService;
 		this.componenteService = componenteService;
@@ -81,6 +86,7 @@ public class EquipoPageController {
 		this.inventarioViejoImportService = inventarioViejoImportService;
 		this.fueroService = fueroService;
 		this.stockService = stockService;
+		this.tareaTecnicaService = tareaTecnicaService;
 	}
 
 	/**
@@ -105,7 +111,9 @@ public class EquipoPageController {
 		}
 
 		// 1. Obtención del universo de equipos y relaciones activas para métricas
-		var todosLosEquipos = equipoService.listar(null, 0, 1000).equipos();
+		var todosLosEquipos = equipoService.listar(null, 0, 1000).equipos().stream()
+				.filter(e -> !esEquipoGenerico(e.nombre()))
+				.toList();
 		var equiposConGemelo = componenteService.obtenerEquipoIdsConRelevamientoInicial();
 
 		// 2. Cálculo de métricas para las tarjetas superiores
@@ -122,7 +130,9 @@ public class EquipoPageController {
 
 		// 3. Filtrado por término de búsqueda (q) y estado seleccionado en las tarjetas métricas
 		var resultadoEquipos = equipoService.listar(q, 0, 50);
-		var listaFiltrada = resultadoEquipos.equipos().stream().filter(e -> {
+		var listaFiltrada = resultadoEquipos.equipos().stream()
+			.filter(e -> !esEquipoGenerico(e.nombre()))
+			.filter(e -> {
 			if (org.springframework.util.StringUtils.hasText(estado)) {
 				if ("SINCRONIZADO".equalsIgnoreCase(estado)) {
 					return e.ultimoReporteEn() != null && equiposConGemelo.contains(e.id());
@@ -161,6 +171,10 @@ public class EquipoPageController {
 		return "admin/equipos";
 	}
 
+	private boolean esEquipoGenerico(String nombre) {
+		return nombre != null && TareaTecnicaService.EQUIPO_GENERICO_NOMBRE.equalsIgnoreCase(nombre);
+	}
+
 	@org.springframework.web.bind.annotation.GetMapping("/admin/equipos/{id:\\d+}")
 	public String detalle(
 			Model model,
@@ -172,6 +186,12 @@ public class EquipoPageController {
 			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene permiso para ver equipos.");
 		}
 		EquipoDetalle equipo = obtenerEquipoOResponder404(id);
+		if (esEquipoGenerico(equipo.nombre())) {
+			prepararDetalleGenerico(model, userDetails, equipo);
+			model.addAttribute("actualizado", "1".equals(actualizado));
+			model.addAttribute("relevamientoConsolidado", false);
+			return "admin/equipo-detalle";
+		}
 		prepararDetalle(model, userDetails, equipo, EquipoForm.desde(equipo));
 		model.addAttribute("actualizado", "1".equals(actualizado) || "relevamiento".equals(actualizado));
 		model.addAttribute("relevamientoConsolidado", "relevamiento".equals(actualizado) || "1".equals(relevamiento));
@@ -227,6 +247,22 @@ public class EquipoPageController {
 		equipoService.eliminar(id);
 		redirectAttributes.addFlashAttribute("eliminado", true);
 		return "redirect:/admin/equipos";
+	}
+
+	@PostMapping("/admin/equipos/generico/tareas/{tareaId}/reasignar")
+	public String reasignarTareaGenerica(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable Long tareaId,
+			@RequestParam Long equipoDestinoId,
+			RedirectAttributes redirectAttributes) {
+		if (!authorizationService.tienePermiso(userDetails, "USUARIOS", "ADMINISTRAR")) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+					"Solo un administrador puede reasignar tareas de PC generica.");
+		}
+		Long equipoGenericoId = tareaTecnicaService.obtener(tareaId).equipoId();
+		tareaTecnicaService.reasignarEquipo(tareaId, equipoDestinoId, nombreUsuario(userDetails));
+		redirectAttributes.addAttribute("actualizado", "1");
+		return "redirect:/admin/equipos/" + equipoGenericoId;
 	}
 
 	private EquipoDetalle obtenerEquipoOResponder404(Long id) {
@@ -411,6 +447,7 @@ public class EquipoPageController {
 		Set<Long> componentesFaltantesIds = calcularComponentesFaltantes(componentesGestion, discrepancias);
 
 		model.addAttribute("equipo", equipo);
+		model.addAttribute("equipoGenerico", false);
 		model.addAttribute("equipoForm", equipoForm);
 		model.addAttribute("puedeEditar", authorizationService.tienePermiso(userDetails, MODULO_EQUIPOS, PERMISO_EDITAR));
 		model.addAttribute("puedeVerComponentes", puedeVerComponentes);
@@ -437,6 +474,29 @@ public class EquipoPageController {
 				.toList());
 		model.addAttribute("actualizado", false);
 		model.addAttribute("relevamientoConsolidado", false);
+	}
+
+	private void prepararDetalleGenerico(Model model, UserDetails userDetails, EquipoDetalle equipo) {
+		var tareas = tareaTecnicaService.buscar(null, equipo.id(), null);
+		Map<Long, List<TareaTecnicaService.TareaComentarioDetalle>> comentariosPorTarea = tareas.stream()
+				.collect(Collectors.toMap(
+						TareaTecnicaService.TareaTecnicaDetalle::id,
+						tarea -> tareaTecnicaService.comentarios(tarea.id())));
+		var equiposReasignacion = equipoService.listar(null, 0, 1000).equipos().stream()
+				.filter(e -> !esEquipoGenerico(e.nombre()))
+				.toList();
+		model.addAttribute("equipo", equipo);
+		model.addAttribute("equipoGenerico", true);
+		model.addAttribute("tareasEquipoGenerico", tareas);
+		model.addAttribute("comentariosPorTarea", comentariosPorTarea);
+		model.addAttribute("equiposReasignacion", equiposReasignacion);
+		model.addAttribute("puedeAsignarTareasGenericas",
+				authorizationService.tienePermiso(userDetails, "USUARIOS", "ADMINISTRAR"));
+		model.addAttribute("puedeEditar", false);
+	}
+
+	private String nombreUsuario(UserDetails userDetails) {
+		return userDetails == null ? "sistema" : userDetails.getUsername();
 	}
 
 	private Set<Long> calcularComponentesFaltantes(

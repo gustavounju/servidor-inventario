@@ -21,6 +21,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -28,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @ActiveProfiles("test")
 @Sql(scripts = "/sql/limpiar-seguridad-modular-test.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(scripts = "/sql/seguridad-modular-test.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+@SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
 class TareaTecnicaPageControllerTests {
 
 	@Autowired
@@ -49,6 +51,9 @@ class TareaTecnicaPageControllerTests {
 				.param("equipoId", "1")
 				.param("titulo", "Revisar impresora compartida")
 				.param("descripcion", "No imprime desde mesa de entrada")
+				.param("solicitanteUsername", "mesa.entrada")
+				.param("solicitanteNombre", "Mesa de Entrada")
+				.param("solicitanteFuero", "Mesa de ayuda")
 				.param("prioridad", "MEDIA")
 				.param("responsable", "gmurad"))
 			.andExpect(status().is3xxRedirection())
@@ -67,6 +72,9 @@ class TareaTecnicaPageControllerTests {
 				.with(csrf())
 				.param("equipoId", "1")
 				.param("titulo", "Actualizar antivirus")
+				.param("solicitanteUsername", "mesa.entrada")
+				.param("solicitanteNombre", "Mesa de Entrada")
+				.param("solicitanteFuero", "Mesa de ayuda")
 				.param("prioridad", "ALTA")
 				.param("responsable", "gmurad"))
 			.andExpect(status().is3xxRedirection());
@@ -93,6 +101,9 @@ class TareaTecnicaPageControllerTests {
 				.param("equipoId", "1")
 				.param("titulo", "Revisar cableado")
 				.param("descripcion", "Control inicial")
+				.param("solicitanteUsername", "mesa.entrada")
+				.param("solicitanteNombre", "Mesa de Entrada")
+				.param("solicitanteFuero", "Mesa de ayuda")
 				.param("prioridad", "MEDIA")
 				.param("responsable", "mesa"))
 			.andExpect(status().is3xxRedirection());
@@ -102,6 +113,9 @@ class TareaTecnicaPageControllerTests {
 				.with(csrf())
 				.param("titulo", "Revisar cableado de red")
 				.param("descripcion", "Se agenda visita tecnica")
+				.param("solicitanteUsername", "mesa.entrada")
+				.param("solicitanteNombre", "Mesa de Entrada")
+				.param("solicitanteFuero", "Mesa de ayuda")
 				.param("prioridad", "ALTA")
 				.param("responsable", "gmurad"))
 			.andExpect(status().is3xxRedirection())
@@ -126,6 +140,15 @@ class TareaTecnicaPageControllerTests {
 		mockMvc.perform(get("/admin/tareas").with(user(adminLocal())))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("Se agenda visita con el responsable.")));
+	}
+
+	@Test
+	@Sql(statements = "INSERT INTO equipos (id, nombre, ultimo_usuario, fuero, ubicacion, sistema_operativo, monitoreo, activo) VALUES (3, 'PC-GENERICA', 'Sin asignar', 'Sin fuero informado', 'Mesa de ayuda', 'No aplica', 'AUXILIAR_TAREAS', TRUE)")
+	void muestraAccesoATareasDePcGenericaSinOfrecerlaComoEquipoNormal() throws Exception {
+		mockMvc.perform(get("/admin/tareas").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("Tareas de PC genérica")))
+			.andExpect(content().string(containsString("No se conoce el equipo")));
 	}
 
 	@Test

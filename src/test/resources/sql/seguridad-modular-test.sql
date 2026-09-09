@@ -167,9 +167,13 @@ CREATE TABLE tareas_tecnicas (
   equipo_id BIGINT,
   titulo VARCHAR(180) NOT NULL,
   descripcion VARCHAR(1000),
+  solicitante_username VARCHAR(120),
+  solicitante_nombre VARCHAR(180),
+  solicitante_fuero VARCHAR(120),
   estado VARCHAR(40) NOT NULL DEFAULT 'PENDIENTE',
   prioridad VARCHAR(40) NOT NULL DEFAULT 'MEDIA',
   responsable VARCHAR(120),
+  creado_por VARCHAR(120),
   observaciones_cierre VARCHAR(1000),
   cerrado_en TIMESTAMP,
   creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -341,8 +345,11 @@ INSERT INTO stock_componentes (
 VALUES
   (1, 'RAM', 'DISPONIBLE', 'Memoria RAM nueva para armado', 'Kingston', 'DDR4 2666', 'STOCK-RAM-001', '8GB', 'Deposito Informatica', 'Disponible para orden de armado', TRUE);
 
-INSERT INTO tareas_tecnicas (id, equipo_id, titulo, descripcion, estado, prioridad, responsable)
-VALUES (1, 1, 'Revisar mantenimiento preventivo', 'Tarea seed para reportes.', 'PENDIENTE', 'MEDIA', 'admin.local');
+INSERT INTO tareas_tecnicas (
+  id, equipo_id, titulo, descripcion, solicitante_username, solicitante_nombre,
+  solicitante_fuero, estado, prioridad, responsable, creado_por)
+VALUES (1, 1, 'Revisar mantenimiento preventivo', 'Tarea seed para reportes.',
+  'mesa.entrada', 'Mesa de Entrada', 'Mesa de ayuda', 'PENDIENTE', 'MEDIA', 'admin.local', 'admin.local');
 
 INSERT INTO tareas_tecnicas_comentarios (id, tarea_id, autor, comentario)
 VALUES (1, 1, 'admin.local', 'Comentario inicial de seguimiento.');

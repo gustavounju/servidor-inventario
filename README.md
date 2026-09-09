@@ -25,6 +25,11 @@ Inventario Modular nace como un backend **API-first** preparado para una futura 
 La web administrativa sera un cliente minimo para configuracion y gestion, no el lugar
 principal de las reglas de negocio.
 
+El alcance de red es interno de la organizacion: salvo GitLab/GitHub para versionado, la
+aplicacion no debe consumir APIs externas ni entregar integraciones hacia servicios
+externos. Los endpoints HTTP son para la LAN institucional, clientes internos y el script
+administrado de inventario.
+
 ## Stack
 
 - Java 21 LTS
@@ -240,6 +245,17 @@ inventario crea o actualiza equipos por `nombre` y queda preparado para conectar
 script de inventario. Desde `/login` se puede copiar el comando PowerShell para ejecutar
 el script en una PC; la IP del servidor se arma automaticamente con la direccion desde
 donde se abrio el login.
+
+Seguridad operativa del script:
+
+- no abre puertos, no instala servicios y no modifica reglas de Firewall de Windows;
+- hace una conexion HTTP/HTTPS saliente al servidor interno para enviar el reporte;
+- valida SHA-256 antes de ejecutar el archivo descargado;
+- elimina el archivo temporal descargado al terminar el comando copiado;
+- no consulta Active Directory desde la PC salvo activacion explicita
+  (`-DetectActiveDirectoryOu` o `INVENTARIO_DETECT_AD_OU=true`);
+- el token de maquina solo queda autorizado para reportar inventario, no para administrar
+  equipos.
 
 Guia tecnica:
 

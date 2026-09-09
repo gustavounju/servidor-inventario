@@ -37,15 +37,20 @@ public class AuthorizationService {
 
 	@Transactional(readOnly = true)
 	public boolean tienePermiso(UserDetails userDetails, String moduloCodigo, String permisoCodigo) {
-		if (userDetails != null && userDetails.getAuthorities().stream()
-				.anyMatch(a -> a.getAuthority().equals("ROLE_MACHINE"))) {
-			return "EQUIPOS".equalsIgnoreCase(moduloCodigo) &&
-					("EDITAR".equalsIgnoreCase(permisoCodigo) || "VER".equalsIgnoreCase(permisoCodigo));
-		}
 		return obtenerUsuarioActual(userDetails).modulos().stream()
 				.filter(modulo -> modulo.codigo().equalsIgnoreCase(moduloCodigo))
 				.anyMatch(modulo -> modulo.permisos().stream()
 						.anyMatch(permiso -> permiso.equalsIgnoreCase(permisoCodigo)));
+	}
+
+	public boolean esReporteDeMaquina(UserDetails userDetails) {
+		return userDetails != null && userDetails.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("ROLE_MACHINE"));
+	}
+
+	@Transactional(readOnly = true)
+	public boolean puedeAdministrarUsuarios(UserDetails userDetails) {
+		return tienePermiso(userDetails, "USUARIOS", "ADMINISTRAR");
 	}
 
 	private List<ModuloAutorizado> obtenerModulos(String username) {

@@ -117,6 +117,12 @@
 										   style="font-size: 0.82rem; padding: 6px 12px; font-weight: 700;">
 											🖥️ Ver Ficha
 										</a>
+										<a th:if="${canViewTareas}"
+										   class="secondary-action" th:href="@{/admin/tareas(equipoId=${equipo.id})}"
+										   style="font-size: 0.78rem; padding: 5px 10px; font-weight: 700;"
+										   title="Ver tareas asociadas a este equipo">
+											Tareas
+										</a>
 
 										<form th:if="${puedeEditar}" th:action="@{/admin/equipos/{id}/eliminar(id=${equipo.id})}" method="post" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este equipo y todos sus datos asociados?');">
 											<button type="submit" class="secondary-action button-danger-subtle" style="font-size: 0.8rem; padding: 5px 9px;" title="Eliminar equipo">

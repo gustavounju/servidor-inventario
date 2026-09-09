@@ -36,6 +36,22 @@ public class UsuarioManagementService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<UsuarioResumen> listarUsuariosActivosNoAdministrativos() {
+		return listarUsuarios().stream()
+				.filter(UsuarioResumen::activo)
+				.filter(usuario -> !esCuentaAdministrativa(usuario.username()))
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<UsuarioResumen> listarTecnicosAsignables() {
+		return listarUsuarios().stream()
+				.filter(UsuarioResumen::activo)
+				.filter(usuario -> usuario.roles().contains("TECNICO") || usuario.roles().contains("ADMINISTRADOR"))
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
 	public List<RolResumen> listarRoles() {
 		return rolRepository.findAll().stream()
 				.sorted(java.util.Comparator.comparing(Rol::getCodigo))
@@ -161,6 +177,10 @@ public class UsuarioManagementService {
 
 	private String normalizar(String username) {
 		return username.trim().toLowerCase();
+	}
+
+	private boolean esCuentaAdministrativa(String username) {
+		return StringUtils.hasText(username) && username.toUpperCase().contains("_ADM");
 	}
 
 	public record CrearUsuarioCommand(
