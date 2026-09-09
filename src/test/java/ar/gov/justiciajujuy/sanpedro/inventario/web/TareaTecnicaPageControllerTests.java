@@ -43,7 +43,10 @@ class TareaTecnicaPageControllerTests {
 			.andExpect(content().string(containsString("Tareas tecnicas")))
 			.andExpect(content().string(containsString("Texto")))
 			.andExpect(content().string(containsString("Comentario inicial de seguimiento.")))
-			.andExpect(content().string(containsString("Nueva tarea")));
+			.andExpect(content().string(containsString("Nueva tarea")))
+			.andExpect(content().string(containsString("Fuero / Unidad organizativa")))
+			.andExpect(content().string(containsString("id=\"solicitante-fuero\"")))
+			.andExpect(content().string(containsString("Mesa de ayuda")));
 
 		mockMvc.perform(post("/admin/tareas")
 				.with(user(adminLocal()))

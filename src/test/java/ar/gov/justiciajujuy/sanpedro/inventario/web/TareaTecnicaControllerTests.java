@@ -110,7 +110,7 @@ class TareaTecnicaControllerTests {
 				  "descripcion": "Se agrega control de teclado y monitor.",
 				  "solicitanteUsername": "mesa.entrada",
 				  "solicitanteNombre": "Mesa de Entrada",
-				  "solicitanteFuero": "",
+				  "solicitanteFuero": "Mesa de ayuda",
 				  "prioridad": "ALTA",
 				  "responsable": "gmurad"
 				}

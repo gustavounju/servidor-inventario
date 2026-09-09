@@ -159,7 +159,7 @@ public class TareaTecnicaController {
 			@Size(max = 1000) String descripcion,
 			@NotBlank @Size(max = 120) String solicitanteUsername,
 			@NotBlank @Size(max = 180) String solicitanteNombre,
-			@Size(max = 120) String solicitanteFuero,
+			@NotBlank @Size(max = 120) String solicitanteFuero,
 			PrioridadTareaTecnica prioridad,
 			@Size(max = 120) String responsable) {
 

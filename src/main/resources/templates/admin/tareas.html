@@ -261,8 +261,15 @@
 								</select>
 								<input type="hidden" th:field="*{solicitanteUsername}" id="solicitante-username">
 								<input type="hidden" th:field="*{solicitanteNombre}" id="solicitante-nombre">
-								<input type="hidden" th:field="*{solicitanteFuero}" id="solicitante-fuero">
 								<small class="field-error" th:if="${#fields.hasErrors('solicitanteUsername')}" th:errors="*{solicitanteUsername}">Error</small>
+							</label>
+							<label>
+								<span>Fuero / Unidad organizativa *</span>
+								<select th:field="*{solicitanteFuero}" id="solicitante-fuero" required>
+									<option value="">Seleccione fuero</option>
+									<option th:each="fuero : ${fuerosDisponibles}" th:value="${fuero}" th:text="${fuero}">Informatica</option>
+								</select>
+								<small class="field-error" th:if="${#fields.hasErrors('solicitanteFuero')}" th:errors="*{solicitanteFuero}">Error</small>
 							</label>
 							<label>
 								<span>Equipo afectado</span>
@@ -313,7 +320,13 @@
 			const option = select.options[select.selectedIndex];
 			document.getElementById('solicitante-username').value = option ? option.value : '';
 			document.getElementById('solicitante-nombre').value = option ? (option.getAttribute('data-nombre') || '') : '';
-			document.getElementById('solicitante-fuero').value = option ? (option.getAttribute('data-fuero') || '') : '';
+			const fueroSelect = document.getElementById('solicitante-fuero');
+			if (fueroSelect && option) {
+				const fuero = option.getAttribute('data-fuero') || '';
+				fueroSelect.value = Array.from(fueroSelect.options).some(opt => opt.value === fuero) ? fuero : '';
+			} else if (fueroSelect) {
+				fueroSelect.value = '';
+			}
 		}
 
 		function switchTab(tabId) {

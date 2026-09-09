@@ -2,9 +2,11 @@ package ar.gov.justiciajujuy.sanpedro.inventario.web;
 
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.equipos.EquipoRepository;
+import ar.gov.justiciajujuy.sanpedro.inventario.equipos.FueroService;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.ActiveDirectoryDomainService;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.ActiveDirectoryDomainService.DominioUsuarios;
 import ar.gov.justiciajujuy.sanpedro.inventario.security.ActiveDirectoryDomainService.UsuarioDominio;
@@ -48,18 +50,21 @@ public class TareaTecnicaPageController {
 	private final EquipoRepository equipoRepository;
 	private final ActiveDirectoryDomainService activeDirectoryDomainService;
 	private final UsuarioManagementService usuarioManagementService;
+	private final FueroService fueroService;
 
 	public TareaTecnicaPageController(
 			AuthorizationService authorizationService,
 			TareaTecnicaService tareaTecnicaService,
 			EquipoRepository equipoRepository,
 			ActiveDirectoryDomainService activeDirectoryDomainService,
-			UsuarioManagementService usuarioManagementService) {
+			UsuarioManagementService usuarioManagementService,
+			FueroService fueroService) {
 		this.authorizationService = authorizationService;
 		this.tareaTecnicaService = tareaTecnicaService;
 		this.equipoRepository = equipoRepository;
 		this.activeDirectoryDomainService = activeDirectoryDomainService;
 		this.usuarioManagementService = usuarioManagementService;
+		this.fueroService = fueroService;
 	}
 
 	@GetMapping("/admin/tareas")
@@ -185,11 +190,24 @@ public class TareaTecnicaPageController {
 		model.addAttribute("filtroResponsable", responsable);
 		boolean puedeEditarTareas = authorizationService.tienePermiso(userDetails, MODULO_TAREAS, PERMISO_EDITAR);
 		boolean puedeAsignarResponsable = authorizationService.puedeAdministrarUsuarios(userDetails);
+		List<UsuarioDominio> solicitantes = solicitantesParaTareas();
 		model.addAttribute("puedeEditarTareas", puedeEditarTareas);
 		model.addAttribute("puedeAsignarResponsable", puedeAsignarResponsable);
 		model.addAttribute("usuarioActual", userDetails.getUsername());
-		model.addAttribute("solicitantes", solicitantesParaTareas());
+		model.addAttribute("solicitantes", solicitantes);
+		model.addAttribute("fuerosDisponibles", fuerosParaTareas(solicitantes));
 		model.addAttribute("tecnicosAsignables", usuarioManagementService.listarTecnicosAsignables());
+	}
+
+	private List<String> fuerosParaTareas(List<UsuarioDominio> solicitantes) {
+		TreeSet<String> fueros = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+		fueros.addAll(fueroService.listarFueros());
+		solicitantes.stream()
+				.map(UsuarioDominio::fuero)
+				.filter(org.springframework.util.StringUtils::hasText)
+				.map(String::trim)
+				.forEach(fueros::add);
+		return List.copyOf(fueros);
 	}
 
 	private List<UsuarioDominio> solicitantesParaTareas() {
@@ -237,6 +255,7 @@ public class TareaTecnicaPageController {
 		@Size(max = 180)
 		private String solicitanteNombre;
 
+		@NotBlank
 		@Size(max = 120)
 		private String solicitanteFuero;
 

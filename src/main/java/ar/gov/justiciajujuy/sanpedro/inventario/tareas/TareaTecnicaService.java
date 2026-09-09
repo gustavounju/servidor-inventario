@@ -66,7 +66,7 @@ public class TareaTecnicaService {
 				textoOpcional(command.descripcion()),
 				textoRequerido(command.solicitanteUsername(), "solicitante"),
 				textoRequerido(command.solicitanteNombre(), "solicitanteNombre"),
-				textoOpcional(command.solicitanteFuero()),
+				textoRequerido(command.solicitanteFuero(), "solicitanteFuero"),
 				command.prioridad() == null ? PrioridadTareaTecnica.MEDIA : command.prioridad(),
 				textoOpcional(command.responsable()));
 		tarea.marcarCreadoPor(textoOpcional(command.creadoPor()));
@@ -86,7 +86,7 @@ public class TareaTecnicaService {
 				textoOpcional(command.descripcion()),
 				textoRequerido(command.solicitanteUsername(), "solicitante"),
 				textoRequerido(command.solicitanteNombre(), "solicitanteNombre"),
-				textoOpcional(command.solicitanteFuero()),
+				textoRequerido(command.solicitanteFuero(), "solicitanteFuero"),
 				command.prioridad() == null ? PrioridadTareaTecnica.MEDIA : command.prioridad(),
 				textoOpcional(command.responsable()));
 		auditoriaService.registrar("TAREAS", "ACTUALIZAR", "TareaTecnica", tarea.getId(),
