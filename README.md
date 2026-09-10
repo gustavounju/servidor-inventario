@@ -3,6 +3,20 @@
 Sistema modular de inventario en Java para el Departamento de Informatica del Centro
 Judicial San Pedro.
 
+## Entrega de tareas LAN - 10/09/2026
+
+Visor independiente para PC/TV, web movil y APK Android piloto con avisos internos.
+La APK aun requiere firma release y validacion en telefonos reales para produccion.
+
+- [Traspaso tecnico para continuar con otra IA](docs/inventario-modular/traspaso-tareas-lan-2026-09-10.md)
+- [Instalacion Linux sin Internet y reversion](docs/inventario-modular/instalacion-tareas-lan-2026-09-10.md)
+- [PDF completo](output/pdf/traspaso-tareas-lan.pdf)
+
+Generar el PDF con `python scripts/generar-pdf-traspaso.py` (requiere reportlab).
+Preparar el kit offline despues de compilar, verificar y confirmar el commit:
+`pwsh -File scripts/preparar-entrega-lan.ps1`. Los binarios y el bundle quedan fuera de
+Git en `output/entrega-lan.zip`; las fuentes, documentacion y PDF si se versionan.
+
 ## Entorno objetivo inicial
 
 Esta instalacion y este repositorio estan documentados para **Windows** como entorno de

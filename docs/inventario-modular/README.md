@@ -25,6 +25,11 @@ Inventario Modular se disena como una aplicacion **API-first**:
 
 ## Documentos
 
+- [Traspaso de tareas, visor y Android LAN (10/09/2026)](./traspaso-tareas-lan-2026-09-10.md)
+- [Instalacion de esta entrega sin Internet](./instalacion-tareas-lan-2026-09-10.md)
+- [PDF de traspaso e instalacion](../../output/pdf/traspaso-tareas-lan.pdf)
+- [Modulo movil y avisos internos](./tareas-moviles-lan.md)
+- [APK Android y prueba de campo](../../android/README.md)
 - [Instalacion desde cero](./instalacion-desde-cero.md)
 - [Bitacora del proyecto](./bitacora-del-proyecto.md)
 - [Requerimientos del sistema](./requerimientos-sistema.md)
@@ -136,12 +141,12 @@ a `127.0.0.1`.
 ## Modo local de casa
 
 Cuando se trabaja desde casa no hay acceso al dominio real ni al servidor MySQL del
-trabajo. Para ese caso, el perfil `local` usa:
+trabajo. El perfil `local` actual intenta MySQL principal y luego fallback; tambien se
+usa en el trabajo con variables de entorno para AD. No confundir su nombre con un
+perfil exclusivamente de desarrollo. Para casa sin MySQL usar `casa` (H2).
 
-- MySQL local en `127.0.0.1:3306`.
-- Base `inventario_modular`.
-- Login local simulado con `inventario.local-auth.*`.
-- LDAP apagado con `inventario.ldap.enabled=false`.
+El login simulado `inventario.local-auth.*` debe habilitarse explicitamente solo para
+desarrollo. Las cuentas locales reales usan `inventario.local-db-auth.*`.
 
 Ese modo no reemplaza la autenticacion real de Active Directory. Solo permite estudiar,
 desarrollar y probar pantallas en Windows.

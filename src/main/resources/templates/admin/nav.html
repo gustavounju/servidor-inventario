@@ -77,6 +77,10 @@
 					<span class="sidebar-icon">🔧</span>
 					<span class="sidebar-text">Tareas Técnicas</span>
 				</a>
+				<a class="sidebar-link" th:if="${canViewTareas != null ? canViewTareas : true}" th:classappend="${activeModule == 'tareas'} ? ' is-active' : ''" th:href="@{/admin/tareas/visor}">
+					<span class="sidebar-icon">▦</span>
+					<span class="sidebar-text">Visor de Tareas</span>
+				</a>
 			</div>
 
 			<!-- Sección 5: Sistema y Auditoría -->

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Visor de tareas - Inventario Modular</title>
+	<link rel="stylesheet" th:href="@{/css/admin.css}">
+	<script defer th:src="@{/js/visor-live.js}"></script>
+</head>
+<body>
+	<main class="task-viewer-shell">
+		<section class="task-viewer" aria-labelledby="tareas-visor-title">
+			<p class="success-message" th:if="${creado}">La tarea fue actualizada correctamente.</p>
+
+			<section class="task-viewer-hero" aria-labelledby="tareas-visor-title">
+				<div>
+					<p class="eyebrow">Centro Judicial San Pedro</p>
+					<h2 id="tareas-visor-title">Seguimiento completo del trabajo diario</h2>
+					<p class="section-note">Consulta tareas por estado, responsable, solicitante, equipo o texto. Cada fila conserva su historial de comentarios y acciones rápidas.</p>
+				</div>
+				<div class="task-viewer-actions">
+					<label class="visor-live-control"><input id="visor-live" type="checkbox" checked> En vivo</label>
+					<span id="visor-live-status" class="section-note" role="status"></span>
+					<a class="secondary-action" th:href="@{/admin}">Panel general</a>
+					<a class="primary-action" href="#nueva-tarea" th:if="${puedeEditarTareas}">Nueva tarea</a>
+				</div>
+			</section>
+
+			<section class="task-metric-grid" aria-label="Resumen de tareas">
+				<a class="task-metric-card" th:href="@{/admin/tareas/visor}">
+					<span>Total</span>
+					<strong th:text="${resumenTareas.total}">0</strong>
+				</a>
+				<a class="task-metric-card metric-pending" th:href="@{/admin/tareas/visor(estado='PENDIENTE')}">
+					<span>Pendientes</span>
+					<strong th:text="${resumenTareas.pendientes + resumenTareas.enProceso}">0</strong>
+				</a>
+				<a class="task-metric-card metric-done" th:href="@{/admin/tareas/visor(estado='CERRADA')}">
+					<span>Realizadas hoy</span>
+					<strong th:text="${resumenTareas.realizadasHoy}">0</strong>
+				</a>
+				<div class="task-metric-card metric-created">
+					<span>Creadas hoy</span>
+					<strong th:text="${resumenTareas.creadasHoy}">0</strong>
+				</div>
+			</section>
+
+			<form class="task-viewer-filter" th:action="@{/admin/tareas/visor}" method="get" role="search">
+				<label>
+					<span>Estado</span>
+					<select name="estado">
+						<option value="">Todos</option>
+						<option th:each="estado : ${estadosTarea}" th:value="${estado}" th:text="${estado}"
+								th:selected="${estado == filtroEstado}">PENDIENTE</option>
+					</select>
+				</label>
+				<label>
+					<span>Equipo</span>
+					<select name="equipoId">
+						<option value="">Todos los equipos</option>
+						<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}"
+								th:selected="${equipo.id == filtroEquipoId}">PC-INF-001</option>
+					</select>
+				</label>
+				<label class="task-viewer-query">
+					<span>Buscar tarea, usuario o comentario</span>
+					<input type="search" name="responsable" th:value="${filtroResponsable}" maxlength="120"
+						   placeholder="Ej: Fredes, gmurad, impresora, PC-INF-001">
+				</label>
+				<div class="form-actions">
+					<button class="primary-action" type="submit">Buscar</button>
+					<a class="secondary-action" th:href="@{/admin/tareas/visor}">Limpiar</a>
+				</div>
+			</form>
+
+			<div class="task-viewer-layout">
+				<section class="task-board" aria-labelledby="tareas-list-title">
+					<div class="section-header">
+						<div>
+							<h2 id="tareas-list-title">Tareas encontradas</h2>
+							<p class="section-note" th:text="${#lists.size(tareas)} + ' registros para el filtro actual'">0 registros para el filtro actual</p>
+						</div>
+					</div>
+
+					<p class="empty-state" th:if="${#lists.isEmpty(tareas)}">No hay tareas con esos criterios.</p>
+
+					<article class="task-row-card" th:each="tarea : ${tareas}">
+						<div class="task-row-main">
+							<div class="task-row-title">
+								<span class="task-id" th:text="'#' + ${tarea.id}">#1</span>
+								<h3 th:text="${tarea.titulo}">Revisar mantenimiento preventivo</h3>
+							</div>
+							<p th:text="${tarea.descripcion ?: 'Sin descripción cargada.'}">Detalle de la tarea.</p>
+							<div class="task-row-tags">
+								<span class="authorization-badge" th:classappend="${tarea.estado.name() == 'CERRADA'} ? ' is-authorized' : (${tarea.estado.name() == 'CANCELADA'} ? ' is-rejected' : ' is-pending')" th:text="${tarea.estado.name() == 'EN_PROCESO' ? 'PENDIENTE' : tarea.estado}">PENDIENTE</span>
+								<span class="count-badge" th:text="${tarea.prioridad}">MEDIA</span>
+								<span class="count-badge" th:text="${tarea.equipoNombre ?: 'PC genérica'}">PC-INF-001</span>
+							</div>
+						</div>
+
+						<dl class="task-row-meta">
+							<div>
+								<dt>Solicitante</dt>
+								<dd>
+									<strong th:text="${tarea.solicitanteNombre ?: tarea.solicitanteUsername ?: 'Sin solicitante'}">Mesa de Entrada</strong>
+									<span th:text="${tarea.solicitanteUsername ?: ''}">mesa.entrada</span>
+								</dd>
+							</div>
+							<div>
+								<dt>Responsable</dt>
+								<dd>
+									<strong th:text="${tarea.responsable ?: 'Sin tomar'}">admin.local</strong>
+									<span th:text="${tarea.solicitanteFuero ?: 'Sin fuero'}">Mesa de ayuda</span>
+								</dd>
+							</div>
+							<div>
+								<dt>Fechas</dt>
+								<dd>
+									<strong th:text="${tarea.creadoEn != null ? #temporals.format(tarea.creadoEn, 'dd/MM/yyyy HH:mm') : 'Sin fecha'}">09/09/2026 09:00</strong>
+									<span th:if="${tarea.cerradoEn != null}" th:text="'Cierre ' + ${#temporals.format(tarea.cerradoEn, 'dd/MM/yyyy HH:mm')}">Cierre</span>
+								</dd>
+							</div>
+						</dl>
+
+						<section class="task-comments" th:if="${comentariosPorTarea[tarea.id] != null and !#lists.isEmpty(comentariosPorTarea[tarea.id])}" aria-label="Comentarios de tarea">
+							<div th:each="comentario : ${comentariosPorTarea[tarea.id]}" class="task-comment">
+								<strong th:text="${comentario.autor}">admin.local</strong>
+								<span th:text="${comentario.creadoEn != null ? #temporals.format(comentario.creadoEn, 'dd/MM/yyyy HH:mm') : ''}">09/09/2026 10:00</span>
+								<p th:text="${comentario.comentario}">Comentario de avance.</p>
+							</div>
+						</section>
+						<p class="table-subtext" th:if="${comentariosPorTarea[tarea.id] == null or #lists.isEmpty(comentariosPorTarea[tarea.id])}">Sin comentarios cargados.</p>
+
+						<div class="task-row-actions" th:if="${puedeEditarTareas}">
+							<form th:if="${tarea.responsable == null}" th:action="@{/admin/tareas/{id}/tomar(id=${tarea.id})}" method="post">
+								<input type="hidden" name="origen" value="visor">
+								<button class="secondary-action" type="submit">Tomar</button>
+							</form>
+							<form class="task-inline-form" th:action="@{/admin/tareas/{id}/estado(id=${tarea.id})}" method="post">
+								<input type="hidden" name="origen" value="visor">
+								<select name="estado" aria-label="Estado">
+									<option th:each="estado : ${estadosTarea}" th:value="${estado}" th:text="${estado}"
+											th:selected="${estado == tarea.estado}">PENDIENTE</option>
+								</select>
+								<input name="observacionesCierre" maxlength="1000" placeholder="Nota de cierre o cambio">
+								<button class="primary-action" type="submit">Actualizar</button>
+							</form>
+							<form class="task-inline-form" th:action="@{/admin/tareas/{id}/comentarios(id=${tarea.id})}" method="post">
+								<input type="hidden" name="origen" value="visor">
+								<input name="comentario" maxlength="1000" required placeholder="Agregar comentario">
+								<button class="secondary-action" type="submit">Comentar</button>
+							</form>
+							<form th:action="@{/admin/tareas/{id}/eliminar(id=${tarea.id})}" method="post" onsubmit="return confirm('¿Eliminar esta tarea y sus comentarios?');">
+								<input type="hidden" name="origen" value="visor">
+								<button class="secondary-action button-danger-subtle" type="submit">Eliminar</button>
+							</form>
+						</div>
+					</article>
+				</section>
+
+				<aside class="task-create-panel" id="nueva-tarea" th:if="${puedeEditarTareas}" aria-labelledby="nueva-tarea-title">
+					<h2 id="nueva-tarea-title">Crear tarea</h2>
+					<form class="equipment-form" th:action="@{/admin/tareas}" th:object="${tareaForm}" method="post">
+						<input type="hidden" name="origen" value="visor">
+						<label>
+							<span>Quién solicita</span>
+							<select id="visor-solicitante-select" required>
+								<option value="">Seleccione solicitante</option>
+								<option th:each="solicitante : ${solicitantes}"
+										th:value="${solicitante.username}"
+										th:text="${solicitante.username + ' - ' + solicitante.nombreVisible}"
+										th:attr="data-nombre=${solicitante.nombreVisible},data-fuero=${solicitante.fuero}">
+									mesa.entrada - Mesa de Entrada
+								</option>
+							</select>
+							<input type="hidden" th:field="*{solicitanteUsername}" id="visor-solicitante-username">
+							<input type="hidden" th:field="*{solicitanteNombre}" id="visor-solicitante-nombre">
+						</label>
+						<label>
+							<span>Fuero / Unidad</span>
+							<select th:field="*{solicitanteFuero}" id="visor-solicitante-fuero" required>
+								<option value="">Seleccione fuero</option>
+								<option th:each="fuero : ${fuerosDisponibles}" th:value="${fuero}" th:text="${fuero}">Informatica</option>
+							</select>
+						</label>
+						<label>
+							<span>Equipo afectado</span>
+							<select th:field="*{equipoId}">
+								<option value="">PC genérica</option>
+								<option th:each="equipo : ${equipos}" th:value="${equipo.id}" th:text="${equipo.nombre}">PC-INF-001</option>
+							</select>
+						</label>
+						<label>
+							<span>Prioridad</span>
+							<select th:field="*{prioridad}">
+								<option th:each="prioridad : ${prioridadesTarea}" th:value="${prioridad}" th:text="${prioridad}">MEDIA</option>
+							</select>
+						</label>
+						<label>
+							<span>Responsable</span>
+							<select th:if="${puedeAsignarResponsable}" th:field="*{responsable}">
+								<option value="">Sin tomar</option>
+								<option th:each="tecnico : ${tecnicosAsignables}" th:value="${tecnico.username}" th:text="${tecnico.username + ' - ' + tecnico.nombreVisible}">gmurad</option>
+							</select>
+							<input th:unless="${puedeAsignarResponsable}" th:field="*{responsable}" th:value="${usuarioActual}" maxlength="120" readonly>
+						</label>
+						<label>
+							<span>Título</span>
+							<input th:field="*{titulo}" maxlength="180" required placeholder="Ej: revisar equipo de Fredes">
+						</label>
+						<label>
+							<span>Descripción</span>
+							<textarea th:field="*{descripcion}" maxlength="1000" rows="5" placeholder="Detalle del pedido, usuario, oficina y síntomas."></textarea>
+						</label>
+						<button class="primary-action" type="submit">Guardar tarea</button>
+					</form>
+				</aside>
+			</div>
+		</section>
+	</main>
+
+	<script>
+		function syncVisorSolicitante() {
+			const select = document.getElementById('visor-solicitante-select');
+			if (!select) return;
+			const option = select.options[select.selectedIndex];
+			document.getElementById('visor-solicitante-username').value = option ? option.value : '';
+			document.getElementById('visor-solicitante-nombre').value = option ? (option.getAttribute('data-nombre') || '') : '';
+			const fueroSelect = document.getElementById('visor-solicitante-fuero');
+			if (fueroSelect && option) {
+				const fuero = option.getAttribute('data-fuero') || '';
+				fueroSelect.value = Array.from(fueroSelect.options).some(opt => opt.value === fuero) ? fuero : '';
+			} else if (fueroSelect) {
+				fueroSelect.value = '';
+			}
+		}
+
+		window.addEventListener('DOMContentLoaded', function() {
+			const solicitanteSelect = document.getElementById('visor-solicitante-select');
+			if (solicitanteSelect) {
+				solicitanteSelect.addEventListener('change', syncVisorSolicitante);
+				syncVisorSolicitante();
+			}
+		});
+	</script>
+</body>
+</html>

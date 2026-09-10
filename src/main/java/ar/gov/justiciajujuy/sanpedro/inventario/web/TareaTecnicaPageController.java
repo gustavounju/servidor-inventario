@@ -81,22 +81,37 @@ public class TareaTecnicaPageController {
 		return "admin/tareas";
 	}
 
+	@GetMapping("/admin/tareas/visor")
+	public String visorTareas(
+			Model model,
+			@AuthenticationPrincipal UserDetails userDetails,
+			@RequestParam(required = false) EstadoTareaTecnica estado,
+			@RequestParam(required = false) Long equipoId,
+			@RequestParam(required = false) String responsable,
+			@RequestParam(required = false) String creado) {
+		exigirPermiso(userDetails, PERMISO_VER);
+		prepararModelo(model, userDetails, new TareaForm(), estado, equipoId, responsable);
+		model.addAttribute("creado", "1".equals(creado));
+		return "admin/tareas-visor";
+	}
+
 	@PostMapping("/admin/tareas")
 	public String crear(
 			Model model,
 			@AuthenticationPrincipal UserDetails userDetails,
 			@Valid @ModelAttribute("tareaForm") TareaForm tareaForm,
 			BindingResult bindingResult,
+			@RequestParam(required = false) String origen,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
 		tareaForm.aplicarReglaResponsable(userDetails.getUsername(), authorizationService.puedeAdministrarUsuarios(userDetails));
 		if (bindingResult.hasErrors()) {
 			prepararModelo(model, userDetails, tareaForm, null, null, null);
-			return "admin/tareas";
+			return vistaTareas(origen);
 		}
 		tareaTecnicaService.crear(tareaForm.toCommand());
 		redirectAttributes.addAttribute("creado", "1");
-		return "redirect:/admin/tareas";
+		return redireccionTareas(origen);
 	}
 
 	@PostMapping("/admin/tareas/{id}")
@@ -106,28 +121,30 @@ public class TareaTecnicaPageController {
 			@PathVariable Long id,
 			@Valid @ModelAttribute("tareaForm") TareaForm tareaForm,
 			BindingResult bindingResult,
+			@RequestParam(required = false) String origen,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
 		exigirTareaPropiaOAdministrador(userDetails, id);
 		tareaForm.aplicarReglaResponsable(userDetails.getUsername(), authorizationService.puedeAdministrarUsuarios(userDetails));
 		if (bindingResult.hasErrors()) {
 			prepararModelo(model, userDetails, tareaForm, null, null, null);
-			return "admin/tareas";
+			return vistaTareas(origen);
 		}
 		tareaTecnicaService.actualizar(id, tareaForm.toCommand());
 		redirectAttributes.addAttribute("creado", "1");
-		return "redirect:/admin/tareas";
+		return redireccionTareas(origen);
 	}
 
 	@PostMapping("/admin/tareas/{id}/tomar")
 	public String tomar(
 			@AuthenticationPrincipal UserDetails userDetails,
 			@PathVariable Long id,
+			@RequestParam(required = false) String origen,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
 		tareaTecnicaService.tomar(id, userDetails.getUsername());
 		redirectAttributes.addAttribute("creado", "1");
-		return "redirect:/admin/tareas";
+		return redireccionTareas(origen);
 	}
 
 	@PostMapping("/admin/tareas/{id}/estado")
@@ -136,24 +153,26 @@ public class TareaTecnicaPageController {
 			@PathVariable Long id,
 			@RequestParam EstadoTareaTecnica estado,
 			@RequestParam(required = false) String observacionesCierre,
+			@RequestParam(required = false) String origen,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
 		exigirTareaPropiaOAdministrador(userDetails, id);
 		tareaTecnicaService.cambiarEstado(id, new CambiarEstadoTareaCommand(estado, observacionesCierre));
 		redirectAttributes.addAttribute("creado", "1");
-		return "redirect:/admin/tareas";
+		return redireccionTareas(origen);
 	}
 
 	@PostMapping("/admin/tareas/{id}/eliminar")
 	public String eliminar(
 			@AuthenticationPrincipal UserDetails userDetails,
 			@PathVariable Long id,
+			@RequestParam(required = false) String origen,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
 		exigirTareaPropiaOAdministrador(userDetails, id);
 		tareaTecnicaService.eliminar(id);
 		redirectAttributes.addFlashAttribute("eliminado", true);
-		return "redirect:/admin/tareas";
+		return redireccionTareas(origen);
 	}
 
 	@PostMapping("/admin/tareas/{id}/comentarios")
@@ -161,12 +180,13 @@ public class TareaTecnicaPageController {
 			@AuthenticationPrincipal UserDetails userDetails,
 			@PathVariable Long id,
 			@RequestParam @NotBlank @Size(max = 1000) String comentario,
+			@RequestParam(required = false) String origen,
 			RedirectAttributes redirectAttributes) {
 		exigirPermiso(userDetails, PERMISO_EDITAR);
 		exigirTareaPropiaOAdministrador(userDetails, id);
 		tareaTecnicaService.comentar(id, new AgregarComentarioTareaCommand(userDetails.getUsername(), comentario));
 		redirectAttributes.addAttribute("creado", "1");
-		return "redirect:/admin/tareas";
+		return redireccionTareas(origen);
 	}
 
 	private void prepararModelo(Model model, UserDetails userDetails, TareaForm tareaForm,
@@ -176,6 +196,7 @@ public class TareaTecnicaPageController {
 				.collect(Collectors.toMap(TareaTecnicaDetalle::id, tarea -> tareaTecnicaService.comentarios(tarea.id())));
 		model.addAttribute("tareas", tareas);
 		model.addAttribute("comentariosPorTarea", comentariosPorTarea);
+		model.addAttribute("resumenTareas", tareaTecnicaService.resumenDelDia());
 		model.addAttribute("tareaForm", tareaForm);
 		model.addAttribute("equipos", equipoRepository.buscar(null, org.springframework.data.domain.Pageable.unpaged()).getContent().stream()
 				.filter(equipo -> !TareaTecnicaService.EQUIPO_GENERICO_NOMBRE.equalsIgnoreCase(equipo.getNombre()))
@@ -197,6 +218,14 @@ public class TareaTecnicaPageController {
 		model.addAttribute("solicitantes", solicitantes);
 		model.addAttribute("fuerosDisponibles", fuerosParaTareas(solicitantes));
 		model.addAttribute("tecnicosAsignables", usuarioManagementService.listarTecnicosAsignables());
+	}
+
+	private String vistaTareas(String origen) {
+		return "visor".equalsIgnoreCase(origen) ? "admin/tareas-visor" : "admin/tareas";
+	}
+
+	private String redireccionTareas(String origen) {
+		return "visor".equalsIgnoreCase(origen) ? "redirect:/admin/tareas/visor" : "redirect:/admin/tareas";
 	}
 
 	private List<String> fuerosParaTareas(List<UsuarioDominio> solicitantes) {

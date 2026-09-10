@@ -1,6 +1,7 @@
 package ar.gov.justiciajujuy.sanpedro.inventario.tareas;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.auditoria.AuditoriaService;
@@ -19,16 +20,19 @@ public class TareaTecnicaService {
 	private final TareaTecnicaComentarioRepository comentarioRepository;
 	private final EquipoRepository equipoRepository;
 	private final AuditoriaService auditoriaService;
+	private final TareaAvisoService avisoService;
 
 	public TareaTecnicaService(
 			TareaTecnicaRepository tareaTecnicaRepository,
 			TareaTecnicaComentarioRepository comentarioRepository,
 			EquipoRepository equipoRepository,
-			AuditoriaService auditoriaService) {
+			AuditoriaService auditoriaService,
+			TareaAvisoService avisoService) {
 		this.tareaTecnicaRepository = tareaTecnicaRepository;
 		this.comentarioRepository = comentarioRepository;
 		this.equipoRepository = equipoRepository;
 		this.auditoriaService = auditoriaService;
+		this.avisoService = avisoService;
 	}
 
 	@Transactional(readOnly = true)
@@ -47,6 +51,18 @@ public class TareaTecnicaService {
 
 	public long contar() {
 		return tareaTecnicaRepository.count();
+	}
+
+	@Transactional(readOnly = true)
+	public ResumenTareas resumenDelDia() {
+		LocalDate hoy = LocalDate.now();
+		LocalDateTime inicio = hoy.atStartOfDay();
+		LocalDateTime fin = hoy.plusDays(1).atStartOfDay();
+		long pendientes = tareaTecnicaRepository.countByEstado(EstadoTareaTecnica.PENDIENTE);
+		long enProceso = tareaTecnicaRepository.countByEstado(EstadoTareaTecnica.EN_PROCESO);
+		long realizadasHoy = tareaTecnicaRepository.countByCerradoEnBetween(inicio, fin);
+		long creadasHoy = tareaTecnicaRepository.countByCreadoEnBetween(inicio, fin);
+		return new ResumenTareas(tareaTecnicaRepository.count(), pendientes, enProceso, realizadasHoy, creadasHoy);
 	}
 
 	@Transactional(readOnly = true)
@@ -73,6 +89,7 @@ public class TareaTecnicaService {
 		TareaTecnica guardada = tareaTecnicaRepository.save(tarea);
 		auditoriaService.registrar("TAREAS", "CREAR", "TareaTecnica", guardada.getId(),
 				"Tarea tecnica creada: " + guardada.getTitulo() + ".");
+		avisoService.registrarCreacion(guardada);
 		return toDetalle(guardada);
 	}
 
@@ -96,8 +113,11 @@ public class TareaTecnicaService {
 
 	@Transactional
 	public TareaTecnicaDetalle tomar(Long id, String responsable) {
-		TareaTecnica tarea = tareaTecnicaRepository.findById(id)
+		TareaTecnica tarea = tareaTecnicaRepository.buscarParaTomar(id)
 				.orElseThrow(() -> new TareaTecnicaNoEncontradaException(id));
+		if (tarea.getEstado() == EstadoTareaTecnica.CERRADA || tarea.getEstado() == EstadoTareaTecnica.CANCELADA) {
+			throw new TareaTecnicaFinalizadaException(id);
+		}
 		String responsableNormalizado = textoRequerido(responsable, "responsable");
 		if (StringUtils.hasText(tarea.getResponsable()) && !tarea.getResponsable().equalsIgnoreCase(responsableNormalizado)) {
 			throw new TareaTecnicaYaAsignadaException(id, tarea.getResponsable());
@@ -268,6 +288,14 @@ public class TareaTecnicaService {
 			LocalDateTime creadoEn) {
 	}
 
+	public record ResumenTareas(
+			long total,
+			long pendientes,
+			long enProceso,
+			long realizadasHoy,
+			long creadasHoy) {
+	}
+
 	public static class TareaTecnicaNoEncontradaException extends RuntimeException {
 		public TareaTecnicaNoEncontradaException(Long id) {
 			super("Tarea tecnica no encontrada: " + id);
@@ -277,6 +305,13 @@ public class TareaTecnicaService {
 	public static class TareaTecnicaYaAsignadaException extends RuntimeException {
 		public TareaTecnicaYaAsignadaException(Long id, String responsable) {
 			super("Tarea tecnica " + id + " ya asignada a " + responsable + ".");
+		}
+	}
+
+	@org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CONFLICT)
+	public static class TareaTecnicaFinalizadaException extends RuntimeException {
+		public TareaTecnicaFinalizadaException(Long id) {
+			super("La tarea " + id + " esta finalizada y no se puede tomar.");
 		}
 	}
 

@@ -2564,3 +2564,59 @@ Validacion manual local:
 - `/admin/stock` carga con columna `Vinculado a`.
 - Un stock asignado muestra PC y usuario cuando existe vinculo activo.
 - Los componentes faltantes inferiores se redujeron a las discrepancias reales a resolver.
+
+## 2026-09-10 - Visor independiente, tareas moviles y avisos LAN
+
+Requerimiento: el administrador necesita crear y seguir tareas en PC/TV, sin menu
+general, y los tecnicos necesitan operar desde celulares y recibir sonido en una
+intranet sin salida a Internet. Se implemento sobre el modulo TAREAS existente.
+
+Cambios entregados:
+
+- Visor autonomo `/admin/tareas/visor`, accesos desde el panel/menu, busqueda ampliada,
+  comentarios, metricas y fichas mas compactas. Actualizacion opcional cada 30 segundos
+  que se pausa para preservar formularios en edicion.
+- Web movil `/movil/login` y `/movil/tareas`: crear, tomar, editar, comentar y gestionar
+  estados segun permisos. Inicio de sesion local o AD reutilizando Spring Security.
+- API movil protegida para sesion, avisos y descarga de APK configurada por el servidor.
+- V15 agrega secuencia y avisos persistidos en la misma transaccion que la tarea.
+  Paginacion de 100 eventos, cursor recuperable y bloqueo pesimista para toma simultanea.
+- Android piloto 0.1.0: WebView del mismo origen, cookie de sesion, servicio visible
+  activado por el tecnico, consulta LAN cada 10 segundos y avisos sonoros de creacion.
+  Sin Firebase/FCM, Google Play Services ni servidor externo de mensajes.
+- Iconos Lucide incluidos localmente con licencia; ninguna dependencia CDN en el movil.
+- Comentarios de codigo sobre orden transaccional, cursores, bloqueo de toma, destinos
+  de login seguros, cookie nativa y preservacion de formularios durante refresco.
+- Traspaso editable, PDF reproducible y runbook para instalar con un kit sin Internet,
+  respaldo de MySQL/JAR, HTTPS institucional, firma release y reversion.
+
+Verificaciones del cierre:
+
+```text
+mvnw.cmd --batch-mode verify
+125 pruebas; 0 fallos; 0 errores; 0 omitidas. JAR ejecutable generado.
+Gradle assembleDebug lintDebug --offline --no-daemon
+Compilacion correcta; lint: 0 errores, 9 advertencias documentadas.
+```
+
+Tambien se verificaron firma debug, descarga autenticada y circuito web de crear,
+tomar, comentar y cerrar. Pantalla movil de 390 px y escritorio sin desborde observado.
+La prueba local #35 quedo cerrada; no se distribuye la base H2 ni sus credenciales.
+
+Limites y continuacion:
+
+- No se probo telefono fisico, AD real ni MySQL institucional. No se desplego en el trabajo.
+- La APK es piloto debug, no release productiva. Exige prueba real de pantalla bloqueada,
+  Doze, bateria y reconexion; el servicio no garantiza avisos tras forzar cierre.
+- La web no reemplaza a Android para sonido en segundo plano. Solo creacion genera aviso.
+- EN_PROCESO se conserva en datos; etiqueta movil/visor dice Pendiente. Quedan diferencias
+  en selectores y filtro del visor y en el contador diario que incluye canceladas.
+- Flyway sigue desactivado; V15 corre por SQL init. No activar Flyway sin ordenar las V6
+  duplicadas. Revisar fallback MySQL y cabeceras del proxy antes de uso productivo.
+- No se incluye clave de firma, certificado privado, secretos de entorno ni backups en Git.
+
+Documentos de continuidad: `traspaso-tareas-lan-2026-09-10.md`,
+`instalacion-tareas-lan-2026-09-10.md`, `tareas-moviles-lan.md` y `android/README.md`.
+El PDF se versiona; JAR/APK/bundle se transportan en el kit generado. El commit exacto
+se registra en VERSION.txt del kit. Publicacion solicitada a GitLab en primeros-pasos;
+confirmar hash remoto y estado de pipeline por separado, sin asumir despliegue automatico.

@@ -365,3 +365,9 @@ VALUES (1, 'ACT-SEED-001', 'ENTREGA', 1, DATE '2026-09-01', 'Mesa de Entradas', 
 
 INSERT INTO ubicaciones (id, codigo, nombre, tipo, fuero, responsable, edificio, piso, estado, observaciones, activo)
 VALUES (1, 'UBI-SEED-001', 'Oficina Informatica', 'OFICINA', 'Informatica', 'admin.local', 'Centro Judicial San Pedro', 'PB', 'ACTIVA', 'Seed de prueba', TRUE);
+CREATE TABLE tareas_aviso_secuencia (id INTEGER PRIMARY KEY, ultimo_id BIGINT NOT NULL);
+INSERT INTO tareas_aviso_secuencia (id, ultimo_id) VALUES (1, 0);
+CREATE TABLE tareas_avisos (
+  id BIGINT PRIMARY KEY, tarea_id BIGINT NOT NULL, titulo VARCHAR(180) NOT NULL,
+  autor VARCHAR(120), creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

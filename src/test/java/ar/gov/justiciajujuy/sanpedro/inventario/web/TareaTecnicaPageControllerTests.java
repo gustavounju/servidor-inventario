@@ -1,6 +1,7 @@
 package ar.gov.justiciajujuy.sanpedro.inventario.web;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -66,6 +67,37 @@ class TareaTecnicaPageControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("Revisar impresora compartida")))
 			.andExpect(content().string(containsString("PC-INF-001")));
+	}
+
+	@Test
+	void muestraVisorDedicadoConMetricasYBusquedaPorComentario() throws Exception {
+		mockMvc.perform(get("/admin/tareas/visor").with(user(adminLocal())))
+			.andExpect(status().isOk())
+			.andExpect(view().name("admin/tareas-visor"))
+			.andExpect(content().string(containsString("Seguimiento completo del trabajo diario")))
+			.andExpect(content().string(containsString("Realizadas hoy")))
+			.andExpect(content().string(containsString("Pendientes")))
+			.andExpect(content().string(containsString("Comentario inicial de seguimiento.")))
+			.andExpect(content().string(not(containsString("app-sidebar"))))
+			.andExpect(content().string(not(containsString("sidebar-brand-title"))))
+			.andExpect(content().string(not(containsString("Panel General"))));
+
+		mockMvc.perform(get("/admin/tareas/visor")
+				.with(user(adminLocal()))
+				.param("responsable", "seguimiento"))
+			.andExpect(status().isOk())
+			.andExpect(content().string(containsString("Revisar mantenimiento preventivo")));
+	}
+
+	@Test
+	void accionesDesdeVisorRegresanAlVisor() throws Exception {
+		mockMvc.perform(post("/admin/tareas/1/comentarios")
+				.with(user(adminLocal()))
+				.with(csrf())
+				.param("comentario", "Avance cargado desde visor.")
+				.param("origen", "visor"))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrlPattern("/admin/tareas/visor?creado=*"));
 	}
 
 	@Test

@@ -52,13 +52,13 @@ public class SecurityConfig {
 					if (path.startsWith("/api/v1/") || path.equals("/submit_inventory")) {
 						response.sendError(401, "Unauthorized");
 					} else {
-						response.sendRedirect(request.getContextPath() + "/login");
+						response.sendRedirect(request.getContextPath() + (path.startsWith(request.getContextPath() + "/movil") ? "/movil/login" : "/login"));
 					}
 				})
 			)
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(
-					"/", "/login", "/logout",
+					"/", "/login", "/movil/login", "/logout",
 					"/css/**", "/js/**", "/images/**", "/scripts/**", "/webjars/**", "/favicon.ico"
 				).permitAll()
 				.requestMatchers("/submit_inventory").authenticated()
@@ -66,7 +66,14 @@ public class SecurityConfig {
 			)
 			.formLogin(form -> form
 				.loginPage("/login")
-				.defaultSuccessUrl("/admin", true)
+				.successHandler((request, response, authentication) -> {
+					// Destinos internos cerrados: el parametro del formulario nunca se usa como URL arbitraria.
+					String destino = "movil".equals(request.getParameter("destino")) ? "/movil/tareas" : "/admin";
+					new org.springframework.security.web.savedrequest.HttpSessionRequestCache().removeRequest(request, response);
+					response.sendRedirect(request.getContextPath() + destino);
+				})
+				.failureHandler((request, response, exception) -> response.sendRedirect(request.getContextPath()
+						+ ("movil".equals(request.getParameter("destino")) ? "/movil/login?error" : "/login?error")))
 				.permitAll()
 			)
 			.logout(logout -> logout

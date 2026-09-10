@@ -16,6 +16,15 @@
 				<span style="font-weight: 600; color: #166534;">Sistema en línea y operativo</span>
 			</div>
 
+			<section class="dashboard-access-strip" th:if="${canViewTareas != null ? canViewTareas : true}" aria-label="Acceso rápido a tareas">
+				<div>
+					<strong>Visor de tareas para administración</strong>
+					<span>Panel completo para controlar pendientes, realizadas del día, responsables, usuarios solicitantes y comentarios.</span>
+				</div>
+				<a class="primary-action" th:href="@{/admin/tareas/visor}">Abrir visor de tareas</a>
+				<a class="secondary-action" th:href="@{/movil/tareas}">Tareas en el celular</a>
+			</section>
+
 			<!-- 🧭 LA BRÚJULA DEL OPERADOR: Recorrido Natural de los Circuitos Judiciales e Informáticos -->
 			<!-- 🧭 LA BRÚJULA DEL OPERADOR: Recorrido Natural de los Circuitos Judiciales e Informáticos -->
 			<section class="workflow-banner">
@@ -115,6 +124,7 @@
 						</div>
 						<div style="display: flex; gap: 6px; flex-wrap: wrap;">
 							<a class="primary-action" th:if="${canViewStock != null ? canViewStock : true}" th:href="@{/admin/stock}" style="font-size: 0.8rem; padding: 5px 10px; background: #ea580c;">📦 Stock</a>
+							<a class="primary-action" th:if="${canViewTareas != null ? canViewTareas : true}" th:href="@{/admin/tareas/visor}" style="font-size: 0.8rem; padding: 5px 10px;">Visor de tareas</a>
 							<a class="secondary-action" th:if="${canViewTareas != null ? canViewTareas : true}" th:href="@{/admin/tareas}" style="font-size: 0.8rem; padding: 5px 9px;">🔧 Tareas</a>
 							<a class="secondary-action" th:if="${canViewUbicaciones != null ? canViewUbicaciones : true}" th:href="@{/admin/ubicaciones}" style="font-size: 0.8rem; padding: 5px 9px;">🏢 Sedes</a>
 							<a class="secondary-action" th:if="${canViewAuditoria != null ? canViewAuditoria : true}" th:href="@{/admin/auditoria}" style="font-size: 0.8rem; padding: 5px 9px;">🛡️ Auditoría</a>
