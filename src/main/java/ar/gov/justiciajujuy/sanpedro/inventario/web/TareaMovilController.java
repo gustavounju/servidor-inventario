@@ -1,6 +1,8 @@
 package ar.gov.justiciajujuy.sanpedro.inventario.web;
 
 import ar.gov.justiciajujuy.sanpedro.inventario.security.AuthorizationService;
+import ar.gov.justiciajujuy.sanpedro.inventario.security.ActiveDirectoryDomainService;
+import ar.gov.justiciajujuy.sanpedro.inventario.security.ActiveDirectoryDomainService.DominioUsuarios;
 import ar.gov.justiciajujuy.sanpedro.inventario.tareas.TareaAvisoService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -23,12 +25,16 @@ import org.springframework.web.server.ResponseStatusException;
 @Controller
 public class TareaMovilController {
     private final AuthorizationService authorization;
+    private final ActiveDirectoryDomainService activeDirectoryDomainService;
     private final TareaAvisoService avisos;
     private final FileSystemResource apk;
 
-    public TareaMovilController(AuthorizationService authorization, TareaAvisoService avisos,
+    public TareaMovilController(AuthorizationService authorization,
+            ActiveDirectoryDomainService activeDirectoryDomainService,
+            TareaAvisoService avisos,
             @Value("${inventario.movil.apk-path:output/android/inventario-tareas-lan-piloto.apk}") String apkPath) {
         this.authorization = authorization;
+        this.activeDirectoryDomainService = activeDirectoryDomainService;
         this.avisos = avisos;
         // La ruta es configuracion del servidor, nunca un parametro de descarga controlado por el cliente.
         this.apk = new FileSystemResource(apkPath);
@@ -77,6 +83,18 @@ public class TareaMovilController {
         }
         response.setHeader("Cache-Control", "no-store");
         return avisos.consultar(despuesDe);
+    }
+
+    @GetMapping("/api/v1/movil/usuarios-dominio")
+    @ResponseBody
+    public DominioUsuarios usuariosDominio(
+            @AuthenticationPrincipal UserDetails user,
+            @RequestParam(name = "q", required = false) String query,
+            HttpServletResponse response) {
+        exigirPermiso(user);
+        // El autocompletado se consulta desde celulares compartidos en LAN; evitamos cachear nombres de AD.
+        response.setHeader("Cache-Control", "no-store");
+        return activeDirectoryDomainService.buscarUsuarios(query);
     }
 
     private void exigirPermiso(UserDetails user) {

@@ -21,10 +21,10 @@ public class DataSourceConfig {
 
 	private static final Logger log = LoggerFactory.getLogger(DataSourceConfig.class);
 
-	@Value("${inventario.datasource.primary.url:jdbc:mysql://10.15.0.62:3306/inventario_modular}")
+	@Value("${inventario.datasource.primary.url:jdbc:mysql://127.0.0.1:3306/inventario_modular}")
 	private String primaryUrl;
 
-	@Value("${inventario.datasource.primary.username:inventario_modular_app}")
+	@Value("${inventario.datasource.primary.username:inventario_local}")
 	private String primaryUsername;
 
 	@Value("${inventario.datasource.primary.password:}")
@@ -75,7 +75,7 @@ public class DataSourceConfig {
 					return ds;
 				}
 			} catch (Exception e) {
-				log.warn("Fallo el login o establecimiento de sesion en MySQL de produccion ({}). Rebotando a base local...", e.getMessage());
+				log.warn("Fallo el login o establecimiento de sesion en MySQL principal ({}). Rebotando a base local...", e.getMessage());
 			}
 		} else {
 			if (hostPort != null) {

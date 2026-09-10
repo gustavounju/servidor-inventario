@@ -2620,3 +2620,56 @@ Documentos de continuidad: `traspaso-tareas-lan-2026-09-10.md`,
 El PDF se versiona; JAR/APK/bundle se transportan en el kit generado. El commit exacto
 se registra en VERSION.txt del kit. Publicacion solicitada a GitLab en primeros-pasos;
 confirmar hash remoto y estado de pipeline por separado, sin asumir despliegue automatico.
+
+## 2026-09-10 - Ajustes de campo: Android, comentarios, AD y MySQL local
+
+Se continuo la prueba en una PC Windows del trabajo con celular Android en la LAN.
+
+Hallazgos operativos:
+
+- La descarga de `inventario-tareas-lan-piloto.apk` desde Chrome/Android muestra avisos
+  esperables de Play Protect por ser una APK debug/piloto, descargada por HTTP y firmada
+  con certificado de desarrollo.
+- El servidor local respondia desde la PC, pero el acceso desde celular puede quedar
+  bloqueado por firewall de Windows, aislamiento Wi-Fi o diferencia de VLAN. El script de
+  arranque ahora imprime la IP LAN detectada para probar `/movil/login` desde el telefono.
+- LDAP estaba desactivado al usar el perfil `casa`; para el trabajo se adopto el perfil
+  `local` con MySQL y variables de AD.
+- Se detecto `Access denied for user 'inventario_local'@'localhost'`, lo que confirma
+  MySQL escuchando en `127.0.0.1:3306` pero con usuario local inexistente, permisos
+  incompletos o clave diferente.
+
+Cambios realizados:
+
+- La app movil muestra una vista previa de comentarios debajo de cada tarea, cargada de
+  forma asincronica para no bloquear el render del listado.
+- El campo **Usuario solicitante** de `/movil/tareas` consulta AD desde el backend y
+  autocompleta usuario, nombre visible y fuero/oficina. Si AD no esta disponible, conserva
+  carga manual.
+- Se agrego `/api/v1/movil/usuarios-dominio?q=...`, protegido por sesion y permiso
+  `TAREAS/VER`, con `Cache-Control: no-store`.
+- El perfil `local` ahora apunta por defecto a MySQL local `127.0.0.1`, dejando la base
+  productiva `10.15.0.62` solo para entornos que la declaren explicitamente por variables.
+- Se agrego `scripts/setup-local-mysql.ps1` para crear/reparar la base y usuario local
+  usando `root` de MySQL local sin guardar claves en el repo.
+- Se agrego `scripts/start-local-ad.ps1` para arrancar Spring Boot con MySQL local, login
+  local de emergencia, AD real y ruta de APK.
+- Se creo `CONTEXT.md` como contexto vivo raiz del proyecto.
+- Se actualizo `docs/inventario-modular/base-datos-local-windows.md`,
+  `docs/inventario-modular/tareas-moviles-lan.md` y `docs/inventario-modular/README.md`.
+
+Verificacion:
+
+```powershell
+.\mvnw.cmd -Dtest=TareaMovilControllerTests test
+```
+
+Resultado: 7 pruebas, 0 fallos, 0 errores.
+
+Pendientes:
+
+- Completar `setup-local-mysql.ps1` en la PC con la clave local de `root`.
+- Reintentar `start-local-ad.ps1` usando la clave configurada para `inventario_local`.
+- Si el celular no abre `http://IP-DE-LA-PC:8081/movil/login`, habilitar firewall de
+  Windows para TCP `8081` o revisar aislamiento/VLAN del Wi-Fi institucional.
+- Probar busqueda AD real con una cuenta lectora autorizada.

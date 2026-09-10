@@ -20,6 +20,15 @@ quedan a su cargo; un administrador puede dejarlas libres para que alguien las t
 El estado visible de una tarea abierta es Pendiente, aunque internamente se conserva
 EN_PROCESO para las tareas tomadas. Finalizadas y canceladas se distinguen.
 
+El listado movil muestra una vista previa de hasta dos comentarios por tarea. La carga se
+hace despues de pintar la lista para que la pantalla siga respondiendo rapido en celulares
+con Wi-Fi institucional irregular.
+
+El campo **Usuario solicitante** consulta Active Directory desde el servidor mediante
+`/api/v1/movil/usuarios-dominio?q=...`. Al elegir un usuario se completan usuario, nombre
+visible y fuero/oficina. Si LDAP no esta disponible o faltan credenciales lectoras, el
+formulario conserva carga manual.
+
 ## Servidor Linux
 
 Se utiliza el mismo proceso Spring Boot y la misma base MySQL. No se necesita otro
@@ -53,6 +62,10 @@ y servidor; el aislamiento entre clientes del punto de acceso puede impedirlo.
 
 `GET /api/v1/movil/sesion` devuelve usuario actual y permisos de operacion.
 
+`GET /api/v1/movil/usuarios-dominio?q=texto` devuelve candidatos de Active Directory
+para autocompletar solicitantes. Requiere sesion autenticada y permiso `TAREAS/VER`;
+la respuesta marca `disponible=false` si LDAP esta deshabilitado o no se pudo consultar.
+
 `GET /api/v1/movil/avisos` inicia el seguimiento en el ultimo cursor, sin historial.
 
 `GET /api/v1/movil/avisos?despuesDe=123` devuelve hasta 100 avisos posteriores y
@@ -78,3 +91,11 @@ Pruebas automatizadas del servidor:
 La prueba movil incluye ingreso local y destino seguro, permisos, CSRF, persistencia
 de avisos, inicializacion idempotente, rollback, paginacion y toma concurrente. Active
 Directory se reutiliza sin cambios, pero su conexion real debe probarse en el trabajo.
+
+Prueba puntual posterior:
+
+```powershell
+.\mvnw.cmd -Dtest=TareaMovilControllerTests test
+```
+
+Resultado del 10 de septiembre de 2026: 7 pruebas, 0 fallos, 0 errores.

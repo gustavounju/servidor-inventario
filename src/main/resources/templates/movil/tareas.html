@@ -78,7 +78,12 @@
             <label>Titulo<input name="titulo" maxlength="180" required></label>
             <label>Descripcion<textarea name="descripcion" maxlength="1000" rows="3"></textarea></label>
             <label>Prioridad<select name="prioridad"><option value="BAJA">Baja</option><option value="MEDIA" selected>Media</option><option value="ALTA">Alta</option><option value="URGENTE">Urgente</option></select></label>
-            <label>Usuario solicitante<input name="solicitanteUsername" maxlength="120" required></label>
+            <label>Usuario solicitante
+                <input id="solicitante-username-input" name="solicitanteUsername" maxlength="120" required
+                       list="solicitante-options" autocomplete="off" autocapitalize="none" spellcheck="false">
+                <datalist id="solicitante-options"></datalist>
+                <small id="solicitante-help" class="field-help">Escriba al menos 2 caracteres para buscar en AD.</small>
+            </label>
             <label>Nombre del solicitante<input name="solicitanteNombre" maxlength="180" required></label>
             <label>Fuero u oficina<input name="solicitanteFuero" maxlength="120" required></label>
             <label id="responsable-field">Responsable<input name="responsable" maxlength="120" placeholder="Sin tomar" autocapitalize="none"></label>

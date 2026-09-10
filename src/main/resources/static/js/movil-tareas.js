@@ -8,6 +8,9 @@
     const native = navigator.userAgent.includes('InventarioLAN/');
     let session, tasks = [], selected, editing, filter = 'pending', limit = 40;
     let cursor, cursorKey, busy = false, audio, sound = false, stopped = false;
+    // Los previews de comentarios se cargan aparte para no retrasar el listado principal de tareas.
+    let renderToken = 0, domainTimer;
+    const commentPreviewCache = new Map(), domainUsers = new Map();
     const icons = () => window.lucide?.createIcons();
     const isOpen = task => ['PENDIENTE', 'EN_PROCESO'].includes(task.estado);
     const owns = task => task.responsable?.toLowerCase() === session.usuario.username.toLowerCase();
@@ -45,6 +48,7 @@
         return response.status === 204 ? null : response.json();
     }
     function render() {
+        const token = ++renderToken;
         const today = new Date().toLocaleDateString('en-CA');
         $('pending-count').textContent = tasks.filter(isOpen).length;
         $('mine-count').textContent = tasks.filter(t => isOpen(t) && owns(t)).length;
@@ -67,7 +71,12 @@
             meta.append(element('span', t.responsable || 'Sin tomar'), element('span', t.solicitanteFuero || '-'),
                 element('span', t.prioridad, ['ALTA', 'URGENTE'].includes(t.prioridad) ? 'priority-high' : ''), element('span', date(t.creadoEn)));
             row.append(meta);
+            const preview = element('section', 'Cargando comentarios...', 'task-comments-preview muted');
+            preview.id = 'comments-preview-' + t.id;
+            preview.setAttribute('aria-label', 'Comentarios de la tarea ' + t.id);
+            row.append(preview);
             $('task-list').append(row);
+            loadCommentPreview(t.id, token);
         }
         $('result-count').textContent = found.length + ' tareas';
         $('empty').hidden = found.length !== 0;
@@ -80,6 +89,7 @@
     }
     async function comments(id) {
         const list = await request(api + '/' + id + '/comentarios');
+        commentPreviewCache.set(id, list);
         if (selected?.id !== id) return;
         $('comments').replaceChildren();
         if (!list.length) $('comments').append(element('p', 'Sin comentarios.', 'muted'));
@@ -87,6 +97,34 @@
             const item = element('article', null, 'comment');
             item.append(element('small', c.autor + ' | ' + date(c.creadoEn)), element('p', c.comentario));
             $('comments').append(item);
+        }
+    }
+    function renderCommentPreview(id, list) {
+        const preview = $('comments-preview-' + id);
+        if (!preview) return;
+        preview.replaceChildren();
+        if (!list.length) {
+            preview.textContent = 'Sin comentarios cargados.';
+            return;
+        }
+        preview.classList.remove('muted');
+        preview.append(element('strong', 'Comentarios'));
+        for (const c of list.slice(0, 2)) {
+            preview.append(element('span', c.autor + ': ' + c.comentario));
+        }
+    }
+    async function loadCommentPreview(id, token) {
+        if (commentPreviewCache.has(id)) {
+            renderCommentPreview(id, commentPreviewCache.get(id));
+            return;
+        }
+        try {
+            const list = await request(api + '/' + id + '/comentarios');
+            commentPreviewCache.set(id, list);
+            if (token === renderToken) renderCommentPreview(id, list);
+        } catch {
+            const preview = $('comments-preview-' + id);
+            if (preview && token === renderToken) preview.textContent = 'No se pudieron cargar comentarios.';
         }
     }
     async function openDetail(task) {
@@ -127,6 +165,7 @@
         const defaults = task || { solicitanteUsername: session.usuario.username, solicitanteNombre: session.usuario.nombreVisible, solicitanteFuero: session.usuario.fuero, prioridad: 'MEDIA' };
         for (const control of form.elements) if (control.name && defaults[control.name] != null) control.value = defaults[control.name];
         $('responsable-field').hidden = !session.administrador;
+        $('solicitante-help').textContent = 'Escriba al menos 2 caracteres para buscar en AD.';
         message('', false, 'form-message');
         $('task-dialog').showModal();
     }
@@ -138,6 +177,7 @@
             data.responsable = data.responsable?.trim() || null;
             const saved = await request(api + (editing ? '/' + editing.id : ''), editing ? 'PUT' : 'POST', data);
             $('task-dialog').close();
+            commentPreviewCache.delete(saved.id);
             await refresh();
             await openDetail(tasks.find(t => t.id === saved.id) || saved);
             message('Tarea guardada.', false, 'detail-message');
@@ -160,6 +200,7 @@
         event.preventDefault();
         act(async () => {
             await request(api + '/' + selected.id + '/comentarios', 'POST', Object.fromEntries(new FormData(event.target)));
+            commentPreviewCache.delete(selected.id);
             event.target.reset(); await comments(selected.id); message('Comentario guardado.', false, 'detail-message');
         });
     };
@@ -177,6 +218,49 @@
         filter = button.dataset.filter; limit = 40; $('list-title').textContent = button.textContent;
         document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b === button))); render();
     });
+    function applySolicitante(username) {
+        const user = domainUsers.get((username || '').trim().toLowerCase());
+        if (!user) return;
+        $('task-form').elements.solicitanteUsername.value = user.username || '';
+        $('task-form').elements.solicitanteNombre.value = user.nombreVisible || '';
+        $('task-form').elements.solicitanteFuero.value = user.fuero || '';
+        $('solicitante-help').textContent = 'Solicitante obtenido desde AD.';
+    }
+    async function searchSolicitantes(query) {
+        const clean = query.trim();
+        const options = $('solicitante-options');
+        if (clean.length < 2) {
+            options.replaceChildren();
+            $('solicitante-help').textContent = 'Escriba al menos 2 caracteres para buscar en AD.';
+            return;
+        }
+        $('solicitante-help').textContent = 'Buscando usuarios de AD...';
+        // La app movil no mantiene una copia de AD; solo consulta al servidor con sesion autenticada.
+        const result = await request('api/v1/movil/usuarios-dominio?q=' + encodeURIComponent(clean));
+        options.replaceChildren();
+        domainUsers.clear();
+        if (!result.disponible) {
+            $('solicitante-help').textContent = result.mensaje || 'No se pudo consultar AD.';
+            return;
+        }
+        for (const user of result.usuarios || []) {
+            domainUsers.set((user.username || '').toLowerCase(), user);
+            const option = element('option');
+            option.value = user.username;
+            option.label = [user.username, user.nombreVisible, user.fuero].filter(Boolean).join(' - ');
+            options.append(option);
+        }
+        $('solicitante-help').textContent = result.usuarios.length ? 'Seleccione un usuario para completar nombre y fuero.' : 'No se encontraron usuarios.';
+        applySolicitante($('task-form').elements.solicitanteUsername.value);
+    }
+    $('solicitante-username-input').addEventListener('input', event => {
+        clearTimeout(domainTimer);
+        domainTimer = setTimeout(() => searchSolicitantes(event.target.value).catch(error => {
+            $('solicitante-help').textContent = error.message || 'No se pudo consultar AD.';
+        }), 350);
+    });
+    $('solicitante-username-input').addEventListener('change', event => applySolicitante(event.target.value));
+    $('solicitante-username-input').addEventListener('blur', event => applySolicitante(event.target.value));
     function beep() {
         if (!audio || audio.state !== 'running') return;
         const oscillator = audio.createOscillator(), gain = audio.createGain();

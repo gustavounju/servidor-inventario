@@ -65,8 +65,13 @@ class TareaMovilControllerTests {
         mvc.perform(get("/api/v1/movil/apk")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/v1/movil/apk").with(user("sin.permisos"))).andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/movil/avisos").with(user("sin.permisos"))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/movil/usuarios-dominio?q=me").with(user("sin.permisos"))).andExpect(status().isForbidden());
         mvc.perform(get("/movil/tareas").with(user("sin.permisos"))).andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/movil/avisos?despuesDe=-1").with(user("admin.local"))).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/movil/usuarios-dominio?q=me").with(user("admin.local"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.consultaRealizada").value(true));
+        mvc.perform(get("/api/v1/tareas-tecnicas/1/comentarios").with(user("admin.local"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].comentario").value("Comentario inicial de seguimiento."));
         mvc.perform(post("/api/v1/tareas-tecnicas").with(user("admin.local")).contentType(MediaType.APPLICATION_JSON).content(NUEVA))
                 .andExpect(status().isForbidden());
     }

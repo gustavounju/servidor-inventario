@@ -127,23 +127,26 @@ luego se redefine en Java con Spring Boot, permisos, API, migraciones y pruebas.
 
 ## Topologia de base de datos
 
-Para estudiar y desarrollar en casa se puede usar MySQL local. Para la instalacion de
-laboratorio en el trabajo, el servidor Ubuntu de la aplicacion y el servidor MySQL son
+Para desarrollar en Windows se usa MySQL local en `127.0.0.1`. Para la instalacion de
+produccion en el trabajo, el servidor Ubuntu de la aplicacion y el servidor MySQL son
 distintos:
 
 ```text
 Servidor Ubuntu de aplicacion -> 10.15.0.62:3306 -> inventario_modular
 ```
 
-Por eso el runbook de Ubuntu configura `INVENTARIO_DB_URL` apuntando a `10.15.0.62`, no
-a `127.0.0.1`.
+Por eso el runbook de Ubuntu configura `INVENTARIO_DB_URL` o `INVENTARIO_DB_PRIMARY_URL`
+apuntando a `10.15.0.62`, no a `127.0.0.1`.
 
-## Modo local de casa
+## Modo local Windows
 
-Cuando se trabaja desde casa no hay acceso al dominio real ni al servidor MySQL del
-trabajo. El perfil `local` actual intenta MySQL principal y luego fallback; tambien se
-usa en el trabajo con variables de entorno para AD. No confundir su nombre con un
-perfil exclusivamente de desarrollo. Para casa sin MySQL usar `casa` (H2).
+El perfil `local` usa MySQL local por defecto. En una PC Windows del trabajo puede
+arrancarse con MySQL local y Active Directory usando:
+
+```powershell
+.\scripts\setup-local-mysql.ps1
+.\scripts\start-local-ad.ps1
+```
 
 El login simulado `inventario.local-auth.*` debe habilitarse explicitamente solo para
 desarrollo. Las cuentas locales reales usan `inventario.local-db-auth.*`.
@@ -151,11 +154,13 @@ desarrollo. Las cuentas locales reales usan `inventario.local-db-auth.*`.
 Ese modo no reemplaza la autenticacion real de Active Directory. Solo permite estudiar,
 desarrollar y probar pantallas en Windows.
 
-Si MySQL local todavia no esta creado, usar el perfil `casa`:
+## Modo H2 de laboratorio
+
+Si no hay MySQL local disponible, existe el perfil `casa`:
 
 ```powershell
 mvn spring-boot:run "-Dspring-boot.run.profiles=casa"
 ```
 
-Ese perfil usa una base H2 local en `.local-data/`, ignorada por git. La clave local de
-desarrollo es `AdminLocal123`.
+Ese perfil usa una base H2 local en `.local-data/`, ignorada por git. No debe usarse
+para validar el flujo real de trabajo con celulares, AD o base MySQL.
